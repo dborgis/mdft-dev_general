@@ -6,7 +6,7 @@ use precision_kinds , only:i2b,dp
 
 implicit none
 
-integer(kind=i2b) :: nb_species
+integer(kind=i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
 
 real(kind=dp) :: Lx , Ly , Lz ! Taille de la boite en Ang
 

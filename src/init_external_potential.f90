@@ -7,7 +7,7 @@ subroutine init_external_potential
     use system , only : chg_mol , chg_solv , eps_solv , eps_mol , sig_solv , sig_mol , Lx , Ly , Lz , nb_omega , nb_psi , &
                     nfft1 , nfft2 , nfft3 , nb_species
     use external_potential, only: Vext_total, Vext_q
-    use mod_lj, only: ljInit => init
+    use mod_lj, only: initLJ => init
 
 
 implicit none
@@ -79,7 +79,7 @@ if (input_log('poisson_solver')) then
   print*, 'je passe dans le PS'
 end if
 
-call ljInit
+call initLJ
 ! and finaly compute it
 !call compute_vlj_ijko_from_tabulated ( nrgrid , drgrid2 , nb_id_solv , nb_id_mol  )
 ! deallocate the tabulated values of Vext_lj(r) and Vext_lj(r**2)
@@ -103,7 +103,7 @@ call external_potential_hard_walls
 
 ! compute potential created by hard cylinder solute if present
 if (input_log('hard_cylinder_solute')) then
-call compute_vext_hard_cylinder
+    call compute_vext_hard_cylinder
 end if
 
 !! compute potential created by a hard square well if present
@@ -114,7 +114,7 @@ end if
 
 ! compute the personnal vext as implemented in personnal_vext.f90. first check existence.
 if (input_log('personnal_vext')) then
-call compute_vext_perso
+    call compute_vext_perso
 end if
 
 ! compute total Vext(i,j,k,omega), the one used in the free energy functional

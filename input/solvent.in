@@ -25,7 +25,7 @@ Stockmayer fluid with dipolar moment D=q.r dipôle de 1,8336 Debye (= electron*A
 charge
 1	1
 	charge	sigma	epsilon	x	y	z
-1	1.0	0.0	0.0	0.0	0.0    2.37
+1	1.0 	0.0    	0.0	    0.0 	0.0    2.37
 
 ====================================================================================================================================One positive charge for debugging poisson solver
 
