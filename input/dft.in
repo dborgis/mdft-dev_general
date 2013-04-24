@@ -1,0 +1,135 @@
+############################
+# SUPERCELL
+############################
+Lx  = 40
+Ly  = 40
+Lz  = 40
+nfft1 = 80                            # nbr of grid points
+nfft2 = 80                                 # nbr of grid points
+nfft3 = 80
+                                  # nbr of grid points
+quadrature = L                             #Type of quadrature used to do integration on the omega angle , GL for Gauss-Legendre(default) , L for lebedev
+
+# order of gauss legendre integration. 3 for water. 2*order^2 angles
+# order of Lebedev integration. theoritically 2/3 of angles of GL integration. routine is written for order = 6, 14 , 26 , 38 
+order_of_quadrature = 6
+nb_psi = 2                                 # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+
+
+############################
+# SOLVENT DEFINITION
+############################
+nb_implicit_species = 1              # total number of implicit solvent species
+mole_fractions                       # mole fraction of each species#0.5
+1.0
+read_ck_or_chi = T                          # cs cdelta and cd are read from input/cs.in input/cdelta.in input/cd.in
+ck_species = spc   # 'spc' for spc water as extracted from MD by Lionel Gendre and Daniel Borgis
+                   # 'spce' for SPCE as trituré par Guillaume qui va se débrouiller
+                   # 'stock' for stockmayer fluid as extracted from MD by Lionel Gendre and Daniel Borgis
+                   # 'perso' for you provide your files in input directory.
+
+read_chi = F
+
+
+polarization = T                     # use c_delta and c_d
+ref_bulk_density      # in molecule per Anstrom^3; 0.0332891 for H2O; 0.0289 for Stockmayer; 0.8785 for HS d=1 with packing fraction 0.46; 0.935831 for packing 0.49
+0.0332891
+temperature = 300                  # system temperature (Kelvin)
+sym_order = 2                        # order of the main symetry axis Cn
+evaluate_polarization = dipol        # Choose if you want to evaluate multipolar (tag = multi) or dipolar (tag = dipol) Polarization.
+
+###########################
+#  IDEAL TERM
+#
+###########################
+Linearize_entropy = F
+if_Linearize_entropy = 1             #if linearize, use bridge on n(r):1 or rho(r,Omega):2
+
+############################
+# HARD SPHERES
+############################
+bridge_hard_sphere = F               # use a hard sphere bridge function
+hard_sphere_fluid = F                # implicit solvent is composed of hard spheres F or T
+hard_sphere_radius                   # 0.5 for expl. If a negative value is found, MDFT will understand that it has to compute it from LJ param using WCA theory
+1.25
+hs_functional = CS                   # hard sphere functional. PY for Percus-Yevick, CS for Carnahan-Starling
+lennard_jones_perturbation_to_hard_spheres = F        # is there a lennard_jones perturbative contribution (WCA type) to hard spheres
+
+
+
+############################
+# POTENTIALS
+############################
+
+#electrostatic_solver = poisson       # 'poisson' for poisson solver
+#                                     # 'point' for qq'/r
+#                                     # 'none' for no electrostatics
+
+poisson_solver = T                 #Warning you should never have 2 tags true for Poisson_solver and point_charge_electrostatic!!!
+point_charge_electrostatic = F
+
+
+reuse_density = F           # begins by minimizing F without charge, then turn charge on 5% by 5%
+
+# HARD SPHERICAL SOLUTE
+hard_sphere_solute = F              # if there is a hard sphere in the center of the box
+radius_of_hard_sphere_solute = 15.0     # hard sphere solute radius for calculation of hard sphere external potential (Ang)
+
+# HARD WALL
+hard_wall_number = 0                 # total number of hard walls in the supercell. They will all have same thickness for now
+0.2   0.0 0.0 1.0   0.0 0.0 2.0
+0.2   0.0 1.0 0.0   0.0 0.0 2.0
+5.0   0.0 0.0 1.0   0.0 0.0 43.32     # one line per hard wall: thickness, coordinates of vector normal to plan defining wall, and coordinates of point in plan
+5.0   0.0 0.0 1.0   0.0 0.0 40.64
+5.0   0.0 0.0 1.0   0.0 0.0 0.59
+5.0   0.0 0.0 1.0   0.0 0.0 40.05
+5.0   0.0 0.0 1.0   0.0 0.0 44.41
+5.0   0.0 0.0 1.0   0.0 0.0 42.23
+5.0   0.0 0.0 1.0   0.0 0.0 44.32
+5.0   0.0 0.0 1.0   0.0 0.0 42.32
+
+# HARD CORE with vdw radius
+vdw_hard_core = F                    # a hard core with vdw radius is like a hard sphere with vdw radius for the solute sites.
+
+# HARD CYLINDER
+hard_cylinder_solute = F             # if there is a hard cylinder in the box (in z direction, at x=Lx/2, y=Ly/2)
+radius_of_hard_cylinder = 0.5           # radius of the hard cylinder solute (Ang)
+
+
+# PERSONAL VEXT
+personnal_vext = F                   # if you want to use the external potential calculated in personnal_vext.f90 that you may want to edit to make something complicated
+vext_hard_square_well = F            # if the external potential is of kind hard well
+hard_well_total_length = 2.0         # total length of the hard well (length or diameter). potential is zero from Lz/2-hard_well_total_length/2 to Lz/2+hard_well_total_length/2 and \infty elsewhere
+purely_repulsive_solute = F          # if there is a 1/r12 repulsive point in the box
+radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^12) solute as defined by Dzubiella
+
+
+
+############################
+# SOLVER
+############################
+minimizer = bfgs                     # bfgs or cg or sd for steepest descent ! it seems 15 sept that cg leads to a strange 'minimum' in complex cases ... :(
+maximum_iteration_nbr = 100          # maximum number of iterations in the minimization procedure. 50 is a good starting point. Often if not converged after 30 then ... forget it.
+epsg = 0.00001                        # default 0.0001
+pgtol = 0.00001                      # default 0.00001
+
+
+############################
+# POST-PROCESSING
+############################
+translate_solute_to_center = T       # T if you want all solute sites to be translated by Lx/2, Ly/2, Lz/2, ie to center of the supercell if solute coordinates are 0, 0, 0
+rdfmaxrange = 20.0                   # the radial distribution function is calculated between 0 and rdfmaxrange (in angstroms)
+nbinsrdf = 80                        # the radial distribution function is calculated by histograms. nbinsrdf is the number of steps. good starting point 200xrdfmaxrange
+
+
+############################
+# OTHER STUFF
+############################
+hydrophobicity = F                   # take into account hydrophobicity term
+treatment_of_hydro = C               #C for Chandler VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
+threebody = T                        # tree body term in functional
+F3B_old = F
+F3B_new = T
+
+Rc = 1.0                              # Used in Compute_vcoul_from_tabulated
+
