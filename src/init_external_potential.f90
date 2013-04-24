@@ -2,11 +2,13 @@
 !Warning there are two ways of calculating the electrostatic potential (Poisson solver and point charge) you should always have one tag
 !T and one tag F for the electrostatic potential, if thera are 2 tags T, it is the last evaluation which counts, i.e Poisson solver. 
 subroutine init_external_potential
-use precision_kinds , only : dp , i2b
-use input , only : input_line , input_log,input_char
-use system , only : chg_mol , chg_solv , eps_solv , eps_mol , sig_solv , sig_mol , Lx , Ly , Lz , nb_omega , nb_psi , &
+    use precision_kinds , only : dp , i2b
+    use input , only : input_line , input_log,input_char
+    use system , only : chg_mol , chg_solv , eps_solv , eps_mol , sig_solv , sig_mol , Lx , Ly , Lz , nb_omega , nb_psi , &
                     nfft1 , nfft2 , nfft3 , nb_species
-use external_potential , only : Vext_total , Vext_lj , Vext_q
+    use external_potential, only: Vext_total, Vext_q
+    use mod_lj, only: ljInit => init
+
 
 implicit none
 integer ( kind = i2b ) :: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
@@ -77,13 +79,9 @@ if (input_log('poisson_solver')) then
   print*, 'je passe dans le PS'
 end if
 
-
-! it is the first time one deals with Vext_lj (which is defined as a public variable in module system) so allocate it
-if (.not. allocated ( Vext_lj ) ) allocate ( Vext_lj ( nfft1 , nfft2 , nfft3 , nb_omega , nb_psi , nb_species ) )
-Vext_lj = 0.0_dp
-
+call ljInit
 ! and finaly compute it
-call compute_vlj_ijko_from_tabulated ( nrgrid , drgrid2 , nb_id_solv , nb_id_mol  )
+!call compute_vlj_ijko_from_tabulated ( nrgrid , drgrid2 , nb_id_solv , nb_id_mol  )
 ! deallocate the tabulated values of Vext_lj(r) and Vext_lj(r**2)
 !if ( allocated ( tabulated_ljsq ) ) deallocate ( tabulated_ljsq )
 

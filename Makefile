@@ -23,7 +23,7 @@ DEBUGFLAGS = -g -Wall -fbounds-check -fcheck=all -fcheck-array-temporaries -Warr
 #-g turns on debugging
 #-p turns on profiling
 
-OPTIM = -O3
+OPTIM = -O3 -march=native
 #-Ofast -funroll-loops -march=native
 # FOR BACKUP : -march=native -O3 -ffast-math -funroll-loops   VERY AGRESSIVE
 # -fopenmp for OPENMP support
@@ -40,6 +40,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/module_external_potential.f90 \
        $(SRCDIR)/module_cg.f90 \
        $(SRCDIR)/module_periodic_table.f90 \
+       $(SRCDIR)/module_mod_lj.f90 \
        $(SRCDIR)/main.f90 \
        $(SRCDIR)/bfgs.f90 \
        $(SRCDIR)/dblas1.f90 \
@@ -89,7 +90,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/compute_planar_density.f90 \
        $(SRCDIR)/write_to_cube_file.f90 \
        $(SRCDIR)/vext_total_sum.f90 \
-       $(SRCDIR)/compute_vlj_ijko_from_tabulated.f90 \
        $(SRCDIR)/compute_vcoul_ijko_from_tabulated.f90 \
        $(SRCDIR)/compute_vext_hard_sphere.f90 \
        $(SRCDIR)/Vcoul_from_solvent_charge_density.f90 \
