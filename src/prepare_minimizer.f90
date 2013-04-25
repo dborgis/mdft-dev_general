@@ -15,7 +15,7 @@ use system , only : nfft1 , nfft2 , nfft3 , nb_omega , nb_species , nb_psi
 
 implicit none
 
-integer ( kind = i2b ) :: i , j ! dummy
+integer(i2b):: i , j ! dummy
 
 
 

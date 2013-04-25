@@ -18,11 +18,11 @@ implicit none
 
 
 
-integer ( kind = i2b ) :: l , m , n , m1 , m2 , m3 , nf1 , nf2 , nf3 ! dummy
+integer(i2b):: l , m , n , m1 , m2 , m3 , nf1 , nf2 , nf3 ! dummy
 
-real ( kind = dp ) :: kx2 , ky2 , kz2 ! norm squared of projection of k in each direction
+real(dp):: kx2 , ky2 , kz2 ! norm squared of projection of k in each direction
 
-real ( kind = dp ) :: twopioverlx , twopioverly , twopioverLz
+real(dp):: twopioverlx , twopioverly , twopioverLz
 
 
 
@@ -111,7 +111,7 @@ do n = 1 , nfft3
 
       k2 ( l , m , n ) = kx2 + ky2 + kz2
 
-      k2_nocoef ( l , m , n ) = real( m1 ,kind=dp) ** 2 + real( m2 ,kind=dp) ** 2 + real( m3 ,kind=dp) ** 2
+      k2_nocoef ( l , m , n ) = real( m1 ,dp) ** 2 + real( m2 ,dp) ** 2 + real( m3 ,dp) ** 2
 
     end do
 

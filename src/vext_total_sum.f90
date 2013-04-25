@@ -27,7 +27,7 @@ implicit none
 
 character ( len = 50 ) :: filename ! dummy
 
-real ( kind = dp ) , dimension ( nfft1 , nfft2 , nfft3 ) :: temparray ! dummy
+real(dp), dimension ( nfft1 , nfft2 , nfft3 ) :: temparray ! dummy
 
 
 

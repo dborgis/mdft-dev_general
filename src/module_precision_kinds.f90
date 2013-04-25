@@ -7,11 +7,11 @@ module precision_kinds
 
   integer ( kind = kind (1) ) , parameter :: i2b = kind ( 1 ) !> simple precision integer 
  
-  integer ( kind = i2b ) , parameter :: dp = kind ( 0.0d0 ) !> double precision real
+  integer(i2b), parameter :: dp = kind ( 0.0d0 ) !> double precision real
 
-  integer ( kind = i2b ) , parameter :: sp = kind ( 0.0 ) !> simple precision real
+  integer(i2b), parameter :: sp = kind ( 0.0 ) !> simple precision real
 
-  integer ( kind = i2b ) , parameter :: i4b = 2_i2b * i2b !> double precision integer
+  integer(i2b), parameter :: i4b = 2_i2b * i2b !> double precision integer
 
 
 

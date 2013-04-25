@@ -13,19 +13,19 @@ use external_potential , only : Vext_total
 
 implicit none
 
-integer ( kind = i2b ) :: i , j , k , n !> @var dummy
+integer(i2b):: i , j , k , n !> @var dummy
 
-real ( kind = dp ) :: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
+real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
 
-real ( kind = dp ) :: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
+real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
 
-real ( kind = dp ) :: solute_radius ! radius of the hard sphere solute. tag in dft.in
+real(dp):: solute_radius ! radius of the hard sphere solute. tag in dft.in
 
-real ( kind = dp ) :: radius_sum_sq ! sum of solute and solvent radius
+real(dp):: radius_sum_sq ! sum of solute and solvent radius
 
-real ( kind = dp ) :: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
+real(dp):: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
 
-integer ( kind = i2b ) :: species ! dummy for loops over species from 1 to nb_species
+integer(i2b):: species ! dummy for loops over species from 1 to nb_species
 
 
 

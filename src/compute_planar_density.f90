@@ -7,13 +7,13 @@ use system, only: nfft1,nfft2,nfft3,nb_solute_sites,x_mol,y_mol,z_mol,Lx,Ly,Lz
 
 implicit none
  character(50),intent(in):: filename
-real(kind=dp),intent(in),dimension(nfft1,nfft2,nfft3):: array
+real(dp),intent(in),dimension(nfft1,nfft2,nfft3):: array
 integer:: plandir !> 1=yz 2=xz 3=xy
 integer:: id !> grid index
 integer:: i,j,k
-real(kind=dp),dimension(nfft1):: x_com !> Cartesian coordinates of grid points in i direction
-real(kind=dp),dimension(nfft2):: y_com !> Cartesian coordinates of grid points in j direction
-real(kind=dp),dimension(nfft3):: z_com !> Cartesian coordinates of grid points in k direction
+real(dp),dimension(nfft1):: x_com !> Cartesian coordinates of grid points in i direction
+real(dp),dimension(nfft2):: y_com !> Cartesian coordinates of grid points in j direction
+real(dp),dimension(nfft3):: z_com !> Cartesian coordinates of grid points in k direction
 
 
 !> Identify the plan coordinate which is 0 (see restrictions to using this program for now)
@@ -29,19 +29,19 @@ end if
 print*,'lalalalal'
 !> Get its grid index called id
 if (plandir==1) then
-  id= nint(x_mol(1)*real(nfft1,kind=dp)/Lx) +1
+  id= nint(x_mol(1)*real(nfft1,dp)/Lx) +1
 else if (plandir==2) then
-  id= nint(y_mol(1)*real(nfft2,kind=dp)/Ly) +1
+  id= nint(y_mol(1)*real(nfft2,dp)/Ly) +1
 else if (plandir==3) then
-  id= nint(z_mol(1)*real(nfft3,kind=dp)/Lz) +1
+  id= nint(z_mol(1)*real(nfft3,dp)/Lz) +1
 else
   write(*,*)'error in compute_planar_density'
 end if
 
 !> Compute grid points cartesian coordinates
-forall(i=1:nfft1) x_com(i)=real(i-1,kind=dp)*Lx/real(nfft1,kind=dp)
-forall(j=1:nfft2) y_com(j)=real(j-1,kind=dp)*Ly/real(nfft2,kind=dp)
-forall(k=1:nfft3) z_com(k)=real(k-1,kind=dp)*Lz/real(nfft3,kind=dp)
+forall(i=1:nfft1) x_com(i)=real(i-1,dp)*Lx/real(nfft1,dp)
+forall(j=1:nfft2) y_com(j)=real(j-1,dp)*Ly/real(nfft2,dp)
+forall(k=1:nfft3) z_com(k)=real(k-1,dp)*Lz/real(nfft3,dp)
 
 
 !> Print density in this plan

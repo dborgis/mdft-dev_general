@@ -24,43 +24,43 @@ implicit none
 
 
 
-integer ( kind = i2b ) :: icg , i , j , k , l , m , n , m1 , m2 , m3 , o , p!> Dummy
+integer(i2b):: icg , i , j , k , l , m , n , m1 , m2 , m3 , o , p!> Dummy
 
-integer ( kind = i2b ) :: nf1 , nf2 , nf3 ! dummy nfft1/2 , nfft2/2 , nfft3/2
+integer(i2b):: nf1 , nf2 , nf3 ! dummy nfft1/2 , nfft2/2 , nfft3/2
 
-integer ( kind = i2b ) :: k_index
+integer(i2b):: k_index
 
-real ( kind = dp ) :: kx , ky , kz , kx2 , ky2 , kz2 , k2 , norm_k
+real(dp):: kx , ky , kz , kx2 , ky2 , kz2 , k2 , norm_k
 
-real ( kind = dp ) :: Fint !> Internal part of the free energy due to polarization
+real(dp):: Fint !> Internal part of the free energy due to polarization
 
-real ( kind = dp ) :: Vint !> Dummy for calculation of Vint
+real(dp):: Vint !> Dummy for calculation of Vint
 
-real ( kind = dp ) :: fact !> facteur d'integration
+real(dp):: fact !> facteur d'integration
 
-real ( kind = dp ) :: rho , psi !> Dummy
+real(dp):: rho , psi !> Dummy
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: Px , Py , Pz , Ex , Ey , Ez
+real(dp), allocatable , dimension ( : , : , : ) :: Px , Py , Pz , Ex , Ey , Ez
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: polatot, polascal
+real(dp), allocatable , dimension ( : , : , : , : ) :: polatot, polascal
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : ) :: Pkx , Pky , Pkz , Ekx , Eky , Ekz
+complex(dp), allocatable , dimension ( : , : , : ) :: Pkx , Pky , Pkz , Ekx , Eky , Ekz
 
-complex ( kind = dp ) :: k_dot_P
+complex(dp):: k_dot_P
 
-real ( kind = dp ) :: c_deltat , c_dt ! dummy local values of c_delta and c_d in loops
+real(dp):: c_deltat , c_dt ! dummy local values of c_delta and c_d in loops
 
-real ( kind = dp ) :: time1 , time0 , time2, time3! timestamps
+real(dp):: time1 , time0 , time2, time3! timestamps
 
-real ( kind = dp ) :: twopioLx , twopioLy , twopioLz ! dummy for 2pi/Lx, 2pi/Ly, 2pi/Lz
+real(dp):: twopioLx , twopioLy , twopioLz ! dummy for 2pi/Lx, 2pi/Ly, 2pi/Lz
 
-real ( kind = dp ) :: pxt , pyt , pzt , r! dummy
+real(dp):: pxt , pyt , pzt , r! dummy
 
-complex ( kind = dp ) :: pxt_k , pyt_k , pzt_k ! dummy
+complex(dp):: pxt_k , pyt_k , pzt_k ! dummy
 
-real ( kind = dp ) :: Nk ! total number of k grid points
+real(dp):: Nk ! total number of k grid points
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
+real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
 
 character (50) :: filename
 

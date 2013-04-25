@@ -12,11 +12,11 @@ use quadrature, only : w_legendre , x_legendre , Omx , Omy , Omz , weight
 implicit none
 
 
-real(kind=dp),dimension(11,11) :: w_gl ! weights for gauss legendre integration of order 1 to 6
+real(dp),dimension(11,11) :: w_gl ! weights for gauss legendre integration of order 1 to 6
 
-real(kind=dp),dimension(11,11) :: x_gl ! zero for gauss legendre integration of order 1 to 6
+real(dp),dimension(11,11) :: x_gl ! zero for gauss legendre integration of order 1 to 6
 
-integer ( kind = i2b ) :: i , j ! dummy
+integer(i2b):: i , j ! dummy
 
 
 ! get gauss legendre integration order nb_legendre from input_line

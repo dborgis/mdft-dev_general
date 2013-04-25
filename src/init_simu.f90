@@ -11,7 +11,7 @@ use input , only : input_line , input_log,input_char! contains all input file df
 implicit none
 
 
-integer ( kind = i2b ) :: i , j ! dummy
+integer(i2b):: i , j ! dummy
 
 
 

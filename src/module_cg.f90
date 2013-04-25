@@ -13,19 +13,19 @@ implicit none
 
 character(10) :: minimizer_type ! bfgs or cg
 
-integer ( kind = i2b ) :: ncg ! nbr of variables
+integer(i2b):: ncg ! nbr of variables
 
-real ( kind = dp ) :: FF ! value of the minimum found for the functional
+real(dp):: FF ! value of the minimum found for the functional
 
-real ( kind = dp ) , allocatable , dimension(:) :: CG_vect ! functional. It has to be a one dimensional array
+real(dp), allocatable , dimension(:) :: CG_vect ! functional. It has to be a one dimensional array
 
-real ( kind = dp ) , allocatable , dimension(:) :: dF ! gradient of the functional
+real(dp), allocatable , dimension(:) :: dF ! gradient of the functional
 
-integer ( kind = i2b ) :: ITERMAX ! maximum number of iterations ! a terme le remplacer dans bfgs par minimizer_iter
+integer(i2b):: ITERMAX ! maximum number of iterations ! a terme le remplacer dans bfgs par minimizer_iter
 
-real ( kind = dp ) :: epsg , epsmch , factr ! precision parameters
+real(dp):: epsg , epsmch , factr ! precision parameters
 
-integer ( kind = i2b ) :: minimizer_iter
+integer(i2b):: minimizer_iter
 
 
 
@@ -33,28 +33,28 @@ integer ( kind = i2b ) :: minimizer_iter
 
 ! integer ( kind = i2b ), parameter :: mmax=4 ! doit etre remplacé par mcg
 
-integer ( kind = i2b ) :: mcg, iprint
+integer(i2b):: mcg, iprint
 
-integer ( kind = i2b ) , allocatable, dimension(:) :: nbd
+integer(i2b), allocatable, dimension(:) :: nbd
 
-integer ( kind = i2b ) , allocatable, dimension(:) :: iwa
+integer(i2b), allocatable, dimension(:) :: iwa
 
-integer ( kind = i2b ) , dimension (1:44) :: isave
+integer(i2b), dimension (1:44) :: isave
 
-real ( kind = dp ) :: pgtol
+real(dp):: pgtol
 
-real ( kind = dp ) , allocatable, dimension(:) :: ll, uu
+real(dp), allocatable, dimension(:) :: ll, uu
 
-real ( kind = dp ) , dimension (1:29) :: dsave
+real(dp), dimension (1:29) :: dsave
 
-real ( kind = dp ) , allocatable, dimension(:) :: wa
+real(dp), allocatable, dimension(:) :: wa
 
 character*60 :: task, csave
 
 logical, dimension (1:4) :: lsave
 
 
-integer ( kind = i2b ) , allocatable , dimension (:,:,:,:) :: indicg
+integer(i2b), allocatable , dimension (:,:,:,:) :: indicg
 
 
 

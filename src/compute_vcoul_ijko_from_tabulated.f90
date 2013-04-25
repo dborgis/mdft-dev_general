@@ -15,30 +15,30 @@ use external_potential , only : Vext_q
 implicit none
 
 
-integer(kind=i2b),intent(in) :: nrgrid ! total number of radial grid nodes
-real(kind=dp), intent(in) :: drgrid ! distance between two radial grid nodes
-integer(kind=i2b), intent(in) :: nb_id_solv,nb_id_mol ! number of different kinds of solvent sites or solute sites
-real(kind=dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
-real(kind=dp), dimension(nb_id_solv,nb_id_mol,0:nrgrid), intent(in) :: tabulated_coulsq
+integer(i2b),intent(in) :: nrgrid ! total number of radial grid nodes
+real(dp), intent(in) :: drgrid ! distance between two radial grid nodes
+integer(i2b), intent(in) :: nb_id_solv,nb_id_mol ! number of different kinds of solvent sites or solute sites
+real(dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+real(dp), dimension(nb_id_solv,nb_id_mol,0:nrgrid), intent(in) :: tabulated_coulsq
 
-integer(kind=i2b) :: i,j,k,o,p,m,n ! dummy
-real(kind=dp),dimension(nb_solvent_sites,nb_psi,nb_omega) :: xmod,ymod,zmod
-real(kind=dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
-real(kind=dp) :: x_m,y_m,z_m ! solvent sites coordinates
-real(kind=dp) :: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
-real(kind=dp) :: r_nm2 ! norm**2 of vector x_nm;y_nm;z_nm
-real(kind=dp) :: V_psi ! dummy
-integer(kind=i2b) :: ids,idm ! id of the solvent site or the solute site that is being used
-real(kind=dp) :: time0,time1 ! timer start and end
-real(kind=dp), dimension(:,:,:), allocatable :: temparray
+integer(i2b) :: i,j,k,o,p,m,n ! dummy
+real(dp),dimension(nb_solvent_sites,nb_psi,nb_omega) :: xmod,ymod,zmod
+real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
+real(dp) :: x_m,y_m,z_m ! solvent sites coordinates
+real(dp) :: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
+real(dp) :: r_nm2 ! norm**2 of vector x_nm;y_nm;z_nm
+real(dp) :: V_psi ! dummy
+integer(i2b) :: ids,idm ! id of the solvent site or the solute site that is being used
+real(dp) :: time0,time1 ! timer start and end
+real(dp), dimension(:,:,:), allocatable :: temparray
 character(50):: filename
-integer(kind=i2b) :: px,py,pz
-real(kind=dp) :: qfactcc ! qfact*chg_solv()*chg_mol()
-real(kind=dp) :: rc2 ! charge pseudo radius **2   == Rc**2
-real(kind=dp) :: tempVcoul ! temporary Vcoul(i,j,k,o)
-integer(kind=i2b) :: ou_on_en_est ! where we are in the loop to follow on screen. goes from nfft3 to 0 when finished
+integer(i2b) :: px,py,pz
+real(dp) :: qfactcc ! qfact*chg_solv()*chg_mol()
+real(dp) :: rc2 ! charge pseudo radius **2   == Rc**2
+real(dp) :: tempVcoul ! temporary Vcoul(i,j,k,o)
+integer(i2b) :: ou_on_en_est ! where we are in the loop to follow on screen. goes from nfft3 to 0 when finished
 
-integer ( kind = i2b ) :: species ! dummy for loops over species
+integer(i2b):: species ! dummy for loops over species
 
 
 print*,'!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!'
@@ -99,7 +99,7 @@ do species = 1 , nb_species
 do k=1,nfft3
   ou_on_en_est=ou_on_en_est-1
   write(*,*)ou_on_en_est
-  z_grid=real(k-1,kind=dp)*deltaz
+  z_grid=real(k-1,dp)*deltaz
 
 !  if(z_grid>12.0_dp .and. z_grid<30.0_dp) then
 !    Vcoul(:,:,k,:)=100.0_dp
@@ -107,10 +107,10 @@ do k=1,nfft3
 !  end if
 
   do j=1,nfft2
-    y_grid=real(j-1,kind=dp)*deltay
+    y_grid=real(j-1,dp)*deltay
 
     do i=1,nfft1
-      x_grid=real(i-1,kind=dp)*deltax
+      x_grid=real(i-1,dp)*deltax
 
       do o=1,nb_omega
         tempVcoul=0.0_dp

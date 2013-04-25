@@ -23,35 +23,35 @@ implicit none
 
 
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: rho_n ! local density
+real(dp), allocatable , dimension ( : , : , : ) :: rho_n ! local density
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : ) :: rho_k ! fourier transformed rho_n
+complex(dp), allocatable , dimension ( : , : , : ) :: rho_k ! fourier transformed rho_n
 
-real ( kind = dp ) :: local_density ! dummy for rho_n
+real(dp):: local_density ! dummy for rho_n
 
-integer ( kind = i2b ) :: icg , i , j , k , o , l , m , n , m1 , m2 , m3 ! dummy
+integer(i2b):: icg , i , j , k , o , l , m , n , m1 , m2 , m3 ! dummy
 
-integer ( kind = i2b ) :: nf1 , nf2 , nf3 ! dummy for nfft1 /2 , nfft2 /2, nfft3 /2
+integer(i2b):: nf1 , nf2 , nf3 ! dummy for nfft1 /2 , nfft2 /2, nfft3 /2
 
-real ( kind = dp ) :: deltav ! integration factor = Lx*Ly*Lz/(nfft1*nfft2*nfft3)
+real(dp):: deltav ! integration factor = Lx*Ly*Lz/(nfft1*nfft2*nfft3)
 
-real ( kind = dp ) :: Nk ! total number of k points
+real(dp):: Nk ! total number of k points
 
-real ( kind = dp ) :: kx2 , ky2 , kz2 , norm_k ! related to number k
+real(dp):: kx2 , ky2 , kz2 , norm_k ! related to number k
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : ) :: vk ! fourier transform of the lennard jones perturbation (WCA)
+complex(dp), allocatable , dimension ( : , : , : ) :: vk ! fourier transform of the lennard jones perturbation (WCA)
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: v_perturbation_r ! vk in real space
+real(dp), allocatable , dimension ( : , : , : ) :: v_perturbation_r ! vk in real space
 
-real ( kind = dp ) :: Fperturbation ! what we want : the perturbative contribution of the lennard jones attractive potential tail
+real(dp):: Fperturbation ! what we want : the perturbative contribution of the lennard jones attractive potential tail
 
-real ( kind = dp ) :: time0 , time1 ! timers
+real(dp):: time0 , time1 ! timers
 
-real ( kind = dp ) :: twopiolx , twopioly , twopiolz ! dummy for speeding up loops
+real(dp):: twopiolx , twopioly , twopiolz ! dummy for speeding up loops
 
-real ( kind = dp ) :: potential ! dFp / drho at rho=rho_0 in order the grand potential to be zero at rho = rho_0
+real(dp):: potential ! dFp / drho at rho=rho_0 in order the grand potential to be zero at rho = rho_0
 
-real ( kind = dp ) :: nb_molecule ! total number of hard spheres ie integral of density over all space
+real(dp):: nb_molecule ! total number of hard spheres ie integral of density over all space
 
 
 ! init
@@ -282,25 +282,25 @@ contains
 
   implicit none
 
-  complex ( kind = dp ) :: vlj_wca_k ! which computes the reciprocal value of the potential 'vk'
+  complex(dp):: vlj_wca_k ! which computes the reciprocal value of the potential 'vk'
 
-  real ( kind = dp ) , intent ( in ) :: k ! one gives the k point 'k' to eat to the routine
+  real(dp), intent(in) :: k ! one gives the k point 'k' to eat to the routine
 
-  real ( kind = dp ) , intent ( in ) :: sigma_lj , epsilon_lj ! lennard jones parameters in Angstroms and KJ/mol
+  real(dp), intent(in) :: sigma_lj , epsilon_lj ! lennard jones parameters in Angstroms and KJ/mol
 
-  real ( kind = dp ) :: cutoff ! cut off under which U(r) = constant = -epsilon_lj and after which U(r)=Vlj(r)
+  real(dp):: cutoff ! cut off under which U(r) = constant = -epsilon_lj and after which U(r)=Vlj(r)
 
-  real ( kind = dp ) :: dx ! width of the integration step
+  real(dp):: dx ! width of the integration step
 
-  real ( kind = dp ) :: borne_sup , borne_inf !sup and inf limits of the integration
+  real(dp):: borne_sup , borne_inf !sup and inf limits of the integration
 
-  integer ( kind = i2b ) , parameter :: nstep = 1000 ! nb of integration steps ! TODO CHECK EFFECT
+  integer(i2b), parameter :: nstep = 1000 ! nb of integration steps ! TODO CHECK EFFECT
 
-  real ( kind = dp ) :: ri !integrants
+  real(dp):: ri !integrants
 
-  real ( kind = dp ) :: sigmaori6 !dummy for (sigma_lj/ri)**6
+  real(dp):: sigmaori6 !dummy for (sigma_lj/ri)**6
 
-  integer ( kind = i2b ) :: i !dummy for loop
+  integer(i2b):: i !dummy for loop
 
   !the integration is theoreticaly between 2^(1/6)*sigma and infinity
   !we do it between sigma_lj and N*sigma for a beginning

@@ -109,7 +109,8 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/lennard_jones_perturbation_to_hard_spheres.f90 \
        $(SRCDIR)/cs_from_dcf.f90 \
        $(SRCDIR)/cs_plus_hydro.f90 \
-       $(SRCDIR)/energy_hydro.f90 
+       $(SRCDIR)/energy_hydro.f90 \
+       $(SRCDIR)/print_header.f90
 
 
 

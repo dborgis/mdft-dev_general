@@ -10,7 +10,7 @@ subroutine print_input_to_output_folder
 
   implicit none
 
-  integer ( kind = i2b ) :: i ! dummy for loop
+  integer(i2b):: i ! dummy for loop
  
   ! open file to write in
   open( unit = 10 , file='output/input.out' )

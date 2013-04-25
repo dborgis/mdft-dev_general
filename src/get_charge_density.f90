@@ -15,11 +15,11 @@ use constants, only : qfact
 
 implicit none
 
-real (kind=dp ) :: rho, psi, time1,time0
+real (dp ) :: rho, psi, time1,time0
 
-real ( kind=dp) , allocatable , dimension ( : , : ,  :) :: charge_density
+real ( dp) , allocatable , dimension ( : , : ,  :) :: charge_density
 
-integer ( kind=i2b) :: i , j , k , o , p , species , n,convert_coordinate_into_icg, xtemp, ytemp, ztemp
+integer ( i2b) :: i , j , k , o , p , species , n,convert_coordinate_into_icg, xtemp, ytemp, ztemp
 
   allocate ( charge_density ( nfft1 , nfft2 , nfft3 ) )
 

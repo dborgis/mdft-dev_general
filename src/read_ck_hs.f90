@@ -16,17 +16,17 @@ use quadrature
 
 implicit none
 
-integer(kind=i2b) :: nk
+integer(i2b) :: nk
 
-real(kind=dp) :: norm_k
+real(dp) :: norm_k
 
-integer(kind=i2b) :: ios ! iostat of the read statement: 
+integer(i2b) :: ios ! iostat of the read statement: 
 
 !    If the value of IOstatus is zero, the previous READ was executed flawlessly and all variables have received their input values. This is the normal case.
 !    If the value of IOstatus is positive, the previous READ has encountered some problem. In general, without knowing the system dependent information, it is impossible to determine what the problem was. However, if hardware and I/O devices are working, a commonly seen problem would be illegal data. For example, supplying a real number to an integer variable. If IOstatus is positive, you cannot trust the values of the variables in the READ statement; they could all contain garbage values, or some of them are fine while the others are garbage.
 !    If the value of IOstatus is negative, it means the end of the input has reached. Under this circumstance, some or all of the variables in the READ may not receive input values. 
 
-real ( kind = dp ) :: value1 , value2 ! dummy
+real(dp):: value1 , value2 ! dummy
 
 
 

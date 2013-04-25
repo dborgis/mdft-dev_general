@@ -21,30 +21,30 @@ use fft , only : in_forward , out_forward , in_backward , out_backward , plan_fo
 implicit none
 
 
-real ( kind = dp ) , intent ( out ) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq !> equilibrium density(position)
+real(dp), intent(out) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq !> equilibrium density(position)
 
-integer ( kind = i2b ) :: i , j , k , omega , icg , species , p ! dummy
+integer(i2b):: i , j , k , omega , icg , species , p ! dummy
 
-real ( kind = dp ) :: rho_over_fourpi !> = CG_vect(i)**2/fourpi
+real(dp):: rho_over_fourpi !> = CG_vect(i)**2/fourpi
 
-real ( kind = dp ) :: local_density ! dummy for speeding loops
+real(dp):: local_density ! dummy for speeding loops
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: rho_k 
-
-
-
-!integer ( kind = i2b ) :: m1 , m2 , m3 , nf1 , l , m , n , nf2 , nf3
-
-!real  ( kind=dp )  :: kx , ky , kz , k2 , kx2 , ky2 , kz2 , twopioLx , twopioLz , twopioLy , Rc
+complex(dp), allocatable , dimension ( : , : , : , : ) :: rho_k 
 
 
-real ( kind = dp ) :: Nk , Rc ! Total number of k points = nfft1*nfft2*nfft3
+
+!integer(i2b):: m1 , m2 , m3 , nf1 , l , m , n , nf2 , nf3
+
+!real  ( dp )  :: kx , ky , kz , k2 , kx2 , ky2 , kz2 , twopioLx , twopioLz , twopioLy , Rc
+
+
+real(dp):: Nk , Rc ! Total number of k points = nfft1*nfft2*nfft3
 
 !nf1=nfft1/2
 !nf2=nfft2/2
 !nf3=nfft3/2
 
-Nk=real (nfft1*nfft2*nfft3 , kind=dp)
+Nk=real (nfft1*nfft2*nfft3 , dp)
 
 !twopioLx=twopi/Lx
 !twopioLy=twopi/Ly

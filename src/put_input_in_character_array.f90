@@ -10,9 +10,9 @@ use input , only : input_line , totalnumberofinputlines
 
 implicit none
 
-integer ( kind = i2b ) :: i , j , k , n ! dummy
+integer(i2b):: i , j , k , n ! dummy
 
-integer ( kind = i2b ) :: ios ! input output status of readen file
+integer(i2b):: ios ! input output status of readen file
 
 character ( len = 100 ) :: text ! temporary input line
 

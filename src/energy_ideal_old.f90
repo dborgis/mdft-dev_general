@@ -15,23 +15,23 @@ use constants, only : fourpi
 implicit none
 
 
-real ( kind = dp ) :: Fideal, Fid_lin ! ideal free energy, linearized ideal free energy 
+real(dp):: Fideal, Fid_lin ! ideal free energy, linearized ideal free energy 
 
-real (kind=dp) :: Fid_lin_temp, dFid_lin_temp !dummy for temporary store linearized ideal free energy and the corresponding gradient
+real (dp) :: Fid_lin_temp, dFid_lin_temp !dummy for temporary store linearized ideal free energy and the corresponding gradient
 
-integer ( kind = i2b ) :: icg , i , j , k , o , p! dummy for loops
+integer(i2b):: icg , i , j , k , o , p! dummy for loops
 
-integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+integer(i2b):: species ! dummy between 1 and nb_species
 
-real ( kind = dp ) :: psi ! dummy for cg_vext(i)
+real(dp):: psi ! dummy for cg_vext(i)
 
-real ( kind = dp ) :: rho, rhon ! local density
+real(dp):: rho, rhon ! local density
 
-real ( kind = dp ) :: logrho ! dummy for log(rho)
+real(dp):: logrho ! dummy for log(rho)
 
-real ( kind = dp ) :: time0 , time1 ! timesteps
+real(dp):: time0 , time1 ! timesteps
 
-real(kind=dp), dimension(nfft1,nfft2,nfft3) :: rho_n  !one-particle number density
+real(dp), dimension(nfft1,nfft2,nfft3) :: rho_n  !one-particle number density
 
 ! init timer
 

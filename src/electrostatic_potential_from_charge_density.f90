@@ -33,11 +33,11 @@ implicit none
 
 
 
-complex ( kind = dp ) , dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: rho_c_k
+complex(dp), dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: rho_c_k
 
-complex ( kind = dp ) , dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: V_c_k
+complex(dp), dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: V_c_k
 
-integer (kind=i2b) :: i !dummy vraiable
+integer (i2b) :: i !dummy vraiable
 
 
 

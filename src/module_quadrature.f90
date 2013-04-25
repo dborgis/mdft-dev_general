@@ -7,15 +7,15 @@ use precision_kinds , only : dp , i2b ! the module defining precision kinds
 implicit none
 
 
-real ( kind = dp ) , allocatable , dimension ( : , : ) :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
+real(dp), allocatable , dimension ( : , : ) :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: Omx , Omy , Omz , weight  ! unit vector for orientation OMEGA and associated weight
+real(dp), allocatable , dimension ( : ) :: Omx , Omy , Omz , weight  ! unit vector for orientation OMEGA and associated weight
 
 real (kind = dp ), allocatable, dimension ( : )  :: weight_psi , x_psi
 
-real(kind=dp) , allocatable, dimension(:) :: x_leb, y_leb , z_leb , weight_leb 
+real(dp) , allocatable, dimension(:) :: x_leb, y_leb , z_leb , weight_leb 
 
-integer(kind=i2b) :: sym_order
+integer(i2b) :: sym_order
 
 contains
 

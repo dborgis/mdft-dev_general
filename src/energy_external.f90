@@ -19,19 +19,19 @@ use external_potential , only : Vext_total, Vext_q
 
 implicit none
 
-real ( kind = dp ) :: Fext , Fext_q! external part of the total energy
+real(dp):: Fext , Fext_q! external part of the total energy
 
-integer ( kind = i2b ) :: icg , i , j , k , o , p! dummy for loops
+integer(i2b):: icg , i , j , k , o , p! dummy for loops
 
-real ( kind = dp ) :: psi !dummy
+real(dp):: psi !dummy
 
-real ( kind = dp ) :: rho ! dummy = psi**2
+real(dp):: rho ! dummy = psi**2
 
-real ( kind = dp ) :: wdfve 
+real(dp):: wdfve 
 
-real ( kind = dp ) :: time0,time1! timers
+real(dp):: time0,time1! timers
 
-integer ( kind = i2b ) :: species  ! dummy between 1 and nb_species
+integer(i2b):: species  ! dummy between 1 and nb_species
 
 
 

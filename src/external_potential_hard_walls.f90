@@ -31,29 +31,29 @@ use external_potential , only : Vext_total
 implicit none
 
 
-integer ( kind = i2b ) :: i , j , k , wall ! dummy
+integer(i2b):: i , j , k , wall ! dummy
 
-real ( kind = dp ) :: dplan ! local distance between point M (grid point) and plan defining wall
+real(dp):: dplan ! local distance between point M (grid point) and plan defining wall
 
-integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+integer(i2b):: species ! dummy between 1 and nb_species
 
-integer ( kind = i2b ) :: number_of_hard_walls ! number of hard walls in the supercell
+integer(i2b):: number_of_hard_walls ! number of hard walls in the supercell
 
-real (kind=dp) , allocatable , dimension ( : ) :: thickness ! thickness of each wall (thickness = 2radius. Don't mix them up)
+real (dp) , allocatable , dimension ( : ) :: thickness ! thickness of each wall (thickness = 2radius. Don't mix them up)
 
-real (kind=dp) , allocatable , dimension ( : , : ) :: normal_vec ! normal vector of each plan defining wall
+real (dp) , allocatable , dimension ( : , : ) :: normal_vec ! normal vector of each plan defining wall
 
-real (kind=dp) , allocatable , dimension ( : ) :: norm2_normal_vec ! norm of normal_vec
+real (dp) , allocatable , dimension ( : ) :: norm2_normal_vec ! norm of normal_vec
 
-real (kind=dp) , allocatable , dimension ( : , : ) :: OA ! A is a point of coordinates OA(1,2,3) which is in the plan normal to normal_vec
+real (dp) , allocatable , dimension ( : , : ) :: OA ! A is a point of coordinates OA(1,2,3) which is in the plan normal to normal_vec
 
-real (kind=dp) , allocatable , dimension ( : ) :: dot_product_normal_vec_OA ! dummy
+real (dp) , allocatable , dimension ( : ) :: dot_product_normal_vec_OA ! dummy
 
-real (kind=dp) , dimension ( 3 ) :: OM ! coordinates of grid points
+real (dp) , dimension ( 3 ) :: OM ! coordinates of grid points
 
-real (kind=dp) :: OMx , OMy , OMz ! projections of OM
+real (dp) :: OMx , OMy , OMz ! projections of OM
 
-real (kind=dp) , parameter :: infty = huge ( 1.0_dp )
+real (dp) , parameter :: infty = huge ( 1.0_dp )
 
 
 
@@ -189,7 +189,7 @@ contains
 !===================================================================================================================================
   subroutine test_number_of_hard_walls ( number_of_hard_walls )
     implicit none
-    integer , intent ( in ) :: number_of_hard_walls
+    integer , intent(in) :: number_of_hard_walls
     if ( number_of_hard_walls > 2 ) then
       print *, 'the number of hard walls wanted by the user should not be > 2.'
       print *, 'that is not implemented for now'

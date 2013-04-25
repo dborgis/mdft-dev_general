@@ -11,13 +11,13 @@ use system , only : nb_solvent_sites , x_solv , y_solv , z_solv , chg_solv , sig
 
 implicit none
 
-integer ( kind = i2b ) :: n ! dummy
+integer(i2b):: n ! dummy
 
-integer ( kind = i2b ) :: stat ! status du fichier ouvert
+integer(i2b):: stat ! status du fichier ouvert
 
-integer ( kind = i2b ) :: nb_id_solv ! number of types of solvent sites
+integer(i2b):: nb_id_solv ! number of types of solvent sites
 
-real ( kind = dp ) :: total_charge ! charge of the whole system (should be zero in almost every case)
+real(dp):: total_charge ! charge of the whole system (should be zero in almost every case)
 
 
 ! open input/solvent.in and check if it is readable

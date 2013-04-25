@@ -16,29 +16,29 @@ use constants , only : Boltz , Navo
 
 implicit none
 
-real ( kind = dp ) , intent ( in ) :: temp ! temperature
+real(dp), intent(in) :: temp ! temperature
 
-real ( kind = dp ) , intent ( in ) :: n_0 ! density
+real(dp), intent(in) :: n_0 ! density
 
-real ( kind = dp ) , intent ( in ) :: sig ! sigma of LJ potential
+real(dp), intent(in) :: sig ! sigma of LJ potential
 
-real ( kind = dp ) , intent ( in ) :: eps ! epsilon of LJ potential
+real(dp), intent(in) :: eps ! epsilon of LJ potential
 
-real ( kind = dp ) , intent ( out ) :: d_wca ! Weeks Chandler Anderson cutoff diameter between the reference potential and the WCA LJ potential
+real(dp), intent(out) :: d_wca ! Weeks Chandler Anderson cutoff diameter between the reference potential and the WCA LJ potential
 
-real ( kind = dp ) , parameter :: kb = Boltz * Navo / 1000.0_dp ! \approx 8.3145e-3, Boltzman constant in kJ/mol
+real(dp), parameter :: kb = Boltz * Navo / 1000.0_dp ! \approx 8.3145e-3, Boltzman constant in kJ/mol
 
-real ( kind = dp ) :: beta ! 1/(kb.T)
+real(dp):: beta ! 1/(kb.T)
 
-real ( kind = dp ) :: temp_reduite ! reduced temperature
+real(dp):: temp_reduite ! reduced temperature
 
-real ( kind = dp ) :: db ! Baker Anderson parameter
+real(dp):: db ! Baker Anderson parameter
 
-real ( kind = dp ) , parameter :: a1 = 0.3837_dp , a2 = 0.4293_dp , a3 = 1.068_dp , a4 = 210.31_dp , a5 = 404.6_dp ! parameter from Verlet & Weis
+real(dp), parameter :: a1 = 0.3837_dp , a2 = 0.4293_dp , a3 = 1.068_dp , a4 = 210.31_dp , a5 = 404.6_dp ! parameter from Verlet & Weis
 
-real ( kind = dp ) :: delta_b ! parameter from Verlet & Weis
+real(dp):: delta_b ! parameter from Verlet & Weis
 
-real ( kind = dp ) :: d_old ! backup value of d_wca during convergence
+real(dp):: d_old ! backup value of d_wca during convergence
 
 ! init
 
@@ -101,17 +101,17 @@ contains
 
   implicit none
 
-  real ( kind = dp ) :: sig1_over_2sig0
+  real(dp):: sig1_over_2sig0
 
-  real ( kind = dp ) , intent ( in ) :: n_0 ! fluid density
+  real(dp), intent(in) :: n_0 ! fluid density
 
-  real ( kind = dp ) , intent ( in ) :: d_wca ! iterative d
+  real(dp), intent(in) :: d_wca ! iterative d
 
-  real ( kind = dp ) , parameter :: s1 = -17.0_dp / 4.0_dp , s2 = 1.362_dp , s3 = -0.8751_dp
+  real(dp), parameter :: s1 = -17.0_dp / 4.0_dp , s2 = 1.362_dp , s3 = -0.8751_dp
 
-  real ( kind = dp ) :: eta ! packing fraction
+  real(dp):: eta ! packing fraction
 
-  real ( kind = dp ) :: eta_w ! corrected packing fraction
+  real(dp):: eta_w ! corrected packing fraction
 
   eta = pi / 6.0_dp * n_0 * d_wca ** 3
 

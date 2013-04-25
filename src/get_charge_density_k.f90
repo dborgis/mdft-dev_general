@@ -23,16 +23,16 @@ use fft , only : kx, ky, kz, k2,in_forward , in_backward , out_forward , out_bac
 
 implicit none
 
-integer (kind=i2b) :: i, j, k, o , p , n,species!dummy
+integer (i2b) :: i, j, k, o , p , n,species!dummy
 
-real(kind=dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+real(dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 
-integer (kind=i2b) :: nf1
+integer (i2b) :: nf1
 
-real (kind=dp) :: xmod, ymod, zmod
+real (dp) :: xmod, ymod, zmod
 
-real (kind=dp) :: deltaVk, Rc
-real (kind=dp), dimension(nfft1,nfft2,nfft3)::molecpolarx,molecpolary,molecpolarz
+real (dp) :: deltaVk, Rc
+real (dp), dimension(nfft1,nfft2,nfft3)::molecpolarx,molecpolary,molecpolarz
 
 !            ====================================================
 !            !    	Initialization				!

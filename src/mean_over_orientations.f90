@@ -4,9 +4,9 @@ use precision_kinds, only: dp,i2b
 use system, only: nb_omega,nfft1,nfft2,nfft3, nb_psi
 use quadrature, only:weight, weight_psi
 implicit none
-real(kind=dp), dimension(nfft1,nfft2,nfft3,nb_omega,nb_psi), intent(in) :: arrayin !>@var input array
-real(kind=dp), dimension(nfft1,nfft2,nfft3), intent(out) :: arrayout !>@var output array
-integer(kind=i2b) :: n , p
+real(dp), dimension(nfft1,nfft2,nfft3,nb_omega,nb_psi), intent(in) :: arrayin !>@var input array
+real(dp), dimension(nfft1,nfft2,nfft3), intent(out) :: arrayout !>@var output array
+integer(i2b) :: n , p
 
 arrayout=0.0_dp
 

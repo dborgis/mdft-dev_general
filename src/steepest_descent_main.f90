@@ -62,15 +62,15 @@
 subroutine steepest_descent_main(xdim,conv_criteria,itermax,X)
 use precision_kinds,only: dp,i2b
 implicit none
-real(kind=dp),dimension(xdim),intent(inout) :: X ! variables of Y
-real(kind=dp),dimension(xdim) :: XOLD ! backup of X
-real(kind=dp),dimension(3) :: Y ! function of X at 3 last iterations
-real(kind=dp),dimension(xdim) :: dY ! partial derivative of Y with respect to Xi
-real(kind=dp),intent(in) :: conv_criteria ! convergence criterion
-real(kind=dp) :: stepsize ! initial guess for step size (how fast we follow dY)
-integer(kind=i2b),intent(in) :: itermax ! maximum number of iterations
-integer(kind=i2b) :: n !dummy
-integer(kind=i2b),intent(in) :: xdim ! nb of dimensions of X
+real(dp),dimension(xdim),intent(inout) :: X ! variables of Y
+real(dp),dimension(xdim) :: XOLD ! backup of X
+real(dp),dimension(3) :: Y ! function of X at 3 last iterations
+real(dp),dimension(xdim) :: dY ! partial derivative of Y with respect to Xi
+real(dp),intent(in) :: conv_criteria ! convergence criterion
+real(dp) :: stepsize ! initial guess for step size (how fast we follow dY)
+integer(i2b),intent(in) :: itermax ! maximum number of iterations
+integer(i2b) :: n !dummy
+integer(i2b),intent(in) :: xdim ! nb of dimensions of X
 
 !> What is the initial guess for the variables ?
 stepsize=10.0_dp
@@ -95,18 +95,18 @@ end subroutine steepest_descent_main
 subroutine steepds(xdim,conv_criteria,itermax,stepsize,X,XOLD,Y,dY,n)
 use precision_kinds,only: dp,i2b
 implicit none
-real(kind=dp), parameter :: macheps=epsilon(1.0d0) ! machine precision given by fortran function epsilon
-real(kind=dp),intent(in) :: conv_criteria !convergence criteria
-real(kind=dp),intent(inout) :: stepsize! initial guess for step size (how fast we follow dY)
-real(kind=dp),dimension(xdim),intent(inout) :: X !variable vector 
-real(kind=dp),dimension(xdim),intent(inout) :: XOLD !old X
-real(kind=dp),dimension(xdim),intent(inout) :: dY(3) !partial derivatives
-real(kind=dp),dimension(3) :: Y(3) ! Y(X) at current step, step before, and step before before
-real(kind=dp) :: eval_Y_and_dY !eval_Y_and_dYuation of the function Y(X) and its partial derivatives dY(X)
-integer(kind=i2b) :: j!dummy
-integer(kind=i2b),intent(in) :: itermax
-integer(kind=i2b),intent(out) :: n
-integer(kind=i2b),intent(in) :: xdim!dimension of X
+real(dp), parameter :: macheps=epsilon(1.0d0) ! machine precision given by fortran function epsilon
+real(dp),intent(in) :: conv_criteria !convergence criteria
+real(dp),intent(inout) :: stepsize! initial guess for step size (how fast we follow dY)
+real(dp),dimension(xdim),intent(inout) :: X !variable vector 
+real(dp),dimension(xdim),intent(inout) :: XOLD !old X
+real(dp),dimension(xdim),intent(inout) :: dY(3) !partial derivatives
+real(dp),dimension(3) :: Y(3) ! Y(X) at current step, step before, and step before before
+real(dp) :: eval_Y_and_dY !eval_Y_and_dYuation of the function Y(X) and its partial derivatives dY(X)
+integer(i2b) :: j!dummy
+integer(i2b),intent(in) :: itermax
+integer(i2b),intent(out) :: n
+integer(i2b),intent(in) :: xdim!dimension of X
 
 !Start initial probe
 do j=1,3
@@ -170,10 +170,10 @@ function eval_Y_and_dY(xdim,X,dY)
 use precision_kinds,only: dp,i2b
 use cg, only: cg_vect,FF,dF
 implicit none
-real(kind=dp) :: eval_Y_and_dY ! value of Y(X) and its partial derivatives dY
-integer(kind=i2b),intent(in) :: xdim !dimension of X
-real(kind=dp),dimension(xdim),intent(in) :: X !variables of Y
-real(kind=dp),dimension(xdim),intent(out) :: dY ! partial derivatives of Y
+real(dp) :: eval_Y_and_dY ! value of Y(X) and its partial derivatives dY
+integer(i2b),intent(in) :: xdim !dimension of X
+real(dp),dimension(xdim),intent(in) :: X !variables of Y
+real(dp),dimension(xdim),intent(out) :: dY ! partial derivatives of Y
  cg_vect=X
 !call compute_energy_and_gradients_DCF
 call energy_and_gradient
@@ -190,13 +190,13 @@ end function eval_Y_and_dY
 
 subroutine updateX(xdim,stepsize,dY,X,XOLD)
 use precision_kinds,only: dp,i2b
-integer(kind=i2b),intent(in) :: xdim!dimension of variables X
-real(kind=dp),intent(in) :: stepsize ! initial guess for step size (how fast we follow dY)
-real(kind=dp),dimension(xdim),intent(inout) :: X!variables of Y
-real(kind=dp),dimension(xdim),intent(out) :: XOLD!backup of X
-real(kind=dp),dimension(xdim),intent(inout) :: dY!partial derivatives of Y with respect to Xi
-integer(kind=i2b) :: i!dummy
-real(kind=dp) :: dYnorm ! norm of the gradient
+integer(i2b),intent(in) :: xdim!dimension of variables X
+real(dp),intent(in) :: stepsize ! initial guess for step size (how fast we follow dY)
+real(dp),dimension(xdim),intent(inout) :: X!variables of Y
+real(dp),dimension(xdim),intent(out) :: XOLD!backup of X
+real(dp),dimension(xdim),intent(inout) :: dY!partial derivatives of Y with respect to Xi
+integer(i2b) :: i!dummy
+real(dp) :: dYnorm ! norm of the gradient
 !Find the magnitude of the gradient (norm2 is fortran2008 language)
 !dYnorm=norm2(dY)
 dYnorm=0.0_dp

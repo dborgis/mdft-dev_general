@@ -13,9 +13,9 @@ use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_int
 implicit none
 
 
-integer ( kind = i2b ) :: i , j , o , p , m
+integer(i2b):: i , j , o , p , m
 
-real(kind=dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+real(dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 
 real (kind = dp ) :: xq , yq , zq , wim , wjm , wip , wjp , wkm , wkp, Dx, Dy, Dz
 
@@ -25,7 +25,7 @@ real (kind= dp ) , allocatable , dimension ( : , : , : ) :: xmod , ymod , zmod
 
  character (len=1) , allocatable , dimension ( : ) :: coordinate
 
-integer ( kind=i2b) , allocatable , dimension ( : ) :: nombre_image
+integer ( i2b) , allocatable , dimension ( : ) :: nombre_image
 
 
 !allocate ( wigma ( nfft1, nfft2, nfft3 , nb_omega , nb_psi ) ) 
@@ -40,9 +40,9 @@ do m = 1 , nb_solvent_sites
    xq = modulo ( x_solv ( m )  , Lx ) / deltax
    yq = modulo ( y_solv ( m ) , Ly ) / deltay
    zq = modulo ( z_solv ( m ) , Lz ) / deltaz
-   Dx = xq - real(int(xq,kind=i2b),kind=dp) 
-   Dy = yq - real(int(yq,kind=i2b),kind=dp) 
-   Dz = zq - real(int(zq,kind=i2b),kind=dp) 
+   Dx = xq - real(int(xq,i2b),dp) 
+   Dy = yq - real(int(yq,i2b),dp) 
+   Dz = zq - real(int(zq,i2b),dp) 
 
    if ( Dx==0.0_dp .and. Dy==0.0_dp .and. Dz==0.0_dp ) then
      nombre_image ( m ) = 1
@@ -144,9 +144,9 @@ print*, 'boucle8'
               km = int ( zq ) + 1
 
 
-              wim = (    1.0_dp - (   xq - real(int(xq,kind=i2b),kind=dp)   )    )
-              wjm = (    1.0_dp - (   yq - real(int(yq,kind=i2b),kind=dp)   )    )
-              wkm = (    1.0_dp - (   zq - real(int(zq,kind=i2b),kind=dp)   )    )
+              wim = (    1.0_dp - (   xq - real(int(xq,i2b),dp)   )    )
+              wjm = (    1.0_dp - (   yq - real(int(yq,i2b),dp)   )    )
+              wkm = (    1.0_dp - (   zq - real(int(zq,i2b),dp)   )    )
 
  
 
@@ -155,9 +155,9 @@ print*, 'boucle8'
               jp = jm + 1                                                                         ! grid node juste above (corner of the cube with highest indices)
               kp = km + 1
 
-              wip = (             (   xq - real(int(xq,kind=i2b),kind=dp)   )    )
-              wjp = (             (   yq - real(int(yq,kind=i2b),kind=dp)   )    )
-              wkp = (             (   zq - real(int(zq,kind=i2b),kind=dp)   )    )
+              wip = (             (   xq - real(int(xq,i2b),dp)   )    )
+              wjp = (             (   yq - real(int(yq,i2b),dp)   )    )
+              wkp = (             (   zq - real(int(zq,i2b),dp)   )    )
 
 
                                                                                                   ! this corner should never have coordinates higher than nfft
@@ -258,18 +258,18 @@ print*, 'boucle8'
              jm = int ( yq ) + 1
              km = int ( zq ) + 1
 
-             wim = (    1.0_dp - (   xq - real(int(xq,kind=i2b),kind=dp)   )    )
-             wjm = (    1.0_dp - (   yq - real(int(yq,kind=i2b),kind=dp)   )    )
-             wkm = (    1.0_dp - (   zq - real(int(zq,kind=i2b),kind=dp)   )    )
+             wim = (    1.0_dp - (   xq - real(int(xq,i2b),dp)   )    )
+             wjm = (    1.0_dp - (   yq - real(int(yq,i2b),dp)   )    )
+             wkm = (    1.0_dp - (   zq - real(int(zq,i2b),dp)   )    )
 
 
              ip = im + 1
              jp = jm + 1
              kp = km + 1
 
-             wip = (             (   xq - real(int(xq,kind=i2b),kind=dp)   )    )
-             wjp = (             (   yq - real(int(yq,kind=i2b),kind=dp)   )    )
-             wkp = (             (   zq - real(int(zq,kind=i2b),kind=dp)   )    )
+             wip = (             (   xq - real(int(xq,i2b),dp)   )    )
+             wjp = (             (   yq - real(int(yq,i2b),dp)   )    )
+             wkp = (             (   zq - real(int(zq,i2b),dp)   )    )
 
             if ( ip == nfft1 + 1 ) ip = 1
             if ( jp == nfft2 + 1 ) jp = 1

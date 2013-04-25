@@ -14,43 +14,43 @@ use constants , only : pi , twopi , fourpi
 
 implicit none
 
-integer(kind=i2b) ::  n !dummy
+integer(i2b) ::  n !dummy
 
-integer(kind=i2b) :: n_psi
+integer(i2b) :: n_psi
 
-real(kind=dp) :: psii
+real(dp) :: psii
 
-real(kind=dp) :: phi , theta
+real(dp) :: phi , theta
 
-real(kind=dp) :: cos_theta
+real(dp) :: cos_theta
 
-real(kind=dp) :: sin_theta
+real(dp) :: sin_theta
 
-real(kind=dp) :: cos_phi
+real(dp) :: cos_phi
 
-real(kind=dp) :: sin_phi
+real(dp) :: sin_phi
 
-real(kind=dp) :: cos_psi
+real(dp) :: cos_psi
 
-real(kind=dp) :: sin_psi
+real(dp) :: sin_psi
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxy
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxy
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxz
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxz
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyx
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyx
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyy
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyy
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyz
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyz
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzx
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzx
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzy
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzy
 
-real(kind=dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzz
+real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzz
 
 
 allocate (weight (nb_omega ) )

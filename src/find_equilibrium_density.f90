@@ -15,13 +15,13 @@ use cg
 
 implicit none
 
-integer ( kind = i2b ) :: iter ! step number ...
+integer(i2b):: iter ! step number ...
 
-integer ( kind = i2b ) :: i , j ! dummy
+integer(i2b):: i , j ! dummy
 
-real ( kind = dp ) :: time1 , time2
+real(dp):: time1 , time2
 
-real ( kind = dp ) :: energy_before ! value of total energy (FF) at step actual and before for comparison
+real(dp):: energy_before ! value of total energy (FF) at step actual and before for comparison
 
 
 
@@ -163,15 +163,15 @@ use cg , only : ncg , cg_vect , FF , dF , minimizer_iter , itermax
 
 implicit none
 
-integer ( kind = i2b ) :: n
+integer(i2b):: n
 
-real ( kind = dp ) , dimension ( ncg ) , intent ( inout ) :: x
+real(dp), dimension ( ncg ) , intent ( inout ) :: x
 
-real ( kind = dp ) , intent ( inout ) :: f
+real(dp), intent ( inout ) :: f
 
-real ( kind = dp ) , dimension ( ncg ) , intent ( inout ) :: g
+real(dp), dimension ( ncg ) , intent ( inout ) :: g
 
-character ( len = 10 ) , intent ( out ) :: stopouencore
+character ( len = 10 ) , intent(out) :: stopouencore
 
 minimizer_iter = minimizer_iter + 1
 

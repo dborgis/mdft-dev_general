@@ -29,8 +29,8 @@ allocate (x_psi ( nb_psi ) )
 
 do n=1 , nb_psi
    
-  weight_psi(n) =twopi/real(nb_psi*sym_order,kind=dp) !Remplacer 1 par l' ordre de Symetrie de la molécule.
-  x_psi(n) = twopi*real((n-1),kind=dp)/real((nb_psi*sym_order),kind=dp)  
+  weight_psi(n) =twopi/real(nb_psi*sym_order,dp) !Remplacer 1 par l' ordre de Symetrie de la molécule.
+  x_psi(n) = twopi*real((n-1),dp)/real((nb_psi*sym_order),dp)  
 
 end do
 

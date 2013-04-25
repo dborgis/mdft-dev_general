@@ -21,21 +21,21 @@ use constants , only : fourpi , pi
 
 implicit none
 
-real (kind=dp) :: phi ! excess free energy density
-real (kind=dp) :: n0, n1, n2, n3 ! weighted densities
-real (kind=dp) :: w0, w1, w2, w3 ! weight functions
-real (kind=dp) :: R ! ==radius (for easier equations)
-real (kind=dp) :: FourPiR ! FourPi*radius
-real (kind=dp) :: kR ! k*R
-real (kind=dp) :: coskR, sinkR ! cos(k*R), sin(k*R)
+real (dp) :: phi ! excess free energy density
+real (dp) :: n0, n1, n2, n3 ! weighted densities
+real (dp) :: w0, w1, w2, w3 ! weight functions
+real (dp) :: R ! ==radius (for easier equations)
+real (dp) :: FourPiR ! FourPi*radius
+real (dp) :: kR ! k*R
+real (dp) :: coskR, sinkR ! cos(k*R), sin(k*R)
 
-real (kind=dp), dimension (0:3,0:3) :: d2phi ! second partial derivative of phi wrt ni nj
-real (kind=dp) :: kmin, kmax ! min and max values of k
-integer (kind=i2b) :: i , j ! dummy
-integer (kind=i2b) :: ios ! input output status
-integer (kind=i2b) :: nb_k ! number of k points
-real (kind=dp) :: value1, value2 ! dummy
-real (kind=dp) :: k ! k-space vector norm
+real (dp), dimension (0:3,0:3) :: d2phi ! second partial derivative of phi wrt ni nj
+real (dp) :: kmin, kmax ! min and max values of k
+integer (i2b) :: i , j ! dummy
+integer (i2b) :: ios ! input output status
+integer (i2b) :: nb_k ! number of k points
+real (dp) :: value1, value2 ! dummy
+real (dp) :: k ! k-space vector norm
 logical :: PY , CS ! the one which is true is the right equation of state
 
 
@@ -93,7 +93,7 @@ close(11)
 
 
 kmin = 0.0_dp
-kmax = ( value2 - value1 ) * real ( nb_k - 1 ,kind=dp)
+kmax = ( value2 - value1 ) * real ( nb_k - 1 ,dp)
 
 
 
@@ -101,7 +101,7 @@ kmax = ( value2 - value1 ) * real ( nb_k - 1 ,kind=dp)
 
 kloop : do i = 0, nb_k-1
 
-  k = real(i,kind=dp)*(kmax-kmin)/real(nb_k-1,kind=dp) ! pay attention to k=0
+  k = real(i,dp)*(kmax-kmin)/real(nb_k-1,dp) ! pay attention to k=0
 
   ! weight functions
   R = radius ( 1 )
@@ -228,7 +228,7 @@ use precision_kinds , only : i2b
 use input , only : input_line
 implicit none
 logical , intent( out ) :: CS , PY
-integer(kind=i2b) :: i , j! dummy
+integer(i2b) :: i , j! dummy
 CS = .false.
 PY = .false.
 do i = 1 , size ( input_line )

@@ -25,15 +25,15 @@ implicit none
 
 
 
-real ( kind = dp ) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) , intent ( out ) :: Px , Py , Pz ! equilibrium polarization(position)
+real(dp), dimension ( nfft1 , nfft2 , nfft3 , nb_species ) , intent(out) :: Px , Py , Pz ! equilibrium polarization(position)
 
-integer ( kind = i2b ) :: i , j , k , omega , icg , species ! dummy
+integer(i2b):: i , j , k , omega , icg , species ! dummy
 
-real ( kind = dp ) :: rho_over_fourpi !> = CG_vect(i)**2/fourpi
+real(dp):: rho_over_fourpi !> = CG_vect(i)**2/fourpi
 
-real ( kind = dp ) :: local_Px , local_Py , local_Pz ! dummy for speeding loops
+real(dp):: local_Px , local_Py , local_Pz ! dummy for speeding loops
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! weight(:)*omx(:) for speeding up
+real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! weight(:)*omx(:) for speeding up
 
 
 

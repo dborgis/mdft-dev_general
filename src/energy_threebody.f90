@@ -25,30 +25,30 @@ use input , only : input_line, input_log
 implicit none
 
 ! 3-BODY PARAMETERS
-real(kind=dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
-real(kind=dp), parameter :: cos_theta0 = -1.0_dp/3.0_dp   ! cos of the 3 body angle one would like (for instance cos_theta0=cos(109.5°) in water
+real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
+real(dp), parameter :: cos_theta0 = -1.0_dp/3.0_dp   ! cos of the 3 body angle one would like (for instance cos_theta0=cos(109.5°) in water
 
-real(kind=dp) :: rmax1 ! distance constraints from the solute site to the 2nd shell
+real(dp) :: rmax1 ! distance constraints from the solute site to the 2nd shell
 
-real(kind=dp), allocatable, dimension(:,:,:) :: rho
-real(kind=dp), allocatable, dimension(:,:,:) :: V3 ! dF3/drho
-real(kind=dp), allocatable, dimension(:,:,:) :: V3_fs ! V3_cor
-real(kind=dp) :: F3 ! total energy due to 3body interactions
-real(kind=dp) :: F3_fs ! first shell part of F3
-real(kind=dp) :: fw1, fw2, fw12, f_w
-real(kind=dp) :: energy_3b
-real(kind=dp) :: fact_n !>@var integration constant for the double sum over all positions = fact**2
-real(kind=dp) :: x1, y1, z1, x2, y2, z2 ! coordinates for first and second integrations
-real(kind=dp) :: x12, y12, z12, r12 ! projections and distance between first and second shell
-real(kind=dp) :: r1, r2 ! distance between solvent site and unique solute
-real(kind=dp) :: cos_theta ! cos of the effective angle between 3bodies
-integer(kind=i2b) :: i1, j1, k1, i2, j2, k2, ix, iy, iz, n!>@var dummy
-!real(kind=dp) :: a40, a3, b3, rho_s   ! 3-body parameters
-integer(kind=i2b) :: nmax1x, nmax1y, nmax1z, nmax2x, nmax2y, nmax2z
+real(dp), allocatable, dimension(:,:,:) :: rho
+real(dp), allocatable, dimension(:,:,:) :: V3 ! dF3/drho
+real(dp), allocatable, dimension(:,:,:) :: V3_fs ! V3_cor
+real(dp) :: F3 ! total energy due to 3body interactions
+real(dp) :: F3_fs ! first shell part of F3
+real(dp) :: fw1, fw2, fw12, f_w
+real(dp) :: energy_3b
+real(dp) :: fact_n !>@var integration constant for the double sum over all positions = fact**2
+real(dp) :: x1, y1, z1, x2, y2, z2 ! coordinates for first and second integrations
+real(dp) :: x12, y12, z12, r12 ! projections and distance between first and second shell
+real(dp) :: r1, r2 ! distance between solvent site and unique solute
+real(dp) :: cos_theta ! cos of the effective angle between 3bodies
+integer(i2b) :: i1, j1, k1, i2, j2, k2, ix, iy, iz, n!>@var dummy
+!real(dp) :: a40, a3, b3, rho_s   ! 3-body parameters
+integer(i2b) :: nmax1x, nmax1y, nmax1z, nmax2x, nmax2y, nmax2z
 
-real(kind=dp) :: psi ! psi**2 = rho(r)
-integer(kind=i2b) :: i , j , k , icg , o , p! dummy for loops
-real(kind=dp) :: time0,time1 ! timer steps
+real(dp) :: psi ! psi**2 = rho(r)
+integer(i2b) :: i , j , k , icg , o , p! dummy for loops
+real(dp) :: time0,time1 ! timer steps
 
 !real(kind = dp),  dimension(nb_solute_sites) :: lambda1_mol, lambda2_mol
 

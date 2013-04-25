@@ -21,27 +21,27 @@ use fft, only: in_forward,in_backward,out_forward,out_backward,plan_forward,plan
 implicit none
 
 
-integer(kind=i2b) :: i, j, k, l, m, n, o, icg, species,p !> Dummy
+integer(i2b) :: i, j, k, l, m, n, o, icg, species,p !> Dummy
 
-integer(kind=i2b) :: k_index
+integer(i2b) :: k_index
 
-real(kind=dp) :: Nk !> Total number of k points = nfft1*nfft2*nfft3
+real(dp) :: Nk !> Total number of k points = nfft1*nfft2*nfft3
 
-real(kind=dp) :: Fint !> Internal part of the free energy
+real(dp) :: Fint !> Internal part of the free energy
 
-real(kind=dp) :: Vint !> Dummy for calculation of Vint
+real(dp) :: Vint !> Dummy for calculation of Vint
 
-real(kind=dp) :: fact !> facteur d'integration
+real(dp) :: fact !> facteur d'integration
 
-real(kind=dp) :: psi ! Dummy
+real(dp) :: psi ! Dummy
 
-real(kind=dp), allocatable, dimension(:,:,:) :: Delta_rho
+real(dp), allocatable, dimension(:,:,:) :: Delta_rho
 
-complex(kind=dp), allocatable, dimension(:,:,:) :: rho_k , Vpolarization_k
+complex(dp), allocatable, dimension(:,:,:) :: rho_k , Vpolarization_k
 
-real(kind=dp) :: time1, time0
+real(dp) :: time1, time0
 
-real(kind=dp) , allocatable , dimension ( : , : , : ) :: Vpolarization
+real(dp) , allocatable , dimension ( : , : , : ) :: Vpolarization
 
 
 
@@ -49,7 +49,7 @@ real(kind=dp) , allocatable , dimension ( : , : , : ) :: Vpolarization
 
 call cpu_time ( time0 )
 
-Nk = real(nfft1*nfft2*nfft3,kind=dp) ! nombre de points k
+Nk = real(nfft1*nfft2*nfft3,dp) ! nombre de points k
 
 allocate ( Delta_rho ( nfft1 , nfft2 , nfft3 ) )
 
@@ -73,7 +73,7 @@ do i=1,nfft1
     end do
   end do
 end do
-Delta_rho = Delta_rho-(twopi*fourpi)/real(sym_order,kind=dp)
+Delta_rho = Delta_rho-(twopi*fourpi)/real(sym_order,dp)
 
 
 !> Next FFT sequences can be done on multiple threads

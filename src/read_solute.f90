@@ -16,13 +16,13 @@ use periodic_table , only : init_periodic_table , ptable
 
 implicit none
 
-integer ( kind = i2b ) :: n ! dummy
+integer(i2b):: n ! dummy
 
-integer ( kind = i2b ) :: stat ! status du fichier ouvert
+integer(i2b):: stat ! status du fichier ouvert
 
-integer ( kind = i2b ) :: nb_id_mol ! number of different kinds of site (ie two LJ sites with same epsilon and sigma, but only diff positions)
+integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites with same epsilon and sigma, but only diff positions)
 
-real ( kind = dp ) :: system_charge ! charge of the whole system (should be zero in almost every case)
+real(dp):: system_charge ! charge of the whole system (should be zero in almost every case)
 
 
 
@@ -178,7 +178,7 @@ use precision_kinds , only : i2b,dp
 use input , only : input_line,input_log
 use system , only : Lx , Ly , Lz , x_mol , y_mol , z_mol
 implicit none
-integer(kind=i2b) :: i , j
+integer(i2b) :: i , j
 logical :: translate_solute_to_center
 
 ! then do the translation
@@ -206,7 +206,7 @@ subroutine check_if_coordinates_are_in_supercell
 use precision_kinds , only : i2b , dp
 use system , only : nb_solute_sites , Lx , Ly , Lz , x_mol , y_mol , z_mol
 implicit none
-integer (kind=i2b) :: i 
+integer (i2b) :: i 
 ! check if some positions are out of the supercell
 
 !j is a test tag. We loop over this test until every atom is in the box.

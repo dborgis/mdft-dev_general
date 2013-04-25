@@ -22,9 +22,9 @@ use input , only : input_line
 implicit none
 
 
-real ( kind = dp ) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq ! equilibrium density(position)
+real(dp), dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq ! equilibrium density(position)
 
-real ( kind = dp ) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: Px , Py , Pz ! equilibrium polarization(position)
+real(dp), dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: Px , Py , Pz ! equilibrium polarization(position)
 
 character(50):: filename
 
@@ -32,9 +32,9 @@ logical :: islinear !> @var true if solute is linear
 
 logical :: isplanar !> @var true if solute is planar
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: temparray
+real(dp), allocatable , dimension ( : , : , : , : ) :: temparray
 
-integer ( kind = i2b ) :: i , j ! dummy
+integer(i2b):: i , j ! dummy
 
 
 

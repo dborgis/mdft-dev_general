@@ -28,26 +28,26 @@ implicit none
 
 ! Declaration zone
 
-real ( kind = dp ) , dimension ( nb_omega , nb_psi ) , intent ( in ) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx ,&
+real(dp), dimension ( nb_omega , nb_psi ) , intent(in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx ,&
                                                                         Rotzy , Rotzz
 
-integer ( kind = i2b ) :: i , j , k , o , p , m,z ! dummy
+integer(i2b):: i , j , k , o , p , m,z ! dummy
 
-real ( kind = dp ) , dimension ( nb_solvent_sites , nb_psi , nb_omega ) :: xmod , ymod , zmod
+real(dp), dimension ( nb_solvent_sites , nb_psi , nb_omega ) :: xmod , ymod , zmod
 
-integer ( kind = i2b ) :: species ! dummy
+integer(i2b):: species ! dummy
 
-real ( kind = dp ) :: xq , yq , zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)
+real(dp):: xq , yq , zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)
 
-integer ( kind = i2b ) :: im , jm , km , ip , jp , kp ! 6 indices from which all corners of cube surrounding point charge are defined
+integer(i2b):: im , jm , km , ip , jp , kp ! 6 indices from which all corners of cube surrounding point charge are defined
 
-real ( kind = dp ) :: wim , wjm , wkm , wip , wjp , wkp ! weights associated to each 'corner' index
+real(dp):: wim , wjm , wkm , wip , wjp , wkp ! weights associated to each 'corner' index
 
-real ( kind = dp ) :: vpsi ! external potential for a given i,j,k,omega & psi.
+real(dp):: vpsi ! external potential for a given i,j,k,omega & psi.
 
-real ( kind = dp ) :: average_over_psi ! boltzmann average of vpsi over psi for a given i,j,k,omega
+real(dp):: average_over_psi ! boltzmann average of vpsi over psi for a given i,j,k,omega
 
-real ( kind = dp ) :: time0 , time1 ! timers
+real(dp):: time0 , time1 ! timers
 
 write(*,*) '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
 write(*,*) 'qunit' , qunit , beta ,qfact
@@ -160,9 +160,9 @@ do species = 1 , nb_species
 
               if ( chg_solv ( id_solv (m) ) == 0.0_dp ) cycle
 
-              xq = modulo ( real( i-1 ,kind=dp) * deltax + xmod (m,p,o) , Lx ) / deltax
-              yq = modulo ( real( j-1 ,kind=dp) * deltay + ymod (m,p,o) , Ly ) / deltay
-              zq = modulo ( real( k-1 ,kind=dp) * deltaz + zmod (m,p,o) , Lz ) / deltaz
+              xq = modulo ( real( i-1 ,dp) * deltax + xmod (m,p,o) , Lx ) / deltax
+              yq = modulo ( real( j-1 ,dp) * deltay + ymod (m,p,o) , Ly ) / deltay
+              zq = modulo ( real( k-1 ,dp) * deltaz + zmod (m,p,o) , Lz ) / deltaz
 
               im = int ( xq ) + 1
               jm = int ( yq ) + 1
@@ -177,12 +177,12 @@ do species = 1 , nb_species
               if ( jp == nfft2 + 1 ) jp = 1
               if ( kp == nfft3 + 1 ) kp = 1
 
-              wim = (    1.0_dp - (   xq - real( int( xq ,kind=i2b),kind=dp)   )    )
-              wjm = (    1.0_dp - (   yq - real( int( yq ,kind=i2b),kind=dp)   )    )
-              wkm = (    1.0_dp - (   zq - real( int( zq ,kind=i2b),kind=dp)   )    )
-              wip = (             (   xq - real( int( xq ,kind=i2b),kind=dp)   )    )
-              wjp = (             (   yq - real( int( yq ,kind=i2b),kind=dp)   )    )
-              wkp = (             (   zq - real( int( zq ,kind=i2b),kind=dp)   )    )
+              wim = (    1.0_dp - (   xq - real( int( xq ,i2b),dp)   )    )
+              wjm = (    1.0_dp - (   yq - real( int( yq ,i2b),dp)   )    )
+              wkm = (    1.0_dp - (   zq - real( int( zq ,i2b),dp)   )    )
+              wip = (             (   xq - real( int( xq ,i2b),dp)   )    )
+              wjp = (             (   yq - real( int( yq ,i2b),dp)   )    )
+              wkp = (             (   zq - real( int( zq ,i2b),dp)   )    )
 
               vpsi = vpsi + (chg_solv ( id_solv (m) ) * qfact * ( V_c (im,jm,km) * wim * wjm * wkm &
                                                                + V_c (ip,jm,km) * wip * wjm * wkm &
@@ -275,7 +275,7 @@ print *, 'vext_q_from_v_c : min = ' , minval ( Vext_q ) , ' ; max = ' , maxval (
 ! DEBUG ONLY
 open ( unit = 10 , file = 'output/vext_q_from_v_c_along-z_no_planar_average.dat' )
 do k = 1 , nfft3
-  write ( 10 , * ) (real(k-1,kind=dp)*deltaz-Lz/2.0_dp) , (Vext_q(nfft1/2,nfft2/2,k,1,1,1) / QFACT)
+  write ( 10 , * ) (real(k-1,dp)*deltaz-Lz/2.0_dp) , (Vext_q(nfft1/2,nfft2/2,k,1,1,1) / QFACT)
 end do
 close(10)
 

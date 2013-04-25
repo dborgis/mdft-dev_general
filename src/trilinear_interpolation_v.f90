@@ -11,19 +11,19 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
  use precision_kinds , only : dp , i2b
  use system, only : V_coulomb, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, deltay, deltaz
  implicit none
-! real(kind=dp), dimension (nfft1, nfft2, nfft3), intent(in) :: V_grid ! potentiel connu sur une grille discrete
- real(kind=dp), intent(in) :: x,y,z ! coordonnee cartesienne du point dont on cherche V par interpolation trilineaire
- real(kind=dp), intent(out) :: V_interpolated ! potentiel interpolé au point qui nous interesse de coordonnees cartesiennes x y z
- real(kind=dp) :: xi, yi, zi ! indice (réel puisqu'on est en fait entre deux indices) correspondant a x
+! real(dp), dimension (nfft1, nfft2, nfft3), intent(in) :: V_grid ! potentiel connu sur une grille discrete
+ real(dp), intent(in) :: x,y,z ! coordonnee cartesienne du point dont on cherche V par interpolation trilineaire
+ real(dp), intent(out) :: V_interpolated ! potentiel interpolé au point qui nous interesse de coordonnees cartesiennes x y z
+ real(dp) :: xi, yi, zi ! indice (réel puisqu'on est en fait entre deux indices) correspondant a x
  ! floor(xic) est le kind real de int(xic) == real(int(xi))point de la grille juste en dessous de x : rappel que int(9.9) = 9
  ! point de la grille juste en dessous de y
  ! point de la grille juste en dessous de z
- real(kind=dp) :: t, u, v ! qui devrait etre x mod(1) == mod(x,1) en fortran a verifier plus tard
- real(kind=dp) :: omt, omu, omv ! 1-t
+ real(dp) :: t, u, v ! qui devrait etre x mod(1) == mod(x,1) en fortran a verifier plus tard
+ real(dp) :: omt, omu, omv ! 1-t
  ! Vi potentiel en chacun des huits points qui entourent notre point de coordonnees x y z
- real(kind=dp) :: V1, V2, V3, V4, V5, V6, V7, V8
- integer(kind=i2b) :: j, k, l ! dummy index
- integer(kind=i2b) :: jp1,kp1,lp1 ! j+1
+ real(dp) :: V1, V2, V3, V4, V5, V6, V7, V8
+ integer(i2b) :: j, k, l ! dummy index
+ integer(i2b) :: jp1,kp1,lp1 ! j+1
  
  xi = modulo(1.0_dp + x/deltax, Lx) ! indice (réel puisqu'on est en fait entre 8 pts de grille) correspondant a x
  yi = modulo(1.0_dp + y/deltay, Ly)

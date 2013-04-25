@@ -2,7 +2,7 @@ module input
   use precision_kinds , only : i2b, dp
   implicit none
   character (len = 100) , allocatable , dimension (:) :: input_line ! array containing all input lines
-  integer ( kind = i2b ) :: TotalNumberOfInputLines
+  integer(i2b):: TotalNumberOfInputLines
 
   private
   public :: input_line, input_dp, input_int, TotalNumberOfInputLines,input_log, input_char

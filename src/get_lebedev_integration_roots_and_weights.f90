@@ -6,12 +6,12 @@ use constants , only : fourpi
 use system , only : nb_omega
 implicit none
 
-!real (kind=dp) , allocatable , dimension (: ), intent(out) :: weight_leb , x_leb , y_leb , z_leb
+!real (dp) , allocatable , dimension (: ), intent(out) :: weight_leb , x_leb , y_leb , z_leb
 
 
-real (kind=dp) :: a, b, v
+real (dp) :: a, b, v
 
-integer(kind=i2b) ::  j , i, counter !dummy
+integer(i2b) ::  j , i, counter !dummy
 
 
 
@@ -120,11 +120,11 @@ subroutine gen_oh(code, x_leb, y_leb, z_leb, weight_leb, a, b, v)
 
 implicit none
 
-real(kind=dp), dimension (:) ,intent(out) :: weight_leb , x_leb , y_leb , z_leb
+real(dp), dimension (:) ,intent(out) :: weight_leb , x_leb , y_leb , z_leb
 
-real (kind=dp) :: a, b, v
+real (dp) :: a, b, v
 
-integer (kind=i2b) :: code
+integer (i2b) :: code
 
 
 

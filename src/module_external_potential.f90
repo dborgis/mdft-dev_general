@@ -9,11 +9,11 @@ use precision_kinds , only : dp, i2b
 implicit none
 
 
-!real(kind=dp), allocatable, dimension(:,:,:,:) :: Vext ! external potential of the whole solute on a position and angular grid
+!real(dp), allocatable, dimension(:,:,:,:) :: Vext ! external potential of the whole solute on a position and angular grid
 
-!real(kind=dp), allocatable, dimension(:,:,:,:) :: Vlj ! lennard jones potential of the whole solute on a position and angular grid
+!real(dp), allocatable, dimension(:,:,:,:) :: Vlj ! lennard jones potential of the whole solute on a position and angular grid
 
-!real(kind=dp), allocatable, dimension(:,:,:,:) :: Vcoul ! electrostatic potential of the whole solute on a position and angular grid
+!real(dp), allocatable, dimension(:,:,:,:) :: Vcoul ! electrostatic potential of the whole solute on a position and angular grid
 
 
 ! we want the outer loop (slowest varying) to be over species, so nb_species is the last rank.
@@ -25,27 +25,27 @@ implicit none
 !       nfft2
 !         nfft1
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : , : , : ) :: Vext_total ! external potential as the sum of all external potentials (LJ + charge + ... )
+real(dp), allocatable , dimension ( : , : , : , : , : , : ) :: Vext_total ! external potential as the sum of all external potentials (LJ + charge + ... )
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : , : , : ) :: Vext_lj
+real(dp), allocatable , dimension ( : , : , : , : , : , : ) :: Vext_lj
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : , : , : ) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , nb_omega , nb_species )
+real(dp), allocatable , dimension ( : , : , : , : , : , : ) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , nb_omega , nb_species )
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: V_c ! electrostatic potential calculated from poisson equation
+real(dp), allocatable , dimension ( : , : , : ) :: V_c ! electrostatic potential calculated from poisson equation
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : , : ) :: Vext_hard ! hard potential
+real(dp), allocatable , dimension ( : , : , : , : , : ) :: Vext_hard ! hard potential
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: Vext_hard_core ! hard core potential based on van der walls radius
+real(dp), allocatable , dimension ( : , : , : , : ) :: Vext_hard_core ! hard core potential based on van der walls radius
 
 !Calculation of charge density
 
-real( kind=dp ) , allocatable , dimension ( : , : , : ) ::  q_charge
+real( dp ) , allocatable , dimension ( : , : , : ) ::  q_charge
 
-integer (kind=i2b) , allocatable , dimension (: , : , : ) :: x_charge, y_charge, z_charge
+integer (i2b) , allocatable , dimension (: , : , : ) :: x_charge, y_charge, z_charge
 
-integer (kind=i2b) :: nb_of_interpolation
+integer (i2b) :: nb_of_interpolation
 
-real (kind=dp) :: Fcoul
+real (dp) :: Fcoul
 ! here is contained the subroutine that deallocates everything properly
 
 contains 

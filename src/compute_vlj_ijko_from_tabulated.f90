@@ -17,25 +17,25 @@ implicit none
 
 !Les 4 déclarations suivantes étaient des intent(in)
 
-integer(kind=i2b)                                       :: nrgrid ! total number of radial grid nodes
-real(kind=dp)                                           :: drgrid2 ! distance between two radial grid nodes
-integer(kind=i2b)                                       :: nb_id_solv, nb_id_mol ! number of different kinds of solvent sites or solute sites
-real(kind=dp), allocatable, dimension(:,:,:) :: tabulated_ljsq
+integer(i2b)                                       :: nrgrid ! total number of radial grid nodes
+real(dp)                                           :: drgrid2 ! distance between two radial grid nodes
+integer(i2b)                                       :: nb_id_solv, nb_id_mol ! number of different kinds of solvent sites or solute sites
+real(dp), allocatable, dimension(:,:,:) :: tabulated_ljsq
 
-integer(kind=i2b) :: i,j,k,n ! dummy
-real(kind=dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
-real(kind=dp) :: V_node ! sum of all solute contributions to a given grid node
-integer(kind=i2b) :: idm, i_r ! id of the solute site that is being used
-real(kind=dp) :: r_nm2 ! norm**2 of vector x_nm;y_nm;z_nm
-real(kind=dp) :: time0,time1 ! timer start and end
-real(kind=dp), dimension(:,:,:), allocatable :: temparray
+integer(i2b) :: i,j,k,n ! dummy
+real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
+real(dp) :: V_node ! sum of all solute contributions to a given grid node
+integer(i2b) :: idm, i_r ! id of the solute site that is being used
+real(dp) :: r_nm2 ! norm**2 of vector x_nm;y_nm;z_nm
+real(dp) :: time0,time1 ! timer start and end
+real(dp), dimension(:,:,:), allocatable :: temparray
 character(50):: filename
-integer ( kind = i2b ) :: species ! dummy for loops over species
-integer ( kind = i2b ) :: pot_type
-real ( kind = dp ) :: eps_Lorentz_Berthelot , sigma_Lorentz_Berthelot 
-integer ( kind = i2b ) ::  i_mol,i_solv
-real ( kind = dp ) , dimension ( 0 : nrgrid ) :: pot !tabulated potential this subroutines computes
-real ( kind = dp ) :: drgrid, dx, dy, dz ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
+integer(i2b):: species ! dummy for loops over species
+integer(i2b):: pot_type
+real(dp):: eps_Lorentz_Berthelot , sigma_Lorentz_Berthelot 
+integer(i2b)::  i_mol,i_solv
+real(dp), dimension ( 0 : nrgrid ) :: pot !tabulated potential this subroutines computes
+real(dp):: drgrid, dx, dy, dz ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
 
 
 
@@ -43,8 +43,8 @@ real ( kind = dp ) :: drgrid, dx, dy, dz ! distance between two points in radial
 
 nb_id_mol  = size ( chg_mol  ) ! total number of solute types
 nb_id_solv = size ( chg_solv ) ! total number of solvent types
-drgrid  =   3._dp* max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) * 2.0_dp / real ( nrgrid , kind=dp) ! distance between two grid points for tabulation
-drgrid2 = ( 3._dp * max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) ) ** 2 * 2.0_dp / real( nrgrid ,kind=dp) ! distance **2 between two grid points
+drgrid  =   3._dp* max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) * 2.0_dp / real ( nrgrid , dp) ! distance between two grid points for tabulation
+drgrid2 = ( 3._dp * max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) ) ** 2 * 2.0_dp / real( nrgrid ,dp) ! distance **2 between two grid points
 
 
 write ( * , * ) 'potentials tabulated using dr = ' , drgrid
@@ -159,11 +159,11 @@ end if
 do species = 1 , nb_species
 
 do k=1,nfft3
-  z_grid=real(k-1,kind=dp)*deltaz
+  z_grid=real(k-1,dp)*deltaz
   do j=1,nfft2
-    y_grid=real(j-1,kind=dp)*deltay
+    y_grid=real(j-1,dp)*deltay
     do i=1,nfft1
-      x_grid=real(i-1,kind=dp)*deltax
+      x_grid=real(i-1,dp)*deltax
       
       V_node=0.0_dp
 

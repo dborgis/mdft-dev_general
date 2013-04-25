@@ -6,87 +6,87 @@ use precision_kinds , only:i2b,dp
 
 implicit none
 
-integer(kind=i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
+integer(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
 
-real(kind=dp) :: Lx , Ly , Lz ! Taille de la boite en Ang
+real(dp) :: Lx , Ly , Lz ! Taille de la boite en Ang
 
-real(kind=dp) :: DeltaV ! volume elementaire=Lx*Ly*Lz/(nfft1*nfft2*nfft3)
+real(dp) :: DeltaV ! volume elementaire=Lx*Ly*Lz/(nfft1*nfft2*nfft3)
 
-real(kind=dp) :: deltax, deltay, deltaz ! Lx/nfft1, Ly/nfft2, Lz/nfft3
+real(dp) :: deltax, deltay, deltaz ! Lx/nfft1, Ly/nfft2, Lz/nfft3
 
-integer(kind=i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
+integer(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
 
-real(kind=dp), allocatable, dimension(:) :: x_mol, y_mol, z_mol ! positions des sites du solute dans la boite (repere absolu)
+real(dp), allocatable, dimension(:) :: x_mol, y_mol, z_mol ! positions des sites du solute dans la boite (repere absolu)
 
-real(kind=dp), allocatable, dimension(:) :: chg_mol, sig_mol, eps_mol  ! charge partielle et parametres LJ pour chaque site du solute (kJ/mol)
+real(dp), allocatable, dimension(:) :: chg_mol, sig_mol, eps_mol  ! charge partielle et parametres LJ pour chaque site du solute (kJ/mol)
 
-real(kind=dp), allocatable, dimension(:) :: x_solv, y_solv, z_solv  ! positions des sites du solvent dans le repere propre ede la molecule
+real(dp), allocatable, dimension(:) :: x_solv, y_solv, z_solv  ! positions des sites du solvent dans le repere propre ede la molecule
 
-real(kind=dp), allocatable, dimension(:) :: chg_solv, sig_solv, eps_solv  ! charge partielle et parametres LJ pour chaque site du solvant (kJ/mol)
+real(dp), allocatable, dimension(:) :: chg_solv, sig_solv, eps_solv  ! charge partielle et parametres LJ pour chaque site du solvant (kJ/mol)
 
-integer(kind=i2b), allocatable, dimension(:) :: id_solv, id_mol ! atom type of each solvent site and solute site for instance id_solv(1)=1, id_solv(2)=2 and id_solv(3)=2 for OH2
+integer(i2b), allocatable, dimension(:) :: id_solv, id_mol ! atom type of each solvent site and solute site for instance id_solv(1)=1, id_solv(2)=2 and id_solv(3)=2 for OH2
 
-real(kind=dp) :: Rc ! Taille de la charge (Ang)
+real(dp) :: Rc ! Taille de la charge (Ang)
 
-real(kind=dp) :: TEMP  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
+real(dp) :: TEMP  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
 
-real(kind=dp) :: kBT , beta
+real(dp) :: kBT , beta
 
 ! Grille pour FFT
 
-integer(kind=i2b) :: nfft ! nbr de point par unite de longueur. lu dans input/dft.in. nfft1, nfft2 et nfft3 sont deduits de nfft.
+integer(i2b) :: nfft ! nbr de point par unite de longueur. lu dans input/dft.in. nfft1, nfft2 et nfft3 sont deduits de nfft.
 
-integer(kind=i2b) :: nfft1,nfft2,nfft3 ! nbr de points sur chaque dimensions de la grille. deduits de nfft lu dans dft.in
+integer(i2b) :: nfft1,nfft2,nfft3 ! nbr de points sur chaque dimensions de la grille. deduits de nfft lu dans dft.in
 
-integer(kind=i2b) :: nb_legendre ! ordre pour integration Gauss-legendre
+integer(i2b) :: nb_legendre ! ordre pour integration Gauss-legendre
 
-real(kind=dp) :: delta_r
+real(dp) :: delta_r
 
 
 ! Grille angulaire
 
-integer(kind=i2b) :: nb_psi ! nb angle psi
+integer(i2b) :: nb_psi ! nb angle psi
 
-integer(kind=i2b) :: nb_omega
+integer(i2b) :: nb_omega
 
 
 !
 
-real(kind=dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
+real(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
+real(dp), allocatable , dimension ( : ) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
 
-real(kind=dp), allocatable, dimension(:) :: c_s, c_delta, c_d !> Direct correlation functions of various rotational invariants
+real(dp), allocatable, dimension(:) :: c_s, c_delta, c_d !> Direct correlation functions of various rotational invariants
 
-real(kind=dp), allocatable, dimension(:) ::chi_L, chi_T
+real(dp), allocatable, dimension(:) ::chi_L, chi_T
 
-real(kind=dp) , allocatable , dimension (:) :: c_s_hs ! c(2)(k) of a hard sphere
+real(dp) , allocatable , dimension (:) :: c_s_hs ! c(2)(k) of a hard sphere
 
-complex(kind=dp),allocatable,dimension(:,:,:) :: Vk !>@var perturabtion in kspace
+complex(dp),allocatable,dimension(:,:,:) :: Vk !>@var perturabtion in kspace
 
-real(kind=dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
+real(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
 
-integer(kind=i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
+integer(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
 
 
 
 ! Electrostatics
-real ( kind=dp ) , allocatable , dimension ( : , : , : , : , : ) :: wigma ! function of n1 , n2 , n3 , omega , psi
+real ( dp ) , allocatable , dimension ( : , : , : , : , : ) :: wigma ! function of n1 , n2 , n3 , omega , psi
 
 ! charge factor & molecule polarization factor
-complex ( kind=dp ) , allocatable , dimension ( : , : , : ,:,:,: ) :: sigma_k
+complex ( dp ) , allocatable , dimension ( : , : , : ,:,:,: ) :: sigma_k
 
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: rho_c ! charge density at each grid node
+real(dp), allocatable , dimension ( : , : , : ) :: rho_c ! charge density at each grid node
 
-complex ( kind = dp ) , allocatable, dimension ( : , : , : ) :: rho_c_k, rho_c_k_myway
+complex(dp), allocatable, dimension ( : , : , : ) :: rho_c_k, rho_c_k_myway
 
 
 !Polarization
 
-complex (kind=dp) , allocatable,dimension (:,:,:,:) :: pola_tot_x_k , pola_tot_y_k , pola_tot_z_k
+complex (dp) , allocatable,dimension (:,:,:,:) :: pola_tot_x_k , pola_tot_y_k , pola_tot_z_k
 
-complex ( kind=dp ) , allocatable , dimension ( : , : , : ,:,: , :) ::  molec_polarx_k,molec_polary_k,molec_polarz_k 
+complex ( dp ) , allocatable , dimension ( : , : , : ,:,: , :) ::  molec_polarx_k,molec_polary_k,molec_polarz_k 
 
 
 !> 3body parameters
@@ -120,9 +120,9 @@ complex ( kind=dp ) , allocatable , dimension ( : , : , : ,:,: , :) ::  molec_po
 
 
 
-real(kind=dp), allocatable, dimension(:,:,:) ::  V_int
+real(dp), allocatable, dimension(:,:,:) ::  V_int
 
-!real ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: rho_n ! density per angle (=n/4pi) of each species at each node (nfft1,nfft2,nfft3,nb_species)
+!real(dp), allocatable , dimension ( : , : , : , : ) :: rho_n ! density per angle (=n/4pi) of each species at each node (nfft1,nfft2,nfft3,nb_species)
 ! for maximum efficiency, rho_species(nfft1,nfft2,nfft3,nb_species) should be used in loops where species is the outer loop (varies slowliest)
 
 !do species = 1 , nb_species
@@ -140,35 +140,35 @@ real(kind=dp), allocatable, dimension(:,:,:) ::  V_int
 
 logical(4) :: HS
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: weight_function_1_k
+complex(dp), allocatable , dimension ( : , : , : , : ) :: weight_function_1_k
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: weight_function_2_k
+complex(dp), allocatable , dimension ( : , : , : , : ) :: weight_function_2_k
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: weight_function_3_k
+complex(dp), allocatable , dimension ( : , : , : , : ) :: weight_function_3_k
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: weight_function_0_k
+complex(dp), allocatable , dimension ( : , : , : , : ) :: weight_function_0_k
 
-real(kind=dp), allocatable, dimension(:) :: radius
+real(dp), allocatable, dimension(:) :: radius
 
-real(kind=dp) :: eta, muexc_0, Fexc_0
+real(dp) :: eta, muexc_0, Fexc_0
 
-!real ( kind = dp ) , allocatable , dimension ( : ) :: eta_multispec ! packing fraction = 4/3 * pi * n_0 * radius **3 = pi/6 * n_0 * diameter**3
+!real(dp), allocatable , dimension ( : ) :: eta_multispec ! packing fraction = 4/3 * pi * n_0 * radius **3 = pi/6 * n_0 * diameter**3
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: Fexc_0_multispec ! 
+real(dp), allocatable , dimension ( : ) :: Fexc_0_multispec ! 
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: muexc_0_multispec ! temp var during implementation of multispecies
+real(dp), allocatable , dimension ( : ) :: muexc_0_multispec ! temp var during implementation of multispecies
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : ) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
+complex(dp), allocatable , dimension ( : , : , : ) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: mole_fraction ! mole fraction of each species "x_i"
+real(dp), allocatable , dimension ( : ) :: mole_fraction ! mole fraction of each species "x_i"
 
 
 
 !> for xsf printing
 
-integer(kind=i2b), allocatable, dimension (:) :: atomic_nbr
+integer(i2b), allocatable, dimension (:) :: atomic_nbr
 
-real(kind=dp), allocatable, dimension (:,:,:) :: V_coulomb ! nfft1 nfft2 nfft3 nb_omega
+real(dp), allocatable, dimension (:,:,:) :: V_coulomb ! nfft1 nfft2 nfft3 nb_omega
 
 !Three body terms
 

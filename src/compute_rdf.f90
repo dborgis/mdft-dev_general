@@ -18,31 +18,31 @@ implicit none
 
 
 
-real ( kind = dp ) , intent ( in ) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: array
+real(dp), intent(in) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: array
 
-character ( 50 ) , intent ( in ) :: filename
+character ( 50 ) , intent(in) :: filename
 
-integer ( kind = i2b ) :: nb_id_solv ! Total number of solvent site kinds
+integer(i2b):: nb_id_solv ! Total number of solvent site kinds
 
-integer ( kind = i2b ) :: nb_id_mol ! Total number of solute site kinds
+integer(i2b):: nb_id_mol ! Total number of solute site kinds
 
-integer ( kind = i2b ) :: nbins !> Total number of bins in which rdf is histogrammed
+integer(i2b):: nbins !> Total number of bins in which rdf is histogrammed
 
-real ( kind = dp ) :: RdfMaxRange !> Maximum distance to which calculate radial distribution function
+real(dp):: RdfMaxRange !> Maximum distance to which calculate radial distribution function
 
-real ( kind = dp ) :: delta_r !> Width of each bin
+real(dp):: delta_r !> Width of each bin
 
-real ( kind = dp ) :: r !> Distance ^2 between each of the n solute sites and each grid point i,j,k
+real(dp):: r !> Distance ^2 between each of the n solute sites and each grid point i,j,k
 
-real ( kind = dp ) , allocatable , dimension ( : , : ) :: rdf
+real(dp), allocatable , dimension ( : , : ) :: rdf
 
-integer ( kind = i2b ) , allocatable , dimension ( : , : ) :: recurrence_bin
+integer(i2b), allocatable , dimension ( : , : ) :: recurrence_bin
 
-integer ( kind = i2b ) :: i , j , k , n , bin
+integer(i2b):: i , j , k , n , bin
 
-real ( kind = dp ) :: xnm2 , ynm2 , znm2 ! dummy
+real(dp):: xnm2 , ynm2 , znm2 ! dummy
 
-integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+integer(i2b):: species ! dummy between 1 and nb_species
 
 
 

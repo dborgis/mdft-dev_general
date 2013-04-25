@@ -4,7 +4,7 @@ subroutine print_supercell_xsf
  use precision_kinds
  use system
  implicit none
- integer(kind=i2b) :: i
+ integer(i2b) :: i
  open(5,file='output/supercell.xsf')
  100 format (xA)
  101 format (3(xF10.5))

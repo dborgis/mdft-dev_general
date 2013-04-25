@@ -11,13 +11,13 @@ subroutine init_external_potential
 
 
 implicit none
-integer ( kind = i2b ) :: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
-integer ( kind = i2b ) , parameter :: nrgrid = 100000 ! nb of point of the radial grid for tabulation of the potentials TODO magic number here ...
-real ( kind = dp ) :: drgrid ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
-real ( kind = dp ) :: drgrid2 ! distance between two point in radial**2 grid
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) ::  tabulated_coulsq
-real ( kind = dp ) , dimension ( nb_omega , nb_psi ) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz
-integer ( kind = i2b ) :: i , j ! dummy
+integer(i2b):: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
+integer(i2b), parameter :: nrgrid = 100000 ! nb of point of the radial grid for tabulation of the potentials TODO magic number here ...
+real(dp):: drgrid ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
+real(dp):: drgrid2 ! distance between two point in radial**2 grid
+real(dp), allocatable , dimension ( : , : , : ) ::  tabulated_coulsq
+real(dp), dimension ( nb_omega , nb_psi ) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz
+integer(i2b):: i , j ! dummy
 
 ! init vext which is in module system
 if (.not. allocated ( Vext_total) ) allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , nb_omega , nb_psi, nb_species ) ) ! multispec
@@ -29,8 +29,8 @@ Vext_total = 0.0_dp
 ! init tabulation properties
 nb_id_mol  = size ( chg_mol  ) ! total number of solute types
 nb_id_solv = size ( chg_solv ) ! total number of solvent types
-drgrid  =   3._dp* max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) * 2.0_dp / real ( nrgrid , kind=dp) ! distance between two grid points for tabulation
-drgrid2 = ( 3._dp * max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) ) ** 2 * 2.0_dp / real( nrgrid ,kind=dp) ! distance **2 between two grid points
+drgrid  =   3._dp* max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) * 2.0_dp / real ( nrgrid , dp) ! distance between two grid points for tabulation
+drgrid2 = ( 3._dp * max ( Lx , Ly , Lz ) * sqrt ( 3.0_dp ) ) ** 2 * 2.0_dp / real( nrgrid ,dp) ! distance **2 between two grid points
 
 !test if GL quadrature is used
 

@@ -27,13 +27,13 @@ use system , only : nfft1 , nfft2 , nfft3 , chg_mol , id_mol , Lx , Ly , Lz , rh
 
 implicit none
 
-integer ( kind = i2b ) :: solute ! dummy
+integer(i2b):: solute ! dummy
 
-real ( kind = dp ) :: xq , yq, zq ! coordinates of the charge in indicial coordinates
+real(dp):: xq , yq, zq ! coordinates of the charge in indicial coordinates
 
-integer ( kind = i2b ) :: im , jm , km , ip , jp , kp ! indices of corner in indicial coordinates
+integer(i2b):: im , jm , km , ip , jp , kp ! indices of corner in indicial coordinates
 
-real ( kind = dp ) :: wim , wjm , wkm , wip , wjp , wkp ! weight associated to each index
+real(dp):: wim , wjm , wkm , wip , wjp , wkp ! weight associated to each index
 
 character ( 50 ) :: filename
 
@@ -91,12 +91,12 @@ do solute = 1 , nb_solute_sites
 
   ! define weights associated with each corner
 
-  wim = (    1.0_dp - (   xq - real(int(xq,kind=i2b),kind=dp)   )    )
-  wjm = (    1.0_dp - (   yq - real(int(yq,kind=i2b),kind=dp)   )    )
-  wkm = (    1.0_dp - (   zq - real(int(zq,kind=i2b),kind=dp)   )    )
-  wip = (             (   xq - real(int(xq,kind=i2b),kind=dp)   )    )
-  wjp = (             (   yq - real(int(yq,kind=i2b),kind=dp)   )    )
-  wkp = (             (   zq - real(int(zq,kind=i2b),kind=dp)   )    )
+  wim = (    1.0_dp - (   xq - real(int(xq,i2b),dp)   )    )
+  wjm = (    1.0_dp - (   yq - real(int(yq,i2b),dp)   )    )
+  wkm = (    1.0_dp - (   zq - real(int(zq,i2b),dp)   )    )
+  wip = (             (   xq - real(int(xq,i2b),dp)   )    )
+  wjp = (             (   yq - real(int(yq,i2b),dp)   )    )
+  wkp = (             (   zq - real(int(zq,i2b),dp)   )    )
 
 
   ! increase density accordingly

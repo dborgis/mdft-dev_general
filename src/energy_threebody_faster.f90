@@ -18,31 +18,31 @@ use fft, only : plan_backward, plan_forward, in_backward, out_backward, in_forwa
 
 implicit none
 
-real(kind=dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
+real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
 
-integer(kind=i2b)::icg
-integer(kind=i2b) :: i,j,k,o,p,n, i1, j1, k1
-real(kind=dp) :: time0,time1
-real(kind=dp), allocatable, dimension(:,:,:)::rho
-complex(kind=dp), allocatable, dimension(:,:,:)::rho_k
-real(kind=dp) ::rk2,xk2,yk2,zk2,r,x,y,z
-real(kind=dp) ::  DHxx_ijk,DHyy_ijk,DHzz_ijk,DHxy_ijk,DHxz_ijk,DHyz_ijk,DH0_ijk,DHx_ijk,DHy_ijk,DHz_ijk
-real(kind=dp), dimension(nfft1,nfft2,nfft3) :: Gxx,Gyy,Gzz,Gxy,Gxz,Gyz,Gx,Gy,Gz,G0 
-real(kind=dp), dimension(nfft1,nfft2,nfft3,nb_solute_sites) :: DHxx,DHyy,DHzz,DHxy,DHxz,DHyz,DH0,DHx,DHy,DHz 
-real(kind=dp), dimension(nb_solute_sites) :: Hxx,Hyy,Hzz,Hxy,Hxz,Hyz,Hx,Hy,Hz,H0
-real(kind=dp), dimension(nfft1,nfft2,nfft3) :: Fxx,Fyy,Fzz,Fxy,Fxz,Fyz,Fx,Fy,Fz,F0
-complex(kind=dp), dimension(nfft1/2+1,nfft2,nfft3) :: Fxx_k,Fyy_k,Fzz_k,Fxy_k,Fxz_k,Fyz_k,Fx_k,Fy_k,Fz_k,F0_k
-real(kind=dp), dimension(nfft1,nfft2,nfft3) :: Axx,Ayy,Azz,Axy,Axz,Ayz,Ax,Ay,Az,A0
-complex(kind=dp), dimension(nfft1/2+1,nfft2,nfft3) :: Axx_k,Ayy_k,Azz_k,Axy_k,Axz_k,Ayz_k,Ax_k,Ay_k,Az_k,A0_k
-real(kind=dp) :: fk1,rmax1,fk2,rho_temp,psi
-integer(kind=i2b)::nmax1x,nmax1y,nmax1z,ix,iy,iz,nmax2x,nmax2y,nmax2z
-real(kind=dp)::deltaVk,Hxxpreviousstep
-real(kind=dp)::fw,f_ww,F3B1,F3B2,costheta0
-real(kind=dp)::rb
-complex(kind=dp), dimension(nfft1/2+1,nfft2,nfft3) ::Gxx_k,Gyy_k,Gzz_k,Gxy_k,Gxz_k,Gyz_k,Gx_k,Gy_k,Gz_k,G0_k , function_rho_0k
-real(kind=dp), dimension(nfft1,nfft2,nfft3) :: FGxx,FGyy,FGzz,FGxy,FGxz,FGyz,FGx,FGy,FGz,FG0, function_rho_0
-real(kind=dp) :: lambda_w , F3B_ww, rmax_w!lambda parameter for water water interaction
-!real(kind=dp), dimension(nfft1,nfft2,nfft3) :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
+integer(i2b)::icg
+integer(i2b) :: i,j,k,o,p,n, i1, j1, k1
+real(dp) :: time0,time1
+real(dp), allocatable, dimension(:,:,:)::rho
+complex(dp), allocatable, dimension(:,:,:)::rho_k
+real(dp) ::rk2,xk2,yk2,zk2,r,x,y,z
+real(dp) ::  DHxx_ijk,DHyy_ijk,DHzz_ijk,DHxy_ijk,DHxz_ijk,DHyz_ijk,DH0_ijk,DHx_ijk,DHy_ijk,DHz_ijk
+real(dp), dimension(nfft1,nfft2,nfft3) :: Gxx,Gyy,Gzz,Gxy,Gxz,Gyz,Gx,Gy,Gz,G0 
+real(dp), dimension(nfft1,nfft2,nfft3,nb_solute_sites) :: DHxx,DHyy,DHzz,DHxy,DHxz,DHyz,DH0,DHx,DHy,DHz 
+real(dp), dimension(nb_solute_sites) :: Hxx,Hyy,Hzz,Hxy,Hxz,Hyz,Hx,Hy,Hz,H0
+real(dp), dimension(nfft1,nfft2,nfft3) :: Fxx,Fyy,Fzz,Fxy,Fxz,Fyz,Fx,Fy,Fz,F0
+complex(dp), dimension(nfft1/2+1,nfft2,nfft3) :: Fxx_k,Fyy_k,Fzz_k,Fxy_k,Fxz_k,Fyz_k,Fx_k,Fy_k,Fz_k,F0_k
+real(dp), dimension(nfft1,nfft2,nfft3) :: Axx,Ayy,Azz,Axy,Axz,Ayz,Ax,Ay,Az,A0
+complex(dp), dimension(nfft1/2+1,nfft2,nfft3) :: Axx_k,Ayy_k,Azz_k,Axy_k,Axz_k,Ayz_k,Ax_k,Ay_k,Az_k,A0_k
+real(dp) :: fk1,rmax1,fk2,rho_temp,psi
+integer(i2b)::nmax1x,nmax1y,nmax1z,ix,iy,iz,nmax2x,nmax2y,nmax2z
+real(dp)::deltaVk,Hxxpreviousstep
+real(dp)::fw,f_ww,F3B1,F3B2,costheta0
+real(dp)::rb
+complex(dp), dimension(nfft1/2+1,nfft2,nfft3) ::Gxx_k,Gyy_k,Gzz_k,Gxy_k,Gxz_k,Gyz_k,Gx_k,Gy_k,Gz_k,G0_k , function_rho_0k
+real(dp), dimension(nfft1,nfft2,nfft3) :: FGxx,FGyy,FGzz,FGxy,FGxz,FGyz,FGx,FGy,FGz,FG0, function_rho_0
+real(dp) :: lambda_w , F3B_ww, rmax_w!lambda parameter for water water interaction
+!real(dp), dimension(nfft1,nfft2,nfft3) :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
 !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
 
 F3B1=0.0_dp

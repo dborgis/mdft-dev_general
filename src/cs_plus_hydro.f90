@@ -12,47 +12,47 @@ subroutine cs_plus_hydro
   
   implicit none
   
-  real(kind=dp) :: d_0 ! Angstroms, from Chandler
-  real(kind=dp) :: gamma_0 ! surface tension of water (0.174kBT/A² or 0.431 KJ/A²)
-  real(kind=dp) :: mu_0 ! phenomenological potential
+  real(dp) :: d_0 ! Angstroms, from Chandler
+  real(dp) :: gamma_0 ! surface tension of water (0.174kBT/A² or 0.431 KJ/A²)
+  real(dp) :: mu_0 ! phenomenological potential
   
-  real(kind=dp) :: Nk ! total number of k points. Real because really often used as a divisor of a real number
-  real(kind=dp) :: deltaVk ! volume unit per k point
-  real(kind=dp) :: fact_n ! integration factor = deltaV*n_0 = deltaV*rho_0/fourpi
+  real(dp) :: Nk ! total number of k points. Real because really often used as a divisor of a real number
+  real(dp) :: deltaVk ! volume unit per k point
+  real(dp) :: fact_n ! integration factor = deltaV*n_0 = deltaV*rho_0/fourpi
   
-  integer(kind=i2b) :: icg,i,j,k,o,l,m,p ! dummy for loops
+  integer(i2b) :: icg,i,j,k,o,l,m,p ! dummy for loops
   
 
-  real(kind=dp) :: nbar ! temp for local coarse grained n
+  real(dp) :: nbar ! temp for local coarse grained n
   
-  real(kind=dp), allocatable, dimension(:,:,:) :: delta_n ! =n-1
-  real(kind=dp), allocatable, dimension(:,:,:) :: delta_nbar ! coarse grained delta_n
-  complex ( kind = dp ) :: delta_nbark_loc ! dummy local value for delta_nbark(i,j,k)
-  complex(kind=dp), allocatable, dimension(:,:,:) :: delta_nk ! delta_n in kspace
-  complex(kind=dp), allocatable, dimension(:,:,:) :: delta_nbark ! delta_nbar in kspace
-  real(kind=dp) :: facsym ! 1 or 2 for taking into account time reversal symetry of FFT(real)
-  real(kind=dp) :: k2_loc ! dummy local k2
-  integer(kind=i2b) :: k_index ! index of the k point for reading c_s(k_index)
-  !real(kind=dp) :: norm_k ! norm of k vector == sqrt(kx**2+ky**2+kz**2)
-  real(kind=dp) :: prefactor ! dummy for a prefactor calculated a large number of times  =-R_cg**2/2.0_dp
-  real(kind=dp), allocatable, dimension(:,:,:) :: V_n ! radial excess potential
-  complex(kind=dp), allocatable, dimension(:,:,:) :: V_nk ! FFT(V_n)
-  real(kind=dp), allocatable, dimension(:,:,:) :: V_nbar ! coarse grained V_n
-  complex(kind=dp), allocatable, dimension(:,:,:) :: V_nbark ! FFT(V_n)
-  real(kind=dp), allocatable, dimension(:,:,:) :: gradx_delta_nbar , grady_delta_nbar , gradz_delta_nbar ! grad delta_nbar
-  complex(kind=dp), allocatable, dimension(:,:,:) :: gradx_delta_nbark , grady_delta_nbark , gradz_delta_nbark ! gradient of delta_nbark
-  real(kind=dp) :: lognbar ! dummy for log(nbar)
-  real(kind=dp) :: Fint ! excess energy one wants to compute here
-  real(kind=dp) :: Vint ! dummy part of Fint
-  real(kind=dp) :: S_cg, F_cg ! surface part of the energy (Cahn Hilliard)
-  complex(kind=dp), allocatable, dimension(:,:,:) :: dS_cgk ! coarse grained part of dF in k space
-  complex(kind=dp), allocatable, dimension(:,:,:) :: dF_cgk ! coarse grained part of dF
-  real(kind=dp), allocatable, dimension(:,:,:) :: dF_cg ! coarse grained part of dF
-  real(kind=dp) :: time0 , time1 ! timesteps
-  real(kind=dp) :: R_cg ! radius of the coarse graining gaussian function  
-  real(kind=dp) :: dF_cg_ijk ! dummy for local dF_cg
-  real(kind=dp) :: delta_n_ijk ! dummy for local delta_n 
-  real ( kind = dp ) :: psi ! local cg_vect
+  real(dp), allocatable, dimension(:,:,:) :: delta_n ! =n-1
+  real(dp), allocatable, dimension(:,:,:) :: delta_nbar ! coarse grained delta_n
+  complex(dp):: delta_nbark_loc ! dummy local value for delta_nbark(i,j,k)
+  complex(dp), allocatable, dimension(:,:,:) :: delta_nk ! delta_n in kspace
+  complex(dp), allocatable, dimension(:,:,:) :: delta_nbark ! delta_nbar in kspace
+  real(dp) :: facsym ! 1 or 2 for taking into account time reversal symetry of FFT(real)
+  real(dp) :: k2_loc ! dummy local k2
+  integer(i2b) :: k_index ! index of the k point for reading c_s(k_index)
+  !real(dp) :: norm_k ! norm of k vector == sqrt(kx**2+ky**2+kz**2)
+  real(dp) :: prefactor ! dummy for a prefactor calculated a large number of times  =-R_cg**2/2.0_dp
+  real(dp), allocatable, dimension(:,:,:) :: V_n ! radial excess potential
+  complex(dp), allocatable, dimension(:,:,:) :: V_nk ! FFT(V_n)
+  real(dp), allocatable, dimension(:,:,:) :: V_nbar ! coarse grained V_n
+  complex(dp), allocatable, dimension(:,:,:) :: V_nbark ! FFT(V_n)
+  real(dp), allocatable, dimension(:,:,:) :: gradx_delta_nbar , grady_delta_nbar , gradz_delta_nbar ! grad delta_nbar
+  complex(dp), allocatable, dimension(:,:,:) :: gradx_delta_nbark , grady_delta_nbark , gradz_delta_nbark ! gradient of delta_nbark
+  real(dp) :: lognbar ! dummy for log(nbar)
+  real(dp) :: Fint ! excess energy one wants to compute here
+  real(dp) :: Vint ! dummy part of Fint
+  real(dp) :: S_cg, F_cg ! surface part of the energy (Cahn Hilliard)
+  complex(dp), allocatable, dimension(:,:,:) :: dS_cgk ! coarse grained part of dF in k space
+  complex(dp), allocatable, dimension(:,:,:) :: dF_cgk ! coarse grained part of dF
+  real(dp), allocatable, dimension(:,:,:) :: dF_cg ! coarse grained part of dF
+  real(dp) :: time0 , time1 ! timesteps
+  real(dp) :: R_cg ! radius of the coarse graining gaussian function  
+  real(dp) :: dF_cg_ijk ! dummy for local dF_cg
+  real(dp) :: delta_n_ijk ! dummy for local delta_n 
+  real(dp):: psi ! local cg_vect
   
 
   call cpu_time(time0)
@@ -75,7 +75,7 @@ subroutine cs_plus_hydro
 
 
   ! total number of kpoints and volume per kpoint
-  Nk = real( nfft1 * nfft2 * nfft3 ,kind=dp)
+  Nk = real( nfft1 * nfft2 * nfft3 ,dp)
   DeltaVk = DeltaV / Nk!twopi**3/(Lx*ly*Lz*Nk)!
 
   
@@ -131,7 +131,7 @@ subroutine cs_plus_hydro
       do p = 1 , nfft3
         k2_loc = k2 ( l , m , p )
         delta_nbark_loc = Delta_nbark ( l , m , p )
-        S_cg = S_cg + facsym * DeltaVk * 1.5_dp * d_0 * gamma_0 * k2_loc * real( Delta_nbark_loc , kind=dp ) ** 2
+        S_cg = S_cg + facsym * DeltaVk * 1.5_dp * d_0 * gamma_0 * k2_loc * real( Delta_nbark_loc , dp ) ** 2
         dS_cgk ( l , m , p ) = facsym * DeltaVk * 3.0 * d_0 * gamma_0 * k2_loc * Delta_nbark_loc
       end do
     end do

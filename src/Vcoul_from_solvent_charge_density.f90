@@ -19,24 +19,24 @@ use quadrature, only : weight, weight_psi, sym_order
 
 implicit none
 
-integer ( kind = i2b ) :: i , j , k , o , p, icg , m1, m2, m3, nf1, nf2, nf3, species, i1, i2
+integer(i2b):: i , j , k , o , p, icg , m1, m2, m3, nf1, nf2, nf3, species, i1, i2
 ! dummy
 
-real (kind=dp) :: kx, ky, kz, kx2, ky2, kz2, k2
+real (dp) :: kx, ky, kz, kx2, ky2, kz2, k2
 
-real (kind=dp) :: twopioLx , twopioLy , twopioLz, deltaVk, Vcoul
+real (dp) :: twopioLx , twopioLy , twopioLz, deltaVk, Vcoul
 
 
 
-complex ( kind = dp ) , dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: V_c_k
+complex(dp), dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: V_c_k
 
-real (kind=dp) , allocatable , dimension ( : , : , :  ) ::  v_c2, rho_c_solv
+real (dp) , allocatable , dimension ( : , : , :  ) ::  v_c2, rho_c_solv
 
-real (kind=dp) , allocatable , dimension ( : , : , :  , :,:,: ) :: rho
+real (dp) , allocatable , dimension ( : , : , :  , :,:,: ) :: rho
 
-complex (kind=dp) , allocatable , dimension ( : , : , : , :, : , :) :: rho_k
+complex (dp) , allocatable , dimension ( : , : , : , :, : , :) :: rho_k
 
-real ( kind = dp ) :: rho_temp
+real(dp):: rho_temp
 
 ! init total energy and gradient to 0
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver

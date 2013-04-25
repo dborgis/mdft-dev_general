@@ -16,17 +16,17 @@ use external_potential , only : Vext_total
 
 implicit none
 
-integer ( kind = i2b ) :: i , j , n ! dummy
+integer(i2b):: i , j , n ! dummy
 
-real ( kind = dp ) :: x_nm2 , y_nm2 , r_nm2 ! distance**2 between solute and grid point
+real(dp):: x_nm2 , y_nm2 , r_nm2 ! distance**2 between solute and grid point
 
-real ( kind = dp ) :: hard_cylinder_radius ! radius of the hard cylinder solute
+real(dp):: hard_cylinder_radius ! radius of the hard cylinder solute
 
-real ( kind = dp ) :: deltax , deltay ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
+real(dp):: deltax , deltay ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
 
-real ( kind = dp ) :: sum_rad2 ! sum of solute cylinder radius and radius of solvent hard sphere
+real(dp):: sum_rad2 ! sum of solute cylinder radius and radius of solvent hard sphere
 
-integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+integer(i2b):: species ! dummy between 1 and nb_species
 
 
 
@@ -79,11 +79,11 @@ do n = 1 , nb_solute_sites
 
     do j = 1 , nfft2
 
-      y_nm2 = ( real(j-1,kind=dp) * deltay - y_mol (n) )**2
+      y_nm2 = ( real(j-1,dp) * deltay - y_mol (n) )**2
 
       do i = 1 , nfft1
 
-        x_nm2 = ( real(i-1,kind=dp) * deltax - x_mol (n) )**2
+        x_nm2 = ( real(i-1,dp) * deltax - x_mol (n) )**2
 
         ! relative distances between solute site and solvent site
 

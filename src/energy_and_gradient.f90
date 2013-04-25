@@ -23,12 +23,12 @@ use quadrature, only : weight, weight_psi, sym_order
 
 implicit none
 
-integer ( kind = i2b ) :: i , j , k , l, icg ,  nf1, nf2, nf3
+integer(i2b):: i , j , k , l, icg ,  nf1, nf2, nf3
 ! dummy
 
 logical :: hydrophobicity_tag
 
-real (kind=dp) :: twopioLx , twopioLy , twopioLz, deltaVk
+real (dp) :: twopioLx , twopioLy , twopioLz, deltaVk
 
 
 ! init total energy and gradient to 0

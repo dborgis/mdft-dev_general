@@ -22,13 +22,13 @@ implicit none
 
 
 
-real ( kind = dp ) :: local_density0 !> @var local_density0 is the density at a space and angular grid point
+real(dp):: local_density0 !> @var local_density0 is the density at a space and angular grid point
 
-integer ( kind = i2b ) :: i , j , k , o , p , icg ! dummy
+integer(i2b):: i , j , k , o , p , icg ! dummy
 
-real ( kind = dp ) :: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
+real(dp):: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
 
-integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+integer(i2b):: species ! dummy between 1 and nb_species
 
 
 

@@ -21,38 +21,38 @@ use external_potential , only : Vext_total
 implicit none
 
 
-real ( kind = dp ) , dimension ( nb_omega , nb_psi ) , intent (in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , &
+real(dp), dimension ( nb_omega , nb_psi ) , intent (in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , &
                                                                       Rotzy , Rotzz ! rotationnal matrix for sites
 
-integer ( kind = i2b ) :: i , j , k , o , p , m , n ! dummy
+integer(i2b):: i , j , k , o , p , m , n ! dummy
 
-real ( kind = dp ) , dimension ( nb_solvent_sites , nb_psi , nb_omega ) :: xmod , ymod , zmod
+real(dp), dimension ( nb_solvent_sites , nb_psi , nb_omega ) :: xmod , ymod , zmod
 
-real ( kind = dp ) :: x_grid , y_grid , z_grid ! coordinates of grid nodes
+real(dp):: x_grid , y_grid , z_grid ! coordinates of grid nodes
 
-real ( kind = dp ) :: x_m , y_m , z_m ! solvent sites coordinates
+real(dp):: x_m , y_m , z_m ! solvent sites coordinates
 
-real ( kind = dp ) :: x_nm , y_nm , z_nm ! coordinate of vecteur solute-solvent
+real(dp):: x_nm , y_nm , z_nm ! coordinate of vecteur solute-solvent
 
-real ( kind = dp ) :: r_nm2 ! norm**2 of vector x_nm;y_nm;z_nm
+real(dp):: r_nm2 ! norm**2 of vector x_nm;y_nm;z_nm
 
-real ( kind = dp ) :: V_psi ! dummy
+real(dp):: V_psi ! dummy
 
-real ( kind = dp ) :: time0 , time1 ! timer start and end
+real(dp):: time0 , time1 ! timer start and end
 
 real ( kind = dp ), dimension (:,:,:) , allocatable :: temparray ! dummy
 
 character (50) :: filename
 
-real ( kind = dp ) :: rc, rc2 ! radius of the hard wall in the purely repulsive potential of dzubiella
+real(dp):: rc, rc2 ! radius of the hard wall in the purely repulsive potential of dzubiella
 
-real ( kind = dp ) :: tempVrep ! temporary Vrep(i,j,k,o)
+real(dp):: tempVrep ! temporary Vrep(i,j,k,o)
 
-real ( kind = dp ) :: kbT ! kbT of the purely repulsive potential V such as V(R0+1)=kBT => kbT = kBT
+real(dp):: kbT ! kbT of the purely repulsive potential V such as V(R0+1)=kBT => kbT = kBT
 
-real ( kind = dp ) , dimension ( nfft1 , nfft2 , nfft3 , nb_omega , nb_psi) :: Vrep
+real(dp), dimension ( nfft1 , nfft2 , nfft3 , nb_omega , nb_psi) :: Vrep
 
-real ( kind = dp ) :: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
+real(dp):: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
 
 
 
@@ -115,15 +115,15 @@ do k = 1 , nfft3
 
   write (*,*) nfft3 - k
 
-  z_grid = real(k-1,kind=dp) * deltaz
+  z_grid = real(k-1,dp) * deltaz
 
   do j = 1 , nfft2
 
-    y_grid = real(j-1,kind=dp) * deltay
+    y_grid = real(j-1,dp) * deltay
 
     do i = 1 , nfft1
 
-      x_grid = real(i-1,kind=dp) * deltax
+      x_grid = real(i-1,dp) * deltax
 
       do o = 1 , nb_omega
 

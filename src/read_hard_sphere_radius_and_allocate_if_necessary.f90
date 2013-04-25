@@ -17,11 +17,11 @@
 
     implicit none
 
-    integer ( kind = i2b ) :: i , j , species ! dummy
+    integer(i2b):: i , j , species ! dummy
 
-    real ( kind = dp ) :: d_wca !>@var optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
+    real(dp):: d_wca !>@var optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
 
-    real ( kind = dp ) :: distance_between_grid_nodes ! minimum distance between two nodes of the nfft grid = min ( Lx/nfft1 , Ly/nfft2 , Lz/nfft3 )
+    real(dp):: distance_between_grid_nodes ! minimum distance between two nodes of the nfft grid = min ( Lx/nfft1 , Ly/nfft2 , Lz/nfft3 )
 
 
     ! if allocation of radius has not been not earlier (no reason for now but perhaps later someone will want to implement it), allocate it

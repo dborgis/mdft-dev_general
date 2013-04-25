@@ -10,8 +10,8 @@ use quadrature , only : sym_order
 
 implicit none
 
-integer ( kind = i2b ) :: i , j ! dummy
-integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+integer(i2b):: i , j ! dummy
+integer(i2b):: species ! dummy between 1 and nb_species
 
 
 
@@ -112,9 +112,9 @@ contains
 
     implicit none
 
-    integer ( kind = i2b ) , intent ( in ) :: nb_species
-    real ( kind = dp ) , dimension ( nb_species ) , intent ( inout ) :: mole_fraction
-    integer ( kind = i2b ) :: i , j , species
+    integer(i2b), intent(in) :: nb_species
+    real(dp), dimension ( nb_species ) , intent ( inout ) :: mole_fraction
+    integer(i2b):: i , j , species
 
     do i = 1 , size ( input_line )
       j = len ( 'mole_fractions' )
@@ -149,8 +149,8 @@ contains
 
     implicit none
 
-    real ( kind = dp ) , dimension ( nb_species ) , intent ( in ) :: mole_fraction
-    integer ( kind = i2b ) :: species
+    real(dp), dimension ( nb_species ) , intent(in) :: mole_fraction
+    integer(i2b):: species
 
   
 

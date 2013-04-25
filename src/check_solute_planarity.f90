@@ -7,7 +7,7 @@ use system, only: nb_solute_sites,x_mol,y_mol,z_mol
 
 implicit none
 logical,intent(out):: is_planar
-real(kind=dp),dimension(2:nb_solute_sites):: xvec,yvec,zvec !> vector between solute sites 1 and N (2<N<NB_SOLUTE_SITES)
+real(dp),dimension(2:nb_solute_sites):: xvec,yvec,zvec !> vector between solute sites 1 and N (2<N<NB_SOLUTE_SITES)
 integer :: n !> dummy
 
 

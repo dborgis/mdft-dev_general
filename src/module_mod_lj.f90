@@ -29,7 +29,7 @@ module mod_lj
             real(dp) :: time0, time1 ! timer start and end
             integer(i2b) :: species ! dummy for loops over species
             integer(i2b) ::  i_mol, i_solv
-            real ( kind = dp ) :: dx, dy, dz ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
+            real(dp):: dx, dy, dz ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
             integer(i2b) :: solute_site, solvent_site
 
             ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species ) 

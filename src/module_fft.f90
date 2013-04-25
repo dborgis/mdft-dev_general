@@ -11,21 +11,21 @@ integer ( kind = i4b ) :: plan_forward !> @var indicates kind of planed FFT
 
 integer ( kind = i4b ) :: plan_backward !> @var indicates kind of planed FFT
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: in_forward !> @var Array input in FFT
+real(dp), allocatable , dimension ( : , : , : ) :: in_forward !> @var Array input in FFT
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : ) :: out_forward !> @var Array output in FFT
+complex(dp), allocatable , dimension ( : , : , : ) :: out_forward !> @var Array output in FFT
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : ) :: in_backward !> @var Array input of FFT-1
+complex(dp), allocatable , dimension ( : , : , : ) :: in_backward !> @var Array input of FFT-1
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: out_backward !> @var Array output for FFT-1
+real(dp), allocatable , dimension ( : , : , : ) :: out_backward !> @var Array output for FFT-1
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: norm_k ! norm of vector k tabulated for l,m,n  (nfft1,nfft2,nfft3)
+real(dp), allocatable , dimension ( : , : , : ) :: norm_k ! norm of vector k tabulated for l,m,n  (nfft1,nfft2,nfft3)
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: k2 ! norm squared of vector k (nfft1,nfft2,nfft3)
+real(dp), allocatable , dimension ( : , : , : ) :: k2 ! norm squared of vector k (nfft1,nfft2,nfft3)
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : ) :: k2_nocoef ! norm squared of vector k without any coefficient (L or nfft)
+real(dp), allocatable , dimension ( : , : , : ) :: k2_nocoef ! norm squared of vector k without any coefficient (L or nfft)
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: kx, ky, kz ! projection of k
+real(dp), allocatable , dimension ( : ) :: kx, ky, kz ! projection of k
 
 
 contains

@@ -127,8 +127,8 @@ subroutine compute_total_number_of_partial_charges_in_system ( nion )
 use precision_kinds , only : i2b
 use system , only : nb_solute_sites , chg_mol , nb_solvent_sites , chg_solv
 implicit none
-integer(kind=i2b) , intent ( out ) :: nion ! total number of partial charges in system
-integer(kind=i2b) :: i ! dummy
+integer(i2b) , intent(out) :: nion ! total number of partial charges in system
+integer(i2b) :: i ! dummy
 ! init
 nion = 0
 ! count in solute

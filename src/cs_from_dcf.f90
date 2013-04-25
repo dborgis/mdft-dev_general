@@ -21,29 +21,29 @@ use fft, only: in_forward,in_backward,out_forward,out_backward,plan_forward,plan
 implicit none
 
 
-integer(kind=i2b) :: i, j, k, l, m, n, o, p , icg, species !> Dummy
+integer(i2b) :: i, j, k, l, m, n, o, p , icg, species !> Dummy
 
-integer(kind=i2b) :: k_index
+integer(i2b) :: k_index
 
-real(kind=dp) :: Nk !> Total number of k points = nfft1*nfft2*nfft3
+real(dp) :: Nk !> Total number of k points = nfft1*nfft2*nfft3
 
-real(kind=dp) :: Fint !> Internal part of the free energy
+real(dp) :: Fint !> Internal part of the free energy
 
-real(kind=dp) :: Vint !> Dummy for calculation of Vint
+real(dp) :: Vint !> Dummy for calculation of Vint
 
-real(kind=dp) :: fact !> facteur d'integration
+real(dp) :: fact !> facteur d'integration
 
-real(kind=dp) :: psi ! Dummy
+real(dp) :: psi ! Dummy
 
-real(kind=dp), allocatable, dimension(:,:,:) :: Delta_rho
+real(dp), allocatable, dimension(:,:,:) :: Delta_rho
 
-real(kind=dp) :: delta_rho_ijk ! dummy delta_rho(i,j,k) @ given ijk
+real(dp) :: delta_rho_ijk ! dummy delta_rho(i,j,k) @ given ijk
 
-complex(kind=dp), allocatable, dimension(:,:,:) :: rho_k , Vpair_k
+complex(dp), allocatable, dimension(:,:,:) :: rho_k , Vpair_k
 
-real(kind=dp) :: time1, time0
+real(dp) :: time1, time0
 
-real(kind=dp) , allocatable , dimension ( : , : , : ) :: Vpair
+real(dp) , allocatable , dimension ( : , : , : ) :: Vpair
 
 
 
@@ -53,7 +53,7 @@ real(kind=dp) , allocatable , dimension ( : , : , : ) :: Vpair
 
 call cpu_time ( time0 )
 
-Nk = real(nfft1*nfft2*nfft3,kind=dp) ! nombre de points k
+Nk = real(nfft1*nfft2*nfft3,dp) ! nombre de points k
 
 allocate ( Delta_rho ( nfft1 , nfft2 , nfft3 ) )
 
@@ -79,7 +79,7 @@ do i=1,nfft1
     end do
   end do
 end do
-Delta_rho = Delta_rho-real(2.0_dp*twopi**2/sym_order, kind=dp)
+Delta_rho = Delta_rho-real(2.0_dp*twopi**2/sym_order, dp)
 
 
 

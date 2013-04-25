@@ -35,11 +35,11 @@ implicit none
 
 integer :: i , j , k , n ! dummy variables
 
-character ( 50 ) , intent ( in ) :: filename ! filename of .cube file. For example : "density.cube"
+character ( 50 ) , intent(in) :: filename ! filename of .cube file. For example : "density.cube"
 
-real ( kind = dp ) , intent ( in ) , dimension ( nfft1 , nfft2 , nfft3 ) :: array ! array printed in .cube file
+real(dp), intent(in) , dimension ( nfft1 , nfft2 , nfft3 ) :: array ! array printed in .cube file
 
-real ( kind = dp ) , parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
+real(dp), parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
 
 ! define formats for writing to file
 

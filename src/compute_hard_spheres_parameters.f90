@@ -101,9 +101,9 @@ contains
 
     implicit none
 
-    real ( kind = dp ) , dimension ( nb_species ) :: eta
+    real(dp), dimension ( nb_species ) :: eta
 
-    integer ( kind = i2b ) :: species ! dummy
+    integer(i2b):: species ! dummy
 
 
 
@@ -158,9 +158,9 @@ contains
 
     implicit none
 
-    integer ( kind = i2b ) :: i , j ! dummy
+    integer(i2b):: i , j ! dummy
 
-    character ( 4 ) , intent ( out ) :: hs_functional
+    character ( 4 ) , intent(out) :: hs_functional
 
 !    do i = 1 , size ( input_line )
 
@@ -197,7 +197,7 @@ contains
 
     implicit none
 
-    integer ( kind = i2b ) :: i ! dummy
+    integer(i2b):: i ! dummy
 
     character ( 4 ) , intent ( inout ) :: hs_functional
 
@@ -255,29 +255,29 @@ contains
 
     implicit none
  
-    integer ( kind = i2b ) , intent ( in ) :: nb_species
+    integer(i2b), intent(in) :: nb_species
 
-    real ( kind = dp ) , dimension ( nb_species ) , intent ( in ) :: n_0_multispec ! ref bulk densities
+    real(dp), dimension ( nb_species ) , intent(in) :: n_0_multispec ! ref bulk densities
 
-    real ( kind = dp ) , dimension ( nb_species ) , intent ( in ) :: radius ! hard sphere radius
+    real(dp), dimension ( nb_species ) , intent(in) :: radius ! hard sphere radius
 
-    character ( 4 ) , intent ( in ) :: hs_functional
+    character ( 4 ) , intent(in) :: hs_functional
 
-    real ( kind = dp ) , dimension ( nb_species ) , intent ( out ) :: muexc_0_multispec ! excess chemical potential defined so that grand potential is zero at ref bulk density
+    real(dp), dimension ( nb_species ) , intent(out) :: muexc_0_multispec ! excess chemical potential defined so that grand potential is zero at ref bulk density
 
-    real ( kind = dp ) , dimension ( nb_species ) , intent ( out ) :: Fexc_0_multispec ! excess helmotz free energy of reference bulk system
+    real(dp), dimension ( nb_species ) , intent(out) :: Fexc_0_multispec ! excess helmotz free energy of reference bulk system
 
-    integer ( kind = i2b ) :: species ! dummy
+    integer(i2b):: species ! dummy
 
-    real ( kind = dp ) :: n0 , n1 , n2 , n3 ! weighted densities in the case of constant density = ref bulk density
+    real(dp):: n0 , n1 , n2 , n3 ! weighted densities in the case of constant density = ref bulk density
 
-    real ( kind = dp ) :: partial_phi_over_partial_n0 , partial_phi_over_partial_n1 ! partial derivative of phi w.r.t. weighted densities
+    real(dp):: partial_phi_over_partial_n0 , partial_phi_over_partial_n1 ! partial derivative of phi w.r.t. weighted densities
 
-    real ( kind = dp ) :: partial_phi_over_partial_n2 , partial_phi_over_partial_n3
+    real(dp):: partial_phi_over_partial_n2 , partial_phi_over_partial_n3
 
-    real ( kind = dp ) :: partial_n0_over_partial_rho , partial_n1_over_partial_rho ! partial derivative of weighted densities w.r.t. density of constituant i
+    real(dp):: partial_n0_over_partial_rho , partial_n1_over_partial_rho ! partial derivative of weighted densities w.r.t. density of constituant i
 
-    real ( kind = dp ) :: partial_n2_over_partial_rho , partial_n3_over_partial_rho
+    real(dp):: partial_n2_over_partial_rho , partial_n3_over_partial_rho
 
 
 
@@ -431,13 +431,13 @@ contains
   implicit none
   
   
-  real ( kind = dp ) :: kR , FourPiR , sinkR , coskR ! dummy for speeding up
+  real(dp):: kR , FourPiR , sinkR , coskR ! dummy for speeding up
   
-  integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+  integer(i2b):: species ! dummy between 1 and nb_species
   
-  integer ( kind = i2b ) :: l , m , n ! dummy for loops
+  integer(i2b):: l , m , n ! dummy for loops
   
-  real ( kind = dp ) :: norm_k_local ! dummy local variable
+  real(dp):: norm_k_local ! dummy local variable
   
   
   

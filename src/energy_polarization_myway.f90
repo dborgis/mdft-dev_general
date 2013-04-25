@@ -26,33 +26,33 @@ implicit none
 
 
 
-real (kind=dp) , dimension (nfft1, nfft2, nfft3,nb_omega,nb_psi,nb_species) ::dF_pol_long , dF_pol_trans, dF_pol_tot
+real (dp) , dimension (nfft1, nfft2, nfft3,nb_omega,nb_psi,nb_species) ::dF_pol_long , dF_pol_trans, dF_pol_tot
 
-complex (kind=dp) , dimension (nfft1/2+1, nfft2, nfft3, nb_omega, nb_psi, nb_species) :: rho_k, dF_pol_long_k , dF_pol_trans_k,&
+complex (dp) , dimension (nfft1/2+1, nfft2, nfft3, nb_omega, nb_psi, nb_species) :: rho_k, dF_pol_long_k , dF_pol_trans_k,&
  dF_pol_tot_k
 
-real (kind=dp) , dimension (nfft1, nfft2, nfft3, nb_omega, nb_psi, nb_species) ::rho
+real (dp) , dimension (nfft1, nfft2, nfft3, nb_omega, nb_psi, nb_species) ::rho
 
-real (kind=dp) , dimension (nfft1, nfft2, nfft3, nb_species) ::Px,Py,Pz,pola_tot_x,pola_tot_y,pola_tot_z,P_long_x,P_long_y,P_long_z
+real (dp) , dimension (nfft1, nfft2, nfft3, nb_species) ::Px,Py,Pz,pola_tot_x,pola_tot_y,pola_tot_z,P_long_x,P_long_y,P_long_z
 
-integer (kind=i2b) :: icg   !dummy counter for cg_vect
+integer (i2b) :: icg   !dummy counter for cg_vect
 
-real(kind=dp) ::  deltaVk, F_pol_long, F_pol_trans , F_pol ,F_pol_tot  !Longitudinal , transverse and total Polarization free energy
+real(dp) ::  deltaVk, F_pol_long, F_pol_trans , F_pol ,F_pol_tot  !Longitudinal , transverse and total Polarization free energy
 
-complex(kind=dp), allocatable, dimension(:,:,:,:) :: P_trans_x_k,P_trans_y_k,P_trans_z_k,P_long_x_k,P_long_y_k,P_long_z_k,&
+complex(dp), allocatable, dimension(:,:,:,:) :: P_trans_x_k,P_trans_y_k,P_trans_z_k,P_long_x_k,P_long_y_k,P_long_z_k,&
 pxk,pyk,pzk  !transverse part of polarization in Fourier space .
  
-integer (kind=i2b) :: i , j , k, o, p , n , species, k_index , m1, m2, m3!dummy
+integer (i2b) :: i , j , k, o, p , n , species, k_index , m1, m2, m3!dummy
 
-real(kind=dp) :: mu_SPCE, facsym,Pxt,Pyt,Pzt
+real(dp) :: mu_SPCE, facsym,Pxt,Pyt,Pzt
 
-complex(kind=dp) :: k_tens_k_Px,k_tens_k_Py,k_tens_k_Pz     
+complex(dp) :: k_tens_k_Px,k_tens_k_Py,k_tens_k_Pz     
 
-real ( kind = dp ) :: time1 , time0 ,time2 , time3 ,rhot! timestamps
+real(dp):: time1 , time0 ,time2 , time3 ,rhot! timestamps
 
-complex(kind=dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k 
+complex(dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k 
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
+real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
 
 if (nb_species/=1) then
 print*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
@@ -728,11 +728,11 @@ end do
 
 if (aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)<tiny(0.0_dp)) then 
 
-F_pol_tot=real( F_pol_tot_k , kind=dp)
+F_pol_tot=real( F_pol_tot_k , dp)
 
-F_pol_long=real( F_pol_long_k,  kind=dp)
+F_pol_long=real( F_pol_long_k,  dp)
 
-F_pol_trans=real( F_pol_trans_k, kind=dp)
+F_pol_trans=real( F_pol_trans_k, dp)
 
 else
 

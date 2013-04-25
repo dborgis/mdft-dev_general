@@ -22,54 +22,54 @@ implicit none
 
 
 
-integer ( kind = i2b ) :: icg , i , j , k , o , p ! dummy
+integer(i2b):: icg , i , j , k , o , p ! dummy
 
-integer ( kind = i2b ) :: species ! dummy between 1 and nb_species
+integer(i2b):: species ! dummy between 1 and nb_species
 
-real ( kind = dp ) :: Nk ! Total number of k points = nfft1*nfft2*nfft3
+real(dp):: Nk ! Total number of k points = nfft1*nfft2*nfft3
 
-real ( kind = dp ) :: Fint !> @var Internal part of free energy
+real(dp):: Fint !> @var Internal part of free energy
 
-real ( kind = dp ) :: local_density, psi !> Dummy , psi is sqrt(local_density)
+real(dp):: local_density, psi !> Dummy , psi is sqrt(local_density)
 
-real ( kind = dp ) , allocatable , dimension ( : ) :: nb_molecules ! temp before full implementation of multispecies
+real(dp), allocatable , dimension ( : ) :: nb_molecules ! temp before full implementation of multispecies
 
-real ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
+real(dp), allocatable , dimension ( : , : , : , : ) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : , :) :: rho_k !> @var Density in k space
+complex(dp), allocatable , dimension ( : , : , : , :) :: rho_k !> @var Density in k space
 
-real ( kind = dp ) :: time0 , time1 ! time stamps
+real(dp):: time0 , time1 ! time stamps
 
-real ( kind = dp ) :: w0 , w1 , w2 , w3 , omw3 ! local 1-w3 ! dummy 
+real(dp):: w0 , w1 , w2 , w3 , omw3 ! local 1-w3 ! dummy 
 
-real ( kind = dp ) :: F_HS ! Perkus Yevick (or Carnahan Starling) expression for excess energy
+real(dp):: F_HS ! Perkus Yevick (or Carnahan Starling) expression for excess energy
 
-real ( kind = dp )    , allocatable , dimension ( : , : , : ) :: weighted_density_0 , weighted_density_1 , weighted_density_2 ,&
+real(dp)   , allocatable , dimension ( : , : , : ) :: weighted_density_0 , weighted_density_1 , weighted_density_2 ,&
                                                                   weighted_density_3 ! weighted densities
 
-real ( kind = dp )    , allocatable , dimension ( : , : , : ) :: one_min_weighted_density_3 ! dummy for 1 - weighted density 3
+real(dp)   , allocatable , dimension ( : , : , : ) :: one_min_weighted_density_3 ! dummy for 1 - weighted density 3
 
-real ( kind = dp )    , allocatable , dimension ( : , : , : ) :: dFHS_0 , dFHS_1 , dFHS_2 , dFHS_3
+real(dp)   , allocatable , dimension ( : , : , : ) :: dFHS_0 , dFHS_1 , dFHS_2 , dFHS_3
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : ) :: dFHS_0_k , dFHS_1_k , dFHS_2_k , dFHS_3_k
+complex(dp), allocatable , dimension ( : , : , : ) :: dFHS_0_k , dFHS_1_k , dFHS_2_k , dFHS_3_k
 
-complex ( kind = dp ) , allocatable , dimension ( : , : , : , : ) :: dFex_k ! gradient in k space
+complex(dp), allocatable , dimension ( : , : , : , : ) :: dFex_k ! gradient in k space
 
-real ( kind = dp )    , allocatable , dimension ( : , : , : , : ) :: dFex ! gradient in real space
+real(dp)   , allocatable , dimension ( : , : , : , : ) :: dFex ! gradient in real space
 
  character ( len = 2 ) :: hs_functional ! hard sphere functional = PY for Percus-Yevick or CS for Carnahan-Starling
 
 ! parameters for easy reading and avoiding 'magic numbers'
 
-real ( kind = dp ) , parameter :: inv8pi  = 1.0_dp / (  8.0_dp * pi ) ! dummy constant
+real(dp), parameter :: inv8pi  = 1.0_dp / (  8.0_dp * pi ) ! dummy constant
 
-real ( kind = dp ) , parameter :: inv12pi = 1.0_dp / ( 12.0_dp * pi ) ! dummy constant
+real(dp), parameter :: inv12pi = 1.0_dp / ( 12.0_dp * pi ) ! dummy constant
 
-real ( kind = dp ) , parameter :: inv18pi = 1.0_dp / ( 18.0_dp * pi ) ! dummy constant
+real(dp), parameter :: inv18pi = 1.0_dp / ( 18.0_dp * pi ) ! dummy constant
 
-real ( kind = dp ) , parameter :: inv24pi = 1.0_dp / ( 24.0_dp * pi ) ! dummy constant
+real(dp), parameter :: inv24pi = 1.0_dp / ( 24.0_dp * pi ) ! dummy constant
 
-real ( kind = dp ) , parameter :: inv36pi = 1.0_dp / ( 36.0_dp * pi ) ! dummy constant
+real(dp), parameter :: inv36pi = 1.0_dp / ( 36.0_dp * pi ) ! dummy constant
 
 
 
@@ -122,7 +122,7 @@ do species = 1 , nb_species
 
         ! correct by 8*pi²/n as the integral over all orientations o and psi is 4pi and 2pi/n
 
-        local_density = local_density*real(sym_order, kind=dp) / (fourpi*twopi)
+        local_density = local_density*real(sym_order, dp) / (fourpi*twopi)
 
         ! at the same time integrate rho in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
 
@@ -546,9 +546,9 @@ use precision_kinds , only : i2b , dp
 
 implicit none
 
-integer ( kind = i2b ) , intent ( in ) :: i , j , k
+integer(i2b), intent(in) :: i , j , k
 
-real ( kind = dp ) , intent ( in ) :: w0 , w1 , w2 , w3
+real(dp), intent(in) :: w0 , w1 , w2 , w3
 
 write (*,*) 'i , j , k = ' , i , j , k
 
