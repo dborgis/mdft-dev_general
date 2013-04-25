@@ -45,8 +45,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/main.f90 \
        $(SRCDIR)/bfgs.f90 \
        $(SRCDIR)/dblas1.f90 \
-       $(SRCDIR)/compute_angular_grid.f90 \
-       $(SRCDIR)/compute_angular_grid_leb.f90\
        $(SRCDIR)/trilinear_interpolation_v.f90 \
        $(SRCDIR)/get_charge_factor.f90 \
        $(SRCDIR)/get_charge_density.f90\
