@@ -41,6 +41,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/module_cg.f90 \
        $(SRCDIR)/module_periodic_table.f90 \
        $(SRCDIR)/module_mod_lj.f90 \
+       $(SRCDIR)/module_solute_geometry.f90 \
        $(SRCDIR)/main.f90 \
        $(SRCDIR)/bfgs.f90 \
        $(SRCDIR)/dblas1.f90 \
@@ -85,8 +86,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/compute_wca_diameter.f90 \
        $(SRCDIR)/prepare_minimizer.f90 \
        $(SRCDIR)/compute_rdf.f90 \
-       $(SRCDIR)/check_solute_linearity.f90 \
-       $(SRCDIR)/check_solute_planarity.f90 \
        $(SRCDIR)/compute_planar_density.f90 \
        $(SRCDIR)/write_to_cube_file.f90 \
        $(SRCDIR)/vext_total_sum.f90 \

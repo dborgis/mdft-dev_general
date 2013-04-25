@@ -1,6 +1,5 @@
 !This routine evaluate the excess free energy plus an hydrophobic part
 subroutine energy_hydro
-
  use precision_kinds , only : dp , i2b
   use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_omega , nb_species,n_0,&
 nb_psi,Lx,Ly,Lz
@@ -11,7 +10,6 @@ nb_psi,Lx,Ly,Lz
   use input, only : input_log
   
   implicit none
-
   real(dp) :: mu_0 ! phenomenological potential
   real(dp) :: Nk ! total number of k points. Real because really often used as a divisor of a real number
   real(dp) :: deltaVk ! volume unit per k point
@@ -62,8 +60,6 @@ nb_psi,Lx,Ly,Lz
     print*, 'energy_hydro MUST be used with hard sphere solvent correction  TAG of hard_sphere_solute in dft.in must be T'
     stop
   end if
-
-
   ! macroscopic water parameters, from Chandler
   mu_0 = 7.16d-4*kBT ! phenomenological potential
   R_cg=4.0_dp ! ARBITRARY gaussian radius for coarse graining
@@ -71,12 +67,9 @@ nb_psi,Lx,Ly,Lz
   !TEST ZONE START
   R_cg = R_cg
   !TEST ZONE STOP
-
   ! total number of kpoints and volume per kpoint
   Nk = real( nfft1 * nfft2 * nfft3 ,dp)
   DeltaVk = DeltaV / Nk!twopi**3/(Lx*ly*Lz*Nk)!
-
-
   fact_n = DeltaV * n_0 ! integration factor
   prefactor = - R_cg ** 2 / 2.0_dp ! dummy for later in the gaussian in k space g(k)=exp(prefactor*k2)
   
@@ -110,7 +103,6 @@ nb_psi,Lx,Ly,Lz
   ! the coarse-grained delta_n is simply delta_n multiplied by a gaussian distribution of empirical
   allocate ( delta_nbark ( nfft1/2+1 , nfft2 , nfft3 ) )
   delta_nbark = delta_nk * exp( prefactor * k2 ) ! ~n=n*exp(prefactor*k²)
-
   ! surface energy (cahn hilliard part of the intrinsic excess energy)
   S_cg = 0.0_dp
   allocate ( dS_cgk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
@@ -132,7 +124,6 @@ nb_psi,Lx,Ly,Lz
     end do
   end do
   print *, 'S_cg in k space = ' , S_cg
-
   
   ! gradient of delta_nbar in kspace
   ! remember that the fourier transform of the gradient of f(r) is i*vector_k*f(k)
@@ -174,7 +165,6 @@ nb_psi,Lx,Ly,Lz
     end do
   end do
   
-
   
   ! coarse grain V_nk
   allocate( V_nbark ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
@@ -217,30 +207,22 @@ nb_psi,Lx,Ly,Lz
   call dfftw_execute(plan_backward)
   allocate(gradz_delta_nbar(nfft1,nfft2,nfft3))
   gradz_delta_nbar = out_backward/Nk
-
   ! compute coarse grained free energy and gradient small part
   allocate ( dF_cg ( nfft1 , nfft2 , nfft3 ) )
   F_cg = 0.0_dp
   do i=1,nfft1
     do j=1,nfft2
       do k=1,nfft3
-
          dF_CG(i,j,k)=-a*delta_nbar(i,j,k)*deltaV*n_0**2*kBT
-
       end do
     end do
   end do
-
-
 !large gradient part
   S_cg = 0.5_dp*mm*DeltaV *sum( gradx_delta_nbar**2 + grady_delta_nbar**2+ gradz_delta_nbar**2 )*n_0**2*kBT
   F_cg= - 0.5_dp*a*DeltaV*sum(delta_nbar**2)*n_0**2*kBT
-
   deallocate(gradx_delta_nbar)
   deallocate(grady_delta_nbar)
   deallocate(gradz_delta_nbar)
-
-
   print *, 'F_CG =  ',F_CG
   print *, 'S_CG =  ',S_CG
   
@@ -249,7 +231,6 @@ nb_psi,Lx,Ly,Lz
   call dfftw_execute(plan_forward)
   allocate(dF_cgk(nfft1/2+1,nfft2,nfft3))
   dF_cgk = out_forward
-
   ! define coarse grained gradients in k space
   dF_cgk = ( dF_cgk + dS_cgk ) * exp ( prefactor * k2 )
   deallocate(dS_cgk)
@@ -272,7 +253,6 @@ nb_psi,Lx,Ly,Lz
     print *, 'nb_species /= 1 and this is not implemented yet in cs_plus_hydro.f90'
     stop
   end if
-
   ! compute final FF and dF
   Fint = 0.0_dp
   icg = 0
@@ -292,7 +272,6 @@ nb_psi,Lx,Ly,Lz
       end do
     end do
   end do
-
   
   ! conclude
   FF = FF + Fint  + S_cg+ F_cg
@@ -301,7 +280,4 @@ nb_psi,Lx,Ly,Lz
   call cpu_time ( time1 )
   write(*,*) 'Fexc(rad)   = ' , Fint , 'computed in (sec)'
   write(*,*) 'Fexc(rad+cg)= ' , F_cg + S_cg , 'computed in (sec)' , time1 - time0
-
-
 end subroutine
-

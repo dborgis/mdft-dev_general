@@ -1,30 +1,15 @@
 !> double is the module defining precision variables.
 !! This allows architecture independant programming.
-
 module precision_kinds
-
   implicit none
-
   integer ( kind = kind (1) ) , parameter :: i2b = kind ( 1 ) !> simple precision integer 
  
   integer(i2b), parameter :: dp = kind ( 0.0d0 ) !> double precision real
-
   integer(i2b), parameter :: sp = kind ( 0.0 ) !> simple precision real
-
   integer(i2b), parameter :: i4b = 2_i2b * i2b !> double precision integer
-
-
-
-
 end module precision_kinds
-
-
 ! defining the precision kind this way we say to the computer : use the default single precision and double precision.
-
 ! remember that this default value may change depending on the architecture of your CPU.
-
 ! but one might one day wish to change that. It would be such a mess do change every number in the program !
-
 ! One would just have to change here the definition of single and double precision.
-
 ! For a very nice lesson about this : http://www.owlnet.rice.edu/~ceng303/manuals/fortran/FOR2_5.html

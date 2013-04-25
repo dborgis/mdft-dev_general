@@ -1,26 +1,16 @@
 subroutine compute_vcoul_ijko_from_tabulated(nrgrid,drgrid,nb_id_solv,nb_id_mol,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,&
                                         Rotyz,Rotzx,Rotzy,Rotzz,tabulated_coulsq )
-
-
 use precision_kinds, only: dp,i2b
-
 use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,nb_omega,nb_psi,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz,Rc , nb_species
-
 use constants , only : fourpi , qfact
-
 use external_potential , only : Vext_q
-
-
 implicit none
-
-
 integer(i2b),intent(in) :: nrgrid ! total number of radial grid nodes
 real(dp), intent(in) :: drgrid ! distance between two radial grid nodes
 integer(i2b), intent(in) :: nb_id_solv,nb_id_mol ! number of different kinds of solvent sites or solute sites
 real(dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 real(dp), dimension(nb_id_solv,nb_id_mol,0:nrgrid), intent(in) :: tabulated_coulsq
-
 integer(i2b) :: i,j,k,o,p,m,n ! dummy
 real(dp),dimension(nb_solvent_sites,nb_psi,nb_omega) :: xmod,ymod,zmod
 real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
@@ -37,17 +27,11 @@ real(dp) :: qfactcc ! qfact*chg_solv()*chg_mol()
 real(dp) :: rc2 ! charge pseudo radius **2   == Rc**2
 real(dp) :: tempVcoul ! temporary Vcoul(i,j,k,o)
 integer(i2b) :: ou_on_en_est ! where we are in the loop to follow on screen. goes from nfft3 to 0 when finished
-
 integer(i2b):: species ! dummy for loops over species
-
-
 print*,'!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!'
 print*,'This routine use Rc which is defined in dft.in know what you are doing'
 write(*,*)'Rc = ',Rc 
 print*,'!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!'
-
-
-
 !> initiate
 call cpu_time(time0)
 Vext_q = 0.0_dp
@@ -56,26 +40,14 @@ py=0
 pz=0
 Rc2=Rc**2
 ou_on_en_est=nfft3
-
-
 ! test if all solutes have zero charge then don't waste your time : go to end of subroutine
-
 if (minval(chg_mol)==0.0_dp .and. maxval(chg_mol)==0.0_dp) then   ! solute is not charged
-
   write(*,*)'solute has no charge'
-
   go to 999 ! end of subroutine
-
 else if (minval(chg_solv)==0.0_dp .and. maxval(chg_solv)==0.0_dp) then   ! solvent is not charged
-
   write(*,*)'solvent has no charge'
-
   go to 999 ! end of subroutine
-
 end if
-
-
-
 !> tabulate Rotij(omega,psi)*k_solv(a) for speeding up
 do o=1,nb_omega
   do p=1,nb_psi
@@ -86,8 +58,6 @@ do o=1,nb_omega
     end do
   end do
 end do
-
-
 !$OMP PARALLEL DO &
 !$OMP DEFAULT(private) & ! variables are all private by default, but the ones in next SHARED(..)
 !$OMP SHARED(nfft3,nfft2,nfft1,ou_on_en_est,deltaz,deltay,deltax,nb_omega,nb_psi,nb_solvent_sites, &
@@ -95,29 +65,22 @@ end do
 !$OMP Rc2,beta,Vcoul) &
 !$OMP SCHEDULE(DYNAMIC) ! dynamic allocation of work over nodes (no node is sleeping while others work)
 do species = 1 , nb_species
-
 do k=1,nfft3
   ou_on_en_est=ou_on_en_est-1
   write(*,*)ou_on_en_est
   z_grid=real(k-1,dp)*deltaz
-
 !  if(z_grid>12.0_dp .and. z_grid<30.0_dp) then
 !    Vcoul(:,:,k,:)=100.0_dp
 !    cycle
 !  end if
-
   do j=1,nfft2
     y_grid=real(j-1,dp)*deltay
-
     do i=1,nfft1
       x_grid=real(i-1,dp)*deltax
-
       do o=1,nb_omega
         tempVcoul=0.0_dp
-
 ploop:  do p=1,nb_psi
           V_psi=0.0_dp
-
           do m=1,nb_solvent_sites
             ids=id_solv(m)
             if (chg_solv(ids)==0.0_dp) cycle
@@ -150,19 +113,15 @@ ploop:  do p=1,nb_psi
             end do
             end do ! solute
           end do ! solvent
-
         !  tempVcoul=tempVcoul+exp(-beta*V_psi)
        
-
   !      if (tempVcoul<1.e-10_dp) then
           Vext_q(i,j,k,o,p,species)=V_psi
   !      else
   !        Vext_q(i,j,k,o,1)=-log(tempVcoul/nb_psi)/beta
   !      end if
-
         ! Limit maximum value
         if (Vext_q(i,j,k,o,p,species)>100.0_dp) Vext_q(i,j,k,o,p,species)=100.0_dp
-
 !!!!!        if (Vcoul(i,j,k,o)<=-10.0_dp) then
 !!!!!          write(*,*)'problem in compute_vcoul_ijko_from_tabulated.f90'
 !!!!!          write(*,*)'reduced coordinate of problematic grid point : ',x_grid/Lx,y_grid/Ly,z_grid/Lz
@@ -175,42 +134,20 @@ ploop:  do p=1,nb_psi
     end do ! i
   end do ! j
 end do ! k
-
 end do ! species
 !$OMP END PARALLEL DO
-
-
-
 999 continue
-
-
 write(*,*) 'minval(Vcoul)= ' , minval( Vext_q (:,:,:,:,:,:) )
-
 write(*,*) 'maxval(Vcoul)= ' , maxval( Vext_q (:,:,:,:,:,:) )
-
 call cpu_time(time1)
-
 write(*,*)'time for compute_vcoul_ijko_from_tabulated ' , time1 - time0
-
 !> Get the external potential over orientations and print it
-
 allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
-
 call mean_over_orientations ( Vext_q (:,:,:,:,:,1) , temparray )
-
 temparray = temparray / fourpi
-
 filename = 'output/Vcoul.cube'
-
 call write_to_cube_file ( temparray , filename )
-
 filename = 'output/Vcoul_along-z.dat'
-
 call compute_z_density ( temparray , filename )
-
 deallocate(temparray)
-
-
-
-
 end subroutine compute_vcoul_ijko_from_tabulated

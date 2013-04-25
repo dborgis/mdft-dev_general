@@ -2,7 +2,6 @@
 !   CP2K: A general program to perform molecular dynamics simulations         !
 !   Copyright (C) 2000 - 2008  CP2K developers group                          !
 !-----------------------------------------------------------------------------!
-
 ! *****************************************************************************
 !> \brief Periodic Table related data definitions
 !> \par History
@@ -12,13 +11,9 @@
 ! It now comes as a simple toolbox for MDFT code
 ! *****************************************************************************
 MODULE periodic_table
-
   use precision_kinds , only : dp
-
   IMPLICIT NONE
-
   PUBLIC :: init_periodic_table, ptable, element, nelem, atom
-
 ! *****************************************************************************
   TYPE element
      CHARACTER ( LEN = 2 ) :: symbol
@@ -34,7 +29,6 @@ MODULE periodic_table
      REAL (KIND=dp) :: gyrom_ratio ! in Mhz/Tesla
      INTEGER :: gyrom_ratio_isotope ! isotope number corresponding with gyrom_ratio
   END TYPE element
-
   type atom
      character(len=4) :: symbol
      character(len=2) :: element
@@ -46,17 +40,11 @@ MODULE periodic_table
      REAL (KIND=dp) :: vdw_radius ! in Angstroms
      INTEGER :: e_conv ( 0:3 )
   end type atom
-
   INTEGER, PARAMETER :: nelem = 106
   TYPE ( element ) :: ptable ( 0:nelem )
-
   REAL(KIND=dp), PARAMETER :: z=0.0_dp, z1=2.015940_dp, z2=2.015650_dp
-
   INTEGER :: table_is_initialized=0
-
-
 CONTAINS
-
 ! *****************************************************************************
 !> \brief Initialization of Periodic Table related data
 !> \par History
@@ -64,11 +52,8 @@ CONTAINS
 !> \author JGH
 ! *****************************************************************************
 SUBROUTINE init_periodic_table()
-
   if (table_is_initialized.eq.1) return
-
 ! Dummy
-
   ptable(0) % symbol = 'X '
   ptable(0) % name = 'Dummy'
   ptable(0) % number = 0
@@ -78,7 +63,6 @@ SUBROUTINE init_periodic_table()
   ptable(0) % vdw_radius = z
   ptable(0) % e_conv(0:3) = (/ 0, 0, 0, 0 /)
   ptable(0) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Hydrogen
   ptable(1) % symbol = 'H '
   ptable(1) % name = 'Hydrogen'
@@ -89,7 +73,6 @@ SUBROUTINE init_periodic_table()
   ptable(1) % vdw_radius = 1.2_dp
   ptable(1) % e_conv(0:3) = (/ 1, 0, 0, 0 /)
   ptable(1) % eht_param(0:3) = (/ -13.60_dp, z, z, z/)
-
 ! Deuterium
 !   ptable(1) % symbol = 'D '
 !   ptable(1) % name = 'Deuterium'
@@ -100,7 +83,6 @@ SUBROUTINE init_periodic_table()
 !   ptable(1) % vdw_radius = 1.2_dp
 !   ptable(1) % e_conv(0:3) = (/ 1, 0, 0, 0 /)
 !   ptable(1) % eht_param(0:3) = (/ -13.60_dp, z, z, z/)
-
 ! Helium
   ptable(2) % symbol = 'He'
   ptable(2) % name = 'Helium'
@@ -111,7 +93,6 @@ SUBROUTINE init_periodic_table()
   ptable(2) % vdw_radius = z
   ptable(2) % e_conv(0:3) = (/ 2, 0, 0, 0 /)
   ptable(2) % eht_param(0:3) = (/ -23.40_dp, z, z, z/)
-
 ! Lithium
   ptable(3) % symbol = 'Li'
   ptable(3) % name = 'Lithium'
@@ -122,7 +103,6 @@ SUBROUTINE init_periodic_table()
   ptable(3) % vdw_radius = z
   ptable(3) % e_conv(0:3) = (/ 3, 0, 0, 0 /)
   ptable(3) % eht_param(0:3) = (/ -5.40_dp, -3.50_dp, z, z/)
-
 ! Beryllium
   ptable(4) % symbol = 'Be'
   ptable(4) % name = 'Beryllium'
@@ -133,7 +113,6 @@ SUBROUTINE init_periodic_table()
   ptable(4) % vdw_radius = z
   ptable(4) % e_conv(0:3) = (/ 4, 0, 0, 0 /)
   ptable(4) % eht_param(0:3) = (/ -10.00_dp, -6.00_dp, z, z/)
-
 ! Boron
   ptable(5) % symbol = 'B '
   ptable(5) % name = 'Boron'
@@ -144,7 +123,6 @@ SUBROUTINE init_periodic_table()
   ptable(5) % vdw_radius = z
   ptable(5) % e_conv(0:3) = (/ 4, 1, 0, 0 /)
   ptable(5) % eht_param(0:3) = (/ -15.20_dp, -8.50_dp, z, z/)
-
 ! Carbon
   ptable(6) % symbol = 'C '
   ptable(6) % name = 'Carbon'
@@ -155,7 +133,6 @@ SUBROUTINE init_periodic_table()
   ptable(6) % vdw_radius = 1.7_dp           ! obtained from www.webelement.com
   ptable(6) % e_conv(0:3) = (/ 4, 2, 0, 0 /)
   ptable(6) % eht_param(0:3) = (/ -21.40_dp, -11.40_dp, z, z/)
-
 ! Nitrogen
   ptable(7) % symbol = 'N '
   ptable(7) % name = 'Nitrogen'
@@ -166,7 +143,6 @@ SUBROUTINE init_periodic_table()
   ptable(7) % vdw_radius = 1.5_dp
   ptable(7) % e_conv(0:3) = (/ 4, 3, 0, 0 /)
   ptable(7) % eht_param(0:3) = (/ -26.00_dp, -13.40_dp, z, z/)
-
 ! Oxygen
   ptable(8) % symbol = 'O '
   ptable(8) % name = 'Oxygen'
@@ -177,7 +153,6 @@ SUBROUTINE init_periodic_table()
   ptable(8) % vdw_radius = 1.40_dp
   ptable(8) % e_conv(0:3) = (/ 4, 4, 0, 0 /)
   ptable(8) % eht_param(0:3) = (/ -32.30_dp, -14.80_dp, z, z/)
-
 ! Fluorine
   ptable(9) % symbol = 'F '
   ptable(9) % name = 'Fluorine'
@@ -188,7 +163,6 @@ SUBROUTINE init_periodic_table()
   ptable(9) % vdw_radius = 1.35_dp
   ptable(9) % e_conv(0:3) = (/ 4, 5, 0, 0 /)
   ptable(9) % eht_param(0:3) = (/ -40.00_dp, -18.10_dp, z, z/)
-
 ! Neon
   ptable(10) % symbol = 'Ne'
   ptable(10) % name = 'Neon'
@@ -199,7 +173,6 @@ SUBROUTINE init_periodic_table()
   ptable(10) % vdw_radius = z
   ptable(10) % e_conv(0:3) = (/ 4, 6, 0, 0 /)
   ptable(10) % eht_param(0:3) = (/ -43.20_dp, -20.00_dp, z, z/)
-
 ! Sodium
   ptable(11) % symbol = 'Na'
   ptable(11) % name = 'Sodium'
@@ -210,7 +183,6 @@ SUBROUTINE init_periodic_table()
   ptable(11) % vdw_radius = z
   ptable(11) % e_conv(0:3) = (/ 5, 6, 0, 0 /)
   ptable(11) % eht_param(0:3) = (/ -5.10_dp, -3.00_dp, z, z/)
-
 ! Magnesium
   ptable(12) % symbol = 'Mg'
   ptable(12) % name = 'Magnesium'
@@ -221,7 +193,6 @@ SUBROUTINE init_periodic_table()
   ptable(12) % vdw_radius = z
   ptable(12) % e_conv(0:3) = (/ 6, 6, 0, 0 /)
   ptable(12) % eht_param(0:3) = (/ -9.00_dp, -4.50_dp, z, z/)
-
 ! Aluminium
   ptable(13) % symbol = 'Al'
   ptable(13) % name = 'Aluminium'
@@ -232,7 +203,6 @@ SUBROUTINE init_periodic_table()
   ptable(13) % vdw_radius = z
   ptable(13) % e_conv(0:3) = (/ 6, 7, 0, 0 /)
   ptable(13) % eht_param(0:3) = (/ -12.30_dp, -6.50_dp, z, z/)
-
 ! Silicon
   ptable(14) % symbol = 'Si'
   ptable(14) % name = 'Silicon'
@@ -243,7 +213,6 @@ SUBROUTINE init_periodic_table()
   ptable(14) % vdw_radius = z
   ptable(14) % e_conv(0:3) = (/ 6, 8, 0, 0 /)
   ptable(14) % eht_param(0:3) = (/ -17.30_dp, -9.20_dp, z, z/)
-
 ! Phosphorus
   ptable(15) % symbol = 'P '
   ptable(15) % name = 'Phosphorus'
@@ -254,7 +223,6 @@ SUBROUTINE init_periodic_table()
   ptable(15) % vdw_radius = 1.9_dp
   ptable(15) % e_conv(0:3) = (/ 6, 9, 0, 0 /)
   ptable(15) % eht_param(0:3) = (/ -18.60_dp, -14.00_dp, z, z/)
-
 ! Sulfur
   ptable(16) % symbol = 'S '
   ptable(16) % name = 'Sulfur'
@@ -265,7 +233,6 @@ SUBROUTINE init_periodic_table()
   ptable(16) % vdw_radius = 1.85_dp
   ptable(16) % e_conv(0:3) = (/ 6, 10, 0, 0 /)
   ptable(16) % eht_param(0:3) = (/ -20.00_dp, -11.00_dp, z, z/)
-
 ! Chlorine
   ptable(17) % symbol = 'Cl'
   ptable(17) % name = 'Chlorine'
@@ -276,7 +243,6 @@ SUBROUTINE init_periodic_table()
   ptable(17) % vdw_radius = 1.80_dp
   ptable(17) % e_conv(0:3) = (/ 6, 11, 0, 0 /)
   ptable(17) % eht_param(0:3) = (/ -26.30_dp, -14.20_dp, z, z/)
-
 ! Argon
   ptable(18) % symbol = 'Ar'
   ptable(18) % name = 'Argon'
@@ -287,7 +253,6 @@ SUBROUTINE init_periodic_table()
   ptable(18) % vdw_radius = 3.83_dp
   ptable(18) % e_conv(0:3) = (/ 6, 12, 0, 0 /)
   ptable(18) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Potassium
   ptable(19) % symbol = 'K '
   ptable(19) % name = 'Potassium'
@@ -298,7 +263,6 @@ SUBROUTINE init_periodic_table()
   ptable(19) % vdw_radius = z
   ptable(19) % e_conv(0:3) = (/ 7, 12, 0, 0 /)
   ptable(19) % eht_param(0:3) = (/ -4.34_dp, -2.73_dp, z, z/)
-
 ! Calcium
   ptable(20) % symbol = 'Ca'
   ptable(20) % name = 'Calcium'
@@ -309,7 +273,6 @@ SUBROUTINE init_periodic_table()
   ptable(20) % vdw_radius = z
   ptable(20) % e_conv(0:3) = (/ 8, 12, 0, 0 /)
   ptable(20) % eht_param(0:3) = (/ -7.00_dp, -4.00_dp, z, z/)
-
 ! Scandium
   ptable(21) % symbol = 'Sc'
   ptable(21) % name = 'Scandium'
@@ -320,7 +283,6 @@ SUBROUTINE init_periodic_table()
   ptable(21) % vdw_radius = z
   ptable(21) % e_conv(0:3) = (/ 8, 12, 1, 0 /)
   ptable(21) % eht_param(0:3) = (/ -8.87_dp, -2.75_dp, -8.51_dp, z/)
-
 ! Titanium
   ptable(22) % symbol = 'Ti'
   ptable(22) % name = 'Titanium'
@@ -331,7 +293,6 @@ SUBROUTINE init_periodic_table()
   ptable(22) % vdw_radius = z
   ptable(22) % e_conv(0:3) = (/ 8, 12, 2, 0 /)
   ptable(22) % eht_param(0:3) = (/ -8.97_dp, -5.44_dp, -10.81_dp, z/)
-
 ! Vanadium
   ptable(23) % symbol = 'V '
   ptable(23) % name = 'Vanadium'
@@ -342,7 +303,6 @@ SUBROUTINE init_periodic_table()
   ptable(23) % vdw_radius = z
   ptable(23) % e_conv(0:3) = (/ 8, 12, 3, 0 /)
   ptable(23) % eht_param(0:3) = (/ -8.81_dp, -5.52_dp, -11.00_dp, z/)
-
 ! Chromium
   ptable(24) % symbol = 'Cr'
   ptable(24) % name = 'Chromium'
@@ -353,7 +313,6 @@ SUBROUTINE init_periodic_table()
   ptable(24) % vdw_radius = z
   ptable(24) % e_conv(0:3) = (/ 7, 12, 5, 0 /)
   ptable(24) % eht_param(0:3) = (/ -8.66_dp, -5.24_dp, -11.22_dp, z/)
-
 ! Manganese
   ptable(25) % symbol = 'Mn'
   ptable(25) % name = 'Manganese'
@@ -364,7 +323,6 @@ SUBROUTINE init_periodic_table()
   ptable(25) % vdw_radius = z
   ptable(25) % e_conv(0:3) = (/ 8, 12, 5, 0 /)
   ptable(25) % eht_param(0:3) = (/ -9.75_dp, -5.89_dp, -11.67_dp, z/)
-
 ! Iron
   ptable(26) % symbol = 'Fe'
   ptable(26) % name = 'Iron'
@@ -375,7 +333,6 @@ SUBROUTINE init_periodic_table()
   ptable(26) % vdw_radius = z
   ptable(26) % e_conv(0:3) = (/ 8, 12, 6, 0 /)
   ptable(26) % eht_param(0:3) = (/ -9.10_dp, -5.32_dp, -12.60_dp, z/)
-
 ! Cobalt
   ptable(27) % symbol = 'Co'
   ptable(27) % name = 'Cobalt'
@@ -386,7 +343,6 @@ SUBROUTINE init_periodic_table()
   ptable(27) % vdw_radius = z
   ptable(27) % e_conv(0:3) = (/ 8, 12, 7, 0 /)
   ptable(27) % eht_param(0:3) = (/ -9.21_dp, -5.29_dp, -13.18_dp, z/)
-
 ! Nickel
   ptable(28) % symbol = 'Ni'
   ptable(28) % name = 'Nickel'
@@ -397,7 +353,6 @@ SUBROUTINE init_periodic_table()
   ptable(28) % vdw_radius = z
   ptable(28) % e_conv(0:3) = (/ 8, 12, 8, 0 /)
   ptable(28) % eht_param(0:3) = (/ -9.17_dp, -5.15_dp, -13.49_dp, z/)
-
 ! Copper
   ptable(29) % symbol = 'Cu'
   ptable(29) % name = 'Copper'
@@ -408,7 +363,6 @@ SUBROUTINE init_periodic_table()
   ptable(29) % vdw_radius = z
   ptable(29) % e_conv(0:3) = (/ 7, 12, 10, 0 /)
   ptable(29) % eht_param(0:3) = (/ -11.40_dp, -6.06_dp, -14.00_dp, z/)
-
 ! Zinc
   ptable(30) % symbol = 'Zn'
   ptable(30) % name = 'Zinc'
@@ -419,7 +373,6 @@ SUBROUTINE init_periodic_table()
   ptable(30) % vdw_radius = z
   ptable(30) % e_conv(0:3) = (/ 8, 12, 10, 0 /)
   ptable(30) % eht_param(0:3) = (/ -12.41_dp, -6.53_dp, z, z/)
-
 ! Gallium
   ptable(31) % symbol = 'Ga'
   ptable(31) % name = 'Gallium'
@@ -430,7 +383,6 @@ SUBROUTINE init_periodic_table()
   ptable(31) % vdw_radius = z
   ptable(31) % e_conv(0:3) = (/ 8, 13, 10, 0 /)
   ptable(31) % eht_param(0:3) = (/ -14.58_dp, -6.75_dp, z, z/)
-
 ! Germanium
   ptable(32) % symbol = 'Ge'
   ptable(32) % name = 'Germanium'
@@ -441,7 +393,6 @@ SUBROUTINE init_periodic_table()
   ptable(32) % vdw_radius = z
   ptable(32) % e_conv(0:3) = (/ 8, 14, 10, 0 /)
   ptable(32) % eht_param(0:3) = (/ -16.00_dp, -9.00_dp, z, z/)
-
 ! Arsenic
   ptable(33) % symbol = 'As'
   ptable(33) % name = 'Arsenic'
@@ -452,7 +403,6 @@ SUBROUTINE init_periodic_table()
   ptable(33) % vdw_radius = 2.0_dp
   ptable(33) % e_conv(0:3) = (/ 8, 15, 10, 0 /)
   ptable(33) % eht_param(0:3) = (/ -16.22_dp, -12.16_dp, z, z/)
-
 ! Selenium
   ptable(34) % symbol = 'Se'
   ptable(34) % name = 'Selenium'
@@ -463,7 +413,6 @@ SUBROUTINE init_periodic_table()
   ptable(34) % vdw_radius = 2.00_dp
   ptable(34) % e_conv(0:3) = (/ 8, 16, 10, 0 /)
   ptable(34) % eht_param(0:3) = (/ -20.50_dp, -14.40_dp, z, z/)
-
 ! Bromine
   ptable(35) % symbol = 'Br'
   ptable(35) % name = 'Bromine'
@@ -474,7 +423,6 @@ SUBROUTINE init_periodic_table()
   ptable(35) % vdw_radius = 1.95_dp
   ptable(35) % e_conv(0:3) = (/ 8, 17, 10, 0 /)
   ptable(35) % eht_param(0:3) = (/ -22.07_dp, -13.10_dp, z, z/)
-
 ! Krypton
   ptable(36) % symbol = 'Kr'
   ptable(36) % name = 'Krypton'
@@ -485,7 +433,6 @@ SUBROUTINE init_periodic_table()
   ptable(36) % vdw_radius = z
   ptable(36) % e_conv(0:3) = (/ 8, 18, 10, 0 /)
   ptable(36) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Rubidium
   ptable(37) % symbol = 'Rb'
   ptable(37) % name = 'Rubidium'
@@ -496,7 +443,6 @@ SUBROUTINE init_periodic_table()
   ptable(37) % vdw_radius = z
   ptable(37) % e_conv(0:3) = (/ 9, 18, 10, 0 /)
   ptable(37) % eht_param(0:3) = (/ -4.18_dp, -2.60_dp, z, z/)
-
 ! Strontium
   ptable(38) % symbol = 'Sr'
   ptable(38) % name = 'Strontium'
@@ -507,7 +453,6 @@ SUBROUTINE init_periodic_table()
   ptable(38) % vdw_radius = z
   ptable(38) % e_conv(0:3) = (/ 10, 18, 10, 0 /)
   ptable(38) % eht_param(0:3) = (/ -6.62_dp, -3.92_dp, z, z/)
-
 ! Yttrium
   ptable(39) % symbol = 'Y '
   ptable(39) % name = 'Yttrium'
@@ -518,7 +463,6 @@ SUBROUTINE init_periodic_table()
   ptable(39) % vdw_radius = z
   ptable(39) % e_conv(0:3) = (/ 10, 18, 11, 0 /)
   ptable(39) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Zirconium
   ptable(40) % symbol = 'Zr'
   ptable(40) % name = 'Zirconium'
@@ -529,7 +473,6 @@ SUBROUTINE init_periodic_table()
   ptable(40) % vdw_radius = z
   ptable(40) % e_conv(0:3) = (/ 10, 18, 12, 0 /)
   ptable(40) % eht_param(0:3) = (/ -8.00_dp, -5.40_dp, -10.20_dp, z/)
-
 ! Niobium
   ptable(41) % symbol = 'Nb'
   ptable(41) % name = 'Niobium'
@@ -540,7 +483,6 @@ SUBROUTINE init_periodic_table()
   ptable(41) % vdw_radius = z
   ptable(41) % e_conv(0:3) = (/ 9, 18, 14, 0 /)
   ptable(41) % eht_param(0:3) = (/ -10.10_dp, -6.86_dp, -12.10_dp, z/)
-
 ! Molybdenum
   ptable(42) % symbol = 'Mo'
   ptable(42) % name = 'Molybdenum'
@@ -551,7 +493,6 @@ SUBROUTINE init_periodic_table()
   ptable(42) % vdw_radius = z
   ptable(42) % e_conv(0:3) = (/ 9, 18, 15, 0 /)
   ptable(42) % eht_param(0:3) = (/ -8.34_dp, -5.25_dp, -10.50_dp, z/)
-
 ! Technetium
   ptable(43) % symbol = 'Tc'
   ptable(43) % name = 'Technetium'
@@ -562,7 +503,6 @@ SUBROUTINE init_periodic_table()
   ptable(43) % vdw_radius = z
   ptable(43) % e_conv(0:3) = (/ 9, 18, 16, 0 /)
   ptable(43) % eht_param(0:3) = (/ -10.07_dp, -5.40_dp, -12.82_dp, z/)
-
 ! Ruthenium
   ptable(44) % symbol = 'Ru'
   ptable(44) % name = 'Ruthenium'
@@ -573,7 +513,6 @@ SUBROUTINE init_periodic_table()
   ptable(44) % vdw_radius = z
   ptable(44) % e_conv(0:3) = (/ 9, 18, 17, 0 /)
   ptable(44) % eht_param(0:3) = (/ -10.40_dp, -6.87_dp, -14.90_dp, z/)
-
 ! Rhodium
   ptable(45) % symbol = 'Rh'
   ptable(45) % name = 'Rhodium'
@@ -584,7 +523,6 @@ SUBROUTINE init_periodic_table()
   ptable(45) % vdw_radius = z
   ptable(45) % e_conv(0:3) = (/ 9, 18, 18, 0 /)
   ptable(45) % eht_param(0:3) = (/ -8.09_dp, -4.57_dp, -12.50_dp, z/)
-
 ! Palladium
   ptable(46) % symbol = 'Pd'
   ptable(46) % name = 'Palladium'
@@ -595,7 +533,6 @@ SUBROUTINE init_periodic_table()
   ptable(46) % vdw_radius = z
   ptable(46) % e_conv(0:3) = (/ 8, 18, 20, 0 /)
   ptable(46) % eht_param(0:3) = (/ -7.32_dp, -3.75_dp, -12.02_dp, z/)
-
 ! Silver
   ptable(47) % symbol = 'Ag'
   ptable(47) % name = 'Silver'
@@ -606,7 +543,6 @@ SUBROUTINE init_periodic_table()
   ptable(47) % vdw_radius = z
   ptable(47) % e_conv(0:3) = (/ 9, 18, 20, 0 /)
   ptable(47) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Cadmium
   ptable(48) % symbol = 'Cd'
   ptable(48) % name = 'Cadmium'
@@ -617,7 +553,6 @@ SUBROUTINE init_periodic_table()
   ptable(48) % vdw_radius = z
   ptable(48) % e_conv(0:3) = (/ 10, 18, 20, 0 /)
   ptable(48) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Indium
   ptable(49) % symbol = 'In'
   ptable(49) % name = 'Indium'
@@ -628,7 +563,6 @@ SUBROUTINE init_periodic_table()
   ptable(49) % vdw_radius = z
   ptable(49) % e_conv(0:3) = (/ 10, 19, 20, 0 /)
   ptable(49) % eht_param(0:3) = (/ -12.60_dp, -6.19_dp, z, z/)
-
 ! Tin
   ptable(50) % symbol = 'Sn'
   ptable(50) % name = 'Tin'
@@ -639,7 +573,6 @@ SUBROUTINE init_periodic_table()
   ptable(50) % vdw_radius = z
   ptable(50) % e_conv(0:3) = (/ 10, 20, 20, 0 /)
   ptable(50) % eht_param(0:3) = (/ -16.16_dp, -8.32_dp, z, z/)
-
 ! Antimony
   ptable(51) % symbol = 'Sb'
   ptable(51) % name = 'Antimony'
@@ -650,7 +583,6 @@ SUBROUTINE init_periodic_table()
   ptable(51) % vdw_radius = 2.2_dp
   ptable(51) % e_conv(0:3) = (/ 10, 21, 20, 0 /)
   ptable(51) % eht_param(0:3) = (/ -18.80_dp, -11.70_dp, z, z/)
-
 ! Tellurium
   ptable(52) % symbol = 'Te'
   ptable(52) % name = 'Tellurium'
@@ -661,7 +593,6 @@ SUBROUTINE init_periodic_table()
   ptable(52) % vdw_radius = 2.20_dp
   ptable(52) % e_conv(0:3) = (/ 10, 22, 20, 0 /)
   ptable(52) % eht_param(0:3) = (/ -20.80_dp, -13.20_dp, z, z/)
-
 ! Iodine
   ptable(53) % symbol = 'I '
   ptable(53) % name = 'Iodine'
@@ -672,7 +603,6 @@ SUBROUTINE init_periodic_table()
   ptable(53) % vdw_radius = 2.15_dp
   ptable(53) % e_conv(0:3) = (/ 10, 23, 20, 0 /)
   ptable(53) % eht_param(0:3) = (/ -18.00_dp, -12.70_dp, z, z/)
-
 ! Xenon
   ptable(54) % symbol = 'Xe'
   ptable(54) % name = 'Xenon'
@@ -683,7 +613,6 @@ SUBROUTINE init_periodic_table()
   ptable(54) % vdw_radius = z
   ptable(54) % e_conv(0:3) = (/ 10, 24, 20, 0 /)
   ptable(54) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Cesium
   ptable(55) % symbol = 'Cs'
   ptable(55) % name = 'Cesium'
@@ -694,7 +623,6 @@ SUBROUTINE init_periodic_table()
   ptable(55) % vdw_radius = z
   ptable(55) % e_conv(0:3) = (/ 11, 24, 20, 0 /)
   ptable(55) % eht_param(0:3) = (/ -3.88_dp, -2.49_dp, z, z/)
-
 ! Barium
   ptable(56) % symbol = 'Ba'
   ptable(56) % name = 'Barium'
@@ -705,7 +633,6 @@ SUBROUTINE init_periodic_table()
   ptable(56) % vdw_radius = z
   ptable(56) % e_conv(0:3) = (/ 12, 24, 20, 0 /)
   ptable(56) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Lantanum
   ptable(57) % symbol = 'La'
   ptable(57) % name = 'Lantanum'
@@ -716,7 +643,6 @@ SUBROUTINE init_periodic_table()
   ptable(57) % vdw_radius = z
   ptable(57) % e_conv(0:3) = (/ 12, 24, 21, 0 /)
   ptable(57) % eht_param(0:3) = (/ -7.67_dp, -5.01_dp, -8.21_dp, z/)
-
 ! Cerium
   ptable(58) % symbol = 'Ce'
   ptable(58) % name = 'Cerium'
@@ -727,7 +653,6 @@ SUBROUTINE init_periodic_table()
   ptable(58) % vdw_radius = z
   ptable(58) % e_conv(0:3) = (/ 12, 24, 20, 2 /)
   ptable(58) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Praseodymium
   ptable(59) % symbol = 'Pr'
   ptable(59) % name = 'Praseodymium'
@@ -738,7 +663,6 @@ SUBROUTINE init_periodic_table()
   ptable(59) % vdw_radius = z
   ptable(59) % e_conv(0:3) = (/ 12, 24, 20, 3 /)
   ptable(59) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Neodymium
   ptable(60) % symbol = 'Nd'
   ptable(60) % name = 'Neodymium'
@@ -749,7 +673,6 @@ SUBROUTINE init_periodic_table()
   ptable(60) % vdw_radius = z
   ptable(60) % e_conv(0:3) = (/ 12, 24, 20, 4 /)
   ptable(60) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Promethium
   ptable(61) % symbol = 'Pm'
   ptable(61) % name = 'Promethium'
@@ -760,7 +683,6 @@ SUBROUTINE init_periodic_table()
   ptable(61) % vdw_radius = z
   ptable(61) % e_conv(0:3) = (/ 12, 24, 20, 5 /)
   ptable(61) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Samarium
   ptable(62) % symbol = 'Sm'
   ptable(62) % name = 'Samarium'
@@ -772,7 +694,6 @@ SUBROUTINE init_periodic_table()
   ptable(62) % e_conv(0:3) = (/ 12, 24, 20, 6 /)
   ptable(62) % eht_param(0:3) = (/ -4.86_dp, -4.86_dp, -6.06_dp, &
           -11.28_dp/)
-
 ! Europium
   ptable(63) % symbol = 'Eu'
   ptable(63) % name = 'Europium'
@@ -783,7 +704,6 @@ SUBROUTINE init_periodic_table()
   ptable(63) % vdw_radius = z
   ptable(63) % e_conv(0:3) = (/ 12, 24, 20, 7 /)
   ptable(63) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Gadolinium
   ptable(64) % symbol = 'Gd'
   ptable(64) % name = 'Gadolinium'
@@ -794,7 +714,6 @@ SUBROUTINE init_periodic_table()
   ptable(64) % vdw_radius = z
   ptable(64) % e_conv(0:3) = (/ 12, 24, 21, 7 /)
   ptable(64) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Terbium
   ptable(65) % symbol = 'Tb'
   ptable(65) % name = 'Terbium'
@@ -805,7 +724,6 @@ SUBROUTINE init_periodic_table()
   ptable(65) % vdw_radius = z
   ptable(65) % e_conv(0:3) = (/ 12, 24, 20, 9 /)
   ptable(65) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Dysprosium
   ptable(66) % symbol = 'Dy'
   ptable(66) % name = 'Dysprosium'
@@ -816,7 +734,6 @@ SUBROUTINE init_periodic_table()
   ptable(66) % vdw_radius = z
   ptable(66) % e_conv(0:3) = (/ 12, 24, 20, 10 /)
   ptable(66) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Holmium
   ptable(67) % symbol = 'Ho'
   ptable(67) % name = 'Holmium'
@@ -827,7 +744,6 @@ SUBROUTINE init_periodic_table()
   ptable(67) % vdw_radius = z
   ptable(67) % e_conv(0:3) = (/ 12, 24, 20, 11 /)
   ptable(67) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Erbium
   ptable(68) % symbol = 'Er'
   ptable(68) % name = 'Erbium'
@@ -838,7 +754,6 @@ SUBROUTINE init_periodic_table()
   ptable(68) % vdw_radius = z
   ptable(68) % e_conv(0:3) = (/ 12, 24, 20, 12 /)
   ptable(68) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Thulium
   ptable(69) % symbol = 'Tm'
   ptable(69) % name = 'Thulium'
@@ -849,7 +764,6 @@ SUBROUTINE init_periodic_table()
   ptable(69) % vdw_radius = z
   ptable(69) % e_conv(0:3) = (/ 12, 24, 20, 13 /)
   ptable(69) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Ytterbium
   ptable(70) % symbol = 'Yb'
   ptable(70) % name = 'Ytterbium'
@@ -861,7 +775,6 @@ SUBROUTINE init_periodic_table()
   ptable(70) % e_conv(0:3) = (/ 12, 24, 20, 14 /)
   ptable(70) % eht_param(0:3) = (/ -5.35_dp, -5.35_dp, -5.21_dp, &
           -13.86_dp/)
-
 ! Lutetium
   ptable(71) % symbol = 'Lu'
   ptable(71) % name = 'Lutetium'
@@ -873,7 +786,6 @@ SUBROUTINE init_periodic_table()
   ptable(71) % e_conv(0:3) = (/ 12, 24, 21, 14 /)
   ptable(71) % eht_param(0:3) = (/ -6.05_dp, -6.05_dp, -5.12_dp, &
           -22.40_dp/)
-
 ! Hafnium
   ptable(72) % symbol = 'Hf'
   ptable(72) % name = 'Hafnium'
@@ -884,7 +796,6 @@ SUBROUTINE init_periodic_table()
   ptable(72) % vdw_radius = z
   ptable(72) % e_conv(0:3) = (/ 12, 24, 22, 14 /)
   ptable(72) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Tantalum
   ptable(73) % symbol = 'Ta'
   ptable(73) % name = 'Tantalum'
@@ -895,7 +806,6 @@ SUBROUTINE init_periodic_table()
   ptable(73) % vdw_radius = z
   ptable(73) % e_conv(0:3) = (/ 12, 24, 23, 14 /)
   ptable(73) % eht_param(0:3) = (/ -10.10_dp, -6.86_dp, -12.10_dp, z/)
-
 ! Tungsten
   ptable(74) % symbol = 'W '
   ptable(74) % name = 'Tungsten'
@@ -906,7 +816,6 @@ SUBROUTINE init_periodic_table()
   ptable(74) % vdw_radius = z
   ptable(74) % e_conv(0:3) = (/ 12, 24, 24, 14 /)
   ptable(74) % eht_param(0:3) = (/ -8.26_dp, -5.17_dp, -10.37_dp, z/)
-
 ! Rhenium
   ptable(75) % symbol = 'Re'
   ptable(75) % name = 'Rhenium'
@@ -917,7 +826,6 @@ SUBROUTINE init_periodic_table()
   ptable(75) % vdw_radius = z
   ptable(75) % e_conv(0:3) = (/ 12, 24, 25, 14 /)
   ptable(75) % eht_param(0:3) = (/ -9.36_dp, -5.96_dp, -12.66_dp, z/)
-
 ! Osmium
   ptable(76) % symbol = 'Os'
   ptable(76) % name = 'Osmium'
@@ -928,7 +836,6 @@ SUBROUTINE init_periodic_table()
   ptable(76) % vdw_radius = z
   ptable(76) % e_conv(0:3) = (/ 12, 24, 26, 14 /)
   ptable(76) % eht_param(0:3) = (/ -8.17_dp, -4.81_dp, -11.84_dp, z/)
-
 ! Iridium
   ptable(77) % symbol = 'Ir'
   ptable(77) % name = 'Iridium'
@@ -939,7 +846,6 @@ SUBROUTINE init_periodic_table()
   ptable(77) % vdw_radius = z
   ptable(77) % e_conv(0:3) = (/ 12, 24, 27, 14 /)
   ptable(77) % eht_param(0:3) = (/ -11.36_dp, -4.50_dp, -12.17_dp, z/)
-
 ! Platinum
   ptable(78) % symbol = 'Pt'
   ptable(78) % name = 'Platinum'
@@ -951,7 +857,6 @@ SUBROUTINE init_periodic_table()
   ptable(78) % e_conv(0:3) = (/ 11, 24, 29, 14 /)
   ptable(78) % eht_param(0:3) = (/ -9.077_dp, -5.475_dp, -12.59_dp, &
           z/)
-
 ! Gold
   ptable(79) % symbol = 'Au'
   ptable(79) % name = 'Gold'
@@ -963,7 +868,6 @@ SUBROUTINE init_periodic_table()
   ptable(79) % e_conv(0:3) = (/ 11, 24, 30, 14 /)
   ptable(79) % eht_param(0:3) = (/ -10.92_dp, -5.55_dp, -15.076_dp, &
           z/)
-
 ! Mercury
   ptable(80) % symbol = 'Hg'
   ptable(80) % name = 'Mercury'
@@ -974,7 +878,6 @@ SUBROUTINE init_periodic_table()
   ptable(80) % vdw_radius = z
   ptable(80) % e_conv(0:3) = (/ 12, 24, 30, 14 /)
   ptable(80) % eht_param(0:3) = (/ -13.68_dp, -8.47_dp, -17.50_dp, z/)
-
 ! Thallium
   ptable(81) % symbol = 'Tl'
   ptable(81) % name = 'Thallium'
@@ -985,7 +888,6 @@ SUBROUTINE init_periodic_table()
   ptable(81) % vdw_radius = z
   ptable(81) % e_conv(0:3) = (/ 12, 25, 30, 14 /)
   ptable(81) % eht_param(0:3) = (/ -11.60_dp, -5.80_dp, z, z/)
-
 ! Lead
   ptable(82) % symbol = 'Pb'
   ptable(82) % name = 'Lead'
@@ -996,7 +898,6 @@ SUBROUTINE init_periodic_table()
   ptable(82) % vdw_radius = z
   ptable(82) % e_conv(0:3) = (/ 12, 26, 30, 14 /)
   ptable(82) % eht_param(0:3) = (/ -15.70_dp, -8.00_dp, z, z/)
-
 ! Bismuth
   ptable(83) % symbol = 'Bi'
   ptable(83) % name = 'Bismuth'
@@ -1007,7 +908,6 @@ SUBROUTINE init_periodic_table()
   ptable(83) % vdw_radius = z
   ptable(83) % e_conv(0:3) = (/ 12, 27, 30, 14 /)
   ptable(83) % eht_param(0:3) = (/ -15.19_dp, -7.79_dp, z, z/)
-
 ! Polonium
   ptable(84) % symbol = 'Po'
   ptable(84) % name = 'Polonium'
@@ -1018,7 +918,6 @@ SUBROUTINE init_periodic_table()
   ptable(84) % vdw_radius = z
   ptable(84) % e_conv(0:3) = (/ 12, 28, 30, 14 /)
   ptable(84) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Astatine
   ptable(85) % symbol = 'At'
   ptable(85) % name = 'Astatine'
@@ -1029,7 +928,6 @@ SUBROUTINE init_periodic_table()
   ptable(85) % vdw_radius = z
   ptable(85) % e_conv(0:3) = (/ 12, 29, 30, 14 /)
   ptable(85) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Radon
   ptable(86) % symbol = 'Rn'
   ptable(86) % name = 'Radon'
@@ -1040,7 +938,6 @@ SUBROUTINE init_periodic_table()
   ptable(86) % vdw_radius = z
   ptable(86) % e_conv(0:3) = (/ 12, 30, 30, 14 /)
   ptable(86) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Francium
   ptable(87) % symbol = 'Fr'
   ptable(87) % name = 'Francium'
@@ -1051,7 +948,6 @@ SUBROUTINE init_periodic_table()
   ptable(87) % vdw_radius = z
   ptable(87) % e_conv(0:3) = (/ 13, 30, 30, 14 /)
   ptable(87) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Radium
   ptable(88) % symbol = 'Ra'
   ptable(88) % name = 'Radium'
@@ -1062,7 +958,6 @@ SUBROUTINE init_periodic_table()
   ptable(88) % vdw_radius = z
   ptable(88) % e_conv(0:3) = (/ 14, 30, 30, 14 /)
   ptable(88) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Actinium
   ptable(89) % symbol = 'Ac'
   ptable(89) % name = 'Actinium'
@@ -1073,7 +968,6 @@ SUBROUTINE init_periodic_table()
   ptable(89) % vdw_radius = z
   ptable(89) % e_conv(0:3) = (/ 14, 30, 31, 14 /)
   ptable(89) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Thorium
   ptable(90) % symbol = 'Th'
   ptable(90) % name = 'Thorium'
@@ -1085,7 +979,6 @@ SUBROUTINE init_periodic_table()
   ptable(90) % e_conv(0:3) = (/ 14, 30, 32, 14 /)
   ptable(90) % eht_param(0:3) = (/ -5.39_dp, -5.39_dp, -10.11_dp, &
           -9.64_dp/)
-
 ! Proctactinium
   ptable(91) % symbol = 'Pa'
   ptable(91) % name = 'Proctactinium'
@@ -1096,7 +989,6 @@ SUBROUTINE init_periodic_table()
   ptable(91) % vdw_radius = z
   ptable(91) % e_conv(0:3) = (/ 14, 30, 31, 16 /)
   ptable(91) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Uranium
   ptable(92) % symbol = 'U '
   ptable(92) % name = 'Uranium'
@@ -1108,7 +1000,6 @@ SUBROUTINE init_periodic_table()
   ptable(92) % e_conv(0:3) = (/ 14, 30, 31, 17 /)
   ptable(92) % eht_param(0:3) = (/ -5.50_dp, -5.50_dp, -9.19_dp, &
           -10.62_dp/)
-
 ! Neptunium
   ptable(93) % symbol = 'Np'
   ptable(93) % name = 'Neptunium'
@@ -1119,7 +1010,6 @@ SUBROUTINE init_periodic_table()
   ptable(93) % vdw_radius = z
   ptable(93) % e_conv(0:3) = (/ 14, 30, 31, 18 /)
   ptable(93) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Plutonium
   ptable(94) % symbol = 'Pu'
   ptable(94) % name = 'Plutonium'
@@ -1130,7 +1020,6 @@ SUBROUTINE init_periodic_table()
   ptable(94) % vdw_radius = z
   ptable(94) % e_conv(0:3) = (/ 14, 30, 30, 20 /)
   ptable(94) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Americum
   ptable(95) % symbol = 'Am'
   ptable(95) % name = 'Americum'
@@ -1141,7 +1030,6 @@ SUBROUTINE init_periodic_table()
   ptable(95) % vdw_radius = z
   ptable(95) % e_conv(0:3) = (/ 14, 30, 30, 21 /)
   ptable(95) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Curium
   ptable(96) % symbol = 'Cm'
   ptable(96) % name = 'Curium'
@@ -1152,7 +1040,6 @@ SUBROUTINE init_periodic_table()
   ptable(96) % vdw_radius = z
   ptable(96) % e_conv(0:3) = (/ 14, 30, 31, 21 /)
   ptable(96) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Berkelium
   ptable(97) % symbol = 'Bk'
   ptable(97) % name = 'Berkelium'
@@ -1163,7 +1050,6 @@ SUBROUTINE init_periodic_table()
   ptable(97) % vdw_radius = z
   ptable(97) % e_conv(0:3) = (/ 14, 30, 31, 22 /)
   ptable(97) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Californium
   ptable(98) % symbol = 'Cf'
   ptable(98) % name = 'Californium'
@@ -1174,7 +1060,6 @@ SUBROUTINE init_periodic_table()
   ptable(98) % vdw_radius = z
   ptable(98) % e_conv(0:3) = (/ 14, 30, 30, 24 /)
   ptable(98) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Einsteinium
   ptable(99) % symbol = 'Es'
   ptable(99) % name = 'Einsteinium'
@@ -1185,7 +1070,6 @@ SUBROUTINE init_periodic_table()
   ptable(99) % vdw_radius = z
   ptable(99) % e_conv(0:3) = (/ 14, 30, 30, 25 /)
   ptable(99) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Fermium
   ptable(100) % symbol = 'Fm'
   ptable(100) % name = 'Fermium'
@@ -1196,7 +1080,6 @@ SUBROUTINE init_periodic_table()
   ptable(100) % vdw_radius = z
   ptable(100) % e_conv(0:3) = (/ 14, 30, 30, 26 /)
   ptable(100) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Mendelevium
   ptable(101) % symbol = 'Md'
   ptable(101) % name = 'Mendelevium'
@@ -1207,7 +1090,6 @@ SUBROUTINE init_periodic_table()
   ptable(101) % vdw_radius = z
   ptable(101) % e_conv(0:3) = (/ 14, 30, 30, 27 /)
   ptable(101) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Nobelium
   ptable(102) % symbol = 'No'
   ptable(102) % name = 'Nobelium'
@@ -1218,7 +1100,6 @@ SUBROUTINE init_periodic_table()
   ptable(102) % vdw_radius = z
   ptable(102) % e_conv(0:3) = (/ 14, 30, 30, 28 /)
   ptable(102) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Lawrencium
   ptable(103) % symbol = 'Lr'
   ptable(103) % name = 'Lawrencium'
@@ -1229,7 +1110,6 @@ SUBROUTINE init_periodic_table()
   ptable(103) % vdw_radius = z
   ptable(103) % e_conv(0:3) = (/ 14, 30, 31, 28 /)
   ptable(103) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Unnilquadium
   ptable(104) % symbol = 'Uq'
   ptable(104) % name = 'Unnilquadium'
@@ -1240,7 +1120,6 @@ SUBROUTINE init_periodic_table()
   ptable(104) % vdw_radius = z
   ptable(104) % e_conv(0:3) = (/ 14, 30, 32, 28 /)
   ptable(104) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Unnilpentium
   ptable(105) % symbol = 'Up'
   ptable(105) % name = 'Unnilpentium'
@@ -1251,7 +1130,6 @@ SUBROUTINE init_periodic_table()
   ptable(105) % vdw_radius = z
   ptable(105) % e_conv(0:3) = (/ 14, 30, 33, 28 /)
   ptable(105) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Unnilhexium
   ptable(106) % symbol = 'Uh'
   ptable(106) % name = 'Unnilhexium'
@@ -1262,16 +1140,12 @@ SUBROUTINE init_periodic_table()
   ptable(106) % vdw_radius = z
   ptable(106) % e_conv(0:3) = (/ 14, 30, 34, 28 /)
   ptable(106) % eht_param(0:3) = (/ z, z, z, z/)
-
 ! Initialize heat of formation
   CALL init_eheat
 ! Initialize gyromagnetic ratio 
   CALL init_gratio
-
   table_is_initialized=1
-
 END SUBROUTINE init_periodic_table
-
 ! *****************************************************************************
 SUBROUTINE init_eheat 
 ! All values in kcal/mol
@@ -1490,9 +1364,7 @@ SUBROUTINE init_eheat
   ptable(105) % heat_of_formation = z
 ! Unnilhexium
   ptable(106) % heat_of_formation = z
-
 END SUBROUTINE init_eheat 
-
 ! *****************************************************************************
 SUBROUTINE init_gratio
 ! D. M. Granty and R. K. Harris, Encyclopedia of Nuclear 
@@ -1821,8 +1693,5 @@ SUBROUTINE init_gratio
 ! Unnilhexium
   ptable(106) % gyrom_ratio = 0.0_dp
   ptable(106) % gyrom_ratio_isotope = 0
-
 END SUBROUTINE init_gratio
-
 END MODULE periodic_table
-

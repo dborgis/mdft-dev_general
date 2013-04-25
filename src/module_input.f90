@@ -3,13 +3,10 @@ module input
   implicit none
   character (len = 100) , allocatable , dimension (:) :: input_line ! array containing all input lines
   integer(i2b):: TotalNumberOfInputLines
-
   private
   public :: input_line, input_dp, input_int, TotalNumberOfInputLines,input_log, input_char
   contains
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 REAL(DP) PURE FUNCTION INPUT_DP( That)
   implicit none
   character(*), intent(in) :: That
@@ -19,9 +16,7 @@ REAL(DP) PURE FUNCTION INPUT_DP( That)
     if( input_line( i)( 1:j) == That ) read ( input_line (i) (j+4:j+50) , * ) input_dp
   end do
 END FUNCTION INPUT_DP
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 INTEGER(I2B) PURE FUNCTION INPUT_INT( That)
   implicit none
   character(*), intent(in) :: That
@@ -31,9 +26,7 @@ INTEGER(I2B) PURE FUNCTION INPUT_INT( That)
     if( input_line( i)( 1:j) == That ) read ( input_line (i) (j+4:j+50) , * ) input_int
   end do
 END FUNCTION INPUT_INT
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 LOGICAL FUNCTION INPUT_LOG( That)
   implicit none
   character(*), intent(in) :: That
@@ -55,9 +48,7 @@ LOGICAL FUNCTION INPUT_LOG( That)
   if( j == 1 ) input_log = .true.
   if( j == 2 ) input_log = .false.
 END FUNCTION INPUT_LOG
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 CHARACTER(50) PURE FUNCTION INPUT_CHAR( That)
   implicit none
   character(*), intent(in) :: That
@@ -67,6 +58,5 @@ CHARACTER(50) PURE FUNCTION INPUT_CHAR( That)
     if( input_line( i)( 1:j) == That ) read ( input_line (i) (j+4:j+50) , * ) input_char
   end do
 END FUNCTION INPUT_CHAR
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 end module input

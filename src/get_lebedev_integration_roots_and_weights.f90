@@ -5,76 +5,39 @@ use input , only : input_line, input_int
 use constants , only : fourpi
 use system , only : nb_omega
 implicit none
-
 !real (dp) , allocatable , dimension (: ), intent(out) :: weight_leb , x_leb , y_leb , z_leb
-
-
 real (dp) :: a, b, v
-
 integer(i2b) ::  j , i, counter !dummy
-
-
-
 counter=0
-
-
-
-
 nb_omega = input_int( 'order_of_quadrature')
-
-
-
-
-
 allocate (x_leb ( nb_omega ) )
 allocate (y_leb ( nb_omega ) )
 allocate (z_leb ( nb_omega ) )
 allocate (weight_leb ( nb_omega ) )
-
-
-
 if (nb_omega==6) then
-
   
   V=1.0_dp/6.0_dp
   Call GEN_OH( 1, x_leb, y_leb, z_leb, weight_leb, A, B, V)
   weight_leb=fourpi*weight_leb  
 open(11, file='output/lebedev6.dat')
-
 write(11, * ) x_leb !, y_leb , z_leb , weight_leb 
-
  close(11)
-
 return
-
 end if
-
-
-
 if (nb_omega==14) then
-
   
   V=2.0_dp/30.0_dp
   Call GEN_OH( 1, x_leb, y_leb, z_leb, weight_leb, A, B, V)
   V=3.0_dp/40.0_dp
   Call GEN_OH( 3 , x_leb, y_leb, z_leb, weight_leb, A, B, V)
   weight_leb=fourpi*weight_leb  
-
-
 open(11, file='output/lebedev.dat')
-
 write(11, * ) x_leb !, y_leb , z_leb , weight_leb 
-
  close(11)
-
 return
  
 end if
-
-
-
 if (nb_omega==26) then
-
    
    V=1.0_dp/21.0_dp!0.4761904761904762D-1
    Call GEN_OH( 1, x_leb, y_leb, z_leb, weight_leb, A, B, V)
@@ -84,18 +47,11 @@ if (nb_omega==26) then
    Call GEN_OH( 3, x_leb, y_leb, z_leb, weight_leb, A, B, V)
    weight_leb=fourpi*weight_leb   
 open(11, file='output/lebedev26.dat')
-
 write(11, * ) x_leb !, y_leb , z_leb , weight_leb 
-
  close(11)
-
 return
-
 end if
-
-
 if (nb_omega==38) then
-
    
    V=1.0_dp/105.0_dp!0.9523809523809524D-2
    Call GEN_OH( 1, x_leb, y_leb, z_leb, weight_leb, A, B, V)
@@ -106,30 +62,18 @@ if (nb_omega==38) then
    Call GEN_OH( 5, x_leb, y_leb, z_leb, weight_leb, A, B, V)
    weight_leb=fourpi*weight_leb
 open(11, file='output/lebedev38.dat')
-
 write(11, * ) x_leb !, y_leb , z_leb , weight_leb 
  close(11)
-
    RETURN
-
 end if
  
 contains
-
 subroutine gen_oh(code, x_leb, y_leb, z_leb, weight_leb, a, b, v)
-
 implicit none
-
 real(dp), dimension (:) ,intent(out) :: weight_leb , x_leb , y_leb , z_leb
-
 real (dp) :: a, b, v
-
 integer (i2b) :: code
-
-
-
 if (code == 1 ) then
-
        a=1.0_dp
        x_leb(counter+1) =  a
        y_leb(counter+1) =  0.0_dp
@@ -157,8 +101,6 @@ if (code == 1 ) then
        weight_leb(counter+6) =  v
        counter=counter+6
 end if
-
-
 if ( code == 2 ) then
        a=sqrt(0.5_dp)
        x_leb(counter+1) =  0.0_dp
@@ -211,10 +153,7 @@ if ( code == 2 ) then
        weight_leb(counter+12) =  v
        counter=counter+12
 end if
-
-
 if ( code==3 ) then
-
        a = sqrt(1d0/3d0)
        x_leb(counter+1) =  a
        y_leb(counter+1) =  a
@@ -249,11 +188,8 @@ if ( code==3 ) then
        z_leb(counter+8) = -a
        weight_leb(counter+8) =  v
        counter=counter+8
-
 end if
-
 if ( code ==4 ) then
-
       b = sqrt(1d0 - 2d0*a*a)
        x_leb(counter+1) =  a
        y_leb(counter+1) =  a
@@ -352,13 +288,8 @@ if ( code ==4 ) then
        z_leb(counter+24) = -a
        weight_leb(counter+24) =  v
        counter=counter+24
-
-
 end if
-
-
 if ( code==5 ) then
-
        b=sqrt(1d0-a*a)
        x_leb(counter+1) =  a
        y_leb(counter+1) =  b
@@ -457,10 +388,6 @@ if ( code==5 ) then
        z_leb(counter+24) = -a
        weight_leb(counter+24) =  v
        counter=counter+24
-
-
 end if 
-
 end subroutine gen_oh
-
 end subroutine

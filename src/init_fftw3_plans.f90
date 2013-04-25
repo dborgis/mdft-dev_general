@@ -1,13 +1,10 @@
 ! this subroutine initiates the plans needed by fftw3.
 ! it also allocates the input and output arrays of fftw3.
-
 subroutine init_fftw3_plans
-
   use fft, only: in_forward, out_forward, out_backward, in_backward, plan_forward, plan_backward
   use system, only: nfft1, nfft2, nfft3
  
   implicit none
-
 !COPY OF /USR/INCLUDE/FFTW3.F
       INTEGER FFTW_R2HC
       PARAMETER (FFTW_R2HC=0)
@@ -81,17 +78,13 @@ subroutine init_fftw3_plans
       PARAMETER (FFTW_NO_FIXED_RADIX_LARGE_N=524288)
       INTEGER FFTW_ALLOW_PRUNING
       PARAMETER (FFTW_ALLOW_PRUNING=1048576)
-
   ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
   ! or needed as input for inverse FFT (in_backward) etc.
-
   allocate ( in_forward   ( nfft1      , nfft2 , nfft3 ) )
   allocate ( out_forward  ( nfft1/2 +1 , nfft2 , nfft3 ) )
   allocate ( out_backward ( nfft1      , nfft2 , nfft3 ) )
   allocate ( in_backward  ( nfft1/2 +1 , nfft2 , nfft3 ) )
-
   ! prepare plans needed by fftw3
   call dfftw_plan_dft_r2c_3d ( plan_forward  , nfft1 , nfft2 , nfft3 , in_forward , out_forward , FFTW_MEASURE )
   call dfftw_plan_dft_c2r_3d ( plan_backward , nfft1 , nfft2 , nfft3 , in_backward , out_backward , FFTW_MEASURE )
-
 end subroutine init_fftw3_plans

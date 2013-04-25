@@ -10,7 +10,6 @@ module mod_lj
     use input , only : input_line
     implicit none
     integer(i2b), private :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
-
     contains
     
         subroutine init
@@ -31,7 +30,6 @@ module mod_lj
             integer(i2b) ::  i_mol, i_solv
             real(dp):: dx, dy, dz ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
             integer(i2b) :: solute_site, solvent_site
-
             ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species ) 
             ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER ONLY TODO
             ! test if this simplification is true and stop if not
@@ -56,10 +54,8 @@ module mod_lj
                     stop
                 end if
             end block
-
             !> initiate
             call cpu_time(time0)
-
             !> Test if the supercell is big enough considering the LJ range (given by sigma).
             ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
             ! It would have no sense to have a box dimension < 2.5 sigma
@@ -70,7 +66,6 @@ module mod_lj
                 print*,'MDFT stops now.'
                 stop
             end if
-
             do species = 1, nb_species
                 do solvent_site = 1, nb_solvent_sites
                     ids = id_solv(solvent_site)
@@ -97,7 +92,6 @@ module mod_lj
                                     V_node = V_node + vlj( geometric_mean( eps_solv(ids), eps_mol(idm) ),&
                                                            arithmetic_mean( sig_solv(ids), sig_mol(idm) ),&
                                                            norm2([dx,dy,dz]) ) ! rules of Lorentz-Berthelot
-
                                     if (V_node >= 100.0_dp) then ! limit maximum value of Vlj to 100
                                         V_node = 100.0_dp ! TODO magic number
                                         exit
@@ -133,7 +127,6 @@ module mod_lj
             
             call cpu_time(time1)
             print *, 'Vext_lj : min = ' , minval(Vext_lj) , ' ; max = ' , maxval(Vext_lj) , ' ; in (sec) ' , time1-time0
-
         end subroutine
         
         pure function vlj(eps,sig,d)
@@ -145,14 +138,12 @@ module mod_lj
             div = (sig/d)**6
             vlj = 4._dp*eps*div*(div-1._dp)
         end function
-
         pure function arithmetic_mean( A, B)
             ! = sum_i^N a_i/N
             real(dp) :: arithmetic_mean
             real(dp), intent(in) :: A, B
             arithmetic_mean = (A+B)/2._dp
         end function
-
         pure function geometric_mean( A, B)
             ! = (product_i^N a_i)^(1/N)
             real(dp) :: geometric_mean

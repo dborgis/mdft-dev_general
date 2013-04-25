@@ -6,7 +6,6 @@
 ! 2/ on détermine les huit points de la grille discrete qui entourent notre point
 ! 3/ on en déduit l'interpolation trilineaire. La forme très simple utilisée pour le calcul est due au travail dans l'espace des indices
 ! ainsi on a toujours un pas entre les indices discrets = 1.
-
 subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
  use precision_kinds , only : dp , i2b
  use system, only : V_coulomb, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, deltay, deltaz
@@ -37,13 +36,10 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
  omt = 1.0_dp-t
  omu = 1.0_dp-u
  omv = 1.0_dp-v
-
-
 ! 8 points qui entourent le point dont on veut l'interpolation
  j = int(xi)
  k = int(yi)
  l = int(zi)
-
  if (j==0) then
   j=nfft1
   jp1=1
@@ -55,7 +51,6 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
   j=j-nfft1
   jp1 = j+1
  end if
-
  if (k==0) then
   k=nfft2
   kp1=1
@@ -67,7 +62,6 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
   k=k-nfft2
   kp1 = k+1
  end if
-
  if (l==0) then
   l=nfft3
   lp1=1
@@ -79,7 +73,6 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
   l=l-nfft3
   lp1 = l+1
  end if
-
  ! Vi potentiel en chacun des huits points qui entourent notre point de coordonnees x y z
  V1 = V_coulomb(j,k,l)
  V2 = V_coulomb(jp1,k,l)
@@ -91,5 +84,4 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
  V8 = V_coulomb(jp1,kp1,lp1)
  
  V_interpolated = omt*omu*omv*V1 + t*omu*omv*V2 + omt*u*omv*V3 + omt*omu*v*V4 + t*u*omv*V5 + omt*u*v*V6 + t*omu*v*V7 + t*u*v*V8
-
 end subroutine trilinear_interpolation_v

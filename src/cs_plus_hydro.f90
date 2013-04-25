@@ -1,7 +1,6 @@
 ! this subroutine computes the radial excess free energy + its associated hydrophobic part.
 ! TODO This subroutine should be merged in one way or another with cs_from_dcf
 subroutine cs_plus_hydro
-
   use precision_kinds , only : dp , i2b
   use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s , kBT , delta_k , nb_omega , nb_species,n_0,nb_psi,Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi
@@ -22,7 +21,6 @@ subroutine cs_plus_hydro
   
   integer(i2b) :: icg,i,j,k,o,l,m,p ! dummy for loops
   
-
   real(dp) :: nbar ! temp for local coarse grained n
   
   real(dp), allocatable, dimension(:,:,:) :: delta_n ! =n-1
@@ -54,9 +52,7 @@ subroutine cs_plus_hydro
   real(dp) :: delta_n_ijk ! dummy for local delta_n 
   real(dp):: psi ! local cg_vect
   
-
   call cpu_time(time0)
-
   if (input_log('bridge_hard_sphere')) then
     print*,'Chandler Version of Hydrophobicity is not consistent with the use of hard sphere bridge, be aware of what you are doing'
   end if
@@ -72,15 +68,11 @@ subroutine cs_plus_hydro
   gamma_0 = gamma_0/10.0_dp  !10. !10  22 is good for R=10A
   R_cg = R_cg
   !TEST ZONE STOP
-
-
   ! total number of kpoints and volume per kpoint
   Nk = real( nfft1 * nfft2 * nfft3 ,dp)
   DeltaVk = DeltaV / Nk!twopi**3/(Lx*ly*Lz*Nk)!
-
   
   
-
   fact_n = DeltaV * n_0 ! integration factor
   prefactor = - R_cg ** 2 / 2.0_dp ! dummy for later in the gaussian in k space g(k)=exp(prefactor*k2)
   
@@ -114,7 +106,6 @@ subroutine cs_plus_hydro
   ! the coarse-grained delta_n is simply delta_n multiplied by a gaussian distribution of empirical
   allocate ( delta_nbark ( nfft1/2+1 , nfft2 , nfft3 ) )
   delta_nbark = delta_nk * exp( prefactor * k2 ) ! ~n=n*exp(prefactor*k²)
-
   ! surface energy (cahn hilliard part of the intrinsic excess energy)
   S_cg = 0.0_dp
   allocate ( dS_cgk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
@@ -137,7 +128,6 @@ subroutine cs_plus_hydro
     end do
   end do
   print *, 'S_cg in k space = ' , S_cg
-
   
   ! gradient of delta_nbar in kspace
   ! remember that the fourier transform of the gradient of f(r) is i*vector_k*f(k)
@@ -179,7 +169,6 @@ subroutine cs_plus_hydro
     end do
   end do
   
-
   
   ! coarse grain V_nk
   allocate( V_nbark ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
@@ -222,7 +211,6 @@ subroutine cs_plus_hydro
   call dfftw_execute(plan_backward)
   allocate(gradz_delta_nbar(nfft1,nfft2,nfft3))
   gradz_delta_nbar = out_backward/Nk
-
   ! compute coarse grained free energy and gradient small part
   allocate ( dF_cg ( nfft1 , nfft2 , nfft3 ) )
   F_cg = 0.0_dp
@@ -244,19 +232,12 @@ subroutine cs_plus_hydro
       end do
     end do
   end do
-
-
 !large gradient part
   S_cg = 3.0_dp/2.0_dp*d_0*gamma_0*DeltaV *sum( gradx_delta_nbar**2 + grady_delta_nbar**2&
                   + gradz_delta_nbar**2 )
-
-
-
   deallocate(gradx_delta_nbar)
   deallocate(grady_delta_nbar)
   deallocate(gradz_delta_nbar)
-
-
   print *, 'F_CG =  ',F_CG
   print *, 'S_CG =  ',S_CG
   
@@ -288,7 +269,6 @@ subroutine cs_plus_hydro
     print *, 'nb_species /= 1 and this is not implemented yet in cs_plus_hydro.f90'
     stop
   end if
-
   ! compute final FF and dF
   Fint = 0.0_dp
   icg = 0
@@ -308,7 +288,6 @@ subroutine cs_plus_hydro
       end do
     end do
   end do
-
   
   ! conclude
   FF = FF + Fint + F_cg + S_cg
@@ -317,5 +296,4 @@ subroutine cs_plus_hydro
   call cpu_time ( time1 )
   write(*,*) 'Fexc(rad)   = ' , Fint , 'computed in (sec)'
   write(*,*) 'Fexc(rad+cg)= ' , F_cg + S_cg , 'computed in (sec)' , time1 - time0
-
 end subroutine cs_plus_hydro

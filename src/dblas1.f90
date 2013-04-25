@@ -34,7 +34,6 @@ function dasum ( n, x, incx )
   real x(*)
 !
   dasum = sum ( abs ( x(1:1+(n-1)*incx:incx) ) )
-
   return
 end
 subroutine daxpy ( n, da, dx, incx, dy, incy )
@@ -81,14 +80,12 @@ subroutine daxpy ( n, da, dx, incx, dy, incy )
    30 continue
   if (  n  <  4 ) return
    40 continue
-
   do i = m+1, n, 4
     dy(i) = dy(i) + da*dx(i)
     dy(i + 1) = dy(i + 1) + da*dx(i + 1)
     dy(i + 2) = dy(i + 2) + da*dx(i + 2)
     dy(i + 3) = dy(i + 3) + da*dx(i + 3)
   end do
-
   return
 end
 subroutine dcopy ( n, dx, incx, dy, incy )
@@ -129,9 +126,7 @@ subroutine dcopy ( n, dx, incx, dy, incy )
 !
    20 m = mod(n,7)
   if (  m  ==  0 ) go to 40
-
   dy(1:m) = dx(1:m)
-
   if (  n  <  7 ) return
    40 continue
   do i = m+1, n ,7
@@ -143,7 +138,6 @@ subroutine dcopy ( n, dx, incx, dy, incy )
     dy(i + 5) = dx(i + 5)
     dy(i + 6) = dx(i + 6)
   end do
-
   return
 end
 function ddot ( n, dx, incx, dy, incy )
@@ -178,7 +172,6 @@ function ddot ( n, dx, incx, dy, incy )
     ix = ix + incx
     iy = iy + incy
   end do
-
   ddot = dtemp
   return
 !
@@ -192,7 +185,6 @@ function ddot ( n, dx, incx, dy, incy )
   do i = 1,m
     dtemp = dtemp + dx(i)*dy(i)
   end do
-
   if (  n  <  5 ) go to 60
    40 continue
   do i = m+1, n, 5
@@ -247,7 +239,6 @@ function dmach ( job )
   double precision eps,tiny,huge,s
 !
   eps = epsilon ( eps )
-
   s = 1.0D+00
    20 tiny = s
   s = s/16.0D+00
@@ -313,9 +304,7 @@ function dnrm2 ( n, x, incx )
      end do
      norm  = scale * sqrt( ssq )
   end if
-
   dnrm2 = norm
-
   return
 end
 subroutine drot ( n, dx, incx, dy, incy, c, s )
@@ -347,19 +336,16 @@ subroutine drot ( n, dx, incx, dy, incy, c, s )
     ix = ix + incx
     iy = iy + incy
   end do
-
   return
 !
 !       code for both increments equal to 1
 !
    20 continue
-
   do i = 1,n
     dtemp = c*dx(i) + s*dy(i)
     dy(i) = c*dy(i) - s*dx(i)
     dx(i) = dtemp
   end do
-
   return
 end
 subroutine drotg ( da, db, c, s )
@@ -375,7 +361,6 @@ subroutine drotg ( da, db, c, s )
   roe = db
   if (  dabs(da) > dabs(db) ) roe = da
   scale = dabs(da) + dabs(db)
-
   if (  scale == 0.0d0 ) then
     c = 1.0d0
     s = 0.0d0
@@ -390,10 +375,8 @@ subroutine drotg ( da, db, c, s )
     if (  dabs(da) > dabs(db) ) z = s
     if (  dabs(db) >= dabs(da) .and. c /= 0.0d0 ) z = 1.0d0/c
   end if
-
   da = r
   db = z
-
   return
 end
 subroutine drotm ( n, dx, incx, dy, incy, dparam )
@@ -482,7 +465,6 @@ subroutine drotm ( n, dx, incx, dy, incy, dparam )
       ky=1
       if ( incx  <  0) kx=1+(1-n)*incx
       if ( incy  <  0) ky=1+(1-n)*incy
-
       if ( dflag)120,80,100
    80     continue
       dh12=dparam(4)
@@ -521,7 +503,6 @@ subroutine drotm ( n, dx, incx, dy, incy, dparam )
            kx=kx+incx
            ky=ky+incy
       end do
-
   140     continue
       return
 end
@@ -588,13 +569,10 @@ end
 !!!!!!!!!!  dp1=dd1*dx1
 !!!!!!!!!!  dq2=dp2*dy1
 !!!!!!!!!!  dq1=dp1*dx1
-
 !!!!!!!!!!  if ( .not. dabs(dq1) > dabs(dq2)) go to 40
 !!!!!!!!!!      dh21=-dy1/dx1
 !!!!!!!!!!      dh12=dp2/dp1
-
 !!!!!!!!!!      du=one-dh12*dh21
-
 !!!!!!!!!!      if ( .not. du  <=  zero) go to 30
 !!!!!!!!!!!         go zero-h-d-and-dx1..
 !!!!!!!!!!           go to 60
@@ -627,7 +605,6 @@ end
 !!!!!!!!!!      dh12=zero
 !!!!!!!!!!      dh21=zero
 !!!!!!!!!!      dh22=zero
-
 !!!!!!!!!!      dd1=zero
 !!!!!!!!!!      dd2=zero
 !!!!!!!!!!      dx1=zero
@@ -636,7 +613,6 @@ end
 !!!!!!!!!!!     procedure..fix-h..
 !!!!!!!!!!   70 continue
 !!!!!!!!!!  if ( .not. dflag >= zero) go to 90
-
 !!!!!!!!!!      if ( .not. dflag  ==  zero) go to 80
 !!!!!!!!!!      dh11=one
 !!!!!!!!!!      dh22=one
@@ -746,14 +722,11 @@ subroutine dscal ( n, da, dx, incx )
 !        clean-up loop
 !
    20 continue
-
   m = mod(n,5)
   if (  m  ==  0 ) go to 40
   dx(1:m) = da*dx(1:m)
   if (  n  <  5 ) return
-
 40 continue
-
   do i = m+1,n,5
     dx(i) = da*dx(i)
     dx(i + 1) = da*dx(i + 1)
@@ -761,7 +734,6 @@ subroutine dscal ( n, da, dx, incx )
     dx(i + 3) = da*dx(i + 3)
     dx(i + 4) = da*dx(i + 4)
   end do
-
   return
 end
 subroutine dswap ( n, x, incx, y, incy )
@@ -807,47 +779,35 @@ subroutine dswap ( n, x, incx, y, incy )
   double precision y(*)
 !
   if ( n <= 0 ) then
-
   else if ( incx == 1 .and. incy == 1 ) then
-
     m = mod ( n, 3 )
-
     do i = 1, m
       temp = x(i)
       x(i) = y(i)
       y(i) = temp
     end do
-
     do i = m+1, n, 3
-
       temp = x(i)
       x(i) = y(i)
       y(i) = temp
-
       temp = x(i+1)
       x(i+1) = y(i+1)
       y(i+1) = temp
-
       temp = x(i+2)
       x(i+2) = y(i+2)
       y(i+2) = temp
-
     end do
-
   else
-
     if ( incx >= 0 ) then
       ix = 1
     else
       ix = ( - n + 1 ) * incx + 1
     end if
-
     if ( incy >= 0 ) then
       iy = 1
     else
       iy = ( - n + 1 ) * incy + 1
     end if
-
     do i = 1, n
       temp = x(ix)
       x(ix) = y(iy)
@@ -855,9 +815,7 @@ subroutine dswap ( n, x, incx, y, incy )
       ix = ix + incx
       iy = iy + incy
     end do
-
   end if
-
   return
 end
 function idamax ( n, dx, incx )
@@ -892,22 +850,18 @@ function idamax ( n, dx, incx )
      dmax = dabs(dx(ix))
     5    ix = ix + incx
   end do
-
   return
 !
 !        code for increment equal to 1
 !
    20 continue
-
   dmax = abs ( dx(1) )
-
   do i = 2,n
     if ( abs ( dx(i) ) > dmax ) then
       idamax = i
       dmax = abs ( dx(i) )
     end if
   end do
-
   return
 end
 function lsame ( CA, CB )
@@ -930,7 +884,6 @@ function lsame ( CA, CB )
 !  Test if the characters are equal
 !
   LSAME = ( CA == CB )
-
   IF ( LSAME ) then
     RETURN
   end if
@@ -946,7 +899,6 @@ function lsame ( CA, CB )
 !
   INTA = ICHAR ( CA )
   INTB = ICHAR ( CB )
-
   IF ( ZCODE == 90 .OR. ZCODE == 122 ) THEN
 !
 !  ASCII is assumed - ZCODE is the ASCII code of either lower or
@@ -954,7 +906,6 @@ function lsame ( CA, CB )
 !
     IF ( INTA >= 97 .AND. INTA <= 122 ) INTA = INTA - 32
     IF ( INTB >= 97 .AND. INTB <= 122 ) INTB = INTB - 32
-
   ELSE IF ( ZCODE == 233 .OR. ZCODE == 169 ) THEN
 !
 !  EBCDIC is assumed - ZCODE is the EBCDIC code of either lower or
@@ -963,11 +914,9 @@ function lsame ( CA, CB )
     IF ( INTA >= 129 .AND. INTA <= 137 .OR. &
          INTA >= 145 .AND. INTA <= 153 .OR. &
          INTA >= 162 .AND. INTA <= 169 ) INTA = INTA + 64
-
     IF ( INTB >= 129 .AND. INTB <= 137 .OR. &
          INTB >= 145 .AND. INTB <= 153 .OR. &
          INTB >= 162 .AND. INTB <= 169 ) INTB = INTB + 64
-
   ELSE IF ( ZCODE == 218 .OR. ZCODE == 250 ) THEN
 !
 !  ASCII is assumed, on Prime machines - ZCODE is the ASCII code
@@ -975,11 +924,8 @@ function lsame ( CA, CB )
 !
     IF ( INTA >= 225 .AND. INTA <= 250 ) INTA = INTA - 32
     IF ( INTB >= 225 .AND. INTB <= 250 ) INTB = INTB - 32
-
   END IF
-
   LSAME = ( INTA == INTB )
-
   return
 end
 SUBROUTINE XERBLA ( SRNAME, INFO )
@@ -1003,7 +949,6 @@ SUBROUTINE XERBLA ( SRNAME, INFO )
 !
   WRITE ( *, FMT = 9999 )SRNAME, INFO
   STOP
-
  9999 FORMAT( ' ** On entry to ', A6, ' parameter number ', I2, ' had ', &
   'an illegal value' )
 END
