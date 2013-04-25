@@ -79,7 +79,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/read_solute.f90 \
        $(SRCDIR)/allocate_from_input.f90 \
        $(SRCDIR)/tabulate_normk_and_k2.f90 \
-       $(SRCDIR)/tabulate_potentials.f90 \
        $(SRCDIR)/compute_hard_spheres_parameters.f90 \
        $(SRCDIR)/compute_wca_diameter.f90 \
        $(SRCDIR)/prepare_minimizer.f90 \
@@ -87,7 +86,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/compute_planar_density.f90 \
        $(SRCDIR)/write_to_cube_file.f90 \
        $(SRCDIR)/vext_total_sum.f90 \
-       $(SRCDIR)/compute_vcoul_ijko_from_tabulated.f90 \
+       $(SRCDIR)/compute_vcoul_as_sum_of_pointcharges.f90 \
        $(SRCDIR)/compute_vext_hard_sphere.f90 \
        $(SRCDIR)/Vcoul_from_solvent_charge_density.f90 \
        $(SRCDIR)/external_potential_hard_walls.f90 \

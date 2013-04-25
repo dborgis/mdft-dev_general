@@ -131,5 +131,5 @@ threebody = T                        # tree body term in functional
 F3B_old = F
 F3B_new = T
 
-Rc = 1.0                              # Used in Compute_vcoul_from_tabulated
+Rc = 1.0                              # Minimum distance at which the electrostatic contribution to the external potential is calculated. Under that ... divergences and other funny stuff come in. Used in Compute_vcoul_from_tabulated
 
