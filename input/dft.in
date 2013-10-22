@@ -4,9 +4,9 @@
 Lx  = 40
 Ly  = 40
 Lz  = 40
-nfft1 = 80                            # nbr of grid points
-nfft2 = 80                                 # nbr of grid points
-nfft3 = 80
+nfft1 = 32                            # nbr of grid points
+nfft2 = 32                                 # nbr of grid points
+nfft3 = 32
                                   # nbr of grid points
 quadrature = L                             #Type of quadrature used to do integration on the omega angle , GL for Gauss-Legendre(default) , L for lebedev
 
@@ -132,4 +132,4 @@ F3B_old = F
 F3B_new = T
 
 Rc = 1.0                              # Minimum distance at which the electrostatic contribution to the external potential is calculated. Under that ... divergences and other funny stuff come in. Used in Compute_vcoul_from_tabulated
-
+verbose = T

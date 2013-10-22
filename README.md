@@ -62,7 +62,9 @@ Empty and blank lines are not considered.
     - `1` if the solvent is pure
 * `mole_fractions` Mole fraction of each solvent species. Sum of mole fractions of all solvent species is 1.
     - `1.0` if the solvent is pure
-
+* `verbose`
+    - `T` for lots of information printed to terminal. Advised, e.g., for debugging purpose
+    - `F` for production runs
 
 
 ### solute.in
