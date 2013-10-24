@@ -55,36 +55,41 @@ if (input_log('Linearize_entropy')) then
     end do
   end do
 end if
-!put linearized ideal free energy in kJ/mol
-Fid_lin=Fid_lin*kBT*n_0_multispec(1)*deltaV
-print*, Fid_lin
-print*, minval(rho_n), maxval(rho_n)
-icg = 0
-if (input_log('Linearize_entropy')) then
-  do species = 1 , nb_species
-    do i = 1 , nfft1
-      do j = 1 , nfft2
-        do k = 1 , nfft3        
-          do o = 1 , nb_omega    
-            do p=1 , nb_psi
-              icg = icg + 1
-              psi = CG_vect ( icg )
-              rhon=rho_n(i,j,k)
-              if (rhon<=1.0_dp) then
-                 dFid_lin_temp=0.0_dp
-              else
-                 dFid_lin_temp=-KbT*(Log(rhon)-rhon+1.0_dp)
-              end if
-              if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
-                Fideal = Fideal + weight ( o ) *weight_psi(p)* rho_0_multispec ( species ) * mole_fraction ( species ) ! lim xlogx= 0 when x->0
-                dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
-              else
-                rho = psi ** 2
-                logrho = log ( rho )
-                Fideal = Fideal + weight ( o ) * weight_psi (p) * rho_0_multispec ( species ) * mole_fraction ( species ) &
-                                  * ( rho * logrho - rho + 1.0_dp )
-                dF (icg) = dF ( icg ) + 2.0_dp * psi * weight ( o ) * weight_psi(p) * DeltaV * rho_0_multispec ( species )&
-                                  *( kBT * logrho + dFid_lin_temp )
+
+    !put linearized ideal free energy in kJ/mol
+    Fid_lin=Fid_lin*kBT*n_0_multispec(1)*deltaV
+    print*, Fid_lin
+    print*, minval(rho_n), maxval(rho_n)
+
+    icg = 0
+    if (input_log('Linearize_entropy')) then
+        do species = 1 , nb_species
+            do i = 1 , nfft1
+                do j = 1 , nfft2
+                    do k = 1 , nfft3        
+                        do o = 1 , nb_omega    
+                            do p=1 , nb_psi
+                                icg = icg + 1
+                                psi = CG_vect ( icg )
+                                rhon=rho_n(i,j,k)
+                                if (rhon<=1.0_dp) then
+                                    dFid_lin_temp=0.0_dp
+                                else
+                                    dFid_lin_temp=-KbT*(Log(rhon)-rhon+1.0_dp)
+                                end if
+                                if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
+                                    Fideal = Fideal &
+                                             + weight ( o ) *weight_psi(p)* rho_0_multispec ( species ) * mole_fraction ( species ) ! lim xlogx= 0 when x->0
+                                    dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
+                                else
+                                    rho = psi ** 2
+                                    logrho = log ( rho )
+                                    Fideal = Fideal &
+                                        + weight ( o ) * weight_psi (p) * rho_0_multispec ( species ) * mole_fraction ( species ) &
+                                        * ( rho * logrho - rho + 1.0_dp )
+                                    dF (icg) = dF ( icg ) &
+                                        + 2.0_dp * psi * weight ( o ) * weight_psi(p) * DeltaV * rho_0_multispec ( species )&
+                                        *( kBT * logrho + dFid_lin_temp )
               end if
             end do ! nb_psi
           end do ! nb_omega

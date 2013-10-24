@@ -44,13 +44,13 @@ if (input_log('Linearize_entropy').and. trim(adjustl(input_char('if_Linearize_en
             rhon=rhon+cg_vect(icg)**2*weight(o)*weight_psi(p)/(fourpi**2/(sym_order*2.0_dp))
           end do
         end do
-           rho_n(i,j,k)=rhon
-           if (rhon <=1.0_dp) then
-             Fid_lin_temp=0.0_dp
-           else  
-             Fid_lin_temp=-(rhon*Log(rhon)-rhon+1.0_dp-0.5_dp*(rhon-1.0_dp)**2)
-           end if
-           Fid_lin=Fid_lin+Fid_lin_temp
+        rho_n(i,j,k)=rhon
+        if (rhon <=1.0_dp) then
+            Fid_lin_temp=0.0_dp
+        else  
+            Fid_lin_temp=-(rhon*Log(rhon)-rhon+1.0_dp-0.5_dp*(rhon-1.0_dp)**2)
+        end if
+        Fid_lin=Fid_lin+Fid_lin_temp
       end do
     end do
   end do
