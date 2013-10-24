@@ -26,6 +26,7 @@ subroutine energy_and_gradient
     rho_c_k_myway=(0.0_dp, 0.0_dp)
 
     call energy_external ! compute ideal part of the total energy
+
     call energy_ideal
 
     ! compute radial part of the excess free energy
@@ -59,6 +60,8 @@ subroutine energy_and_gradient
 
     write(*,*)'SOLVATION FREE ENERGY AT THIS STEP = ',FF
     write(*,*)'-----------------------'
+
+
 
     contains
     
