@@ -2,30 +2,29 @@
 subroutine energy_external
 
     use precision_kinds , only : dp , i2b
-    use system , only : DeltaV , rho_0 , nfft1 , nfft2 , nfft3 , nb_omega , nb_species , rho_0_multispec , nb_psi
-    use input , only : input_line
+    use system , only : lx,ly,lz, nfft1, nfft2, nfft3, nb_omega, nb_psi, nb_species, rhoBulk=>rho_0_multispec
     use quadrature , only : weight, weight_psi
     use cg , only : CG_vect , FF , dF
-    use external_potential , only : Vext_total, Vext_q
+    use external_potential , only : Vext_total
     
     implicit none
     real(dp):: Fext , Fext_q! external part of the total energy
     integer(i2b):: icg , i , j , k , o , p! dummy for loops
     real(dp):: psi !dummy
     real(dp):: rho ! dummy = psi**2
-    real(dp):: wdfve 
+    real(dp):: wdfve, deltaV
     real(dp):: time0,time1! timers
-    integer(i2b):: species  ! dummy between 1 and nb_species
+    integer(i2b):: spec  ! dummy between 1 and nb_species
     
     call cpu_time ( time0 )
 
     Fext = 0.0_dp ; Fext_q = 0.0_dp
 
-    ! the following is a dummy variable to improve loop speed by decreasing the total number of calculations
     ! Compute Fext and dFext
     ! F_{ext}[\rho(\vec{r},\vec{\Omega})]=\int d \vec{r} d \vec{\Omega} V_{ext}(\vec{r},\vec{\Omega})\rho(\vec{r},\vec{\Omega})
+    deltaV = lx*ly*lz/real(nfft1*nfft2*nfft3,dp) ! volume integration
     icg = 0
-    do species = 1 , nb_species
+    do spec = 1 , nb_species
         do i = 1 , nfft1
             do j = 1 , nfft2
                 do k = 1 , nfft3
@@ -34,8 +33,7 @@ subroutine energy_external
                             icg = icg + 1
                             psi = cg_vect ( icg )
                             rho = psi ** 2
-                            wdfve = weight(o)*weight_psi(p) &
-                                * DeltaV * rho_0_multispec(species) * Vext_total(i,j,k,o,p,species)
+                            wdfve = weight(o) * weight_psi(p) * DeltaV * rhoBulk(spec) * Vext_total(i,j,k,o,p,spec)
                             Fext = Fext + rho * wdfve
                             dF(icg) = dF(icg) + 2.0_dp*psi*wdfve
                         end do
