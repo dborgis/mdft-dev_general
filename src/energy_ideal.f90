@@ -3,11 +3,11 @@
 
 subroutine energy_ideal
 
-    use precision_kinds , only : i2b , dp
-    use cg , only : cg_vect , FF , dF
-    use system, only : nfft1, nfft2, nfft3, nb_omega, deltaV, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, nb_psi,&
+    use precision_kinds, only : i2b, dp
+    use cg, only : cg_vect, FF, dF
+    use system, only : nfft1, nfft2, nfft3, lx, ly, lz, nb_omega, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, nb_psi,&
                         n_0_multispec
-    use quadrature , only : weight , weight_psi,sym_order
+    use quadrature, only : weight , weight_psi,sym_order
     use input, only : input_log, input_char
     use constants, only : fourpi
 
@@ -18,6 +18,7 @@ subroutine energy_ideal
     integer(i2b):: species ! dummy between 1 and nb_species
     real(dp):: psi ! dummy for cg_vext(i)
     real(dp):: rho, rhon ! local density
+    real(dp) :: deltaV !=lx*ly*lz/(nfft1*nfft2*nfft3)
     real(dp):: logrho ! dummy for log(rho)
     real(dp):: time0 , time1 ! timesteps
     real(dp), dimension(nfft1,nfft2,nfft3) :: rho_n  !one-particle number density
@@ -25,13 +26,9 @@ subroutine energy_ideal
     call cpu_time(time0)! init timer
 
     Fideal = 0.0_dp! init Fideal to zero and its gradient
-    print*, 'BETA' ,1/kbt, rho_0_multispec
+    print*, 'BETA' ,1._dp/kbt, rho_0_multispec
 
-    ! the following is a dummy for speeding up loops
-    !get rho_n, currently implemented only for 1 species
-    if (input_log('Linearize_entropy') .and. trim(adjustl(input_char('if_Linearize_entropy'))) == '1' ) then
-
-    end if
+    deltaV = Lx*Ly*Lz/real(nfft1*nfft2*nfft3,dp) ! elementary volume (needed often for integration)
 
     icg=0
     Fid_lin=0.0_dp
