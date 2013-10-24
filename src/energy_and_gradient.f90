@@ -28,26 +28,11 @@ rho_c_k_myway=(0.0_dp, 0.0_dp)
 
 call energy_external ! compute ideal part of the total energy
 call energy_ideal
+
 ! compute radial part of the excess free energy
-! test if solvent fluid is of kind "water (tabulated cs) " or hard sphere
-!do i = 1 , size ( input_line )
-!  j = len ( 'hard_sphere_fluid' )
-!  if ( input_line (i) (1:j) == 'hard_sphere_fluid' .and. input_line (i) (j+4:j+4) == 'T' ) then
-!    ! fluid is composed of hard spheres  
-!    call energy_hard_sphere_fmt ! => pure hard sphere contribution
-!    exit ! it is useless to continue the loop over i if you've found the tag
-!  end if
-!end do
 if (input_log('hard_sphere_fluid') ) call energy_hard_sphere_fmt ! => pure hard sphere contribution
 
 ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
-!do k = 1 , size ( input_line )
-!  l = len ( 'lennard_jones_perturbation_to_hard_spheres' )
-!  if ( input_line (k) (1:l) == 'lennard_jones_perturbation_to_hard_spheres' .and. input_line (k) (l+4:l+4) == 'T' ) then
-!    call lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
-!    exit
-!  end if
-!end do
 if (input_log('lennard_jones_perturbation_to_hard_spheres') ) call lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
 
 if (input_log('read_ck_or_chi')) then
@@ -61,16 +46,9 @@ if (input_log('read_ck_or_chi')) then
   call cs_from_dcf
   end if
 end if
+
 ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
-!do i = 1 , size ( input_line )
-!  j = len ( 'bridge_hard_sphere' )
-!  if ( input_line (i) (1:j) == 'bridge_hard_sphere' .and. input_line (i) (j+4:j+4) == 'T' ) then
-!    ! compute effect of direct correlation function of reference fluid
-!    call energy_cs_hard_sphere
-!    exit ! it is useless to continue the loop over i if you've found the tag
-!  end if
-!end do
-if (input_log('bridge_hard_sphere'))   call energy_cs_hard_sphere
+if (input_log('bridge_hard_sphere')) call energy_cs_hard_sphere ! better name should be given
 
 ! Dipolar polarization. What user wants (use it or not) is checked in subroutine for clearer code.
 call energy_polarization
