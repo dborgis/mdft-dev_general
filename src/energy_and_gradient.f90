@@ -15,7 +15,6 @@ subroutine energy_and_gradient
     use quadrature, only : weight, weight_psi, sym_order
 
     implicit none
-    integer(i2b):: i , j , k , l, nf1, nf2, nf3
     logical :: hydrophobicity_tag
 
 
