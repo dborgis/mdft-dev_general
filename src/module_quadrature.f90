@@ -7,10 +7,10 @@ module quadrature
 
     implicit none
 
-    real(dp), allocatable , dimension ( : , : ) :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
-    real(dp), allocatable , dimension ( : ) :: Omx , Omy , Omz , weight  ! unit vector for orientation OMEGA and associated weight
-    real (dp ), allocatable, dimension ( : )  :: weight_psi , x_psi
-    real(dp) , allocatable, dimension(:) :: x_leb, y_leb , z_leb , weight_leb 
+    real(dp), allocatable, dimension(:,:) :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
+    real(dp), allocatable, dimension(:) :: Omx , Omy , Omz , weight  ! unit vector for orientation OMEGA and associated weight
+    real(dp), allocatable, dimension(:) :: weight_psi , x_psi
+    real(dp), allocatable, dimension(:) :: x_leb, y_leb , z_leb , weight_leb 
     integer(i2b) :: sym_order
     
     contains
