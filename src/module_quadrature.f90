@@ -1,7 +1,7 @@
-! Module for angular grid and Gauss-Legendre integration.
+! Module for numerical integration
 module quadrature
 
-    use precision_kinds
+    use precision_kinds, only: dp, i2b
     use system , only : nb_omega , nb_psi , nb_legendre 
     use constants , only : pi , twopi , fourpi
 
