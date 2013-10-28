@@ -1,6 +1,6 @@
 subroutine get_lebedev_integration_roots_and_weights 
 
-    use quadrature , only :   weight_leb , x_leb , y_leb , z_leb
+    use quadrature , only :   weight_leb, x_leb, y_leb, z_leb
     use precision_kinds , only : dp, i2b
     use input , only : input_int
     use constants , only : fourpi

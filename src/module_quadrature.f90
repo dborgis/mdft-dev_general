@@ -2,21 +2,33 @@
 module quadrature
 
     use precision_kinds, only: dp, i2b
-    use system , only : nb_omega , nb_psi , nb_legendre 
-    use constants , only : pi , twopi , fourpi
+    use system , only : nb_omega, nb_psi, nb_legendre 
+    use constants , only : pi, twopi, fourpi
+    use input, only: input_log, input_char
 
     implicit none
-
-    real(dp), allocatable, dimension(:,:) :: NEWweight, NEWroot
 
     real(dp), allocatable, dimension(:,:) :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
     real(dp), allocatable, dimension(:) :: Omx , Omy , Omz , weight  ! unit vector for orientation OMEGA and associated weight
     real(dp), allocatable, dimension(:) :: weight_psi , x_psi
     real(dp), allocatable, dimension(:) :: x_leb, y_leb , z_leb , weight_leb 
     integer(i2b) :: sym_order
+    type quadratureType
+        real(dp), allocatable, dimension(:) :: NEWweight
+        real(dp), allocatable, dimension(:,:) :: NEWroots
+    end type
 
     contains
     
+    
+        subroutine init
+            implicit none
+            call get_psi_integration_roots_and_weights (nb_psi,sym_order,weight_psi,x_psi)
+            if (trim(adjustl(input_char('quadrature')))=='L') call get_lebedev_integration_roots_and_weights
+            if (trim(adjustl(input_char('quadrature')))=='GL') call get_gauss_legendre_integration_roots_and_weights
+        end subroutine init
+    
+   
         subroutine deallocate_everything_gauss_legendre
             if ( allocated (weight_psi ) ) deallocate ( weight_psi)
             if ( allocated (x_psi ) ) deallocate ( x_psi)
@@ -31,6 +43,7 @@ module quadrature
             if ( allocated ( weight ) ) deallocate ( weight)
             if ( allocated ( weight_leb ) ) deallocate ( weight_leb)
         end subroutine deallocate_everything_gauss_legendre
+
         
         ! Compute angular grid properties : Omx, Omy, Omz, weight
         subroutine gauss ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
@@ -95,7 +108,6 @@ module quadrature
             call check_weights_psi(weight_psi)
 
         end subroutine gauss
-
 
 
         subroutine lebedev( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
@@ -198,5 +210,30 @@ module quadrature
             if (.not. allocated ( Omz    ) ) allocate ( Omz    ( nb_omega ) ) ! orientational vector along z
             if (.not. allocated ( weight ) ) allocate ( weight ( nb_omega ) ) ! weight of each orientation
         end subroutine allocate_Omx_Omy_Omz_weight_if_necessary
+
+
+        subroutine get_psi_integration_roots_and_weights (nb_psi,sym_order,weight,root)
+            use input , only : input_int
+            integer(i2b), intent(out) :: nb_psi, sym_order
+            real(dp), allocatable, dimension(:), intent(out) :: weight, root
+            integer(i2b) :: i
+            nb_psi = input_int('nb_psi')
+            if ( nb_psi <= 0 ) then
+                print*,"in module_quadrature, nb_psi, readen from input/dft.in is unphysical. critical stop."
+                stop
+            end if
+            sym_order = input_int('sym_order')
+            if ( sym_order <= 0 ) then
+                print*,"in module_quadrature, sym_order, readen from input/dft.in, is unphysical. critical stop"
+                stop
+            end if
+            allocate (weight (nb_psi)) ! weights
+            weight = twopi/real(nb_psi*sym_order,dp) ! equidistant repartition between 0 and 2Pi => all weights are equal
+            allocate (root (nb_psi)) ! roots
+            do concurrent (i=1:nb_psi) ! equidistant repartition between 0 and 2Pi
+                root(i) = real(i-1,dp)*twopi/real(nb_psi*sym_order,dp) ! roots
+            end do
+        end subroutine get_psi_integration_roots_and_weights
+
 
 end module quadrature
