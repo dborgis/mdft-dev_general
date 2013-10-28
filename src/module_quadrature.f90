@@ -7,12 +7,14 @@ module quadrature
 
     implicit none
 
+    real(dp), allocatable, dimension(:,:) :: NEWweight, NEWroot
+
     real(dp), allocatable, dimension(:,:) :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
     real(dp), allocatable, dimension(:) :: Omx , Omy , Omz , weight  ! unit vector for orientation OMEGA and associated weight
     real(dp), allocatable, dimension(:) :: weight_psi , x_psi
     real(dp), allocatable, dimension(:) :: x_leb, y_leb , z_leb , weight_leb 
     integer(i2b) :: sym_order
-    
+
     contains
     
         subroutine deallocate_everything_gauss_legendre
@@ -28,7 +30,7 @@ module quadrature
             if ( allocated ( z_leb ) ) deallocate ( z_leb)
             if ( allocated ( weight ) ) deallocate ( weight)
             if ( allocated ( weight_leb ) ) deallocate ( weight_leb)
-        end subroutine
+        end subroutine deallocate_everything_gauss_legendre
         
         ! Compute angular grid properties : Omx, Omy, Omz, weight
         subroutine gauss ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
@@ -45,22 +47,10 @@ module quadrature
             real(dp) :: sin_phi
             real(dp) :: cos_psi
             real(dp) :: sin_psi
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxy
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxz
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyx
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyy
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyz
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzx
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzy
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzz
+            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 
             write(*,*)'>> computing angular grid'
-            !> allocate what we want to compute
-            if ( .not. allocated ( Omx ) ) allocate ( Omx ( nb_omega ) ) ! orientatioal vector along x
-            if ( .not. allocated ( Omy ) ) allocate ( Omy ( nb_omega ) ) ! orientational vector along x
-            if ( .not. allocated ( Omz ) ) allocate ( Omz ( nb_omega ) ) ! orientational vector along x
-            if ( .not. allocated ( weight ) ) allocate ( weight ( nb_omega ) ) ! weight of each orientation
+            call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
 
             !test if we use GL quadrature
             if ( nb_legendre == 1 ) then
@@ -86,14 +76,8 @@ module quadrature
                             cos_psi = cos(psii) !1
                             sin_psi = sin(psii) !0
                             Rotxx(n_omega,n_psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
-                            !Rotxx(1,1)           =  0
-                            !Rotxx(2,1)           =  0
                             Rotxy(n_omega,n_psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
-                            !Rotxy(1,1)           =  0
-                            !Rotxy(2,1)           =  0
                             Rotxz(n_omega,n_psi) =  sin_theta*cos_phi
-                            !Rotxz(1,1)           =  1
-                            !Rotxz(2,1)           =  -1
                             Rotyx(n_omega,n_psi) =  cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
                             Rotyy(n_omega,n_psi) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
                             Rotyz(n_omega,n_psi) =  sin_theta*sin_phi
@@ -103,19 +87,16 @@ module quadrature
                         end do
                     end do
                 end do
-            else
-                write(*,*)'Error detected in compute_angular_grid.f90'
-                stop
+            else if ( nb_legendre < 1 ) then
+                stop 'Error detected in compute_angular_grid.f90 nb_legendre should not be < 1'
             end if
 
-            ! check if sum over all omega of weight(omega) is fourpi
-            if ( abs( sum( weight(:) ) - fourpi ) / fourpi > 1.0e-10_dp &
-                    .or.  abs ( sum ( weight_psi ( : ) ) - twopi/sym_order )  > 1.0e-10_dp ) then
-                print *, 'problem detected in compute_angular_grid.f90 :'
-                print *, 'sum over omegas of weight(omega) is not 4pi. stop'
-                stop
-            end if
-        end subroutine
+            call check_weights(weight)
+            call check_weights_psi(weight_psi)
+
+        end subroutine gauss
+
+
 
         subroutine lebedev( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
 
@@ -129,20 +110,9 @@ module quadrature
             real(dp) :: sin_phi
             real(dp) :: cos_psi
             real(dp) :: sin_psi
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxy
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxz
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyx
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyy
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotyz
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzx
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzy
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotzz
-        
-            allocate (weight (nb_omega ) )
-            if ( .not. allocated ( Omx ) ) allocate ( Omx ( nb_omega ) ) ! orientational vector along x
-            if ( .not. allocated ( Omy ) ) allocate ( Omy ( nb_omega ) ) ! orientational vector along x
-            if ( .not. allocated ( Omz ) ) allocate ( Omz ( nb_omega ) ) ! orientational vector along x
+            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+
+            call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
         
             do n= 1, nb_omega
                 weight(n) = weight_leb(n)
@@ -166,14 +136,8 @@ module quadrature
                     cos_psi = cos(psii) !1
                     sin_psi = sin(psii) !0
                     Rotxx(n,n_psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
-                    !Rotxx(1,1)           =  0
-                    !Rotxx(2,1)           =  0
                     Rotxy(n,n_psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
-                    !Rotxy(1,1)           =  0
-                    !Rotxy(2,1)           =  0
                     Rotxz(n,n_psi) =  sin_theta*cos_phi
-                    !Rotxz(1,1)           =  1
-                    !Rotxz(2,1)           =  -1
                     Rotyx(n,n_psi) =  cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
                     Rotyy(n,n_psi) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
                     Rotyz(n,n_psi) =  sin_theta*sin_phi
@@ -183,19 +147,43 @@ module quadrature
                 end do
             end do
         
+            call check_weights(weight)
+            call check_weights_psi(weight_psi)
+
+        end subroutine lebedev
+
+
+        subroutine check_weights_psi(weight_psi)
+            implicit none
+            real(dp), dimension(:), intent(in) :: weight_psi
+            if ( abs ( sum ( weight_psi ( : ) ) - twopi/sym_order )  > 1.0e-10_dp ) then
+                print*, 'problem detected in compute_angular_grid.f90 :'
+                print*, 'sum over omegas of weight_psi(omega) is not 2pi/sym_order. stop'
+                stop
+            end if
+        end subroutine check_weights_psi
+
+        
+        subroutine check_weights(weight)
+            implicit none
+            real(dp), dimension(:), intent(in) :: weight
             ! check if sum over all omega of weight(omega) is fourpi
             if ( abs ( sum ( weight ( : ) ) - fourpi )  > 1.0e-10_dp ) then
                 print *, 'problem detected in compute_angular_grid.f90 :'
                 print *, 'sum over omegas of weight(omega) is not 4pi. stop'
                 stop
-            end if
+            end if            
+        end subroutine check_weights
         
-            if ( abs ( sum ( weight_psi ( : ) ) - twopi/sym_order )  > 1.0e-10_dp ) then
-            print *, 'problem detected in compute_angular_grid.f90 :'
-            print *, 'sum over omegas of weight_psi(omega) is not 2pi/sym_order. stop'
-            stop
-            end if
-
-        end subroutine
+        
+        pure subroutine allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
+            implicit none
+            real(dp), allocatable, dimension(:), intent(out) :: Omx , Omy , Omz , weight
+            integer(i2b), intent(in) :: nb_omega
+            if (.not. allocated ( Omx    ) ) allocate ( Omx    ( nb_omega ) ) ! orientatioal vector along x
+            if (.not. allocated ( Omy    ) ) allocate ( Omy    ( nb_omega ) ) ! orientational vector along y
+            if (.not. allocated ( Omz    ) ) allocate ( Omz    ( nb_omega ) ) ! orientational vector along z
+            if (.not. allocated ( weight ) ) allocate ( weight ( nb_omega ) ) ! weight of each orientation
+        end subroutine allocate_Omx_Omy_Omz_weight_if_necessary
 
 end module quadrature
