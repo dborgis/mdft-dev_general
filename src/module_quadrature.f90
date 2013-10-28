@@ -101,8 +101,7 @@ module quadrature
         subroutine lebedev( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
 
             integer(i2b) ::  n !dummy
-            integer(i2b) :: n_psi
-            real(dp) :: psii
+            integer(i2b) :: psi
             real(dp) :: phi , theta
             real(dp) :: cos_theta
             real(dp) :: sin_theta
@@ -114,9 +113,29 @@ module quadrature
 
             call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
         
-            do n= 1, nb_omega
-                weight(n) = weight_leb(n)
+            weight(1:nb_omega) = weight_leb(1:nb_omega)
+            call check_weights(weight)
+                        
+            do concurrent (n=1:nb_omega)
+                if ( x_leb(n)==0.0_dp .and. y_leb(n)==0.0_dp ) then 
+                    phi = 0.0_dp
+                else if (y_leb(n)>=0.0_dp) then 
+                    phi = acos(x_leb(n)/(sqrt ( x_leb(n)**2 + y_leb(n)**2 ) ) )
+                else
+                    phi = twopi - acos(x_leb(n)/(sqrt ( x_leb(n)**2 + y_leb(n)**2 ) ) )
+                end if
+                theta = acos(z_leb(n))
+                OMx (n) = sin(theta) * cos(phi)
+                OMy (n) = sin(theta) * sin(phi)
+                OMz (n) = cos(theta)
+            end do
+            
+            do concurrent (n=1:nb_omega)
+                
                 theta=acos(z_leb(n))
+                cos_theta=cos(theta)
+                sin_theta=sin(theta)
+                
                 if    ( x_leb(n)  == 0.0_dp .and. y_leb(n)  == 0.0_dp ) then 
                     phi=0.0_dp
                 else if  (y_leb(n)>=0.0_dp) then 
@@ -124,30 +143,24 @@ module quadrature
                 else  
                     phi=twopi - acos(x_leb(n)/(sqrt ( x_leb(n)**2 + y_leb(n)**2 ) ) )
                 end if
-                cos_theta=cos(theta)
-                sin_theta=sin(theta) 
                 cos_phi=cos(phi)
                 sin_phi=sin(phi)    
-                OMx ( n ) = sin_theta * cos_phi
-                OMy ( n ) = sin_theta * sin_phi
-                OMz ( n ) = cos_theta
-                do n_psi = 1 , nb_psi
-                    psii = x_psi(n_psi)
-                    cos_psi = cos(psii) !1
-                    sin_psi = sin(psii) !0
-                    Rotxx(n,n_psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
-                    Rotxy(n,n_psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
-                    Rotxz(n,n_psi) =  sin_theta*cos_phi
-                    Rotyx(n,n_psi) =  cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
-                    Rotyy(n,n_psi) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
-                    Rotyz(n,n_psi) =  sin_theta*sin_phi
-                    Rotzx(n,n_psi) = -sin_theta*cos_psi
-                    Rotzy(n,n_psi) =  sin_theta*sin_psi
-                    Rotzz(n,n_psi) =  cos_theta
+                
+                do concurrent (psi=1:nb_psi)
+                    cos_psi = cos(x_psi(psi)) !1
+                    sin_psi = sin(x_psi(psi)) !0
+                    Rotxx(n,psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
+                    Rotxy(n,psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
+                    Rotxz(n,psi) =  sin_theta*cos_phi
+                    Rotyx(n,psi) =  cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
+                    Rotyy(n,psi) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
+                    Rotyz(n,psi) =  sin_theta*sin_phi
+                    Rotzx(n,psi) = -sin_theta*cos_psi
+                    Rotzy(n,psi) =  sin_theta*sin_psi
+                    Rotzz(n,psi) =  cos_theta
                 end do
             end do
-        
-            call check_weights(weight)
+       
             call check_weights_psi(weight_psi)
 
         end subroutine lebedev
