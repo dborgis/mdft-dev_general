@@ -62,9 +62,11 @@ Empty and blank lines are not considered.
     - `1` if the solvent is pure
 * `mole_fractions` Mole fraction of each solvent species. Sum of mole fractions of all solvent species is 1.
     - `1.0` if the solvent is pure
-*'read_ck_or_chi' If true the pair correlation functions files specified in 'ck_species' will be read, this is necessary if you want to include any kind of polarization
-*'ck_species' specify which type of correlation functions you want to use to describe the solvent, those file are stored in input/direct_correlation_functions... or you can provide your own files in the input directory and use the tag: 'perso'
-
+* `read_ck_or_chi` If true the pair correlation functions files specified in 'ck_species' will be read, this is necessary if you want to include any kind of polarization
+* `ck_species` specify which type of correlation functions you want to use to describe the solvent, those file are stored in input/direct_correlation_functions... or you can provide your own files in the input directory and use the tag: 'perso'
+* `read_chi` If true and if it will read the longitudinal and transverse suceptibily, note that in that case the tag of 'read_ck_or_chi' must be T.
+* `polarization` do you want to include any type of polarization: dipolar or multipolar?
+* `evaluate_polarization` if dipol will use cdelta and cd to compute the purely dipolar polarization contribution to free energy, if multi will use suceptiblities to compute the multipolar polarozation contribution to free energy
 
 ### solute.in
 
