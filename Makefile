@@ -71,7 +71,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/init_external_potential.f90 \
        $(SRCDIR)/put_input_in_character_array.f90 \
        $(SRCDIR)/print_input_in_output_folder.f90 \
-       $(SRCDIR)/get_Psi_integration_roots_and_weights.f90 \
        $(SRCDIR)/get_gauss_legendre_integration_roots_and_weights.f90 \
        $(SRCDIR)/get_lebedev_integration_roots_and_weights.f90 \
        $(SRCDIR)/read_ck.f90 \
