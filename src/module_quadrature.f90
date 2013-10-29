@@ -8,137 +8,142 @@ module quadrature
 
     implicit none
 
-    real(dp), allocatable, dimension(:,:), public :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
+    real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb , weight_leb, x_psi
     real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for orientation OMEGA and associated weight
     real(dp), allocatable, dimension(:), public :: weight, weight_psi
-    real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb , weight_leb, x_psi
     real(dp), allocatable, dimension(:,:), public :: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
-    integer(i2b) :: sym_order
-    integer(i2b) :: order_of_quadrature
+    type angularGrid
+        integer(i2b) :: n_angles
+        real(dp), allocatable, dimension(:) :: weight, root
+    end type
+    type (angularGrid) :: angGrid
+    type (angularGrid) :: molRotGrid ! rotation of molecule around its main axis, e.g., around C2v axis for H2O.
+    type integrationScheme
+        character(80) :: name
+        integer(i2b) :: order
+        real(dp), allocatable, dimension(:) :: weight, root
+    end type
+    type (integrationScheme) :: intScheme
+    integer(i2b), public :: sym_order
 
     contains
     
     
         subroutine init
-            call get_psi_integration_roots_and_weights (nb_psi,sym_order,weight_psi,x_psi)
-            call read_order_of_quadrature (order_of_quadrature)
-            nb_omega = order_of_quadrature
-            call allocate_Rotij (order_of_quadrature,nb_psi,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
-            if (trim(adjustl(input_char('quadrature')))=='L') then
-                allocate( x_leb(order_of_quadrature), y_leb(order_of_quadrature), z_leb(order_of_quadrature) )
-                allocate( weight_leb(order_of_quadrature) )
-                call lebedev_integration_roots_and_weights (order_of_quadrature, x_leb ,y_leb , z_leb, weight_leb)
+            implicit none
+
+            sym_order = input_int('sym_order')
+            if ( sym_order <= 0 ) then
+                print*,"in module_quadrature, sym_order, readen from input/dft.in, is unphysical. critical stop"
+                stop
+            end if
+
+            ! molecular rotation grid
+            call get_psi_integration_roots_and_weights (molRotGrid, sym_order)
+            call check_weights_psi(molRotGrid%weight)
+            nb_psi = molRotGrid%n_angles ! to be removed if all code coherent
+
+            ! integration scheme
+            intScheme%name = trim(adjustl(input_char('quadrature')))
+            call read_order_of_quadrature (intScheme%order)
+
+            ! LEBEDEV
+            if (intScheme%name(1:1)=='L') then
+                angGrid%n_angles = intScheme%order
+                nb_omega = angGrid%n_angles ! to be removed when coherent in whole code
+                call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+                allocate( x_leb(intScheme%order), y_leb(intScheme%order), z_leb(intScheme%order) )
+                allocate( weight_leb(intScheme%order), source=0._dp )
+                call lebedev_integration_roots_and_weights (intScheme%order, x_leb ,y_leb , z_leb, weight_leb)
                 call lebedev ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
-            else if (trim(adjustl(input_char('quadrature')))=='GL') then
-                call get_gauss_legendre_integration_roots_and_weights
-                call gauss ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+                deallocate( x_leb, y_leb, z_leb, weight_leb)
+
+            ! GAUSS-LEGENDRE
+            else if (intScheme%name(1:2)=='GL') then
+                angGrid%n_angles = 2*(intScheme%order**2)
+                nb_omega = angGrid%n_angles ! to be removed when coherent in whole code
+                allocate (intScheme%weight(intScheme%order), source=0._dp)
+                allocate (intScheme%root(intScheme%order), source=0._dp)
+                call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+                call gauss_legendre_integration_roots_and_weights (intScheme%order, intScheme%weight , intScheme%root)
+                allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
+                call gauss (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
             end if
         end subroutine init
 
-
-        pure subroutine  allocate_Rotij (order,nb_psi,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
-            integer(i2b), intent(in) :: order, nb_psi
-            real(dp), allocatable, dimension(:,:), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
-            allocate( Rotxx(order,nb_psi), Rotxy(order,nb_psi), Rotxz(order,nb_psi) )
-            allocate( Rotyx(order,nb_psi), Rotyy(order,nb_psi), Rotyz(order,nb_psi) )
-            allocate( Rotzx(order,nb_psi), Rotzy(order,nb_psi), Rotzz(order,nb_psi) )            
-        end subroutine
-
-
-        subroutine read_order_of_quadrature (order_of_quadrature)
-            integer(i2b), intent(out) :: order_of_quadrature
-            order_of_quadrature = input_int('order_of_quadrature')
-            if (order_of_quadrature < 1) then
-                print*,"In input/dft.in, I read order_of_quadrature is < 1. This is not physical as you must have"
-                print*,"at least one point, even without angular grid. CRITICAL"
-                stop
-            end if
-        end subroutine read_order_of_quadrature
-    
-   
-        subroutine deallocate_everything_gauss_legendre
-            if ( allocated (weight_psi ) ) deallocate ( weight_psi)
-            if ( allocated (x_psi ) ) deallocate ( x_psi)
-            if ( allocated ( w_legendre ) ) deallocate ( w_legendre )
-            if ( allocated ( x_legendre ) ) deallocate ( x_legendre ) 
-            if ( allocated ( Omx ) ) deallocate ( Omx )
-            if ( allocated ( Omy ) ) deallocate ( Omy )
-            if ( allocated ( Omz ) ) deallocate ( Omz )
-            if ( allocated ( x_leb ) ) deallocate ( y_leb)
-            if ( allocated ( y_leb ) ) deallocate ( x_leb)
-            if ( allocated ( z_leb ) ) deallocate ( z_leb)
-            if ( allocated ( weight ) ) deallocate ( weight)
-            if ( allocated ( weight_leb ) ) deallocate ( weight_leb)
-        end subroutine deallocate_everything_gauss_legendre
-
-        
-        ! Compute angular grid properties : Omx, Omy, Omz, weight
-        subroutine gauss ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
-
-            integer(i2b) :: n_omega, n_psi, n_theta, n_phi
+        ! GAUSS
+        subroutine gauss (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+            type (angularGrid), intent(inout) :: angGrid
+            type (integrationScheme), intent(in) :: intScheme
+            integer(i2b) :: omega, n_psi, theta, n_phi,i
             real(dp) :: psii, phi, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
-            real(dp), dimension(nb_omega,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            real(dp), dimension(angGrid%n_angles,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 
-            write(*,*)'>> computing angular grid'
-            call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
+            allocate(OMx(angGrid%n_angles))
+            allocate(OMy(angGrid%n_angles))
+            allocate(OMz(angGrid%n_angles))
+!~             call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,angGrid%weight,angGrid%n_angles) ! allocate what we want to compute
 
-            !test if we use GL quadrature
-            if ( nb_legendre == 1 ) then
-                weight ( 1 )  = fourpi
+            select case (intScheme%order)
+            case (1)
+                weight (1)  = fourpi
                 Rotxx = 1.0_dp ; Rotxy = 0.0_dp ; Rotxz = 0.0_dp
                 Rotyx = 0.0_dp ; Rotyy = 1.0_dp ; Rotyz = 0.0_dp
                 Rotzx = 0.0_dp ; Rotzy = 0.0_dp ; Rotzz = 1.0_dp
-            else if ( nb_legendre >= 2 ) then 
-                do  n_theta = 1, nb_legendre !1 <= si nb_legendre=1
-                    cos_theta = x_legendre ( n_theta , nb_legendre ) !0
-                    sin_theta = sqrt ( 1.0_dp - cos_theta ** 2 ) !1
-                    do  n_phi = 1, 2*nb_legendre !1,2
-                        n_omega = ( n_theta - 1 ) * 2 * nb_legendre + n_phi !1,2
-                        phi = real ( n_phi - 1 , dp ) * twopi / real ( 2 * nb_legendre , dp ) !0,pi
-                        cos_phi = cos ( phi ) !1,-1
-                        sin_phi = sin ( phi ) !0,0
-                        OMx ( n_omega ) = sin_theta * cos_phi
-                        OMy ( n_omega ) = sin_theta * sin_phi
-                        OMz ( n_omega ) = cos_theta
-                        weight ( n_omega ) = w_legendre ( n_theta , nb_legendre ) * pi / real ( nb_legendre , dp ) ! 2pi,2pi
+            case default
+                do  theta = 1, intScheme%order
+
+                    PRINT*,;PRINT*,"START THETA=",theta
+
+                    cos_theta = intScheme%root(theta)
+                    sin_theta = sqrt ( 1.0_dp - cos_theta ** 2 )
+
+                    do  n_phi = 1, 2*intScheme%order
+                        omega = (theta-1)*2*intScheme%order + n_phi
+                        phi = real(n_phi-1,dp) * twopi / real ( 2 * intScheme%order , dp ) !0,pi
+                        cos_phi = cos ( phi ) ; sin_phi = sin ( phi )
+                        OMx ( omega ) = sin_theta * cos_phi
+                        OMy ( omega ) = sin_theta * sin_phi
+                        OMz ( omega ) = cos_theta
+                        angGrid%weight(omega) = intScheme%weight(theta) *pi /real(intScheme%order,dp)
+                        PRINT*,theta,n_phi,intScheme%weight(theta),omega,angGrid%weight(omega)
                         do n_psi = 1 , nb_psi
-                            psii = x_psi(n_psi)
+                            psii = molRotGrid%root(n_psi)
                             cos_psi = cos(psii) !1
                             sin_psi = sin(psii) !0
-                            Rotxx(n_omega,n_psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
-                            Rotxy(n_omega,n_psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
-                            Rotxz(n_omega,n_psi) =  sin_theta*cos_phi
-                            Rotyx(n_omega,n_psi) =  cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
-                            Rotyy(n_omega,n_psi) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
-                            Rotyz(n_omega,n_psi) =  sin_theta*sin_phi
-                            Rotzx(n_omega,n_psi) = -sin_theta*cos_psi
-                            Rotzy(n_omega,n_psi) =  sin_theta*sin_psi
-                            Rotzz(n_omega,n_psi) =  cos_theta
+                            Rotxx(omega,n_psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
+                            Rotxy(omega,n_psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
+                            Rotxz(omega,n_psi) =  sin_theta*cos_phi
+                            Rotyx(omega,n_psi) =  cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
+                            Rotyy(omega,n_psi) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
+                            Rotyz(omega,n_psi) =  sin_theta*sin_phi
+                            Rotzx(omega,n_psi) = -sin_theta*cos_psi
+                            Rotzy(omega,n_psi) =  sin_theta*sin_psi
+                            Rotzz(omega,n_psi) =  cos_theta
                         end do
                     end do
                 end do
-            else if ( nb_legendre < 1 ) then
-                stop 'Error detected in module_quadrature.f90 => subroutine "gauss" : nb_legendre should not be < 1'
-            end if
+            end select
 
-            call check_weights(weight)
-            call check_weights_psi(weight_psi)
-
+            call check_weights(angGrid%weight)
+!~             
+STOP "OK FOR NOW COOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL"
         end subroutine gauss
 
 
+        ! LEBEDEV
         subroutine lebedev( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
 
-            real(dp), dimension(nb_omega,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            real(dp), dimension(angGrid%n_angles,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
             integer(i2b) ::  n, psi
             real(dp) :: phi, theta, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
-            call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
+            call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,angGrid%weight,angGrid%n_angles) ! allocate what we want to compute
         
-            weight(1:nb_omega) = weight_leb(1:nb_omega)
+            weight(1:angGrid%n_angles) = weight_leb(1:angGrid%n_angles)
             call check_weights(weight)
-                        
-            do concurrent (n=1:nb_omega)
+
+            do concurrent (n=1:angGrid%n_angles)
                 if ( x_leb(n)==0.0_dp .and. y_leb(n)==0.0_dp ) then 
                     phi = 0.0_dp
                 else if (y_leb(n)>=0.0_dp) then 
@@ -152,7 +157,7 @@ module quadrature
                 OMz (n) = cos(theta)
             end do
             
-            do concurrent (n=1:nb_omega)
+            do concurrent (n=1:angGrid%n_angles)
                 
                 theta=acos(z_leb(n))
                 cos_theta=cos(theta)
@@ -169,8 +174,8 @@ module quadrature
                 sin_phi=sin(phi)    
                 
                 do concurrent (psi=1:nb_psi)
-                    cos_psi = cos(x_psi(psi)) !1
-                    sin_psi = sin(x_psi(psi)) !0
+                    cos_psi = cos(x_psi(psi))
+                    sin_psi = sin(x_psi(psi))
                     Rotxx(n,psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
                     Rotxy(n,psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
                     Rotxz(n,psi) =  sin_theta*cos_phi
@@ -183,7 +188,7 @@ module quadrature
                 end do
             end do
        
-            call check_weights_psi(weight_psi)
+!~             call check_weights_psi(weight_psi)
 
         end subroutine lebedev
 
@@ -211,39 +216,61 @@ module quadrature
         end subroutine check_weights
         
         
-        pure subroutine allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
+        pure subroutine allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,n_angles) ! allocate what we want to compute
             implicit none
             real(dp), allocatable, dimension(:), intent(out) :: Omx , Omy , Omz , weight
-            integer(i2b), intent(in) :: nb_omega
-            if (.not. allocated ( Omx    ) ) allocate ( Omx    ( nb_omega ) ) ! orientatioal vector along x
-            if (.not. allocated ( Omy    ) ) allocate ( Omy    ( nb_omega ) ) ! orientational vector along y
-            if (.not. allocated ( Omz    ) ) allocate ( Omz    ( nb_omega ) ) ! orientational vector along z
-            if (.not. allocated ( weight ) ) allocate ( weight ( nb_omega ) ) ! weight of each orientation
+            integer(i2b), intent(in) :: n_angles
+            if (.not. allocated ( Omx    ) ) allocate ( Omx    ( n_angles ) ) ! orientatioal vector along x
+            if (.not. allocated ( Omy    ) ) allocate ( Omy    ( n_angles ) ) ! orientational vector along y
+            if (.not. allocated ( Omz    ) ) allocate ( Omz    ( n_angles ) ) ! orientational vector along z
+            if (.not. allocated ( weight ) ) allocate ( weight ( n_angles ) ) ! weight of each orientation
         end subroutine allocate_Omx_Omy_Omz_weight_if_necessary
 
 
-        subroutine get_psi_integration_roots_and_weights (nb_psi,sym_order,weight,root)
-            use input , only : input_int
-            integer(i2b), intent(out) :: nb_psi, sym_order
-            real(dp), allocatable, dimension(:), intent(out) :: weight, root
+
+
+
+!~         subroutine get_psi_integration_roots_and_weights (nb_psi,sym_order,weight,root)
+        subroutine get_psi_integration_roots_and_weights (molRotGrid, sym_order)
+            type (angularGrid), intent(inout) :: molRotGrid
+            integer(i2b), intent(out) :: sym_order
             integer(i2b) :: i
-            nb_psi = input_int('nb_psi')
-            if ( nb_psi <= 0 ) then
+            molRotGrid%n_angles = input_int('nb_psi')
+            if ( molRotGrid%n_angles < 1 ) then
                 print*,"in module_quadrature, nb_psi, readen from input/dft.in is unphysical. critical stop."
                 stop
             end if
-            sym_order = input_int('sym_order')
-            if ( sym_order <= 0 ) then
-                print*,"in module_quadrature, sym_order, readen from input/dft.in, is unphysical. critical stop"
-                stop
-            end if
-            allocate (weight (nb_psi)) ! weights
-            weight = twopi/real(nb_psi*sym_order,dp) ! equidistant repartition between 0 and 2Pi => all weights are equal
-            allocate (root (nb_psi)) ! roots
-            do concurrent (i=1:nb_psi) ! equidistant repartition between 0 and 2Pi
-                root(i) = real(i-1,dp)*twopi/real(nb_psi*sym_order,dp) ! roots
+            allocate( molRotGrid%weight(molRotGrid%n_angles), source=0._dp)
+            molRotGrid%weight = twopi/real(molRotGrid%n_angles*sym_order,dp) ! equidistant repartition between 0 and 2Pi => all weights are equal
+            allocate( molRotGrid%root(molRotGrid%n_angles), source=0._dp)
+            do concurrent (i=1:molRotGrid%n_angles) ! equidistant repartition between 0 and 2Pi
+                molRotGrid%root(i) = real(i-1,dp)*twopi/real(molRotGrid%n_angles*sym_order,dp) ! roots
             end do
         end subroutine get_psi_integration_roots_and_weights
+
+
+
+
+
+        pure subroutine  allocate_Rotij (n_angles, nb_psi,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+            integer(i2b), intent(in) :: n_angles, nb_psi
+            real(dp), allocatable, dimension(:,:), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            allocate( Rotxx(n_angles,nb_psi), Rotxy(n_angles,nb_psi), Rotxz(n_angles,nb_psi) )
+            allocate( Rotyx(n_angles,nb_psi), Rotyy(n_angles,nb_psi), Rotyz(n_angles,nb_psi) )
+            allocate( Rotzx(n_angles,nb_psi), Rotzy(n_angles,nb_psi), Rotzz(n_angles,nb_psi) )            
+        end subroutine
+
+
+        subroutine read_order_of_quadrature (order_of_quadrature)
+            integer(i2b), intent(out) :: order_of_quadrature
+            order_of_quadrature = input_int('order_of_quadrature')
+            if (order_of_quadrature < 1) then
+                print*,"In input/dft.in, I read order_of_quadrature is < 1. This is not physical as you must have"
+                print*,"at least one point, even without angular grid. CRITICAL"
+                stop
+            end if
+        end subroutine read_order_of_quadrature
+
 
 
 end module quadrature

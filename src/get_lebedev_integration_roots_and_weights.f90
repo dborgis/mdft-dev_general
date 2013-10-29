@@ -1,23 +1,14 @@
 subroutine lebedev_integration_roots_and_weights (order, roots_x, roots_y, roots_z, weights)
 
-!~     use quadrature , only :   weights, roots_x, roots_y, roots_z
     use precision_kinds , only : dp, i2b
-!~     use input , only : input_int
-!~     use constants , only : fourpi
-!~     use system , only : nb_omega
     
     implicit none
     
     integer(i2b), intent(in) :: order
     real(dp), dimension(order), intent(out)  :: roots_x, roots_y, roots_z, weights
-    
     real(dp), parameter :: fourpi = acos(-1._dp)*4._dp
     real(dp) :: a, b, v
     integer(i2b) ::  counter !dummy
-!~ 
-!~     nb_omega = input_int('order_of_quadrature')
-!~     allocate (roots_x(nb_omega),roots_y(nb_omega),roots_z(nb_omega) )
-!~     allocate (weights ( nb_omega ) )
 
     counter=0
 
