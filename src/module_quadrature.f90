@@ -4,29 +4,56 @@ module quadrature
     use precision_kinds, only: dp, i2b
     use system , only : nb_omega, nb_psi, nb_legendre 
     use constants , only : pi, twopi, fourpi
-    use input, only: input_log, input_char
+    use input, only: input_log, input_char, input_int
 
     implicit none
 
-    real(dp), allocatable, dimension(:,:) :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
-    real(dp), allocatable, dimension(:) :: Omx , Omy , Omz , weight  ! unit vector for orientation OMEGA and associated weight
-    real(dp), allocatable, dimension(:) :: weight_psi , x_psi
-    real(dp), allocatable, dimension(:) :: x_leb, y_leb , z_leb , weight_leb 
+    real(dp), allocatable, dimension(:,:), public :: w_legendre , x_legendre ! w(i,L) (weights) and x(i,L) (roots) for order L integration
+    real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for orientation OMEGA and associated weight
+    real(dp), allocatable, dimension(:), public :: weight, weight_psi
+    real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb , weight_leb, x_psi
+    real(dp), allocatable, dimension(:,:), public :: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
     integer(i2b) :: sym_order
-    type quadratureType
-        real(dp), allocatable, dimension(:) :: NEWweight
-        real(dp), allocatable, dimension(:,:) :: NEWroots
-    end type
+    integer(i2b) :: order_of_quadrature
 
     contains
     
     
         subroutine init
-            implicit none
             call get_psi_integration_roots_and_weights (nb_psi,sym_order,weight_psi,x_psi)
-            if (trim(adjustl(input_char('quadrature')))=='L') call get_lebedev_integration_roots_and_weights
-            if (trim(adjustl(input_char('quadrature')))=='GL') call get_gauss_legendre_integration_roots_and_weights
+            call read_order_of_quadrature (order_of_quadrature)
+            nb_omega = order_of_quadrature
+            call allocate_Rotij (order_of_quadrature,nb_psi,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+            if (trim(adjustl(input_char('quadrature')))=='L') then
+                allocate( x_leb(order_of_quadrature), y_leb(order_of_quadrature), z_leb(order_of_quadrature) )
+                allocate( weight_leb(order_of_quadrature) )
+                call lebedev_integration_roots_and_weights (order_of_quadrature, x_leb ,y_leb , z_leb, weight_leb)
+                call lebedev ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+            else if (trim(adjustl(input_char('quadrature')))=='GL') then
+                call get_gauss_legendre_integration_roots_and_weights
+                call gauss ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+            end if
         end subroutine init
+
+
+        pure subroutine  allocate_Rotij (order,nb_psi,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+            integer(i2b), intent(in) :: order, nb_psi
+            real(dp), allocatable, dimension(:,:), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            allocate( Rotxx(order,nb_psi), Rotxy(order,nb_psi), Rotxz(order,nb_psi) )
+            allocate( Rotyx(order,nb_psi), Rotyy(order,nb_psi), Rotyz(order,nb_psi) )
+            allocate( Rotzx(order,nb_psi), Rotzy(order,nb_psi), Rotzz(order,nb_psi) )            
+        end subroutine
+
+
+        subroutine read_order_of_quadrature (order_of_quadrature)
+            integer(i2b), intent(out) :: order_of_quadrature
+            order_of_quadrature = input_int('order_of_quadrature')
+            if (order_of_quadrature < 1) then
+                print*,"In input/dft.in, I read order_of_quadrature is < 1. This is not physical as you must have"
+                print*,"at least one point, even without angular grid. CRITICAL"
+                stop
+            end if
+        end subroutine read_order_of_quadrature
     
    
         subroutine deallocate_everything_gauss_legendre
@@ -48,19 +75,9 @@ module quadrature
         ! Compute angular grid properties : Omx, Omy, Omz, weight
         subroutine gauss ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
 
-            integer(i2b) :: n_psi
-            integer(i2b) :: n_theta
-            integer(i2b) :: n_phi
-            integer(i2b) :: n_omega
-            real(dp) :: psii
-            real(dp) :: phi 
-            real(dp) :: cos_theta
-            real(dp) :: sin_theta
-            real(dp) :: cos_phi
-            real(dp) :: sin_phi
-            real(dp) :: cos_psi
-            real(dp) :: sin_psi
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            integer(i2b) :: n_omega, n_psi, n_theta, n_phi
+            real(dp) :: psii, phi, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
+            real(dp), dimension(nb_omega,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 
             write(*,*)'>> computing angular grid'
             call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
@@ -101,7 +118,7 @@ module quadrature
                     end do
                 end do
             else if ( nb_legendre < 1 ) then
-                stop 'Error detected in compute_angular_grid.f90 nb_legendre should not be < 1'
+                stop 'Error detected in module_quadrature.f90 => subroutine "gauss" : nb_legendre should not be < 1'
             end if
 
             call check_weights(weight)
@@ -112,16 +129,9 @@ module quadrature
 
         subroutine lebedev( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
 
-            integer(i2b) ::  n !dummy
-            integer(i2b) :: psi
-            real(dp) :: phi , theta
-            real(dp) :: cos_theta
-            real(dp) :: sin_theta
-            real(dp) :: cos_phi
-            real(dp) :: sin_phi
-            real(dp) :: cos_psi
-            real(dp) :: sin_psi
-            real(dp), dimension ( nb_omega, nb_psi ), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            real(dp), dimension(nb_omega,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            integer(i2b) ::  n, psi
+            real(dp) :: phi, theta, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
             call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,nb_omega) ! allocate what we want to compute
         
@@ -182,9 +192,9 @@ module quadrature
             implicit none
             real(dp), dimension(:), intent(in) :: weight_psi
             if ( abs ( sum ( weight_psi ( : ) ) - twopi/sym_order )  > 1.0e-10_dp ) then
-                print*, 'problem detected in compute_angular_grid.f90 :'
-                print*, 'sum over omegas of weight_psi(omega) is not 2pi/sym_order. stop'
-                stop
+                print*, 'problem detected in module_quadrature.f90 :'
+                print*, 'sum over omegas of weight_psi(omega) is not 2pi/sym_order, it is ',sum ( weight_psi ( : ) )
+                stop 'CRITICAL'
             end if
         end subroutine check_weights_psi
 
@@ -195,8 +205,8 @@ module quadrature
             ! check if sum over all omega of weight(omega) is fourpi
             if ( abs ( sum ( weight ( : ) ) - fourpi )  > 1.0e-10_dp ) then
                 print *, 'problem detected in compute_angular_grid.f90 :'
-                print *, 'sum over omegas of weight(omega) is not 4pi. stop'
-                stop
+                print *, 'sum over omegas of weight(omega) is not 4pi. it is ',sum ( weight )
+                stop 'CRITICAL'
             end if            
         end subroutine check_weights
         
