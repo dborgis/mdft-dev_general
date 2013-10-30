@@ -3,7 +3,7 @@ use precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
                     weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
                     muexc_0_multispec , Fexc_0_multispec , mole_fraction , rho_0_multispec
-use quadrature , only : weight , sym_order , angGrid, molRotGrid
+use quadrature , only : sym_order , angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : pi , FourPi , twopi
 use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward
@@ -52,7 +52,7 @@ do species = 1 , nb_species
         do o = 1, angGrid%n_angles
           do p=1, molRotGrid%n_angles
           icg = icg + 1
-          local_density = local_density + weight (o) * cg_vect (icg) ** 2*molRotGrid%weight(p)
+          local_density = local_density + angGrid%weight (o) * cg_vect (icg) ** 2*molRotGrid%weight(p)
            end do          
         end do
         ! correct by 8*pi²/n as the integral over all orientations o and psi is 4pi and 2pi/n
@@ -232,7 +232,7 @@ do species = 1 , nb_species
 ! AHAAAAAAAAAAAAATTENTION ICI LE 12 SEPTEMBRE 2011 JE ME RENDS COMPTE QU iL Y A PEUT ETRE UN FACTEUR WEIGHT(o) QUI MANQUE, CA DEPEND DE LA DEF DE N0 par RAPPORT à rho_0
           dF ( icg ) = dF ( icg ) &
 + 2.0_dp * psi * rho_0_multispec ( species ) * deltav * ( kBT * dFex ( i , j , k , species ) - muexc_0_multispec ( species ) )*&
-weight(o)*molRotGrid%weight(p)
+angGrid%weight(o)*molRotGrid%weight(p)
  ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
          end do  !p
   

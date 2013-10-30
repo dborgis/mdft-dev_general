@@ -5,7 +5,7 @@ subroutine cs_plus_hydro
   use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s , kBT , delta_k , nb_species,n_0, Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi
   use cg , only : cg_vect , FF , dF
-  use quadrature, only: weight,sym_order,angGrid, molRotGrid
+  use quadrature, only: sym_order,angGrid, molRotGrid
   use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , kx , ky , kz , k2
   use input, only : input_log
   
@@ -87,7 +87,7 @@ subroutine cs_plus_hydro
         do o=1,angGrid%n_angles
           do p=1, molRotGrid%n_angles
             icg=icg+1
-            delta_n_ijk = delta_n_ijk + weight(o)*molRotGrid%weight(p) * cg_vect(icg) ** 2 ! sum over all orientations
+            delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect(icg) ** 2 ! sum over all orientations
           end do  
         end do
           delta_n(i,j,k)=delta_n_ijk*sym_order/(twopi*fourpi) - 1.0_dp ! normalize (n=1/fourpi int_o rho(r,o))
@@ -282,7 +282,7 @@ subroutine cs_plus_hydro
           do p=1,molRotGrid%n_angles
             icg = icg + 1
             psi = cg_vect ( icg )
-            dF (icg) = dF ( icg )+2.0_dp*psi*molRotGrid%weight(p)*weight(o)/(fourpi*twopi/sym_order)*( Vint + dF_cg_ijk )
+            dF (icg) = dF ( icg )+2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)/(fourpi*twopi/sym_order)*( Vint + dF_cg_ijk )
           end do
         end do
       end do

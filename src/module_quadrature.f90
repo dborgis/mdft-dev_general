@@ -10,7 +10,6 @@ module quadrature
 
     real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb
     real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for orientation OMEGA and associated weight
-    real(dp), allocatable, dimension(:), public :: weight ! to be removed once everything is coherent and type derived
     real(dp), allocatable, dimension(:,:), public :: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
     type angularGrid
         integer(i2b) :: n_angles
@@ -72,12 +71,6 @@ module quadrature
                 call gauss (angGrid, intScheme, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
             end if
             
-            if (.not. allocated(weight) ) allocate (weight(angGrid%n_angles) )
-            weight = angGrid%weight
-            
-            if (.not. allocated(molRotGrid%weight) ) allocate (molRotGrid%weight(molRotGrid%n_angles))
-            molRotGrid%weight = molRotGrid%weight
-            
         end subroutine init
 
         ! GAUSS
@@ -95,7 +88,7 @@ module quadrature
 
             select case (intScheme%order)
             case (1)
-                weight (1)  = fourpi
+                angGrid%weight (1)  = fourpi
                 Rotxx = 1.0_dp ; Rotxy = 0.0_dp ; Rotxz = 0.0_dp
                 Rotyx = 0.0_dp ; Rotyy = 1.0_dp ; Rotyz = 0.0_dp
                 Rotzx = 0.0_dp ; Rotzy = 0.0_dp ; Rotzz = 1.0_dp
@@ -218,19 +211,6 @@ module quadrature
         end subroutine check_weights
         
         
-        pure subroutine allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,weight,n_angles) ! allocate what we want to compute
-            implicit none
-            real(dp), allocatable, dimension(:), intent(out) :: Omx , Omy , Omz , weight
-            integer(i2b), intent(in) :: n_angles
-            if (.not. allocated ( Omx    ) ) allocate ( Omx    ( n_angles ) ) ! orientatioal vector along x
-            if (.not. allocated ( Omy    ) ) allocate ( Omy    ( n_angles ) ) ! orientational vector along y
-            if (.not. allocated ( Omz    ) ) allocate ( Omz    ( n_angles ) ) ! orientational vector along z
-            if (.not. allocated ( weight ) ) allocate ( weight ( n_angles ) ) ! weight of each orientation
-        end subroutine allocate_Omx_Omy_Omz_weight_if_necessary
-
-
-
-
 
         subroutine get_psi_integration_roots_and_weights (molRotGrid, sym_order)
             type (angularGrid), intent(inout) :: molRotGrid

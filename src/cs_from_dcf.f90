@@ -3,7 +3,7 @@ subroutine cs_from_dcf
 use precision_kinds, only: i2b,dp
 use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
                   nb_species
-use quadrature, only: weight , sym_order, angGrid, molRotGrid
+use quadrature, only: sym_order, angGrid, molRotGrid
 use cg, only: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi
 use fft, only: in_forward,in_backward,out_forward,out_backward,plan_forward,plan_backward , norm_k
@@ -34,7 +34,7 @@ do i=1,nfft1
       do o = 1, angGrid%n_angles
         do p=1 , molRotGrid%n_angles
           icg=icg+1
-          delta_rho_ijk = delta_rho_ijk + weight(o) * cg_vect(icg)**2*molRotGrid%weight(p)
+          delta_rho_ijk = delta_rho_ijk + angGrid%weight(o) * cg_vect(icg)**2*molRotGrid%weight(p)
         end do
       end do
       delta_rho ( i , j , k ) = delta_rho_ijk
@@ -84,8 +84,8 @@ do species = 1 , nb_species
           do p=1, molRotGrid%n_angles
           icg = icg + 1
           psi = CG_vect ( icg )
-          Fint   = Fint   + weight(o) * fact * 0.5_dp * ( psi ** 2 - 1.0_dp) * Vint*molRotGrid%weight(p)
-          dF (icg) = dF ( icg ) + 2.0_dp * psi * weight(o) * fact * Vint*molRotGrid%weight(p)
+          Fint   = Fint   + angGrid%weight(o) * fact * 0.5_dp * ( psi ** 2 - 1.0_dp) * Vint*molRotGrid%weight(p)
+          dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * fact * Vint*molRotGrid%weight(p)
          end do
    
         end do

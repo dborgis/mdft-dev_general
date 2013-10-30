@@ -3,7 +3,7 @@
 ! 201109151545 added the calculation of the perturbation potential
 subroutine lennard_jones_perturbation_to_hard_spheres
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
-use quadrature , only : weight, angGrid
+use quadrature , only : angGrid
 use cg , only : cg_vect , dF , FF
 use precision_kinds , only : dp , i2b
 use constants , only : fourpi , twopi
@@ -40,7 +40,7 @@ do i = 1 , nfft1
       local_density = 0.0_dp
       do o = 1, angGrid%n_angles ! angGrid%n_angles=1
         icg = icg + 1
-        local_density = local_density + weight (o) * cg_vect (icg) ** 2
+        local_density = local_density + angGrid%weight (o) * cg_vect (icg) ** 2
       end do
       ! correct by fourpi as the integral over all orientations o is 4pi
       local_density = local_density / fourpi

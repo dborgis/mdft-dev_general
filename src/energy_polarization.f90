@@ -2,7 +2,7 @@ subroutine energy_polarization
 use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, deltax,deltay,deltaz
-use quadrature , only : weight , Omx , Omy , Omz, sym_order , angGrid, molRotGrid
+use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : twopi
 use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
@@ -61,13 +61,13 @@ Px = 0.0_dp
 Py = 0.0_dp
 Pz = 0.0_dp
 ! put density of last minimization step in delta_rho and P
-! but first prepare the product weight(omega)*Omx in order not to repeat it
+! but first prepare the product angGrid%weight(omega)*Omx in order not to repeat it
 allocate ( weight_omx ( angGrid%n_angles ) )
 allocate ( weight_omy ( angGrid%n_angles ) )
 allocate ( weight_omz ( angGrid%n_angles ) )
-weight_omx = weight * Omx
-weight_omy = weight * Omy
-weight_omz = weight * Omz
+weight_omx = angGrid%weight * Omx
+weight_omy = angGrid%weight * Omy
+weight_omz = angGrid%weight * Omz
 icg = 0
 do i = 1 , nfft1
     
@@ -218,8 +218,8 @@ do i = 1 , nfft1
           psi = cg_vect ( icg )
           rho = psi ** 2
           Vint = - kBT * rho_0 * ( Omx ( o ) * Ex ( i ,  j , k ) + Omy ( o ) * Ey ( i , j , k ) + Omz ( o ) * Ez ( i , j , k ) )
-          Fint = Fint + (rho - 1.0_dp) * weight(o) * molRotGrid%weight(p) * Vint
-          dF (icg) = dF ( icg ) + 2.0_dp * psi * weight(o) * molRotGrid%weight(p) * fact * Vint
+          Fint = Fint + (rho - 1.0_dp) * angGrid%weight(o) * molRotGrid%weight(p) * Vint
+          dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * molRotGrid%weight(p) * fact * Vint
         end do  
       end do
     end do

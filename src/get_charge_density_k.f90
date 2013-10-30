@@ -9,7 +9,7 @@ use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly
 , sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k,nb_species, deltaV,deltax
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
 use cg , only : cg_vect
-use quadrature, only : weight, Omx , Omy , Omz, angGrid, molRotGrid
+use quadrature, only : Omx , Omy , Omz, angGrid, molRotGrid
 use fft , only : kx, ky, kz, k2,in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
 implicit none
 integer (i2b) :: i, j, k, o , p , n,species!dummy

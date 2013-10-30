@@ -7,7 +7,7 @@ subroutine energy_ideal
     use cg, only : cg_vect, FF, dF
     use system, only : nfft1, nfft2, nfft3, lx, ly, lz, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, &
                         n_0_multispec
-    use quadrature, only : weight , sym_order, angGrid, molRotGrid
+    use quadrature, only : sym_order, angGrid, molRotGrid
     use input, only : input_log, input_char
     use constants, only : fourpi
 
@@ -44,7 +44,7 @@ subroutine energy_ideal
                     do o=1,angGrid%n_angles
                         do p=1,molRotGrid%n_angles
                             icg=icg+1
-                            rhon=rhon+cg_vect(icg)**2*weight(o)*molRotGrid%weight(p)/(fourpi**2/(sym_order*2.0_dp))
+                            rhon=rhon+cg_vect(icg)**2*angGrid%weight(o)*molRotGrid%weight(p)/(fourpi**2/(sym_order*2.0_dp))
                         end do
                     end do
                     rho_n(i,j,k)=rhon
@@ -82,17 +82,19 @@ subroutine energy_ideal
                                     end if
                                     if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
                                         Fideal = Fideal + &
-                                            weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species ) * mole_fraction&
+                                            angGrid%weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species ) * mole_fraction&
                                                                                 ( species ) ! lim xlogx= 0 when x->0
                                         dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
                                     else
                                         rho = psi ** 2
                                         logrho = log ( rho )
                                         Fideal = Fideal + &
-                                            weight ( o ) * molRotGrid%weight (p) * rho_0_multispec(species)*mole_fraction(species)&
+                                            angGrid%weight ( o ) * molRotGrid%weight (p) * rho_0_multispec(species)&
+                                            *mole_fraction(species)&
                                             * ( rho * logrho - rho + 1.0_dp )
                                         dF (icg) = dF ( icg ) &
-                                            + 2.0_dp * psi * weight ( o ) * molRotGrid%weight(p) * DeltaV*rho_0_multispec(species)&
+                                            + 2.0_dp * psi * angGrid%weight ( o ) * molRotGrid%weight(p) *&
+                                             DeltaV*rho_0_multispec(species)&
                                             *( kBT * logrho + dFid_lin_temp )
                                     end if
                                 end do ! molRotGrid%n_angles
@@ -122,18 +124,18 @@ subroutine energy_ideal
                                     end if
                                     if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
                                         Fideal = Fideal + &
-                                            weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species ) &
+                                            angGrid%weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species ) &
                                             * mole_fraction ( species ) ! lim xlogx= 0 when x->0
                                         dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
                                     else
                                         Fideal = Fideal + &
-                                          weight ( o ) * molRotGrid%weight (p) * rho_0_multispec ( species ) &
+                                          angGrid%weight ( o ) * molRotGrid%weight (p) * rho_0_multispec ( species ) &
                                           * mole_fraction ( species ) &
                                             * ( rho * logrho - rho + 1.0_dp )
-                                        Fid_lin=Fid_lin+weight(o)*molRotGrid%weight(p)*DeltaV * rho_0_multispec &
+                                        Fid_lin=Fid_lin+angGrid%weight(o)*molRotGrid%weight(p)*DeltaV * rho_0_multispec &
                                         ( species )*Fid_lin_temp
                                         dF(icg) = dF(icg) &
-                                           + 2.0_dp * psi * weight ( o ) * molRotGrid%weight(p) * DeltaV * rho_0_multispec &
+                                           + 2.0_dp * psi * angGrid%weight ( o ) * molRotGrid%weight(p) * DeltaV * rho_0_multispec &
                                            ( species )  *( kBT * logrho + dFid_lin_temp )
                                     end if
                                 end do ! molRotGrid%n_angles
@@ -157,17 +159,19 @@ subroutine energy_ideal
                                 psi = CG_vect ( icg )
                                 if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
                                     Fideal = Fideal + &
-                                        weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species ) * mole_fraction ( species ) ! lim xlogx= 0 when x->0
+                                        angGrid%weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species )&
+                                         * mole_fraction ( species ) ! lim xlogx= 0 when x->0
                                     dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
                                 else
                                     rho = psi ** 2
                                     logrho = log ( rho )
                                     Fideal = Fideal + &
-                                        weight ( o ) * molRotGrid%weight (p) * rho_0_multispec ( species ) &
+                                        angGrid%weight ( o ) * molRotGrid%weight (p) * rho_0_multispec ( species ) &
                                         * mole_fraction ( species ) &
                                         * ( rho * logrho - rho + 1.0_dp )
                                     dF(icg) = dF(icg) &
-                                        + 2.0_dp * psi * weight ( o ) * molRotGrid%weight(p) * DeltaV * rho_0_multispec ( species )&
+                                        + 2.0_dp * psi * angGrid%weight ( o ) * &
+                                        molRotGrid%weight(p) * DeltaV * rho_0_multispec ( species )&
                                         * kBT * logrho
                                 end if
                             end do ! molRotGrid%n_angles

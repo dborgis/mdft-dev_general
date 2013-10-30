@@ -6,7 +6,7 @@ use constants , only : fourpi
 ! cg contains everything related to the minimizer
 use cg , only : CG_vect
 ! cg_vect = density for at each grid point for each angle and each species
-use quadrature , only : weight , Omx , Omy , Omz, angGrid
+use quadrature , only : Omx , Omy , Omz, angGrid
 implicit none
 real(dp), dimension ( nfft1 , nfft2 , nfft3 , nb_species ) , intent(out) :: Px , Py , Pz ! equilibrium polarization(position)
 integer(i2b):: i , j , k , omega , icg , species ! dummy
@@ -20,9 +20,9 @@ Pz = 0.0_dp
 allocate ( weight_omx ( angGrid%n_angles ) )
 allocate ( weight_omy ( angGrid%n_angles ) )
 allocate ( weight_omz ( angGrid%n_angles ) )
-weight_omx = weight * Omx
-weight_omy = weight * Omy
-weight_omz = weight * Omz
+weight_omx = angGrid%weight * Omx
+weight_omy = angGrid%weight * Omy
+weight_omz = angGrid%weight * Omz
 ! read cg_vect and get density and polarization from it
 ! note again that rho is the density per angle so that 
 icg = 0
