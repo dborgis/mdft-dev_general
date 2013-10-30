@@ -9,8 +9,8 @@ real(dp), dimension(nfft1,nfft2,nfft3), intent(out) :: arrayout !>@var output ar
 integer(i2b) :: n , p
 arrayout=0.0_dp
 do n=1,nb_omega
-  do p=1,nb_psi
-  arrayout(:,:,:)=arrayout(:,:,:)+arrayin(:,:,:,n,p)*weight(n)*weight_psi(p)
-  end do
+    do p=1,nb_psi
+        arrayout(:,:,:)=arrayout(:,:,:)+arrayin(:,:,:,n,p)*weight(n)*weight_psi(p)
+    end do
 end do
 end subroutine mean_over_orientations
