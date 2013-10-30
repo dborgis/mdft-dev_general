@@ -1,11 +1,11 @@
 !> Gets the final density from the last minimizer step.
 subroutine get_final_density ( neq )
 use precision_kinds , only: dp , i2b
-use system , only : nfft1 , nfft2 , nfft3 , nb_species , Lx , Ly , Lz , mole_fraction, n_0_multispec, nb_psi,deltax,&
+use system , only : nfft1 , nfft2 , nfft3 , nb_species , Lx , Ly , Lz , mole_fraction, n_0_multispec, deltax,&
 deltay,deltaz
 use constants , only : fourpi, pi , twopi
 use cg , only : CG_vect
-use quadrature , only : weight, sym_order, weight_psi, angGrid
+use quadrature , only : weight, sym_order, weight_psi, angGrid, molRotGrid
 use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward , k2
 implicit none
 real(dp), intent(out) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq !> equilibrium density(position)
@@ -36,7 +36,7 @@ do species = 1 , nb_species
         local_density = 0.0_dp
         do omega = 1 , angGrid%n_angles
          
-          do p=1, nb_psi
+          do p=1, molRotGrid%n_angles
             icg = icg + 1
             rho_over_fourpi = cg_vect ( icg ) ** 2 / (twopi**2*2.0_dp/sym_order)
             local_density = local_density + weight ( omega ) *weight_psi(p)* rho_over_fourpi ! integral of rho over all orientations ie 'n'

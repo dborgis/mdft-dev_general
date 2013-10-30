@@ -1,20 +1,20 @@
 !TO DO use a smaller array to store sigma by finding the larger indexes (on x, y, z) on which some charges are projected
 subroutine get_charge_factor ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
 use precision_kinds , only : i2b , dp
-use system , only : nfft1 , nfft2 , nfft3 , x_solv  ,y_solv , z_solv , chg_solv , id_solv , nb_psi , &
+use system , only : nfft1 , nfft2 , nfft3 , x_solv  ,y_solv , z_solv , chg_solv , id_solv , &
  nb_solvent_sites, &
  Lx , Ly , Lz , deltax , deltay , deltaz, wigma
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
-use quadrature, only: angGrid
+use quadrature, only: angGrid, molRotGrid
 implicit none
 integer(i2b):: i , j , o , p , m
-real(dp), dimension(angGrid%n_angles,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 real (dp ) :: xq , yq , zq , wim , wjm , wip , wjp , wkm , wkp, Dx, Dy, Dz
 integer (kind = i2b ) :: im , jm , km , ip , jp , kp 
 real (kind= dp ) , allocatable , dimension ( : , : , : ) :: xmod , ymod , zmod
  character (len=1) , allocatable , dimension ( : ) :: coordinate
 integer ( i2b) , allocatable , dimension ( : ) :: nombre_image
-!allocate ( wigma ( nfft1, nfft2, nfft3 , angGrid%n_angles , nb_psi ) ) 
+!allocate ( wigma ( nfft1, nfft2, nfft3 , angGrid%n_angles , molRotGrid%n_angles ) ) 
 allocate ( nombre_image ( nb_solvent_sites ) )
 allocate ( coordinate ( nb_solvent_sites ) )
 !check how many coordinates it is neccessary to store if there is one site of the solvent in ( 0 , 0 , 0 ) it will not move by rotation
@@ -53,17 +53,17 @@ print*, nombre_image
 !evaluate the total number of images which is necessary to store
 nb_of_interpolation = sum ( nombre_image )
 print*, nb_of_interpolation
-allocate (x_charge ( nb_of_interpolation , nb_psi , angGrid%n_angles ) )
-allocate (y_charge (nb_of_interpolation , nb_psi , angGrid%n_angles ) )
-allocate (z_charge (nb_of_interpolation , nb_psi , angGrid%n_angles ) )
-allocate (q_charge (nb_of_interpolation , nb_psi , angGrid%n_angles ) )
+allocate (x_charge ( nb_of_interpolation , molRotGrid%n_angles , angGrid%n_angles ) )
+allocate (y_charge (nb_of_interpolation , molRotGrid%n_angles , angGrid%n_angles ) )
+allocate (z_charge (nb_of_interpolation , molRotGrid%n_angles , angGrid%n_angles ) )
+allocate (q_charge (nb_of_interpolation , molRotGrid%n_angles , angGrid%n_angles ) )
 x_charge=0
 y_charge=0
 z_charge=0
 q_charge=0.0_dp
-allocate ( xmod ( nb_solvent_sites  , nb_psi , angGrid%n_angles) )
-allocate ( ymod ( nb_solvent_sites  , nb_psi , angGrid%n_angles) )
-allocate ( zmod ( nb_solvent_sites  , nb_psi , angGrid%n_angles) )
+allocate ( xmod ( nb_solvent_sites  , molRotGrid%n_angles , angGrid%n_angles) )
+allocate ( ymod ( nb_solvent_sites  , molRotGrid%n_angles , angGrid%n_angles) )
+allocate ( zmod ( nb_solvent_sites  , molRotGrid%n_angles , angGrid%n_angles) )
 xmod=0.0_dp
 ymod=0.0_dp
 zmod=0.0_dp
@@ -73,7 +73,7 @@ do m=1, nb_solvent_sites                                                        
 print*, 'boucle8'      
        do o =1 , angGrid%n_angles
        
-         do p=1 , nb_psi
+         do p=1 , molRotGrid%n_angles
               i=0
               do j = 1 , m-1
               i= i+nombre_image(j)                                                              !Find the value of index i for this solute site
@@ -156,7 +156,7 @@ print*, 'boucle8'
      !print*, 'boucle1'         
        do o =1 , angGrid%n_angles
        
-          do p=1 , nb_psi
+          do p=1 , molRotGrid%n_angles
              i=0
              do j = 1 , m-1
                i= i+nombre_image(j)

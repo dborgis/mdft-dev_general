@@ -5,12 +5,12 @@ use precision_kinds , only : i2b , dp
 use input , only : input_line, input_int, input_dp,input_char
 use cg , only : nbd , iwa , ll , uu , wa , dF , cg_vect , epsmch , factr , epsg , ncg , mcg , iprint , minimizer_type ,&
                 itermax , minimizer_iter , pgtol
-use system , only : nfft1 , nfft2 , nfft3 , nb_species , nb_psi
-use quadrature, only: angGrid
+use system , only : nfft1 , nfft2 , nfft3 , nb_species
+use quadrature, only: angGrid, molRotGrid
 implicit none
 integer(i2b):: i , j ! dummy
 ! total number of variables to optimize
-ncg = nfft1 * nfft2 * nfft3 * angGrid%n_angles *nb_psi* nb_species
+ncg = nfft1 * nfft2 * nfft3 * angGrid%n_angles *molRotGrid%n_angles* nb_species
 ! get maximum number of iterations itermax
 itermax=input_int('maximum_iteration_nbr')
 write (*,*) 'itermax = ' , itermax

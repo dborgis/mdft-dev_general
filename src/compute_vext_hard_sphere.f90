@@ -4,9 +4,9 @@ subroutine compute_Vext_hard_sphere
 use precision_kinds , only : i2b , dp
 use input , only : input_line,input_dp
 use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species &
-                    , deltax , deltay , deltaz , nb_psi
+                    , deltax , deltay , deltaz
 use external_potential , only : Vext_total , Vext_hard
-use quadrature, only: angGrid
+use quadrature, only: angGrid, molRotGrid
 implicit none
 integer(i2b):: i , j , k !> @var dummy
 integer(i2b):: species ! dummy between 1 and nb_species
@@ -21,7 +21,7 @@ write (*,*) '>>> Compute HS Vext for hard sphere in hs fluid'
 write (*,*) 'there are as many hard sphere solute as solutes in solute.in'
 ! be sure Vext_total is allocated
 if ( .not. allocated ( Vext_total ) ) then
-  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi , nb_species ) )
+  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles , nb_species ) )
   Vext_total = 0.0_dp
 end if
 ! look for tag 'hard_sphere_solute_radius' which gives the radius of the sphere for the external potential

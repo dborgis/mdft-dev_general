@@ -20,8 +20,6 @@ integer(i2b) :: nfft ! nbr de point par unite de longueur. lu dans input/dft.in.
 integer(i2b) :: nfft1,nfft2,nfft3 ! nbr de points sur chaque dimensions de la grille. deduits de nfft lu dans dft.in
 integer(i2b) :: nb_legendre ! ordre pour integration Gauss-legendre
 real(dp) :: delta_r
-! Grille angulaire
-integer(i2b) :: nb_psi ! nb angle psi
 !
 real(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
 real(dp), allocatable , dimension ( : ) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case

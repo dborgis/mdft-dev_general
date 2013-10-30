@@ -5,17 +5,17 @@
 subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
 
     use precision_kinds, only: dp,i2b
-    use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,nb_psi,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
+    use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species, RC
     use constants , only : fourpi , qfact
     use external_potential , only : Vext_q
-    use quadrature, only: angGrid
+    use quadrature, only: angGrid, molRotGrid
 
     implicit none
 
-    real(dp), dimension(angGrid%n_angles,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+    real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     integer(i2b) :: i,j,k,o,p,m,n ! dummy
-    real(dp),dimension(nb_solvent_sites,nb_psi,angGrid%n_angles) :: xmod,ymod,zmod
+    real(dp),dimension(nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) :: xmod,ymod,zmod
     real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
     real(dp) :: x_m,y_m,z_m ! solvent sites coordinates
     real(dp) :: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
@@ -56,7 +56,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     
     ! precompute Rot_ij(omega,psi)*k_solv(a) for speeding up
     do o=1,angGrid%n_angles
-        do p=1,nb_psi
+        do p=1,molRotGrid%n_angles
             do m=1,nb_solvent_sites
                 xmod(m,p,o)= Rotxx(o,p)*x_solv(m) + Rotxy(o,p)*y_solv(m) + Rotxz(o,p)*z_solv(m)
                 ymod(m,p,o)= Rotyx(o,p)*x_solv(m) + Rotyy(o,p)*y_solv(m) + Rotyz(o,p)*z_solv(m)
@@ -67,7 +67,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
 
 !$OMP PARALLEL DO &
 !$OMP DEFAULT(private) & ! variables are all private by default, but the ones in next SHARED(..)
-!$OMP SHARED(nfft3,nfft2,nfft1,ou_on_en_est,deltaz,deltay,deltax,angGrid%n_angles,nb_psi,nb_solvent_sites, &
+!$OMP SHARED(nfft3,nfft2,nfft1,ou_on_en_est,deltaz,deltay,deltax,angGrid%n_angles,molRotGrid%n_angles,nb_solvent_sites, &
 !$OMP id_solv,chg_solv,xmod,ymod,zmod,nb_solute_sites,id_mol,chg_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz, &
 !$OMP Rc2,beta,Vcoul) &
 !$OMP SCHEDULE(DYNAMIC) ! dynamic allocation of work over nodes (no node is sleeping while others work)
@@ -86,7 +86,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
                     x_grid=real(i-1,dp)*deltax
                     do o=1,angGrid%n_angles
                         tempVcoul=0.0_dp
-                        ploop:  do p=1,nb_psi
+                        ploop:  do p=1,molRotGrid%n_angles
                             V_psi=0.0_dp
                             do m=1,nb_solvent_sites
                                 ids=id_solv(m)
@@ -122,7 +122,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
                         !if (tempVcoul<1.e-10_dp) then
                         Vext_q(i,j,k,o,p,species ) = V_psi
                         !else
-                        !   Vext_q(i,j,k,o,1)=-log(tempVcoul/nb_psi)/beta
+                        !   Vext_q(i,j,k,o,1)=-log(tempVcoul/molRotGrid%n_angles)/beta
                         !end if
                         ! Limit maximum value
                         if (Vext_q(i,j,k,o,p,species)>100.0_dp) Vext_q(i,j,k,o,p,species)=100.0_dp

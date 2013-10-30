@@ -6,16 +6,16 @@
 subroutine compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz )
 use precision_kinds , only : dp , i2b
 use input , only : input_line,input_dp 
-use system, only: nfft1 , nfft2 , nfft3 , nb_psi , x_solv , y_solv , z_solv , x_mol , y_mol , z_mol , &
+use system, only: nfft1 , nfft2 , nfft3 , x_solv , y_solv , z_solv , x_mol , y_mol , z_mol , &
                         beta , nb_solute_sites , nb_solvent_sites , Lx , Ly , Lz
 use constants , only : fourpi
 use external_potential , only : Vext_total
-use quadrature, only: angGrid
+use quadrature, only: angGrid, molRotGrid
 implicit none
-real(dp), dimension ( angGrid%n_angles , nb_psi ) , intent (in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , &
-                                                                      Rotzy , Rotzz ! rotationnal matrix for sites
+real(dp), dimension ( angGrid%n_angles , molRotGrid%n_angles ) , intent (in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy ,&
+                                                                Rotyz , Rotzx, Rotzy , Rotzz ! rotationnal matrix for sites
 integer(i2b):: i , j , k , o , p , m , n ! dummy
-real(dp), dimension ( nb_solvent_sites , nb_psi , angGrid%n_angles ) :: xmod , ymod , zmod
+real(dp), dimension ( nb_solvent_sites , molRotGrid%n_angles , angGrid%n_angles ) :: xmod , ymod , zmod
 real(dp):: x_grid , y_grid , z_grid ! coordinates of grid nodes
 real(dp):: x_m , y_m , z_m ! solvent sites coordinates
 real(dp):: x_nm , y_nm , z_nm ! coordinate of vecteur solute-solvent
@@ -27,7 +27,7 @@ character (50) :: filename
 real(dp):: rc, rc2 ! radius of the hard wall in the purely repulsive potential of dzubiella
 real(dp):: tempVrep ! temporary Vrep(i,j,k,o)
 real(dp):: kbT ! kbT of the purely repulsive potential V such as V(R0+1)=kBT => kbT = kBT
-real(dp), dimension ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi) :: Vrep
+real(dp), dimension ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles) :: Vrep
 real(dp):: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
 ! init timer
 call cpu_time(time0)
@@ -43,7 +43,7 @@ Rc2 = Rc**2
 kbT = 1.0_dp/beta
 ! tabulate coordinates of solvent sites for each omega and psi angles
 do o = 1 , angGrid%n_angles
-  do p = 1 , nb_psi
+  do p = 1 , molRotGrid%n_angles
     do m = 1 , nb_solvent_sites
       xmod (m,p,o) = Rotxx (o,p) * x_solv (m) + Rotxy (o,p) * y_solv (m) + Rotxz (o,p) * z_solv (m)
       ymod (m,p,o) = Rotyx (o,p) * x_solv (m) + Rotyy (o,p) * y_solv (m) + Rotyz (o,p) * z_solv (m)
@@ -66,7 +66,7 @@ do k = 1 , nfft3
       x_grid = real(i-1,dp) * deltax
       do o = 1 , angGrid%n_angles
         tempVrep = 0.0_dp
-        do p = 1 , nb_psi
+        do p = 1 , molRotGrid%n_angles
           V_psi = 0.0_dp
           do m = 1 , nb_solvent_sites
             x_m = x_grid + xmod (m,p,o)

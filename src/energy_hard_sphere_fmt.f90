@@ -2,8 +2,8 @@ subroutine energy_hard_sphere_fmt
 use precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
                     weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
-                    muexc_0_multispec , Fexc_0_multispec , mole_fraction , nb_psi, rho_0_multispec
-use quadrature , only : weight , sym_order , weight_psi, angGrid
+                    muexc_0_multispec , Fexc_0_multispec , mole_fraction , rho_0_multispec
+use quadrature , only : weight , sym_order , weight_psi, angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : pi , FourPi , twopi
 use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward
@@ -50,7 +50,7 @@ do species = 1 , nb_species
       do k = 1 , nfft3
         local_density = 0.0_dp
         do o = 1, angGrid%n_angles
-          do p=1, nb_psi
+          do p=1, molRotGrid%n_angles
           icg = icg + 1
           local_density = local_density + weight (o) * cg_vect (icg) ** 2*weight_psi(p)
            end do          
@@ -226,7 +226,7 @@ do species = 1 , nb_species
     do j = 1, nfft2
       do k = 1, nfft3
         do o = 1, angGrid%n_angles
-          do p=1, nb_psi
+          do p=1, molRotGrid%n_angles
           icg = icg + 1
           psi = cg_vect ( icg )
 ! AHAAAAAAAAAAAAATTENTION ICI LE 12 SEPTEMBRE 2011 JE ME RENDS COMPTE QU iL Y A PEUT ETRE UN FACTEUR WEIGHT(o) QUI MANQUE, CA DEPEND DE LA DEF DE N0 par RAPPORT à rho_0

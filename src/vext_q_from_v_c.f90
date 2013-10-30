@@ -1,11 +1,11 @@
 subroutine vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
 use precision_kinds , only : dp , i2b
-use system , only : chg_mol , chg_solv , nb_psi, x_solv , y_solv , z_solv , nb_solvent_sites , nb_species , Lx , Ly , &
+use system , only : chg_mol , chg_solv , x_solv , y_solv , z_solv , nb_solvent_sites , nb_species , Lx , Ly , &
                     Lz , deltax , deltay , deltaz , beta , id_solv , beta , nfft1 , nfft2 , nfft3
 ! chg_mol (nb_id_mol ) = charge of each solute site
 ! chg_solv ( nb_id_solv ) = charge of each solvent site
-! nb_psi = total number of psi angles
-use quadrature, only: angGrid
+! molRotGrid%n_angles = total number of psi angles
+use quadrature, only: angGrid, molRotGrid
 use external_potential , only : v_c , vext_q , vext_lj
 ! v_c = electrostatic potential from charge density and poisson equation
 ! vext_q = electrostatic potential energy in general and as used in the calculation of the total external potential
@@ -14,10 +14,10 @@ use constants , only : fourpi , qfact , qunit
 ! qfact = qunit ** 2 * 1.0e-3_dp * Navo / ( fourpi * eps0 * 1.0e-10_dp ) ! electrostatic potential unit so that QFACT*q*q/r is kJ/mol
 implicit none
 ! Declaration zone
-real(dp), dimension ( angGrid%n_angles , nb_psi ) , intent(in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx ,&
-                                                                        Rotzy , Rotzz
+real(dp), dimension ( angGrid%n_angles , molRotGrid%n_angles ) , intent(in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , &
+                                                                Rotzx , Rotzy , Rotzz
 integer(i2b):: i , j , k , o , p , m,z ! dummy
-real(dp), dimension ( nb_solvent_sites , nb_psi , angGrid%n_angles ) :: xmod , ymod , zmod
+real(dp), dimension ( nb_solvent_sites , molRotGrid%n_angles , angGrid%n_angles ) :: xmod , ymod , zmod
 integer(i2b):: species ! dummy
 real(dp):: xq , yq , zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)
 integer(i2b):: im , jm , km , ip , jp , kp ! 6 indices from which all corners of cube surrounding point charge are defined
@@ -33,7 +33,7 @@ call cpu_time ( time0 )
 z=0
 ! be sure this subroutine comes at right moment
 ! init (again during debug) vext_q
-if ( .not. allocated ( vext_q ) ) allocate ( vext_q ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi , nb_species ) )
+if ( .not. allocated ( vext_q ) ) allocate ( vext_q ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ) )
 vext_q = 0.0_dp
 print *, 'vext_q_from_v_c : min = ' , minval ( Vext_q ) , ' ; max = ' , maxval ( Vext_q ) 
 ! test if all solutes or solvent sites have zero charge then don't waste your time : go to end of subroutine
@@ -56,7 +56,7 @@ write(11,*) v_c(i , j , k)
 close(11)
 ! Tabulate rotation matrix * solvent coordinates
 do o = 1 , angGrid%n_angles
-  do p = 1 , nb_psi
+  do p = 1 , molRotGrid%n_angles
     do m = 1 , nb_solvent_sites
       xmod ( m , p , o ) = Rotxx ( o , p ) * x_solv ( m ) + Rotxy ( o , p ) * y_solv ( m ) + Rotxz ( o , p ) * z_solv ( m )
       ymod ( m , p , o ) = Rotyx ( o , p ) * x_solv ( m ) + Rotyy ( o , p ) * y_solv ( m ) + Rotyz ( o , p ) * z_solv ( m )
@@ -73,7 +73,7 @@ do species = 1 , nb_species
       do k = 1 , nfft3
         do o = 1 , angGrid%n_angles
           average_over_psi = 0.0_dp ! init average over psi which is for all psi for a given i,j,k,omega
-          do p = 1 , nb_psi
+          do p = 1 , molRotGrid%n_angles
             vpsi = 0.0_dp ! vpsi is initiated. We make a boltzmann average over psi angles
             do m = 1 , nb_solvent_sites
               if ( chg_solv ( id_solv (m) ) == 0.0_dp ) cycle
@@ -117,10 +117,10 @@ do species = 1 , nb_species
 !          if ( average_over_psi < 1.e-10_dp ) then
 !            Vext_q ( i , j , k , o , species ) = 25.0_dp / beta ! TODO magic numbers are not welcome
 !          else
-!            Vext_q ( i , j , k , o , species ) = - log ( average_over_psi / nb_psi ) / beta
+!            Vext_q ( i , j , k , o , species ) = - log ( average_over_psi / molRotGrid%n_angles ) / beta
 !          end if
 !          if ( average_over_psi > 0.0_dp ) then
-            Vext_q ( i , j , k , o , p , species ) = vpsi !- log ( average_over_psi / nb_psi ) / (beta)
+            Vext_q ( i , j , k , o , p , species ) = vpsi !- log ( average_over_psi / molRotGrid%n_angles ) / (beta)
 !          else
 !            Vext_q ( i , j , k , o , species ) = huge(1.0_dp)
 !          end if

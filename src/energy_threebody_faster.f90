@@ -2,12 +2,13 @@ subroutine energy_threebody_faster
 use precision_kinds, only:i2b, dp
 use input , only : input_line , input_log
 use constants, only: twopi
-use quadrature, only : weight, weight_psi, angGrid
+use quadrature, only : weight, weight_psi, angGrid, molRotGrid
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , Lx , Ly , Lz ,&
 &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
-& , lambda1_mol , lambda2_mol, nb_psi,deltaV,n_0
+& , lambda1_mol , lambda2_mol, deltaV,n_0
 use cg, only:cg_vect,dF,FF
 use fft, only : plan_backward, plan_forward, in_backward, out_backward, in_forward, out_forward
+
 implicit none
 real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
 integer(i2b)::icg
@@ -55,7 +56,7 @@ do i=1,nfft1
   do j=1,nfft2
     do k=1,nfft3
       do o=1,angGrid%n_angles
-        do p=1, nb_psi
+        do p=1, molRotGrid%n_angles
           icg=icg+1
           rho(i,j,k) = rho(i,j,k) + rho_0*weight(o)*weight_psi(p)*cg_vect(icg)**2
         end do
@@ -467,7 +468,7 @@ do i=1,nfft1
   do j=1, nfft2
     do k=1, nfft3
       do o=1,angGrid%n_angles
-        do p=1,nb_psi
+        do p=1,molRotGrid%n_angles
           icg=icg+1    
           psi=cg_vect(icg)
           dF(icg)=dF(icg)+kBT*psi*deltaV*weight(o)*weight_psi(p)*rho_0*(&

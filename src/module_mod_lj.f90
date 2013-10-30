@@ -4,11 +4,11 @@ module mod_lj
     use external_potential, only: Vext_lj
     use precision_kinds, only: dp, i2b
     use system, only: nfft1, nfft2, nfft3, deltax,deltay,deltaz,nb_solute_sites,eps_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz&
-                   ,sig_solv,sig_mol , nb_species, id_mol, id_solv, chg_mol , chg_solv, eps_solv, nb_psi, &
+                   ,sig_solv,sig_mol , nb_species, id_mol, id_solv, chg_mol , chg_solv, eps_solv, &
                    x_solv,y_solv,z_solv, nb_solvent_sites
     use constants, only:fourpi
     use input , only : input_line
-    use quadrature, only: angGrid
+    use quadrature, only: angGrid, molRotGrid
     implicit none
     integer(i2b), private :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
     contains
@@ -16,7 +16,8 @@ module mod_lj
         subroutine init
             nb_id_mol  = size ( chg_mol  ) ! total number of solute types
             nb_id_solv = size ( chg_solv ) ! total number of solvent types
-            if (.not. allocated( Vext_lj )) allocate( Vext_lj(nfft1,nfft2,nfft3,angGrid%n_angles,nb_psi,nb_species), source=0._dp ) ! Vext_lj is a *very* big array that should now be allocated
+            if (.not. allocated( Vext_lj )) allocate( Vext_lj(nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species),&
+                source=0._dp ) ! Vext_lj is a *very* big array that should now be allocated
             call calculate ! compute Vext_lj
         end subroutine
         

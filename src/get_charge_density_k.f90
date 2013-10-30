@@ -5,15 +5,15 @@ subroutine get_charge_density_k ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotz
 !into energy_polarization_myway.f90 to compute the (multipolar) polarization Free energy.
 use precision_kinds, only : i2b, dp
 use constants, only : i_complex, twopi, fourpi
-use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly, Lz,nb_solvent_sites,nb_psi, id_solv&
+use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly, Lz,nb_solvent_sites, id_solv&
 , sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k,nb_species, deltaV,deltax
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
 use cg , only : cg_vect
-use quadrature, only : weight, weight_psi, Omx , Omy , Omz, angGrid
+use quadrature, only : weight, weight_psi, Omx , Omy , Omz, angGrid, molRotGrid
 use fft , only : kx, ky, kz, k2,in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
 implicit none
 integer (i2b) :: i, j, k, o , p , n,species!dummy
-real(dp), dimension(angGrid%n_angles,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 integer (i2b) :: nf1
 real (dp) :: xmod, ymod, zmod
 real (dp) :: deltaVk, Rc
@@ -28,13 +28,13 @@ print*, 'WARNING: you convolute molecular Charge Density and POLARIZATION with a
 end if
 deltaVk=twopi**3/(Lx*Ly*Lz)
 nf1=nfft1/2
-allocate(sigma_k(nf1+1, nfft2, nfft3, angGrid%n_angles, nb_psi,nb_species))
+allocate(sigma_k(nf1+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles,nb_species))
 sigma_k=(0.0_dp,0.0_dp)
-allocate (molec_polarx_k (nf1+1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi,nb_species))
+allocate (molec_polarx_k (nf1+1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles,nb_species))
 molec_polarx_k= ( 0.0_dp , 0.0_dp )
-allocate (molec_polary_k (nf1+1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi,nb_species))
+allocate (molec_polary_k (nf1+1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles,nb_species))
 molec_polary_k= ( 0.0_dp , 0.0_dp )
-allocate (molec_polarz_k (nf1+1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi,nb_species))
+allocate (molec_polarz_k (nf1+1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles,nb_species))
 molec_polarz_k= ( 0.0_dp , 0.0_dp )
 !            ====================================================
 !            !    Compute sigma and molecular polarization	!
@@ -46,7 +46,7 @@ do i = 1 , nf1 + 1
   do j = 1 , nfft2
     do k = 1 , nfft3
         do o=1, angGrid%n_angles
-           do p=1, nb_psi
+           do p=1, molRotGrid%n_angles
              do n=1, nb_solvent_sites
              xmod= Rotxx(o,p)*x_solv(n) + Rotxy(o,p)*y_solv(n) + Rotxz(o,p)*z_solv(n)
              ymod= Rotyx(o,p)*x_solv(n) + Rotyy(o,p)*y_solv(n) + Rotyz(o,p)*z_solv(n)   

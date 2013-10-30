@@ -2,7 +2,7 @@
 module quadrature
 
     use precision_kinds, only: dp, i2b
-    use system , only: nb_psi, nb_legendre 
+    use system , only: nb_legendre 
     use constants , only : pi, twopi, fourpi
     use input, only: input_log, input_char, input_int
 
@@ -16,7 +16,7 @@ module quadrature
         integer(i2b) :: n_angles
         real(dp), allocatable, dimension(:) :: weight, root
     end type
-    type (angularGrid), public :: angGrid
+    type (angularGrid), public :: angGrid ! angular grid
     type (angularGrid), public :: molRotGrid ! rotation of molecule around its main axis, e.g., around C2v axis for H2O.
     type integrationScheme
         character(80) :: name
@@ -41,7 +41,6 @@ module quadrature
             ! molecular rotation grid
             call get_psi_integration_roots_and_weights (molRotGrid, sym_order)
             call check_weights_psi(molRotGrid%weight)
-            nb_psi = molRotGrid%n_angles ! to be removed if all code coherent
 
             ! integration scheme
             intScheme%name = trim(adjustl(input_char('quadrature')))
@@ -56,7 +55,7 @@ module quadrature
                 allocate( x_leb(intScheme%order), y_leb(intScheme%order), z_leb(intScheme%order) )
                 allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
                 call lebedev_integration_roots_and_weights (intScheme%order, x_leb ,y_leb , z_leb, intScheme%weight)
-                call lebedev (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+                call lebedev (angGrid, intScheme, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
                 deallocate( x_leb, y_leb, z_leb)
 
             ! GAUSS-LEGENDRE
@@ -70,7 +69,7 @@ module quadrature
                 call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
                 call gauss_legendre_integration_roots_and_weights (intScheme%order, intScheme%weight , intScheme%root)
                 allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
-                call gauss (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+                call gauss (angGrid, intScheme, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
             end if
             
             if (.not. allocated(weight) ) allocate (weight(angGrid%n_angles) )
@@ -82,10 +81,11 @@ module quadrature
         end subroutine init
 
         ! GAUSS
-        subroutine gauss (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+        subroutine gauss (angGrid, intScheme, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
             type (angularGrid), intent(inout) :: angGrid
+            type (angularGrid), intent(in) :: molRotGrid
             type (integrationScheme), intent(in) :: intScheme
-            real(dp), dimension(angGrid%n_angles,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            real(dp), dimension(:,:), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
             integer(i2b) :: omega, n_psi, theta, n_phi
             real(dp) :: phi, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
@@ -111,7 +111,7 @@ module quadrature
                         OMy ( omega ) = sin_theta * sin_phi
                         OMz ( omega ) = cos_theta
                         angGrid%weight(omega) = intScheme%weight(theta) *pi /real(intScheme%order,dp)
-                        do n_psi = 1 , nb_psi
+                        do n_psi = 1 , molRotGrid%n_angles
                             cos_psi = cos(  molRotGrid%root(n_psi)  )
                             sin_psi = sin(  molRotGrid%root(n_psi)  )
                             Rotxx(omega,n_psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
@@ -134,11 +134,12 @@ module quadrature
 
 
         ! LEBEDEV
-        subroutine lebedev (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+        subroutine lebedev (angGrid, intScheme, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
             
             type (angularGrid), intent(inout) :: angGrid
+            type (angularGrid), intent(in) :: molRotGrid
             type (integrationScheme), intent(in) :: intScheme
-            real(dp), dimension(angGrid%n_angles,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            real(dp), dimension(:,:), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
             integer(i2b) ::  n, psi
             real(dp) :: phi, theta, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
@@ -176,7 +177,7 @@ module quadrature
                 end if
                 cos_phi=cos(phi)
                 sin_phi=sin(phi)    
-                do concurrent (psi=1:nb_psi)
+                do concurrent (psi=1:molRotGrid%n_angles)
                     cos_psi = cos(  molRotGrid%root(psi)  )
                     sin_psi = sin(  molRotGrid%root(psi)  )
                     Rotxx(n,psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
@@ -230,7 +231,6 @@ module quadrature
 
 
 
-!~         subroutine get_psi_integration_roots_and_weights (nb_psi,sym_order,weight,root)
         subroutine get_psi_integration_roots_and_weights (molRotGrid, sym_order)
             type (angularGrid), intent(inout) :: molRotGrid
             integer(i2b), intent(out) :: sym_order
@@ -252,12 +252,12 @@ module quadrature
 
 
 
-        pure subroutine  allocate_Rotij (n_angles, nb_psi,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
-            integer(i2b), intent(in) :: n_angles, nb_psi
+        pure subroutine  allocate_Rotij (n_angles, n_psi,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+            integer(i2b), intent(in) :: n_angles, n_psi
             real(dp), allocatable, dimension(:,:), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
-            allocate( Rotxx(n_angles,nb_psi), Rotxy(n_angles,nb_psi), Rotxz(n_angles,nb_psi) )
-            allocate( Rotyx(n_angles,nb_psi), Rotyy(n_angles,nb_psi), Rotyz(n_angles,nb_psi) )
-            allocate( Rotzx(n_angles,nb_psi), Rotzy(n_angles,nb_psi), Rotzz(n_angles,nb_psi) )            
+            allocate( Rotxx(n_angles,n_psi), Rotxy(n_angles,n_psi), Rotxz(n_angles,n_psi) )
+            allocate( Rotyx(n_angles,n_psi), Rotyy(n_angles,n_psi), Rotyz(n_angles,n_psi) )
+            allocate( Rotzx(n_angles,n_psi), Rotzy(n_angles,n_psi), Rotzz(n_angles,n_psi) )            
         end subroutine
 
 

@@ -3,7 +3,7 @@ subroutine allocate_from_input
     use precision_kinds , only : i2b , dp
     use input , only : input_line, input_int, input_dp, input_log
     use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , rho_0 , temp , beta , kbT , Rc , deltax , deltay , deltaz , &
-                        deltav , nb_psi , n_0_multispec , rho_0_multispec , nb_species , mole_fraction
+                        deltav , n_0_multispec , rho_0_multispec , nb_species , mole_fraction
     use constants , only : fourpi , boltz, navo , twopi
     use quadrature , only : sym_order
     implicit none
@@ -52,8 +52,7 @@ subroutine allocate_from_input
     end if
     allocate ( mole_fraction ( nb_species ) ) ! molar fraction of each species.
     call read_mole_fractions ( nb_species , mole_fraction )
-    ! get the number of psi angles over which one wants to mean the potential (r,omega)
-    nb_psi=input_int('nb_psi')
+
     ! look for Rc
     Rc=input_dp('Rc')
     contains  

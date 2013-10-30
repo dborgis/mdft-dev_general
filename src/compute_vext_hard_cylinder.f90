@@ -3,9 +3,9 @@
 subroutine compute_Vext_hard_cylinder
 use precision_kinds , only : i2b , dp
 use input , only : input_line, input_dp
-use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , nb_solute_sites , Lx , Ly , radius , nb_species, nb_psi
+use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , nb_solute_sites , Lx , Ly , radius , nb_species
 use external_potential , only : Vext_total
-use quadrature, only: angGrid
+use quadrature, only: angGrid, molRotGrid
 implicit none
 integer(i2b):: i , j , n ! dummy
 real(dp):: x_nm2 , y_nm2 , r_nm2 ! distance**2 between solute and grid point
@@ -18,7 +18,7 @@ deltax = Lx / real ( nfft1 , dp )
 deltay = Ly / real ( nfft2 , dp )
 ! be sure Vext_total is allocated
 if ( .not. allocated ( Vext_total ) ) then
-  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi, nb_species ) )
+  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ) )
   Vext_total = 0.0_dp
 end if
 ! tell user

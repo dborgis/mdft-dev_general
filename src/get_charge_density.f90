@@ -1,7 +1,7 @@
 subroutine get_charge_density
 use precision_kinds, only : i2b, dp
-use system, only : nfft1, nfft2, nfft3, nb_psi , deltaV , nb_species, rho_0_multispec
-use quadrature, only : weight, weight_psi, angGrid
+use system, only : nfft1, nfft2, nfft3, deltaV , nb_species, rho_0_multispec
+use quadrature, only : weight, weight_psi, angGrid, molRotGrid
 use external_potential, only : x_charge ,y_charge ,z_charge ,q_charge ,nb_of_interpolation,Fcoul, v_c
 use cg , only : CG_vect
 use constants, only : qfact
@@ -19,7 +19,7 @@ do species = 1 , nb_species
     do j = 1 , nfft2
       do k = 1 , nfft3
         do o = 1 , angGrid%n_angles
-          do p=1 , nb_psi            
+          do p=1 , molRotGrid%n_angles            
    
             do n=1, nb_of_interpolation
             xtemp= modulo(-(x_charge(n , p , o)-i),nfft1)+1

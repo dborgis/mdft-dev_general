@@ -2,10 +2,10 @@
 ! TODO This subroutine should be merged in one way or another with cs_from_dcf
 subroutine cs_plus_hydro
   use precision_kinds , only : dp , i2b
-  use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s , kBT , delta_k , nb_species,n_0,nb_psi,Lx,Ly,Lz
+  use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s , kBT , delta_k , nb_species,n_0, Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi
   use cg , only : cg_vect , FF , dF
-  use quadrature, only: weight,sym_order,weight_psi, angGrid
+  use quadrature, only: weight,sym_order,weight_psi, angGrid, molRotGrid
   use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , kx , ky , kz , k2
   use input, only : input_log
   
@@ -85,7 +85,7 @@ subroutine cs_plus_hydro
       do k=1,nfft3
         delta_n_ijk=0.0_dp ! init delta_n
         do o=1,angGrid%n_angles
-          do p=1, nb_psi
+          do p=1, molRotGrid%n_angles
             icg=icg+1
             delta_n_ijk = delta_n_ijk + weight(o)*weight_psi(p) * cg_vect(icg) ** 2 ! sum over all orientations
           end do  
@@ -279,7 +279,7 @@ subroutine cs_plus_hydro
         Fint = Fint + 0.5_dp* ( Delta_n (i,j,k) - Delta_nbar (i,j,k) ) * Vint ! TODO doesnt work in case of angGrid%n_angles /= 1)
         dF_cg_ijk = dF_cg(i,j,k)
         do o = 1, angGrid%n_angles
-          do p=1,nb_psi
+          do p=1,molRotGrid%n_angles
             icg = icg + 1
             psi = cg_vect ( icg )
             dF (icg) = dF ( icg )+2.0_dp*psi*weight_psi(p)*weight(o)/(fourpi*twopi/sym_order)*( Vint + dF_cg_ijk )
