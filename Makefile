@@ -42,6 +42,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/module_periodic_table.f90 \
        $(SRCDIR)/module_mod_lj.f90 \
        $(SRCDIR)/module_solute_geometry.f90 \
+       $(SRCDIR)/module_testing.f90 \
        $(SRCDIR)/main.f90 \
        $(SRCDIR)/bfgs.f90 \
        $(SRCDIR)/dblas1.f90 \
