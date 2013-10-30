@@ -136,7 +136,6 @@ module quadrature
             type (angularGrid), intent(inout) :: angGrid
             type (integrationScheme), intent(in) :: intScheme
             real(dp), dimension(angGrid%n_angles,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
-            
             integer(i2b) ::  n, psi
             real(dp) :: phi, theta, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
@@ -162,11 +161,9 @@ module quadrature
             end do
             
             do concurrent (n=1:angGrid%n_angles)
-                
                 theta=acos(z_leb(n))
                 cos_theta=cos(theta)
                 sin_theta=sin(theta)
-                
                 if    ( x_leb(n)  == 0.0_dp .and. y_leb(n)  == 0.0_dp ) then 
                     phi=0.0_dp
                 else if  (y_leb(n)>=0.0_dp) then 
@@ -176,7 +173,6 @@ module quadrature
                 end if
                 cos_phi=cos(phi)
                 sin_phi=sin(phi)    
-                
                 do concurrent (psi=1:nb_psi)
                     cos_psi = cos(  molRotGrid%root(psi)  )
                     sin_psi = sin(  molRotGrid%root(psi)  )
@@ -191,7 +187,6 @@ module quadrature
                     Rotzz(n,psi) =  cos_theta
                 end do
             end do
-       
         end subroutine lebedev
 
 
