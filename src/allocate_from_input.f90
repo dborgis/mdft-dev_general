@@ -11,23 +11,38 @@ subroutine allocate_from_input
     integer(i2b):: species ! dummy between 1 and nb_species
     
     sym_order = input_int('sym_order') !Get the order of the main symmetry axis of the solvent
+    
     nfft1 = input_int('nfft1') !Read the number of spatial grid nodes
     nfft2 = input_int('nfft2')
     nfft3 = input_int('nfft3')
+    if( any([nfft1,nfft2,nfft3]  <= 0) ) then
+        print*,'The space is divided into grid nodes. The number of nodes must be greater than 1.'
+        print*,'You have nfft1, nfft2, nfft3 nodes per direction : ',nfft1, nfft2, nfft3
+        stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT.'
+    end if
+    
     temp = input_dp('temperature') ! look for temperature in input
     ! variables associated with temperature
     kBT = Boltz * Navo * TEMP * 1.0e-3_dp
     beta = 1.0_dp / kBT
-    ! look for system dimension in x direction = Lx
+
+    ! Length of supercell in each direction
     Lx=input_dp('Lx')
     Ly=input_dp('Ly')
     Lz=input_dp('Lz')
+    if( any([Lx,Ly,Lz] <= 0._dp ) ) then
+        print*,'The supercell cannot have negative length.'
+        print*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',Lx,Ly,Lz
+        stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
+    end if
+    
     ! distance between two grid points in x direction deltax
     deltax = Lx / real ( nfft1 , dp )
     deltay = Ly / real ( nfft2 , dp )
     deltaz = Lz / real ( nfft3 , dp )
     ! minimum grid volume. (needed for instance for the integrations)
     deltav = deltax * deltay * deltaz
+    
     ! get the number of implicit species
     nb_species=input_int('nb_implicit_species')
     ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer  
