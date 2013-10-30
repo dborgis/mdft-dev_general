@@ -10,7 +10,7 @@ use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0_multispec , sig_mol , s
 &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
 & , lambda1_mol , lambda2_mol
 use cg, only: cg_vect,FF,dF
-use quadrature, only: weight , weight_psi, angGrid, molRotGrid
+use quadrature, only: weight , angGrid, molRotGrid
 use constants, only: fourpi
 use input , only : input_line, input_log
 implicit none
@@ -68,7 +68,7 @@ do i=1,nfft1
       do o=1,angGrid%n_angles
         do p=1, molRotGrid%n_angles
           icg=icg+1
-          rho(i,j,k) = rho(i,j,k) + weight(o)*weight_psi(p)*cg_vect(icg)**2
+          rho(i,j,k) = rho(i,j,k) + weight(o)*molRotGrid%weight(p)*cg_vect(icg)**2
         end do
       end do
     end do
@@ -174,8 +174,8 @@ do i = 1 , nfft1
         do p=1, molRotGrid%n_angles
           icg = icg + 1
           psi = CG_vect ( icg )
-          dF ( icg ) = dF ( icg ) + 2.0_dp * psi * weight ( o ) * weight_psi(p)* (V3 ( i , j , k ))
-!           write(11,*) icg,  2.0_dp * psi * weight ( o ) * weight_psi(p)* (V3 ( i , j , k )-V3_fs(i,j,k))
+          dF ( icg ) = dF ( icg ) + 2.0_dp * psi * weight ( o ) * molRotGrid%weight(p)* (V3 ( i , j , k ))
+!           write(11,*) icg,  2.0_dp * psi * weight ( o ) * molRotGrid%weight(p)* (V3 ( i , j , k )-V3_fs(i,j,k))
         end do
       end do
     end do

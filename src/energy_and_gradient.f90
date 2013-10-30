@@ -12,7 +12,7 @@ subroutine energy_and_gradient
     use system, only : sigma_k, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, rho_c, deltaV, nb_species,&
                     rho_0_multispec , rho_c_k_myway
     use constants, only : twopi, fourpi, qfact
-    use quadrature, only : weight, weight_psi, sym_order
+    use quadrature, only : weight, molRotGrid, sym_order
 
     implicit none
     logical :: hydrophobicity_tag

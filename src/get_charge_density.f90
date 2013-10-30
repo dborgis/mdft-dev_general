@@ -1,7 +1,7 @@
 subroutine get_charge_density
 use precision_kinds, only : i2b, dp
 use system, only : nfft1, nfft2, nfft3, deltaV , nb_species, rho_0_multispec
-use quadrature, only : weight, weight_psi, angGrid, molRotGrid
+use quadrature, only : weight, molRotGrid, angGrid, molRotGrid
 use external_potential, only : x_charge ,y_charge ,z_charge ,q_charge ,nb_of_interpolation,Fcoul, v_c
 use cg , only : CG_vect
 use constants, only : qfact
@@ -30,7 +30,7 @@ do species = 1 , nb_species
             psi=cg_vect( convert_coordinate_into_icg ( species , xtemp, ytemp, ztemp, o , p ) )
             rho = psi ** 2
             
-            charge_density (i , j , k ) =  charge_density (i , j , k ) + deltaV * weight ( o ) * weight_psi ( p )&
+            charge_density (i , j , k ) =  charge_density (i , j , k ) + deltaV * weight ( o ) * molRotGrid%weight ( p )&
                                               * rho *q_charge (n , p , o )*rho_0_multispec (species)
             end do   !n
           end do    !psi

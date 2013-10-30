@@ -10,7 +10,7 @@ module quadrature
 
     real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb
     real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for orientation OMEGA and associated weight
-    real(dp), allocatable, dimension(:), public :: weight, weight_psi ! to be removed once everything is coherent and type derived
+    real(dp), allocatable, dimension(:), public :: weight ! to be removed once everything is coherent and type derived
     real(dp), allocatable, dimension(:,:), public :: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
     type angularGrid
         integer(i2b) :: n_angles
@@ -75,8 +75,8 @@ module quadrature
             if (.not. allocated(weight) ) allocate (weight(angGrid%n_angles) )
             weight = angGrid%weight
             
-            if (.not. allocated(weight_psi) ) allocate (weight_psi(molRotGrid%n_angles))
-            weight_psi = molRotGrid%weight
+            if (.not. allocated(molRotGrid%weight) ) allocate (molRotGrid%weight(molRotGrid%n_angles))
+            molRotGrid%weight = molRotGrid%weight
             
         end subroutine init
 
@@ -194,12 +194,13 @@ module quadrature
         end subroutine lebedev
 
 
-        subroutine check_weights_psi(weight_psi)
+        subroutine check_weights_psi(weight_over_molecular_rotations)
             implicit none
-            real(dp), dimension(:), intent(in) :: weight_psi
-            if ( abs ( sum ( weight_psi ( : ) ) - twopi/sym_order )  > 1.0e-10_dp ) then
+            real(dp), dimension(:), intent(in) :: weight_over_molecular_rotations
+            if ( abs ( sum ( weight_over_molecular_rotations( : ) ) - twopi/sym_order )  > 1.0e-10_dp ) then
                 print*, 'problem detected in module_quadrature.f90 :'
-                print*, 'sum over omegas of weight_psi(omega) is not 2pi/sym_order, it is ',sum ( weight_psi ( : ) )
+                print*, 'sum over omegas of molRotGrid%weight(omega) is not 2pi/sym_order, it is ',&
+                    sum ( weight_over_molecular_rotations )
                 stop 'CRITICAL'
             end if
         end subroutine check_weights_psi

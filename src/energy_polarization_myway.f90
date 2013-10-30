@@ -4,7 +4,7 @@ use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT ,
                    deltav, molec_polarx_k,molec_polary_k, molec_polarz_k,delta_k,nb_k,kBT,&
                    rho_0_multispec, nb_species,pola_tot_x_k , pola_tot_y_k , pola_tot_z_k, deltax, rho_c_k_myway, chi_l, chi_t,&
                    n_0, beta,deltax,deltay,deltaz
-use quadrature , only : weight , Omx , Omy , Omz, sym_order , weight_psi, angGrid, molRotGrid
+use quadrature , only : weight , Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
 use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward, kx, ky, kz, k2, norm_k
@@ -146,11 +146,11 @@ do species=1, nb_species
         do k=1, nfft3
            do o=1, angGrid%n_angles
               do p=1, molRotGrid%n_angles
-              pola_tot_x_k(i,j,k,species)=pola_tot_x_k(i,j,k,species)+weight(o)*weight_psi(p)*&
+              pola_tot_x_k(i,j,k,species)=pola_tot_x_k(i,j,k,species)+weight(o)*molRotGrid%weight(p)*&
               molec_polarx_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
-              pola_tot_y_k(i,j,k,species)=pola_tot_y_k(i,j,k,species)+weight(o)*weight_psi(p)*&
+              pola_tot_y_k(i,j,k,species)=pola_tot_y_k(i,j,k,species)+weight(o)*molRotGrid%weight(p)*&
               molec_polary_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
-              pola_tot_z_k(i,j,k,species)=pola_tot_z_k(i,j,k,species)+weight(o)*weight_psi(p)*&
+              pola_tot_z_k(i,j,k,species)=pola_tot_z_k(i,j,k,species)+weight(o)*molRotGrid%weight(p)*&
               molec_polarz_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
               end do
             end do
@@ -196,9 +196,9 @@ end do
 !        do p=1, molRotGrid%n_angles
 !          icg = icg + 1
 !          rhot = cg_vect (icg) ** 2
-!          pxt = pxt + weight_Omx ( o ) * weight_psi(p) * rhot
-!          pyt = pyt + weight_Omy ( o ) * weight_psi(p) * rhot
-!          pzt = pzt + weight_Omz ( o ) * weight_psi(p) * rhot
+!          pxt = pxt + weight_Omx ( o ) * molRotGrid%weight(p) * rhot
+!          pyt = pyt + weight_Omy ( o ) * molRotGrid%weight(p) * rhot
+!          pzt = pzt + weight_Omz ( o ) * molRotGrid%weight(p) * rhot
 !        end do
 !      end do
 !      Px ( i , j , k,species ) = pxt
@@ -316,21 +316,21 @@ molec_polarz_k(i,j,k,o,p,species))
      dF_pol_trans_k(i,j,k,o,p,species)=rho_0*0.5_dp*qfact/chi_t(k_index)*&
      (P_trans_x_k(i,j,k,species)*conjg(molec_polarx_k(i,j,k,o,p,species))&
       +P_trans_y_k(i,j,k,species)*conjg(molec_polary_k(i,j,k,o,p,species))&
-     +P_trans_z_k(i,j,k,species)*conjg(molec_polarz_k(i,j,k,o,p,species)))*weight(o)*weight_psi(p)*2.0_dp
+     +P_trans_z_k(i,j,k,species)*conjg(molec_polarz_k(i,j,k,o,p,species)))*weight(o)*molRotGrid%weight(p)*2.0_dp
      else
-      dF_pol_long_k(i,j,k,o,p,species) = rho_0*0.5_dp*qfact/chi_l(k_index)*fourpi*weight(o)*weight_psi(p)*&
+      dF_pol_long_k(i,j,k,o,p,species) = rho_0*0.5_dp*qfact/chi_l(k_index)*fourpi*weight(o)*molRotGrid%weight(p)*&
       (P_long_x_k(i,j,k,species)*k_tens_k_Px+P_long_y_k(i,j,k,species)*k_tens_k_Py+P_long_z_k(i,j,k,species)&
       *k_tens_k_Pz)/k2(i,j,k)*2.0_dp
 !             ===============================================================================
       dF_pol_trans_k(i,j,k,o,p,species) = rho_0*0.5_dp*qfact/chi_t(k_index)*(P_trans_x_k(i,j,k,species)*&
       (conjg(molec_polarx_k(i,j,k,o,p,species))-k_tens_k_Px/k2(i,j,k))&
 +P_trans_y_k(i,j,k,species)*(conjg(molec_polary_k(i,j,k,o,p,species))-k_tens_k_Py/k2(i,j,k))&
-+P_trans_z_k(i,j,k,species)*(conjg(molec_polarz_k(i,j,k,o,p,species))-k_tens_k_Pz/k2(i,j,k)) )*weight(o)*weight_psi(p)*2.0_dp
++P_trans_z_k(i,j,k,species)*(conjg(molec_polarz_k(i,j,k,o,p,species))-k_tens_k_Pz/k2(i,j,k)) )*weight(o)*molRotGrid%weight(p)*2.0_dp
      end if
 !             ===============================================================================
 dF_pol_tot_k(i,j,k,o,p,species)=-kBT*3*rho_0/(2*mu_SPCE**2*n_0)*(pola_tot_x_k(i,j,k,species)*&
 conjg(molec_polarx_k(i,j,k,o,p,species))+pola_tot_y_k(i,j,k,species)*conjg(molec_polary_k(i,j,k,o,p,species))+pola_tot_z_k&  
-(i,j,k,species)*conjg(molec_polarz_k(i,j,k,o,p,species)))*weight(o)*weight_psi(p)*2.0_dp
+(i,j,k,species)*conjg(molec_polarz_k(i,j,k,o,p,species)))*weight(o)*molRotGrid%weight(p)*2.0_dp
           end do  !psi
         end do   !omega
      
@@ -362,7 +362,7 @@ do species=1, nb_species
         do o=1,angGrid%n_angles
           do p=1, molRotGrid%n_angles
           icg=icg+1
-          dF(icg)=dF(icg)+  dF_pol_tot (i,j,k,o,p,species)*cg_vect(icg)*rho_0*2.0_dp * deltav!* weight(o) * weight_psi(p) 
+          dF(icg)=dF(icg)+  dF_pol_tot (i,j,k,o,p,species)*cg_vect(icg)*rho_0*2.0_dp * deltav!* weight(o) * molRotGrid%weight(p) 
           end do
  
         end do

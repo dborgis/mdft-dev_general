@@ -5,7 +5,7 @@ use system , only : nfft1 , nfft2 , nfft3 , nb_species , Lx , Ly , Lz , mole_fra
 deltay,deltaz
 use constants , only : fourpi, pi , twopi
 use cg , only : CG_vect
-use quadrature , only : weight, sym_order, weight_psi, angGrid, molRotGrid
+use quadrature , only : weight, sym_order, angGrid, molRotGrid
 use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward , k2
 implicit none
 real(dp), intent(out) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq !> equilibrium density(position)
@@ -39,7 +39,7 @@ do species = 1 , nb_species
           do p=1, molRotGrid%n_angles
             icg = icg + 1
             rho_over_fourpi = cg_vect ( icg ) ** 2 / (twopi**2*2.0_dp/sym_order)
-            local_density = local_density + weight ( omega ) *weight_psi(p)* rho_over_fourpi ! integral of rho over all orientations ie 'n'
+            local_density = local_density + weight ( omega ) *molRotGrid%weight(p)* rho_over_fourpi ! integral of rho over all orientations ie 'n'
           end do
         end do
         neq ( i , j , k , species ) = local_density

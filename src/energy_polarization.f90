@@ -2,7 +2,7 @@ subroutine energy_polarization
 use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, deltax,deltay,deltaz
-use quadrature , only : weight , Omx , Omy , Omz, sym_order , weight_psi, angGrid, molRotGrid
+use quadrature , only : weight , Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : twopi
 use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
@@ -87,9 +87,9 @@ do i = 1 , nfft1
         do p=1, molRotGrid%n_angles
           icg = icg + 1
           rho = cg_vect (icg) ** 2
-          pxt = pxt + weight_Omx ( o ) * weight_psi(p) * rho
-          pyt = pyt + weight_Omy ( o ) * weight_psi(p) * rho
-          pzt = pzt + weight_Omz ( o ) * weight_psi(p) * rho
+          pxt = pxt + weight_Omx ( o ) * molRotGrid%weight(p) * rho
+          pyt = pyt + weight_Omy ( o ) * molRotGrid%weight(p) * rho
+          pzt = pzt + weight_Omz ( o ) * molRotGrid%weight(p) * rho
           r=sqrt((m1*deltax)**2+(m2*deltay)**2+(m3*deltaz)**2)
         end do
       end do
@@ -218,8 +218,8 @@ do i = 1 , nfft1
           psi = cg_vect ( icg )
           rho = psi ** 2
           Vint = - kBT * rho_0 * ( Omx ( o ) * Ex ( i ,  j , k ) + Omy ( o ) * Ey ( i , j , k ) + Omz ( o ) * Ez ( i , j , k ) )
-          Fint = Fint + (rho - 1.0_dp) * weight(o) * weight_psi(p) * Vint
-          dF (icg) = dF ( icg ) + 2.0_dp * psi * weight(o) * weight_psi(p) * fact * Vint
+          Fint = Fint + (rho - 1.0_dp) * weight(o) * molRotGrid%weight(p) * Vint
+          dF (icg) = dF ( icg ) + 2.0_dp * psi * weight(o) * molRotGrid%weight(p) * fact * Vint
         end do  
       end do
     end do

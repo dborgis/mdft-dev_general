@@ -7,7 +7,7 @@ use fft , only : in_forward , in_backward , out_forward , out_backward , plan_fo
 use system, only : sigma_k, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, rho_c, deltaV, nb_species,&
                    rho_0_multispec , rho_c_k_myway
 use constants, only : twopi, fourpi, qfact
-use quadrature, only : weight, weight_psi, sym_order, angGrid, molRotGrid
+use quadrature, only : weight, sym_order, angGrid, molRotGrid
 implicit none
 integer(i2b):: i , j , k , o , p, icg , m1, m2, m3, nf1, nf2, nf3, species, i1, i2
 ! dummy
@@ -97,7 +97,7 @@ do i = 1 , nf1 + 1
       ! squared norm of k vector
          do o = 1 , angGrid%n_angles
             do p=1 , molRotGrid%n_angles
-              rho_c_k_myway(i,j,k)=rho_c_k_myway(i,j,k)+weight(o)*weight_psi(p)*sigma_k(i,j,k,o,p,species)*&
+              rho_c_k_myway(i,j,k)=rho_c_k_myway(i,j,k)+weight(o)*molRotGrid%weight(p)*sigma_k(i,j,k,o,p,species)*&
               rho_k (i , j , k , o , p , species)!*deltavK
          
           end do  !p

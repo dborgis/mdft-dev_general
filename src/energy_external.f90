@@ -3,7 +3,7 @@ subroutine energy_external
 
     use precision_kinds , only : dp , i2b
     use system , only : lx,ly,lz, nfft1, nfft2, nfft3, nb_species, rhoBulk=>rho_0_multispec
-    use quadrature , only : weight, weight_psi, angGrid, molRotGrid
+    use quadrature , only : weight, angGrid, molRotGrid
     use cg , only : CG_vect , FF , dF
     use external_potential , only : Vext_total
     
@@ -33,7 +33,7 @@ subroutine energy_external
                             icg = icg + 1
                             psi = cg_vect ( icg )
                             rho = psi ** 2
-                            wdfve = weight(o) * weight_psi(p) * DeltaV * rhoBulk(spec) * Vext_total(i,j,k,o,p,spec)
+                            wdfve = weight(o) * molRotGrid%weight(p) * DeltaV * rhoBulk(spec) * Vext_total(i,j,k,o,p,spec)
                             Fext = Fext + rho * wdfve
                             dF(icg) = dF(icg) + 2.0_dp*psi*wdfve
                         end do
