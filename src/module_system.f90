@@ -22,7 +22,6 @@ integer(i2b) :: nb_legendre ! ordre pour integration Gauss-legendre
 real(dp) :: delta_r
 ! Grille angulaire
 integer(i2b) :: nb_psi ! nb angle psi
-integer(i2b) :: nb_omega
 !
 real(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
 real(dp), allocatable , dimension ( : ) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
@@ -88,7 +87,7 @@ complex(dp), allocatable , dimension ( : , : , : ) :: v_perturbation_k ! fourier
 real(dp), allocatable , dimension ( : ) :: mole_fraction ! mole fraction of each species "x_i"
 !> for xsf printing
 integer(i2b), allocatable, dimension (:) :: atomic_nbr
-real(dp), allocatable, dimension (:,:,:) :: V_coulomb ! nfft1 nfft2 nfft3 nb_omega
+real(dp), allocatable, dimension (:,:,:) :: V_coulomb ! nfft1 nfft2 nfft3 angGrid%n_angles
 !Three body terms
 real(dp), allocatable, dimension(:) :: lambda1_mol, lambda2_mol 
 contains

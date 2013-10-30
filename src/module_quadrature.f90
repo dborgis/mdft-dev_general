@@ -2,7 +2,7 @@
 module quadrature
 
     use precision_kinds, only: dp, i2b
-    use system , only : nb_omega, nb_psi, nb_legendre 
+    use system , only: nb_psi, nb_legendre 
     use constants , only : pi, twopi, fourpi
     use input, only: input_log, input_char, input_int
 
@@ -16,14 +16,14 @@ module quadrature
         integer(i2b) :: n_angles
         real(dp), allocatable, dimension(:) :: weight, root
     end type
-    type (angularGrid) :: angGrid
-    type (angularGrid) :: molRotGrid ! rotation of molecule around its main axis, e.g., around C2v axis for H2O.
+    type (angularGrid), public :: angGrid
+    type (angularGrid), public :: molRotGrid ! rotation of molecule around its main axis, e.g., around C2v axis for H2O.
     type integrationScheme
         character(80) :: name
         integer(i2b) :: order
         real(dp), allocatable, dimension(:) :: weight, root
     end type
-    type (integrationScheme) :: intScheme
+    type (integrationScheme), public :: intScheme
     integer(i2b), public :: sym_order
 
     contains
@@ -52,7 +52,6 @@ module quadrature
             ! LEBEDEV
             if (intScheme%name(1:1)=='L') then
                 angGrid%n_angles = intScheme%order
-                nb_omega = angGrid%n_angles ! to be removed when coherent in whole code
                 call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
                 allocate( x_leb(intScheme%order), y_leb(intScheme%order), z_leb(intScheme%order) )
                 allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
@@ -62,8 +61,12 @@ module quadrature
 
             ! GAUSS-LEGENDRE
             else if (intScheme%name(1:2)=='GL') then
-                angGrid%n_angles = 2*(intScheme%order**2)
-                nb_omega = angGrid%n_angles ! to be removed when coherent in whole code
+                select case (intScheme%order)
+                case (1)
+                    angGrid%n_angles = 1
+                case default
+                    angGrid%n_angles = 2*(intScheme%order**2)
+                end select
                 call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
                 call gauss_legendre_integration_roots_and_weights (intScheme%order, intScheme%weight , intScheme%root)
                 allocate (angGrid%weight(angGrid%n_angles), source=0._dp)

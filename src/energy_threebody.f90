@@ -7,10 +7,10 @@
 subroutine energy_threebody
 use precision_kinds, only: dp,i2b
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0_multispec , sig_mol , sig_solv , Lx , Ly , Lz ,&
-&    id_mol, x_mol , y_mol , z_mol , kbT , nb_omega , nb_species, nb_solute_sites, deltax, deltay, deltaz&
+&    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
 & , lambda1_mol , lambda2_mol, nb_psi
 use cg, only: cg_vect,FF,dF
-use quadrature, only: weight , weight_psi
+use quadrature, only: weight , weight_psi, angGrid
 use constants, only: fourpi
 use input , only : input_line, input_log
 implicit none
@@ -65,7 +65,7 @@ icg=0
 do i=1,nfft1
   do j=1,nfft2
     do k=1,nfft3
-      do o=1,nb_omega
+      do o=1,angGrid%n_angles
         do p=1, nb_psi
           icg=icg+1
           rho(i,j,k) = rho(i,j,k) + weight(o)*weight_psi(p)*cg_vect(icg)**2
@@ -170,7 +170,7 @@ icg = 0
 do i = 1 , nfft1
   do j = 1 , nfft2
     do k = 1 , nfft3
-      do o = 1, nb_omega
+      do o = 1, angGrid%n_angles
         do p=1, nb_psi
           icg = icg + 1
           psi = CG_vect ( icg )

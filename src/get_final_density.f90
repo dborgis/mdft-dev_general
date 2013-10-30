@@ -1,11 +1,11 @@
 !> Gets the final density from the last minimizer step.
 subroutine get_final_density ( neq )
 use precision_kinds , only: dp , i2b
-use system , only : nfft1 , nfft2 , nfft3 , nb_omega , nb_species , Lx , Ly , Lz , mole_fraction, n_0_multispec, nb_psi,deltax,&
+use system , only : nfft1 , nfft2 , nfft3 , nb_species , Lx , Ly , Lz , mole_fraction, n_0_multispec, nb_psi,deltax,&
 deltay,deltaz
 use constants , only : fourpi, pi , twopi
 use cg , only : CG_vect
-use quadrature , only : weight, sym_order, weight_psi
+use quadrature , only : weight, sym_order, weight_psi, angGrid
 use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward , k2
 implicit none
 real(dp), intent(out) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq !> equilibrium density(position)
@@ -34,7 +34,7 @@ do species = 1 , nb_species
     do j = 1 , nfft2
       do k = 1 , nfft3
         local_density = 0.0_dp
-        do omega = 1 , nb_omega
+        do omega = 1 , angGrid%n_angles
          
           do p=1, nb_psi
             icg = icg + 1

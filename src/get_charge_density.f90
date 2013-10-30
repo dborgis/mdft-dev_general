@@ -1,7 +1,7 @@
 subroutine get_charge_density
 use precision_kinds, only : i2b, dp
-use system, only : nfft1, nfft2, nfft3, nb_omega, nb_psi , deltaV , nb_species, rho_0_multispec
-use quadrature, only : weight, weight_psi
+use system, only : nfft1, nfft2, nfft3, nb_psi , deltaV , nb_species, rho_0_multispec
+use quadrature, only : weight, weight_psi, angGrid
 use external_potential, only : x_charge ,y_charge ,z_charge ,q_charge ,nb_of_interpolation,Fcoul, v_c
 use cg , only : CG_vect
 use constants, only : qfact
@@ -18,7 +18,7 @@ do species = 1 , nb_species
   do i = 1 , nfft1
     do j = 1 , nfft2
       do k = 1 , nfft3
-        do o = 1 , nb_omega
+        do o = 1 , angGrid%n_angles
           do p=1 , nb_psi            
    
             do n=1, nb_of_interpolation

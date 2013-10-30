@@ -1,19 +1,19 @@
 subroutine energy_polarization_myway
 use precision_kinds , only : i2b , dp
-use system , only : nfft1 , nfft2 , nfft3 , nb_omega , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
+use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, nb_psi, molec_polarx_k,molec_polary_k, molec_polarz_k,delta_k,nb_k,kBT,&
                    rho_0_multispec, nb_species,pola_tot_x_k , pola_tot_y_k , pola_tot_z_k, deltax, rho_c_k_myway, chi_l, chi_t,&
                    n_0, beta,deltax,deltay,deltaz
-use quadrature , only : weight , Omx , Omy , Omz, sym_order , weight_psi
+use quadrature , only : weight , Omx , Omy , Omz, sym_order , weight_psi, angGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
 use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward, kx, ky, kz, k2, norm_k
 use input , only : input_line,input_log, input_char
 implicit none
-real (dp) , dimension (nfft1, nfft2, nfft3,nb_omega,nb_psi,nb_species) ::dF_pol_long , dF_pol_trans, dF_pol_tot
-complex (dp) , dimension (nfft1/2+1, nfft2, nfft3, nb_omega, nb_psi, nb_species) :: rho_k, dF_pol_long_k , dF_pol_trans_k,&
+real (dp) , dimension (nfft1, nfft2, nfft3,angGrid%n_angles,nb_psi,nb_species) ::dF_pol_long , dF_pol_trans, dF_pol_tot
+complex (dp) , dimension (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, nb_psi, nb_species) :: rho_k, dF_pol_long_k , dF_pol_trans_k,&
  dF_pol_tot_k
-real (dp) , dimension (nfft1, nfft2, nfft3, nb_omega, nb_psi, nb_species) ::rho
+real (dp) , dimension (nfft1, nfft2, nfft3, angGrid%n_angles, nb_psi, nb_species) ::rho
 real (dp) , dimension (nfft1, nfft2, nfft3, nb_species) ::Px,Py,Pz,pola_tot_x,pola_tot_y,pola_tot_z,P_long_x,P_long_y,P_long_z
 integer (i2b) :: icg   !dummy counter for cg_vect
 real(dp) ::  deltaVk, F_pol_long, F_pol_trans , F_pol ,F_pol_tot  !Longitudinal , transverse and total Polarization free energy
@@ -100,7 +100,7 @@ do species =1 , nb_species
      do j=1, nfft2
    
        do k=1, nfft3
-         do o = 1 , nb_omega
+         do o = 1 , angGrid%n_angles
          
             do p=1, nb_psi
             icg = icg + 1
@@ -118,7 +118,7 @@ call cpu_time(time2)
 !            !			in Fourier Space		!
 !            ====================================================
 do species=1, nb_species
-   do o=1, nb_omega
+   do o=1, angGrid%n_angles
       do p=1, nb_psi
       in_forward=rho(:,:,:,o,p,species)
       call dfftw_execute (plan_forward)
@@ -128,7 +128,7 @@ do species=1, nb_species
    end do
 end do
 call cpu_time(time3)
-!do o=1,nb_omega
+!do o=1,angGrid%n_angles
 !     molec_polarx_k(:,:,:,o,:,:) = mu_SPCE*Omx(o)
 !    molec_polary_k(:,:,:,o,:,:) = mu_SPCE*Omy(o)
 !    molec_polarz_k(:,:,:,o,:,:) = mu_SPCE*Omz(o)
@@ -142,7 +142,7 @@ do species=1, nb_species
   do i=1, nfft1/2+1
      do j=1, nfft2
         do k=1, nfft3
-           do o=1, nb_omega
+           do o=1, angGrid%n_angles
               do p=1, nb_psi
               pola_tot_x_k(i,j,k,species)=pola_tot_x_k(i,j,k,species)+weight(o)*weight_psi(p)*&
               molec_polarx_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
@@ -168,9 +168,9 @@ in_backward= pola_tot_z_k(:,:,:,species)
 call dfftw_execute(plan_backward)
 pola_tot_z(:,:,:,species)=out_backward*deltaVk/(twopi)**3
 end do
-!allocate ( weight_omx ( nb_omega ) )
-!allocate ( weight_omy ( nb_omega ) )
-!allocate ( weight_omz ( nb_omega ) )
+!allocate ( weight_omx ( angGrid%n_angles ) )
+!allocate ( weight_omy ( angGrid%n_angles ) )
+!allocate ( weight_omz ( angGrid%n_angles ) )
 !weight_omx = weight * Omx
 !weight_omy = weight * Omy
 !weight_omz = weight * Omz
@@ -190,7 +190,7 @@ end do
 !      pxt = 0.0_dp
 !      pyt = 0.0_dp
 !      pzt = 0.0_dp
-!      do o = 1 , nb_omega
+!      do o = 1 , angGrid%n_angles
 !        do p=1, nb_psi
 !          icg = icg + 1
 !          rhot = cg_vect (icg) ** 2
@@ -297,7 +297,7 @@ do species=1, nb_species
        F_pol_tot_k=F_pol_tot_k-kBT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*rho_0**2*&
        (pola_tot_x_k(i,j,k,species)*conjg(pola_tot_x_k(i,j,k,species))+pola_tot_y_k(i,j,k,species)*&
        conjg(pola_tot_y_k(i,j,k,species))+pola_tot_z_k(i,j,k,species)*conjg(pola_tot_z_k(i,j,k,species)))
-        do o=1,nb_omega
+        do o=1,angGrid%n_angles
            do p=1,nb_psi 
 !========================================================================================================================
 !Evaluate gradient
@@ -340,7 +340,7 @@ end do     !species
 !						Get gradient in real space
 !========================================================================================================================
 do species=1 , nb_species
-  do o=1,nb_omega
+  do o=1,angGrid%n_angles
     do p=1, nb_psi
     in_backward= (dF_pol_trans_k (:,:,:,o,p,species)+dF_pol_long_k (:,:,:,o,p,species)+dF_pol_tot_k (:,:,:,o,p,species))
     call dfftw_execute (plan_backward)
@@ -357,7 +357,7 @@ do species=1, nb_species
     do j=1, nfft2
       do k=1,nfft3
     
-        do o=1,nb_omega
+        do o=1,angGrid%n_angles
           do p=1, nb_psi
           icg=icg+1
           dF(icg)=dF(icg)+  dF_pol_tot (i,j,k,o,p,species)*cg_vect(icg)*rho_0*2.0_dp * deltav!* weight(o) * weight_psi(p) 

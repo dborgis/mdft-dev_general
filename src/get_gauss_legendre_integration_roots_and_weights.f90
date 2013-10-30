@@ -2,8 +2,6 @@ subroutine gauss_legendre_integration_roots_and_weights (order, weight , root)
 
     use precision_kinds , only : dp , i2b
     use input , only : input_line, input_int
-!~     use system , only : nb_legendre , nb_omega
-!~     use quadrature, only : weight
     
     implicit none
     
@@ -22,14 +20,6 @@ subroutine gauss_legendre_integration_roots_and_weights (order, weight , root)
         stop
     end if
     
-!~     select case (nb_legendre)
-!~     case (1)!> in case of no angular grid (nb_legendre=1) (only one orientation, the one defined in solvent.in), no need to consider psi
-!~         nb_omega = 1
-!~     case default
-!~         nb_omega = 2*nb_legendre**2
-!~     end select
-
-
     ! GET THEM FROM up to N=100
     ! http://www.holoborodko.com/pavel/numerical-methods/numerical-integration/#gauss_quadrature_abscissas_table
     ! N=1 ************************

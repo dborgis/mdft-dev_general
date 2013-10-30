@@ -13,10 +13,11 @@ use precision_kinds , only : i2b , dp
 ! contains input/dft.in put in input_line
 use input , only : input_line
 ! input_line (:) contains all lines in dft.in
-use system , only : nfft1 , nfft2 , nfft3 , Lz , radius , nb_species , nb_omega , deltax , deltay , deltaz, nb_psi
+use system , only : nfft1 , nfft2 , nfft3 , Lz , radius , nb_species , deltax , deltay , deltaz, nb_psi
 ! nfft1 = number of grid nodes in X direction
 ! Lz = Length (Angstroms) of the supercell in X direction
 use external_potential , only : Vext_total
+use quadrature, only: angGrid
 ! Vext_total = external potential as used in the total free energy calculation
 implicit none
 integer(i2b):: i , j , k , wall ! dummy
@@ -54,7 +55,7 @@ do i = 1 , size ( input_line )
 end do
 ! be sure Vext_total is allocated
 if ( .not. allocated ( Vext_total ) ) then
-  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , nb_omega , nb_psi , nb_species ) )
+  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_psi , nb_species ) )
   Vext_total = 0.0_dp
 end if
 ! be sure radius(:) (solvent radius) is already computed

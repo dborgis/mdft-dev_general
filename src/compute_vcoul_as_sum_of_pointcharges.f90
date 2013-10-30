@@ -5,16 +5,17 @@
 subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
 
     use precision_kinds, only: dp,i2b
-    use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,nb_omega,nb_psi,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
+    use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,nb_psi,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species, RC
     use constants , only : fourpi , qfact
     use external_potential , only : Vext_q
+    use quadrature, only: angGrid
 
     implicit none
 
-    real(dp), dimension(nb_omega,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+    real(dp), dimension(angGrid%n_angles,nb_psi), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     integer(i2b) :: i,j,k,o,p,m,n ! dummy
-    real(dp),dimension(nb_solvent_sites,nb_psi,nb_omega) :: xmod,ymod,zmod
+    real(dp),dimension(nb_solvent_sites,nb_psi,angGrid%n_angles) :: xmod,ymod,zmod
     real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
     real(dp) :: x_m,y_m,z_m ! solvent sites coordinates
     real(dp) :: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
@@ -54,7 +55,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     end if
     
     ! precompute Rot_ij(omega,psi)*k_solv(a) for speeding up
-    do o=1,nb_omega
+    do o=1,angGrid%n_angles
         do p=1,nb_psi
             do m=1,nb_solvent_sites
                 xmod(m,p,o)= Rotxx(o,p)*x_solv(m) + Rotxy(o,p)*y_solv(m) + Rotxz(o,p)*z_solv(m)
@@ -66,7 +67,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
 
 !$OMP PARALLEL DO &
 !$OMP DEFAULT(private) & ! variables are all private by default, but the ones in next SHARED(..)
-!$OMP SHARED(nfft3,nfft2,nfft1,ou_on_en_est,deltaz,deltay,deltax,nb_omega,nb_psi,nb_solvent_sites, &
+!$OMP SHARED(nfft3,nfft2,nfft1,ou_on_en_est,deltaz,deltay,deltax,angGrid%n_angles,nb_psi,nb_solvent_sites, &
 !$OMP id_solv,chg_solv,xmod,ymod,zmod,nb_solute_sites,id_mol,chg_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz, &
 !$OMP Rc2,beta,Vcoul) &
 !$OMP SCHEDULE(DYNAMIC) ! dynamic allocation of work over nodes (no node is sleeping while others work)
@@ -83,7 +84,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
                 y_grid=real(j-1,dp)*deltay
                 do i=1,nfft1
                     x_grid=real(i-1,dp)*deltax
-                    do o=1,nb_omega
+                    do o=1,angGrid%n_angles
                         tempVcoul=0.0_dp
                         ploop:  do p=1,nb_psi
                             V_psi=0.0_dp

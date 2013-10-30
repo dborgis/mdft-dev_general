@@ -4,10 +4,10 @@ use precision_kinds , only : i2b , dp
 use input , only : input_line
 use cg , only : FF , dF , cg_vect
 use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
-use system, only : nb_omega, nb_psi, sigma_k, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, rho_c, deltaV, nb_species,&
+use system, only : nb_psi, sigma_k, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, rho_c, deltaV, nb_species,&
                    rho_0_multispec , rho_c_k_myway
 use constants, only : twopi, fourpi, qfact
-use quadrature, only : weight, weight_psi, sym_order
+use quadrature, only : weight, weight_psi, sym_order, angGrid
 implicit none
 integer(i2b):: i , j , k , o , p, icg , m1, m2, m3, nf1, nf2, nf3, species, i1, i2
 ! dummy
@@ -34,12 +34,12 @@ nf2=nfft2/2
 nf3=nfft3/2
 deltaVk=twopi**3/(Lx*Ly*Lz)
 Vcoul=0.0_dp
-allocate ( rho_k (nf1+1, nfft2 , nfft3, nb_omega , nb_psi, nb_species ))
+allocate ( rho_k (nf1+1, nfft2 , nfft3, angGrid%n_angles , nb_psi, nb_species ))
 rho_k = 0.0_dp
 allocate(v_c2(nfft1, nfft2, nfft3))
 allocate(rho_c_solv(nfft1, nfft2, nfft3))
 rho_c_solv=0.0_dp
-allocate(rho (nfft1, nfft2, nfft3,nb_omega,nb_psi, nb_species ))
+allocate(rho (nfft1, nfft2, nfft3,angGrid%n_angles,nb_psi, nb_species ))
 ! compute part of the energy due to the external potential
 icg = 0
 !check if we want to compute electrostatic using this way
@@ -54,7 +54,7 @@ do species =1 , nb_species
    DO i=1,nfft1
      do j=1, nfft2
        do k=1, nfft3
-        do o = 1 , nb_omega
+        do o = 1 , angGrid%n_angles
          
           do p=1, nb_psi
             icg = icg + 1
@@ -68,7 +68,7 @@ do species =1 , nb_species
 end do
 !Fourier transform backward solvent density
 do species = 1 , nb_species
-   do o =1, nb_omega
+   do o =1, angGrid%n_angles
      do p=1, nb_psi
       in_forward = rho ( : , : , : , o , p , species )
       call dfftw_execute ( plan_forward )
@@ -95,7 +95,7 @@ do i = 1 , nf1 + 1
       kz = twopioLz * real ( m3 , dp )
       kz2 = kz ** 2
       ! squared norm of k vector
-         do o = 1 , nb_omega
+         do o = 1 , angGrid%n_angles
             do p=1 , nb_psi
               rho_c_k_myway(i,j,k)=rho_c_k_myway(i,j,k)+weight(o)*weight_psi(p)*sigma_k(i,j,k,o,p,species)*&
               rho_k (i , j , k , o , p , species)!*deltavK

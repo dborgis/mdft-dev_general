@@ -4,7 +4,8 @@
 ! we thus init the density not using vext, but Vext_total - Vext_q
 subroutine init_density
 use precision_kinds , only : dp , i2b
-use system , only : nfft1 , nfft2 , nfft3 , nb_omega , beta , nb_species, nb_psi
+use system , only : nfft1 , nfft2 , nfft3 , beta , nb_species, nb_psi
+use quadrature, only: angGrid
 use cg , only : cg_vect
 use external_potential , only : Vext_total , Vext_q
 use input , only : input_line, input_log
@@ -33,7 +34,7 @@ do species = 1 , nb_species
   do i = 1 , nfft1
     do j = 1 , nfft2
       do k = 1 , nfft3
-        do o = 1 , nb_omega
+        do o = 1 , angGrid%n_angles
           do p= 1, nb_psi
           icg = icg + 1
           Vext_total_local = Vext_total ( i , j , k , o ,p , species )

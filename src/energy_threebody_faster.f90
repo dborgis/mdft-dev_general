@@ -2,9 +2,9 @@ subroutine energy_threebody_faster
 use precision_kinds, only:i2b, dp
 use input , only : input_line , input_log
 use constants, only: twopi
-use quadrature, only : weight, weight_psi
+use quadrature, only : weight, weight_psi, angGrid
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , Lx , Ly , Lz ,&
-&    id_mol, x_mol , y_mol , z_mol , kbT , nb_omega , nb_species, nb_solute_sites, deltax, deltay, deltaz&
+&    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
 & , lambda1_mol , lambda2_mol, nb_psi,deltaV,n_0
 use cg, only:cg_vect,dF,FF
 use fft, only : plan_backward, plan_forward, in_backward, out_backward, in_forward, out_forward
@@ -54,7 +54,7 @@ icg=0
 do i=1,nfft1
   do j=1,nfft2
     do k=1,nfft3
-      do o=1,nb_omega
+      do o=1,angGrid%n_angles
         do p=1, nb_psi
           icg=icg+1
           rho(i,j,k) = rho(i,j,k) + rho_0*weight(o)*weight_psi(p)*cg_vect(icg)**2
@@ -466,7 +466,7 @@ open(12,file='output/dF_2S_new.dat')
 do i=1,nfft1
   do j=1, nfft2
     do k=1, nfft3
-      do o=1,nb_omega
+      do o=1,angGrid%n_angles
         do p=1,nb_psi
           icg=icg+1    
           psi=cg_vect(icg)

@@ -1,8 +1,8 @@
 subroutine energy_polarization
 use precision_kinds , only : i2b , dp
-use system , only : nfft1 , nfft2 , nfft3 , nb_omega , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
+use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, nb_psi, deltax,deltay,deltaz
-use quadrature , only : weight , Omx , Omy , Omz, sym_order , weight_psi
+use quadrature , only : weight , Omx , Omy , Omz, sym_order , weight_psi, angGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : twopi
 use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
@@ -62,9 +62,9 @@ Py = 0.0_dp
 Pz = 0.0_dp
 ! put density of last minimization step in delta_rho and P
 ! but first prepare the product weight(omega)*Omx in order not to repeat it
-allocate ( weight_omx ( nb_omega ) )
-allocate ( weight_omy ( nb_omega ) )
-allocate ( weight_omz ( nb_omega ) )
+allocate ( weight_omx ( angGrid%n_angles ) )
+allocate ( weight_omy ( angGrid%n_angles ) )
+allocate ( weight_omz ( angGrid%n_angles ) )
 weight_omx = weight * Omx
 weight_omy = weight * Omy
 weight_omz = weight * Omz
@@ -83,7 +83,7 @@ do i = 1 , nfft1
       pxt = 0.0_dp
       pyt = 0.0_dp
       pzt = 0.0_dp
-      do o = 1 , nb_omega
+      do o = 1 , angGrid%n_angles
         do p=1, nb_psi
           icg = icg + 1
           rho = cg_vect (icg) ** 2
@@ -212,7 +212,7 @@ icg = 0
 do i = 1 , nfft1
   do j = 1 , nfft2
     do k = 1 , nfft3
-      do o = 1 , nb_omega
+      do o = 1 , angGrid%n_angles
         do p=1 , nb_psi
           icg = icg + 1
           psi = cg_vect ( icg )

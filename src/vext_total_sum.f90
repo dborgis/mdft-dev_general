@@ -3,7 +3,8 @@
 ! then it gives a upper value (100 kJ/mol) to vext_total.
 subroutine vext_total_sum
 use precision_kinds , only : dp , i2b
-use system , only : nfft1 , nfft2 , nfft3 , nb_omega , nb_species,nb_psi
+use system , only : nfft1 , nfft2 , nfft3 , nb_species
+use quadrature, only : angGrid, molRotGrid
 use constants , only : fourpi
 use external_potential , only : Vext_total , Vext_lj , Vext_q , vext_hard_core
 ! vext_total = total external potential used for minimization
@@ -17,7 +18,7 @@ real(dp), dimension ( nfft1 , nfft2 , nfft3 ) :: temparray ! dummy
 ! be sure Vext_total is allocated
 if ( .not. allocated ( Vext_total ) ) then
   print*,'V_ext_total is allocated in vext_total_sum'
-  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , nb_omega , nb_psi, nb_species ) )
+  allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ) )
   Vext_total = 0.0_dp
 else 
   print*, 'Warning V_ext_total has been allocated before vext_total_sum if you do not want to use HS you may have a problem'

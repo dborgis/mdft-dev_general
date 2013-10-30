@@ -1,9 +1,9 @@
 ! Compute total energy and gradients using direct correlation functions c_s_hs of a hard sphere fluid
 subroutine energy_cs_hard_sphere
 use precision_kinds, only: i2b,dp
-use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , nb_omega , c_s_hs , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
+use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s_hs , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
                   nb_species, nb_psi
-use quadrature, only: weight, weight_psi,sym_order
+use quadrature, only: weight, weight_psi,sym_order, angGrid
 use cg, only: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi
 use fft, only: in_forward,in_backward,out_forward,out_backward,plan_forward,plan_backward , norm_k
@@ -29,7 +29,7 @@ icg=0
 do i=1,nfft1
   do j=1,nfft2
     do k=1,nfft3
-      do o = 1, nb_omega
+      do o = 1, angGrid%n_angles
         do p=1, nb_psi
         icg=icg+1
         Delta_rho(i,j,k) = Delta_rho(i,j,k) + weight(o) * cg_vect(icg)**2*weight_psi(p)
@@ -77,7 +77,7 @@ do species = 1 , nb_species
     do j = 1 , nfft2
       do k = 1 , nfft3
         Vint   = -kBT * rho_0_multispec ( species ) * Vpolarization(i,j,k)
-        do o = 1 , nb_omega
+        do o = 1 , angGrid%n_angles
           do p=1, nb_psi
           icg = icg + 1
           psi = CG_vect ( icg )

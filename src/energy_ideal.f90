@@ -5,9 +5,9 @@ subroutine energy_ideal
 
     use precision_kinds, only : i2b, dp
     use cg, only : cg_vect, FF, dF
-    use system, only : nfft1, nfft2, nfft3, lx, ly, lz, nb_omega, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, nb_psi,&
+    use system, only : nfft1, nfft2, nfft3, lx, ly, lz, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, nb_psi,&
                         n_0_multispec
-    use quadrature, only : weight , weight_psi,sym_order
+    use quadrature, only : weight , weight_psi,sym_order, angGrid
     use input, only : input_log, input_char
     use constants, only : fourpi
 
@@ -41,7 +41,7 @@ subroutine energy_ideal
             do j=1,nfft2
                 do k=1,nfft3
                     rhon=0.0_dp
-                    do o=1,nb_omega
+                    do o=1,angGrid%n_angles
                         do p=1,nb_psi
                             icg=icg+1
                             rhon=rhon+cg_vect(icg)**2*weight(o)*weight_psi(p)/(fourpi**2/(sym_order*2.0_dp))
@@ -70,7 +70,7 @@ subroutine energy_ideal
                 do i = 1 , nfft1
                     do j = 1 , nfft2
                         do k = 1 , nfft3        
-                            do o = 1 , nb_omega    
+                            do o = 1 , angGrid%n_angles    
                                 do p=1 , nb_psi
                                     icg = icg + 1
                                     psi = CG_vect ( icg )
@@ -95,7 +95,7 @@ subroutine energy_ideal
                                             *( kBT * logrho + dFid_lin_temp )
                                     end if
                                 end do ! nb_psi
-                            end do ! nb_omega
+                            end do ! angGrid%n_angles
                         end do ! nfft3
                     end do ! nfft2
                 end do ! nfft1
@@ -106,7 +106,7 @@ subroutine energy_ideal
                 do i = 1 , nfft1
                     do j = 1 , nfft2
                         do k = 1 , nfft3        
-                            do o = 1 , nb_omega    
+                            do o = 1 , angGrid%n_angles    
                                 do p=1 , nb_psi
                                     icg = icg + 1
                                     psi = CG_vect ( icg )
@@ -133,7 +133,7 @@ subroutine energy_ideal
                                            *( kBT * logrho + dFid_lin_temp )
                                     end if
                                 end do ! nb_psi
-                            end do ! nb_omega
+                            end do ! angGrid%n_angles
                         end do ! nfft3
                     end do ! nfft2
                 end do ! nfft1
@@ -147,7 +147,7 @@ subroutine energy_ideal
             do i = 1 , nfft1
                 do j = 1 , nfft2
                     do k = 1 , nfft3
-                        do o = 1 , nb_omega
+                        do o = 1 , angGrid%n_angles
                             do p=1 , nb_psi
                                 icg = icg + 1
                                 psi = CG_vect ( icg )
@@ -166,7 +166,7 @@ subroutine energy_ideal
                                         * kBT * logrho
                                 end if
                             end do ! nb_psi
-                        end do ! nb_omega
+                        end do ! angGrid%n_angles
                     end do ! nfft3
                 end do ! nfft2
             end do ! nfft1

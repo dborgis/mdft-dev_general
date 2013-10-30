@@ -1,9 +1,9 @@
 subroutine energy_hard_sphere_fmt
 use precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
-                    weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_omega , nb_species , n_0_multispec , &
+                    weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
                     muexc_0_multispec , Fexc_0_multispec , mole_fraction , nb_psi, rho_0_multispec
-use quadrature , only : weight , sym_order , weight_psi
+use quadrature , only : weight , sym_order , weight_psi, angGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : pi , FourPi , twopi
 use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward
@@ -49,7 +49,7 @@ do species = 1 , nb_species
     do j = 1 , nfft2
       do k = 1 , nfft3
         local_density = 0.0_dp
-        do o = 1, nb_omega ! nb_omega
+        do o = 1, angGrid%n_angles
           do p=1, nb_psi
           icg = icg + 1
           local_density = local_density + weight (o) * cg_vect (icg) ** 2*weight_psi(p)
@@ -225,7 +225,7 @@ do species = 1 , nb_species
   do i = 1, nfft1
     do j = 1, nfft2
       do k = 1, nfft3
-        do o = 1, nb_omega ! nb_omega = 1
+        do o = 1, angGrid%n_angles
           do p=1, nb_psi
           icg = icg + 1
           psi = cg_vect ( icg )
@@ -233,7 +233,7 @@ do species = 1 , nb_species
           dF ( icg ) = dF ( icg ) &
 + 2.0_dp * psi * rho_0_multispec ( species ) * deltav * ( kBT * dFex ( i , j , k , species ) - muexc_0_multispec ( species ) )*&
 weight(o)*weight_psi(p)
- ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A NB_OMEGA /=1 LE 18 JUILLET 2011
+ ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
          end do  !p
   
         end do  !o

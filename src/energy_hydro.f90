@@ -1,11 +1,11 @@
 !This routine evaluate the excess free energy plus an hydrophobic part
 subroutine energy_hydro
  use precision_kinds , only : dp , i2b
-  use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_omega , nb_species,n_0,&
+  use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_species,n_0,&
 nb_psi,Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi
   use cg , only : cg_vect , FF , dF
-  use quadrature, only: weight,sym_order,weight_psi
+  use quadrature, only: weight,sym_order,weight_psi, angGrid
   use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , kx , ky , kz , k2
   use input, only : input_log
   
@@ -81,7 +81,7 @@ nb_psi,Lx,Ly,Lz
     do j=1,nfft2
       do k=1,nfft3
         delta_n_ijk=0.0_dp ! init delta_n
-        do o=1,nb_omega
+        do o=1,angGrid%n_angles
           do p=1, nb_psi
             icg=icg+1
             delta_n_ijk = delta_n_ijk + weight(o)*weight_psi(p) * cg_vect(icg) ** 2 ! sum over all orientations
@@ -241,9 +241,9 @@ nb_psi,Lx,Ly,Lz
   call dfftw_execute ( plan_backward ) 
   dF_cg = out_backward/Nk 
   
-  ! following count does not take into account all cases where nb_omega /=1
-  if ( nb_omega /= 1 ) then
-    print *, 'nb_omega /= 1 and hydrophobic part is calculated while not still implemented'
+  ! following count does not take into account all cases where angGrid%n_angles /=1
+  if ( angGrid%n_angles /= 1 ) then
+    print *, 'angGrid%n_angles /= 1 and hydrophobic part is calculated while not still implemented'
     print *, 'not possible for now. error in cs_plus_hydro.f90'
     stop
   end if
@@ -260,9 +260,9 @@ nb_psi,Lx,Ly,Lz
     do j = 1, nfft2
       do k = 1, nfft3
         Vint = -kBT * n_0 * fact_n * ( V_n(i,j,k) - V_nbar(i,j,k) ) 
-        Fint = Fint + 0.5_dp* ( Delta_n (i,j,k) - Delta_nbar (i,j,k) ) * Vint ! TODO doesnt work in case of nb_omega /= 1)
+        Fint = Fint + 0.5_dp* ( Delta_n (i,j,k) - Delta_nbar (i,j,k) ) * Vint ! TODO doesnt work in case of angGrid%n_angles /= 1)
         dF_cg_ijk = dF_cg(i,j,k)
-        do o = 1, nb_omega
+        do o = 1, angGrid%n_angles
           do p=1,nb_psi
             icg = icg + 1
             psi = cg_vect ( icg )

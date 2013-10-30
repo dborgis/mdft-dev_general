@@ -6,18 +6,18 @@ subroutine init_external_potential
 
     use precision_kinds , only : dp , i2b
     use input, only: input_line, input_log, input_char
-    use system , only: chg_mol, chg_solv, eps_solv, eps_mol, sig_solv, sig_mol, Lx, Ly, Lz, nb_omega, nb_psi, &
+    use system , only: chg_mol, chg_solv, eps_solv, eps_mol, sig_solv, sig_mol, Lx, Ly, Lz, nb_psi, &
                     nfft1, nfft2, nfft3, nb_species
     use external_potential, only: Vext_total, Vext_q
     use mod_lj, only: initLJ => init
-    use quadrature, only: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
+    use quadrature, only: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid
     
     implicit none
     
     integer(i2b):: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
     integer(i2b):: i, j
 
-    if(.not. allocated(Vext_total)) allocate( Vext_total(nfft1,nfft2,nfft3,nb_omega,nb_psi,nb_species), source=0._dp )
+    if(.not. allocated(Vext_total)) allocate( Vext_total(nfft1,nfft2,nfft3,angGrid%n_angles,nb_psi,nb_species), source=0._dp )
 
     nb_id_mol  = size ( chg_mol  ) ! total number of solute types
     nb_id_solv = size ( chg_solv ) ! total number of solvent types
@@ -29,7 +29,7 @@ subroutine init_external_potential
     end if
 
     ! Pseudopotential
-    !allocate(Vpseudo(nfft1,nfft2,nfft3,nb_omega))
+    !allocate(Vpseudo(nfft1,nfft2,nfft3,angGrid%n_angles))
     !call compute_vpseudo_ijko
 
     ! Hard walls
@@ -38,13 +38,13 @@ subroutine init_external_potential
     ! Charges : treatment as point charges
     if (input_log('point_charge_electrostatic')) then
         ! Compute Vcoul(i,j,k,omega)
-        if (.not. allocated(Vext_q)) allocate( Vext_q(nfft1,nfft2,nfft3,nb_omega,nb_psi,nb_species), source=0._dp )
+        if (.not. allocated(Vext_q)) allocate( Vext_q(nfft1,nfft2,nfft3,angGrid%n_angles,nb_psi,nb_species), source=0._dp )
         call compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
     end if
 
     ! Charges : Poisson solver
     if (input_log('poisson_solver')) then
-        if (.not. allocated(Vext_q) ) allocate ( Vext_q ( nfft1 , nfft2 , nfft3 , nb_omega, nb_psi , nb_species ) )
+        if (.not. allocated(Vext_q) ) allocate ( Vext_q ( nfft1 , nfft2 , nfft3 , angGrid%n_angles, nb_psi , nb_species ) )
         Vext_q=0.0_dp
         call electrostatic_potential_from_charge_density ! Electrostatic potential using FFT of Poisson equation Laplacian(V(r))= - charge_density / Epsilon_0
         call vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)

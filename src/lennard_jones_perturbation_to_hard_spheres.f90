@@ -2,8 +2,8 @@
 ! 201109121332 creation by Maximilien Levesque
 ! 201109151545 added the calculation of the perturbation potential
 subroutine lennard_jones_perturbation_to_hard_spheres
-use system , only : nfft1 , nfft2 , nfft3 , nb_omega , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
-use quadrature , only : weight
+use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
+use quadrature , only : weight, angGrid
 use cg , only : cg_vect , dF , FF
 use precision_kinds , only : dp , i2b
 use constants , only : fourpi , twopi
@@ -38,7 +38,7 @@ do i = 1 , nfft1
   do j = 1 , nfft2
     do k = 1 , nfft3
       local_density = 0.0_dp
-      do o = 1, nb_omega ! nb_omega=1
+      do o = 1, angGrid%n_angles ! angGrid%n_angles=1
         icg = icg + 1
         local_density = local_density + weight (o) * cg_vect (icg) ** 2
       end do
@@ -102,7 +102,7 @@ Fperturbation = 0.0_dp
 do i = 1 , nfft1
   do j = 1 , nfft2
     do k = 1 , nfft3
-      do o = 1, nb_omega ! nb_omega=1
+      do o = 1, angGrid%n_angles ! angGrid%n_angles=1
         Fperturbation = Fperturbation + rho_n ( i , j , k ) * v_perturbation_r ( i , j , k )
       end do
     end do
@@ -121,7 +121,7 @@ icg = 0
 do i = 1 , nfft1
   do j = 1 , nfft2
     do k = 1 , nfft3
-      do o = 1 , nb_omega
+      do o = 1 , angGrid%n_angles
         icg = icg + 1
         dF ( icg ) = dF ( icg ) + 2.0_dp * cg_vect ( icg ) * DeltaV * v_perturbation_r ( i , j , k ) ! 2011 09 18 23h16 deleted *n_0
       end do

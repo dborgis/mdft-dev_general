@@ -9,7 +9,7 @@ subroutine energy_and_gradient
     use input , only : input_line,input_log,input_char
     use cg , only : FF , dF , cg_vect
     use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
-    use system, only : nb_omega, nb_psi, sigma_k, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, rho_c, deltaV, nb_species,&
+    use system, only : nb_psi, sigma_k, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, rho_c, deltaV, nb_species,&
                     rho_0_multispec , rho_c_k_myway
     use constants, only : twopi, fourpi, qfact
     use quadrature, only : weight, weight_psi, sym_order
