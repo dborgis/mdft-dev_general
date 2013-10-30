@@ -11,10 +11,12 @@ subroutine allocate_from_input
     integer(i2b):: species ! dummy between 1 and nb_species
     
     sym_order = input_int('sym_order') !Get the order of the main symmetry axis of the solvent
+    if( sym_order <= 1 ) then
+        print*,'order of main symetric axe cannot be less than 1. sym_order is declared as ',sym_order
+        stop 'CRITICAL STOP. CHANGE sym_order IN INPUT'
+    end if
     
-    nfft1 = input_int('nfft1') !Read the number of spatial grid nodes
-    nfft2 = input_int('nfft2')
-    nfft3 = input_int('nfft3')
+    nfft1 = input_int('nfft1') ; nfft2 = input_int('nfft2') ; nfft3 = input_int('nfft3')
     if( any([nfft1,nfft2,nfft3]  <= 0) ) then
         print*,'The space is divided into grid nodes. The number of nodes must be greater than 1.'
         print*,'You have nfft1, nfft2, nfft3 nodes per direction : ',nfft1, nfft2, nfft3
@@ -22,14 +24,15 @@ subroutine allocate_from_input
     end if
     
     temp = input_dp('temperature') ! look for temperature in input
-    ! variables associated with temperature
-    kBT = Boltz * Navo * TEMP * 1.0e-3_dp
+    if( temp <= 0 ) then
+        print*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',temp
+        stop
+    end if
+    kBT = Boltz * Navo * temp * 1.0e-3_dp
     beta = 1.0_dp / kBT
 
     ! Length of supercell in each direction
-    Lx=input_dp('Lx')
-    Ly=input_dp('Ly')
-    Lz=input_dp('Lz')
+    Lx=input_dp('Lx') ; Ly=input_dp('Ly') ; Lz=input_dp('Lz')
     if( any([Lx,Ly,Lz] <= 0._dp ) ) then
         print*,'The supercell cannot have negative length.'
         print*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',Lx,Ly,Lz
@@ -37,40 +40,54 @@ subroutine allocate_from_input
     end if
     
     ! distance between two grid points in x direction deltax
-    deltax = Lx / real ( nfft1 , dp )
-    deltay = Ly / real ( nfft2 , dp )
-    deltaz = Lz / real ( nfft3 , dp )
-    ! minimum grid volume. (needed for instance for the integrations)
-    deltav = deltax * deltay * deltaz
+    deltax = Lx/ real(nfft1,dp) ; deltay = Ly/ real(nfft2,dp) ; deltaz = Lz/ real(nfft3,dp)
+    deltav = deltax * deltay * deltaz ! minimum grid volume. (needed for instance for the integrations)
     
-    ! get the number of implicit species
-    nb_species=input_int('nb_implicit_species')
+    nb_species=input_int('nb_implicit_species') ! get the number of implicit species
+    if( nb_species < 1 ) then
+        print*,'Solvent is without species. This is not what you want. Check nb_implicit_species in dft.in :',nb_species
+        stop
+    end if
+    
     ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer  
     allocate ( n_0_multispec ( nb_species ) )
     do i = 1 , size ( input_line )
-    if ( input_line ( i ) ( 1 : len ( 'ref_bulk_density' ) ) == 'ref_bulk_density' ) then
-        do species = 1 , nb_species
-        read ( input_line ( i + species ) , * ) n_0_multispec ( species )
-        write (*,*) 'Reference bulk density (' , species , ') = ' , n_0_multispec ( species )
-        end do
-        exit
-    end if
+        if ( input_line ( i ) ( 1 : len ( 'ref_bulk_density' ) ) == 'ref_bulk_density' ) then
+            do species = 1 , nb_species
+                read ( input_line ( i + species ) , * ) n_0_multispec ( species )
+                write (*,*) 'Reference bulk density (' , species , ') = ' , n_0_multispec ( species )
+            end do
+            exit
+        end if
     end do
+    if( any( n_0_multispec < 0._dp) ) then
+        print*,'you ask for several species as solvent, but some have negative bulk density'
+        do i=1, size(n_0_multispec)
+            print*,'species',i,'bulk density',n_0_multispec(i)
+        end do
+        STOP 'UNPHYSICAL INPUT CHECK ref_bulk_density'
+    end if
     allocate ( rho_0_multispec ( nb_species ) )
     rho_0_multispec = sym_order*n_0_multispec / (2.0_dp*twopi**2) ! for single specie compatibility while not fully complete :
     n_0 = n_0_multispec ( 1 ) ! for single specie compatibility while not fully complete : 
     rho_0 = sym_order*n_0 / ( twopi**2*2.0_dp) ! rho is the density per angle
+
     if (allocated(mole_fraction)) then
-    write(*,*)'something is not under control with respect to mole fraction reading and definition in allocate_from_input.f90'
-    write(*,*)'this was done, in a previous version of the program, in compute_hard_sphere_parameters.f90'
-    stop
+        write(*,*)'something is not under control with respect to mole fraction reading and definition in allocate_from_input.f90'
+        write(*,*)'this was done, in a previous version of the program, in compute_hard_sphere_parameters.f90'
+        stop
+    else
+        allocate ( mole_fraction ( nb_species ) ) ! molar fraction of each species.
+        call read_mole_fractions ( nb_species , mole_fraction )
     end if
-    allocate ( mole_fraction ( nb_species ) ) ! molar fraction of each species.
-    call read_mole_fractions ( nb_species , mole_fraction )
 
     ! look for Rc
     Rc=input_dp('Rc')
+    
+    
+    
     contains  
+    
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Subroutine to read the mole fractions in dft.in.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -124,7 +141,7 @@ subroutine allocate_from_input
         ! a mole fraction should be between 0 and 1
         do species = 1 , nb_species
         if ( mole_fraction ( species ) < 0.0_dp .or. mole_fraction ( species ) > 1.0_dp ) then
-            write (*,*) 'Critical errror in compute_hs_parameters.f90. Mole fractions should be between 0 and 1'
+            write (*,*) 'Critical errror in allocate_from_input.f90. Mole fractions should be between 0 and 1'
             write (*,*) 'here are the number of the species and its associated mole fraction'
             write (*,*) 'species number ' , species , ' has mole fraction ' , mole_fraction ( species )
             write (*,*) 'stop'

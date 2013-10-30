@@ -43,12 +43,23 @@ module quadrature
 
             ! integration scheme
             intScheme%name = trim(adjustl(input_char('quadrature')))
+            if( intScheme%name /= 'L' .and. intScheme%name /= 'GL' ) then
+                print*,'You ask for a integration scheme called ',intScheme%name
+                print*,'it is not implemeted for now. Check readme for more information.'
+                stop
+            end if
+            
             call read_order_of_quadrature (intScheme%order)
+            if( intScheme%order <= 0 ) then
+                print*,'You ask for a quadrature of order less than 1',intScheme%order
+                STOP 'CRITICAL STOP. UNPHYSICAL QUADRATURE ORDER'
+            end if
+            
             allocate (intScheme%weight(intScheme%order), source=0._dp)
             allocate (intScheme%root(intScheme%order), source=0._dp)
 
             ! LEBEDEV
-            if (intScheme%name(1:1)=='L') then
+            if (intScheme%name=='L') then
                 angGrid%n_angles = intScheme%order
                 call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
                 allocate( x_leb(intScheme%order), y_leb(intScheme%order), z_leb(intScheme%order) )
@@ -58,7 +69,7 @@ module quadrature
                 deallocate( x_leb, y_leb, z_leb)
 
             ! GAUSS-LEGENDRE
-            else if (intScheme%name(1:2)=='GL') then
+            else if (intScheme%name=='GL') then
                 select case (intScheme%order)
                 case (1)
                     angGrid%n_angles = 1
