@@ -8,7 +8,7 @@ nfft1 = 32                            # nbr of grid points
 nfft2 = 32                                 # nbr of grid points
 nfft3 = 32
                                   # nbr of grid points
-quadrature = GL                             #Type of quadrature used to do integration on the omega angle , GL for Gauss-Legendre(default) , L for lebedev
+quadrature = L                             #Type of quadrature used to do integration on the omega angle , GL for Gauss-Legendre(default) , L for lebedev
 
 # order of gauss legendre integration. 3 for water. 2*order^2 angles
 # order of Lebedev integration. theoritically 2/3 of angles of GL integration. routine is written for order = 6, 14 , 26 , 38 

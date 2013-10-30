@@ -8,9 +8,9 @@ module quadrature
 
     implicit none
 
-    real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb , weight_leb, x_psi
+    real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb
     real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for orientation OMEGA and associated weight
-    real(dp), allocatable, dimension(:), public :: weight, weight_psi
+    real(dp), allocatable, dimension(:), public :: weight, weight_psi ! to be removed once everything is coherent and type derived
     real(dp), allocatable, dimension(:,:), public :: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
     type angularGrid
         integer(i2b) :: n_angles
@@ -46,6 +46,8 @@ module quadrature
             ! integration scheme
             intScheme%name = trim(adjustl(input_char('quadrature')))
             call read_order_of_quadrature (intScheme%order)
+            allocate (intScheme%weight(intScheme%order), source=0._dp)
+            allocate (intScheme%root(intScheme%order), source=0._dp)
 
             ! LEBEDEV
             if (intScheme%name(1:1)=='L') then
@@ -53,36 +55,40 @@ module quadrature
                 nb_omega = angGrid%n_angles ! to be removed when coherent in whole code
                 call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
                 allocate( x_leb(intScheme%order), y_leb(intScheme%order), z_leb(intScheme%order) )
-                allocate( weight_leb(intScheme%order), source=0._dp )
-                call lebedev_integration_roots_and_weights (intScheme%order, x_leb ,y_leb , z_leb, weight_leb)
-                call lebedev ( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
-                deallocate( x_leb, y_leb, z_leb, weight_leb)
+                allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
+                call lebedev_integration_roots_and_weights (intScheme%order, x_leb ,y_leb , z_leb, intScheme%weight)
+                call lebedev (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+                deallocate( x_leb, y_leb, z_leb)
 
             ! GAUSS-LEGENDRE
             else if (intScheme%name(1:2)=='GL') then
                 angGrid%n_angles = 2*(intScheme%order**2)
                 nb_omega = angGrid%n_angles ! to be removed when coherent in whole code
-                allocate (intScheme%weight(intScheme%order), source=0._dp)
-                allocate (intScheme%root(intScheme%order), source=0._dp)
                 call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
                 call gauss_legendre_integration_roots_and_weights (intScheme%order, intScheme%weight , intScheme%root)
                 allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
                 call gauss (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
             end if
+            
+            if (.not. allocated(weight) ) allocate (weight(angGrid%n_angles) )
+            weight = angGrid%weight
+            
+            if (.not. allocated(weight_psi) ) allocate (weight_psi(molRotGrid%n_angles))
+            weight_psi = molRotGrid%weight
+            
         end subroutine init
 
         ! GAUSS
         subroutine gauss (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
             type (angularGrid), intent(inout) :: angGrid
             type (integrationScheme), intent(in) :: intScheme
-            integer(i2b) :: omega, n_psi, theta, n_phi,i
-            real(dp) :: psii, phi, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
             real(dp), dimension(angGrid%n_angles,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            integer(i2b) :: omega, n_psi, theta, n_phi
+            real(dp) :: phi, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
             allocate(OMx(angGrid%n_angles))
             allocate(OMy(angGrid%n_angles))
             allocate(OMz(angGrid%n_angles))
-!~             call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,angGrid%weight,angGrid%n_angles) ! allocate what we want to compute
 
             select case (intScheme%order)
             case (1)
@@ -92,12 +98,8 @@ module quadrature
                 Rotzx = 0.0_dp ; Rotzy = 0.0_dp ; Rotzz = 1.0_dp
             case default
                 do  theta = 1, intScheme%order
-
-                    PRINT*,;PRINT*,"START THETA=",theta
-
                     cos_theta = intScheme%root(theta)
                     sin_theta = sqrt ( 1.0_dp - cos_theta ** 2 )
-
                     do  n_phi = 1, 2*intScheme%order
                         omega = (theta-1)*2*intScheme%order + n_phi
                         phi = real(n_phi-1,dp) * twopi / real ( 2 * intScheme%order , dp ) !0,pi
@@ -106,11 +108,9 @@ module quadrature
                         OMy ( omega ) = sin_theta * sin_phi
                         OMz ( omega ) = cos_theta
                         angGrid%weight(omega) = intScheme%weight(theta) *pi /real(intScheme%order,dp)
-                        PRINT*,theta,n_phi,intScheme%weight(theta),omega,angGrid%weight(omega)
                         do n_psi = 1 , nb_psi
-                            psii = molRotGrid%root(n_psi)
-                            cos_psi = cos(psii) !1
-                            sin_psi = sin(psii) !0
+                            cos_psi = cos(  molRotGrid%root(n_psi)  )
+                            sin_psi = sin(  molRotGrid%root(n_psi)  )
                             Rotxx(omega,n_psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
                             Rotxy(omega,n_psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
                             Rotxz(omega,n_psi) =  sin_theta*cos_phi
@@ -126,22 +126,26 @@ module quadrature
             end select
 
             call check_weights(angGrid%weight)
-!~             
-STOP "OK FOR NOW COOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL"
+
         end subroutine gauss
 
 
         ! LEBEDEV
-        subroutine lebedev( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
-
+        subroutine lebedev (angGrid, intScheme, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
+            
+            type (angularGrid), intent(inout) :: angGrid
+            type (integrationScheme), intent(in) :: intScheme
             real(dp), dimension(angGrid%n_angles,nb_psi), intent(out) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+            
             integer(i2b) ::  n, psi
             real(dp) :: phi, theta, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
-            call allocate_Omx_Omy_Omz_weight_if_necessary(Omx,Omy,Omz,angGrid%weight,angGrid%n_angles) ! allocate what we want to compute
-        
-            weight(1:angGrid%n_angles) = weight_leb(1:angGrid%n_angles)
-            call check_weights(weight)
+            allocate(OMx(angGrid%n_angles))
+            allocate(OMy(angGrid%n_angles))
+            allocate(OMz(angGrid%n_angles))
+            
+            angGrid%weight(1:angGrid%n_angles) = intScheme%weight(1:angGrid%n_angles)
+            call check_weights(angGrid%weight)
 
             do concurrent (n=1:angGrid%n_angles)
                 if ( x_leb(n)==0.0_dp .and. y_leb(n)==0.0_dp ) then 
@@ -174,8 +178,8 @@ STOP "OK FOR NOW COOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL"
                 sin_phi=sin(phi)    
                 
                 do concurrent (psi=1:nb_psi)
-                    cos_psi = cos(x_psi(psi))
-                    sin_psi = sin(x_psi(psi))
+                    cos_psi = cos(  molRotGrid%root(psi)  )
+                    sin_psi = sin(  molRotGrid%root(psi)  )
                     Rotxx(n,psi) =  cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
                     Rotxy(n,psi) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
                     Rotxz(n,psi) =  sin_theta*cos_phi
@@ -188,8 +192,6 @@ STOP "OK FOR NOW COOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL"
                 end do
             end do
        
-!~             call check_weights_psi(weight_psi)
-
         end subroutine lebedev
 
 
