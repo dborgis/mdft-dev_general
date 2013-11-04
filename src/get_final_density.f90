@@ -12,8 +12,7 @@ SUBROUTINE get_final_density ( neq )
 
     REAL(dp), INTENT(OUT) :: neq (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),nb_species) ! equilibrium density(position)
     INTEGER(i2b) :: i, j, k, omega, icg, species, p
-    REAL(dp) :: rho_over_fourpi ! = CG_vect(i)**2/fourpi
-    REAL(dp) :: local_density
+    REAL(dp) :: rho_over_fourpi, local_density
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:,:) :: rho_k 
     REAL(dp) :: Nk ! Total number of k points = nfft1*nfft2*nfft3
     INTEGER(i2b) :: nfft1, nfft2, nfft3
@@ -46,6 +45,7 @@ SUBROUTINE get_final_density ( neq )
             CALL dfftw_execute ( plan_forward )
             rho_k (:,:,:,species) = timesExpPrefactork2 ( out_forward, gaussianWidth**2/2.0_dp )
             in_backward = rho_k (:,:,:,species)
+            DEALLOCATE( rho_k )
             CALL dfftw_execute ( plan_backward )
             neq (:,:,:,species ) = out_backward/Nk 
         END DO
