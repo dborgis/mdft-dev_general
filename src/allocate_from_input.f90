@@ -3,7 +3,7 @@ subroutine allocate_from_input
     use precision_kinds , only : i2b , dp
     use input , only : input_line, input_int, input_dp, input_log
     use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , rho_0 , temp , beta , kbT , Rc , deltax , deltay , deltaz , &
-                        deltav , n_0_multispec , rho_0_multispec , nb_species , mole_fraction
+                        deltav , n_0_multispec , rho_0_multispec , nb_species , mole_fraction, spaceGrid
     use constants , only : fourpi , boltz, navo , twopi
     use quadrature , only : sym_order
     implicit none
@@ -16,13 +16,26 @@ subroutine allocate_from_input
         stop 'CRITICAL STOP. CHANGE sym_order IN INPUT'
     end if
     
-    nfft1 = input_int('nfft1') ; nfft2 = input_int('nfft2') ; nfft3 = input_int('nfft3')
-    if( any([nfft1,nfft2,nfft3]  <= 0) ) then
+    spaceGrid%n_nodes = [ input_int('nfft1'), input_int('nfft2'), input_int('nfft3') ] ! number of grid nodes in each direction
+    if( any( spaceGrid%n_nodes  <= 0) ) then
         print*,'The space is divided into grid nodes. The number of nodes must be greater than 1.'
-        print*,'You have nfft1, nfft2, nfft3 nodes per direction : ',nfft1, nfft2, nfft3
+        print*,'You have nfft1, nfft2, nfft3 nodes per direction : ',spaceGrid%n_nodes
         stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT.'
     end if
-    
+    nfft1 = spaceGrid%n_nodes(1) ; nfft2 = spaceGrid%n_nodes(2) ; nfft3 = spaceGrid%n_nodes(3) ! should be deprecated soon
+
+    spaceGrid%length = [ input_dp('Lx'), input_dp('Ly'), input_dp('Lz') ]
+    if( any( spaceGrid%length  <= 0._dp ) ) then
+        print*,'The supercell cannot have negative length.'
+        print*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',spaceGrid%length
+        stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
+    end if
+    lx = spaceGrid%length(1) ; ly = spaceGrid%length(2) ; lz = spaceGrid%length(3) ! should be deprecated soon
+    spaceGrid%dl = spaceGrid%length/spaceGrid%n_nodes
+    deltax = Lx/ real(nfft1,dp) ; deltay = Ly/ real(nfft2,dp) ; deltaz = Lz/ real(nfft3,dp) ! should be deprecated soon
+    spaceGrid%dv = product(spaceGrid%dl)
+    deltav = deltax * deltay * deltaz ! should be deprecated soon
+
     temp = input_dp('temperature') ! look for temperature in input
     if( temp <= 0 ) then
         print*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',temp
@@ -30,18 +43,6 @@ subroutine allocate_from_input
     end if
     kBT = Boltz * Navo * temp * 1.0e-3_dp
     beta = 1.0_dp / kBT
-
-    ! Length of supercell in each direction
-    Lx=input_dp('Lx') ; Ly=input_dp('Ly') ; Lz=input_dp('Lz')
-    if( any([Lx,Ly,Lz] <= 0._dp ) ) then
-        print*,'The supercell cannot have negative length.'
-        print*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',Lx,Ly,Lz
-        stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
-    end if
-    
-    ! distance between two grid points in x direction deltax
-    deltax = Lx/ real(nfft1,dp) ; deltay = Ly/ real(nfft2,dp) ; deltaz = Lz/ real(nfft3,dp)
-    deltav = deltax * deltay * deltaz ! minimum grid volume. (needed for instance for the integrations)
     
     nb_species=input_int('nb_implicit_species') ! get the number of implicit species
     if( nb_species < 1 ) then

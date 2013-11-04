@@ -3,9 +3,6 @@ module system
 use precision_kinds , only:i2b,dp
 implicit none
 integer(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
-real(dp) :: Lx , Ly , Lz ! Taille de la boite en Ang
-real(dp) :: DeltaV ! volume elementaire=Lx*Ly*Lz/(nfft1*nfft2*nfft3)
-real(dp) :: deltax, deltay, deltaz ! Lx/nfft1, Ly/nfft2, Lz/nfft3
 integer(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
 real(dp), allocatable, dimension(:) :: x_mol, y_mol, z_mol ! positions des sites du solute dans la boite (repere absolu)
 real(dp), allocatable, dimension(:) :: chg_mol, sig_mol, eps_mol  ! charge partielle et parametres LJ pour chaque site du solute (kJ/mol)
@@ -15,7 +12,17 @@ integer(i2b), allocatable, dimension(:) :: id_solv, id_mol ! atom type of each s
 real(dp) :: Rc ! Taille de la charge (Ang)
 real(dp) :: TEMP  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
 real(dp) :: kBT , beta
+
 ! Grille pour FFT
+TYPE :: spaceGridType
+    integer(i2b), dimension(1:3) :: n_nodes
+    real(dp), dimension(1:3) :: length, dl
+    real(dp) :: dv
+END TYPE spaceGridType
+TYPE( spaceGridType ) :: spaceGrid
+real(dp) :: Lx , Ly , Lz ! Taille de la boite en Ang
+real(dp) :: DeltaV ! volume elementaire=Lx*Ly*Lz/(nfft1*nfft2*nfft3)
+real(dp) :: deltax, deltay, deltaz ! Lx/nfft1, Ly/nfft2, Lz/nfft3
 integer(i2b) :: nfft ! nbr de point par unite de longueur. lu dans input/dft.in. nfft1, nfft2 et nfft3 sont deduits de nfft.
 integer(i2b) :: nfft1,nfft2,nfft3 ! nbr de points sur chaque dimensions de la grille. deduits de nfft lu dans dft.in
 real(dp) :: delta_r
