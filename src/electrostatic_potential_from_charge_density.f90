@@ -16,15 +16,16 @@ use external_potential , only : V_c
 implicit none
 complex(dp), dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: rho_c_k
 complex(dp), dimension ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: V_c_k
-integer (i2b) :: i !dummy vraiable
+integer (i2b) :: i,j,k
+
 ! check if rho_c exists and is allocated
 if ( .not. allocated ( rho_c ) ) then
   print *, 'rho_c is not allocated in electrostatic_potential_from_charge_density.f90'
   stop
 end if
 if (maxval(abs(rho_c)) < tiny(1.0_dp)) then
-allocate ( V_c ( nfft1 , nfft2 , nfft3 ) )
-v_c = 0.0_dp
+allocate ( V_c ( nfft1 , nfft2 , nfft3 ), source=0._dp )
+!~ v_c = 0.0_dp
 return
 end if
 ! FFT of rho_c
@@ -33,11 +34,15 @@ call dfftw_execute ( plan_forward )
 rho_c_k = out_forward ! It is verified that at this point, FFT-1(rho_c_k)/ (nfft1*nfft2*nfft3) = rho_c
 ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
 ! V(k) = 4Pi rho(k) / k^2
-where ( k2 /= 0.0_dp )
-  V_c_k = rho_c_k * fourpi / k2 ! in electrostatic units : V=-4pi rho
-elsewhere
-  V_c_k = 0.0_dp ! arbitrary choice equivalent to an infinite dielectric material at infinity
-end where
+
+DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
+    IF ( K2(i,j,k) /= 0._dp ) THEN
+        V_c_k(i,j,k) = rho_c_k(i,j,k) * fourpi/k2(i,j,k) ! in electrostatic units : V=-4pi rho
+    ELSE
+        V_c_k(i,j,k) = 0._dp
+    END IF
+END DO
+
 ! get real space potential V(r)
 if ( .not. allocated ( V_c ) ) allocate ( V_c ( nfft1 , nfft2 , nfft3 ) )
 in_backward = V_c_k

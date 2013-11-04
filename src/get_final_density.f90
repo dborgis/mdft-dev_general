@@ -1,12 +1,11 @@
 !> Gets the final density from the last minimizer step.
 subroutine get_final_density ( neq )
 use precision_kinds , only: dp , i2b
-use system , only : nfft1 , nfft2 , nfft3 , nb_species , Lx , Ly , Lz , mole_fraction, n_0_multispec, deltax,&
-deltay,deltaz
+use system , only : nfft1 , nfft2 , nfft3 , nb_species , Lx , Ly , Lz , mole_fraction, n_0_multispec, deltax,deltay,deltaz
 use constants , only : fourpi, pi , twopi
 use cg , only : CG_vect
 use quadrature , only : sym_order, angGrid, molRotGrid
-use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward , k2
+use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward , timesExpPrefactork2
 implicit none
 real(dp), intent(out) , dimension ( nfft1 , nfft2 , nfft3 , nb_species ) :: neq !> equilibrium density(position)
 integer(i2b):: i , j , k , omega , icg , species , p ! dummy
@@ -49,19 +48,23 @@ do species = 1 , nb_species
 end do
   !convolute with a gaussian
 allocate ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
-do species = 1 , nb_species
+
+DO species = 1 , nb_species
   in_forward = neq ( : , : , : , species )
   call dfftw_execute ( plan_forward )
   rho_k ( : , : , : , species ) = out_forward 
-end do
-do species = 1 , nb_species
-  rho_k ( : , : , : , nb_species ) = rho_k ( : , : , : , nb_species ) * exp ( - k2 ( : , : , : ) * Rc **2 / 2.0_dp )
-end do
-do species = 1 , nb_species
+END DO
+
+DO CONCURRENT ( species=1:nb_species )
+    rho_k (:,:,:,species) = timesExpPrefactork2 ( rho_k(:,:,:,species), Rc**2/2.0_dp )
+END DO
+
+DO species = 1 , nb_species
   in_backward = rho_k ( : , : , : , species )
   call dfftw_execute ( plan_backward )
   neq ( : , : , : , species ) = out_backward/Nk 
-end do 
+END DO
+
 open(11,file='output/density_along_x.dat')
 do i=1,nfft1
 write(11,*) (i-1)*deltax, neq(i,nfft2/2+1,nfft3/2+1,1)
@@ -77,5 +80,4 @@ do i=1,nfft3
 write(13,*) (i-1)*deltaz, neq(nfft1/2+1,nfft2/2+1,i,1)
 end do
 close(13)
-print*, 'blablabla' , Rc
 end subroutine get_final_density

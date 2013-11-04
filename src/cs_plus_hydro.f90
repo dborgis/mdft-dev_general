@@ -6,7 +6,8 @@ subroutine cs_plus_hydro
   use constants , only : fourpi , i_complex,twopi
   use cg , only : cg_vect , FF , dF
   use quadrature, only: sym_order,angGrid, molRotGrid
-  use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , kx , ky , kz , k2
+  use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k,kx,ky,kz,k2,&
+                    timesExpPrefactork2
   use input, only : input_log
   
   implicit none
@@ -104,8 +105,8 @@ subroutine cs_plus_hydro
   delta_nk = out_forward
   
   ! the coarse-grained delta_n is simply delta_n multiplied by a gaussian distribution of empirical
-  allocate ( delta_nbark ( nfft1/2+1 , nfft2 , nfft3 ) )
-  delta_nbark = delta_nk * exp( prefactor * k2 ) ! ~n=n*exp(prefactor*k²)
+    allocate ( delta_nbark ( nfft1/2+1 , nfft2 , nfft3 ) )
+    delta_nbark = timesExpPrefactork2 ( delta_nk,prefactor ) ! ~n=n*exp(prefactor*k²)
   ! surface energy (cahn hilliard part of the intrinsic excess energy)
   S_cg = 0.0_dp
   allocate ( dS_cgk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
@@ -120,8 +121,8 @@ subroutine cs_plus_hydro
   
     do m = 1 , nfft2
       do p = 1 , nfft3
-        k2_loc = k2 ( l , m , p )
-        delta_nbark_loc = Delta_nbark ( l , m , p )
+        k2_loc = k2 (l,m,p)
+        delta_nbark_loc = Delta_nbark (l,m,p)
         S_cg = S_cg + facsym * DeltaVk * 1.5_dp * d_0 * gamma_0 * k2_loc * real( Delta_nbark_loc , dp ) ** 2
         dS_cgk ( l , m , p ) = facsym * DeltaVk * 3.0 * d_0 * gamma_0 * k2_loc * Delta_nbark_loc
       end do
@@ -171,8 +172,8 @@ subroutine cs_plus_hydro
   
   
   ! coarse grain V_nk
-  allocate( V_nbark ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-  V_nbark = V_nk * exp(prefactor*k2)
+    ALLOCATE( V_nbark ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
+    V_nbark = timesExpPrefactork2 (V_nk,prefactor)
   
   ! compute V_n(r) by FFT-1
   in_backward = V_nk
@@ -248,7 +249,7 @@ subroutine cs_plus_hydro
   dF_cgk = out_forward
   
   ! define coarse grained gradients in k space
-  dF_cgk = ( dF_cgk + dS_cgk ) * exp ( prefactor * k2 )
+  dF_cgk = timesExpPrefactork2 ( dF_cgk + dS_cgk, prefactor )
   deallocate(dS_cgk)
   
   ! get back coarse grained gradients in r space

@@ -6,7 +6,8 @@ subroutine energy_hydro
   use constants , only : fourpi , i_complex,twopi
   use cg , only : cg_vect , FF , dF
   use quadrature, only: sym_order, angGrid, molRotGrid
-  use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , kx , ky , kz , k2
+  use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k,kx,ky,kz,k2,&
+                timesExpPrefactork2
   use input, only : input_log
   
   implicit none
@@ -102,7 +103,7 @@ subroutine energy_hydro
   
   ! the coarse-grained delta_n is simply delta_n multiplied by a gaussian distribution of empirical
   allocate ( delta_nbark ( nfft1/2+1 , nfft2 , nfft3 ) )
-  delta_nbark = delta_nk * exp( prefactor * k2 ) ! ~n=n*exp(prefactor*k²)
+  delta_nbark = timesExpPrefactork2 (delta_nk,prefactor)
   ! surface energy (cahn hilliard part of the intrinsic excess energy)
   S_cg = 0.0_dp
   allocate ( dS_cgk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
@@ -168,7 +169,7 @@ subroutine energy_hydro
   
   ! coarse grain V_nk
   allocate( V_nbark ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-  V_nbark = V_nk * exp(prefactor*k2)
+  V_nbark = timesExpPrefactork2 (V_nk,prefactor)
   
   ! compute V_n(r) by FFT-1
   in_backward = V_nk
@@ -230,9 +231,8 @@ subroutine energy_hydro
   in_forward = dF_cg
   call dfftw_execute(plan_forward)
   allocate(dF_cgk(nfft1/2+1,nfft2,nfft3))
-  dF_cgk = out_forward
   ! define coarse grained gradients in k space
-  dF_cgk = ( dF_cgk + dS_cgk ) * exp ( prefactor * k2 )
+  dF_cgk = timesExpPrefactork2 ( out_forward + dS_cgk, prefactor)
   deallocate(dS_cgk)
   
   ! get back coarse grained gradients in r space

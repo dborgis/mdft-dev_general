@@ -133,8 +133,10 @@ deallocate ( v_perturbation_r )
 call cpu_time ( time1 )
 ! warn user
 write (*,*) 'Fperturbati = ' , Fperturbation , 'computed in (sec)' , time1 - time0
+
 contains
   ! Here we compute Uperturbation in kspace. it's an integration we do numericaly
+
   function vlj_wca_k ( k , sigma_lj , epsilon_lj )
   use precision_kinds , only : dp , i2b
   use constants , only : fourpi
