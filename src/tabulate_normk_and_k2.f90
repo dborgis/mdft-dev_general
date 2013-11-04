@@ -1,9 +1,9 @@
 ! This subroutine tabulates the value of norm(k) for each vector k (l,m,n) ((nfft1,nfft2,nfft3)) and its square
 SUBROUTINE tabulate_normk_and_k2
 
-    USE precision_kinds , ONLY : i2b , dp
-    USE system , ONLY : spaceGrid
-    USE fft , ONLY : norm_k , k2 , kx , ky , kz , k2_nocoef! what we want to tabulate
+    USE precision_kinds , ONLY: i2b , dp
+    USE system , ONLY: spaceGrid
+    USE fft , ONLY: kx , ky , kz ! what we want to tabulate
 
     IMPLICIT NONE
 
@@ -19,9 +19,6 @@ SUBROUTINE tabulate_normk_and_k2
     ly = spaceGrid%length(2)
     lz = spaceGrid%length(3)
 
-!~     ALLOCATE ( norm_k ( nfft1/2+1 , nfft2 , nfft3 ) )
-!~     ALLOCATE ( k2 ( nfft1/2+1 , nfft2 , nfft3 ) )
-    ALLOCATE ( k2_nocoef ( nfft1/2+1 , nfft2 , nfft3 ) )
     ALLOCATE ( kx ( nfft1/2+1 ) )
     ALLOCATE ( ky ( nfft2 ) )
     ALLOCATE ( kz ( nfft3 ) )
@@ -53,9 +50,4 @@ SUBROUTINE tabulate_normk_and_k2
         kx(l) = twopi/Lx*real(m1,dp)
     END DO
     
-!~     DO CONCURRENT ( l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3 )
-!~         k2(l,m,n) = kx(l)**2 + ky(m)**2 + kz(n)**2
-!~         norm_k = SQRT(k2)
-!~     END DO
-
 END SUBROUTINE tabulate_normk_and_k2

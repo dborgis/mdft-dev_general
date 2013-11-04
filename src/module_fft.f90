@@ -8,12 +8,8 @@ MODULE fft
     INTEGER(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT
-    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: k2_nocoef ! norm squared of vector k without any coefficient (L or nfft)
     REAL(dp), PRIVATE, PARAMETER :: twopi = 2._dp*ACOS(-1._dp)
-
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: kx, ky, kz ! projection of k
-    !~ REAL(dp), ALLOCATABLE , DIMENSION (:,:,:) :: norm_k ! norm of vector k tabulated for l,m,n  (nfft1,nfft2,nfft3)
-    !~ REAL(dp), ALLOCATABLE , DIMENSION (:,:,:) :: k2 ! norm squared of vector k (nfft1,nfft2,nfft3)
 
 CONTAINS
 

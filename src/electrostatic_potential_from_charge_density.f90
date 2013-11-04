@@ -9,7 +9,7 @@ use precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , rho_c
 ! nfft = number of FFT grid nodes in each direction
 ! rho_c (nfft1,nfft2,nfft3) = discrete charge density per unit volume
-use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , k2 , k2_nocoef
+use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , k2
 use constants , only : fourpi , twopi
 use external_potential , only : V_c
 ! V_c = electrostatic potential from charge density and poisson equation
