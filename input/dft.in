@@ -4,11 +4,11 @@
 Lx  = 40
 Ly  = 40
 Lz  = 40
-nfft1 = 32                            # nbr of grid points
+nfft1 = 32                             # nbr of grid points
 nfft2 = 32                                 # nbr of grid points
 nfft3 = 32
                                   # nbr of grid points
-quadrature = L                             #Type of quadrature used to do integration on the omega angle , GL for Gauss-Legendre(default) , L for lebedev
+quadrature = L                          #Type of quadrature used to do integration on the omega angle , GL for Gauss-Legendre(default) , L for lebedev
 
 # order of gauss legendre integration. 3 for water. 2*order^2 angles
 # order of Lebedev integration. theoritically 2/3 of angles of GL integration. routine is written for order = 6, 14 , 26 , 38 
@@ -32,8 +32,10 @@ read_chi = F
 
 
 polarization = T                     # use c_delta and c_d
-ref_bulk_density      # in molecule per Anstrom^3; 0.0332891 for H2O; 0.0289 for Stockmayer; 0.8785 for HS d=1 with packing fraction 0.46; 0.935831 for packing 0.49
+
+ref_bulk_density
 0.0332891
+
 temperature = 300                  # system temperature (Kelvin)
 sym_order = 2                        # order of the main symetry axis Cn
 evaluate_polarization = dipol        # Choose if you want to evaluate multipolar (tag = multi) or dipolar (tag = dipol) Polarization.

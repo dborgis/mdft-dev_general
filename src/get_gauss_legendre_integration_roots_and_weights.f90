@@ -11,11 +11,10 @@ subroutine gauss_legendre_integration_roots_and_weights (order, weight , root)
     real(dp), dimension(11,11) :: x_gl ! tabulated roots for gauss legendre integration of order 1 to 6
     integer(i2b):: i , j ! dummy
 
-!~     nb_legendre = order ! get gauss legendre integration order nb_legendre from input_line
 
-    if (order > size(x_gl,1)) then!> Test if nb_legendre is not too high
+    if (order > size(x_gl,1)) then
         write(*,*)'Problem detected in gauss_legendre_integration.f90'
-        write(*,*)'nb_legendre > size(x_gl,1)'
+        write(*,*)'You ask for an integration order:',order,'higher than the maximum one implemented',size(x_gl,1)
         write(*,*)'critical. stop.'
         stop
     end if
