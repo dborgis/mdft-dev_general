@@ -170,7 +170,8 @@ contains
                                    - muexc_0_multispec ( species) * Lx * Ly * Lz * n_0_multispec ( species )  ! integration factor
       write ( * , * ) 'Fexc0 ( ' , species , ' ) = ' , Fexc_0_multispec ( species )
     end do
-  end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
+    end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -183,100 +184,50 @@ contains
 ! They are scalar numbers in opposition to scalar and vector weight functions by Rosenfeld in its seminal Phys. Rev. Lett.
 ! introducing the fundamental measure theory (FMT)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine compute_hard_sphere_weight_functions_k
+    SUBROUTINE compute_hard_sphere_weight_functions_k
   
-  use precision_kinds , only : dp , i2b
+        USE precision_kinds , only : dp , i2b
+        USE constants , only : FourPi
+        USE system , only : nb_species, radius, spaceGrid,&
+                    weight_function_3_k , weight_function_2_k , weight_function_1_k , weight_function_0_k
+        USE fft , only : norm_k
   
-  use constants , only : FourPi
+        IMPLICIT NONE
   
-  use system , only : nfft1 , nfft2 , nfft3 , nb_species , radius , &
-                      weight_function_3_k , weight_function_2_k , weight_function_1_k , weight_function_0_k
+        REAL(dp) :: kR , FourPiR , sinkR , coskR, norm_k_local ! dummy for speeding up
+        INTEGER(i2b):: l , m , n, s ! dummy for loops
+        INTEGER(i2b), DIMENSION(3) :: nfft
+        
+        nfft = spaceGrid%n_nodes
+        ALLOCATE ( weight_function_3_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
+        ALLOCATE ( weight_function_2_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
+        ALLOCATE ( weight_function_1_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
+        ALLOCATE ( weight_function_0_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
   
-  use fft , only : norm_k
-  
-  
-  implicit none
-  
-  
-  real(dp):: kR , FourPiR , sinkR , coskR ! dummy for speeding up
-  
-  integer(i2b):: species ! dummy between 1 and nb_species
-  
-  integer(i2b):: l , m , n ! dummy for loops
-  
-  real(dp):: norm_k_local ! dummy local variable
-  
-  
-  
-  ! Allocate the weight functions.
-  
-  allocate ( weight_function_3_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
-  
-  allocate ( weight_function_2_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
-  
-  allocate ( weight_function_1_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
-  
-  allocate ( weight_function_0_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
-  
-  ! density weights for hard spheres are known analyticaly
-  ! they only depends on fundamental measures of hard spheres
-  ! here is the Kierlik and Rosinberg FMT : 4 scalar weight function by species
-  
-  !> Warn user
-  
-  write (*,*)  '>>> Compute hard sphere weight functions as defined by Kierlik and Rosinberg, PRA1990'
-  
-  ! For each species (ie each radius), compute weight functions in k space
-  
-  do species = 1 , nb_species
-  
-    FourPiR = FourPi * radius ( species )
-  
-    do n = 1 , nfft3
-  
-      do m = 1 , nfft2
-  
-        do l = 1 , nfft1 / 2 + 1
-  
-          norm_k_local = norm_k ( l , m , n )
-  
-          if ( norm_k_local /= 0.0_dp ) then
-  
-            kR = norm_k_local * radius ( species )
-  
-            sinkR = sin ( kR )
-  
-            coskR = cos ( kR )
-  
-            weight_function_3_k ( l , m , n , species ) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
-  
-            weight_function_2_k ( l , m , n , species ) = FourPiR * sinkR / norm_k_local
-  
-            weight_function_1_k ( l , m , n , species ) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
-  
-            weight_function_0_k ( l , m , n , species ) = coskR + 0.5_dp * kR * sinkR
-  
-          else if ( norm_k_local == 0.0_dp ) then
-  
-            weight_function_3_k ( l , m , n , species ) = FourPi / 3.0_dp * radius ( species ) ** 3 ! volume
-  
-            weight_function_2_k ( l , m , n , species ) = FourPi * radius ( species ) ** 2 ! surface area
-  
-            weight_function_1_k ( l , m , n , species ) = radius ( species ) ! radius
-  
-            weight_function_0_k ( l , m , n , species ) = 1.0_dp ! unity
-  
-          end if
-  
-        end do ! n nfft3 end loop over k-vectors
-  
-      end do ! m nfft2
-  
-    end do ! l nfft1
-  
-  end do ! species
-  
-  
-  
-  end subroutine compute_hard_sphere_weight_functions_k
-end subroutine compute_hard_spheres_parameters
+        ! density weights for hard spheres are known analyticaly
+        ! they only depends on fundamental measures of hard spheres
+        ! here is the Kierlik and Rosinberg FMT : 4 scalar weight function by species
+
+        ! Compute hard sphere weight functions as defined by Kierlik and Rosinberg, PRA1990
+        DO CONCURRENT ( s=1:nb_species, l=1:nfft(1), m=1:nfft(2), n=1:nfft(3) )
+            FourPiR = FourPi * radius (s)
+            norm_k_local = norm_k (l,m,n)
+            IF ( norm_k_local /= 0.0_dp ) THEN
+                kR = norm_k_local * radius (s)
+                sinkR = sin ( kR )
+                coskR = cos ( kR )
+                weight_function_3_k (l,m,n,s) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
+                weight_function_2_k (l,m,n,s) = FourPiR * sinkR / norm_k_local
+                weight_function_1_k (l,m,n,s) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
+                weight_function_0_k (l,m,n,s) = coskR + 0.5_dp * kR * sinkR
+            ELSE
+                weight_function_3_k (l,m,n,s) = FourPi / 3.0_dp * radius(s)** 3 ! volume
+                weight_function_2_k (l,m,n,s) = FourPi * radius(s)** 2 ! surface area
+                weight_function_1_k (l,m,n,s) = radius(s) ! radius
+                weight_function_0_k (l,m,n,s) = 1.0_dp ! unity
+            END IF
+        END DO
+        
+    END SUBROUTINE compute_hard_sphere_weight_functions_k
+
+END SUBROUTINE compute_hard_spheres_parameters
