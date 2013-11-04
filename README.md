@@ -65,6 +65,8 @@ Empty and blank lines are not considered.
 * `verbose`
     - `T` for lots of information printed to terminal. Advised, e.g., for debugging purpose
     - `F` for production runs
+* `read_ck_or_chi` If true the pair correlation functions files specified in 'ck_species' will be read, this is necessary if you want to include any kind of polarization
+* `ck_species` specify which type of correlation functions you want to use to describe the solvent, those file are stored in input/direct_correlation_functions... or you can provide your own files in the input directory and use the tag: 'perso'
 
 
 ### solute.in
