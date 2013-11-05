@@ -3,47 +3,30 @@ SUBROUTINE tabulate_normk_and_k2
 
     USE precision_kinds , ONLY: i2b , dp
     USE system , ONLY: spaceGrid
-    USE fft , ONLY: kx , ky , kz ! what we want to tabulate
+    USE fft , ONLY: kx , ky , kz, kproj
 
     IMPLICIT NONE
 
-    INTEGER(i2b) :: nfft1, nfft2, nfft3
-    INTEGER(i2b):: l, m1
+    INTEGER(i2b), DIMENSION(3) :: nfft
+    INTEGER(i2b):: l
     REAL(dp), PARAMETER :: twopi = ACOS(-1._dp)*2._dp
 
-    nfft1 = spaceGrid%n_nodes(1)
-    nfft2 = spaceGrid%n_nodes(2)
-    nfft3 = spaceGrid%n_nodes(3)
+    nfft = spaceGrid%n_nodes
 
-    ALLOCATE ( kx ( nfft1/2+1 ) )
-    ALLOCATE ( ky ( nfft2 ) )
-    ALLOCATE ( kz ( nfft3 ) )
+    ALLOCATE ( kx ( nfft(1)/2+1 ) )
+    ALLOCATE ( ky ( nfft(2) ) )
+    ALLOCATE ( kz ( nfft(3) ) )
 
-    DO CONCURRENT ( l=1:nfft1/2+1 )
-        IF ( l <= nfft1/2 ) THEN
-            m1 = l - 1
-        ELSE
-            m1 = l - 1 - nfft1
-        END IF
-        kx(l) = twopi*REAL(m1,dp)/spaceGrid%length(1)
+    DO CONCURRENT ( l=1:nfft(1)/2+1 )
+        kx(l) = kproj(1,l)
     END DO
 
-    DO CONCURRENT ( l=1:nfft2 )
-        IF ( l <= nfft2/2 ) THEN
-            m1 = l - 1
-        ELSE
-            m1 = l - 1 - nfft2
-        END IF
-        ky(l) = twopi*REAL(m1,dp)/spaceGrid%length(2)
+    DO CONCURRENT ( l=1:nfft(2) )
+        ky(l) = kproj(2,l)
     END DO
     
-    DO CONCURRENT ( l=1:nfft3 )
-        IF ( l <= nfft3/2 ) THEN
-            m1 = l - 1
-        ELSE
-            m1 = l - 1 - nfft3
-        END IF
-        kz(l) = twopi*REAL(m1,dp)/spaceGrid%length(3)
+    DO CONCURRENT ( l=1:nfft(3) )
+        kz(l) = kproj(3,l)
     END DO
     
 END SUBROUTINE tabulate_normk_and_k2
