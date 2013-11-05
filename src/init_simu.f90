@@ -4,12 +4,12 @@ subroutine init_simu
     use precision_kinds , only: i2b
     use input, only: input_log, input_char! contains all input file dft.in in a character array
     use quadrature, only : prepare_quadrature => init
-    USE fft, ONLY: init_fft => init
+    USE fft, ONLY: prepare_fft => init
     implicit none
 
     call put_input_in_character_array! more powerfull way of reading dft.in : put each line in an array
     call allocate_from_input ! TODO this should be removed and done only when needed ! read dft.in, solute.in and solvent.in
-    call init_fft
+    call prepare_fft
     call read_solvent! Read solvent atomic positions, charge and Lennard-Jones param
     call read_solute! Read solute atomic positions, charge and Lennard-Jones param
     call charge_density_from_point_charge_positions! Get charge density rho_c from point charge positions
