@@ -6,7 +6,7 @@ SUBROUTINE get_final_density ( neq )
     USE constants , ONLY : fourpi, pi , twopi
     USE cg , ONLY : CG_vect
     USE quadrature , ONLY : sym_order, angGrid, molRotGrid
-    USE fft , ONLY : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward , timesExpPrefactork2
+    USE fft , ONLY : fftw3 , timesExpPrefactork2
     
     implicit none
 
@@ -41,13 +41,13 @@ SUBROUTINE get_final_density ( neq )
     IF ( gaussianWidth /= 0._dp ) THEN !convolute with a gaussian
         ALLOCATE ( rho_k (nfft1/2+1, nfft2, nfft3, nb_species) )
         DO species = 1, nb_species
-            in_forward = neq ( : , : , : , species )
-            CALL dfftw_execute ( plan_forward )
-            rho_k (:,:,:,species) = timesExpPrefactork2 ( out_forward, gaussianWidth**2/2.0_dp )
-            in_backward = rho_k (:,:,:,species)
+            fftw3%in_forward = neq ( : , : , : , species )
+            CALL dfftw_execute ( fftw3%plan_forward )
+            rho_k (:,:,:,species) = timesExpPrefactork2 ( fftw3%out_forward, gaussianWidth**2/2.0_dp )
+            fftw3%in_backward = rho_k (:,:,:,species)
             DEALLOCATE( rho_k )
-            CALL dfftw_execute ( plan_backward )
-            neq (:,:,:,species ) = out_backward/Nk 
+            CALL dfftw_execute ( fftw3%plan_backward )
+            neq (:,:,:,species ) = fftw3%out_backward/Nk 
         END DO
     END IF
     

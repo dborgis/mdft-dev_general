@@ -3,7 +3,7 @@ subroutine Vcoul_from_solvent_charge_density
 use precision_kinds , only : i2b , dp
 use input , only : input_line
 use cg , only : FF , dF , cg_vect
-use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
+use fft , only : fftw3
 use system, only : sigma_k, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, rho_c, deltaV, nb_species,&
                    rho_0_multispec , rho_c_k_myway
 use constants, only : twopi, fourpi, qfact
@@ -70,9 +70,9 @@ end do
 do species = 1 , nb_species
    do o =1, angGrid%n_angles
      do p=1, molRotGrid%n_angles
-      in_forward = rho ( : , : , : , o , p , species )
-      call dfftw_execute ( plan_forward )
-      rho_k ( : , : , : , o, p ,species ) = out_forward*deltaV
+      fftw3%in_forward = rho ( : , : , : , o , p , species )
+      call dfftw_execute ( fftw3%plan_forward )
+      rho_k ( : , : , : , o, p ,species ) = fftw3%out_forward*deltaV
      end do
    end do
 end do
@@ -137,9 +137,9 @@ do i = 1 , nf1 + 1
 end do  !i
 ! get real space potential V(r)
 if ( .not. allocated ( V_c2 ) ) allocate ( V_c2 ( nfft1 , nfft2 , nfft3 ) )
-in_backward = V_c_k
-call dfftw_execute ( plan_backward )
-V_c2 = out_backward*deltaVk/(twopi)**3 
+fftw3%in_backward = V_c_k
+call dfftw_execute ( fftw3%plan_backward )
+V_c2 = fftw3%out_backward*deltaVk/(twopi)**3 
 !Compute electrostatic energy
 do i =1, nfft1
    do j=1, nfft2

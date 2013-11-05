@@ -6,7 +6,7 @@ subroutine energy_hydro
   use constants , only : fourpi , i_complex,twopi
   use cg , only : cg_vect , FF , dF
   use quadrature, only: sym_order, angGrid, molRotGrid
-  use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k,kx,ky,kz,k2,&
+  use fft , only : fftw3 , norm_k,kx,ky,kz,k2,&
                 timesExpPrefactork2
   use input, only : input_log
   
@@ -96,10 +96,10 @@ subroutine energy_hydro
   
   ! TODO Next FFT sequences can be done on multiple threads
   ! compute delta_nk which is FFT(delta_n)
-  in_forward = delta_n
-  call dfftw_execute ( plan_forward )
+  fftw3%in_forward = delta_n
+  call dfftw_execute ( fftw3%plan_forward )
   allocate ( delta_nk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-  delta_nk = out_forward
+  delta_nk = fftw3%out_forward
   
   ! the coarse-grained delta_n is simply delta_n multiplied by a gaussian distribution of empirical
   allocate ( delta_nbark ( nfft1/2+1 , nfft2 , nfft3 ) )
@@ -172,42 +172,42 @@ subroutine energy_hydro
   V_nbark = timesExpPrefactork2 (V_nk,prefactor)
   
   ! compute V_n(r) by FFT-1
-  in_backward = V_nk
+  fftw3%in_backward = V_nk
   deallocate(V_nk)
-  call dfftw_execute(plan_backward)
+  call dfftw_execute(fftw3%plan_backward)
   allocate(V_n(nfft1,nfft2,nfft3))
-  V_n = out_backward/Nk
+  V_n = fftw3%out_backward/Nk
   
   ! compute coarse grained objects in real space by FFT-1
-  in_backward = V_nbark
+  fftw3%in_backward = V_nbark
   deallocate(V_nbark)
-  call dfftw_execute(plan_backward)
+  call dfftw_execute(fftw3%plan_backward)
   allocate(V_nbar(nfft1,nfft2,nfft3))
-  V_nbar = out_backward/Nk
+  V_nbar = fftw3%out_backward/Nk
   
-  in_backward = delta_nbark
+  fftw3%in_backward = delta_nbark
   deallocate(delta_nbark)
-  call dfftw_execute(plan_backward)
+  call dfftw_execute(fftw3%plan_backward)
   allocate(delta_nbar(nfft1,nfft2,nfft3))
-  delta_nbar = out_backward/Nk
+  delta_nbar = fftw3%out_backward/Nk
   
-  in_backward = gradx_delta_nbark
+  fftw3%in_backward = gradx_delta_nbark
   deallocate(gradx_delta_nbark)
-  call dfftw_execute(plan_backward)
+  call dfftw_execute(fftw3%plan_backward)
   allocate(gradx_delta_nbar(nfft1,nfft2,nfft3))
-  gradx_delta_nbar = out_backward/Nk
+  gradx_delta_nbar = fftw3%out_backward/Nk
   
-  in_backward = grady_delta_nbark
+  fftw3%in_backward = grady_delta_nbark
   deallocate(grady_delta_nbark)
-  call dfftw_execute(plan_backward)
+  call dfftw_execute(fftw3%plan_backward)
   allocate(grady_delta_nbar(nfft1,nfft2,nfft3))
-  grady_delta_nbar = out_backward/Nk
+  grady_delta_nbar = fftw3%out_backward/Nk
   
-  in_backward = gradz_delta_nbark
+  fftw3%in_backward = gradz_delta_nbark
   deallocate(gradz_delta_nbark)
-  call dfftw_execute(plan_backward)
+  call dfftw_execute(fftw3%plan_backward)
   allocate(gradz_delta_nbar(nfft1,nfft2,nfft3))
-  gradz_delta_nbar = out_backward/Nk
+  gradz_delta_nbar = fftw3%out_backward/Nk
   ! compute coarse grained free energy and gradient small part
   allocate ( dF_cg ( nfft1 , nfft2 , nfft3 ) )
   F_cg = 0.0_dp
@@ -228,18 +228,18 @@ subroutine energy_hydro
   print *, 'S_CG =  ',S_CG
   
   ! FFT (dF_cg) in order to work in kspace
-  in_forward = dF_cg
-  call dfftw_execute(plan_forward)
+  fftw3%in_forward = dF_cg
+  call dfftw_execute(fftw3%plan_forward)
   allocate(dF_cgk(nfft1/2+1,nfft2,nfft3))
   ! define coarse grained gradients in k space
-  dF_cgk = timesExpPrefactork2 ( out_forward + dS_cgk, prefactor)
+  dF_cgk = timesExpPrefactork2 ( fftw3%out_forward + dS_cgk, prefactor)
   deallocate(dS_cgk)
   
   ! get back coarse grained gradients in r space
-  in_backward = dF_cgk
+  fftw3%in_backward = dF_cgk
   deallocate ( dF_cgk )
-  call dfftw_execute ( plan_backward ) 
-  dF_cg = out_backward/Nk 
+  call dfftw_execute ( fftw3%plan_backward ) 
+  dF_cg = fftw3%out_backward/Nk 
   
   ! following count does not take into account all cases where angGrid%n_angles /=1
   if ( angGrid%n_angles /= 1 ) then

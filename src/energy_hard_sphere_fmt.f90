@@ -6,7 +6,7 @@ use system , only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_functio
 use quadrature , only : sym_order , angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : pi , FourPi , twopi
-use fft , only : in_forward , out_forward , in_backward , out_backward , plan_forward , plan_backward
+use fft , only : fftw3
 use input, only : input_line
 implicit none
 integer(i2b):: icg , i , j , k , o , p ! dummy
@@ -64,9 +64,9 @@ do species = 1 , nb_species
   end do
 end do
 ! total number of molecules of each species
-forall ( species = 1 : nb_species )
+DO CONCURRENT ( species = 1 : nb_species )
   nb_molecules ( species ) = sum ( rho ( : , : , : , species ) ) * n_0_multispec ( species ) * mole_fraction ( species ) * deltav
-end forall
+END DO
 ! tell user about the number of molecule of each species in the supercell
 do species = 1 , nb_species
   write (*,*) 'nb_molecule (' , species , ') = ' , nb_molecules ( species )
@@ -75,9 +75,9 @@ write (*,*) 'total number of molecules = ' , sum ( nb_molecules )
 ! fourier transform the density rho => rho_k
 allocate ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
 do species = 1 , nb_species
-  in_forward = rho ( : , : , : , species )
-  call dfftw_execute ( plan_forward )
-  rho_k ( : , : , : , species ) = out_forward * n_0_multispec ( species ) * mole_fraction ( species )
+  fftw3%in_forward = rho ( : , : , : , species )
+  call dfftw_execute ( fftw3%plan_forward )
+  rho_k ( : , : , : , species ) = fftw3%out_forward * n_0_multispec ( species ) * mole_fraction ( species )
 end do
 deallocate ( rho )
 ! inverse fourier transform the weighted densities
@@ -91,19 +91,20 @@ weighted_density_2 = 0.0_dp
 allocate ( weighted_density_3  ( nfft1 , nfft2 , nfft3 ) )
 weighted_density_3 = 0.0_dp
 do species = 1 , nb_species
-  in_backward = weight_function_0_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density in kspace _0
-  call dfftw_execute ( plan_backward )
-  weighted_density_0 = weighted_density_0 + out_backward / Nk
-  in_backward = weight_function_1_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _1
-  call dfftw_execute ( plan_backward )
-  weighted_density_1 = weighted_density_1 + out_backward / Nk
-  in_backward = weight_function_2_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _2
-  call dfftw_execute ( plan_backward )
-  weighted_density_2 = weighted_density_2 + out_backward / Nk
-  in_backward = weight_function_3_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _3
-  call dfftw_execute ( plan_backward )
-  weighted_density_3 = weighted_density_3 + out_backward / Nk
+    fftw3%in_backward = weight_function_0_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density in kspace _0
+    call dfftw_execute ( fftw3%plan_backward )
+    weighted_density_0 = weighted_density_0 + fftw3%out_backward / Nk
+    fftw3%in_backward = weight_function_1_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _1
+    call dfftw_execute ( fftw3%plan_backward )
+    weighted_density_1 = weighted_density_1 + fftw3%out_backward / Nk
+    fftw3%in_backward = weight_function_2_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _2
+    call dfftw_execute ( fftw3%plan_backward )
+    weighted_density_2 = weighted_density_2 + fftw3%out_backward / Nk
+    fftw3%in_backward = weight_function_3_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _3
+    call dfftw_execute ( fftw3%plan_backward )
+    weighted_density_3 = weighted_density_3 + fftw3%out_backward / Nk
 end do
+
 ! check if the hard sphere functional is Percus-Yevick or Carnahan-Starling
 ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
 do i = 1 , size ( input_line )
@@ -180,18 +181,18 @@ allocate ( dFHS_1_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 allocate ( dFHS_2_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 allocate ( dFHS_3_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 ! FFT dFHS for computing convolution
-in_forward = dFHS_0
-call dfftw_execute ( plan_forward )
-dFHS_0_k = out_forward
-in_forward = dFHS_1
-call dfftw_execute ( plan_forward )
-dFHS_1_k = out_forward
-in_forward = dFHS_2
-call dfftw_execute ( plan_forward )
-dFHS_2_k = out_forward
-in_forward = dFHS_3
-call dfftw_execute ( plan_forward )
-dFHS_3_k = out_forward
+fftw3%in_forward = dFHS_0
+call dfftw_execute ( fftw3%plan_forward )
+dFHS_0_k = fftw3%out_forward
+fftw3%in_forward = dFHS_1
+call dfftw_execute ( fftw3%plan_forward )
+dFHS_1_k = fftw3%out_forward
+fftw3%in_forward = dFHS_2
+call dfftw_execute ( fftw3%plan_forward )
+dFHS_2_k = fftw3%out_forward
+fftw3%in_forward = dFHS_3
+call dfftw_execute ( fftw3%plan_forward )
+dFHS_3_k = fftw3%out_forward
 ! deallocate useless
 deallocate ( dFHS_0 )
 deallocate ( dFHS_1 )
@@ -213,11 +214,11 @@ deallocate ( dFHS_2_k )
 deallocate ( dFHS_3_k )
 ! inverse fourier transform gradient
 allocate ( dFex ( nfft1 , nfft2 , nfft3 , nb_species ) )
-do species = 1 , nb_species
-  in_backward = dFex_k ( : , : , : , species )
-  call dfftw_execute ( plan_backward )
-  dFex ( : , : , : , species ) = out_backward / Nk
-end do
+DO species = 1, nb_species
+  fftw3%in_backward = dFex_k ( : , : , : , species )
+  call dfftw_execute ( fftw3%plan_backward )
+  dFex ( : , : , : , species ) = fftw3%out_backward / Nk
+END DO
 deallocate ( dFex_k )
 ! transfer in rank 1 vector dF
 icg = 0
@@ -247,20 +248,23 @@ deallocate ( dFex )
 call cpu_time ( time1 )
 ! print info for user
 write (*,*) 'Fexc fmt    = ' , Fint , 'computed in (sec)' , time1 - time0
-contains
-! this subroutine prints error message related to subroutine excess_cs_hard_sphere
-! it may stop program execution depending on the error.
-subroutine error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
-use precision_kinds , only : i2b , dp
-implicit none
-integer(i2b), intent(in) :: i , j , k
-real(dp), intent(in) :: w0 , w1 , w2 , w3
-write (*,*) 'i , j , k = ' , i , j , k
-write (*,*) 'log (1-w3<=0) in energy_hard_sphere_fmt.f90. Critical stop'
-write (*,*) 'w0 = ' , w0
-write (*,*) 'w1 = ' , w1
-write (*,*) 'w2 = ' , w2
-write (*,*) 'w3 = ' , w3
-stop
-end subroutine error_message_energy_hard_sphere_fmt
+
+CONTAINS
+
+    ! this subroutine prints error message related to subroutine excess_cs_hard_sphere
+    ! it may stop program execution depending on the error.
+    subroutine error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
+        use precision_kinds , only : i2b , dp
+        implicit none
+        integer(i2b), intent(in) :: i , j , k
+        real(dp), intent(in) :: w0 , w1 , w2 , w3
+        write (*,*) 'i , j , k = ' , i , j , k
+        write (*,*) 'log (1-w3<=0) in energy_hard_sphere_fmt.f90. Critical stop'
+        write (*,*) 'w0 = ' , w0
+        write (*,*) 'w1 = ' , w1
+        write (*,*) 'w2 = ' , w2
+        write (*,*) 'w3 = ' , w3
+        stop
+    end subroutine error_message_energy_hard_sphere_fmt
+
 end subroutine energy_hard_sphere_fmt

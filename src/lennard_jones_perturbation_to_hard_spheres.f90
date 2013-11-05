@@ -7,7 +7,7 @@ use quadrature , only : angGrid
 use cg , only : cg_vect , dF , FF
 use precision_kinds , only : dp , i2b
 use constants , only : fourpi , twopi
-use fft , only : in_forward , out_forward , plan_forward , in_backward , out_backward , plan_backward
+use fft , only : fftw3
 implicit none
 real(dp), allocatable , dimension ( : , : , : ) :: rho_n ! local density
 complex(dp), allocatable , dimension ( : , : , : ) :: rho_k ! fourier transformed rho_n
@@ -54,10 +54,10 @@ nb_molecule = nb_molecule * n_0 * deltav ! normalization
 ! total number of k points needed for inverse fft normalization
 Nk = real ( nfft1 * nfft2 * nfft3 , dp )
 ! fourier transform the density rho_n => rho_k
-in_forward = rho_n
-call dfftw_execute ( plan_forward )
+fftw3%in_forward = rho_n
+call dfftw_execute ( fftw3%plan_forward )
 allocate ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-rho_k = out_forward
+rho_k = fftw3%out_forward
 ! compute lennard jones perturbation in k space
 ! if v_perturbation_k doesn't exist, then compute it and put it in Vk. 
 if ( .not. allocated ( v_perturbation_k ) ) then
@@ -91,12 +91,12 @@ vk = v_perturbation_k
 ! once equation written, dFp / drho at rho = rho_0 is shown to be equal to rho_0 * Vk(k=0)
 potential = n_0 * real ( Vk ( 1 , 1 , 1 ) )
 ! FFT-1 of perturbation
-in_backward = Vk * rho_k
+fftw3%in_backward = Vk * rho_k
 deallocate ( Vk )
 deallocate ( rho_k )
-call dfftw_execute (plan_backward)
+call dfftw_execute (fftw3%plan_backward)
 allocate ( v_perturbation_r ( nfft1 , nfft2 , nfft3 ) )
-v_perturbation_r = out_backward / Nk
+v_perturbation_r = fftw3%out_backward / Nk
 ! Compute the perturbative energy
 Fperturbation = 0.0_dp
 do i = 1 , nfft1

@@ -7,7 +7,7 @@ use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT ,
 use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
-use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward, kx, ky, kz, k2, norm_k
+use fft , only : fftw3, kx, ky, kz, k2, norm_k
 use input , only : input_line,input_log, input_char
 
 implicit none
@@ -29,13 +29,13 @@ real(dp):: time1 , time0 ,time2 , time3 ,rhot! timestamps
 complex(dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k 
 real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
 if (nb_species/=1) then
-print*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
-stop
+    print*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
+    stop
 end if
+
 ! look for tag polarization in input
-if (.not. input_log('polarization')) then
-return
-end if
+if (.not. input_log('polarization')) return
+
 !Check if you want to compute Polarization from a macroscopic point of view
 !do i = 1 , size ( input_line )
 !  j = len ( 'evaluate_polarization' )
@@ -96,14 +96,10 @@ mu_SPCE=0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in 
 !            ====================================================
 !Compute rho_k
 do species =1 , nb_species
-  
    do i=1,nfft1
-   
      do j=1, nfft2
-   
        do k=1, nfft3
          do o = 1 , angGrid%n_angles
-         
             do p=1, molRotGrid%n_angles
             icg = icg + 1
             rho(i,j,k,o,p,species) = cg_vect ( icg ) ** 2
@@ -119,19 +115,18 @@ call cpu_time(time2)
 !            !    		get Density 			!
 !            !			in Fourier Space		!
 !            ====================================================
-do species=1, nb_species
-   do o=1, angGrid%n_angles
-      do p=1, molRotGrid%n_angles
-      in_forward=rho(:,:,:,o,p,species)
-      call dfftw_execute (plan_forward)
-      rho_k(:,:,:,o,p,species)=out_forward*deltaV
-  
-      end do
-   end do
-end do
+DO species = 1, nb_species
+    DO o = 1, angGrid%n_angles
+        DO p = 1, molRotGrid%n_angles
+            fftw3%in_forward=rho(:,:,:,o,p,species)
+            CALL dfftw_execute (fftw3%plan_forward)
+            rho_k(:,:,:,o,p,species)=fftw3%out_forward*deltaV
+        END DO
+    END DO
+END DO
 call cpu_time(time3)
 !do o=1,angGrid%n_angles
-!     molec_polarx_k(:,:,:,o,:,:) = mu_SPCE*Omx(o)
+!    molec_polarx_k(:,:,:,o,:,:) = mu_SPCE*Omx(o)
 !    molec_polary_k(:,:,:,o,:,:) = mu_SPCE*Omy(o)
 !    molec_polarz_k(:,:,:,o,:,:) = mu_SPCE*Omz(o)
 !end do
@@ -146,30 +141,31 @@ do species=1, nb_species
         do k=1, nfft3
            do o=1, angGrid%n_angles
               do p=1, molRotGrid%n_angles
-              pola_tot_x_k(i,j,k,species)=pola_tot_x_k(i,j,k,species)+angGrid%weight(o)*molRotGrid%weight(p)*&
-              molec_polarx_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
-              pola_tot_y_k(i,j,k,species)=pola_tot_y_k(i,j,k,species)+angGrid%weight(o)*molRotGrid%weight(p)*&
-              molec_polary_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
-              pola_tot_z_k(i,j,k,species)=pola_tot_z_k(i,j,k,species)+angGrid%weight(o)*molRotGrid%weight(p)*&
-              molec_polarz_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
+                pola_tot_x_k(i,j,k,species)=pola_tot_x_k(i,j,k,species)+angGrid%weight(o)*molRotGrid%weight(p)*&
+                molec_polarx_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
+                pola_tot_y_k(i,j,k,species)=pola_tot_y_k(i,j,k,species)+angGrid%weight(o)*molRotGrid%weight(p)*&
+                molec_polary_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
+                pola_tot_z_k(i,j,k,species)=pola_tot_z_k(i,j,k,species)+angGrid%weight(o)*molRotGrid%weight(p)*&
+                molec_polarz_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
               end do
             end do
          end do
-      
       end do
    end do
 end do
-do species=1,nb_species
-in_backward= pola_tot_x_k(:,:,:,species)
-call dfftw_execute(plan_backward)
-pola_tot_x(:,:,:,species)=out_backward*deltaVk/(twopi)**3
-in_backward= pola_tot_y_k(:,:,:,species)
-call dfftw_execute(plan_backward)
-pola_tot_y(:,:,:,species)=out_backward*deltaVk/(twopi)**3
-in_backward= pola_tot_z_k(:,:,:,species)
-call dfftw_execute(plan_backward)
-pola_tot_z(:,:,:,species)=out_backward*deltaVk/(twopi)**3
-end do
+
+DO species=1,nb_species
+    fftw3%in_backward= pola_tot_x_k(:,:,:,species)
+    call dfftw_execute(fftw3%plan_backward)
+    pola_tot_x(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
+    fftw3%in_backward= pola_tot_y_k(:,:,:,species)
+    call dfftw_execute(fftw3%plan_backward)
+    pola_tot_y(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
+    fftw3%in_backward= pola_tot_z_k(:,:,:,species)
+    call dfftw_execute(fftw3%plan_backward)
+    pola_tot_z(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
+END DO
+
 !allocate ( weight_omx ( angGrid%n_angles ) )
 !allocate ( weight_omy ( angGrid%n_angles ) )
 !allocate ( weight_omz ( angGrid%n_angles ) )
@@ -251,24 +247,25 @@ do n=1, nb_species
   end do
 end do
 do species=1,nb_species
-in_backward= P_long_x_k(:,:,:,species)
-call dfftw_execute(plan_backward)
-P_long_x(:,:,:,species)=out_backward*deltaVk/(twopi)**3
-in_backward= P_long_y_k(:,:,:,species)
-call dfftw_execute(plan_backward)
-P_long_y(:,:,:,species)=out_backward*deltaVk/(twopi)**3
-in_backward= P_long_z_k(:,:,:,species)
-call dfftw_execute(plan_backward)
-P_long_z(:,:,:,species)=out_backward*deltaVk/(twopi)**3
+fftw3%in_backward= P_long_x_k(:,:,:,species)
+call dfftw_execute(fftw3%plan_backward)
+P_long_x(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward= P_long_y_k(:,:,:,species)
+call dfftw_execute(fftw3%plan_backward)
+P_long_y(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward= P_long_z_k(:,:,:,species)
+call dfftw_execute(fftw3%plan_backward)
+P_long_z(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
 end do
+
 open (11, file='output/pola_tot_x')
 open (12, file='output/pola_tot_y')
 open (13, file='output/pola_tot_z')
-do i=1,nfft1
-write(11,*) , i*deltax, pola_tot_x(i,nfft2/2+1,nfft3/2+1,1), Px(i,nfft2/2+1,nfft3/2+1,1),P_long_x(i,nfft2/2+1,nfft3/2+1,1) 
-write(12,*) , i*deltay, pola_tot_y(nfft1/2+1,i,nfft3/2+1,1), Py(nfft1/2+1,i,nfft3/2+1,1),P_long_y(nfft1/2+1,i,nfft3/2+1,1) 
-write(13,*) , i*deltaz, pola_tot_z(nfft1/2+1,nfft2/2+1,i,1), Pz(nfft1/2+1,nfft1/2+1,i,1),P_long_z(nfft1/2+1,nfft1/2+1,i,1)
-end do
+    do i=1,nfft1
+        write(11,*) , i*deltax, pola_tot_x(i,nfft2/2+1,nfft3/2+1,1), Px(i,nfft2/2+1,nfft3/2+1,1),P_long_x(i,nfft2/2+1,nfft3/2+1,1) 
+        write(12,*) , i*deltay, pola_tot_y(nfft1/2+1,i,nfft3/2+1,1), Py(nfft1/2+1,i,nfft3/2+1,1),P_long_y(nfft1/2+1,i,nfft3/2+1,1) 
+        write(13,*) , i*deltaz, pola_tot_z(nfft1/2+1,nfft2/2+1,i,1), Pz(nfft1/2+1,nfft1/2+1,i,1),P_long_z(nfft1/2+1,nfft1/2+1,i,1)
+    end do
 close(11)
 close(12)
 close(13)
@@ -345,9 +342,9 @@ end do     !species
 do species=1 , nb_species
   do o=1,angGrid%n_angles
     do p=1, molRotGrid%n_angles
-    in_backward= (dF_pol_trans_k (:,:,:,o,p,species)+dF_pol_long_k (:,:,:,o,p,species)+dF_pol_tot_k (:,:,:,o,p,species))
-    call dfftw_execute (plan_backward)
-    dF_pol_tot (:,:,:,o,p,species)=out_backward*deltaVk/(twopi)**3
+    fftw3%in_backward= (dF_pol_trans_k (:,:,:,o,p,species)+dF_pol_long_k (:,:,:,o,p,species)+dF_pol_tot_k (:,:,:,o,p,species))
+    call dfftw_execute (fftw3%plan_backward)
+    dF_pol_tot (:,:,:,o,p,species)=fftw3%out_backward*deltaVk/(twopi)**3
     end do
   end do
 end do

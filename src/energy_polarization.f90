@@ -5,7 +5,7 @@ use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT ,
 use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 use cg , only : cg_vect , FF , dF
 use constants , only : twopi
-use fft , only : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
+use fft , only : fftw3
 use input , only : input_line, input_log,input_char
 implicit none
 integer(i2b):: icg , i , j , k , l , m , n , m1 , m2 , m3 , o , p!> Dummy
@@ -28,10 +28,9 @@ complex(dp):: pxt_k , pyt_k , pzt_k ! dummy
 real(dp):: Nk ! total number of k grid points
 real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
 character (50) :: filename
-! look for tag polarization in input
-if (.not. input_log('polarization')) then
-return
-end if
+
+    if (.not. input_log('polarization')) return ! look for tag polarization in input
+
 !Check if you want to compute Polarization from a macroscopic point of view
 !do i = 1 , size ( input_line )
 !  j = len ( 'evaluate_polarization' )
@@ -120,21 +119,21 @@ allocate ( Pkx ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 allocate ( Pky ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 allocate ( Pkz ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 call cpu_time(time2)
-in_forward = Px
-call dfftw_execute ( plan_forward )
-Pkx = out_forward
+fftw3%in_forward = Px
+call dfftw_execute ( fftw3%plan_forward )
+Pkx = fftw3%out_forward
 call cpu_time(time3)
 print*, 'Duree FFT=', time3-time2
-in_forward = Py
-call dfftw_execute ( plan_forward )
-Pky = out_forward
-in_forward = Pz
-call dfftw_execute ( plan_forward )
+fftw3%in_forward = Py
+call dfftw_execute ( fftw3%plan_forward )
+Pky = fftw3%out_forward
+fftw3%in_forward = Pz
+call dfftw_execute ( fftw3%plan_forward )
 ! deallocate useless arrays
 deallocate ( Px )
 deallocate ( Py )
 deallocate ( Pz )
-Pkz = out_forward 
+Pkz = fftw3%out_forward 
 ! compute polarisation in k-space
 allocate ( Ekx ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 allocate ( Eky ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
@@ -192,15 +191,15 @@ deallocate ( Pkz )
 allocate ( Ex ( nfft1 , nfft2 , nfft3 ) )
 allocate ( Ey ( nfft1 , nfft2 , nfft3 ) )
 allocate ( Ez ( nfft1 , nfft2 , nfft3 ) )
-in_backward = Ekx
-call dfftw_execute ( plan_backward )
-Ex = out_backward / Nk
-in_backward = Eky
-call dfftw_execute ( plan_backward )
-Ey = out_backward / Nk 
-in_backward = Ekz
-call dfftw_execute ( plan_backward )
-Ez = out_backward / Nk 
+fftw3%in_backward = Ekx
+call dfftw_execute ( fftw3%plan_backward )
+Ex = fftw3%out_backward / Nk
+fftw3%in_backward = Eky
+call dfftw_execute ( fftw3%plan_backward )
+Ey = fftw3%out_backward / Nk 
+fftw3%in_backward = Ekz
+call dfftw_execute ( fftw3%plan_backward )
+Ez = fftw3%out_backward / Nk 
 deallocate(Ekx)
 deallocate(Eky)
 deallocate(Ekz)

@@ -10,7 +10,8 @@ use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
 use cg , only : cg_vect
 use quadrature, only : Omx , Omy , Omz, angGrid, molRotGrid
-use fft , only : kx, ky, kz, k2,in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward
+use fft , only : kx, ky, kz, k2
+
 implicit none
 integer (i2b) :: i, j, k, o , p , n,species!dummy
 real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
@@ -53,7 +54,7 @@ do i = 1 , nf1 + 1
              zmod= Rotzx(o,p)*x_solv(n) + Rotzy(o,p)*y_solv(n) + Rotzz(o,p)*z_solv(n)  
 !print*, xmod,ymod,zmod,chg_solv(id_solv(n))
                if (xmod==Lx) then
-               xmod=0.0_dp
+                xmod=0.0_dp
                end if
                if (ymod==Ly) then
                ymod=0.0_dp

@@ -6,7 +6,7 @@ use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s , kBT , nb_k , delt
 use quadrature, only: sym_order, angGrid, molRotGrid
 use cg, only: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi
-use fft, only: in_forward,in_backward,out_forward,out_backward,plan_forward,plan_backward , norm_k
+use fft, only: fftw3, norm_k
 implicit none
 integer(i2b) :: i, j, k, l, m, n, o, p , icg, species !> Dummy
 integer(i2b) :: k_index
@@ -44,10 +44,11 @@ end do
 Delta_rho = Delta_rho-real(2.0_dp*twopi**2/sym_order, dp)
 !> Next FFT sequences can be done on multiple threads
 !> Compute rho in k-space
-in_forward = Delta_rho
-call dfftw_execute ( plan_forward )
+fftw3%in_forward = Delta_rho
+call dfftw_execute ( fftw3%plan_forward )
 allocate ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-rho_k = out_forward
+rho_k = fftw3%out_forward
+
 ! Compute polarisation in k-space
 allocate ( Vpair_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
 ! V(k)=cs(k)*rho(k)
@@ -66,11 +67,11 @@ end do
 ! since rho(k) is now useless, deallocate associated array
 deallocate ( rho_k )
 ! FFT-1
-in_backward = Vpair_k
+fftw3%in_backward = Vpair_k
 deallocate (Vpair_k)
-call dfftw_execute (plan_backward)
+call dfftw_execute (fftw3%plan_backward)
 allocate ( Vpair ( nfft1 , nfft2 , nfft3 ) )
-Vpair = out_backward / Nk
+Vpair = fftw3%out_backward / Nk
 ! compute excess energy and its gradient
 Fint = 0.0_dp ! excess energy
 icg = 0 ! index of cg_vect

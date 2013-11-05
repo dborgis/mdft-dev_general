@@ -7,7 +7,7 @@ use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , 
 &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
 & , lambda1_mol , lambda2_mol, deltaV,n_0
 use cg, only:cg_vect,dF,FF
-use fft, only : plan_backward, plan_forward, in_backward, out_backward, in_forward, out_forward
+use fft, only : fftw3
 
 implicit none
 real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
@@ -117,39 +117,39 @@ do i=1, nfft1
 end do         !i,x
 !stop
 allocate(rho_k(nfft1/2+1,nfft2,nfft3))
-in_forward=rho
-call dfftw_execute(plan_forward)
-rho_k=out_forward*deltaV
-      in_forward=Axx
-      call dfftw_execute(plan_forward)
-      Axx_k=out_forward*deltaV
-      in_forward=Ayy
-      call dfftw_execute(plan_forward)
-      Ayy_k=out_forward*deltaV
-      in_forward=Azz
-      call dfftw_execute(plan_forward)
-      Azz_k=out_forward*deltaV
-      in_forward=Axy
-      call dfftw_execute(plan_forward)
-      Axy_k=out_forward*deltaV
-      in_forward=Axz
-      call dfftw_execute(plan_forward)
-      Axz_k=out_forward*deltaV
-      in_forward=Ayz
-      call dfftw_execute(plan_forward)
-      Ayz_k=out_forward*deltaV
-      in_forward=Ax
-      call dfftw_execute(plan_forward)
-      Ax_k=out_forward*deltaV
-      in_forward=Ay
-      call dfftw_execute(plan_forward)
-      Ay_k=out_forward*deltaV
-      in_forward=Az
-      call dfftw_execute(plan_forward)
-      Az_k=out_forward*deltaV
-      in_forward=A0
-      call dfftw_execute(plan_forward)
-      A0_k=out_forward*deltaV
+fftw3%in_forward=rho
+call dfftw_execute(fftw3%plan_forward)
+rho_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Axx
+      call dfftw_execute(fftw3%plan_forward)
+      Axx_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Ayy
+      call dfftw_execute(fftw3%plan_forward)
+      Ayy_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Azz
+      call dfftw_execute(fftw3%plan_forward)
+      Azz_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Axy
+      call dfftw_execute(fftw3%plan_forward)
+      Axy_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Axz
+      call dfftw_execute(fftw3%plan_forward)
+      Axz_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Ayz
+      call dfftw_execute(fftw3%plan_forward)
+      Ayz_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Ax
+      call dfftw_execute(fftw3%plan_forward)
+      Ax_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Ay
+      call dfftw_execute(fftw3%plan_forward)
+      Ay_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=Az
+      call dfftw_execute(fftw3%plan_forward)
+      Az_k=fftw3%out_forward*deltaV
+      fftw3%in_forward=A0
+      call dfftw_execute(fftw3%plan_forward)
+      A0_k=fftw3%out_forward*deltaV
       Fxx_k=Axx_k*rho_k
       Fyy_k=Ayy_k*rho_k
       Fzz_k=Azz_k*rho_k
@@ -160,36 +160,36 @@ rho_k=out_forward*deltaV
       Fy_k=Ay_k*rho_k
       Fz_k=Az_k*rho_k
       F0_k=A0_k*rho_k
-      in_backward=Fxx_k
-      call dfftw_execute(plan_backward)
-      Fxx=out_backward*deltaVk/(twopi)**3
-      in_backward=Fyy_k
-      call dfftw_execute(plan_backward)
-      Fyy=out_backward*deltaVk/(twopi)**3
-      in_backward=Fzz_k
-      call dfftw_execute(plan_backward)
-      Fzz=out_backward*deltaVk/(twopi)**3
-      in_backward=Fxy_k
-      call dfftw_execute(plan_backward)
-      Fxy=out_backward*deltaVk/(twopi)**3
-      in_backward=Fxz_k
-      call dfftw_execute(plan_backward)
-      Fxz=out_backward*deltaVk/(twopi)**3
-      in_backward=Fyz_k
-      call dfftw_execute(plan_backward)
-      Fyz=out_backward*deltaVk/(twopi)**3
-      in_backward=Fx_k
-      call dfftw_execute(plan_backward)
-      Fx=out_backward*deltaVk/(twopi)**3
-      in_backward=Fy_k
-      call dfftw_execute(plan_backward)
-      Fy=out_backward*deltaVk/(twopi)**3
-      in_backward=Fz_k
-      call dfftw_execute(plan_backward)
-      Fz=out_backward*deltaVk/(twopi)**3
-      in_backward=F0_k
-      call dfftw_execute(plan_backward)
-      F0=out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fxx_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fxx=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fyy_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fyy=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fzz_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fzz=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fxy_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fxy=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fxz_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fxz=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fyz_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fyz=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fx_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fx=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fy_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fy=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=Fz_k
+      call dfftw_execute(fftw3%plan_backward)
+      Fz=fftw3%out_backward*deltaVk/(twopi)**3
+      fftw3%in_backward=F0_k
+      call dfftw_execute(fftw3%plan_backward)
+      F0=fftw3%out_backward*deltaVk/(twopi)**3
 !      function_rho_0=n_0
 !      in_forward=function_rho_0
 !      call dfftw_execute(plan_forward)
@@ -358,36 +358,36 @@ FGx=0.0_dp
 FGy=0.0_dp
 FGz=0.0_dp
 FG0=0.0_dp
-in_forward=Gxx*rho
-call dfftw_execute(plan_forward)
-Gxx_k=out_forward*deltaV
-in_forward=Gyy*rho
-call dfftw_execute(plan_forward)
-Gyy_k=out_forward*deltaV
-in_forward=Gzz*rho
-call dfftw_execute(plan_forward)
-Gzz_k=out_forward*deltaV
-in_forward=Gxy*rho
-call dfftw_execute(plan_forward)
-Gxy_k=out_forward*deltaV
-in_forward=Gxz*rho
-call dfftw_execute(plan_forward)
-Gxz_k=out_forward*deltaV
-in_forward=Gyz*rho
-call dfftw_execute(plan_forward)
-Gyz_k=out_forward*deltaV
-in_forward=Gx*rho
-call dfftw_execute(plan_forward)
-Gx_k=out_forward*deltaV
-in_forward=Gy*rho
-call dfftw_execute(plan_forward)
-Gy_k=out_forward*deltaV
-in_forward=Gz*rho
-call dfftw_execute(plan_forward)
-Gz_k=out_forward*deltaV
-in_forward=G0*rho
-call dfftw_execute(plan_forward)
-G0_k=out_forward*deltaV
+fftw3%in_forward=Gxx*rho
+call dfftw_execute(fftw3%plan_forward)
+Gxx_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gyy*rho
+call dfftw_execute(fftw3%plan_forward)
+Gyy_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gzz*rho
+call dfftw_execute(fftw3%plan_forward)
+Gzz_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gxy*rho
+call dfftw_execute(fftw3%plan_forward)
+Gxy_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gxz*rho
+call dfftw_execute(fftw3%plan_forward)
+Gxz_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gyz*rho
+call dfftw_execute(fftw3%plan_forward)
+Gyz_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gx*rho
+call dfftw_execute(fftw3%plan_forward)
+Gx_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gy*rho
+call dfftw_execute(fftw3%plan_forward)
+Gy_k=fftw3%out_forward*deltaV
+fftw3%in_forward=Gz*rho
+call dfftw_execute(fftw3%plan_forward)
+Gz_k=fftw3%out_forward*deltaV
+fftw3%in_forward=G0*rho
+call dfftw_execute(fftw3%plan_forward)
+G0_k=fftw3%out_forward*deltaV
 Gxx_k=Axx_k*Gxx_k
 Gyy_k=Ayy_k*Gyy_k
 Gzz_k=Azz_k*Gzz_k
@@ -398,36 +398,36 @@ Gx_k=Ax_k*Gx_k
 Gy_k=Ay_k*Gy_k
 Gz_k=Az_k*Gz_k
 G0_k=A0_k*G0_k
-in_backward=Gxx_k
-call dfftw_execute(plan_backward)
-FGxx=out_backward*deltaVk/(twopi)**3
-in_backward=Gyy_k
-call dfftw_execute(plan_backward)
-FGyy=out_backward*deltaVk/(twopi)**3
-in_backward=Gzz_k
-call dfftw_execute(plan_backward)
-FGzz=out_backward*deltaVk/(twopi)**3
-in_backward=Gxy_k
-call dfftw_execute(plan_backward)
-FGxy=out_backward*deltaVk/(twopi)**3
-in_backward=Gxz_k
-call dfftw_execute(plan_backward)
-FGxz=out_backward*deltaVk/(twopi)**3
-in_backward=Gyz_k
-call dfftw_execute(plan_backward)
-FGyz=out_backward*deltaVk/(twopi)**3
-in_backward=Gx_k
-call dfftw_execute(plan_backward)
-FGx=out_backward*deltaVk/(twopi)**3
-in_backward=Gy_k
-call dfftw_execute(plan_backward)
-FGy=out_backward*deltaVk/(twopi)**3
-in_backward=Gz_k
-call dfftw_execute(plan_backward)
-FGz=out_backward*deltaVk/(twopi)**3
-in_backward=G0_k
-call dfftw_execute(plan_backward)
-FG0=out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gxx_k
+call dfftw_execute(fftw3%plan_backward)
+FGxx=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gyy_k
+call dfftw_execute(fftw3%plan_backward)
+FGyy=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gzz_k
+call dfftw_execute(fftw3%plan_backward)
+FGzz=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gxy_k
+call dfftw_execute(fftw3%plan_backward)
+FGxy=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gxz_k
+call dfftw_execute(fftw3%plan_backward)
+FGxz=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gyz_k
+call dfftw_execute(fftw3%plan_backward)
+FGyz=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gx_k
+call dfftw_execute(fftw3%plan_backward)
+FGx=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gy_k
+call dfftw_execute(fftw3%plan_backward)
+FGy=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=Gz_k
+call dfftw_execute(fftw3%plan_backward)
+FGz=fftw3%out_backward*deltaVk/(twopi)**3
+fftw3%in_backward=G0_k
+call dfftw_execute(fftw3%plan_backward)
+FG0=fftw3%out_backward*deltaVk/(twopi)**3
 !print*,maxval(aimag(G0_k)),maxval(aimag(Gxx_k)),maxval(aimag(Gyy_k)),maxval(aimag(Gzz_k)),maxval(aimag(Gxy_k))
 !print*,maxval(aimag(Gyz_k)),maxval(aimag(Gxz_k)),maxval(aimag(Gx_k)),maxval(aimag(Gy_k)),maxval(aimag(Gz_k))
 !print*,maxval(real(G0_k)),maxval(real(Gxx_k)),maxval(real(Gyy_k)),maxval(real(Gzz_k)),maxval(real(Gxy_k))
@@ -512,24 +512,24 @@ print*, 'F3B2=', F3B2
 print*, 'in' , time1-time0, 'sec'
 FF=FF+F3B2+F3B1!+F3B_ww
 end subroutine
+
 function f_ww( r , rmin, rsw, rmax )
-use precision_kinds, only: dp,i2b
-implicit none
-real(dp) :: f_ww, r, rmin, rsw, rmax
-real(dp) , parameter :: gam = 2.0_dp/3.0_dp
-real(dp) :: deltar, exp_term, Switch
-deltar = rsw-rmin 
-if(r > rmin .and. r<rmax) then
-                
-exp_term = exp(gam*rmax/(r-rmax))
-   if(r<rsw) then
-     Switch = (r-rmin)**2*(-2.0_dp*(r-rmin)/deltar+3.0_dp)/deltar**2
-     else
-     Switch = 1.0_dp
-   end if
-f_ww = Switch*exp_term
-else
-f_ww = 0.0_dp
-end if
-return
+    use precision_kinds, only: dp,i2b
+    implicit none
+    real(dp) :: f_ww, r, rmin, rsw, rmax
+    real(dp) , parameter :: gam = 2.0_dp/3.0_dp
+    real(dp) :: deltar, exp_term, Switch
+    deltar = rsw-rmin 
+    if(r > rmin .and. r<rmax) then
+        exp_term = exp(gam*rmax/(r-rmax))
+        if(r<rsw) then
+            Switch = (r-rmin)**2*(-2.0_dp*(r-rmin)/deltar+3.0_dp)/deltar**2
+        else
+            Switch = 1.0_dp
+        end if
+        f_ww = Switch*exp_term
+    else
+        f_ww = 0.0_dp
+    end if
+    RETURN
 end function f_ww

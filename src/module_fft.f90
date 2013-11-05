@@ -5,9 +5,12 @@ MODULE fft
 
     IMPLICIT NONE
 
-    INTEGER(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
-    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
-    COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT
+    TYPE :: fftw3Needs
+        INTEGER(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
+        REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
+        COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT        
+    END TYPE
+    TYPE( fftw3Needs ) :: fftw3
     REAL(dp), PRIVATE, PARAMETER :: twopi = 2._dp*ACOS(-1._dp)
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: kx, ky, kz ! projection of k
 
@@ -68,8 +71,8 @@ CONTAINS
     END FUNCTION kvec
 
     SUBROUTINE deallocate_everything_fft
-        CALL dfftw_destroy_plan ( plan_forward ) ! destroy FFTW3 plans 
-        CALL dfftw_destroy_plan ( plan_backward ) ! destroy FFTW3 plans 
+        CALL dfftw_destroy_plan ( fftw3%plan_forward ) ! destroy FFTW3 plans 
+        CALL dfftw_destroy_plan ( fftw3%plan_backward ) ! destroy FFTW3 plans 
     END SUBROUTINE deallocate_everything_fft
     
     PURE FUNCTION timesExpPrefactork2 (array3D, prefactor)

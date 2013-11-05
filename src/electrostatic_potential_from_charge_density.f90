@@ -10,7 +10,7 @@ SUBROUTINE electrostatic_potential_from_charge_density
     USE system , ONLY : nfft1 , nfft2 , nfft3 , rho_c
     ! nfft = number of FFT grid nodes in each direction
     ! rho_c (nfft1,nfft2,nfft3) = discrete charge density per unit volume
-    USE fft , ONLY : in_forward , in_backward , out_forward , out_backward , plan_forward , plan_backward , norm_k , k2
+    USE fft , ONLY : fftw3 , norm_k , k2
     USE constants , ONLY : fourpi , twopi
     USE external_potential , ONLY : V_c
     ! V_c = electrostatic potential from charge density and poisson equation
@@ -31,9 +31,9 @@ SUBROUTINE electrostatic_potential_from_charge_density
     END IF
 
     ! FFT of rho_c
-    in_forward = rho_c
-    CALL dfftw_execute ( plan_forward )
-    rho_c_k = out_forward ! It is verified that at this point, FFT-1(rho_c_k)/ (nfft1*nfft2*nfft3) = rho_c
+    fftw3%in_forward = rho_c
+    CALL dfftw_execute ( fftw3%plan_forward )
+    rho_c_k = fftw3%out_forward ! It is verified that at this point, FFT-1(rho_c_k)/ (nfft1*nfft2*nfft3) = rho_c
     ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
     ! V(k) = 4Pi rho(k) / k^2
 
@@ -47,9 +47,9 @@ SUBROUTINE electrostatic_potential_from_charge_density
 
     ! get real space potential V(r)
     IF ( .NOT. ALLOCATED ( V_c ) ) ALLOCATE ( V_c ( nfft1 , nfft2 , nfft3 ) )
-    in_backward = V_c_k
-    CALL dfftw_execute ( plan_backward )
-    V_c = out_backward / REAL ( nfft1 * nfft2 * nfft3 , dp )
+    fftw3%in_backward = V_c_k
+    CALL dfftw_execute ( fftw3%plan_backward )
+    V_c = fftw3%out_backward / REAL ( nfft1 * nfft2 * nfft3 , dp )
     
     OPEN(11,FILE='output/V_cmax.dat')
         DO i=1, nfft1
