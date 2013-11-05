@@ -87,7 +87,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/vext_total_sum.f90 \
        $(SRCDIR)/compute_vcoul_as_sum_of_pointcharges.f90 \
        $(SRCDIR)/compute_vext_hard_sphere.f90 \
-       $(SRCDIR)/Vcoul_from_solvent_charge_density.f90 \
        $(SRCDIR)/external_potential_hard_walls.f90 \
        $(SRCDIR)/compute_vext_hard_cylinder.f90 \
        $(SRCDIR)/compute_purely_repulsive_potential.f90 \
