@@ -78,7 +78,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/read_solvent.f90 \
        $(SRCDIR)/read_solute.f90 \
        $(SRCDIR)/allocate_from_input.f90 \
-       $(SRCDIR)/tabulate_normk_and_k2.f90 \
        $(SRCDIR)/compute_hard_spheres_parameters.f90 \
        $(SRCDIR)/compute_wca_diameter.f90 \
        $(SRCDIR)/prepare_minimizer.f90 \

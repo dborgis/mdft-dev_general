@@ -13,6 +13,29 @@ MODULE fft
 
 CONTAINS
 
+    SUBROUTINE init
+        CALL init_fftw3_plans! initialize FFTW3 plans
+        CALL tabulate_kx_ky_kz! tabulate the value of norm(\vec{k}) and k2 = norm_k**2 in order to speed up program
+    END SUBROUTINE
+
+    SUBROUTINE tabulate_kx_ky_kz
+        USE system , ONLY: spaceGrid
+        INTEGER(i2b), DIMENSION(3) :: nfft
+        INTEGER(i2b):: l
+        REAL(dp), PARAMETER :: twopi = ACOS(-1._dp)*2._dp
+        nfft = spaceGrid%n_nodes
+        ALLOCATE ( kx (nfft(1)/2+1), ky (nfft(2)), kz (nfft(3)), source=0._dp)
+        DO CONCURRENT ( l=1:nfft(1)/2+1 )
+            kx(l) = kproj(1,l)
+        END DO
+        DO CONCURRENT ( l=1:nfft(2) )
+            ky(l) = kproj(2,l)
+        END DO
+        DO CONCURRENT ( l=1:nfft(3) )
+            kz(l) = kproj(3,l)
+        END DO
+    END SUBROUTINE
+
     PURE FUNCTION k2 (l,m,n)
         INTEGER(i2b), INTENT(IN) :: l,m,n
         REAL(dp) :: k2
