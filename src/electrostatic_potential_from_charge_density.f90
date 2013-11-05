@@ -6,7 +6,7 @@
 ! FFT(V(k)) = V(r)
 SUBROUTINE electrostatic_potential_from_charge_density
 
-    USE precision_kinds , ONLY : dp , i2b
+    USE precision_kinds, ONLY : dp, i2b
     USE system , ONLY : nfft1 , nfft2 , nfft3 , rho_c
     ! nfft = number of FFT grid nodes in each direction
     ! rho_c (nfft1,nfft2,nfft3) = discrete charge density per unit volume
