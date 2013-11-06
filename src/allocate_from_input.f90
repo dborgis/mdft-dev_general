@@ -131,23 +131,23 @@ subroutine allocate_from_input
     
         ! sum of all mole fractions should be equal to 1
         if ( sum ( mole_fraction ) /= 1.0_dp ) then
-        write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
-        write (*,*) 'here are the number of the species and its associated mole fraction'
-        do species = 1 , nb_species
-            write (*,*) species , mole_fraction ( species )
-        end do
-        write (*,*) 'stop'
-        stop
-        end if
-        ! a mole fraction should be between 0 and 1
-        do species = 1 , nb_species
-        if ( mole_fraction ( species ) < 0.0_dp .or. mole_fraction ( species ) > 1.0_dp ) then
-            write (*,*) 'Critical errror in allocate_from_input.f90. Mole fractions should be between 0 and 1'
+            write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
             write (*,*) 'here are the number of the species and its associated mole fraction'
-            write (*,*) 'species number ' , species , ' has mole fraction ' , mole_fraction ( species )
+            do species = 1 , nb_species
+                write (*,*) species , mole_fraction ( species )
+            end do
             write (*,*) 'stop'
             stop
         end if
+        ! a mole fraction should be between 0 and 1
+        do species = 1 , nb_species
+            if ( mole_fraction ( species ) < 0.0_dp .or. mole_fraction ( species ) > 1.0_dp ) then
+                write (*,*) 'Critical errror in allocate_from_input.f90. Mole fractions should be between 0 and 1'
+                write (*,*) 'here are the number of the species and its associated mole fraction'
+                write (*,*) 'species number ' , species , ' has mole fraction ' , mole_fraction ( species )
+                write (*,*) 'stop'
+                stop
+            end if
         end do
     end subroutine check_error_in_mole_fraction
 end subroutine allocate_from_input
