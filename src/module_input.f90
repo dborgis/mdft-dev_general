@@ -4,7 +4,7 @@ module input
   character (len = 100) , allocatable , dimension (:) :: input_line ! array containing all input lines
   integer(i2b):: TotalNumberOfInputLines
   private
-  public :: input_line, input_dp, input_int, TotalNumberOfInputLines,input_log, input_char
+  public :: input_line, input_dp, input_int, TotalNumberOfInputLines,input_log, input_char,n_linesInFile
   contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL(DP) PURE FUNCTION INPUT_DP( That)
@@ -59,4 +59,27 @@ CHARACTER(50) PURE FUNCTION INPUT_CHAR( That)
   end do
 END FUNCTION INPUT_CHAR
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-end module input
+
+FUNCTION n_linesInFile (filename)
+    IMPLICIT NONE
+    INTEGER :: n_linesInFile
+    CHARACTER(*), INTENT(IN) :: filename
+    INTEGER :: ios
+    OPEN (77, FILE=filename)
+        n_linesInFile = 0
+        DO WHILE (.true.)
+            READ (77,*,IOSTAT=ios)
+            IF (ios>0) THEN
+                WRITE(*,*)'Error in compute_ck_dipolar.f90'
+                WRITE(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
+                STOP
+            ELSE IF (ios<0) THEN ! end of file reached
+                EXIT
+            ELSE
+                n_linesInFile = n_linesInFile +1
+            END IF
+        END DO
+    CLOSE (77)
+END FUNCTION
+
+END MODULE input

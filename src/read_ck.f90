@@ -5,7 +5,7 @@ subroutine read_ck
   use system
   use constants
   use quadrature
-  use input , only : input_line , input_char, input_log! contains all input file dft.in in a character array
+  use input , only : input_line , input_char, input_log, n_linesInFile
   implicit none
   integer(i2b) :: nk, i, j
   character(len=5) :: ck_species
