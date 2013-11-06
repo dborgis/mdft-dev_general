@@ -1,9 +1,15 @@
 ! Variable relative to the system being studied
 MODULE system
 
-    USE precision_kinds , ONLY: i2b,dp
+    USE precision_kinds, ONLY: i2b, dp
 
     IMPLICIT NONE
+
+    TYPE solute
+        character(80) :: name
+        
+    END TYPE solute
+    TYPE (solute), ALLOCATABLE, DIMENSION (:) :: solute
 
     INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
@@ -28,13 +34,12 @@ MODULE system
     REAL(dp), POINTER :: DeltaV => spaceGrid%dv
     REAL(dp), POINTER :: deltax => spaceGrid%dl(1), deltay => spaceGrid%dl(2), deltaz => spaceGrid%dl(3)
     INTEGER(i2b), POINTER :: nfft1 => spaceGrid%n_nodes(1), nfft2 => spaceGrid%n_nodes(2), nfft3 => spaceGrid%n_nodes(3) ! deprecated. Should be removed at some point
-    !
-    REAL(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
-    REAL(dp), ALLOCATABLE , DIMENSION (:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
+    REAL(dp) :: n_0, rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
+    REAL(dp), ALLOCATABLE, DIMENSION(:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: c_s, c_delta, c_d !> Direct correlation functions of various rotational invariants
     REAL(dp), ALLOCATABLE, DIMENSION(:) ::chi_L, chi_T
-    REAL(dp) , ALLOCATABLE , DIMENSION (:) :: c_s_hs ! c(2)(k) of a hard sphere
-    COMPLEX(dp),ALLOCATABLE,DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
+    REAL(dp), ALLOCATABLE, DIMENSION(:) :: c_s_hs ! c(2)(k) of a hard sphere
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
     REAL(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
     INTEGER(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
     ! Electrostatics
