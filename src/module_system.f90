@@ -24,11 +24,10 @@ MODULE system
         REAL(dp) :: dv ! elemental volume
     END TYPE spaceGridType
     TYPE( spaceGridType ), TARGET :: spaceGrid
-    REAL(dp), POINTER :: Lx , Ly , Lz ! Taille de la boite en Ang
-    REAL(dp), POINTER :: DeltaV ! volume elementaire=Lx*Ly*Lz/(nfft1*nfft2*nfft3)
-    REAL(dp), POINTER :: deltax, deltay, deltaz ! Lx/nfft1, Ly/nfft2, Lz/nfft3
-    INTEGER(i2b) :: nfft ! nbr de point par unite de longueur. lu dans input/dft.in. nfft1, nfft2 et nfft3 sont deduits de nfft.
-    INTEGER(i2b), POINTER :: nfft1, nfft2, nfft3 ! nbr de points sur chaque DIMENSIONs de la grille. deduits de nfft lu dans dft.in
+    REAL(dp), POINTER :: Lx => spaceGrid%length(1), Ly => spaceGrid%length(2), Lz => spaceGrid%length(3)
+    REAL(dp), POINTER :: DeltaV => spaceGrid%dv
+    REAL(dp), POINTER :: deltax => spaceGrid%dl(1), deltay => spaceGrid%dl(2), deltaz => spaceGrid%dl(3)
+    INTEGER(i2b), POINTER :: nfft1 => spaceGrid%n_nodes(1), nfft2 => spaceGrid%n_nodes(2), nfft3 => spaceGrid%n_nodes(3) ! deprecated. Should be removed at some point
     !
     REAL(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case

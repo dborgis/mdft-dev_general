@@ -1,6 +1,6 @@
 SUBROUTINE put_input_in_character_array
     
-    U precision_kinds , only : i2b
+    USE precision_kinds , only : i2b
     use input , only : input_line , n_linesInFile
     implicit none
     integer(i2b):: i , j , k , n, n_lines ! dummy

@@ -22,7 +22,6 @@ subroutine allocate_from_input
         print*,'You have nfft1, nfft2, nfft3 nodes per direction : ',spaceGrid%n_nodes
         stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT.'
     end if
-    nfft1 => spaceGrid%n_nodes(1) ; nfft2 => spaceGrid%n_nodes(2) ; nfft3 => spaceGrid%n_nodes(3) ! should be deprecated soon
 
     spaceGrid%length = [ input_dp('Lx'), input_dp('Ly'), input_dp('Lz') ]
     if( any( spaceGrid%length  <= 0._dp ) ) then
@@ -30,11 +29,8 @@ subroutine allocate_from_input
         print*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',spaceGrid%length
         stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
     end if
-    lx => spaceGrid%length(1) ; ly => spaceGrid%length(2) ; lz => spaceGrid%length(3) ! should be deprecated soon
     spaceGrid%dl = spaceGrid%length/REAL(spaceGrid%n_nodes,dp)
-    deltax => spaceGrid%dl(1) ; deltay => spaceGrid%dl(2) ; deltaz => spaceGrid%dl(3) ! should be deprecated soon
     spaceGrid%dv = product(spaceGrid%dl)
-    deltav => spaceGrid%dv ! should be deprecated soon
 
     temp = input_dp('temperature') ! look for temperature in input
     if( temp <= 0 ) then
