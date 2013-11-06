@@ -1,6 +1,6 @@
 SUBROUTINE put_input_in_character_array
     
-    use precision_kinds , only : i2b
+    U precision_kinds , only : i2b
     use input , only : input_line , n_linesInFile
     implicit none
     integer(i2b):: i , j , k , n, n_lines ! dummy
@@ -18,20 +18,19 @@ SUBROUTINE put_input_in_character_array
     CLOSE (11)
     
     !  clean up comments in the lines (expl: option = 3 # blabla)
-    do i = 1 , n_lines
-        do j = 1 , len(text)
-        if ( input_line (i) (j:j) == '#' ) then
-            forall ( k = j : len(text) )
-            input_line (i) (k:k) = ' '
-            end forall
-            exit
-        end if
-        end do
-        input_line (i) = trim ( adjustl (input_line (i) ) )
-    end do
+    DO i = 1, n_lines
+        DO j = 1 , len(text)
+            IF ( input_line (i) (j:j) == '#' ) THEN
+                DO CONCURRENT ( k=j:LEN(text) )
+                    input_line(i)(k:k) = ' '
+                END DO
+                EXIT
+            END IF
+        END DO
+        input_line (i) = TRIM( ADJUSTL( input_line(i) ))
+    END DO
     
     !Delete blank lines and count the size of the smallest array containing initial data  
-    
     n = 0
     do i = 1 , n_lines
         if ( input_line (i) (1:1) /= ' ' )  then
