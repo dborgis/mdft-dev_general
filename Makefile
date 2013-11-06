@@ -59,7 +59,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/compute_z_density.f90 \
        $(SRCDIR)/steepest_descent_main.f90 \
        $(SRCDIR)/mean_over_orientations.f90 \
-       $(SRCDIR)/potgen.f90 \
        $(SRCDIR)/init_simu.f90 \
        $(SRCDIR)/charge_density_from_point_charge_positions.f90 \
        $(SRCDIR)/convert_coordinate_into_icg.f90\
