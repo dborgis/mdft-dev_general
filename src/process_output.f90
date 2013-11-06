@@ -60,14 +60,14 @@ subroutine process_output
     contains
 
         subroutine print_cg_vect
-            use cg , only : cg_vect
-            if ( .not. allocated ( cg_vect ) ) then
-                print *, 'cg_vect is not allocated in subroutine print_cg_vect in process_output.f90. STOP.'
-                stop
-            end if
-            open( unit = 10 , file = 'output/density.bin' , form = 'unformatted' )
-            write ( 10 ) cg_vect
-            print *, ' output/density.bin                                 written'
+!~             use cg , only : cg_vect
+!~             if ( .not. allocated ( cg_vect ) ) then
+!~                 print *, 'cg_vect is not allocated in subroutine print_cg_vect in process_output.f90. STOP.'
+!~                 stop
+!~             end if
+!~             open( unit = 10 , file = 'output/density.bin' , form = 'unformatted' )
+!~             write ( 10 ) cg_vect
+!~             print *, ' output/density.bin                                 written'
         end subroutine print_cg_vect
 
 end subroutine process_output

@@ -3,11 +3,11 @@
 ! Written by Maximilien Levesque, June 2011 @ Ecole Normale Superieure
 ! For now This potential is named Vcoul which means as soon as we will have to use both electrostatic and (NOT TRUE ANYMORE : VREP)
 ! purely repulsive potential, one will HAVE TO re-write this subroutine with unique variable names
-subroutine compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz )
+SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz )
 use precision_kinds , only : dp , i2b
 use input , only : input_line,input_dp 
 use system, only: nfft1 , nfft2 , nfft3 , x_solv , y_solv , z_solv , x_mol , y_mol , z_mol , &
-                        beta , nb_solute_sites , nb_solvent_sites , Lx , Ly , Lz
+                        beta , nb_solute_sites , nb_solvent_sites , Lx , Ly , Lz, spaceGrid
 use constants , only : fourpi
 use external_potential , only : Vext_total
 use quadrature, only: angGrid, molRotGrid
@@ -28,15 +28,14 @@ real(dp):: rc, rc2 ! radius of the hard wall in the purely repulsive potential o
 real(dp):: tempVrep ! temporary Vrep(i,j,k,o)
 real(dp):: kbT ! kbT of the purely repulsive potential V such as V(R0+1)=kBT => kbT = kBT
 real(dp), dimension ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles) :: Vrep
-real(dp):: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
+
 ! init timer
 call cpu_time(time0)
 ! get the radius of the purely repulsive solute
 ! the radius is defined such as in Dzubiella and Hansen, J Chem Phys 121 , 2011
 ! look for tag 'purely_repulsive_solute_radius' in dft.in for hard wall thickness
 Rc=input_dp('radius_of_purely_repulsive_solute')
-write (*,*) 'the radius of the purely repulsive solute is ' , Rc
-print*, size(Vrep)
+
 ! init variables
 Vrep = 0.0_dp
 Rc2 = Rc**2
@@ -51,19 +50,16 @@ do o = 1 , angGrid%n_angles
     end do
   end do
 end do
-! distance between two grid points in x y z directions
-deltax = Lx / real ( nfft1 , dp )
-deltay = Ly / real ( nfft2 , dp )
-deltaz = Lz / real ( nfft3 , dp )
+
 ! TODO CARE HERE ONLY ONE SPECIES
 do k = 1 , nfft3
   ! print screen how many grid points in z have still to be calculated
   write (*,*) nfft3 - k
-  z_grid = real(k-1,dp) * deltaz
+  z_grid = real(k-1,dp) * spaceGrid%dl(3)
   do j = 1 , nfft2
-    y_grid = real(j-1,dp) * deltay
+    y_grid = real(j-1,dp) * spaceGrid%dl(2)
     do i = 1 , nfft1
-      x_grid = real(i-1,dp) * deltax
+      x_grid = real(i-1,dp) * spaceGrid%dl(1)
       do o = 1 , angGrid%n_angles
         tempVrep = 0.0_dp
         do p = 1 , molRotGrid%n_angles
@@ -115,7 +111,5 @@ call mean_over_orientations ( Vrep , temparray )
 temparray = temparray / fourpi
 filename = 'output/Vrep.cube'
 call write_to_cube_file ( temparray , filename )
-filename = 'output/Vrep_radial.dat'
-call compute_rdf ( temparray , filename )
 deallocate ( temparray )
 end subroutine compute_purely_repulsive_potential
