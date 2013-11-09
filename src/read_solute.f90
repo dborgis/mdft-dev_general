@@ -48,21 +48,6 @@ integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites wi
             END DO
         CLOSE (5)
 
-    ! As a first step toward removing all x_mol etc, I make them as pointers to our new derived type
-
-    x_mol = soluteSite%r(1)
-    y_mol = soluteSite%r(2)
-    z_mol = soluteSite%r(3)
-    atomic_nbr = soluteSite%Z
-    lambda1_mol = soluteSite%lambda1
-    lambda2_mol = soluteSite%lambda2
-    DO n = 1, nb_solute_sites
-        i = id_mol(n)
-        chg_mol(i) = soluteSite(n)%q
-        sig_mol(i) = soluteSite(n)%sig
-        eps_mol(i) = soluteSite(n)%eps
-    END DO
-
     IF ( ABS(SUM( soluteSite%q )) >= 1.E-7 ) THEN ! warn user if total charge is not zero
         PRINT*,
         PRINT*,'*******************************************************************'
@@ -77,34 +62,48 @@ integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites wi
     CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
     CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell
 
+
+
+    ! As a first step toward removing all x_mol etc, I make them as pointers to our new derived type
+    x_mol = soluteSite%r(1)
+    y_mol = soluteSite%r(2)
+    z_mol = soluteSite%r(3)
+    atomic_nbr = soluteSite%Z
+    lambda1_mol = soluteSite%lambda1
+    lambda2_mol = soluteSite%lambda2
+    DO n = 1, nb_solute_sites
+        i = id_mol(n)
+        chg_mol(i) = soluteSite(n)%q
+        sig_mol(i) = soluteSite(n)%sig
+        eps_mol(i) = soluteSite(n)%eps
+    END DO
+
+
     CONTAINS
 
     ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
     SUBROUTINE translate_to_center_of_supercell_if_needed
-        USE input, ONLY : input_line,input_log
-        USE system, ONLY : Lx , Ly , Lz , x_mol , y_mol , z_mol, spaceGrid
-        INTEGER(i2b) :: i, j
-        LOGICAL :: translate_solute_to_center
-        ! then do the translation
+        USE input, ONLY: input_log
+        USE system, ONLY: spaceGrid
         IF (input_log( 'translate_solute_to_center' )) THEN
-            x_mol = x_mol + spaceGrid%length(1)/2.0_dp
-            y_mol = y_mol + spaceGrid%length(2)/2.0_dp
-            z_mol = z_mol + spaceGrid%length(3)/2.0_dp
+            soluteSite%r(1) = soluteSite%r(1) + spaceGrid%length(1)/2.0_dp
+            soluteSite%r(2) = soluteSite%r(2) + spaceGrid%length(2)/2.0_dp
+            soluteSite%r(3) = soluteSite%r(3) + spaceGrid%length(3)/2.0_dp
         END IF
     END SUBROUTINE translate_to_center_of_supercell_if_needed
 
 
 
     SUBROUTINE assure_coo_inside_cell
-        USE SYSTEM, ONLY : nb_solute_sites , Lx , Ly , Lz , x_mol , y_mol , z_mol, spaceGrid
+        USE SYSTEM, ONLY: spaceGrid
         INTEGER(i2b) :: i 
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
-        DO CONCURRENT ( i=1:nb_solute_sites )
-            x_mol (i) = MODULO ( x_mol (i) , spaceGrid%length(1) )
-            y_mol (i) = MODULO ( y_mol (i) , spaceGrid%length(2) )
-            z_mol (i) = MODULO ( z_mol (i) , spaceGrid%length(3) )
+        DO CONCURRENT ( i=1:SIZE(soluteSite) )
+            soluteSite(i)%r(1) = MODULO ( soluteSite(i)%r(1) , spaceGrid%length(1) )
+            soluteSite(i)%r(2) = MODULO ( soluteSite(i)%r(2) , spaceGrid%length(2) )
+            soluteSite(i)%r(3) = MODULO ( soluteSite(i)%r(3) , spaceGrid%length(3) )
         END DO
     END SUBROUTINE assure_coo_inside_cell
 
