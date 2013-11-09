@@ -3,10 +3,10 @@
 SUBROUTINE read_solvent
 
     USE precision_kinds, ONLY: i2b , dp
-    USE system, ONLY: nb_solvent_sites , x_solv , y_solv , z_solv , chg_solv , sig_solv , eps_solv , id_solv
+    USE system, ONLY: nb_solvent_sites , x_solv , y_solv , z_solv , chg_solv , sig_solv , eps_solv , id_solv, solventSite
     IMPLICIT NONE
 
-    integer(i2b):: n ! dummy
+    integer(i2b):: i, n
     integer(i2b):: stat ! status du fichier ouvert
     integer(i2b):: nb_id_solv ! number of types of solvent sites
     real(dp):: total_charge ! charge of the whole system (should be zero in almost every case)
@@ -38,20 +38,17 @@ SUBROUTINE read_solvent
         ! close input/solvent.in
     CLOSE(5)
 
-ALLOCATE( solventSite (nb_solvent_sites) )
+    ALLOCATE( solventSite (nb_solvent_sites) )
+    DO n = 1, nb_solvent_sites
+        i = id_solv(n)
+        solventSite(n)%q = chg_solv(i)
+        solventSite(n)%sig = sig_solv(i)
+        solventSite(n)%eps = eps_solv(i)
+        solventSite(n)%r(1) = x_solv(n)
+        solventSite(n)%r(2) = y_solv(n)
+        solventSite(n)%r(3) = z_solv(n)
+    END DO
 
-DO n = 1, nb_solvent_sites
-    i = id_solv(n)
-    solventSite(n)%q = chg_solv(i)
-    solventSite(n)%sig = sig_solv(i)
-    solventSite(n)%eps = eps_solv(i)
-    solventSite(n)%r(1) = x_solv(n)
-    solventSite(n)%r(2) = y_solv(n)
-    solventSite(n)%r(3) = z_solv(n)
-END DO
-
-PRINT*,solventSite%q;stop
-
-    IF( total_charge /= 0._dp ) PRINT*,"YOUR SOLVENT WEAR A TOTAL CHARGE OF ",total_charge,". BE SURE YOU KNOW WHAT YOU'RE DOING."
+    IF( SUM(solventSite%q) /= 0._dp ) PRINT*,"YOUR SOLVENT WEAR A TOTAL CHARGE OF ",total_charge,". BE SURE YOU KNOW WHAT YOU'RE DOING."
 
 END SUBROUTINE read_solvent
