@@ -6,7 +6,7 @@ subroutine get_charge_density_k ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotz
 use precision_kinds, only : i2b, dp
 use constants, only : i_complex, twopi, fourpi
 use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly, Lz,nb_solvent_sites, id_solv&
-, sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k,nb_species, deltaV,deltax
+, sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k,nb_species
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
 use cg , only : cg_vect
 use quadrature, only : Omx , Omy , Omz, angGrid, molRotGrid
@@ -25,7 +25,7 @@ real (dp), dimension(nfft1,nfft2,nfft3)::molecpolarx,molecpolary,molecpolarz
 !            ====================================================
 Rc=0.5_dp
 if (Rc/=0.0_dp) then
-print*, 'WARNING: you convolute molecular Charge Density and POLARIZATION with a Gaussian be sure that is what you want!!!'
+    print*, 'WARNING: you convolute molecular Charge Density and POLARIZATION with a Gaussian be sure that is what you want!!!'
 end if
 deltaVk=twopi**3/(Lx*Ly*Lz)
 nf1=nfft1/2
