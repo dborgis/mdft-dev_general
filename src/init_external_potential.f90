@@ -7,7 +7,7 @@ subroutine init_external_potential
     use precision_kinds , only : dp , i2b
     use input, only: input_line, input_log, input_char
     use system , only: chg_mol, chg_solv, eps_solv, eps_mol, sig_solv, sig_mol, Lx, Ly, Lz, &
-                    nfft1, nfft2, nfft3, nb_species
+                    nfft1, nfft2, nfft3, nb_species, soluteSite, spaceGrid
     use external_potential, only: Vext_total, Vext_q
     use mod_lj, only: initLJ => init
     use quadrature, only: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
@@ -17,10 +17,14 @@ subroutine init_external_potential
     integer(i2b):: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
     integer(i2b):: i, j
 
-    if(.not. allocated(Vext_total)) allocate( Vext_total(nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species), &
-                                                                                                        source=0._dp )
+    IF( .NOT. ALLOCATED( Vext_total )) THEN
+        allocate( Vext_total(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),angGrid%n_angles,&
+                            molRotGrid%n_angles,nb_species), source=0._dp )
+    ELSE
+        STOP "see init_external_potential.f90 vext_total is already allocated."
+    END IF
 
-    nb_id_mol  = size ( chg_mol  ) ! total number of solute types
+    nb_id_mol  = size ( soluteSite  ) ! total number of solute types
     nb_id_solv = size ( chg_solv ) ! total number of solvent types
 
     !call get_charge_factor ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz )
