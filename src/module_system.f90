@@ -5,16 +5,16 @@ MODULE system
 
     IMPLICIT NONE
 
-    TYPE :: some_soluteSite
+    TYPE :: sites
         CHARACTER(100) :: name
         INTEGER(i2b) :: type
         REAL(dp), DIMENSION(3) :: r
         REAL(dp) :: q, sig, eps, lambda1, lambda2
         INTEGER(i2b) :: Z ! atomic number
-    END TYPE some_soluteSite
+    END TYPE sites
     
-    TYPE (some_soluteSite), ALLOCATABLE, DIMENSION(:), TARGET :: soluteSite
-    TYPE (some_soluteSite), ALLOCATABLE, DIMENSION(:), TARGET :: solventSite
+    TYPE (sites), ALLOCATABLE, DIMENSION(:), TARGET :: soluteSite
+    TYPE (sites), ALLOCATABLE, DIMENSION(:), TARGET :: solventSite
 
     INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
