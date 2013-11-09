@@ -1,8 +1,7 @@
 ! This subroutine computes the radial distribution function around each solute site
 subroutine compute_rdf ( array , filename )
 use precision_kinds , only : dp , i2b
-use system , only : nfft1 , nfft2 , nfft3 , deltax , deltay , deltaz , nb_solute_sites , x_mol , y_mol , z_mol , id_mol , id_solv, &
-                    nb_species, spaceGrid
+use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , id_mol , id_solv, nb_species, spaceGrid, soluteSite
 use input , only : input_line, input_dp, input_int
 IMPLICIT NONE
 
@@ -18,7 +17,9 @@ REAL(dp), allocatable , dimension ( : , : ) :: rdf
 INTEGER(i2b), allocatable , dimension ( : , : ) :: recurrence_bin
 INTEGER(i2b):: i , j , k , n , bin
 REAL(dp):: xnm2 , ynm2 , znm2 ! dummy
-INTEGER(i2b):: species ! dummy between 1 and nb_species
+INTEGER(i2b):: species, nb_solute_sites ! dummy between 1 and nb_species
+
+nb_solute_sites = SIZE(soluteSite)
 
 !~ do i=1,4
 !~ PRINT*,FILENAME,size(array,i)
