@@ -1,123 +1,112 @@
 !> read solute atomic positions, charge, and lennard jones values in solute.in
 !! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
 subroutine read_solute
+
 use precision_kinds , only : i2b,dp
 use system , only : nb_solute_sites , x_mol , y_mol , z_mol , chg_mol , sig_mol , eps_mol , atomic_nbr , id_mol , Lx , Ly , Lz&
-&, lambda1_mol , lambda2_mol
+&, lambda1_mol , lambda2_mol, soluteSite
 use input , only : input_line
 use periodic_table , only : init_periodic_table , ptable
+
 implicit none
-integer(i2b):: n ! dummy
+
+integer(i2b):: n, i
 integer(i2b):: stat ! status du fichier ouvert
 integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites with same epsilon and sigma, but only diff positions)
-real(dp):: system_charge ! charge of the whole system (should be zero in almost every case)
 ! init module periodic_table so that all informations are available
-call init_periodic_table
-!print *, ptable ( 1 ) % name
-!> open and test if input/solute.in is ok
-open ( 5 , file='input/solute.in', status='old', iostat=stat)
-if (stat /= 0) then
-  write(*,*) 'solute.in cannot be opened ! => STOP !'
-  stop
-end if
-!> first line is a comment
-read ( 5 , * )
-!> Second line is the total number of atom sites of the solute AND the total number of different types of atoms
-read (5,*) nb_solute_sites, nb_id_mol
-!> Allocate accordingly
-allocate(x_mol(nb_solute_sites))
-allocate(y_mol(nb_solute_sites))
-allocate(z_mol(nb_solute_sites))
-allocate(id_mol(nb_solute_sites)) ! from solute_site to id for instance id_mol(1)=1, id_mol(2)=2 and id_mol(3)=2 for OH2
-allocate(atomic_nbr(nb_solute_sites))
-allocate(chg_mol(nb_id_mol))
-allocate(sig_mol(nb_id_mol))
-allocate(eps_mol(nb_id_mol))
-!allocate lambda1_mol et lambda2_mol
-allocate(lambda1_mol(nb_solute_sites))
-allocate(lambda2_mol(nb_solute_sites))
-! Read rest of the file and test the total chage
-read(5,*) ! comment line
-do n = 1 , nb_solute_sites
-  read(5,*) id_mol(n) , chg_mol(id_mol(n)) , sig_mol(id_mol(n)) , eps_mol(id_mol(n)) ,lambda1_mol(n) , lambda2_mol(n) &
-& , x_mol(n) , y_mol(n) , z_mol(n) ,atomic_nbr(n)
- 
-end do
-! sum all charges
-system_charge = 0.0_dp
-do n = 1 , nb_solute_sites
-  system_charge = system_charge + chg_mol ( id_mol ( n ) )
-end do
-! warn user if total charge is not zero
-if ( abs ( system_charge ) >= 0.001 ) then
-  write(*,*)
-  write(*,*)'*******************************************************************'
-  write(*,*)'          TOTAL CHARGE IS NOT ZERO.'
-  write(*,*)'          IT IS ' , system_charge
-  write(*,*)'          CONTINUE AT YOUR OWN RISK'
-  write(*,*)'*******************************************************************'
-  write(*,*)
-end if
-! close input/solute.in
-close(5)
-! ask user if he wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
-call translate_to_center_of_supercell_if_needed
-! Print periodic XSF file to be read by VMD or equivalent
-call print_supercell_xsf
-! check if cartesian coordinates read in input/solute.in are in the supercell
-call check_if_coordinates_are_in_supercell
-!write(*,*), x_mol(1) , y_mol(1) , z_mol(1)
-!write(*,*), x_mol(2) , y_mol(2) , z_mol(2)
-!write(*,*), x_mol(3) , y_mol(3) , z_mol(3)
-! x_mol(1) =  15.000000000000000_dp     
-! y_mol(1) = 15.000999999999999_dp     
-! z_mol(1) = 15.000000000000000_dp    
-  
-! x_mol(2) =  15.816495000000000_dp 
-! y_mol(2) =     15.000999999999999_dp    
-! z_mol(2) =   15.577352500000000_dp     
- 
-! x_mol(3)  = 14.183505000000000_dp    
-! y_mol(3)  =  15.000999999999999_dp  
-! z_mol(3) =  15.577352500000000_dp    
-!write(*,*), x_mol(1) , y_mol(1) , z_mol(1)
-!write(*,*), x_mol(2) , y_mol(2) , z_mol(2)
-!write(*,*), x_mol(3) , y_mol(3) , z_mol(3)
-!write(*,*), x_mol(4) , y_mol(4) , z_mol(4)
-!write(*,*), x_mol(5) , y_mol(5) , z_mol(5)
-!write(*,*), x_mol(6) , y_mol(6) , z_mol(6)
-contains
-! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
-subroutine translate_to_center_of_supercell_if_needed
-use precision_kinds , only : i2b,dp
-use input , only : input_line,input_log
-use system , only : Lx , Ly , Lz , x_mol , y_mol , z_mol
-implicit none
-integer(i2b) :: i , j
-logical :: translate_solute_to_center
-! then do the translation
-!print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-!print*,'ATTENTION J ai Changé Translate Solute to Center Pour Test ne marche que selon z!!!!'
-!print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-if (input_log( 'translate_solute_to_center' )) then
-  x_mol = x_mol + Lx / 2.0_dp
-  y_mol = y_mol + Ly / 2.0_dp
-  z_mol = z_mol + Lz / 2.0_dp
-end if
-end subroutine translate_to_center_of_supercell_if_needed
-! this subroutine checks if coordinates are in supercell, and if not, add i*Lx to the cartesian coordinate to put back in supercell
-subroutine check_if_coordinates_are_in_supercell
-use precision_kinds , only : i2b , dp
-use system , only : nb_solute_sites , Lx , Ly , Lz , x_mol , y_mol , z_mol
-implicit none
-integer (i2b) :: i 
-! check if some positions are out of the supercell
-!j is a test tag. We loop over this test until every atom is in the box.
-! This allows for instance, if a site is two boxes too far to still be ok.
-forall ( i = 1 : nb_solute_sites )
-  x_mol ( i ) = modulo ( x_mol ( i ) , Lx )
-  y_mol ( i ) = modulo ( y_mol ( i ) , Ly )
-  z_mol ( i ) = modulo ( z_mol ( i ) , Lz )
-end forall
-end subroutine check_if_coordinates_are_in_supercell
-end subroutine read_solute
+
+    CALL init_periodic_table
+    ! print *, ptable ( 1 ) % name
+    ! open and test if input/solute.in is ok
+
+    OPEN (5, FILE='input/solute.in', STATUS='old', IOSTAT=stat)
+        IF (stat /= 0) THEN
+            PRINT*,'solute.in cannot be opened ! => STOP !'
+            STOP
+        END IF
+
+        READ (5,*) ! comment line
+        READ (5,*) nb_solute_sites, nb_id_mol ! total number of atom sites of the solute AND the total number of different types of atoms
+        ALLOCATE(soluteSite(nb_solute_sites))
+        
+        ALLOCATE(x_mol(nb_solute_sites))
+        ALLOCATE(y_mol(nb_solute_sites))
+        ALLOCATE(z_mol(nb_solute_sites))
+        ALLOCATE(id_mol(nb_solute_sites)) ! from solute_site to id for instance id_mol(1)=1, id_mol(2)=2 and id_mol(3)=2 for OH2
+        ALLOCATE(atomic_nbr(nb_solute_sites))
+        ALLOCATE(chg_mol(nb_id_mol))
+        ALLOCATE(sig_mol(nb_id_mol))
+        ALLOCATE(eps_mol(nb_id_mol))
+        ALLOCATE(lambda1_mol(nb_solute_sites))
+        ALLOCATE(lambda2_mol(nb_solute_sites))
+
+        READ (5,*) ! comment line
+            DO n = 1, SIZE(soluteSite)
+                READ(5,*) id_mol(n), soluteSite(n)%q, soluteSite(n)%sig, soluteSite(n)%eps, &
+                        soluteSite(n)%lambda1, soluteSite(n)%lambda2, soluteSite(n)%r, soluteSite(n)%Z
+!~ READ(5,*) id_mol(n), chg_mol(id_mol(n)) , sig_mol(id_mol(n)) , eps_mol(id_mol(n)) ,lambda1_mol(n) , lambda2_mol(n), x_mol(n) , y_mol(n) , z_mol(n) ,atomic_nbr(n)
+            END DO
+        CLOSE (5)
+
+    ! As a first step toward removing all x_mol etc, I make them as pointers to our new derived type
+
+    x_mol = soluteSite%r(1)
+    y_mol = soluteSite%r(2)
+    z_mol = soluteSite%r(3)
+    atomic_nbr = soluteSite%Z
+    lambda1_mol = soluteSite%lambda1
+    lambda2_mol = soluteSite%lambda2
+    DO n = 1, nb_solute_sites
+        i = id_mol(n)
+        chg_mol(i) = soluteSite(n)%q
+        sig_mol(i) = soluteSite(n)%sig
+        eps_mol(i) = soluteSite(n)%eps
+    END DO
+
+    IF ( ABS(SUM( soluteSite%q )) >= 1.E-7 ) THEN ! warn user if total charge is not zero
+        PRINT*,
+        PRINT*,'*******************************************************************'
+        PRINT*,'          TOTAL CHARGE IS NOT ZERO.'
+        PRINT*,'          IT IS ' , SUM( soluteSite%q )
+        PRINT*,'          CONTINUE AT YOUR OWN RISK'
+        PRINT*,'*******************************************************************'
+        PRINT*,
+    END IF
+
+    CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
+    CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
+    CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell
+
+    CONTAINS
+
+    ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
+    SUBROUTINE translate_to_center_of_supercell_if_needed
+        USE input, ONLY : input_line,input_log
+        USE system, ONLY : Lx , Ly , Lz , x_mol , y_mol , z_mol, spaceGrid
+        INTEGER(i2b) :: i, j
+        LOGICAL :: translate_solute_to_center
+        ! then do the translation
+        IF (input_log( 'translate_solute_to_center' )) THEN
+            x_mol = x_mol + spaceGrid%length(1)/2.0_dp
+            y_mol = y_mol + spaceGrid%length(2)/2.0_dp
+            z_mol = z_mol + spaceGrid%length(3)/2.0_dp
+        END IF
+    END SUBROUTINE translate_to_center_of_supercell_if_needed
+
+
+
+    SUBROUTINE assure_coo_inside_cell
+        USE SYSTEM, ONLY : nb_solute_sites , Lx , Ly , Lz , x_mol , y_mol , z_mol, spaceGrid
+        INTEGER(i2b) :: i 
+        ! check if some positions are out of the supercell
+        !j is a test tag. We loop over this test until every atom is in the box.
+        ! This allows for instance, if a site is two boxes too far to still be ok.
+        DO CONCURRENT ( i=1:nb_solute_sites )
+            x_mol (i) = MODULO ( x_mol (i) , spaceGrid%length(1) )
+            y_mol (i) = MODULO ( y_mol (i) , spaceGrid%length(2) )
+            z_mol (i) = MODULO ( z_mol (i) , spaceGrid%length(3) )
+        END DO
+    END SUBROUTINE assure_coo_inside_cell
+
+
+END SUBROUTINE read_solute

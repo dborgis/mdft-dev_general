@@ -1,25 +1,31 @@
 ! Variable relative to the system being studied
 MODULE system
 
-    USE precision_kinds, ONLY: i2b, dp
+    USE precision_kinds , ONLY: i2b,dp
 
     IMPLICIT NONE
 
-    TYPE solute
-        character(80) :: name
-        
-    END TYPE solute
-    TYPE (solute), ALLOCATABLE, DIMENSION (:) :: solute
+    TYPE :: some_soluteSite
+        CHARACTER(100) :: name
+        INTEGER(i2b) :: type
+        REAL(dp), DIMENSION(3) :: r
+        REAL(dp) :: q, sig, eps, lambda1, lambda2
+        INTEGER(i2b) :: Z ! atomic number
+    END TYPE some_soluteSite
+    
+    TYPE (some_soluteSite), ALLOCATABLE, DIMENSION(:), TARGET :: soluteSite
 
     INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: x_mol, y_mol, z_mol ! positions des sites du solute dans la boite (repere absolu)
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_mol, sig_mol, eps_mol  ! charge partielle et parametres LJ pour chaque site du solute (kJ/mol)
+    REAL(dp), ALLOCATABLE, DIMENSION(:) :: lambda1_mol, lambda2_mol     !Three body terms
+    INTEGER(i2b), ALLOCATABLE, DIMENSION (:) :: atomic_nbr
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: x_solv, y_solv, z_solv  ! positions des sites du solvent dans le repere propre ede la molecule
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_solv, sig_solv, eps_solv  ! charge partielle et parametres LJ pour chaque site du solvant (kJ/mol)
     INTEGER(i2b), ALLOCATABLE, DIMENSION(:) :: id_solv, id_mol ! atom type of each solvent site and solute site for instance id_solv(1)=1, id_solv(2)=2 and id_solv(3)=2 for OH2
     REAL(dp) :: Rc ! Taille de la charge (Ang)
-    REAL(dp) :: TEMP  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
+    REAL(dp) :: temp  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
     REAL(dp) :: kBT , beta
     
     ! Grille pour FFT
@@ -34,12 +40,13 @@ MODULE system
     REAL(dp), POINTER :: DeltaV => spaceGrid%dv
     REAL(dp), POINTER :: deltax => spaceGrid%dl(1), deltay => spaceGrid%dl(2), deltaz => spaceGrid%dl(3)
     INTEGER(i2b), POINTER :: nfft1 => spaceGrid%n_nodes(1), nfft2 => spaceGrid%n_nodes(2), nfft3 => spaceGrid%n_nodes(3) ! deprecated. Should be removed at some point
-    REAL(dp) :: n_0, rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
+
+    REAL(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
+    REAL(dp), ALLOCATABLE, DIMENSION (:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: c_s, c_delta, c_d !> Direct correlation functions of various rotational invariants
     REAL(dp), ALLOCATABLE, DIMENSION(:) ::chi_L, chi_T
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: c_s_hs ! c(2)(k) of a hard sphere
-    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
+    REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s_hs ! c(2)(k) of a hard sphere
+    COMPLEX(dp),ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
     REAL(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
     INTEGER(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
     ! Electrostatics
@@ -97,9 +104,7 @@ MODULE system
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing
-    INTEGER(i2b), ALLOCATABLE, DIMENSION (:) :: atomic_nbr
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: V_coulomb ! nfft1 nfft2 nfft3 angGrid%n_angles
-    !Three body terms
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: lambda1_mol, lambda2_mol 
+
 
 END MODULE system
