@@ -3,40 +3,35 @@
 
 subroutine energy_ideal
 
-    use precision_kinds, only : i2b, dp
-    use cg, only : cg_vect, FF, dF
-    use system, only : nfft1, nfft2, nfft3, lx, ly, lz, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, &
-                        n_0_multispec
-    use quadrature, only : sym_order, angGrid, molRotGrid
-    use input, only : input_log, input_char
-    use constants, only : fourpi
+    USE precision_kinds, ONLY: i2b, dp
+    USE cg, ONLY: cg_vect, FF, dF
+    USE system, ONLY: nfft1, nfft2, nfft3, lx, ly, lz, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, &
+                        n_0_multispec, spaceGrid
+    USE quadrature, ONLY: sym_order, angGrid, molRotGrid
+    USE input, ONLY: input_log, input_char
+    USE constants, ONLY: fourpi
 
-    implicit none
-    real(dp):: Fideal, Fid_lin ! ideal free energy, linearized ideal free energy 
-    real (dp) :: Fid_lin_temp, dFid_lin_temp !dummy for temporary store linearized ideal free energy and the corresponding gradient
-    integer(i2b):: icg , i , j , k , o , p! dummy for loops
-    integer(i2b):: species ! dummy between 1 and nb_species
-    real(dp):: psi ! dummy for cg_vext(i)
-    real(dp):: rho, rhon ! local density
-    real(dp) :: deltaV !=lx*ly*lz/(nfft1*nfft2*nfft3)
-    real(dp):: logrho ! dummy for log(rho)
-    real(dp):: time0 , time1 ! timesteps
-    real(dp), dimension(nfft1,nfft2,nfft3) :: rho_n  !one-particle number density
+    IMPLICIT NONE
+    
+    REAL(dp):: Fideal, Fid_lin ! ideal free energy, linearized ideal free energy 
+    REAL(dp) :: Fid_lin_temp, dFid_lin_temp !dummy for temporary store linearized ideal free energy and the corresponding gradient
+    INTEGER(i2b):: icg , i , j , k , o , p, s! dummy for loops
+    INTEGER(i2b):: species ! dummy between 1 and nb_species
+    REAL(dp):: psi, tmp ! dummy for cg_vext(i)
+    REAL(dp):: rho, rhon ! local density
+    REAL(dp), POINTER :: deltaV => spaceGrid%dv
+    REAL(dp):: logrho ! dummy for log(rho)
+    REAL(dp):: time0 , time1 ! timesteps
+    REAL(dp), dimension(nfft1,nfft2,nfft3) :: rho_n  !one-particle number density
 
-    call cpu_time(time0)! init timer
+    CALL CPU_TIME (time0) ! init timer
 
     Fideal = 0.0_dp! init Fideal to zero and its gradient
-    print*, 'BETA' ,1._dp/kbt, rho_0_multispec
-
-    deltaV = Lx*Ly*Lz/real(nfft1*nfft2*nfft3,dp) ! elementary volume (needed often for integration)
 
     icg=0
     Fid_lin=0.0_dp
-    if (input_log('Linearize_entropy').and. trim(adjustl(input_char('if_Linearize_entropy'))) == '1' ) then
-        if (nb_species/=1 ) then
-            print*, 'the linearized ideal F is only implemented for 1 specie for the moment'
-            stop
-        end if
+    IF (input_log('Linearize_entropy').and. trim(adjustl(input_char('if_Linearize_entropy'))) == '1' ) then
+        IF (nb_species/=1 ) STOP 'the linearized ideal F is only implemented for 1 specie for the moment'
         do i=1,nfft1
             do j=1,nfft2
                 do k=1,nfft3
@@ -57,15 +52,16 @@ subroutine energy_ideal
                 end do
             end do
         end do
-    end if
+    END IF
+    Fid_lin = Fid_lin*kBT*n_0_multispec(1)*spaceGrid%dv ! convert to kJ/mol
 
-    !put linearized ideal free energy in kJ/mol
-    Fid_lin=Fid_lin*kBT*n_0_multispec(1)*deltaV
-    print*, Fid_lin
-    print*, minval(rho_n), maxval(rho_n)
+
+
     icg = 0
-    if (input_log('Linearize_entropy')  ) then
-        if (trim(adjustl(input_char('if_Linearize_entropy'))) == '1') then
+    IF (input_log('Linearize_entropy')  ) THEN
+    
+    
+        IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '1') then
             do species = 1 , nb_species
                 do i = 1 , nfft1
                     do j = 1 , nfft2
@@ -74,38 +70,25 @@ subroutine energy_ideal
                                 do p=1 , molRotGrid%n_angles
                                     icg = icg + 1
                                     psi = CG_vect ( icg )
-                                    rhon=rho_n(i,j,k)
+                                    rhon = rho_n(i,j,k)
                                     if (rhon<=1.0_dp) then
                                         dFid_lin_temp=0.0_dp
                                     else
-                                        dFid_lin_temp=-KbT*(Log(rhon)-rhon+1.0_dp)
+                                        dFid_lin_temp = -KbT*(Log(rhon)-rhon+1.0_dp)
                                     end if
-                                    if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
-                                        Fideal = Fideal + &
-                                            angGrid%weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species ) * mole_fraction&
-                                                                                ( species ) ! lim xlogx= 0 when x->0
-                                        dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
-                                    else
-                                        rho = psi ** 2
-                                        logrho = log ( rho )
-                                        Fideal = Fideal + &
-                                            angGrid%weight ( o ) * molRotGrid%weight (p) * rho_0_multispec(species)&
-                                            *mole_fraction(species)&
-                                            * ( rho * logrho - rho + 1.0_dp )
-                                        dF (icg) = dF ( icg ) &
-                                            + 2.0_dp * psi * angGrid%weight ( o ) * molRotGrid%weight(p) *&
-                                             DeltaV*rho_0_multispec(species)&
-                                            *( kBT * logrho + dFid_lin_temp )
-                                    end if
-                                end do ! molRotGrid%n_angles
-                            end do ! angGrid%n_angles
-                        end do ! nfft3
-                    end do ! nfft2
-                end do ! nfft1
-            end do ! nb_species
-        else if (trim(adjustl(input_char('if_Linearize_entropy'))) == '2') then
-            Fid_lin=0.0_dp
-            do species = 1 , nb_species
+                                    rho = psi ** 2
+                                    Fideal = Fideal + Fideal_local(o,p,s,rho)
+                                    dF(icg) =  dF(icg) + dFideal_local(o,p,s,psi,dFid_lin_temp)
+                                end do
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+
+        ELSE IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '2') then
+            Fid_lin = 0.0_dp
+            do s = 1 , nb_species
                 do i = 1 , nfft1
                     do j = 1 , nfft2
                         do k = 1 , nfft3        
@@ -115,78 +98,87 @@ subroutine energy_ideal
                                     psi = CG_vect ( icg )
                                     rho=psi**2
                                     logrho = log ( rho )
-                                    if (rho<=1.0_dp) then
-                                        dFid_lin_temp=0.0_dp
-                                        Fid_lin_temp=0.0_dp
-                                    else
+                                    IF ( rho > 0._dp ) THEN
                                         dFid_lin_temp=-KbT*(Logrho-rho+1.0_dp)
                                         Fid_lin_temp=-KbT*(rho*Logrho-rho+1.0_dp-0.5_dp*(rho-1.0_dp)**2)
-                                    end if
-                                    if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
-                                        Fideal = Fideal + &
-                                            angGrid%weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species ) &
-                                            * mole_fraction ( species ) ! lim xlogx= 0 when x->0
-                                        dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
-                                    else
-                                        Fideal = Fideal + &
-                                          angGrid%weight ( o ) * molRotGrid%weight (p) * rho_0_multispec ( species ) &
-                                          * mole_fraction ( species ) &
-                                            * ( rho * logrho - rho + 1.0_dp )
-                                        Fid_lin=Fid_lin+angGrid%weight(o)*molRotGrid%weight(p)*DeltaV * rho_0_multispec &
-                                        ( species )*Fid_lin_temp
-                                        dF(icg) = dF(icg) &
-                                           + 2.0_dp * psi * angGrid%weight ( o ) * molRotGrid%weight(p) * DeltaV * rho_0_multispec &
-                                           ( species )  *( kBT * logrho + dFid_lin_temp )
-                                    end if
-                                end do ! molRotGrid%n_angles
-                            end do ! angGrid%n_angles
-                        end do ! nfft3
-                    end do ! nfft2
-                end do ! nfft1
-            end do ! nb_species
-        else
-            print*, 'error in energy_ideal, you want to linearize the entropy but you did not choose HOW:1 for n 2 for rho'
-            stop
-        end if
-    else
-        do species = 1 , nb_species
+                                    END IF
+                                    Fideal = Fideal + Fideal_local (o,p,s,rho)
+                                    IF ( psi /= 0.0_dp ) THEN
+                                        Fid_lin = Fid_lin + prefactor(o,p,s) *DeltaV *Fid_lin_temp
+                                        dF(icg) = dF(icg) + dFideal_local (o,p,s,psi,dFid_lin_temp)
+                                    END IF
+                                end do
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+            
+        ELSE
+            STOP 'error in energy_ideal, you want to linearize the entropy but you did not choose HOW:1 for n 2 for rho'
+        END IF
+    
+    ELSE
+        do s = 1 , nb_species
             do i = 1 , nfft1
                 do j = 1 , nfft2
                     do k = 1 , nfft3
                         do o = 1 , angGrid%n_angles
-                            do p=1 , molRotGrid%n_angles
+                            do p = 1 , molRotGrid%n_angles
                                 icg = icg + 1
-                                psi = CG_vect ( icg )
-                                if ( psi <= 0.0_dp ) then ! <= because sometimes comes -0.0_dp
-                                    Fideal = Fideal + &
-                                        angGrid%weight ( o ) *molRotGrid%weight(p)* rho_0_multispec ( species )&
-                                         * mole_fraction ( species ) ! lim xlogx= 0 when x->0
-                                    dF (icg) = dF ( icg ) + 0.0_dp ! lim x logx = 0.0
-                                else
-                                    rho = psi ** 2
-                                    logrho = log ( rho )
-                                    Fideal = Fideal + &
-                                        angGrid%weight ( o ) * molRotGrid%weight (p) * rho_0_multispec ( species ) &
-                                        * mole_fraction ( species ) &
-                                        * ( rho * logrho - rho + 1.0_dp )
-                                    dF(icg) = dF(icg) &
-                                        + 2.0_dp * psi * angGrid%weight ( o ) * &
-                                        molRotGrid%weight(p) * DeltaV * rho_0_multispec ( species )&
-                                        * kBT * logrho
-                                end if
-                            end do ! molRotGrid%n_angles
-                        end do ! angGrid%n_angles
-                    end do ! nfft3
-                end do ! nfft2
-            end do ! nfft1
-        end do ! nb_species
-    end if
+                                psi = CG_vect (icg)
+                                rho = psi**2
+                                Fideal = Fideal + Fideal_local (o,p,s,rho)
+                                dF (icg) = dF (icg) + dFideal_local (o,p,s,psi,0._dp)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        end do
+    END IF
+    Fideal = Fideal * kBT * spaceGrid%dv ! integration factor
 
-    Fideal = Fideal * kBT * DeltaV ! integration factor
-    FF = FF + Fideal +Fid_lin
+    FF = FF + Fideal + Fid_lin
     
-    print*, 'Fid_lin =' , Fid_lin
-    call cpu_time ( time1 )
-    write (*,*) 'ideal       = ' , Fideal , 'computed in (sec)' , time1 - time0
+    CALL CPU_TIME (time1)
+    WRITE(*,*) 'Fideal      = ' , Fideal , 'computed in (sec)' , time1 - time0
 
-end subroutine energy_ideal
+
+    CONTAINS
+
+
+    
+    PURE FUNCTION dFideal_local (o,p,s,psi,toadd)
+        INTEGER(i2b), INTENT(IN) :: o,p,s
+        REAL(dp), INTENT(IN) :: psi, toadd
+        REAL(dp) :: dFideal_local
+        IF (psi /= 0._dp) THEN
+            dFideal_local = 2.0_dp * psi * prefactor(o,p,s) * spaceGrid%dv * ( kBT*LOG(psi**2) + toadd )
+        ELSE
+            dFideal_local = 0._dp
+        END IF
+    END FUNCTION dFideal_local
+
+    
+    
+    PURE FUNCTION Fideal_local (o,p,s,rho)
+        INTEGER(i2b), INTENT(IN) :: o,p,s
+        REAL(dp), INTENT(IN) :: rho
+        REAL(dp) :: Fideal_local
+        IF (rho /= 0._dp) THEN
+            Fideal_local = prefactor(o,p,s) * mole_fraction(s) * (rho*LOG(rho)-rho+1.0_dp)
+        ELSE IF ( rho == 0._dp ) THEN
+            Fideal_local = prefactor(o,p,s) * mole_fraction(s)
+        END IF
+    END FUNCTION Fideal_local
+
+
+    PURE FUNCTION prefactor (o,p,s)
+        INTEGER(i2b), INTENT(IN) :: o,p,s
+        REAL(dp) :: prefactor
+        prefactor = angGrid%weight(o) * molRotGrid%weight(p) * rho_0_multispec(s)
+    END FUNCTION
+
+
+END SUBROUTINE energy_ideal
