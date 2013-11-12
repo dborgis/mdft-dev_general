@@ -5,25 +5,22 @@ subroutine energy_ideal
 
     USE precision_kinds, ONLY: i2b, dp
     USE cg, ONLY: cg_vect, FF, dF
-    USE system, ONLY: nfft1, nfft2, nfft3, lx, ly, lz, rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, &
-                        n_0_multispec, spaceGrid
+    USE system, ONLY: rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
     USE quadrature, ONLY: sym_order, angGrid, molRotGrid
     USE input, ONLY: input_log, input_char
     USE constants, ONLY: fourpi
 
     IMPLICIT NONE
     
-    REAL(dp):: Fideal, Fid_lin ! ideal free energy, linearized ideal free energy 
+    REAL(dp) :: Fideal, Fid_lin ! ideal free energy, linearized ideal free energy 
     REAL(dp) :: Fid_lin_temp, dFid_lin_temp !dummy for temporary store linearized ideal free energy and the corresponding gradient
-    INTEGER(i2b):: icg , i , j , k , o , p, s! dummy for loops
-    INTEGER(i2b):: species ! dummy between 1 and nb_species
-    REAL(dp):: psi, tmp ! dummy for cg_vext(i)
-    REAL(dp):: rho, rhon ! local density
-    REAL(dp), POINTER :: deltaV => spaceGrid%dv
-    REAL(dp):: logrho ! dummy for log(rho)
-    REAL(dp):: time0 , time1 ! timesteps
-    REAL(dp), dimension(nfft1,nfft2,nfft3) :: rho_n  !one-particle number density
-
+    INTEGER(i2b) :: icg , i , j , k , o , p, s! dummy for loops
+    REAL(dp) :: psi ! dummy for cg_vext(i)
+    REAL(dp) :: rho, rhon ! local density
+    REAL(dp) :: logrho ! dummy for log(rho)
+    REAL(dp) :: time0, time1
+    REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) :: rho_n  !one-particle number density
+    
     CALL CPU_TIME (time0) ! init timer
 
     Fideal = 0.0_dp! init Fideal to zero and its gradient
@@ -32,9 +29,9 @@ subroutine energy_ideal
     Fid_lin=0.0_dp
     IF (input_log('Linearize_entropy').and. trim(adjustl(input_char('if_Linearize_entropy'))) == '1' ) then
         IF (nb_species/=1 ) STOP 'the linearized ideal F is only implemented for 1 specie for the moment'
-        do i=1,nfft1
-            do j=1,nfft2
-                do k=1,nfft3
+        do i=1,spaceGrid%n_nodes(1)
+            do j=1,spaceGrid%n_nodes(2)
+                do k=1,spaceGrid%n_nodes(3)
                     rhon=0.0_dp
                     do o=1,angGrid%n_angles
                         do p=1,molRotGrid%n_angles
@@ -62,10 +59,10 @@ subroutine energy_ideal
     
     
         IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '1') then
-            do species = 1 , nb_species
-                do i = 1 , nfft1
-                    do j = 1 , nfft2
-                        do k = 1 , nfft3        
+            do s = 1 , nb_species
+                do i = 1 , spaceGrid%n_nodes(1)
+                    do j = 1 , spaceGrid%n_nodes(2)
+                        do k = 1 , spaceGrid%n_nodes(3)
                             do o = 1 , angGrid%n_angles    
                                 do p=1 , molRotGrid%n_angles
                                     icg = icg + 1
@@ -89,9 +86,9 @@ subroutine energy_ideal
         ELSE IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '2') then
             Fid_lin = 0.0_dp
             do s = 1 , nb_species
-                do i = 1 , nfft1
-                    do j = 1 , nfft2
-                        do k = 1 , nfft3        
+                do i = 1 , spaceGrid%n_nodes(1)
+                    do j = 1 , spaceGrid%n_nodes(2)
+                        do k = 1 , spaceGrid%n_nodes(3)     
                             do o = 1 , angGrid%n_angles    
                                 do p=1 , molRotGrid%n_angles
                                     icg = icg + 1
@@ -104,7 +101,7 @@ subroutine energy_ideal
                                     END IF
                                     Fideal = Fideal + Fideal_local (o,p,s,rho)
                                     IF ( psi /= 0.0_dp ) THEN
-                                        Fid_lin = Fid_lin + prefactor(o,p,s) *DeltaV *Fid_lin_temp
+                                        Fid_lin = Fid_lin + prefactor(o,p,s) * spaceGrid%dv *Fid_lin_temp
                                         dF(icg) = dF(icg) + dFideal_local (o,p,s,psi,dFid_lin_temp)
                                     END IF
                                 end do
@@ -120,9 +117,9 @@ subroutine energy_ideal
     
     ELSE
         do s = 1 , nb_species
-            do i = 1 , nfft1
-                do j = 1 , nfft2
-                    do k = 1 , nfft3
+            do i = 1 , spaceGrid%n_nodes(1)
+                do j = 1 , spaceGrid%n_nodes(2)
+                    do k = 1 , spaceGrid%n_nodes(3)
                         do o = 1 , angGrid%n_angles
                             do p = 1 , molRotGrid%n_angles
                                 icg = icg + 1
