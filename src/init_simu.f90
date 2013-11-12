@@ -7,6 +7,7 @@ subroutine init_simu
     USE fft, ONLY: prepare_fft => init
     implicit none
 
+    call print_header ! package name, day & time
     call put_input_in_character_array! more powerfull way of reading dft.in : put each line in an array
     call allocate_from_input ! TODO this should be removed and done only when needed ! read dft.in, solute.in and solvent.in
     call prepare_fft
