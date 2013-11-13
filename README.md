@@ -67,7 +67,14 @@ Empty and blank lines are not considered.
 * `read_chi` If true and if it will read the longitudinal and transverse suceptibily, note that in that case the tag of 'read_ck_or_chi' must be T.
 * `polarization` do you want to include any type of polarization: dipolar or multipolar?
 * `evaluate_polarization` if dipol will use cdelta and cd to compute the purely dipolar polarization contribution to free energy, if multi will use suceptiblities to compute the multipolar polarozation contribution to free energy
-
+*`temperature` Temperature in Kelvin, it is only involved in KbT terms
+*`ref_bulk_density` is the density of the reference fluid, in molecule/Angstrom^3, you should specify the value on the next line.
+*`Linearize_entropy`set T if you want to linearize the ideal term of the functunial, if is is the case you need to specify how you want to do that on the next keyword:`if_Linearize_entropy. Usually you do not want to Linearize the ideal term so put the tag F.
+*`if_Linearize_entropy` 1: you will linearize wrt n(r) which the density averaged on the angle, if 2: you will linearize wrt rho(r,omega) which is the space and angular dependent density
+*`bridge_hard_sphere` T if you want to use an Hard Sphere bridge correction, described in Levesque et al., The Journal of Chemical Physics 137, 034115 (2012), if it is the case, you need also to compute the total free energy for an hard sphere fluid, i.e, the tag on the next keyword `hard_sphere_fluid` MUST ALSO BE T.
+*`hard_sphere_fluid` T if you want to treat your solvent as an hard sphere fluid, if it is the case your should also choose an hard sphere as solvent in solvent.in, except if you want to add a Hard sphere correction to a molecular fluid, or if you want to use an HS bridge.(cf supra)
+*`hard_sphere_radius`The radius in Angstrom of the Hard sphere solvent is set in line right after this keyword
+*`lennard_jones_perturbation_to_hard_spheres`T if you want to add a lennard jones contribution to the hard sphere solvent, this contribution is computed using the WCA theory. If you are not using a HS solvent then the tag MUST BE F. 
 ### solute.in
 
 
