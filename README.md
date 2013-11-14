@@ -131,3 +131,4 @@ Here is the description of the differents parameters you must give to describe a
 * `Atom Name` String it is the name of the atom of the site,This is not used in the computation, so you could set whatever you want for a site as long as it is a string
 * `Surname` Surname of the site, this can be usefull if you have different type of the same atom to remember what kind it is, (e.g for the description of the type of H in a protein described by Amber forcefield) This is not used in the computation, so you could set whatever you want for a site as long as it is a string.
 ### solvent.in
+The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above
