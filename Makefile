@@ -117,10 +117,10 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
 	 $(FC) $(FCFLAGS) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  optim: $(OBJS)
-	 $(FC) $(FCFLAGS) $(LDFLAGS) $(OPTIM) -o $(EXE) $(OBJS)
+	 $(FC) $(FCFLAGS) $(OPTIM) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  debug: $(OBJS)
-	 $(FC) $(FCFLAGS) $(LDFLAGS) $(DEBUGFLAGS) -o $(EXE) $(OBJS)
+	 $(FC) $(FCFLAGS) $(DEBUGFLAGS) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  clean:
 	rm -vf gmon.out $(EXE) $(MODDIR)/* 
