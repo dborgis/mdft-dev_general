@@ -112,8 +112,22 @@ The parameters of this correction are stored in solute.in, please see the solute
 * `Rc` please ignore this parameter this should be fixed as fast as possible by Guillaume et Maximilien
 
 ### solute.in
-The program will automatically take the first solute in solute.in to be the solute you use in your computation
-
-
-
+The program will automatically take the first solute in solute.in to be the solute you use in your computation. The first line must be the name of the solute.
+1st line:name of the solute
+2nd line:Should be integer free-space integer: the 1st integer is the total number of solute site (e.g 3 in SPC/E water); the 2nd integer is the number of differents site type in the solute, two site have the same type if they have the same charge, the same Lennard-Jones parameter (sigma, epsilon), (e.g in SPC/E water there are 2 atoms type, the O atom and the H atoms).
+3rd line: it is a comment line to help you remember the differents parameters which describe your solute sites in the following lines.
+4th line and the following:are used to describe the solute sites you Must have as many of those lines as there are solute sites, i.e the total of thos lines should be equal to the 1st integer of the 2nd line.
+Here is the description of the differents parameters you must give to describe a solute site in the order they should appear from left to right:
+* `#` is the index of the site type, all of the sites of the same type must have the same integer to begin the line, thoses indexes should go from 1 to the second integer of the 2nd line
+* `charge` is a real, it is the charge of your solute site in elementary charge unit (e.g. 1.0 for sodium cation, -1.0 for chlorine anion)
+* `sigma`is a real, it is the value, in angstrom of the sigma parameter in the LJ potential describing the interaction of the site with a identical site according to the following expression of the LJ potential: V=4\epsilon((\sigma/r)^12-(\sigma/r)^6)
+* `epsilon`is a real, it is the value, in kJ/mol of the epsilon parameter in the LJ potential describing the interaction of the site with a identical site according to the following expression of the LJ potential: V=4\epsilon((\sigma/r)^12-(\sigma/r)^6)
+* `lambda1_mol` is a real without dimension it is a parameter describing the strength of the tetrahedrality added by the three body correction for H-bond interactions from the solute site to the water molecules in first shell
+* `lambda2_mol` is a real without dimension it is a parameter describing the strength of the tetrahedrality added by the three body correction for H-bond interactions  water molecules in first shell to water molecule in the second shell. See Zhao et al., J. Chem. Phys. 134, 194102 (2011).
+* `x` real. The coordinate on the X axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in. 
+* `y` real. The coordinate on the Y axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in. 
+* `z` real. The coordinate on the Z axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in. 
+* `Zatomic` integer, is the Atomic Number of the Atom of the site. This is not used in the computation, so you could set whatever you want for a site as long as it is an integer.
+* `Atom Name` String it is the name of the atom of the site,This is not used in the computation, so you could set whatever you want for a site as long as it is a string
+* `Surname` Surname of the site, this can be usefull if you have different type of the same atom to remember what kind it is, (e.g for the description of the type of H in a protein described by Amber forcefield) This is not used in the computation, so you could set whatever you want for a site as long as it is a string.
 ### solvent.in
