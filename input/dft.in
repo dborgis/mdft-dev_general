@@ -4,60 +4,46 @@
 Lx  = 40
 Ly  = 40
 Lz  = 40
-nfft1 = 32                             # nbr of grid points
-nfft2 = 32                                 # nbr of grid points
+nfft1 = 32
+nfft2 = 32
 nfft3 = 32
-                                  # nbr of grid points
-quadrature = L                          #Type of quadrature used to do integration on the omega angle , GL for Gauss-Legendre(default) , L for lebedev
+quadrature = L # GL or L
 
 # order of gauss legendre integration. 3 for water. 2*order^2 angles
 # order of Lebedev integration. theoritically 2/3 of angles of GL integration. routine is written for order = 6, 14 , 26 , 38 
 order_of_quadrature = 6
-nb_psi = 2                                 # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+nb_psi = 2     # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
 ############################
 # SOLVENT DEFINITION
 ############################
-nb_implicit_species = 1              # total number of implicit solvent species
-mole_fractions                       # mole fraction of each species#0.5
+nb_implicit_species = 1
+mole_fractions
 1.0
-read_ck_or_chi = T                          # cs cdelta and cd are read from input/cs.in input/cdelta.in input/cd.in
-ck_species = spc   # 'spc' for spc water as extracted from MD by Lionel Gendre and Daniel Borgis
-                   # 'spce' for SPCE as trituré par Guillaume qui va se débrouiller
-                   # 'stock' for stockmayer fluid as extracted from MD by Lionel Gendre and Daniel Borgis
-                   # 'perso' for you provide your files in input directory.
-
+read_ck_or_chi = T # cs cdelta and cd are read from input/cs.in input/cdelta.in input/cd.in
+ck_species = spc   # spc or spce or stock or perso
 read_chi = F
-
-
-polarization = T                     # use c_delta and c_d
-
+polarization = T    # use c_delta and c_d
 ref_bulk_density
 0.0332891
+temperature = 300 # K
+sym_order = 2  # n in Cn. 2 for H2O
+evaluate_polarization = dipol # multi or dipol
 
-temperature = 300                  # system temperature (Kelvin)
-sym_order = 2                        # order of the main symetry axis Cn
-evaluate_polarization = dipol        # Choose if you want to evaluate multipolar (tag = multi) or dipolar (tag = dipol) Polarization.
+############################
+# SOLVER
+############################
+minimizer = bfgs
+maximum_iteration_nbr = 50
+epsg =  0.00001  # default 0.0001
+pgtol = 0.00001  # default 0.00001
 
 ###########################
 #  IDEAL TERM
-#
 ###########################
 Linearize_entropy = F
-if_Linearize_entropy = 1             #if linearize, use bridge on n(r):1 or rho(r,Omega):2
-
-############################
-# HARD SPHERES
-############################
-bridge_hard_sphere = F               # use a hard sphere bridge function
-hard_sphere_fluid = F                # implicit solvent is composed of hard spheres F or T
-hard_sphere_radius                   # 0.5 for expl. If a negative value is found, MDFT will understand that it has to compute it from LJ param using WCA theory
-1.25
-hs_functional = CS                   # hard sphere functional. PY for Percus-Yevick, CS for Carnahan-Starling
-lennard_jones_perturbation_to_hard_spheres = F        # is there a lennard_jones perturbative contribution (WCA type) to hard spheres
-
-
+if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
 
 ############################
 # POTENTIALS
@@ -66,12 +52,44 @@ lennard_jones_perturbation_to_hard_spheres = F        # is there a lennard_jones
 #electrostatic_solver = poisson       # 'poisson' for poisson solver
 #                                     # 'point' for qq'/r
 #                                     # 'none' for no electrostatics
-
-poisson_solver = T                 #Warning you should never have 2 tags true for Poisson_solver and point_charge_electrostatic!!!
+poisson_solver = T   #Warning you should never have 2 tags true for Poisson_solver and point_charge_electrostatic!!!
 point_charge_electrostatic = F
+reuse_density = F
+
+############################
+# POST-PROCESSING
+############################
+translate_solute_to_center = T
+rdfmaxrange = 20.0
+nbinsrdf = 100
+
+############################
+# HARD SPHERES
+############################
+bridge_hard_sphere = F
+hard_sphere_fluid = F
+hard_sphere_radius
+1.25
+hs_functional = CS # PY or CS
+lennard_jones_perturbation_to_hard_spheres = F # WCA type
 
 
-reuse_density = F           # begins by minimizing F without charge, then turn charge on 5% by 5%
+############################
+# OTHER STUFF
+############################
+hydrophobicity = F
+treatment_of_hydro = C    #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
+threebody = T
+F3B_old = F
+F3B_new = T
+
+Rc = 1.0  # CAREFULL
+verbose = T
+
+
+
+
+
 
 # HARD SPHERICAL SOLUTE
 hard_sphere_solute = F              # if there is a hard sphere in the center of the box
@@ -105,33 +123,3 @@ hard_well_total_length = 2.0         # total length of the hard well (length or 
 purely_repulsive_solute = F          # if there is a 1/r12 repulsive point in the box
 radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^12) solute as defined by Dzubiella
 
-
-
-############################
-# SOLVER
-############################
-minimizer = bfgs                     # bfgs or cg or sd for steepest descent ! it seems 15 sept that cg leads to a strange 'minimum' in complex cases ... :(
-maximum_iteration_nbr = 100          # maximum number of iterations in the minimization procedure. 50 is a good starting point. Often if not converged after 30 then ... forget it.
-epsg = 0.00001                        # default 0.0001
-pgtol = 0.00001                      # default 0.00001
-
-
-############################
-# POST-PROCESSING
-############################
-translate_solute_to_center = T       # T if you want all solute sites to be translated by Lx/2, Ly/2, Lz/2, ie to center of the supercell if solute coordinates are 0, 0, 0
-rdfmaxrange = 20.0                   # the radial distribution function is calculated between 0 and rdfmaxrange (in angstroms)
-nbinsrdf = 80                        # the radial distribution function is calculated by histograms. nbinsrdf is the number of steps. good starting point 200xrdfmaxrange
-
-
-############################
-# OTHER STUFF
-############################
-hydrophobicity = F                   # take into account hydrophobicity term
-treatment_of_hydro = C               #C for Chandler VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
-threebody = T                        # tree body term in functional
-F3B_old = F
-F3B_new = T
-
-Rc = 1.0                              # Minimum distance at which the electrostatic contribution to the external potential is calculated. Under that ... divergences and other funny stuff come in. Used in Compute_vcoul_from_tabulated
-verbose = T
