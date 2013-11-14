@@ -1,0 +1,4 @@
+Neutral solute with large radius for purely repulsive potential to reproduice Dzubiella and Hansen, J Chem Phys 121 2004
+1    1
+#    charge     sigma     epsilon       x            y           z      Zatomic   Atom Name  Surname
+1     0.0        0.0        0.0     0.0 0.0    0.0          0.0         0.0      50        S           S0

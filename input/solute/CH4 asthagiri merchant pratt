@@ -1,0 +1,4 @@
+CH4, Asthagiri, Merchant and Pratt, J Chem Phys 128, 244512 (2008)
+1 1
+#    charge    sigma     epsilon lambda1_mol    lambda2_mol      x            y           z      Zatomic   Atom Name  Surname
+1      0.0     3.73       1.230       0.0           0.0          0.0          0.0         0.0        6         C         CH4

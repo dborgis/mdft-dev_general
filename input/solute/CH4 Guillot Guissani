@@ -1,0 +1,4 @@
+CH4, Guillot and Guissani, J. Chem. Phys. 99 (10), 8075 (1993)
+1 1
+#    charge    sigma     epsilon  lambda1     lambda2     x            y           z      Zatomic   Atom Name  Surname
+1      0.0     3.73000    1.22640  0.0     0.0    0.0          0.0         0.0        6         C         CH4
