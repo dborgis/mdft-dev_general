@@ -112,7 +112,7 @@ The parameters of this correction are stored in solute.in, please see the solute
 * `Rc` please ignore this parameter this should be fixed as fast as possible by Guillaume et Maximilien
 
 ### solute.in
-
+The program will automatically take the first solute in solute.in to be the solute you use in your computation
 
 
 
