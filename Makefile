@@ -114,7 +114,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
 # symbol '@' in front of a line makes it silent. Otherwise it is printed in terminal when called
 
  all: $(OBJS)
-	 $(FC) $(FCFLAGS) $(LDFLAGS) -o $(EXE) $(OBJS)
+	 $(FC) $(FCFLAGS) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  optim: $(OBJS)
 	 $(FC) $(FCFLAGS) $(LDFLAGS) $(OPTIM) -o $(EXE) $(OBJS)
