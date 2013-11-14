@@ -22,4 +22,5 @@ real(dp)   , parameter :: qfact         = qunit ** 2 * 1.0e-3_dp * Navo / ( four
 real(dp)   , parameter :: Boltz         = 1.3806488e-23_dp ! Boltzmann constant in Joule per Kelvin, [J].[K]^{-1}
 complex(dp), parameter :: i_complex     = ( 0.0_dp , 1.0_dp )
 real(dp)   , parameter :: infty         = huge ( 1.0_dp )
+real(dp)   , parameter :: zero = 0._dp, one = 1.0_dp, two = 2.0_dp, three = 3.0_dp, four = 4.0_dp, five = 5.0_dp
 end module constants
