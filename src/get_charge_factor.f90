@@ -3,7 +3,7 @@ subroutine get_charge_factor ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,R
 use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , x_solv  ,y_solv , z_solv , chg_solv , id_solv , &
  nb_solvent_sites, &
- Lx , Ly , Lz , deltax , deltay , deltaz, wigma
+ Lx , Ly , Lz , deltax , deltay , deltaz
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
 use quadrature, only: angGrid, molRotGrid
 implicit none
@@ -14,7 +14,6 @@ integer (kind = i2b ) :: im , jm , km , ip , jp , kp
 real (kind= dp ) , allocatable , dimension ( : , : , : ) :: xmod , ymod , zmod
  character (len=1) , allocatable , dimension ( : ) :: coordinate
 integer ( i2b) , allocatable , dimension ( : ) :: nombre_image
-!allocate ( wigma ( nfft1, nfft2, nfft3 , angGrid%n_angles , molRotGrid%n_angles ) ) 
 allocate ( nombre_image ( nb_solvent_sites ) )
 allocate ( coordinate ( nb_solvent_sites ) )
 !check how many coordinates it is neccessary to store if there is one site of the solvent in ( 0 , 0 , 0 ) it will not move by rotation

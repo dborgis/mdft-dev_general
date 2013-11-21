@@ -51,7 +51,6 @@ MODULE system
     REAL(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
     INTEGER(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
     ! Electrostatics
-    REAL ( dp ) , ALLOCATABLE , DIMENSION (:,:,:,:,:) :: wigma ! function of n1 , n2 , n3 , omega , psi
     ! charge factor & molecule polarization factor
     COMPLEX ( dp ) , ALLOCATABLE , DIMENSION (:,:,:,:,:,:) :: sigma_k
     REAL(dp), ALLOCATABLE , DIMENSION (:,:,:) :: rho_c ! charge density at each grid node
