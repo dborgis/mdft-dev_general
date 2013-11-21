@@ -2,8 +2,8 @@
 ! needed data
 subroutine prepare_minimizer
     
-    USE precision_kinds, ONLY: i2b, dp
-    USE input, ONLY: input_line, input_int, input_dp,input_char
+    USE precision_kinds, ONLY: dp
+    USE input, ONLY: input_int, input_dp,input_char
     USE cg, ONLY: nbd , iwa , ll , uu , wa , dF , cg_vect , epsmch , factr , epsg , ncg , mcg , iprint , minimizer_type ,&
                     itermax , minimizer_iter , pgtol, FF
     USE system , ONLY: spaceGrid, soluteSite
