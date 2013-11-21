@@ -1,4 +1,4 @@
-!> This subroutine should minimize FF by finding the ground state of CGVECT array
+!> This SUBROUTINE should minimize FF by finding the ground state of CGVECT array
 ! two methods for now: LBFGS and Conjugate Gradient
 ! LBFGS and CG+ seem equivalent in terms of velocity but
 ! LBFGS recquires much more memory than CG+ (around 8 times)
@@ -10,7 +10,7 @@ SUBROUTINE find_equilibrium_density
     USE cg
     use bfgs, ONLY: startBFGS => setulb
     
-    implicit none
+    IMPLICIT NONE
     
     integer(i2b):: iter ! step number ...
     integer(i2b):: i , j ! dummy
@@ -51,11 +51,11 @@ SUBROUTINE find_equilibrium_density
             ! L-BFGS knows when it is converged but I prefer to control it here by myself ...
             if ( abs ( FF - energy_before ) <= epsg ) goto 999
             goto 111 ! minimization continues ...
-        else if ( task (1:5) == 'NEW_X' ) then
+        ELSE IF ( task (1:5) == 'NEW_X' ) then
             goto 111
-        else
+        ELSE
             if ( iprint <= -1 .and. task (1:4) /= 'STOP' ) write (6,*) task
-        end if
+        END IF
         ! loops to find the minima is ended for one reason or the other
         999 continue
         CALL finalizeMinimizer
@@ -65,20 +65,20 @@ SUBROUTINE find_equilibrium_density
         ! test if minimizer is cg+
         !if ( minimizer_type ( 1 : 2 ) == 'cg' ) then
         !  call driver ( ncg , cg_vect , FF , dF , epsg )
-        !end if
+        !END IF
         !! if minimizer is steepest descent
         !if ( minimizer_type ( 1 : 2 ) == 'sd' ) then
         !  call steepest_descent_main(ncg,epsg,itermax,cg_vect)
-        !end if 
+        !END IF 
 END SUBROUTINE find_equilibrium_density
 
 
-subroutine interface_compute_energy_and_gradients ( n , x , f , g , stopouencore )
+SUBROUTINE interface_compute_energy_and_gradients ( n , x , f , g , stopouencore )
 
     use precision_kinds , only : dp , i2b
     USE cg, ONLY: ncg , cg_vect , FF , dF , minimizer_iter , itermax
 
-    implicit none
+    IMPLICIT NONE
     integer(i2b):: n
     real(dp), dimension ( ncg ) , intent ( inout ) :: x
     real(dp), intent ( inout ) :: f
@@ -93,8 +93,8 @@ subroutine interface_compute_energy_and_gradients ( n , x , f , g , stopouencore
     f = FF
     g = dF
     stopouencore = 'ENCORE'
-    else if ( minimizer_iter > itermax ) then
+    ELSE IF ( minimizer_iter > itermax ) then
     stopouencore = 'STOP'
-    end if
+    END IF
     
-end subroutine interface_compute_energy_and_gradients
+END SUBROUTINE interface_compute_energy_and_gradients

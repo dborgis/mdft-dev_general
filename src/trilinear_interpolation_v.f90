@@ -6,10 +6,10 @@
 ! 2/ on détermine les huit points de la grille discrete qui entourent notre point
 ! 3/ on en déduit l'interpolation trilineaire. La forme très simple utilisée pour le calcul est due au travail dans l'espace des indices
 ! ainsi on a toujours un pas entre les indices discrets = 1.
-subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
+SUBROUTINE trilinear_interpolation_v(x, y, z, V_interpolated)
  use precision_kinds , only : dp , i2b
  use system, only : V_coulomb, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, deltay, deltaz
- implicit none
+ IMPLICIT NONE
 ! real(dp), dimension (nfft1, nfft2, nfft3), intent(in) :: V_grid ! potentiel connu sur une grille discrete
  real(dp), intent(in) :: x,y,z ! coordonnee cartesienne du point dont on cherche V par interpolation trilineaire
  real(dp), intent(out) :: V_interpolated ! potentiel interpolé au point qui nous interesse de coordonnees cartesiennes x y z
@@ -43,36 +43,36 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
  if (j==0) then
   j=nfft1
   jp1=1
- else if (j>0 .and. j<nfft1) then
+ ELSE IF (j>0 .and. j<nfft1) then
   jp1 = j+1
- else if (j==nfft1) then
+ ELSE IF (j==nfft1) then
   jp1 = 1
- else if (j>nfft1) then
+ ELSE IF (j>nfft1) then
   j=j-nfft1
   jp1 = j+1
- end if
+ END IF
  if (k==0) then
   k=nfft2
   kp1=1
- else if (k>0 .and. k<nfft2) then
+ ELSE IF (k>0 .and. k<nfft2) then
   kp1 = k+1
- else if (k==nfft2) then
+ ELSE IF (k==nfft2) then
   kp1 = 1
- else if (k>nfft2) then
+ ELSE IF (k>nfft2) then
   k=k-nfft2
   kp1 = k+1
- end if
+ END IF
  if (l==0) then
   l=nfft3
   lp1=1
- else if (l>0 .and. l<nfft3) then
+ ELSE IF (l>0 .and. l<nfft3) then
   lp1 = l+1
- else if (l==nfft3) then
+ ELSE IF (l==nfft3) then
   lp1 = 1
- else if (l>nfft3) then
+ ELSE IF (l>nfft3) then
   l=l-nfft3
   lp1 = l+1
- end if
+ END IF
  ! Vi potentiel en chacun des huits points qui entourent notre point de coordonnees x y z
  V1 = V_coulomb(j,k,l)
  V2 = V_coulomb(jp1,k,l)
@@ -84,4 +84,4 @@ subroutine trilinear_interpolation_v(x, y, z, V_interpolated)
  V8 = V_coulomb(jp1,kp1,lp1)
  
  V_interpolated = omt*omu*omv*V1 + t*omu*omv*V2 + omt*u*omv*V3 + omt*omu*v*V4 + t*u*omv*V5 + omt*u*v*V6 + t*omu*v*V7 + t*u*v*V8
-end subroutine trilinear_interpolation_v
+END SUBROUTINE trilinear_interpolation_v

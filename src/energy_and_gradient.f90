@@ -1,6 +1,6 @@
-! In this subroutine one calls the different parts of the total energy
+! In this SUBROUTINE one calls the different parts of the total energy
 ! first is computed the radial_part, then ... blabla.
-! this subroutine is the one called by the minimization stuff
+! this SUBROUTINE is the one called by the minimization stuff
 ! for computing the total energy and associated gradient
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF is the gradient of FF with respect to all coordinates. Remember it is of the kind dF ( number of variables over density (ie angles etc))
@@ -39,11 +39,11 @@ SUBROUTINE energy_and_gradient
     ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
     IF (input_log('bridge_hard_sphere')) CALL energy_cs_hard_sphere ! better name should be given
 
-    ! Dipolar polarization. What user wants (use it or not) is checked in subroutine for clearer code.
+    ! Dipolar polarization. What user wants (use it or not) is checked in SUBROUTINE for clearer code.
     CALL energy_polarization
     CALL energy_polarization_myway
 
-    ! Threebody term that is needed to empiricaly force H-bonding in water. What user wants (use it or not) is checked in subroutine for clearer code
+    ! Threebody term that is needed to empiricaly force H-bonding in water. What user wants (use it or not) is checked in SUBROUTINE for clearer code
     CALL energy_threebody
     CALL energy_threebody_faster
 
@@ -62,4 +62,4 @@ SUBROUTINE energy_and_gradient
         FF = zero ; dF = zero ! functional and gradient
     END SUBROUTINE init_functional_and_gradient_to_zero
     
-end subroutine energy_and_gradient
+END SUBROUTINE energy_and_gradient

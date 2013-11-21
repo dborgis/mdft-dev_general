@@ -1,4 +1,4 @@
-subroutine energy_polarization
+SUBROUTINE energy_polarization
 use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, deltax,deltay,deltaz
@@ -7,7 +7,7 @@ USE cg, ONLY: cg_vect , FF , dF
 use constants , only : twopi
 use fft , only : fftw3
 use input , only : input_log, input_char, verbose
-implicit none
+IMPLICIT NONE
 integer(i2b):: icg , i , j , k , l , m , n , m1 , m2 , m3 , o , p!> Dummy
 integer(i2b):: nf1 , nf2 , nf3 ! dummy nfft1/2 , nfft2/2 , nfft3/2
 integer(i2b):: k_index
@@ -80,15 +80,15 @@ do i = 1 , nfft1
           pyt = pyt + weight_Omy ( o ) * molRotGrid%weight(p) * rho
           pzt = pzt + weight_Omz ( o ) * molRotGrid%weight(p) * rho
           r=sqrt((m1*deltax)**2+(m2*deltay)**2+(m3*deltaz)**2)
-        end do
-      end do
+        END DO
+      END DO
       Px ( i , j , k ) = pxt
       Py ( i , j , k ) = pyt
       Pz ( i , j , k ) = pzt
       polascal(i,j,k,1)=polascal(i,j,k,1)+pxt*m1*deltax/r+pyt*m2*deltay/r+pzt*m3*deltaz/r
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 
 IF (verbose) THEN
     BLOCK
@@ -96,7 +96,7 @@ IF (verbose) THEN
         open(11,file='output/polatotxmax')
             do i=1,nfft1
                 write(11,*) i*deltax, 0.4894_dp*Px(i,nfft2/2+1,nfft3/2+1)
-            end do
+            END DO
         close(11)
         !Compute Radial Polarization
         filename='output/radial_polarization_dipolar'
@@ -167,17 +167,17 @@ do l = 1 , nf1 + 1
       ! pay attention to first moment value in order not to divise by zero
       if ( k2 /= 0.0_dp) then
         k_dot_P = ( kx * pxt_k + ky * pyt_k + kz * pzt_k ) / k2
-      else
+      ELSE
         k_dot_P = cmplx ( tiny ( 1.0_dp ) , tiny ( 1.0_dp ) , dp )
-      end if
+      END IF
       c_deltat = c_delta ( k_index )
       c_dt = c_d ( k_index )
       Ekx ( l , m , n ) = c_deltat * pxt_k + c_dt * ( 3.0_dp * k_dot_P * kx - pxt_k )
       Eky ( l , m , n ) = c_deltat * pyt_k + c_dt * ( 3.0_dp * k_dot_P * ky - pyt_k )
       Ekz ( l , m , n ) = c_deltat * pzt_k + c_dt * ( 3.0_dp * k_dot_P * kz - pzt_k )
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 ! deallocate useless Pkx , Pky and Pkz
 deallocate ( Pkx )
 deallocate ( Pky )
@@ -215,11 +215,11 @@ do i = 1 , nfft1
           Vint = - kBT * rho_0 * ( Omx ( o ) * Ex ( i ,  j , k ) + Omy ( o ) * Ey ( i , j , k ) + Omz ( o ) * Ez ( i , j , k ) )
           Fint = Fint + (rho - 1.0_dp) * angGrid%weight(o) * molRotGrid%weight(p) * Vint
           dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * molRotGrid%weight(p) * fact * Vint
-        end do  
-      end do
-    end do
-  end do
-end do
+        END DO  
+      END DO
+    END DO
+  END DO
+END DO
 Fint = Fint * 0.5_dp * deltav * rho_0
 FF = FF + Fint
 ! deallocate useless arrays
@@ -230,4 +230,4 @@ deallocate ( Ez )
 call cpu_time ( time1 )
 ! inform user
 write (*,*) 'Fexc polar  = ' , Fint , 'computed in (sec)' , time1 - time0
-end subroutine energy_polarization
+END SUBROUTINE energy_polarization

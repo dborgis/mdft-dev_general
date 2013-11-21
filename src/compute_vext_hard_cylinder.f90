@@ -1,12 +1,12 @@
 ! compute the external potential as created by a hard cylinder solute
 ! hard cylinder is along axe z=0, x=Lx/2, y=Ly/2
-subroutine compute_Vext_hard_cylinder
+SUBROUTINE compute_Vext_hard_cylinder
 use precision_kinds , only : i2b , dp
 use input , only : input_line, input_dp
 use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , nb_solute_sites , Lx , Ly , radius , nb_species
 use external_potential , only : Vext_total
 use quadrature, only: angGrid, molRotGrid
-implicit none
+IMPLICIT NONE
 integer(i2b):: i , j , n ! dummy
 real(dp):: x_nm2 , y_nm2 , r_nm2 ! distance**2 between solute and grid point
 real(dp):: hard_cylinder_radius ! radius of the hard cylinder solute
@@ -20,7 +20,7 @@ deltay = Ly / real ( nfft2 , dp )
 if ( .not. allocated ( Vext_total ) ) then
   allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ) )
   Vext_total = 0.0_dp
-end if
+END IF
 ! tell user
 write(*,*)'>>> Compute HS Vext Daniel for cylinder in z dir in hs fluid'
 ! look for tag 'hard_cylinder_radius' in dft.in
@@ -39,12 +39,12 @@ do n = 1 , nb_solute_sites
         x_nm2 = ( real(i-1,dp) * deltax - x_mol (n) )**2
         ! relative distances between solute site and solvent site
         r_nm2 = x_nm2 + y_nm2
-        ! if we are inside , vext is huge, else vext is unchanged
+        ! if we are inside , vext is huge, ELSE vext is unchanged
         if ( r_nm2 <= sum_rad2 ) then
           Vext_total ( i , j , : , : , : , species ) = huge ( 1.0_dp )
-        end if
-      end do
-    end do
-  end do
-end do
-end subroutine compute_Vext_hard_cylinder
+        END IF
+      END DO
+    END DO
+  END DO
+END DO
+END SUBROUTINE compute_Vext_hard_cylinder

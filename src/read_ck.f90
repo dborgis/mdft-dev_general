@@ -1,12 +1,12 @@
-! This subroutines reads files containing the direct correlation functions of the first three rotational invariants
+! This SUBROUTINEs reads files containing the direct correlation functions of the first three rotational invariants
 ! in k-space. This files are input/cs.in input/cdelta.in and input/cd.in
-subroutine read_ck
+SUBROUTINE read_ck
   use precision_kinds , only: i2b,dp
   use system
   use constants
   use quadrature
   use input , only : input_line , input_char, input_log, n_linesInFile
-  implicit none
+  IMPLICIT NONE
   integer(i2b) :: nk, i, j
   character(len=5) :: ck_species
   real(dp) :: norm_k
@@ -20,15 +20,15 @@ subroutine read_ck
   ! read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
   if ( ck_species == 'spc  ' ) then
     open(11,file='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in')
-  else if ( ck_species == 'stock' ) then
+  ELSE IF ( ck_species == 'stock' ) then
     open(11,file='input/direct_correlation_functions/stockmayer/cs.in')
-  else if ( ck_species == 'perso' ) then
+  ELSE IF ( ck_species == 'perso' ) then
     open(11,file='input/cs.in')
-  else if ( ck_species == 'spce' ) then
+  ELSE IF ( ck_species == 'spce' ) then
     open(11,file='input/direct_correlation_functions/water/SPCE/cs.in')
-  else
+  ELSE
     stop 'in read_ck.f90 ck_species should be spc or sto or per'
-  end if
+  END IF
   nb_k=0
   do while(.true.)
     read(11,*,iostat=ios)
@@ -36,24 +36,24 @@ subroutine read_ck
       write(*,*)'Error in compute_ck_dipolar.f90'
       write(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
       stop
-    else if (ios<0) then
+    ELSE IF (ios<0) then
       ! end of file reached
       exit
-    else
+    ELSE
       nb_k=nb_k+1
-    end if
-  end do
+    END IF
+  END DO
   close(11)
   ! read the distance between two k points in input/cs.in  (which is the same as in input/cd.in and input/cdelta.in
   if ( ck_species == 'spc  ' ) then
     open(11,file='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in')
-  else if ( ck_species == 'stock' ) then
+  ELSE IF ( ck_species == 'stock' ) then
     open(11,file='input/direct_correlation_functions/stockmayer/cs.in')
-  else if ( ck_species == 'perso' ) then
+  ELSE IF ( ck_species == 'perso' ) then
     open(11,file='input/cs.in')
-  else if ( ck_species == 'spce' ) then
+  ELSE IF ( ck_species == 'spce' ) then
     open(11,file='input/direct_correlation_functions/water/SPCE/cs.in')
-  end if
+  END IF
   read(11,*)value1, norm_k
   read(11,*)value2, norm_k
   close(11)
@@ -63,19 +63,19 @@ subroutine read_ck
     open(11,file='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in')
     open(12,file='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in')
     open(13,file='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in')
-  else if ( ck_species == 'stock' ) then
+  ELSE IF ( ck_species == 'stock' ) then
     open(11,file='input/direct_correlation_functions/stockmayer/cs.in')
     open(12,file='input/direct_correlation_functions/stockmayer/cdelta.in')
     open(13,file='input/direct_correlation_functions/stockmayer/cd.in')
-  else if ( ck_species == 'perso' ) then
+  ELSE IF ( ck_species == 'perso' ) then
     open(11,file='input/cs.in')
     open(12,file='input/cdelta.in')
     open(13,file='input/cd.in')
-  else if ( ck_species == 'spce' ) then
+  ELSE IF ( ck_species == 'spce' ) then
     open(11,file='input/direct_correlation_functions/water/SPCE/cs.in')
     open(12,file='input/direct_correlation_functions/water/SPCE/cdelta.in')
     open(13,file='input/direct_correlation_functions/water/SPCE/cd.in')
-  end if
+  END IF
   ! Now that we know the total number of k points, allocate arrays accordingly
   allocate(c_s(nb_k))
   allocate(c_delta(nb_k))
@@ -86,25 +86,25 @@ subroutine read_ck
       write(*,*)'Error in compute_ck_dipolar.f90'
       write(*,*)'something went wrong during reading c_s. stop'
       stop
-    end if
+    END IF
     read(12,*,iostat=ios) value1, c_delta(nk) !110
     if (ios>0) then
       write(*,*)'Error in compute_ck_dipolar.f90'
       write(*,*)'something went wrong during reading c_delta. stop'
       stop
-    else if (ios<0) then     ! end of file reached
+    ELSE IF (ios<0) then     ! end of file reached
       c_delta(nk)=c_delta(nk-1)*0.5_dp ! TODO MAGIC NUMBER IN ORDER TO PUSH IT TO DECREASE TOWARD ZERO
-    end if
+    END IF
     read(13,*,iostat=ios) value1, c_d(nk) !211
     if (ios>0) then
       write(*,*)'Error in compute_ck_dipolar.f90'
       write(*,*)'something went wrong during reading c_d. stop'
       stop
-    else if (ios<0) then     ! end of file reached
+    ELSE IF (ios<0) then     ! end of file reached
       c_d(nk)=c_d(nk-1)*0.5_dp ! TODO MAGIC NUMBER IN ORDER TO PUSH IT TO DECREASE TOWARD ZERO
-    end if
+    END IF
   
-  end do
+  END DO
   
   ! close files
   close(11)
@@ -126,12 +126,12 @@ allocate(chi_t(nb_k))
 do nk=1,nb_k
   read(14,*,iostat=ios) norm_k, chi_L(nk) 
   read(15,*,iostat=ios) norm_k, chi_t(nk) 
-end do
-end if
+END DO
+END IF
 ! close files
 close(11)
 close(12)
 close(13)
 close(14)
 close(15)
-end subroutine read_ck
+END SUBROUTINE read_ck

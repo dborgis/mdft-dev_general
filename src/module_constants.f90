@@ -8,7 +8,7 @@
 ! 20111216 08h36 Maximilien Levesque         addition of infty = huge(1.0_dp)
 module constants ! fondamental_constants
 use precision_kinds , only : dp
-implicit none
+IMPLICIT NONE
 real(dp)   , parameter :: ln2           = log ( 2.0_dp )
 real(dp)   , parameter :: pi            = acos ( -1.0_dp )
 real(dp)   , parameter :: twopi         = 2.0_dp * pi

@@ -1,4 +1,4 @@
-! this subroutine compute the external part of the free energy functional
+! this SUBROUTINE compute the external part of the free energy functional
 SUBROUTINE energy_external
 
     USE precision_kinds, ONLY: dp , i2b

@@ -1,6 +1,6 @@
 !> read solute atomic positions, charge, and lennard jones values in solute.in
 !! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
-subroutine read_solute
+SUBROUTINE read_solute
 
 use precision_kinds , only : i2b,dp
 use system , only : nb_solute_sites , x_mol , y_mol , z_mol , chg_mol , sig_mol , eps_mol , atomic_nbr , id_mol , Lx , Ly , Lz&
@@ -8,7 +8,7 @@ use system , only : nb_solute_sites , x_mol , y_mol , z_mol , chg_mol , sig_mol 
 use input , only : input_line
 use periodic_table , only : init_periodic_table , ptable
 
-implicit none
+IMPLICIT NONE
 
 integer(i2b):: n, i
 integer(i2b):: stat ! status du fichier ouvert

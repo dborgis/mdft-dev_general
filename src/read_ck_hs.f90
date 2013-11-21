@@ -1,12 +1,12 @@
-! This subroutines reads files containing the direct correlation functions of the first three rotational invariants
+! This SUBROUTINEs reads files containing the direct correlation functions of the first three rotational invariants
 ! in k-space. This files are input/cs.in input/cdelta.in and input/cd.in
-subroutine read_ck_hs
+SUBROUTINE read_ck_hs
 !TODO
 use precision_kinds, only: i2b , dp
 use system
 use constants
 use quadrature
-implicit none
+IMPLICIT NONE
 integer(i2b) :: nk
 real(dp) :: norm_k
 integer(i2b) :: ios ! iostat of the read statement: 
@@ -25,13 +25,13 @@ do while(.true.)
     write(*,*)'Error in compute_ck_dipolar.f90'
     write(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
     stop
-  else if (ios<0) then
+  ELSE IF (ios<0) then
     ! end of file reached
     exit
-  else
+  ELSE
     nb_k=nb_k+1
-  end if
-end do
+  END IF
+END DO
 close(11)
 write(*,*)'nb_k = ',nb_k
 !> read the distance between two k points in input/cs.in  (which is the same as in input/cd.in and input/cdelta.in
@@ -51,8 +51,8 @@ do nk=1,nb_k
     write(*,*)'Error in read_ck_hs.f90'
     write(*,*)'something went wrong during reading c_s_hs. stop'
     stop
-  end if
-end do
+  END IF
+END DO
 ! close files
 close(11)
-end subroutine read_ck_hs
+END SUBROUTINE read_ck_hs

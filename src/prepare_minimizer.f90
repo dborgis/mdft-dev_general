@@ -1,4 +1,4 @@
-! this subroutine gets the informations in input file and then allocate, prepare, compute needed data
+! this SUBROUTINE gets the informations in input file and then allocate, prepare, compute needed data
 
 SUBROUTINE prepare_minimizer
     

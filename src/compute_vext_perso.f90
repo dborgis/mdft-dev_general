@@ -1,10 +1,10 @@
 ! this is the routine where you may want to build a personnal vext, something that is not implemented automaticaly
-subroutine compute_vext_perso
+SUBROUTINE compute_vext_perso
 use precision_kinds , only : i2b , dp
 use input , only : input_line,input_dp
 use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species
 use external_potential , only : Vext_total
-implicit none
+IMPLICIT NONE
 integer(i2b):: i , j , k , n !> @var dummy
 real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
 real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
@@ -26,7 +26,7 @@ deltaz = Lz / real ( nfft3 , dp )
 if ( .not. allocated ( radius ) ) then
   write (*,*) 'radius is not allocated. should be. critial stop in compute_vext_perso.f90'
   stop
-end if
+END IF
 ! compute the sum of solute and solvent radius
 do species = 1 , nb_species
 radius_sum_sq = ( solute_radius + radius ( species ) ) ** 2
@@ -46,10 +46,10 @@ do n = 1 , nb_solute_sites
           ! we're inside the hard potential. vext is very high
           Vext_total ( i , j , k , : , : , species ) = huge ( 1.0_dp )
           ! if not, vext is unchanged
-        end if
-      end do
-    end do
-  end do
-end do ! solutes sites
-end do ! species
-end subroutine compute_vext_perso
+        END IF
+      END DO
+    END DO
+  END DO
+END DO ! solutes sites
+END DO ! species
+END SUBROUTINE compute_vext_perso

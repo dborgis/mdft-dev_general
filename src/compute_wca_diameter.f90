@@ -1,14 +1,14 @@
-! in this subroutine is evaluated the Weeks Chandler Anderson diameter at which the Lennard Jones potential is cutted into
+! in this SUBROUTINE is evaluated the Weeks Chandler Anderson diameter at which the Lennard Jones potential is cutted into
 ! a reference potential (the Hard sphere potential) and the attractive potential)
-! here we use only the fit by Verlet et Weiss but more robust methods exist and are coded in a subroutine called compute_optimal_hs_diameter.f90
+! here we use only the fit by Verlet et Weiss but more robust methods exist and are coded in a SUBROUTINE called compute_optimal_hs_diameter.f90
 ! be carefull as d_wca is in reduced units. for instance if you use it for lennard jones perturbations, the hard sphere diameter is d_wca calculated here x sigmalj
 ! 201109121800 Maximilien Levesque   Creation
 ! 201109122158 Maximilien Levesque   Better notations, equations, explicit interface for function, more coherent declaration of kb
 ! 201109182054 Maximilien Levesque   Comment about reduced units
-subroutine compute_wca_diameter ( n_0 , temp , sig , eps , d_wca )
+SUBROUTINE compute_wca_diameter ( n_0 , temp , sig , eps , d_wca )
 use precision_kinds , only : dp , i2b
 use constants , only : Boltz , Navo
-implicit none
+IMPLICIT NONE
 real(dp), intent(in) :: temp ! temperature
 real(dp), intent(in) :: n_0 ! density
 real(dp), intent(in) :: sig ! sigma of LJ potential
@@ -43,7 +43,7 @@ d_wca = db * ( 1.0_dp + delta_b * sig1_over_2sig0 ( n_0 , d_wca ) )
 do while ( abs ( d_wca - d_old ) > 1.0e-10_dp )
   d_old = d_wca
   d_wca = db * ( 1.0_dp + delta_b * sig1_over_2sig0 ( n_0 , d_wca ) )
-end do
+END DO
 ! go back to real units
 d_wca = d_wca * sig
 write(*,*)'WCA calculated hard sphere diameter is d = ',d_wca
@@ -51,7 +51,7 @@ contains
   function sig1_over_2sig0 ( n_0 , d_wca )
   use precision_kinds , only : dp
   use constants , only : pi
-  implicit none
+  IMPLICIT NONE
   real(dp):: sig1_over_2sig0
   real(dp), intent(in) :: n_0 ! fluid density
   real(dp), intent(in) :: d_wca ! iterative d
@@ -62,5 +62,5 @@ contains
   eta_w = eta - eta ** 2 / 16.0_dp
   sig1_over_2sig0 = ( 1.0_dp + s1 * eta_w + s2 * eta_w ** 2 + s3 * eta_w ** 3 ) / ( 1.0_dp - eta_w ) ** 2
   end function sig1_over_2sig0
-end subroutine compute_wca_diameter
+END SUBROUTINE compute_wca_diameter
 	

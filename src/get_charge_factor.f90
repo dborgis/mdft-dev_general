@@ -1,12 +1,12 @@
 !TO DO use a smaller array to store sigma by finding the larger indexes (on x, y, z) on which some charges are projected
-subroutine get_charge_factor ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
+SUBROUTINE get_charge_factor ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
 use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , x_solv  ,y_solv , z_solv , chg_solv , id_solv , &
  nb_solvent_sites, &
  Lx , Ly , Lz , deltax , deltay , deltaz
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
 use quadrature, only: angGrid, molRotGrid
-implicit none
+IMPLICIT NONE
 integer(i2b):: i , j , o , p , m
 real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 real (dp ) :: xq , yq , zq , wim , wjm , wip , wjp , wkm , wkp, Dx, Dy, Dz
@@ -26,28 +26,28 @@ do m = 1 , nb_solvent_sites
    Dz = zq - real(int(zq,i2b),dp) 
    if ( Dx==0.0_dp .and. Dy==0.0_dp .and. Dz==0.0_dp ) then
      nombre_image ( m ) = 1
-!   else if ( Dx==0.0_dp .and. Dy==0.0_dp) then
+!   ELSE IF ( Dx==0.0_dp .and. Dy==0.0_dp) then
 !     nombre_image( m ) =  2
 !     coordinate (m ) = 'z'
-!   else if ( Dx==0.0_dp .and. Dz==0.0_dp) then
+!   ELSE IF ( Dx==0.0_dp .and. Dz==0.0_dp) then
 !     nombre_image( m ) =  2
 !     coordinate (m ) = 'y'
-!   else if ( Dy==0.0_dp .and. Dz==0.0_dp) then
+!   ELSE IF ( Dy==0.0_dp .and. Dz==0.0_dp) then
 !     nombre_image( m ) =  2
 !     coordinate (m ) = 'x'
-!   else if ( Dx==0.0_dp ) then
+!   ELSE IF ( Dx==0.0_dp ) then
 !     nombre_image( m ) =  4
 !     coordinate (m ) = 'x'  
-!   else if ( Dy==0.0_dp ) then
+!   ELSE IF ( Dy==0.0_dp ) then
 !     nombre_image( m ) =  4
 !     coordinate (m ) = 'y'  
-!   else if ( Dz==0.0_dp ) then
+!   ELSE IF ( Dz==0.0_dp ) then
 !     nombre_image( m ) =  4
 !     coordinate (m ) = 'z'     
-   else 
+   ELSE 
      nombre_image( m ) =  8
-   end if
-end do
+   END IF
+END DO
 print*, nombre_image
 !evaluate the total number of images which is necessary to store
 nb_of_interpolation = sum ( nombre_image )
@@ -76,7 +76,7 @@ print*, 'boucle8'
               i=0
               do j = 1 , m-1
               i= i+nombre_image(j)                                                              !Find the value of index i for this solute site
-              end do
+              END DO
               xmod(m,p,o)= Rotxx(o,p)*x_solv(m) + Rotxy(o,p)*y_solv(m) + Rotxz(o,p)*z_solv(m)   !new  coordinates of this site after rotation
               ymod(m,p,o)= Rotyx(o,p)*x_solv(m) + Rotyy(o,p)*y_solv(m) + Rotyz(o,p)*z_solv(m)
               zmod(m,p,o)= Rotzx(o,p)*x_solv(m) + Rotzy(o,p)*y_solv(m) + Rotzz(o,p)*z_solv(m)  
@@ -149,9 +149,9 @@ print*, 'boucle8'
              y_charge ( i,  p, o ) =   jp
              z_charge ( i,  p, o ) =   kp
              q_charge ( i,  p, o ) = wip*wjp*wkp* chg_solv ( id_solv ( m ) ) 
-         end do
-       end do
-   else if (nombre_image(m) == 1 ) then
+         END DO
+       END DO
+   ELSE IF (nombre_image(m) == 1 ) then
      !print*, 'boucle1'         
        do o =1 , angGrid%n_angles
        
@@ -159,7 +159,7 @@ print*, 'boucle8'
              i=0
              do j = 1 , m-1
                i= i+nombre_image(j)
-             end do
+             END DO
              xmod(m,p,o)= Rotxx(o,p)*x_solv(m) + Rotxy(o,p)*y_solv(m) + Rotxz(o,p)*z_solv(m)
              ymod(m,p,o)= Rotyx(o,p)*x_solv(m) + Rotyy(o,p)*y_solv(m) + Rotyz(o,p)*z_solv(m)   
              zmod(m,p,o)= Rotzx(o,p)*x_solv(m) + Rotzy(o,p)*y_solv(m) + Rotzz(o,p)*z_solv(m)  
@@ -189,10 +189,10 @@ print*, 'boucle8'
             y_charge ( i,  p, o ) =   jm
             z_charge ( i,  p, o ) =   km
             q_charge ( i,  p, o ) = wim*wjm*wkm* chg_solv ( id_solv ( m ) ) 
-          end do  !end loop on psi
-       end do     !end loop on omega
-   end if         !end condition on number of images
-end do    !end loop on solvent site                                                     
+          END DO  !end loop on psi
+       END DO     !end loop on omega
+   END IF         !end condition on number of images
+END DO    !end loop on solvent site                                                     
 print*,  'HERE IS I :::: ' ,i
 print*, 'Somme charge', Sum(q_charge)
 open (11, file='output/x_charge')
@@ -205,4 +205,4 @@ open (12, file='output/q_charge')
 write(12,*) , q_charge
  close(12)
 !check if both ways to evaluate charge factor are similar.
-end subroutine
+END SUBROUTINE

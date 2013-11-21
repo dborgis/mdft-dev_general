@@ -1,4 +1,4 @@
-! This subroutine closes the program properly.
+! This SUBROUTINE closes the program properly.
 ! It deallocates memory and destroys FFTW3 plans.
 SUBROUTINE close_simu
     USE cg, ONLY: finalizeMinimizer

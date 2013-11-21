@@ -4,7 +4,7 @@
 ! Corresponding parameters are specified in tables lambda1_mol, lambda2_mol which
 ! have dimension nb_solute_sites
 ! See the paper by Borgis et al. JCP 134 194102 (2011), a_1 = rmax1, a_2 = rmax2
-subroutine energy_threebody
+SUBROUTINE energy_threebody
 use precision_kinds, only: dp,i2b
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0_multispec , sig_mol , sig_solv , Lx , Ly , Lz ,&
 &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
@@ -13,7 +13,7 @@ USE cg, ONLY: cg_vect,FF,dF
 use quadrature, only: angGrid, molRotGrid
 use constants, only: fourpi
 use input , only : input_line, input_log
-implicit none
+IMPLICIT NONE
 ! 3-BODY PARAMETERS
 real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
 real(dp), parameter :: cos_theta0 = -1.0_dp/3.0_dp   ! cos of the 3 body angle one would like (for instance cos_theta0=cos(109.5°) in water
@@ -57,7 +57,7 @@ fact_n=(deltaV*rho_0_multispec(1) )**2 !CARE TODO HERE ONLY VALID FOR NB_SPECIES
 if ( nb_species /= 1 ) then
   print *, 'error in energy_thhreebody.f90. You try to compute it but it is only valid for 1 component fluid'
   stop
-end if
+END IF
 ! get density
 allocate(rho(nfft1,nfft2,nfft3))
 rho=0.0_dp
@@ -69,11 +69,11 @@ do i=1,nfft1
         do p=1, molRotGrid%n_angles
           icg=icg+1
           rho(i,j,k) = rho(i,j,k) + angGrid%weight(o)*molRotGrid%weight(p)*cg_vect(icg)**2
-        end do
-      end do
-    end do
-  end do
-end do
+        END DO
+      END DO
+    END DO
+  END DO
+END DO
 !> First shell
 allocate(V3_fs(nfft1,nfft2,nfft3))
 V3_fs = 0.0_dp ! array
@@ -123,9 +123,9 @@ do k1 = iz - nmax1z, iz + nmax1z +1
                 V3_fs(i1,j1,k1) = V3_fs(i1,j1,k1) + energy_3b*rho(i2,j2,k2)
                 V3_fs(i2,j2,k2) = V3_fs(i2,j2,k2) + energy_3b*rho(i1,j1,k1)
               endif
-            end do
-          end do
-        end do
+            END DO
+          END DO
+        END DO
    
 ! Second shell contribution
         ! second loop over all positions
@@ -148,15 +148,15 @@ do k1 = iz - nmax1z, iz + nmax1z +1
                 V3(i1,j1,k1) = V3(i1,j1,k1) + energy_3b*rho(i2,j2,k2)
                 V3(i2,j2,k2) = V3(i2,j2,k2) + energy_3b*rho(i1,j1,k1)
                 
-              end if
-            end do
-          end do
-        end do
+              END IF
+            END DO
+          END DO
+        END DO
           
-      end if  
-    end do
-  end do
-end do
+      END IF  
+    END DO
+  END DO
+END DO
 END IF
 END DO ! end loop over sites
 !> The detail is useless for computing the whole energy and its gradient
@@ -176,21 +176,21 @@ do i = 1 , nfft1
           psi = CG_vect ( icg )
           dF ( icg ) = dF ( icg ) + 2.0_dp * psi * angGrid%weight ( o ) * molRotGrid%weight(p)* (V3 ( i , j , k ))
 !           write(11,*) icg,  2.0_dp * psi * angGrid%weight ( o ) * molRotGrid%weight(p)* (V3 ( i , j , k )-V3_fs(i,j,k))
-        end do
-      end do
-    end do
-  end do
-end do
+        END DO
+      END DO
+    END DO
+  END DO
+END DO
 close(11)
 ! Add the threebody contributions to total energy FF
 FF = FF + F3
 ! Warn user
 call cpu_time ( time1 )
 write(*,*) 'F3body      = ',F3,'computed in (sec)',time1-time0
-end subroutine energy_threebody
+END SUBROUTINE energy_threebody
 function f_w( r , rmin, rsw, rmax )
 use precision_kinds, only: dp,i2b
-implicit none
+IMPLICIT NONE
 real(dp) :: f_w, r, rmin, rsw, rmax
 real(dp) , parameter :: gam = 2.0_dp/3.0_dp
 real(dp) :: deltar, exp_term, Switch
@@ -200,12 +200,12 @@ if(r > rmin .and. r<rmax) then
 exp_term = exp(gam*rmax/(r-rmax))
    if(r<rsw) then
      Switch = (r-rmin)**2*(-2.0_dp*(r-rmin)/deltar+3.0_dp)/deltar**2
-     else
+     ELSE
      Switch = 1.0_dp
-   end if
+   END IF
 f_w = Switch*exp_term
-else
+ELSE
 f_w = 0.0_dp
-end if
+END IF
 return
 end function f_w

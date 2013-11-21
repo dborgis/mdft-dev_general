@@ -4,7 +4,7 @@ module cg
 
     use precision_kinds , only: i2b , dp
     
-    implicit none
+    IMPLICIT NONE
 
     character(10) :: minimizer_type ! bfgs or cg
     integer(i2b):: ncg ! nbr of variables

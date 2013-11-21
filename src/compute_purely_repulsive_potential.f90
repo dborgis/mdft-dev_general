@@ -1,8 +1,8 @@
-!> This subroutine compute the external purely repulsive potential as defined by Dzubiella and Hansen in J Chem Phys 121 (2004)
+!> This SUBROUTINE compute the external purely repulsive potential as defined by Dzubiella and Hansen in J Chem Phys 121 (2004)
 ! This potential has the form V(r)=kbT*(r-R0)^-(12)
 ! Written by Maximilien Levesque, June 2011 @ Ecole Normale Superieure
 ! For now This potential is named Vcoul which means as soon as we will have to use both electrostatic and (NOT TRUE ANYMORE : VREP)
-! purely repulsive potential, one will HAVE TO re-write this subroutine with unique variable names
+! purely repulsive potential, one will HAVE TO re-write this SUBROUTINE with unique variable names
 
 SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz )
 
@@ -14,7 +14,7 @@ SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , 
     use external_potential , only : Vext_total
     use quadrature, only: angGrid, molRotGrid
 
-    implicit none
+    IMPLICIT NONE
 
     real(dp), dimension ( angGrid%n_angles , molRotGrid%n_angles ) , intent (in) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy ,&
                                                                     Rotyz , Rotzx, Rotzy , Rotzz ! rotationnal matrix for sites
@@ -53,9 +53,9 @@ SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , 
                 xmod (m,p,o) = Rotxx (o,p) * x_solv (m) + Rotxy (o,p) * y_solv (m) + Rotxz (o,p) * z_solv (m)
                 ymod (m,p,o) = Rotyx (o,p) * x_solv (m) + Rotyy (o,p) * y_solv (m) + Rotyz (o,p) * z_solv (m)
                 zmod (m,p,o) = Rotzx (o,p) * x_solv (m) + Rotzy (o,p) * y_solv (m) + Rotzz (o,p) * z_solv (m)
-            end do
-        end do
-    end do
+            END DO
+        END DO
+    END DO
     
     ! TODO CARE HERE ONLY ONE SPECIES
     do k = 1 , nfft3
@@ -79,28 +79,28 @@ SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , 
                 y_nm = y_m - y_mol (n)
                 z_nm = z_m - z_mol (n)
                 r_nm2 = x_nm**2+y_nm**2+z_nm**2
-                ! if we're in the hard repulsive zone v is huge, else its purely repulsive
+                ! if we're in the hard repulsive zone v is huge, ELSE its purely repulsive
                 if ( r_nm2 <= Rc2 ) then
                     V_psi = huge(1.0_dp)
-                else
+                ELSE
                     V_psi = V_psi + kbT * ( sqrt ( r_nm2 ) - Rc )**(-12)
-                end if
-                end do ! solute
-            end do ! solvent
+                END IF
+                END DO ! solute
+            END DO ! solvent
     !          tempVrep = tempVrep + exp ( - beta * V_psi )
             ! care about not having log(0)        
         !  if ( tempVrep < 1.e-10_dp ) then
         !    Vrep (i,j,k,o) = 25.0_dp * kbT
-        !  else
+        !  ELSE
             Vrep (i,j,k,o, p) = V_psi
             if ( Vrep (i,j,k,o, p) > 100.0_dp ) Vrep (i,j,k,o, p) = 100.0_dp
-        !  end if
-            end do !ploop ! psi
+        !  END IF
+            END DO !ploop ! psi
             ! limit maximum value of Vrep to 100.0
-        end do
-        end do
-    end do
-    end do
+        END DO
+        END DO
+    END DO
+    END DO
 
     Vext_total (:,:,:,:, :,1) = Vext_total (:,:,:, :,:,1) + vrep (:,:,:,:, :)! vrep is only part of vext so put vrep in vext
 
@@ -120,4 +120,4 @@ SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , 
         deallocate ( temparray )
     END IF
 
-end subroutine compute_purely_repulsive_potential
+END SUBROUTINE compute_purely_repulsive_potential

@@ -1,15 +1,15 @@
-! this subroutine init the density as a function of position and orientation
+! this SUBROUTINE init the density as a function of position and orientation
 ! it should be initiated to exp(-beta*Vext_total) but
 ! Vext_q is the electrostatic part of Vext_total, and is pathologic (it sometimes diverges)
 ! we thus init the density not using vext, but Vext_total - Vext_q
-subroutine init_density
+SUBROUTINE init_density
 use precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , beta , nb_species
 use quadrature, only: angGrid, molRotGrid
 USE cg, ONLY: cg_vect
 use external_potential , only : Vext_total , Vext_q
 use input , only : input_log
-implicit none
+IMPLICIT NONE
 real(dp):: local_density0 !> @var local_density0 is the density at a space and angular grid point
 integer(i2b):: i , j , k , o , p , icg ! dummy
 real(dp):: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
@@ -20,11 +20,11 @@ if (input_log('reuse_density')) then
   if ( k /= 0 ) then
     print *, 'density.bin not found. stop. bug at init_density.f90'
     stop
-  end if
+  END IF
   read ( 10 ) cg_vect
   print *, 'cg_vect has been read'
-  return ! get out of subroutine
-end if
+  return ! get out of SUBROUTINE
+END IF
   
 ! We minimize with respect to sqrt(density) and not directly with respect to the density.
 ! This allows the variable (sqrt(density)) to be strictly positive.
@@ -40,22 +40,22 @@ do species = 1 , nb_species
           Vext_total_local = Vext_total ( i , j , k , o ,p , species )
           if ( allocated ( Vext_q ) ) then
             Vext_total_local_min_Vext_q = Vext_total_local - Vext_q ( i , j , k , o , p , species )
-          else
+          ELSE
             Vext_total_local_min_Vext_q = Vext_total_local
-          end if
+          END IF
           if ( Vext_total_local >= 100.0_dp .or. Vext_total_local_min_Vext_q >= 100.0_dp ) then
             local_density0 = tiny ( 0.0_dp ) ! Don't put 0 as it induces problems in the calculations of log(density) in ideal part of F.
-          else
+          ELSE
             local_density0 = exp ( - beta * Vext_total_local_min_Vext_q )
-          end if
+          END IF
           ! put result in cg_vect. note that we do prefer to minimize sqrt(density) than the density in order to avoid sign problems
           cg_vect ( icg ) = sqrt ( local_density0 )
-          end do !psi
-        end do ! omega
-      end do ! nfft3
-    end do ! nfft2
-  end do ! nfft1
-end do ! species
+          END DO !psi
+        END DO ! omega
+      END DO ! nfft3
+    END DO ! nfft2
+  END DO ! nfft1
+END DO ! species
 ! only Vext_total is used in the functional. We may deallocate it now.
 !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
-end subroutine init_density
+END SUBROUTINE init_density

@@ -1,8 +1,8 @@
-subroutine lebedev_integration_roots_and_weights (order, roots_x, roots_y, roots_z, weights)
+SUBROUTINE lebedev_integration_roots_and_weights (order, roots_x, roots_y, roots_z, weights)
 
     use precision_kinds , only : dp, i2b
     
-    implicit none
+    IMPLICIT NONE
     
     integer(i2b), intent(in) :: order
     real(dp), dimension(order), intent(out)  :: roots_x, roots_y, roots_z, weights
@@ -45,8 +45,8 @@ subroutine lebedev_integration_roots_and_weights (order, roots_x, roots_y, roots
 
     contains
         
-        pure subroutine gen_oh (code, roots_x, roots_y, roots_z, weights, a, b, v, counter)
-            implicit none
+        pure SUBROUTINE gen_oh (code, roots_x, roots_y, roots_z, weights, a, b, v, counter)
+            IMPLICIT NONE
             real(dp), dimension(:), intent(out) :: weights , roots_x , roots_y , roots_z
             real(dp), intent(inout) :: a, b, v
             integer(i2b), intent(inout) :: counter
@@ -364,6 +364,6 @@ subroutine lebedev_integration_roots_and_weights (order, roots_x, roots_y, roots
                 weights(counter+24) =  v
                 counter=counter+24
             end select
-        end subroutine gen_oh
+        END SUBROUTINE gen_oh
 
-end subroutine lebedev_integration_roots_and_weights 
+END SUBROUTINE lebedev_integration_roots_and_weights 

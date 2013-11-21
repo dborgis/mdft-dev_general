@@ -1,6 +1,6 @@
-! this subroutine computes the radial excess free energy + its associated hydrophobic part.
-! TODO This subroutine should be merged in one way or another with cs_from_dcf
-subroutine cs_plus_hydro
+! this SUBROUTINE computes the radial excess free energy + its associated hydrophobic part.
+! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
+SUBROUTINE cs_plus_hydro
   use precision_kinds , only : dp , i2b
   use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s , kBT , delta_k , nb_species,n_0, Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi
@@ -9,7 +9,7 @@ subroutine cs_plus_hydro
   use fft , only : fftw3, norm_k, kx, ky, kz, k2, timesExpPrefactork2
   use input, only : input_log
   
-  implicit none
+  IMPLICIT NONE
   
   real(dp) :: d_0 ! Angstroms, from Chandler
   real(dp) :: gamma_0 ! surface tension of water (0.174kBT/A² or 0.431 KJ/A²)
@@ -55,7 +55,7 @@ subroutine cs_plus_hydro
   call cpu_time(time0)
   if (input_log('bridge_hard_sphere')) then
     print*,'Chandler Version of Hydrophobicity is not consistent with the use of hard sphere bridge, be aware of what you are doing'
-  end if
+  END IF
   
   ! macroscopic water parameters, from Chandler
   d_0 = 1.27_dp ! Angstroms
@@ -88,12 +88,12 @@ subroutine cs_plus_hydro
           do p=1, molRotGrid%n_angles
             icg=icg+1
             delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect(icg) ** 2 ! sum over all orientations
-          end do  
-        end do
+          END DO  
+        END DO
           delta_n(i,j,k)=delta_n_ijk*sym_order/(twopi*fourpi) - 1.0_dp ! normalize (n=1/fourpi int_o rho(r,o))
-      end do
-    end do
-  end do
+      END DO
+    END DO
+  END DO
   
   
   ! TODO Next FFT sequences can be done on multiple threads
@@ -114,9 +114,9 @@ subroutine cs_plus_hydro
     ! take time reversal symetry into account small part
     if ( l >= 2 .and. l <= nfft1/2 ) then
       facsym = 2.0_dp
-    else
+    ELSE
       facsym = 1.0_dp
-    end if
+    END IF
   
     do m = 1 , nfft2
       do p = 1 , nfft3
@@ -124,9 +124,9 @@ subroutine cs_plus_hydro
         delta_nbark_loc = Delta_nbark (l,m,p)
         S_cg = S_cg + facsym * DeltaVk * 1.5_dp * d_0 * gamma_0 * k2_loc * real( Delta_nbark_loc , dp ) ** 2
         dS_cgk ( l , m , p ) = facsym * DeltaVk * 3.0 * d_0 * gamma_0 * k2_loc * Delta_nbark_loc
-      end do
-    end do
-  end do
+      END DO
+    END DO
+  END DO
   print *, 'S_cg in k space = ' , S_cg
   
   ! gradient of delta_nbar in kspace
@@ -137,15 +137,15 @@ subroutine cs_plus_hydro
   
   do l=1,nfft1/2+1
     gradx_delta_nbark(l,:,:) = i_complex * kx(l) * delta_nbark(l,:,:)
-  end do
+  END DO
   
   do l=1,nfft2
     grady_delta_nbark(:,l,:) = i_complex * ky(l) * delta_nbark(:,l,:)
-  end do
+  END DO
   
   do l=1,nfft3
     gradz_delta_nbark(:,:,l) = i_complex * kz(l) * delta_nbark(:,:,l)
-  end do
+  END DO
   
   
   
@@ -165,9 +165,9 @@ subroutine cs_plus_hydro
         ! we suppose c_s(nbar)=cst=c_s(n_0) which is a crude approximation
         V_nk ( l , m , p ) = c_s ( k_index ) * ( delta_nk ( l , m , p ) - delta_nbark ( l , m , p ) )
   
-      end do
-    end do
-  end do
+      END DO
+    END DO
+  END DO
   
   
   ! coarse grain V_nk
@@ -229,9 +229,9 @@ subroutine cs_plus_hydro
   
         dF_cg(i,j,k) = (DeltaV*(6.0*gamma_0/d_0)*2.0_dp*(nbar-1.0_dp)*nbar*(2.0_dp*nbar-1.0_dp) - mu_0*n_0*deltaV)&
                         - kBT*fact_n*lognbar
-      end do
-    end do
-  end do
+      END DO
+    END DO
+  END DO
 !large gradient part
   S_cg = 3.0_dp/2.0_dp*d_0*gamma_0*DeltaV *sum( gradx_delta_nbar**2 + grady_delta_nbar**2&
                   + gradz_delta_nbar**2 )
@@ -262,13 +262,13 @@ subroutine cs_plus_hydro
     print *, 'angGrid%n_angles /= 1 and hydrophobic part is calculated while not still implemented'
     print *, 'not possible for now. error in cs_plus_hydro.f90'
     stop
-  end if
+  END IF
   
-  ! this subroutine only works for nb_species = 1
+  ! this SUBROUTINE only works for nb_species = 1
   if ( nb_species /= 1 ) then
     print *, 'nb_species /= 1 and this is not implemented yet in cs_plus_hydro.f90'
     stop
-  end if
+  END IF
   ! compute final FF and dF
   Fint = 0.0_dp
   icg = 0
@@ -283,11 +283,11 @@ subroutine cs_plus_hydro
             icg = icg + 1
             psi = cg_vect ( icg )
             dF (icg) = dF ( icg )+2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)/(fourpi*twopi/sym_order)*( Vint + dF_cg_ijk )
-          end do
-        end do
-      end do
-    end do
-  end do
+          END DO
+        END DO
+      END DO
+    END DO
+  END DO
   
   ! conclude
   FF = FF + Fint + F_cg + S_cg
@@ -296,4 +296,4 @@ subroutine cs_plus_hydro
   call cpu_time ( time1 )
   write(*,*) 'Fexc(rad)   = ' , Fint , 'computed in (sec)'
   write(*,*) 'Fexc(rad+cg)= ' , F_cg + S_cg , 'computed in (sec)' , time1 - time0
-end subroutine cs_plus_hydro
+END SUBROUTINE cs_plus_hydro

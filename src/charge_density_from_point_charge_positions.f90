@@ -1,4 +1,4 @@
-! This subroutine reads the positions of the charges of the solute sites. It extrapolates them to the grid points in order to 
+! This SUBROUTINE reads the positions of the charges of the solute sites. It extrapolates them to the grid points in order to 
 ! get a charge density rho_c ( i , j , k )
 
 SUBROUTINE charge_density_from_point_charge_positions

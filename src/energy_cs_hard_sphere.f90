@@ -1,5 +1,5 @@
 ! Compute total energy and gradients using direct correlation functions c_s_hs of a hard sphere fluid
-subroutine energy_cs_hard_sphere
+SUBROUTINE energy_cs_hard_sphere
 use precision_kinds, only: i2b,dp
 use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s_hs , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
                   nb_species
@@ -7,7 +7,7 @@ use quadrature, only: sym_order, angGrid, molRotGrid
 USE cg, ONLY: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi
 use fft, only: fftw3, norm_k
-implicit none
+IMPLICIT NONE
 integer(i2b) :: i, j, k, l, m, n, o, icg, species,p !> Dummy
 integer(i2b) :: k_index
 real(dp) :: Nk !> Total number of k points = nfft1*nfft2*nfft3
@@ -33,11 +33,11 @@ do i=1,nfft1
         do p=1, molRotGrid%n_angles
         icg=icg+1
         Delta_rho(i,j,k) = Delta_rho(i,j,k) + angGrid%weight(o) * cg_vect(icg)**2*molRotGrid%weight(p)
-       end do
-      end do
-    end do
-  end do
-end do
+       END DO
+      END DO
+    END DO
+  END DO
+END DO
 Delta_rho = Delta_rho-(twopi*fourpi)/real(sym_order,dp)
 !> Next FFT sequences can be done on multiple threads
 !> Compute rho in k-space
@@ -57,9 +57,9 @@ do n = 1 , nfft3
       if ( k_index > nb_k ) k_index = nb_k
       ! V(k)=cs(k)*rho(k)
       Vpolarization_k ( l , m , n ) = rho_k ( l , m , n ) * c_s_hs ( k_index )
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 ! since rho(k) is now useless, deallocate associated array
 deallocate ( rho_k )
 ! FFT-1
@@ -84,16 +84,16 @@ do species = 1 , nb_species
           Fint   = Fint   + angGrid%weight(o)*molRotGrid%weight(p) * fact * 0.5_dp * ( psi ** 2 - 1.0_dp) * Vint
 !         dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * fact * Vint ! in case of bridge calculation, one deduces the pair contribution of hard spheres + => - and FF=FF-Fint
           dF (icg) = dF ( icg ) - 2.0_dp * psi * angGrid%weight(o) *molRotGrid%weight(p)* fact * Vint
-          end do
-        end do
-      end do
-    end do
-  end do
-end do ! species
+          END DO
+        END DO
+      END DO
+    END DO
+  END DO
+END DO ! species
 deallocate(Vpolarization)
 ! conclude
 FF = FF - Fint
 call cpu_time(time1)
 write(*,*) 'Fexc c_hs   = ' , Fint , 'computed in (sec)' , time1 - time0
  
-end subroutine energy_cs_hard_sphere
+END SUBROUTINE energy_cs_hard_sphere

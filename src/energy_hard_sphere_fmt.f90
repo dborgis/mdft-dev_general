@@ -1,4 +1,4 @@
-subroutine energy_hard_sphere_fmt
+SUBROUTINE energy_hard_sphere_fmt
 use precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
                     weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
@@ -8,7 +8,7 @@ USE cg, ONLY: cg_vect , FF , dF
 use constants , only : pi , FourPi , twopi
 use fft , only : fftw3
 use input, only : input_line
-implicit none
+IMPLICIT NONE
 integer(i2b):: icg , i , j , k , o , p ! dummy
 integer(i2b):: species ! dummy between 1 and nb_species
 real(dp):: Nk ! Total number of k points = nfft1*nfft2*nfft3
@@ -53,16 +53,16 @@ do species = 1 , nb_species
           do p=1, molRotGrid%n_angles
           icg = icg + 1
           local_density = local_density + angGrid%weight (o) * cg_vect (icg) ** 2*molRotGrid%weight(p)
-           end do          
-        end do
+           END DO          
+        END DO
         ! correct by 8*pi²/n as the integral over all orientations o and psi is 4pi and 2pi/n
         local_density = local_density*real(sym_order, dp) / (fourpi*twopi)
         ! at the same time integrate rho in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
         rho ( i , j , k , species ) = local_density
-      end do
-    end do
-  end do
-end do
+      END DO
+    END DO
+  END DO
+END DO
 ! total number of molecules of each species
 DO CONCURRENT ( species = 1 : nb_species )
   nb_molecules ( species ) = sum ( rho ( : , : , : , species ) ) * n_0_multispec ( species ) * mole_fraction ( species ) * deltav
@@ -70,7 +70,7 @@ END DO
 ! tell user about the number of molecule of each species in the supercell
 do species = 1 , nb_species
   write (*,*) 'nb_molecule (' , species , ') = ' , nb_molecules ( species )
-end do
+END DO
 write (*,*) 'total number of molecules = ' , sum ( nb_molecules )
 ! fourier transform the density rho => rho_k
 allocate ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
@@ -78,7 +78,7 @@ do species = 1 , nb_species
   fftw3%in_forward = rho ( : , : , : , species )
   call dfftw_execute ( fftw3%plan_forward )
   rho_k ( : , : , : , species ) = fftw3%out_forward * n_0_multispec ( species ) * mole_fraction ( species )
-end do
+END DO
 deallocate ( rho )
 ! inverse fourier transform the weighted densities
 ! allocate the arrays for receiving the FFT-1
@@ -103,14 +103,14 @@ do species = 1 , nb_species
     fftw3%in_backward = weight_function_3_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _3
     call dfftw_execute ( fftw3%plan_backward )
     weighted_density_3 = weighted_density_3 + fftw3%out_backward / Nk
-end do
+END DO
 
 ! check if the hard sphere functional is Percus-Yevick or Carnahan-Starling
 ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
 do i = 1 , size ( input_line )
   j = len ( 'hs_functional' )
   if ( input_line (i) (1:j) == 'hs_functional' ) read ( input_line (i) (j+4:j+5) , * ) hs_functional
-end do
+END DO
 ! compute free intrinsic energy
 ! init Fint
 Fint = 0.0_dp
@@ -126,19 +126,19 @@ do k = 1 , nfft3 ! please pay attention to inner / outer loop.
       if ( omw3 <= 0.0_dp ) then
         call error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
         call process_output ! process output so that we know where we are !
-      end if
+      END IF
       ! here is the Perkus Yevick excess free energy
       if ( hs_functional == 'PY' .or. hs_functional == 'py' ) then
         F_HS = - w0 * log ( omw3 ) + w1 * w2 / omw3 + inv24pi * w2 ** 3 / omw3 ** 2
-      else if ( hs_functional == 'CS' .or. hs_functional == 'cs' ) then
+      ELSE IF ( hs_functional == 'CS' .or. hs_functional == 'cs' ) then
         F_HS = ( inv36pi * w2 ** 3 / w3 ** 2 - w0 ) * log ( omw3 ) + w1 * w2 / omw3 &
                  + inv36pi * w2 ** 3 / ( omw3 ** 2 * w3 )
-      end if
+      END IF
   
       Fint = Fint + F_HS
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 Fint = Fint * kBT * DeltaV - sum ( muexc_0_multispec * nb_molecules ) - sum ( Fexc_0_multispec * mole_fraction )
 FF = FF + Fint ! FF is used in BFGS algorithm with CGvect(icg) and dF(icg)
 ! gradients
@@ -158,7 +158,7 @@ if ( hs_functional == 'PY' .or. hs_functional == 'py' ) then
   dFHS_2 = weighted_density_1 / one_min_weighted_density_3 + inv8pi * dFHS_1 ** 2
   dFHS_3 = ( weighted_density_0 + weighted_density_1 * dFHS_1 ) / one_min_weighted_density_3 + inv12pi * dFHS_1 ** 3
 ! Carnahan Starling
-else if ( hs_functional == 'CS' .or. hs_functional == 'cs' ) then
+ELSE IF ( hs_functional == 'CS' .or. hs_functional == 'cs' ) then
   dFHS_0 = - log ( one_min_weighted_density_3 )
   dFHS_1 = weighted_density_2 / one_min_weighted_density_3
   dFHS_2 = - inv12pi * ( weighted_density_2 / weighted_density_3 ) ** 2 * dFHS_0 &
@@ -168,7 +168,7 @@ else if ( hs_functional == 'CS' .or. hs_functional == 'cs' ) then
            + weighted_density_1 * dFHS_1 / one_min_weighted_density_3 + inv36pi * &
            weighted_density_2 ** 3 / weighted_density_3 ** 2 * &
            ( 3.0_dp * weighted_density_3 - 1.0_dp ) / one_min_weighted_density_3 ** 3
-end if
+END IF
 ! deallocate weighted_densities
 deallocate ( weighted_density_0 )
 deallocate ( weighted_density_1 )
@@ -206,7 +206,7 @@ do species = 1 , nb_species
        + dFHS_1_k * weight_function_1_k ( :,:,:, species ) &
        + dFHS_2_k * weight_function_2_k ( :,:,:, species ) &
        + dFHS_3_k * weight_function_3_k ( :,:,:, species )
-end do
+END DO
 !> Deallocate useless
 deallocate ( dFHS_0_k )
 deallocate ( dFHS_1_k )
@@ -235,13 +235,13 @@ do species = 1 , nb_species
 + 2.0_dp * psi * rho_0_multispec ( species ) * deltav * ( kBT * dFex ( i , j , k , species ) - muexc_0_multispec ( species ) )*&
 angGrid%weight(o)*molRotGrid%weight(p)
  ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
-         end do  !p
+         END DO  !p
   
-        end do  !o
-      end do  !i
-    end do  !j
-  end do   !k
-end do   !species
+        END DO  !o
+      END DO  !i
+    END DO  !j
+  END DO   !k
+END DO   !species
 ! deallocate useless gradient
 deallocate ( dFex )
  !stop timer
@@ -251,11 +251,11 @@ write (*,*) 'Fexc fmt    = ' , Fint , 'computed in (sec)' , time1 - time0
 
 CONTAINS
 
-    ! this subroutine prints error message related to subroutine excess_cs_hard_sphere
+    ! this SUBROUTINE prints error message related to SUBROUTINE excess_cs_hard_sphere
     ! it may stop program execution depending on the error.
-    subroutine error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
+    SUBROUTINE error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
         use precision_kinds , only : i2b , dp
-        implicit none
+        IMPLICIT NONE
         integer(i2b), intent(in) :: i , j , k
         real(dp), intent(in) :: w0 , w1 , w2 , w3
         write (*,*) 'i , j , k = ' , i , j , k
@@ -265,6 +265,6 @@ CONTAINS
         write (*,*) 'w2 = ' , w2
         write (*,*) 'w3 = ' , w3
         stop
-    end subroutine error_message_energy_hard_sphere_fmt
+    END SUBROUTINE error_message_energy_hard_sphere_fmt
 
-end subroutine energy_hard_sphere_fmt
+END SUBROUTINE energy_hard_sphere_fmt

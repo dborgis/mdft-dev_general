@@ -1,4 +1,4 @@
-! This subroutine uses the Gauss theorem associated to the expression of the derivation in Fourier transforms to get V(r).
+! This SUBROUTINE uses the Gauss theorem associated to the expression of the derivation in Fourier transforms to get V(r).
 ! Field E(r)=-grad(V(r))
 ! Local expression of Gauss theorem : div(E(r))=rho_c(r)/eps0
 ! => laplacien(V(r))=-rho_c(r)/eps0

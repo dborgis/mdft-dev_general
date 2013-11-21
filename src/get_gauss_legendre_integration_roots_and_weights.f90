@@ -15,7 +15,7 @@ SUBROUTINE gauss_legendre_integration_roots_and_weights (order, weight, root)
         write(*,*)'You ask for an integration order:',order,'higher than the maximum one implemented',size(x_gl,1)
         write(*,*)'critical. stop.'
         stop
-    end if
+    END IF
     
     ! GET THEM FROM up to N=100
     ! http://www.holoborodko.com/pavel/numerical-methods/numerical-integration/#gauss_quadrature_abscissas_table

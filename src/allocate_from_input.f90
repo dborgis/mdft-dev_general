@@ -1,5 +1,5 @@
 ! Here are allocated variables declared in modules
-subroutine allocate_from_input
+SUBROUTINE allocate_from_input
 
     use precision_kinds , only : i2b , dp
     use input , only : input_line, input_int, input_dp, input_log
@@ -7,7 +7,7 @@ subroutine allocate_from_input
     use constants , only : fourpi , boltz, navo , twopi
     use quadrature , only : sym_order
 
-    implicit none
+    IMPLICIT NONE
 
     integer(i2b):: i , j ! dummy
     integer(i2b):: species ! dummy between 1 and nb_species
@@ -16,21 +16,21 @@ subroutine allocate_from_input
     if( sym_order <= 1 ) then
         print*,'order of main symetric axe cannot be less than 1. sym_order is declared as ',sym_order
         stop 'CRITICAL STOP. CHANGE sym_order IN INPUT'
-    end if
+    END IF
     
     spaceGrid%n_nodes = [ input_int('nfft1'), input_int('nfft2'), input_int('nfft3') ] ! number of grid nodes in each direction
     if( any( spaceGrid%n_nodes  <= 0) ) then
         print*,'The space is divided into grid nodes. The number of nodes must be greater than 1.'
         print*,'You have nfft1, nfft2, nfft3 nodes per direction : ',spaceGrid%n_nodes
         stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT.'
-    end if
+    END IF
 
     spaceGrid%length = [ input_dp('Lx'), input_dp('Ly'), input_dp('Lz') ]
     if( any( spaceGrid%length  <= 0._dp ) ) then
         print*,'The supercell cannot have negative length.'
         print*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',spaceGrid%length
         stop 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
-    end if
+    END IF
     spaceGrid%dl = spaceGrid%length/REAL(spaceGrid%n_nodes,dp)
     spaceGrid%dv = product(spaceGrid%dl)
 
@@ -38,7 +38,7 @@ subroutine allocate_from_input
     if( temp <= 0 ) then
         print*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',temp
         stop
-    end if
+    END IF
     kBT = Boltz * Navo * temp * 1.0e-3_dp
     beta = 1.0_dp / kBT
     
@@ -46,7 +46,7 @@ subroutine allocate_from_input
     if( nb_species < 1 ) then
         print*,'Solvent is without species. This is not what you want. Check nb_implicit_species in dft.in :',nb_species
         stop
-    end if
+    END IF
     
     ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer  
     allocate ( n_0_multispec ( nb_species ) )
@@ -54,17 +54,17 @@ subroutine allocate_from_input
         if ( input_line ( i ) ( 1 : len ( 'ref_bulk_density' ) ) == 'ref_bulk_density' ) then
             do species = 1 , nb_species
                 read ( input_line ( i + species ) , * ) n_0_multispec ( species )
-            end do
+            END DO
             exit
-        end if
-    end do
+        END IF
+    END DO
     if( any( n_0_multispec <= 0._dp) ) then
         print*,'you ask for several species as solvent, but some have negative bulk density'
         do i=1, size(n_0_multispec)
             print*,'species',i,'bulk density',n_0_multispec(i)
-        end do
+        END DO
         STOP 'UNPHYSICAL INPUT CHECK ref_bulk_density'
-    end if
+    END IF
     allocate ( rho_0_multispec ( nb_species ) )
     rho_0_multispec = sym_order*n_0_multispec / (2.0_dp*twopi**2) ! for single specie compatibility while not fully complete :
     n_0 = n_0_multispec ( 1 ) ! for single specie compatibility while not fully complete : 
@@ -74,10 +74,10 @@ subroutine allocate_from_input
         write(*,*)'something is not under control with respect to mole fraction reading and definition in allocate_from_input.f90'
         write(*,*)'this was done, in a previous version of the program, in compute_hard_sphere_parameters.f90'
         stop
-    else
+    ELSE
         allocate ( mole_fraction ( nb_species ) ) ! molar fraction of each species.
         call read_mole_fractions ( nb_species , mole_fraction )
-    end if
+    END IF
 
     ! look for Rc
     Rc=input_dp('Rc')
@@ -89,14 +89,14 @@ subroutine allocate_from_input
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Subroutine to read the mole fractions in dft.in.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! This subroutine open the array input_line which contains every line of input/dft.in
+    ! This SUBROUTINE open the array input_line which contains every line of input/dft.in
     ! It then reads every line of input_line and looks for the tag "mole_fractions"
     ! Then, it reads, one line after the other, the mole fractions of every constituant.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine read_mole_fractions ( nb_species , mole_fraction )
+    SUBROUTINE read_mole_fractions ( nb_species , mole_fraction )
         use precision_kinds , only : dp , i2b
         use input , only : input_line
-        implicit none
+        IMPLICIT NONE
         integer(i2b), intent(in) :: nb_species
         real(dp), dimension ( nb_species ) , intent ( inout ) :: mole_fraction
         integer(i2b):: i , j , species
@@ -105,14 +105,14 @@ subroutine allocate_from_input
         if ( input_line (i) (1:j) == 'mole_fractions' ) then
             do species = 1 , nb_species
                 read ( input_line ( i + species ) , * ) mole_fraction ( species )
-            end do
+            END DO
             exit ! loop over i
-        end if
-        end do
+        END IF
+        END DO
     
         ! check error in mole fraction : sum of all mole fractions should be equal to 1
         call check_error_in_mole_fraction ( mole_fraction )
-    end subroutine read_mole_fractions
+    END SUBROUTINE read_mole_fractions
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -120,10 +120,10 @@ subroutine allocate_from_input
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! It checks that the sum of all mole fractions is 1, and that every mole fractions are between 0 and 1.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine check_error_in_mole_fraction ( mole_fraction )
+    SUBROUTINE check_error_in_mole_fraction ( mole_fraction )
         use precision_kinds , only : i2b , dp
         use system , only : nb_species
-        implicit none
+        IMPLICIT NONE
         real(dp), dimension ( nb_species ) , intent(in) :: mole_fraction
         integer(i2b):: species
     
@@ -133,10 +133,10 @@ subroutine allocate_from_input
             write (*,*) 'here are the number of the species and its associated mole fraction'
             do species = 1 , nb_species
                 write (*,*) species , mole_fraction ( species )
-            end do
+            END DO
             write (*,*) 'stop'
             stop
-        end if
+        END IF
         ! a mole fraction should be between 0 and 1
         do species = 1 , nb_species
             if ( mole_fraction ( species ) < 0.0_dp .or. mole_fraction ( species ) > 1.0_dp ) then
@@ -145,10 +145,10 @@ subroutine allocate_from_input
                 write (*,*) 'species number ' , species , ' has mole fraction ' , mole_fraction ( species )
                 write (*,*) 'stop'
                 stop
-            end if
-        end do
-    end subroutine check_error_in_mole_fraction
+            END IF
+        END DO
+    END SUBROUTINE check_error_in_mole_fraction
 
 
 
-end subroutine allocate_from_input
+END SUBROUTINE allocate_from_input

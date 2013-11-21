@@ -52,9 +52,9 @@
 !X(3)=-1.5707963
 !local maximum = 4.000000
 !total number of steps: 30
-subroutine steepest_descent_main(xdim,conv_criteria,itermax,X)
+SUBROUTINE steepest_descent_main(xdim,conv_criteria,itermax,X)
 use precision_kinds,only: dp,i2b
-implicit none
+IMPLICIT NONE
 real(dp),dimension(xdim),intent(inout) :: X ! variables of Y
 real(dp),dimension(xdim) :: XOLD ! backup of X
 real(dp),dimension(3) :: Y ! function of X at 3 last iterations
@@ -72,10 +72,10 @@ call steepds(xdim,conv_criteria,itermax,stepsize,X,XOLD,Y,dY,n)
 write(*,*)'----- results -----'
 !write(*,*)'Maximum found = ',eval_Y_and_dY(xdim,X,dY)
 write(*,*)'Number of iterations = ',n
-end subroutine steepest_descent_main
-subroutine steepds(xdim,conv_criteria,itermax,stepsize,X,XOLD,Y,dY,n)
+END SUBROUTINE steepest_descent_main
+SUBROUTINE steepds(xdim,conv_criteria,itermax,stepsize,X,XOLD,Y,dY,n)
 use precision_kinds,only: dp,i2b
-implicit none
+IMPLICIT NONE
 real(dp), parameter :: macheps=epsilon(1.0d0) ! machine precision given by fortran function epsilon
 real(dp),intent(in) :: conv_criteria !convergence criteria
 real(dp),intent(inout) :: stepsize! initial guess for step size (how fast we follow dY)
@@ -94,7 +94,7 @@ do j=1,3
   Y(j)=eval_Y_and_dY(xdim,X,dY)
   !update X(i)
   call updateX(xdim,stepsize,dY,X,XOLD)
-end do
+END DO
 !We now have a history to base the subsequent search on
 !Open file to write the convergence
 open(10,file='output/iterations.dat',form='formatted')
@@ -104,7 +104,7 @@ do n=1,itermax
   !Accelerate search if approach is monotonic
   if (abs(Y(2)-Y(1))>macheps .and. (Y(3)-Y(2))/(Y(2)-Y(1))>0.0d0) then
     if (stepsize <1000.d0) stepsize=stepsize*5.0d0
-  end if
+  END IF
   !If heading the wrong way (here we're searching for the minimum)
   if(Y(3)>Y(2)) then
     !decelerate search
@@ -113,10 +113,10 @@ do n=1,itermax
     X=XOLD
     !recall values of Y and dY for X=XOLD
     Y(3)=eval_Y_and_dY(xdim,X,dY)
-  else !if head the right way
+  ELSE !if head the right way
     Y(1)=Y(2)
     Y(2)=Y(3)
-  end if
+  END IF
   
   !Update X(i)
   call updateX(xdim,stepsize,dY,X,XOLD)
@@ -126,15 +126,15 @@ do n=1,itermax
   write(10,*)n,Y(3),Y(3)-Y(2),stepsize
   !Check for convergence : if converged, exit loop
   if (abs(Y(3)-Y(2))<conv_criteria) exit
-end do
+END DO
 !close iteration output
 close(10)
-end subroutine steepds
+END SUBROUTINE steepds
 !this function is the one to replace with any compute energy and gradient you wish for
 function eval_Y_and_dY(xdim,X,dY)
 use precision_kinds,only: dp,i2b
 USE cg, ONLY: cg_vect,FF,dF
-implicit none
+IMPLICIT NONE
 real(dp) :: eval_Y_and_dY ! value of Y(X) and its partial derivatives dY
 integer(i2b),intent(in) :: xdim !dimension of X
 real(dp),dimension(xdim),intent(in) :: X !variables of Y
@@ -145,7 +145,7 @@ call energy_and_gradient
 eval_Y_and_dY=FF
 dY=dF
 end function eval_Y_and_dY
-subroutine updateX(xdim,stepsize,dY,X,XOLD)
+SUBROUTINE updateX(xdim,stepsize,dY,X,XOLD)
 use precision_kinds,only: dp,i2b
 integer(i2b),intent(in) :: xdim!dimension of variables X
 real(dp),intent(in) :: stepsize ! initial guess for step size (how fast we follow dY)
@@ -159,10 +159,10 @@ real(dp) :: dYnorm ! norm of the gradient
 dYnorm=0.0_dp
 do i=1,xdim
   dYnorm=dYnorm+dY(xdim)**2
-end do
+END DO
 dYnorm=sqrt(dYnorm)
 !Backup the X(i)
 XOLD=X
 !Update the X(i)
 X=X-stepsize*dY/dYnorm
-end subroutine updateX
+END SUBROUTINE updateX

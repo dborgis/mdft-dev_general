@@ -1,4 +1,4 @@
-subroutine energy_polarization_myway
+SUBROUTINE energy_polarization_myway
 use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, molec_polarx_k,molec_polary_k, molec_polarz_k,delta_k,nb_k,kBT,&
@@ -10,7 +10,7 @@ use constants , only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
 use fft , only : fftw3, kx, ky, kz, k2, norm_k
 use input , only : input_line,input_log, input_char
 
-implicit none
+IMPLICIT NONE
 real (dp) , dimension (nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ::dF_pol_long , dF_pol_trans, dF_pol_tot
 complex (dp) , dimension (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: rho_k, dF_pol_long_k ,&
  dF_pol_trans_k,&
@@ -32,7 +32,7 @@ real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz 
 if (nb_species/=1) then
     print*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
     stop
-end if
+END IF
 
 ! look for tag polarization in input
 if (.not. input_log('polarization')) return
@@ -47,7 +47,7 @@ END IF
 !  j = len ( 'evaluate_polarization' )
 !  if ( input_line (i) (1:j) == 'evaluate_polarization' .and. input_line (i) (j+4:j+8) == 'Macro' ) return ! exit this routine to get back to energy calculation skeleton.
 !  
-!end do
+!END DO
 if (trim(adjustl(input_char('evaluate_polarization')))== 'dipol') return
 ! init timer
 call cpu_time(time0)
@@ -109,12 +109,12 @@ do species =1 , nb_species
             do p=1, molRotGrid%n_angles
             icg = icg + 1
             rho(i,j,k,o,p,species) = cg_vect ( icg ) ** 2
-          end do
-        end do
-      end do
-    end do
-  end do
-end do
+          END DO
+        END DO
+      END DO
+    END DO
+  END DO
+END DO
 call cpu_time(time2)
 !======================================================================================================
 !            ====================================================
@@ -135,7 +135,7 @@ call cpu_time(time3)
 !    molec_polarx_k(:,:,:,o,:,:) = mu_SPCE*Omx(o)
 !    molec_polary_k(:,:,:,o,:,:) = mu_SPCE*Omy(o)
 !    molec_polarz_k(:,:,:,o,:,:) = mu_SPCE*Omz(o)
-!end do
+!END DO
 !======================================================================================================
 !            ====================================================
 !            !    		Compute 			!
@@ -153,12 +153,12 @@ do species=1, nb_species
                 molec_polary_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
                 pola_tot_z_k(i,j,k,species)=pola_tot_z_k(i,j,k,species)+angGrid%weight(o)*molRotGrid%weight(p)*&
                 molec_polarz_k(i,j,k,o,p,species)*rho_k(i,j,k,o,p,species)
-              end do
-            end do
-         end do
-      end do
-   end do
-end do
+              END DO
+            END DO
+         END DO
+      END DO
+   END DO
+END DO
 
 DO species=1,nb_species
     fftw3%in_backward= pola_tot_x_k(:,:,:,species)
@@ -201,15 +201,15 @@ END DO
 !          pxt = pxt + weight_Omx ( o ) * molRotGrid%weight(p) * rhot
 !          pyt = pyt + weight_Omy ( o ) * molRotGrid%weight(p) * rhot
 !          pzt = pzt + weight_Omz ( o ) * molRotGrid%weight(p) * rhot
-!        end do
-!      end do
+!        END DO
+!      END DO
 !      Px ( i , j , k,species ) = pxt
 !      Py ( i , j , k ,species) = pyt
 !      Pz ( i , j , k ,species) = pzt
-!    end do
-!  end do
-!end do
-!end do
+!    END DO
+!  END DO
+!END DO
+!END DO
 !======================================================================================================
 !            ====================================================
 !            !    	Compute 				!
@@ -226,7 +226,7 @@ END DO
 !in_forward=Pz(:,:,:,species)
 !call dfftw_execute ( plan_forward )
 !pola_tot_z_k(:,:,:,species)=out_forward*deltaV*mu_SPCE
-!end do
+!END DO
 !!======================================================================================================
 !            ====================================================
 !            !    	Compute 				!
@@ -244,14 +244,14 @@ do n=1, nb_species
       P_long_x_k(i,j,k,n)=0.0_dp
       P_long_y_k(i,j,k,n)=0.0_dp
       P_long_z_k(i,j,k,n)=0.0_dp
-      end if
+      END IF
       P_trans_x_k(i,j,k,n)=pola_tot_x_k(i,j,k,n)- P_long_x_k(i,j,k,n)
       P_trans_y_k(i,j,k,n)=pola_tot_y_k(i,j,k,n)- P_long_y_k(i,j,k,n)
       P_trans_z_k(i,j,k,n)=pola_tot_z_k(i,j,k,n)- P_long_z_k(i,j,k,n)
-      end do
-    end do
-  end do
-end do
+      END DO
+    END DO
+  END DO
+END DO
 do species=1,nb_species
 fftw3%in_backward= P_long_x_k(:,:,:,species)
 call dfftw_execute(fftw3%plan_backward)
@@ -262,7 +262,7 @@ P_long_y(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
 fftw3%in_backward= P_long_z_k(:,:,:,species)
 call dfftw_execute(fftw3%plan_backward)
 P_long_z(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
-end do
+END DO
 
 open (11, file='output/pola_tot_x')
 open (12, file='output/pola_tot_y')
@@ -271,7 +271,7 @@ open (13, file='output/pola_tot_z')
         write(11,*) , i*deltax, pola_tot_x(i,nfft2/2+1,nfft3/2+1,1), Px(i,nfft2/2+1,nfft3/2+1,1),P_long_x(i,nfft2/2+1,nfft3/2+1,1) 
         write(12,*) , i*deltay, pola_tot_y(nfft1/2+1,i,nfft3/2+1,1), Py(nfft1/2+1,i,nfft3/2+1,1),P_long_y(nfft1/2+1,i,nfft3/2+1,1) 
         write(13,*) , i*deltaz, pola_tot_z(nfft1/2+1,nfft2/2+1,i,1), Pz(nfft1/2+1,nfft1/2+1,i,1),P_long_z(nfft1/2+1,nfft1/2+1,i,1)
-    end do
+    END DO
 close(11)
 close(12)
 close(13)
@@ -284,9 +284,9 @@ do species=1, nb_species
   
     if (i>1 .and. i<nfft1/2+1) then
     facsym=2.0_dp
-    else
+    ELSE
     facsym=1.0_dp
-    end if
+    END IF
     do j=1, nfft2
       do k=1, nfft3
        k_index = int ( norm_k(i,j,k) / delta_k ) + 1
@@ -320,7 +320,7 @@ molec_polarz_k(i,j,k,o,p,species))
      (P_trans_x_k(i,j,k,species)*conjg(molec_polarx_k(i,j,k,o,p,species))&
       +P_trans_y_k(i,j,k,species)*conjg(molec_polary_k(i,j,k,o,p,species))&
      +P_trans_z_k(i,j,k,species)*conjg(molec_polarz_k(i,j,k,o,p,species)))*angGrid%weight(o)*molRotGrid%weight(p)*2.0_dp
-     else
+     ELSE
       dF_pol_long_k(i,j,k,o,p,species) = rho_0*0.5_dp*qfact/chi_l(k_index)*fourpi*angGrid%weight(o)*molRotGrid%weight(p)*&
       (P_long_x_k(i,j,k,species)*k_tens_k_Px+P_long_y_k(i,j,k,species)*k_tens_k_Py+P_long_z_k(i,j,k,species)&
       *k_tens_k_Pz)/k2(i,j,k)*2.0_dp
@@ -330,18 +330,18 @@ molec_polarz_k(i,j,k,o,p,species))
 +P_trans_y_k(i,j,k,species)*(conjg(molec_polary_k(i,j,k,o,p,species))-k_tens_k_Py/k2(i,j,k))&
 +P_trans_z_k(i,j,k,species)*(conjg(molec_polarz_k(i,j,k,o,p,species))-k_tens_k_Pz/k2(i,j,k)) )&
 *angGrid%weight(o)*molRotGrid%weight(p)*2.0_dp
-     end if
+     END IF
 !             ===============================================================================
 dF_pol_tot_k(i,j,k,o,p,species)=-kBT*3*rho_0/(2*mu_SPCE**2*n_0)*(pola_tot_x_k(i,j,k,species)*&
 conjg(molec_polarx_k(i,j,k,o,p,species))+pola_tot_y_k(i,j,k,species)*conjg(molec_polary_k(i,j,k,o,p,species))+pola_tot_z_k&  
 (i,j,k,species)*conjg(molec_polarz_k(i,j,k,o,p,species)))*angGrid%weight(o)*molRotGrid%weight(p)*2.0_dp
-          end do  !psi
-        end do   !omega
+          END DO  !psi
+        END DO   !omega
      
-      end do    !k
-    end do    !j
-  end do    !i
-end do     !species
+      END DO    !k
+    END DO    !j
+  END DO    !i
+END DO     !species
 !========================================================================================================================
 !						Get gradient in real space
 !========================================================================================================================
@@ -351,9 +351,9 @@ do species=1 , nb_species
     fftw3%in_backward= (dF_pol_trans_k (:,:,:,o,p,species)+dF_pol_long_k (:,:,:,o,p,species)+dF_pol_tot_k (:,:,:,o,p,species))
     call dfftw_execute (fftw3%plan_backward)
     dF_pol_tot (:,:,:,o,p,species)=fftw3%out_backward*deltaVk/(twopi)**3
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 icg=0
 !========================================================================================================================
 !						Allocate it for minimizing
@@ -367,13 +367,13 @@ do species=1, nb_species
           do p=1, molRotGrid%n_angles
           icg=icg+1
           dF(icg)=dF(icg)+  dF_pol_tot (i,j,k,o,p,species)*cg_vect(icg)*rho_0*2.0_dp * deltav!* angGrid%weight(o) * molRotGrid%weight(p) 
-          end do
+          END DO
  
-        end do
-      end do
-    end do
-  end do
-end do
+        END DO
+      END DO
+    END DO
+  END DO
+END DO
 !========================================================================================================================
 !					Check if Polarization Free energy is Real
 !========================================================================================================================
@@ -381,16 +381,16 @@ if (aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)<tiny(0.0_dp)) then
     F_pol_tot=real( F_pol_tot_k , dp)
     F_pol_long=real( F_pol_long_k,  dp)
     F_pol_trans=real( F_pol_trans_k, dp)
-else
+ELSE
     print*, 'Error in energy_polarization_myway Free energy is not Real'
     print*,aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)
     print*,F_pol_tot_k+F_pol_long_k+F_pol_trans_k
     stop
-end if
+END IF
 !========================================================================================================================
 F_pol=F_pol_tot+F_pol_long+F_pol_trans
 FF=FF+F_pol
 ! stop timer
 call cpu_time ( time1 )
 PRINT*, 'F_polarization =' , F_pol  , 'computed in (sec)' , time1 - time0
-end subroutine
+END SUBROUTINE

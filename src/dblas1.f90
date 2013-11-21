@@ -36,7 +36,7 @@ function dasum ( n, x, incx )
   dasum = sum ( abs ( x(1:1+(n-1)*incx:incx) ) )
   return
 end
-subroutine daxpy ( n, da, dx, incx, dy, incy )
+SUBROUTINE daxpy ( n, da, dx, incx, dy, incy )
 !
 !*******************************************************************************
 !
@@ -85,10 +85,10 @@ subroutine daxpy ( n, da, dx, incx, dy, incy )
     dy(i + 1) = dy(i + 1) + da*dx(i + 1)
     dy(i + 2) = dy(i + 2) + da*dx(i + 2)
     dy(i + 3) = dy(i + 3) + da*dx(i + 3)
-  end do
+  END DO
   return
 end
-subroutine dcopy ( n, dx, incx, dy, incy )
+SUBROUTINE dcopy ( n, dx, incx, dy, incy )
 !
 !*******************************************************************************
 !
@@ -116,7 +116,7 @@ subroutine dcopy ( n, dx, incx, dy, incy )
     dy(iy) = dx(ix)
     ix = ix + incx
     iy = iy + incy
-  end do
+  END DO
   return
 !
 !        code for both increments equal to 1
@@ -137,7 +137,7 @@ subroutine dcopy ( n, dx, incx, dy, incy )
     dy(i + 4) = dx(i + 4)
     dy(i + 5) = dx(i + 5)
     dy(i + 6) = dx(i + 6)
-  end do
+  END DO
   return
 end
 function ddot ( n, dx, incx, dy, incy )
@@ -171,7 +171,7 @@ function ddot ( n, dx, incx, dy, incy )
     dtemp = dtemp + dx(ix)*dy(iy)
     ix = ix + incx
     iy = iy + incy
-  end do
+  END DO
   ddot = dtemp
   return
 !
@@ -184,13 +184,13 @@ function ddot ( n, dx, incx, dy, incy )
   if (  m  ==  0 ) go to 40
   do i = 1,m
     dtemp = dtemp + dx(i)*dy(i)
-  end do
+  END DO
   if (  n  <  5 ) go to 60
    40 continue
   do i = m+1, n, 5
     dtemp = dtemp + dx(i)*dy(i) + dx(i + 1)*dy(i + 1) + &
         dx(i + 2)*dy(i + 2) + dx(i + 3)*dy(i + 3) + dx(i + 4)*dy(i + 4)
-  end do
+  END DO
    60 ddot = dtemp
   return
 end
@@ -281,9 +281,9 @@ function dnrm2 ( n, x, incx )
 !
   if (  n < 1 .or. incx.lt.1 )then
      norm  = zero
-  else if (  n == 1 )then
+  ELSE IF (  n == 1 )then
      norm  = abs( x( 1 ) )
-  else
+  ELSE
      scale = zero
      ssq   = one
 !
@@ -297,17 +297,17 @@ function dnrm2 ( n, x, incx )
            if (  scale < absxi )then
               ssq   = one   + ssq*( scale/absxi )**2
               scale = absxi
-           else
+           ELSE
               ssq   = ssq   +     ( absxi/scale )**2
-           end if
-        end if
-     end do
+           END IF
+        END IF
+     END DO
      norm  = scale * sqrt( ssq )
-  end if
+  END IF
   dnrm2 = norm
   return
 end
-subroutine drot ( n, dx, incx, dy, incy, c, s )
+SUBROUTINE drot ( n, dx, incx, dy, incy, c, s )
 !
 !*******************************************************************************
 !
@@ -335,7 +335,7 @@ subroutine drot ( n, dx, incx, dy, incy, c, s )
     dx(ix) = dtemp
     ix = ix + incx
     iy = iy + incy
-  end do
+  END DO
   return
 !
 !       code for both increments equal to 1
@@ -345,10 +345,10 @@ subroutine drot ( n, dx, incx, dy, incy, c, s )
     dtemp = c*dx(i) + s*dy(i)
     dy(i) = c*dy(i) - s*dx(i)
     dx(i) = dtemp
-  end do
+  END DO
   return
 end
-subroutine drotg ( da, db, c, s )
+SUBROUTINE drotg ( da, db, c, s )
 !
 !*******************************************************************************
 !
@@ -366,7 +366,7 @@ subroutine drotg ( da, db, c, s )
     s = 0.0d0
     r = 0.0d0
     z = 0.0d0
-  else
+  ELSE
     r = scale*dsqrt((da/scale)**2 + (db/scale)**2)
     r = dsign(1.0d0,roe)*r
     c = da/r
@@ -374,12 +374,12 @@ subroutine drotg ( da, db, c, s )
     z = 1.0d0
     if (  dabs(da) > dabs(db) ) z = s
     if (  dabs(db) >= dabs(da) .and. c /= 0.0d0 ) z = 1.0d0/c
-  end if
+  END IF
   da = r
   db = z
   return
 end
-subroutine drotm ( n, dx, incx, dy, incy, dparam )
+SUBROUTINE drotm ( n, dx, incx, dy, incy, dparam )
 !
 !*******************************************************************************
 !
@@ -388,7 +388,7 @@ subroutine drotm ( n, dx, incx, dy, incy, dparam )
 !     (dx**t) , where **t indicates transpose. the elements of dx are in
 !     (dy**t)
 !
-!     dx(lx+i*incx), i = 0 to n-1, where lx = 1 if incx >= 0, else
+!     dx(lx+i*incx), i = 0 to n-1, where lx = 1 if incx >= 0, ELSE
 !     lx = (-incx)*n, and similarly for sy using ly and incy.
 !     with dparam(1)=dflag, h has one of the following forms..
 !
@@ -488,7 +488,7 @@ subroutine drotm ( n, dx, incx, dy, incy, dparam )
            dy(ky)=-w+dh22*z
            kx=kx+incx
            ky=ky+incy
-      end do
+      END DO
       go to 140
   120     continue
       dh11=dparam(2)
@@ -502,11 +502,11 @@ subroutine drotm ( n, dx, incx, dy, incy, dparam )
            dy(ky)=w*dh21+z*dh22
            kx=kx+incx
            ky=ky+incy
-      end do
+      END DO
   140     continue
       return
 end
-!!!!!!!!!!subroutine drotmg ( dd1, dd2, dx1, dy1, dparam )
+!!!!!!!!!!SUBROUTINE drotmg ( dd1, dd2, dx1, dy1, dparam )
 !!!!!!!!!!!
 !!!!!!!!!!!*******************************************************************************
 !!!!!!!!!!!
@@ -692,7 +692,7 @@ end
 !!!!!!!!!!      dparam(1)=dflag
 !!!!!!!!!!  return
 !!!!!!!!!!end
-subroutine dscal ( n, da, dx, incx )
+SUBROUTINE dscal ( n, da, dx, incx )
 !
 !*******************************************************************************
 !
@@ -713,7 +713,7 @@ subroutine dscal ( n, da, dx, incx )
   nincx = n*incx
   do i = 1,nincx,incx
     dx(i) = da*dx(i)
-  end do
+  END DO
   return
 !
 !        code for increment equal to 1
@@ -733,10 +733,10 @@ subroutine dscal ( n, da, dx, incx )
     dx(i + 2) = da*dx(i + 2)
     dx(i + 3) = da*dx(i + 3)
     dx(i + 4) = da*dx(i + 4)
-  end do
+  END DO
   return
 end
-subroutine dswap ( n, x, incx, y, incy )
+SUBROUTINE dswap ( n, x, incx, y, incy )
 !
 !*******************************************************************************
 !
@@ -779,13 +779,13 @@ subroutine dswap ( n, x, incx, y, incy )
   double precision y(*)
 !
   if ( n <= 0 ) then
-  else if ( incx == 1 .and. incy == 1 ) then
+  ELSE IF ( incx == 1 .and. incy == 1 ) then
     m = mod ( n, 3 )
     do i = 1, m
       temp = x(i)
       x(i) = y(i)
       y(i) = temp
-    end do
+    END DO
     do i = m+1, n, 3
       temp = x(i)
       x(i) = y(i)
@@ -796,26 +796,26 @@ subroutine dswap ( n, x, incx, y, incy )
       temp = x(i+2)
       x(i+2) = y(i+2)
       y(i+2) = temp
-    end do
-  else
+    END DO
+  ELSE
     if ( incx >= 0 ) then
       ix = 1
-    else
+    ELSE
       ix = ( - n + 1 ) * incx + 1
-    end if
+    END IF
     if ( incy >= 0 ) then
       iy = 1
-    else
+    ELSE
       iy = ( - n + 1 ) * incy + 1
-    end if
+    END IF
     do i = 1, n
       temp = x(ix)
       x(ix) = y(iy)
       y(iy) = temp
       ix = ix + incx
       iy = iy + incy
-    end do
-  end if
+    END DO
+  END IF
   return
 end
 function idamax ( n, dx, incx )
@@ -849,7 +849,7 @@ function idamax ( n, dx, incx )
      idamax = i
      dmax = dabs(dx(ix))
     5    ix = ix + incx
-  end do
+  END DO
   return
 !
 !        code for increment equal to 1
@@ -860,8 +860,8 @@ function idamax ( n, dx, incx )
     if ( abs ( dx(i) ) > dmax ) then
       idamax = i
       dmax = abs ( dx(i) )
-    end if
-  end do
+    END IF
+  END DO
   return
 end
 function lsame ( CA, CB )
@@ -886,7 +886,7 @@ function lsame ( CA, CB )
   LSAME = ( CA == CB )
   IF ( LSAME ) then
     RETURN
-  end if
+  END IF
 !
 !  Now test for equivalence if both characters are alphabetic.
 !

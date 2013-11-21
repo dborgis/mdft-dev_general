@@ -1,5 +1,5 @@
-! This subroutine computes the radial distribution function around each solute site
-subroutine compute_rdf ( array , filename )
+! This SUBROUTINE computes the radial distribution function around each solute site
+SUBROUTINE compute_rdf ( array , filename )
 
     USE precision_kinds, ONLY: dp , i2b
     USE system, ONLY: x_mol , y_mol , z_mol , id_mol , id_solv, nb_species, spaceGrid, soluteSite
@@ -62,15 +62,15 @@ do s = 1 , nb_species
           if ( bin > nbins ) cycle ! out of range
           recurrence_bin ( n , bin ) = recurrence_bin ( n , bin ) + 1
           rdf ( n , bin ) = rdf ( n , bin ) + array ( i , j , k , s )
-        end do
-      end do
-    end do
-  end do
+        END DO
+      END DO
+    END DO
+  END DO
 
   !> Average rdf on each bin
   where ( recurrence_bin /= 0 )
      rdf = rdf / REAL ( recurrence_bin , dp )
-  elsewhere
+  ELSEWHERE
      rdf = 0.0_dp
   end where
 
@@ -79,16 +79,16 @@ do s = 1 , nb_species
      write ( 10 , * ) '#site ' , n
      do bin = 0 , nbins
            write ( 10 , 100 ) (REAL ( bin , dp )) * delta_r , rdf ( n , bin ) 
-     end do
+     END DO
      write ( 10 , * )
-  end do
+  END DO
   ! white line for xmgrace
   write ( 10 , * )
-end do
+END DO
 close(10)
 
 deallocate ( recurrence_bin )
 deallocate ( rdf )
 
 write(*,*)filename,' written'
-end subroutine compute_rdf
+END SUBROUTINE compute_rdf

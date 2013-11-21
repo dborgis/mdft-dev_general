@@ -2,7 +2,7 @@
 ! See issue in Github for a proposition to improve this.
 ! Note that NO TABULATION IS USED. This name is here for historical reasons and should be modified at some point.
 
-subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
+SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
 
     use precision_kinds, only: dp,i2b
     use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
@@ -12,7 +12,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     use quadrature, only: angGrid, molRotGrid
     USE input, ONLY: verbose
 
-    implicit none
+    IMPLICIT NONE
 
     real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     integer(i2b) :: i,j,k,o,p,m,n ! dummy
@@ -44,7 +44,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     pz=0
     Rc2=Rc**2
 
-    ! test if all solutes have zero charge then don't waste your time : go to end of subroutine
+    ! test if all solutes have zero charge then don't waste your time : go to end of SUBROUTINE
     IF (MINVAL(chg_mol)==0.0_dp .and. MAXVAL(chg_mol)==0.0_dp) THEN   ! solute is not charged
         IF (verbose) WRITE(*,*)'solute has no charge'
         RETURN
@@ -60,9 +60,9 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
                 xmod(m,p,o)= Rotxx(o,p)*x_solv(m) + Rotxy(o,p)*y_solv(m) + Rotxz(o,p)*z_solv(m)
                 ymod(m,p,o)= Rotyx(o,p)*x_solv(m) + Rotyy(o,p)*y_solv(m) + Rotyz(o,p)*z_solv(m)
                 zmod(m,p,o)= Rotzx(o,p)*x_solv(m) + Rotzy(o,p)*y_solv(m) + Rotzz(o,p)*z_solv(m)
-            end do
-        end do
-    end do
+            END DO
+        END DO
+    END DO
 
     do species = 1 , nb_species
         do k=1,nfft3
@@ -70,7 +70,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
             !  if(z_grid>12.0_dp .and. z_grid<30.0_dp) then
             !    Vcoul(:,:,k,:)=100.0_dp
             !    cycle
-            !  end if
+            !  END IF
             do j=1,nfft2
                 y_grid=real(j-1,dp)*deltay
                 do i=1,nfft1
@@ -101,35 +101,35 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
                                                 if(r_nm2<Rc2) then
                                                     V_psi = huge(1.0_dp)
                                                     cycle ploop ! sous-entendu tempVcoul=tempVcoul+exp(-beta*huge)=tempVcoul+0
-                                                else
+                                                ELSE
                                                     V_psi = V_psi + qfactcc/sqrt(r_nm2)
-                                                end if
-                                            end do
-                                        end do
-                                    end do
-                                end do ! solute
-                            end do ! solvent
+                                                END IF
+                                            END DO
+                                        END DO
+                                    END DO
+                                END DO ! solute
+                            END DO ! solvent
                         !tempVcoul=tempVcoul+exp(-beta*V_psi)
                         !if (tempVcoul<1.e-10_dp) then
                         Vext_q(i,j,k,o,p,species ) = V_psi
-                        !else
+                        !ELSE
                         !   Vext_q(i,j,k,o,1)=-log(tempVcoul/molRotGrid%n_angles)/beta
-                        !end if
+                        !END IF
                         ! Limit maximum value
                         if (Vext_q(i,j,k,o,p,species)>100.0_dp) Vext_q(i,j,k,o,p,species)=100.0_dp
                         !!!!!        if (Vcoul(i,j,k,o)<=-10.0_dp) then
                         !!!!!          write(*,*)'problem in compute_vcoul_ijko_from_tabulated.f90'
                         !!!!!          write(*,*)'reduced coordinate of problematic grid point : ',x_grid/Lx,y_grid/Ly,z_grid/Lz
                         !!!!!          write(*,*)'Vcoul(i,j,k,o) = ',Vcoul(i,j,k,o)
-                        !!!!!        else if (Vcoul(i,j,k,o)>100.0_dp) then
+                        !!!!!        ELSE IF (Vcoul(i,j,k,o)>100.0_dp) then
                         !!!!!          Vcoul(i,j,k,o)=100.0_dp
-                        !!!!!        end if
-                        end do ploop ! psi
-                    end do ! omega
-                end do ! i
-            end do ! j
-        end do ! k
-    end do ! species
+                        !!!!!        END IF
+                        END DO ploop ! psi
+                    END DO ! omega
+                END DO ! i
+            END DO ! j
+        END DO ! k
+    END DO ! species
 !$OMP END PARALLEL DO
     
     999 continue

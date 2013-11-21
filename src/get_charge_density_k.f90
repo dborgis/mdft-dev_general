@@ -12,7 +12,7 @@ use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly
 use quadrature, only : angGrid, molRotGrid
 use fft , only : kx, ky, kz, k2
 
-implicit none
+IMPLICIT NONE
 integer (i2b) :: i, j, k, o , p , n,species!dummy
 real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
 integer (i2b) :: nf1
@@ -26,7 +26,7 @@ real (dp) :: deltaVk, Rc
 Rc=0.5_dp
 if (Rc/=0.0_dp) then
     print*, 'WARNING: you convolute molecular Charge Density and POLARIZATION with a Gaussian be sure that is what you want!!!'
-end if
+END IF
 deltaVk=twopi**3/(Lx*Ly*Lz)
 nf1=nfft1/2
 allocate(sigma_k(nf1+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles,nb_species))
@@ -55,13 +55,13 @@ do i = 1 , nf1 + 1
 !print*, xmod,ymod,zmod,chg_solv(id_solv(n))
                if (xmod==Lx) then
                 xmod=0.0_dp
-               end if
+               END IF
                if (ymod==Ly) then
                ymod=0.0_dp
-               end if
+               END IF
                if (zmod==Lz) then
                zmod=0.0_dp
-               end if
+               END IF
   
                sigma_k (i , j, k ,o,p,species) = sigma_k (i , j , k ,o,p,species) +chg_solv(id_solv(n))*&
                exp(-i_complex*(kx(i)*xmod+ky(j)*ymod+ kz(k)*zmod ))*exp(-(Rc**2*k2(i,j,k))/2)
@@ -70,7 +70,7 @@ do i = 1 , nf1 + 1
                molec_polarx_k (i,j,k,o,p,species)=molec_polarx_k(i,j,k,o,p,species) + chg_solv(id_solv(n))*xmod
                molec_polary_k (i,j,k,o,p,species)=molec_polary_k(i,j,k,o,p,species) + chg_solv(id_solv(n))*ymod
                molec_polarz_k (i,j,k,o,p,species)=molec_polarz_k(i,j,k,o,p,species) + chg_solv(id_solv(n))*zmod
-              else
+              ELSE
                molec_polarx_k (i,j,k,o,p,species)=molec_polarx_k(i,j,k,o,p,species) + chg_solv(id_solv(n))*xmod/&
               (xmod*kx(i)+ymod*ky(j)+zmod*kz(k))*(exp(i_complex*(xmod*kx(i)+ymod*ky(j)+zmod*kz(k)))-1)*(-i_complex)&
                *exp(-(Rc**2*k2(i,j,k))/2)
@@ -80,14 +80,14 @@ do i = 1 , nf1 + 1
                molec_polarz_k (i,j,k,o,p,species)=molec_polarz_k(i,j,k,o,p,species) + chg_solv(id_solv(n))*zmod/&
                (xmod*kx(i)+ymod*ky(j)+zmod*kz(k))*(exp(i_complex*(xmod*kx(i)+ymod*ky(j)+zmod*kz(k)))-1)*(-i_complex)&
                *exp(-(Rc**2*k2(i,j,k))/2)
-               end if
-            end do  !n
-           end do  !p
-        end do  !o
-     end do  !k
-   end do  !j
-end do  !i
-end do!species
+               END IF
+            END DO  !n
+           END DO  !p
+        END DO  !o
+     END DO  !k
+   END DO  !j
+END DO  !i
+END DO!species
 !in_backward=molec_polarx_k (:,:,:,1,1,1)
 !call dfftw_execute(plan_backward)
 !molecpolarx=out_backward*deltaVk/(twopi)**3
@@ -100,16 +100,16 @@ end do!species
 !open(11,file='output/mux')
 !do i =1,nfft1
 !write(11,*) i*deltax, molecpolarx(i,1,1)
-!end do
+!END DO
 !close(11)
 !open(11,file='output/muy')
 !do i =1,nfft1
 !write(11,*) i*deltax, molecpolary(i,1,1)
-!end do
+!END DO
 !close(11)
 !open(11,file='output/muz')
 !do i =1,nfft1
 !write(11,*) i*deltax, molecpolarz(i,1,1)
-!end do
+!END DO
 !close(11)
-end subroutine
+END SUBROUTINE

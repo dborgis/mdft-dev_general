@@ -38,7 +38,7 @@ SUBROUTINE put_input_in_character_array
             input_line (n+1) = input_line(i)
             n = n + 1   
         endif
-    end do
+    END DO
     
     !Resize input_line to the smallest size by using a temporary array
     allocate ( arraytemp(n) , SOURCE= input_line(1:n) )
@@ -46,4 +46,4 @@ SUBROUTINE put_input_in_character_array
     allocate ( input_line (n), SOURCE= arraytemp )
     deallocate (arraytemp)
 
-end subroutine put_input_in_character_array
+END SUBROUTINE put_input_in_character_array

@@ -1,7 +1,7 @@
 ! Here is a module dedicated to the calculation and the use of the external potential
 module external_potential
 use precision_kinds , only : dp, i2b
-implicit none
+IMPLICIT NONE
 !real(dp), allocatable, dimension(:,:,:,:) :: Vext ! external potential of the whole solute on a position and angular grid
 !real(dp), allocatable, dimension(:,:,:,:) :: Vlj ! lennard jones potential of the whole solute on a position and angular grid
 !real(dp), allocatable, dimension(:,:,:,:) :: Vcoul ! electrostatic potential of the whole solute on a position and angular grid
@@ -24,10 +24,10 @@ real( dp ) , allocatable , dimension ( : , : , : ) ::  q_charge
 integer (i2b) , allocatable , dimension (: , : , : ) :: x_charge, y_charge, z_charge
 integer (i2b) :: nb_of_interpolation
 real (dp) :: Fcoul
-! here is contained the subroutine that deallocates everything properly
+! here is contained the SUBROUTINE that deallocates everything properly
 contains 
-  subroutine deallocate_everything_external_potential
-    implicit none
+  SUBROUTINE deallocate_everything_external_potential
+    IMPLICIT NONE
     if ( allocated ( Vext_total ) ) deallocate ( Vext_total )
     if ( allocated ( Vext_lj ) ) deallocate ( Vext_lj )
     if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
@@ -35,5 +35,5 @@ contains
      if ( allocated ( y_charge ) ) deallocate ( y_charge )
      if ( allocated ( z_charge ) ) deallocate ( z_charge )
       if ( allocated ( q_charge ) ) deallocate ( q_charge )
-  end subroutine deallocate_everything_external_potential
+  END SUBROUTINE deallocate_everything_external_potential
 end module external_potential

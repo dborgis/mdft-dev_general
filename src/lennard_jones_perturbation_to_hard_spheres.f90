@@ -1,14 +1,14 @@
-! this subroutine computes the lennard jones perturbative contribution to the hard sphere Helmotz energy
+! this SUBROUTINE computes the lennard jones perturbative contribution to the hard sphere Helmotz energy
 ! 201109121332 creation by Maximilien Levesque
 ! 201109151545 added the calculation of the perturbation potential
-subroutine lennard_jones_perturbation_to_hard_spheres
+SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
 use quadrature , only : angGrid
 USE cg, ONLY: cg_vect , dF , FF
 use precision_kinds , only : dp , i2b
 use constants , only : fourpi , twopi
 use fft , only : fftw3
-implicit none
+IMPLICIT NONE
 real(dp), allocatable , dimension ( : , : , : ) :: rho_n ! local density
 complex(dp), allocatable , dimension ( : , : , : ) :: rho_k ! fourier transformed rho_n
 real(dp):: local_density ! dummy for rho_n
@@ -41,15 +41,15 @@ do i = 1 , nfft1
       do o = 1, angGrid%n_angles ! angGrid%n_angles=1
         icg = icg + 1
         local_density = local_density + angGrid%weight (o) * cg_vect (icg) ** 2
-      end do
+      END DO
       ! correct by fourpi as the integral over all orientations o is 4pi
       local_density = local_density / fourpi
       ! at the same time integrate rho_n in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
       rho_n ( i , j , k ) = local_density
       nb_molecule = nb_molecule + local_density
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 nb_molecule = nb_molecule * n_0 * deltav ! normalization
 ! total number of k points needed for inverse fft normalization
 Nk = real ( nfft1 * nfft2 * nfft3 , dp )
@@ -80,11 +80,11 @@ if ( .not. allocated ( v_perturbation_k ) ) then
         kz2 = ( twopiOLz * real ( m3 , dp ) ) ** 2
         norm_k = sqrt ( kx2 + ky2 + kz2 )
         v_perturbation_k ( l , m , n ) = vlj_wca_k ( norm_k , sig_solv(1) , eps_solv(1) ) ! in kJ/mol
-      end do
+      END DO
  
-    end do
-  end do
-end if
+    END DO
+  END DO
+END IF
 ! put the backup in what we use (perhaps redondant)
 allocate ( Vk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) ) ! Vk is the one we use in this routine. It may be saved in v_perturbation_k in order not to compute it each time.
 vk = v_perturbation_k
@@ -104,10 +104,10 @@ do i = 1 , nfft1
     do k = 1 , nfft3
       do o = 1, angGrid%n_angles ! angGrid%n_angles=1
         Fperturbation = Fperturbation + rho_n ( i , j , k ) * v_perturbation_r ( i , j , k )
-      end do
-    end do
-  end do
-end do
+      END DO
+    END DO
+  END DO
+END DO
 ! normalize
 Fperturbation = Fperturbation * 0.5_dp * deltav ! * n_0
 deallocate ( rho_n )
@@ -124,10 +124,10 @@ do i = 1 , nfft1
       do o = 1 , angGrid%n_angles
         icg = icg + 1
         dF ( icg ) = dF ( icg ) + 2.0_dp * cg_vect ( icg ) * DeltaV * v_perturbation_r ( i , j , k ) ! 2011 09 18 23h16 deleted *n_0
-      end do
-    end do
-  end do
-end do
+      END DO
+    END DO
+  END DO
+END DO
 deallocate ( v_perturbation_r )
 !> Close timer
 call cpu_time ( time1 )
@@ -140,7 +140,7 @@ contains
   function vlj_wca_k ( k , sigma_lj , epsilon_lj )
   use precision_kinds , only : dp , i2b
   use constants , only : fourpi
-  implicit none
+  IMPLICIT NONE
   complex(dp):: vlj_wca_k ! which computes the reciprocal value of the potential 'vk'
   real(dp), intent(in) :: k ! one gives the k point 'k' to eat to the routine
   real(dp), intent(in) :: sigma_lj , epsilon_lj ! lennard jones parameters in Angstroms and KJ/mol
@@ -169,20 +169,20 @@ contains
     if ( ri < cutoff ) then ! if under cutoff
       if ( k > 0.0_dp ) then
         vlj_wca_k = vlj_wca_k + cmplx ( - epsilon_lj * ri * sin ( k * ri ) / k , 0.0_dp )
-      else ! if k = 0 then lim sin(k*r)/k = r
+      ELSE ! if k = 0 then lim sin(k*r)/k = r
         vlj_wca_k = vlj_wca_k + cmplx ( - epsilon_lj * ri ** 2 , 0.0_dp )
-      end if
-    else ! if after cutoff
+      END IF
+    ELSE ! if after cutoff
       sigmaori6 = ( sigma_lj / ri ) ** 6
       if ( k > 0.0_dp ) then
         vlj_wca_k = vlj_wca_k + cmplx ( 4.0_dp * epsilon_lj * ri * ( sigmaori6 ** 2 - sigmaori6 ) * sin ( k * ri ) / k , 0.0_dp )
-      else ! if k = 0 then lim sin(k*r)/k = r 
+      ELSE ! if k = 0 then lim sin(k*r)/k = r 
         vlj_wca_k = vlj_wca_k + cmplx ( 4.0_dp * epsilon_lj * ri * ( sigmaori6 ** 2 - sigmaori6 ) * ri , 0.0_dp ) ! lim ( sin(kr) / k , k->0 ) = r
-      end if
-    end if
-  end do
+      END IF
+    END IF
+  END DO
   ! integration factors
   vlj_wca_k = vlj_wca_k * cmplx ( dx * fourpi , 0.0_dp )
   end function vlj_wca_k
   
-end subroutine lennard_jones_perturbation_to_hard_spheres
+END SUBROUTINE lennard_jones_perturbation_to_hard_spheres

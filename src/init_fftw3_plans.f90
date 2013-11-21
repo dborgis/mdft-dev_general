@@ -1,4 +1,4 @@
-! this subroutine initiates the plans needed by fftw3.
+! this SUBROUTINE initiates the plans needed by fftw3.
 ! it also allocates the input and output arrays of fftw3.
 
 SUBROUTINE init_fftw3_plans

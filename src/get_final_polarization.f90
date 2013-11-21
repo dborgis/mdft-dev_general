@@ -1,5 +1,5 @@
 !> Gets the final density from the last minimizer step.
-subroutine get_final_polarization ( Px , Py , Pz )
+SUBROUTINE get_final_polarization ( Px , Py , Pz )
 use precision_kinds , only: dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , nb_species
 use constants , only : fourpi
@@ -7,7 +7,7 @@ use constants , only : fourpi
 USE cg, ONLY: CG_vect
 ! cg_vect = density for at each grid point for each angle and each species
 use quadrature , only : Omx , Omy , Omz, angGrid
-implicit none
+IMPLICIT NONE
 real(dp), dimension ( nfft1 , nfft2 , nfft3 , nb_species ) , intent(out) :: Px , Py , Pz ! equilibrium polarization(position)
 integer(i2b):: i , j , k , omega , icg , species ! dummy
 real(dp):: rho_over_fourpi !> = CG_vect(i)**2/fourpi
@@ -39,16 +39,16 @@ do species = 1 , nb_species
           local_Px = local_Px + weight_Omx ( omega ) * rho_over_fourpi
           local_Py = local_Py + weight_Omy ( omega ) * rho_over_fourpi
           local_Pz = local_Pz + weight_Omz ( omega ) * rho_over_fourpi
-        end do
+        END DO
         Px ( i , j , k , species  ) = local_Px
         Py ( i , j , k , species  ) = local_Py
         Pz ( i , j , k , species  ) = local_Pz
-      end do
-    end do
-  end do
-end do
+      END DO
+    END DO
+  END DO
+END DO
 ! deallocate
 deallocate ( weight_omx )
 deallocate ( weight_omy )
 deallocate ( weight_omz )
-end subroutine get_final_polarization
+END SUBROUTINE get_final_polarization

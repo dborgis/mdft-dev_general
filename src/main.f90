@@ -3,7 +3,7 @@
 program mdft
 
     use precision_kinds , only : dp ! definition of the precision kinds
-    implicit none
+    IMPLICIT NONE
     real(dp) :: time0, time1 ! time steps
 
     call cpu_time ( time0 ) ! init timer

@@ -8,9 +8,9 @@
 ! read the excess functional
 ! compute accordingly the chemical potential and the reference bulk density
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine compute_hard_spheres_parameters
+SUBROUTINE compute_hard_spheres_parameters
 use system , only : radius , nb_species , muexc_0_multispec , Fexc_0_multispec , n_0_multispec
-implicit none
+IMPLICIT NONE
 character ( 4 ) :: hs_functional
 !> Warn user
 write(*,*)'>>> Compute hard sphere parameters in compute_hs_parameters.f90'
@@ -34,11 +34,11 @@ contains
 ! We want the reference bulk fluids to have physical meaning, that's why we pay attention to them not to be greater than 0.74, where
 ! they would be unphysical. 0.74 is the maximum packing of a solid crystal.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine compute_packing_fractions_and_check_legality
+  SUBROUTINE compute_packing_fractions_and_check_legality
     use precision_kinds , only : dp , i2b
     use constants , only : fourpi
     use system , only : nb_species , n_0_multispec , radius
-    implicit none
+    IMPLICIT NONE
     real(dp), dimension ( nb_species ) :: eta
     integer(i2b):: species ! dummy
     ! packing fraction : eta = 4/3 * pi * R^3 * solvent density of the constituant ( /= total solvent density)
@@ -51,34 +51,34 @@ contains
       if ( eta ( species ) >= 0.74_dp ) then
         write (*,*) 'packing fraction of species ' , species , ' >= 0.74 , ie closed packed solid. unphysical region explored. stop'
         stop
-      end if
-    end do
-  end subroutine compute_packing_fractions_and_check_legality
+      END IF
+    END DO
+  END SUBROUTINE compute_packing_fractions_and_check_legality
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reads hard sphere excess functional
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine read_hs_functional ( hs_functional )
+  SUBROUTINE read_hs_functional ( hs_functional )
     use precision_kinds , only : i2b
     use input , only : input_line, input_char
-    implicit none
+    IMPLICIT NONE
     integer(i2b):: i , j ! dummy
     character ( 4 ) , intent(out) :: hs_functional
 !    do i = 1 , size ( input_line )
 !      j = len ( 'hs_functional' )
 !      if ( input_line (i) (1:j) == 'hs_functional' ) read ( input_line (i) (j+4:j+7) , * ) hs_functional
-!    end do
+!    END DO
     hs_functional=trim(adjustl(input_char('hs_functional')))
     ! Check legality of hs_functional
     call check_functional_legality ( hs_functional )
-  end subroutine read_hs_functional
+  END SUBROUTINE read_hs_functional
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! this subroutine checks if the functional asked in input file is legal. Else, stop execution.
+! this SUBROUTINE checks if the functional asked in input file is legal. Else, stop execution.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine check_functional_legality ( hs_functional )
+  SUBROUTINE check_functional_legality ( hs_functional )
     use precision_kinds , only : i2b
     use system , only : nb_species
-    implicit none
+    IMPLICIT NONE
     integer(i2b):: i ! dummy
     character ( 4 ) , intent ( inout ) :: hs_functional
     i = 0
@@ -92,8 +92,8 @@ contains
       write (*,*) 'Default value will be used: Carnahan-starling for pure fluids and Mansoori-Carnahan-Starling-Leland for multi.'
       if ( nb_species == 1 ) hs_functional(1:2) = 'CS'
       if ( nb_species > 1 ) hs_functional(1:4) = 'MCSL'
-    end if
-  end subroutine check_functional_legality
+    END IF
+  END SUBROUTINE check_functional_legality
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! excess_chemical_potential_and_reference_bulk_grand_potential calculates the excess chemical potential and reference bulk grand-pot
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -101,12 +101,12 @@ contains
 ! and the reference bulk homogeneous grand-potential is zero.
 ! We also calculate the reference bulk grand potential
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine excess_chemical_potential_and_reference_bulk_grand_potential &
+  SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential &
                ( nb_species , n_0_multispec , radius , muexc_0_multispec , Fexc_0_multispec , hs_functional )
     use precision_kinds , only : dp , i2b
     use constants , only : fourpi , pi
     use system , only : kbT , Lx , Ly , Lz
-    implicit none
+    IMPLICIT NONE
  
     integer(i2b), intent(in) :: nb_species
     real(dp), dimension ( nb_species ) , intent(in) :: n_0_multispec ! ref bulk densities
@@ -135,7 +135,7 @@ contains
         partial_phi_over_partial_n2 = n1 / ( 1.0_dp - n3 ) + n2 ** 2 / ( 8.0_dp * pi * ( 1.0_dp - n3 ) ** 2 )
         partial_phi_over_partial_n3 = n0 / ( 1.0_dp - n3 ) + n1 * n2 / ( 1.0_dp - n3 ) ** 2 &
                                     - n2 ** 3 / ( 12.0_dp * pi * ( n3 - 1.0_dp ) ** 3 )
-      else if ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) then
+      ELSE IF ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) then
         partial_phi_over_partial_n0 = - log ( 1.0_dp - n3 )
         partial_phi_over_partial_n1 = n2 / ( 1.0_dp - n3 )
         partial_phi_over_partial_n2 = ( n3 * ( n2 ** 2 - 12.0_dp * n1 * ( -1.0_dp + n3 ) * n3 * Pi ) &
@@ -143,7 +143,7 @@ contains
         partial_phi_over_partial_n3 = ( n3 * ( n2 ** 3 * ( 2.0_dp - 5.0_dp * n3 + n3 ** 2 ) + 36.0_dp * n1 * n2 * ( -1.0_dp + n3 )&
                   * n3 ** 2 * Pi - 36.0_dp * n0 * (-1.0_dp + n3) ** 2 * n3**2 * Pi) - 2.0_dp * n2 ** 3 *&
                   (-1.0_dp + n3)**3 * log ( 1.0_dp - n3 ) ) / ( 36.0_dp *(-1.0_dp + n3)**3 * n3**3 *Pi)
-      end if
+      END IF
       ! partial derivative of weighted densities w.r.t. density of constituant i. It may be shown it is weight function (k=0)
       partial_n0_over_partial_rho = 1.0_dp
       partial_n1_over_partial_rho = radius ( species )
@@ -160,20 +160,20 @@ contains
         Fexc_0_multispec ( species ) = kBT * ( - n0 * log ( 1.0_dp - n3 )                            &
                                                + n1 * n2 / ( 1.0_dp - n3 )                           &
                                                + n2 ** 3 / ( 24.0_dp * pi * ( 1.0_dp - n3 ) ** 2 ) )
-      else if ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) then
+      ELSE IF ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) then
         Fexc_0_multispec ( species ) = kBT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
                                              + n1 * n2 / ( 1.0_dp - n3 )                                                        &
                                              + ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / ( ( 1.0_dp - n3 ) ** 2 * n3 )          )
-      end if
+      END IF
       ! integration factors
       Fexc_0_multispec ( species ) = Fexc_0_multispec ( species ) * Lx * Ly * Lz &
                                    - muexc_0_multispec ( species) * Lx * Ly * Lz * n_0_multispec ( species )  ! integration factor
       write ( * , * ) 'Fexc0 ( ' , species , ' ) = ' , Fexc_0_multispec ( species )
-    end do
-    end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
+    END DO
+    END SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
+! This SUBROUTINE computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! The four weight functions are here defined in k-space. They are known analyticaly and only depend on the so called fundamental
 ! measures of the hard spheres.

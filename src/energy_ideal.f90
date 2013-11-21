@@ -1,7 +1,7 @@
-! This subroutine computes the ideal part of the free energy functional.
+! This SUBROUTINE computes the ideal part of the free energy functional.
 ! It sum over species of n(log(n)-1)
 
-subroutine energy_ideal
+SUBROUTINE energy_ideal
 
     USE precision_kinds, ONLY: i2b, dp
     USE cg, ONLY: cg_vect, FF, dF
@@ -37,18 +37,18 @@ subroutine energy_ideal
                         do p=1,molRotGrid%n_angles
                             icg=icg+1
                             rhon=rhon+cg_vect(icg)**2*angGrid%weight(o)*molRotGrid%weight(p)/(fourpi**2/(sym_order*2.0_dp))
-                        end do
-                    end do
+                        END DO
+                    END DO
                     rho_n(i,j,k)=rhon
                     if (rhon <=1.0_dp) then
                         Fid_lin_temp=0.0_dp
-                    else  
+                    ELSE  
                         Fid_lin_temp=-(rhon*Log(rhon)-rhon+1.0_dp-0.5_dp*(rhon-1.0_dp)**2)
-                    end if
+                    END IF
                     Fid_lin = Fid_lin+Fid_lin_temp
-                end do
-            end do
-        end do
+                END DO
+            END DO
+        END DO
     END IF
     Fid_lin = Fid_lin*kBT*n_0_multispec(1)*spaceGrid%dv ! convert to kJ/mol
 
@@ -70,18 +70,18 @@ subroutine energy_ideal
                                     rhon = rho_n(i,j,k)
                                     if (rhon<=1.0_dp) then
                                         dFid_lin_temp=0.0_dp
-                                    else
+                                    ELSE
                                         dFid_lin_temp = -KbT*(Log(rhon)-rhon+1.0_dp)
-                                    end if
+                                    END IF
                                     rho = psi ** 2
                                     Fideal = Fideal + Fideal_local(o,p,s,rho)
                                     dF(icg) =  dF(icg) + dFideal_local(o,p,s,psi,dFid_lin_temp)
-                                end do
-                            end do
-                        end do
-                    end do
-                end do
-            end do
+                                END DO
+                            END DO
+                        END DO
+                    END DO
+                END DO
+            END DO
 
         ELSE IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '2') then
             Fid_lin = 0.0_dp
@@ -104,12 +104,12 @@ subroutine energy_ideal
                                         Fid_lin = Fid_lin + prefactor(o,p,s) * spaceGrid%dv *Fid_lin_temp
                                         dF(icg) = dF(icg) + dFideal_local (o,p,s,psi,dFid_lin_temp)
                                     END IF
-                                end do
-                            end do
-                        end do
-                    end do
-                end do
-            end do
+                                END DO
+                            END DO
+                        END DO
+                    END DO
+                END DO
+            END DO
             
         ELSE
             STOP 'error in energy_ideal, you want to linearize the entropy but you did not choose HOW:1 for n 2 for rho'
@@ -127,12 +127,12 @@ subroutine energy_ideal
                                 rho = psi**2
                                 Fideal = Fideal + Fideal_local (o,p,s,rho)
                                 dF (icg) = dF (icg) + dFideal_local (o,p,s,psi,0._dp)
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        end do
+                            END DO
+                        END DO
+                    END DO
+                END DO
+            END DO
+        END DO
     END IF
     Fideal = Fideal * kBT * spaceGrid%dv ! integration factor
 

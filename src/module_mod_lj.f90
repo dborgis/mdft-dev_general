@@ -11,19 +11,19 @@ MODULE mod_lj
     use constants, only:fourpi
     use input , only : input_line, verbose
     use quadrature, only: angGrid, molRotGrid
-    implicit none
+    IMPLICIT NONE
     integer(i2b), private :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
     contains
     
-        subroutine init
+        SUBROUTINE init
             nb_id_mol  = size ( chg_mol  ) ! total number of solute types
             nb_id_solv = size ( chg_solv ) ! total number of solvent types
             if (.not. allocated( Vext_lj )) allocate( Vext_lj(nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species),&
                 source=0._dp ) ! Vext_lj is a *very* big array that should now be allocated
             call calculate ! compute Vext_lj
-        end subroutine
+        END SUBROUTINE
         
-        subroutine calculate
+        SUBROUTINE calculate
         
             integer(i2b) :: i,j,k
             real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
@@ -43,7 +43,7 @@ MODULE mod_lj
                 print*,'ONLY VALID FOR SOLUTES WITH 1 LJ SITE'
                 print*,'stop'
                 stop
-            end if
+            END IF
             
             ! Also, for now, the solvent site that wear the LJ potential should be on a grid node, and more precisely have coordinates 0 0 0.
             block
@@ -55,7 +55,7 @@ MODULE mod_lj
                     print*,'These coordinates are now defined as',coo
                     print*,'For this reason, MDFT stops now.'
                     stop
-                end if
+                END IF
             end block
             !> initiate
             call cpu_time(time0)
@@ -68,7 +68,7 @@ MODULE mod_lj
                 print*,'the supercell is too small to use the minimum image convention with such large sigma values'
                 print*,'MDFT stops now.'
                 stop
-            end if
+            END IF
             do species = 1, nb_species
                 do solvent_site = 1, nb_solvent_sites
                     ids = id_solv(solvent_site)
@@ -98,17 +98,17 @@ MODULE mod_lj
                                     if (V_node >= 100.0_dp) then ! limit maximum value of Vlj to 100
                                         V_node = 100.0_dp ! TODO magic number
                                         exit
-                                    end if
-                                end do ! solute
+                                    END IF
+                                END DO ! solute
     
                                 ! all omegas are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
                                 Vext_lj ( i , j , k , : , : , species ) = V_node
     
-                            end do ! i
-                        end do ! j
-                    end do ! k
-                end do ! solvent sites
-            end do ! species
+                            END DO ! i
+                        END DO ! j
+                    END DO ! k
+                END DO ! solvent sites
+            END DO ! species
             
             IF (verbose) THEN
                 BLOCK
@@ -124,7 +124,7 @@ MODULE mod_lj
                     open(11,file='Vlj_aumilieu.dat')
                         do i=1,nfft3
                             write(11,*) i*deltaz, Vext_lj(nfft1/2,nfft2/2,i,1,1,1)
-                        end do
+                        END DO
                     close(11)
                     deallocate(temparray)
                     call cpu_time(time1)

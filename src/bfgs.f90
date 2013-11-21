@@ -21,7 +21,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine setulb                                                  
  !                                                                        
- !     This subroutine partitions the working arrays wa and iwa, and      
+ !     This SUBROUTINE partitions the working arrays wa and iwa, and      
  !       then uses the limited memory BFGS method to solve the bound      
  !       constrained optimization problem by calling mainlb.              
  !       (The direct method will be used in the subspace minimization.)   
@@ -91,7 +91,7 @@ MODULE bfgs
  !     iwa is an integer working array of length 3nmax.                   
  !                                                                        
  !     task is a working string of characters of length 60 indicating     
- !       the current job when entering and quitting this subroutine.      
+ !       the current job when entering and quitting this SUBROUTINE.      
  !                                                                        
  !     iprint is an integer variable that must be set by the user.        
  !       It controls the frequency and type of output generated:          
@@ -261,7 +261,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine mainlb                                                  
  !                                                                        
- !     This subroutine solves bound constrained optimization problems by  
+ !     This SUBROUTINE solves bound constrained optimization problems by  
  !       using the compact formula of the limited memory BFGS updates.    
  !                                                                        
  !     n is an integer variable.                                          
@@ -351,7 +351,7 @@ MODULE bfgs
  !                                                                        
  !                                                                        
  !     index is an integer working array of dimension n.                  
- !       In subroutine freev, index is used to store the free and fixed   
+ !       In SUBROUTINE freev, index is used to store the free and fixed   
  !          variables at the Generalized Cauchy Point (GCP).              
  !                                                                        
  !     iwhere is an integer working array of dimension n used to record   
@@ -363,13 +363,13 @@ MODULE bfgs
  !                -1       if x(i) is always free, i.e., no bounds on it. 
  !                                                                        
  !     indx2 is an integer working array of dimension n.                  
- !       Within subroutine cauchy, indx2 corresponds to the array iorder. 
- !       In subroutine freev, a list of variables entering and leaving    
+ !       Within SUBROUTINE cauchy, indx2 corresponds to the array iorder. 
+ !       In SUBROUTINE freev, a list of variables entering and leaving    
  !       the free set is stored in indx2, and it is passed on to          
- !       subroutine formk with this information.                          
+ !       SUBROUTINE formk with this information.                          
  !                                                                        
  !     task is a working string of characters of length 60 indicating     
- !       the current job when entering and leaving this subroutine.       
+ !       the current job when entering and leaving this SUBROUTINE.       
  !                                                                        
  !     iprint is an INTEGER variable that must be set by the user.        
  !       It controls the frequency and type of output generated:          
@@ -529,7 +529,7 @@ MODULE bfgs
                                                                           
  !        The end of the initialization.                                  
                                                                           
-       else                                                               
+       ELSE                                                               
  !          restore local variables.                                      
                                                                           
           prjctd = lsave(1)                                               
@@ -761,7 +761,7 @@ MODULE bfgs
              task = 'ABNORMAL_TERMINATION_IN_LNSRCH'                      
              iter = iter + 1                                              
              goto 999                                                     
-          else                                                            
+          ELSE                                                            
  !             refresh the lbfgs memory and restart the iteration.        
              if(iprint .ge. 1) write (6, 1008)                            
              if (info .eq. 0) nfgv = nfgv - 1                             
@@ -776,10 +776,10 @@ MODULE bfgs
              lnscht = lnscht + cpu2 - cpu1                                
              goto 222                                                     
           endif                                                           
-       else if (task(1:5) .eq. 'FG_LN') then                              
+       ELSE IF (task(1:5) .eq. 'FG_LN') then                              
  !          return to the driver for calculating f and g; reenter at 666. 
           goto 1000                                                       
-       else                                                               
+       ELSE                                                               
  !          calculate and print out the quantities related to the new X.  
           call timer_BDGS(cpu2)                                           
           lnscht = lnscht + cpu2 - cpu1                                   
@@ -823,7 +823,7 @@ MODULE bfgs
        if (stp .eq. one) then                                             
           dr = gd - gdold                                                 
           ddum = -gdold                                                   
-       else                                                               
+       ELSE                                                               
           dr = (gd - gdold)*stp                                           
           call dscal(n,stp,d,1)                                           
           ddum = -gdold*stp                                               
@@ -967,7 +967,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine active                                                  
  !                                                                        
- !     This subroutine initializes iwhere and projects the initial x to   
+ !     This SUBROUTINE initializes iwhere and projects the initial x to   
  !       the feasible set if necessary.                                   
  !                                                                        
  !     iwhere is an integer array of dimension n.                         
@@ -1011,7 +1011,7 @@ MODULE bfgs
                    x(i) = l(i)                                            
                 endif                                                     
                 nbdd = nbdd + 1                                           
-             else if (nbd(i) .ge. 2 .and. x(i) .ge. u(i)) then            
+             ELSE IF (nbd(i) .ge. 2 .and. x(i) .ge. u(i)) then            
                 if (x(i) .gt. u(i)) then                                  
                    prjctd = .true.                                        
                    x(i) = u(i)                                            
@@ -1030,12 +1030,12 @@ MODULE bfgs
              iwhere(i) = -1                                               
                                                                           
  !           otherwise set x(i)=mid(x(i), u(i), l(i)).                    
-          else                                                            
+          ELSE                                                            
              cnstnd = .true.                                              
              if (nbd(i) .eq. 2 .and. u(i) - l(i) .le. zero) then          
  !                   this variable is always fixed                        
                 iwhere(i) = 3                                             
-             else                                                         
+             ELSE                                                         
                 iwhere(i) = 0                                             
              endif                                                        
           endif                                                           
@@ -1065,7 +1065,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine bmv                                                     
  !                                                                        
- !     This subroutine computes the product of the 2m x 2m middle matrix  
+ !     This SUBROUTINE computes the product of the 2m x 2m middle matrix  
  !       in the compact L-BFGS formula of B and a 2m vector v;            
  !       it returns the product in p.                                     
  !                                                                        
@@ -1187,7 +1187,7 @@ MODULE bfgs
  !                                                                        
  !     For given x, l, u, g (with sbgnrm > 0), and a limited memory       
  !       BFGS matrix B defined in terms of matrices WY, WS, WT, and       
- !       scalars head, col, and theta, this subroutine computes the       
+ !       scalars head, col, and theta, this SUBROUTINE computes the       
  !       generalized Cauchy point (GCP), defined as the first local       
  !       minimizer of the quadratic                                       
  !                                                                        
@@ -1408,16 +1408,16 @@ MODULE bfgs
              iwhere(i) = 0                                                
              if (xlower) then                                             
                 if (neggi .le. zero) iwhere(i) = 1                        
-             else if (xupper) then                                        
+             ELSE IF (xupper) then                                        
                 if (neggi .ge. zero) iwhere(i) = 2                        
-             else                                                         
+             ELSE                                                         
                 if (abs(neggi) .le. zero) iwhere(i) = -3                  
              endif                                                        
           endif                                                           
           pointr = head                                                   
           if (iwhere(i) .ne. 0 .and. iwhere(i) .ne. -1) then              
              d(i) = zero                                                  
-          else                                                            
+          ELSE                                                            
              d(i) = neggi                                                 
              f1 = f1 - neggi*neggi                                        
  !             calculate p := p - W'e_i* (g_i).                           
@@ -1436,7 +1436,7 @@ MODULE bfgs
                    bkmin = t(nbreak)                                      
                    ibkmin = nbreak                                        
                 endif                                                     
-             else if (nbd(i) .ge. 2 .and. neggi .gt. zero) then           
+             ELSE IF (nbd(i) .ge. 2 .and. neggi .gt. zero) then           
  !                                 x(i) + d(i) is bounded; compute t(i).  
                 nbreak = nbreak + 1                                       
                 iorder(nbreak) = i                                        
@@ -1445,7 +1445,7 @@ MODULE bfgs
                    bkmin = t(nbreak)                                      
                    ibkmin = nbreak                                        
                 endif                                                     
-             else                                                         
+             ELSE                                                         
  !                x(i) + d(i) is not bounded.                             
                 nfree = nfree - 1                                         
                 iorder(nfree) = i                                         
@@ -1518,7 +1518,7 @@ MODULE bfgs
  !         cost of heapsort is avoided.                                   
           tj = bkmin                                                      
           ibp = iorder(ibkmin)                                            
-       else                                                               
+       ELSE                                                               
           if (iter .eq. 2) then                                           
  !             Replace the already used smallest breakpoint with the      
  !             breakpoint numbered nbreak > nlast, before heapsort call.  
@@ -1559,7 +1559,7 @@ MODULE bfgs
           zibp = u(ibp) - x(ibp)                                          
           xcp(ibp) = u(ibp)                                               
           iwhere(ibp) = 2                                                 
-       else                                                               
+       ELSE                                                               
           zibp = l(ibp) - x(ibp)                                          
           xcp(ibp) = l(ibp)                                               
           iwhere(ibp) = 1                                                 
@@ -1616,11 +1616,11 @@ MODULE bfgs
           dtm = -f1/f2                                                    
           goto 777                                                        
  !                 to repeat the loop for unsearched intervals.           
-       else if(bnded) then                                                
+       ELSE IF(bnded) then                                                
           f1 = zero                                                       
           f2 = zero                                                       
           dtm = zero                                                      
-       else                                                               
+       ELSE                                                               
           dtm = -f1/f2                                                    
        endif                                                              
                                                                           
@@ -1676,8 +1676,8 @@ MODULE bfgs
  !                                                                        
  !     Subroutine cmprlb                                                  
  !                                                                        
- !       This subroutine computes r=-Z'B(xcp-xk)-Z'g by using             
- !         wa(2m+1)=W'(xcp-x) from subroutine cauchy.                     
+ !       This SUBROUTINE computes r=-Z'B(xcp-xk)-Z'g by using             
+ !         wa(2m+1)=W'(xcp-x) from SUBROUTINE cauchy.                     
  !                                                                        
  !     Subprograms called:                                                
  !                                                                        
@@ -1703,7 +1703,7 @@ MODULE bfgs
           do 26 i = 1, n                                                  
              r(i) = -g(i)                                                 
    26     continue                                                        
-       else                                                               
+       ELSE                                                               
           do 30 i = 1, nfree                                              
              k = index(i)                                                 
              r(i) = -theta*(z(k) - x(k)) - g(k)                           
@@ -1739,7 +1739,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine errclb                                                  
  !                                                                        
- !     This subroutine checks the validity of the input data.             
+ !     This SUBROUTINE checks the validity of the input data.             
  !                                                                        
  !                                                                        
  !                           *  *  *                                      
@@ -1801,7 +1801,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine formk                                                   
  !                                                                        
- !     This subroutine forms  the LEL^T factorization of the indefinite   
+ !     This SUBROUTINE forms  the LEL^T factorization of the indefinite   
  !                                                                        
  !       matrix    K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]                 
  !                     [L_a -R_z           theta*S'AA'S ]                 
@@ -1992,7 +1992,7 @@ MODULE bfgs
              wn1(is,jy) = temp3                                           
    30     continue                                                        
           upcl = col - 1                                                  
-       else                                                               
+       ELSE                                                               
           upcl = col                                                      
        endif                                                              
                                                                           
@@ -2042,7 +2042,7 @@ MODULE bfgs
    51        continue                                                     
           if (is .le. jy + m) then                                        
                 wn1(is,jy) = wn1(is,jy) + temp1 - temp3                   
-             else                                                         
+             ELSE                                                         
                 wn1(is,jy) = wn1(is,jy) - temp1 + temp3                   
              endif                                                        
              jpntr = mod(jpntr,m) + 1                                     
@@ -2111,7 +2111,7 @@ MODULE bfgs
                                                                           
  !======================= The end of formk ============================== 
                                                                           
-    subroutine formt (m, wt, sy, ss, col, theta, info)                  
+    SUBROUTINE formt (m, wt, sy, ss, col, theta, info)                  
                                                                           
        integer          m, col, info                                      
        double precision theta, wt(m, m), sy(m, m), ss(m, m)               
@@ -2120,7 +2120,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine formt                                                   
  !                                                                        
- !       This subroutine forms the upper half of the pos. def. and symm.  
+ !       This SUBROUTINE forms the upper half of the pos. def. and symm.  
  !         T = theta*SS + L*D^(-1)*L', stores T in the upper triangle     
  !         of the array wt, and performs the Cholesky factorization of T  
  !         to produce J*J', with J' stored in the upper triangle of wt.   
@@ -2179,7 +2179,7 @@ MODULE bfgs
                                                                           
  !======================= The end of formt ============================== 
                                                                           
-       subroutine freev(n, nfree, index, nenter, ileave, indx2,          &
+       SUBROUTINE freev(n, nfree, index, nenter, ileave, indx2,          &
                         iwhere, wrk, updatd, cnstnd, iprint, iter)        
                                                                           
        integer n, nfree, nenter, ileave, iprint, iter,                   &
@@ -2190,7 +2190,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine freev                                                   
  !                                                                        
- !     This subroutine counts the entering and leaving variables when     
+ !     This SUBROUTINE counts the entering and leaving variables when     
  !       iter > 0, and finds the index set of free and active variables   
  !       at the GCP.                                                      
  !                                                                        
@@ -2261,7 +2261,7 @@ MODULE bfgs
           if (iwhere(i) .le. 0) then                                      
              nfree = nfree + 1                                            
              index(nfree) = i                                             
-          else                                                            
+          ELSE                                                            
              iact = iact - 1                                              
              index(iact) = i                                              
           endif                                                           
@@ -2275,7 +2275,7 @@ MODULE bfgs
                                                                           
  !======================= The end of freev ============================== 
                                                                           
-       subroutine hpsolb(n, t, iorder, iheap)                             
+       SUBROUTINE hpsolb(n, t, iorder, iheap)                             
        integer          iheap, n, iorder(n)                               
        double precision t(n)                                              
                                                                           
@@ -2283,7 +2283,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine hpsolb                                                  
  !                                                                        
- !     This subroutine sorts out the least element of t, and puts the     
+ !     This SUBROUTINE sorts out the least element of t, and puts the     
  !       remaining elements of t in a heap.                               
  !                                                                        
  !     n is an integer variable.                                          
@@ -2387,7 +2387,7 @@ MODULE bfgs
                                                                           
  !====================== The end of hpsolb ============================== 
                                                                           
-       subroutine lnsrlb(n, l, u, nbd, x, f, fold, gd, gdold, g, d, r, t,&
+       SUBROUTINE lnsrlb(n, l, u, nbd, x, f, fold, gd, gdold, g, d, r, t,&
                          z, stp, dnorm, dtd, xstep, stpmx, iter, ifun,   &
                          iback, nfgv, info, task, boxed, cnstnd, csave,  &
                          isave, dsave)                                    
@@ -2403,7 +2403,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine lnsrlb                                                  
  !                                                                        
- !     This subroutine calls subroutine dcsrch from the Minpack2 library  
+ !     This SUBROUTINE calls SUBROUTINE dcsrch from the Minpack2 library  
  !       to perform the line search.  Subroutine dscrch is safeguarded so 
  !       that all trial points lie within the feasible region.            
  !                                                                        
@@ -2444,7 +2444,7 @@ MODULE bfgs
        if (cnstnd) then                                                   
           if (iter .eq. 0) then                                           
              stpmx = one                                                  
-          else                                                            
+          ELSE                                                            
              do 43 i = 1, n                                               
                 a1 = d(i)                                                 
                 if (nbd(i) .ne. 0) then                                   
@@ -2452,14 +2452,14 @@ MODULE bfgs
                       a2 = l(i) - x(i)                                    
                       if (a2 .ge. zero) then                              
                          stpmx = zero                                     
-                      else if (a1*stpmx .lt. a2) then                     
+                      ELSE IF (a1*stpmx .lt. a2) then                     
                          stpmx = a2/a1                                    
                       endif                                               
-                   else if (a1 .gt. zero .and. nbd(i) .ge. 2) then        
+                   ELSE IF (a1 .gt. zero .and. nbd(i) .ge. 2) then        
                       a2 = u(i) - x(i)                                    
                       if (a2 .le. zero) then                              
                          stpmx = zero                                     
-                      else if (a1*stpmx .gt. a2) then                     
+                      ELSE IF (a1*stpmx .gt. a2) then                     
                          stpmx = a2/a1                                    
                       endif                                               
                    endif                                                  
@@ -2470,7 +2470,7 @@ MODULE bfgs
                                                                           
        if (iter .eq. 0 .and. .not. boxed) then                            
           stp = min(one/dnorm, stpmx)                                     
-       else                                                               
+       ELSE                                                               
           stp = one                                                       
        endif                                                              
                                                                           
@@ -2502,12 +2502,12 @@ MODULE bfgs
           iback = ifun - 1                                                
           if (stp .eq. one) then                                          
              call dcopy(n,z,1,x,1)                                        
-          else                                                            
+          ELSE                                                            
              do 41 i = 1, n                                               
                 x(i) = stp*d(i) + t(i)                                    
    41        continue                                                     
           endif                                                           
-       else                                                               
+       ELSE                                                               
           task = 'NEW_X'                                                  
        endif                                                              
                                                                           
@@ -2517,7 +2517,7 @@ MODULE bfgs
                                                                           
  !======================= The end of lnsrlb ============================= 
                                                                           
-       subroutine matupd(n, m, ws, wy, sy, ss, d, r, itail,              &
+       SUBROUTINE matupd(n, m, ws, wy, sy, ss, d, r, itail,              &
                          iupdat, col, head, theta, rr, dr, stp, dtd)      
                                                                           
        integer          n, m, itail, iupdat, col, head                    
@@ -2528,7 +2528,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine matupd                                                  
  !                                                                        
- !       This subroutine updates matrices WS and WY, and forms the        
+ !       This SUBROUTINE updates matrices WS and WY, and forms the        
  !         middle matrix in B.                                            
  !                                                                        
  !     Subprograms called:                                                
@@ -2558,7 +2558,7 @@ MODULE bfgs
        if (iupdat .le. m) then                                            
           col = iupdat                                                    
           itail = mod(head+iupdat-2,m) + 1                                
-       else                                                               
+       ELSE                                                               
           itail = mod(itail,m) + 1                                        
           head = mod(head,m) + 1                                          
        endif                                                              
@@ -2593,7 +2593,7 @@ MODULE bfgs
    51  continue                                                           
        if (stp .eq. one) then                                             
           ss(col,col) = dtd                                               
-       else                                                               
+       ELSE                                                               
           ss(col,col) = stp*stp*dtd                                       
        endif                                                              
        sy(col,col) = dr                                                   
@@ -2604,7 +2604,7 @@ MODULE bfgs
                                                                           
  !======================= The end of matupd ============================= 
                                                                           
-       subroutine prn1lb(n, m, l, u, x, iprint, itfile, epsmch)           
+       SUBROUTINE prn1lb(n, m, l, u, x, iprint, itfile, epsmch)           
                                                                           
        integer n, m, iprint, itfile                                       
        double precision epsmch, x(n), l(n), u(n)                          
@@ -2613,7 +2613,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine prn1lb                                                  
  !                                                                        
- !     This subroutine prints the input data, initial point, upper and    
+ !     This SUBROUTINE prints the input data, initial point, upper and    
  !       lower bounds of each variable, machine precision, as well as     
  !       the headings of the output.                                      
  !                                                                        
@@ -2675,7 +2675,7 @@ MODULE bfgs
                                                                           
  !======================= The end of prn1lb ============================= 
                                                                           
-       subroutine prn2lb(n, x, f, g, iprint, itfile, iter, nfgv, nact,   &
+       SUBROUTINE prn2lb(n, x, f, g, iprint, itfile, iter, nfgv, nact,   &
                          sbgnrm, nint, word, iword, iback, stp, xstep)    
                                                                           
        character*3      word                                              
@@ -2687,7 +2687,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine prn2lb                                                  
  !                                                                        
- !     This subroutine prints out new information after a successful      
+ !     This SUBROUTINE prints out new information after a successful      
  !       line search.                                                     
  !                                                                        
  !                                                                        
@@ -2709,13 +2709,13 @@ MODULE bfgs
        if (iword .eq. 0) then                                             
  !                            the subspace minimization converged.        
           word = 'con'                                                    
-       else if (iword .eq. 1) then                                        
+       ELSE IF (iword .eq. 1) then                                        
  !                          the subspace minimization stopped at a bound. 
           word = 'bnd'                                                    
-       else if (iword .eq. 5) then                                        
+       ELSE IF (iword .eq. 5) then                                        
  !                             the truncated Newton step has been used.   
           word = 'TNT'                                                    
-       else                                                               
+       ELSE                                                               
           word = '---'                                                    
        endif                                                              
        if (iprint .ge. 99) then                                           
@@ -2725,7 +2725,7 @@ MODULE bfgs
              write (6,1004) 'X =',(x(i), i = 1, n)                        
              write (6,1004) 'G =',(g(i), i = 1, n)                        
           endif                                                           
-       else if (iprint .gt. 0) then                                       
+       ELSE IF (iprint .gt. 0) then                                       
           imod = mod(iter,iprint)                                         
           if (imod .eq. 0) write (6,2001) iter,f,sbgnrm                   
        endif                                                              
@@ -2743,7 +2743,7 @@ MODULE bfgs
                                                                           
  !======================= The end of prn2lb ============================= 
                                                                           
-       subroutine prn3lb(n, x, f, task, iprint, info, itfile,            &
+       SUBROUTINE prn3lb(n, x, f, task, iprint, info, itfile,            &
                          iter, nfgv, nintol, nskip, nact, sbgnrm,        &
                          time, nint, word, iback, stp, xstep, k,         &
                          cachyt, sbtime, lnscht)                          
@@ -2759,7 +2759,7 @@ MODULE bfgs
  !                                                                        
  !     Subroutine prn3lb                                                  
  !                                                                        
- !     This subroutine prints out information when either a built-in      
+ !     This SUBROUTINE prints out information when either a built-in      
  !       convergence test is satisfied or when an error message is        
  !       generated.                                                       
  !                                                                        
@@ -2877,7 +2877,7 @@ endif
                                                                           
  !======================= The end of prn3lb ============================= 
                                                                           
-       subroutine projgr(n, l, u, nbd, x, g, sbgnrm)                      
+       SUBROUTINE projgr(n, l, u, nbd, x, g, sbgnrm)                      
                                                                           
        integer          n, nbd(n)                                         
        double precision sbgnrm, x(n), l(n), u(n), g(n)                    
@@ -2886,7 +2886,7 @@ endif
  !                                                                        
  !     Subroutine projgr                                                  
  !                                                                        
- !     This subroutine computes the infinity norm of the projected        
+ !     This SUBROUTINE computes the infinity norm of the projected        
  !       gradient.                                                        
  !                                                                        
  !                                                                        
@@ -2913,7 +2913,7 @@ endif
          if (nbd(i) .ne. 0) then                                          
             if (gi .lt. zero) then                                        
                if (nbd(i) .ge. 2) gi = max((x(i)-u(i)),gi)                
-            else                                                          
+            ELSE                                                          
                if (nbd(i) .le. 2) gi = min((x(i)-l(i)),gi)                
             endif                                                         
          endif                                                            
@@ -2926,7 +2926,7 @@ endif
                                                                           
  !======================= The end of projgr ============================= 
                                                                           
-       subroutine subsm(n, m, nsub, ind, l, u, nbd, x, d, ws, wy, theta, &
+       SUBROUTINE subsm(n, m, nsub, ind, l, u, nbd, x, d, ws, wy, theta, &
                         col, head, iword, wv, wn, iprint, info)           
                                                                           
        integer          n, m, nsub, col, head, iword, iprint, info,      &
@@ -2943,7 +2943,7 @@ endif
  !     Given xcp, l, u, r, an index set that specifies                    
  !       the active set at xcp, and an l-BFGS matrix B                    
  !       (in terms of WY, WS, SY, WT, head, col, and theta),              
- !       this subroutine computes an approximate solution                 
+ !       this SUBROUTINE computes an approximate solution                 
  !       of the subspace problem                                          
  !                                                                        
  !       (P)   min Q(x) = r'(x-xcp) + 1/2 (x-xcp)' B (x-xcp)              
@@ -3148,14 +3148,14 @@ endif
                 temp2 = l(k) - x(k)                                       
                 if (temp2 .ge. zero) then                                 
                    temp1 = zero                                           
-                else if (dk*alpha .lt. temp2) then                        
+                ELSE IF (dk*alpha .lt. temp2) then                        
                    temp1 = temp2/dk                                       
                 endif                                                     
-             else if (dk .gt. zero .and. nbd(k) .ge. 2) then              
+             ELSE IF (dk .gt. zero .and. nbd(k) .ge. 2) then              
                 temp2 = u(k) - x(k)                                       
                 if (temp2 .le. zero) then                                 
                    temp1 = zero                                           
-                else if (dk*alpha .gt. temp2) then                        
+                ELSE IF (dk*alpha .gt. temp2) then                        
                    temp1 = temp2/dk                                       
                 endif                                                     
              endif                                                        
@@ -3172,7 +3172,7 @@ endif
           if (dk .gt. zero) then                                          
              x(k) = u(k)                                                  
              d(ibd) = zero                                                
-          else if (dk .lt. zero) then                                     
+          ELSE IF (dk .lt. zero) then                                     
              x(k) = l(k)                                                  
              d(ibd) = zero                                                
           endif                                                           
@@ -3185,15 +3185,15 @@ endif
        if (iprint .ge. 99) then                                           
           if (alpha .lt. one) then                                        
              write (6,1002) alpha                                         
-          else                                                            
+          ELSE                                                            
              write (6,*) 'SM solution inside the box'                     
-          end if                                                          
+          END IF                                                          
           if (iprint .gt.100) write (6,1003) (x(i),i=1,n)                 
        endif                                                              
                                                                           
        if (alpha .lt. one) then                                           
           iword = 1                                                       
-       else                                                               
+       ELSE                                                               
           iword = 0                                                       
        endif                                                              
        if (iprint .ge. 99) write (6,1004)                                 
@@ -3209,7 +3209,7 @@ endif
                                                                           
  !====================== The end of subsm =============================== 
                                                                           
-       subroutine dcsrch(f,g,stp,ftol,gtol,xtol,stpmin,stpmax,           &
+       SUBROUTINE dcsrch(f,g,stp,ftol,gtol,xtol,stpmin,stpmax,           &
                          task,isave,dsave)                                
        character*(*) task                                                 
        integer isave(2)                                                   
@@ -3219,10 +3219,10 @@ endif
  !                                                                        
  !     Subroutine dcsrch                                                  
  !                                                                        
- !     This subroutine finds a step that satisfies a sufficient           
+ !     This SUBROUTINE finds a step that satisfies a sufficient           
  !     decrease condition and a curvature condition.                      
  !                                                                        
- !     Each call of the subroutine updates an interval with               
+ !     Each call of the SUBROUTINE updates an interval with               
  !     endpoints stx and sty. The interval is initially chosen            
  !     so that it contains a minimizer of the modified function           
  !                                                                        
@@ -3256,13 +3256,13 @@ endif
  !        if (task .eq. 'FG') then                                        
  !           Evaluate the function and the gradient at stp                
  !           goto 10                                                      
- !           end if                                                       
+ !           END IF                                                       
  !                                                                        
  !     NOTE: The user must no alter work arrays between calls.            
  !                                                                        
- !     The subroutine statement is                                        
+ !     The SUBROUTINE statement is                                        
  !                                                                        
- !        subroutine dcsrch(f,g,stp,ftol,gtol,xtol,stpmin,stpmax,         
+ !        SUBROUTINE dcsrch(f,g,stp,ftol,gtol,xtol,stpmin,stpmax,         
  !                          task,isave,dsave)                             
  !     where                                                              
  !                                                                        
@@ -3298,7 +3298,7 @@ endif
  !                                                                        
  !       xtol is a double precision variable.                             
  !         On entry xtol specifies a nonnegative relative tolerance       
- !            for an acceptable step. The subroutine exits with a         
+ !            for an acceptable step. The SUBROUTINE exits with a         
  !            warning if the relative difference between sty and stx      
  !            is less than xtol.                                          
  !         On exit xtol is unchanged.                                     
@@ -3320,7 +3320,7 @@ endif
  !                                                                        
  !            If task(1:4) = 'CONV' then the search is successful.        
  !                                                                        
- !            If task(1:4) = 'WARN' then the subroutine is not able       
+ !            If task(1:4) = 'WARN' then the SUBROUTINE is not able       
  !            to satisfy the convergence conditions. The exit value of    
  !            stp contains the best point found during the search.        
  !                                                                        
@@ -3405,13 +3405,13 @@ endif
                                                                           
           goto 1000                                                       
                                                                           
-       else                                                               
+       ELSE                                                               
                                                                           
  !        Restore local variables.                                        
                                                                           
           if (isave(1) .eq. 1) then                                       
              brackt = .true.                                              
-          else                                                            
+          ELSE                                                            
              brackt = .false.                                             
           endif                                                           
           stage = isave(2)                                                
@@ -3485,7 +3485,7 @@ endif
           gx = gxm + gtest                                                
           gy = gym + gtest                                                
                                                                           
-       else                                                               
+       ELSE                                                               
                                                                           
  !       Call dcstep to update stx, sty, and to compute the new step.     
                                                                           
@@ -3507,7 +3507,7 @@ endif
        if (brackt) then                                                   
           stmin = min(stx,sty)                                            
           stmax = max(stx,sty)                                            
-       else                                                               
+       ELSE                                                               
           stmin = stp + xtrapl*(stp - stx)                                
           stmax = stp + xtrapu*(stp - stx)                                
        endif                                                              
@@ -3533,7 +3533,7 @@ endif
                                                                           
        if (brackt) then                                                   
           isave(1) = 1                                                    
-       else                                                               
+       ELSE                                                               
           isave(1) = 0                                                    
        endif                                                              
        isave(2) = stage                                                   
@@ -3555,7 +3555,7 @@ endif
                                                                           
  !====================== The end of dcsrch ============================== 
                                                                           
-       subroutine dcstep(stx,fx,dx,sty,fy,dy,stp,fp,dp,brackt,           &
+       SUBROUTINE dcstep(stx,fx,dx,sty,fy,dy,stp,fp,dp,brackt,           &
                          stpmin,stpmax)                                   
        logical brackt                                                     
        double precision stx,fx,dx,sty,fy,dy,stp,fp,dp,stpmin,stpmax       
@@ -3563,7 +3563,7 @@ endif
  !                                                                        
  !     Subroutine dcstep                                                  
  !                                                                        
- !     This subroutine computes a safeguarded step for a search           
+ !     This SUBROUTINE computes a safeguarded step for a search           
  !     procedure and updates an interval that contains a step that        
  !     satisfies a sufficient decrease and a curvature condition.         
  !                                                                        
@@ -3571,16 +3571,16 @@ endif
  !     value. If brackt is set to .true. then a minimizer has             
  !     been bracketed in an interval with endpoints stx and sty.          
  !     The parameter stp contains the current step.                       
- !     The subroutine assumes that if brackt is set to .true. then        
+ !     The SUBROUTINE assumes that if brackt is set to .true. then        
  !                                                                        
  !           min(stx,sty) < stp < max(stx,sty),                           
  !                                                                        
  !     and that the derivative at stx is negative in the direction        
  !     of the step.                                                       
  !                                                                        
- !     The subroutine statement is                                        
+ !     The SUBROUTINE statement is                                        
  !                                                                        
- !       subroutine dcstep(stx,fx,dx,sty,fy,dy,stp,fp,dp,brackt,          
+ !       SUBROUTINE dcstep(stx,fx,dx,sty,fy,dy,stp,fp,dp,brackt,          
  !                         stpmin,stpmax)                                 
  !                                                                        
  !     where                                                              
@@ -3676,7 +3676,7 @@ endif
                                                               (stp - stx) 
           if (abs(stpc-stx) .lt. abs(stpq-stx)) then                      
              stpf = stpc                                                  
-          else                                                            
+          ELSE                                                            
              stpf = stpc + (stpq - stpc)/two                              
           endif                                                           
           brackt = .true.                                                 
@@ -3686,7 +3686,7 @@ endif
  !     stp than the secant step, the cubic step is taken, otherwise the   
  !     secant step is taken.                                              
                                                                           
-       else if (sgnd .lt. zero) then                                      
+       ELSE IF (sgnd .lt. zero) then                                      
           theta = three*(fx - fp)/(stp - stx) + dx + dp                   
           s = max(abs(theta),abs(dx),abs(dp))                             
           gamma = s*sqrt((theta/s)**2 - (dx/s)*(dp/s))                    
@@ -3698,7 +3698,7 @@ endif
           stpq = stp + (dp/(dp - dx))*(stx - stp)                         
           if (abs(stpc-stp) .gt. abs(stpq-stp)) then                      
              stpf = stpc                                                  
-          else                                                            
+          ELSE                                                            
              stpf = stpq                                                  
           endif                                                           
           brackt = .true.                                                 
@@ -3706,7 +3706,7 @@ endif
  !     Third case: A lower function value, derivatives of the same sign,  
  !     and the magnitude of the derivative decreases.                     
                                                                           
-       else if (abs(dp) .lt. abs(dx)) then                                
+       ELSE IF (abs(dp) .lt. abs(dx)) then                                
                                                                           
  !        The cubic step is computed only if the cubic tends to infinity  
  !        in the direction of the step or if the minimum of the cubic     
@@ -3726,9 +3726,9 @@ endif
           r = p/q                                                         
           if (r .lt. zero .and. gamma .ne. zero) then                     
              stpc = stp + r*(stx - stp)                                   
-          else if (stp .gt. stx) then                                     
+          ELSE IF (stp .gt. stx) then                                     
              stpc = stpmax                                                
-          else                                                            
+          ELSE                                                            
              stpc = stpmin                                                
           endif                                                           
           stpq = stp + (dp/(dp - dx))*(stx - stp)                         
@@ -3741,15 +3741,15 @@ endif
                                                                           
              if (abs(stpc-stp) .lt. abs(stpq-stp)) then                   
                 stpf = stpc                                               
-             else                                                         
+             ELSE                                                         
                 stpf = stpq                                               
              endif                                                        
              if (stp .gt. stx) then                                       
                 stpf = min(stp+p66*(sty-stp),stpf)                        
-             else                                                         
+             ELSE                                                         
                 stpf = max(stp+p66*(sty-stp),stpf)                        
              endif                                                        
-          else                                                            
+          ELSE                                                            
                                                                           
  !           A minimizer has not been bracketed. If the cubic step is     
  !           farther from stp than the secant step, the cubic step is     
@@ -3757,7 +3757,7 @@ endif
                                                                           
              if (abs(stpc-stp) .gt. abs(stpq-stp)) then                   
                 stpf = stpc                                               
-             else                                                         
+             ELSE                                                         
                 stpf = stpq                                               
              endif                                                        
              stpf = min(stpmax,stpf)                                      
@@ -3769,7 +3769,7 @@ endif
  !     decrease. If the minimum is not bracketed, the step is either      
  !     stpmin or stpmax, otherwise the cubic step is taken.               
                                                                           
-       else                                                               
+       ELSE                                                               
           if (brackt) then                                                
              theta = three*(fp - fy)/(sty - stp) + dy + dp                
              s = max(abs(theta),abs(dy),abs(dp))                          
@@ -3780,9 +3780,9 @@ endif
              r = p/q                                                      
              stpc = stp + r*(sty - stp)                                   
              stpf = stpc                                                  
-          else if (stp .gt. stx) then                                     
+          ELSE IF (stp .gt. stx) then                                     
              stpf = stpmax                                                
-          else                                                            
+          ELSE                                                            
              stpf = stpmin                                                
           endif                                                           
        endif                                                              
@@ -3793,7 +3793,7 @@ endif
           sty = stp                                                       
           fy = fp                                                         
           dy = dp                                                         
-       else                                                               
+       ELSE                                                               
           if (sgnd .lt. zero) then                                        
              sty = stx                                                    
              fy = fx                                                      
@@ -3812,19 +3812,19 @@ endif
                                                                           
  !====================== The end of dcstep ============================== 
                                                                           
-       subroutine timer_BDGS(ttime)                                       
+       SUBROUTINE timer_BDGS(ttime)                                       
        double precision ttime                                             
  !     *********                                                          
  !                                                                        
  !     Subroutine timer_BDGS                                              
  !                                                                        
- !     This subroutine is used to determine user time. In a typical       
+ !     This SUBROUTINE is used to determine user time. In a typical       
  !     application, the user time for a code segment requires calls       
- !     to subroutine timer_BDGS to determine the initial and final time.  
+ !     to SUBROUTINE timer_BDGS to determine the initial and final time.  
  !                                                                        
- !     The subroutine statement is                                        
+ !     The SUBROUTINE statement is                                        
  !                                                                        
- !       subroutine timer_BDGS(ttime)                                     
+ !       SUBROUTINE timer_BDGS(ttime)                                     
  !                                                                        
  !     where                                                              
  !                                                                        
@@ -3852,19 +3852,19 @@ endif
  !                                                                        
  !     Subroutine dpeps                                                   
  !                                                                        
- !     This subroutine computes the machine precision parameter           
+ !     This SUBROUTINE computes the machine precision parameter           
  !     dpmeps as the smallest floating point number such that             
  !     1 + dpmeps differs from 1.                                         
  !                                                                        
- !     This subroutine is based on the subroutine machar described in     
+ !     This SUBROUTINE is based on the SUBROUTINE machar described in     
  !                                                                        
  !     W. J. Cody,                                                        
- !     MACHAR: A subroutine to dynamically determine machine parameters,  
+ !     MACHAR: A SUBROUTINE to dynamically determine machine parameters,  
  !     ACM Trans. Math. Soft., 14, 1988, pages 303-311.                   
  !                                                                        
- !     The subroutine statement is:                                       
+ !     The SUBROUTINE statement is:                                       
  !                                                                        
- !       subroutine dpeps(dpmeps)                                         
+ !       SUBROUTINE dpeps(dpmeps)                                         
  !                                                                        
  !     where                                                              
  !                                                                        
@@ -3943,7 +3943,7 @@ endif
                                                                           
  !====================== The end of dpmeps ============================== 
                                                                           
-       subroutine dpofa(a,lda,n,info)                                     
+       SUBROUTINE dpofa(a,lda,n,info)                                     
        integer lda,n,info                                                 
        double precision a(lda,*)                                          
  !                                                                        
@@ -3981,7 +3981,7 @@ endif
  !     linpack.  this version dated 08/14/78 .                            
  !     cleve moler, university of new mexico, argonne national lab.       
  !                                                                        
- !     subroutines and functions                                          
+ !     SUBROUTINEs and functions                                          
  !                                                                        
  !     blas ddot                                                          
  !     fortran sqrt                                                       
@@ -4018,7 +4018,7 @@ endif
                                                                           
  !====================== The end of dpofa =============================== 
                                                                           
-       subroutine dtrsl(t,ldt,n,b,job,info)                               
+       SUBROUTINE dtrsl(t,ldt,n,b,job,info)                               
        integer ldt,n,job,info                                             
        double precision t(ldt,*),b(*)                                     
  !                                                                        
@@ -4071,7 +4071,7 @@ endif
  !     linpack. this version dated 08/14/78 .                             
  !     g. w. stewart, university of maryland, argonne national lab.       
  !                                                                        
- !     subroutines and functions                                          
+ !     SUBROUTINEs and functions                                          
  !                                                                        
  !     blas daxpy,ddot                                                    
  !     fortran mod                                                        

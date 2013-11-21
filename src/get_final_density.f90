@@ -8,7 +8,7 @@ SUBROUTINE get_final_density ( neq )
     USE quadrature , ONLY : sym_order, angGrid, molRotGrid
     USE fft , ONLY : fftw3 , timesExpPrefactork2
     
-    implicit none
+    IMPLICIT NONE
 
     REAL(dp), INTENT(OUT) :: neq (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),nb_species) ! equilibrium density(position)
     INTEGER(i2b) :: i, j, k, omega, icg, species, p
@@ -32,11 +32,11 @@ SUBROUTINE get_final_density ( neq )
                     icg = icg + 1
                     rho_over_fourpi = cg_vect ( icg ) ** 2 / (twopi**2*2.0_dp/sym_order)
                     local_density = local_density + angGrid%weight ( omega ) *molRotGrid%weight(p)* rho_over_fourpi ! integral of rho over all orientations ie 'n'
-                end do
-            end do
+                END DO
+            END DO
             neq (i,j,k,species) = local_density
-        end do; end do ; end do
-    end do
+        END DO; END DO ; END DO
+    END DO
 
     IF ( gaussianWidth /= 0._dp ) THEN !convolute with a gaussian
         ALLOCATE ( rho_k (nfft1/2+1, nfft2, nfft3, nb_species) )
@@ -54,19 +54,19 @@ SUBROUTINE get_final_density ( neq )
     open(11,file='output/density_along_x.dat')
         do i=1,nfft1
             write(11,*) (i-1)*dl(1), neq(i,nfft2/2+1,nfft3/2+1,1)
-        end do
+        END DO
     close(11)
     
     open(12,file='output/density_along_y.dat')
         do i=1,nfft2
             write(12,*) (i-1)*dl(2), neq(nfft1/2+1,i,nfft3/2+1,1)
-        end do
+        END DO
     close(12)
     
     open(13,file='output/density_along_z.dat')
         do i=1,nfft3
             write(13,*) (i-1)*dl(3), neq(nfft1/2+1,nfft2/2+1,i,1)
-        end do
+        END DO
     close(13)
 
-end subroutine get_final_density
+END SUBROUTINE get_final_density

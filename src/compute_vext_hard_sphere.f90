@@ -1,13 +1,13 @@
 !> Compute external potential in a basic way
 !> Solvation of a hard sphere in a hard sphere fluid
-subroutine compute_Vext_hard_sphere
+SUBROUTINE compute_Vext_hard_sphere
 use precision_kinds , only : i2b , dp
 use input , only : input_line,input_dp
 use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species &
                     , deltax , deltay , deltaz
 use external_potential , only : Vext_total , Vext_hard
 use quadrature, only: angGrid, molRotGrid
-implicit none
+IMPLICIT NONE
 integer(i2b):: i , j , k !> @var dummy
 integer(i2b):: species ! dummy between 1 and nb_species
 integer(i2b):: solute_site ! dummy between 1 and nb_solute_sites
@@ -23,7 +23,7 @@ write (*,*) 'there are as many hard sphere solute as solutes in solute.in'
 if ( .not. allocated ( Vext_total ) ) then
   allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles , nb_species ) )
   Vext_total = 0.0_dp
-end if
+END IF
 ! look for tag 'hard_sphere_solute_radius' which gives the radius of the sphere for the external potential
 hard_sphere_solute_radius=input_dp('radius_of_hard_sphere_solute')
 write (*,*) 'the radius of these solute hard spheres is defined as a constant for now and is ', hard_sphere_solute_radius
@@ -37,7 +37,7 @@ print*,'WARNING solvent radius is not defined in comput_vext_hard_sphere it is n
 print*,'an HS solute but no HS Solvent'
 print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
 radius(1)=0.00_dp
-end if
+END IF
 write(*,*) 'radius' , radius
 ! compute the sum of solute and solvent radius
 do solute_site = 1 , nb_solute_sites
@@ -58,10 +58,10 @@ do solute_site = 1 , nb_solute_sites
             ! we're inside the hard potential. vext is very high
             Vext_total ( i , j , k , : , : , species ) = huge ( 1.0_dp ) ! no dependancy over Omega here
             ! if not , Vext_total is unchanged
-          end if
-        end do
-      end do
-    end do
-  end do
-end do
-end subroutine compute_Vext_hard_sphere
+          END IF
+        END DO
+      END DO
+    END DO
+  END DO
+END DO
+END SUBROUTINE compute_Vext_hard_sphere

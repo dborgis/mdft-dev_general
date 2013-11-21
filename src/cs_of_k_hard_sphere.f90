@@ -1,6 +1,6 @@
-! This subroutine computes the radial distribution function c_s (k) 
+! This SUBROUTINE computes the radial distribution function c_s (k) 
 ! For now it only works for 1 SPECIES. BEWARE !!!
-subroutine cs_of_k_hard_sphere
+SUBROUTINE cs_of_k_hard_sphere
 use precision_kinds , only : i2b , dp
 ! i2b for integer simple precision
 ! dp for real double precision
@@ -13,7 +13,7 @@ use input , only : input_line
 use constants , only : fourpi , pi
 ! fourpi = 4pi
 ! pi = 3.14159...
-implicit none
+IMPLICIT NONE
 real (dp) :: phi ! excess free energy density
 real (dp) :: n0, n1, n2, n3 ! weighted densities
 real (dp) :: w0, w1, w2, w3 ! weight functions
@@ -45,13 +45,13 @@ do while(.true.)
     write(*,*)'Error in compute_ck_dipolar.f90'
     write(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
     stop
-  else if (ios<0) then
+  ELSE IF (ios<0) then
     ! end of file reached
     exit
-  else
+  ELSE
     nb_k=nb_k+1
-  end if
-end do
+  END IF
+END DO
 close(11)
 print*, nb_k , '#########@@@@@@@@@@@################'
 ! allocate accordingly
@@ -83,12 +83,12 @@ kloop : do i = 0, nb_k-1
     n1 = n_0_multispec ( 1 ) * w1
     n2 = n_0_multispec ( 1 ) * w2
     n3 = n_0_multispec ( 1 ) * w3
-  else ! k/=0
+  ELSE ! k/=0
     w0 = coskR + .5d0*kR*sinkR
     w1 = (sinkR + kR*coskR) / (2.d0*k)
     w2 = (FourPiR*sinkR) /k
     w3 = FourPi*(sinkR-kR*coskR) / k**3
-  end if
+  END IF
   
   ! expression of phi_exc depends obviously of the choice of the excess functional
   if ( PY ) then ! PY
@@ -118,7 +118,7 @@ kloop : do i = 0, nb_k-1
     d2phi(3,1) = n2/(1.d0 - n3)**2
     d2phi(3,2) = d2phi(2,3)
     d2phi(3,3) = (2.d0*n1*n2)/(1.d0 - n3)**3 + n0/(1.d0 - n3)**2 + n2**3/(4.d0*(1.d0 - n3)**4*Pi)
-  else if ( CS ) then ! CS
+  ELSE IF ( CS ) then ! CS
     ! first partial derivative of phi wrt n_\alpha, case PY
     !dphi(0) = -Log(1.0d0-n3)
     !dphi(1) = n2/(1.0d0-n3)
@@ -147,7 +147,7 @@ kloop : do i = 0, nb_k-1
     d2phi(3,2) = d2phi(2,3)
     d2phi(3,3) = (n3*(n2**3*(6.d0 - 21.d0*n3 + 26.d0*n3**2 - 5.d0*n3**3) - 72.d0*n1*n2*(-1.d0 + n3)*n3**3*Pi &
                  + 36.d0*n0*(-1.d0 + n3)**2*n3**3*Pi) + 6.d0*n2**3*(-1.d0 + n3)**4*Log(1.d0 - n3))/(36.d0*(-1.d0 + n3)**4*n3**4*Pi) ! simplified by Mathematica
-  end if ! only PY or CS for now
+  END IF ! only PY or CS for now
   
   ! direct correlation function
   c_s_hs ( i + 1 ) =( d2phi(0,0)*w0*w0 &
@@ -167,12 +167,12 @@ kloop : do i = 0, nb_k-1
                     + d2phi(3,2)*w3*w2 &
                     + d2phi(3,3)*w3*w3 ) * (-1.d0)
   write(99,*) k, c_s_hs ( i + 1 )
-end do kloop
+END DO kloop
 contains
-subroutine do_we_use_cs_or_py_eos ( PY , CS )
+SUBROUTINE do_we_use_cs_or_py_eos ( PY , CS )
 use precision_kinds , only : i2b
 use input , only : input_line
-implicit none
+IMPLICIT NONE
 logical , intent( out ) :: CS , PY
 integer(i2b) :: i , j! dummy
 CS = .false.
@@ -181,16 +181,16 @@ do i = 1 , size ( input_line )
   j = len ( 'hs_functional' )
   if ( input_line (i) (1:j) == 'hs_functional' .and. input_line (i) (j+4:j+5) == 'CS' ) CS = .true.
   if ( input_line (i) (1:j) == 'hs_functional' .and. input_line (i) (j+4:j+5) == 'PY' ) PY = .true.
-end do
-end subroutine do_we_use_cs_or_py_eos
-! This subroutine checks if the number of implicit species is not different from 1
-subroutine is_it_only_one_species
+END DO
+END SUBROUTINE do_we_use_cs_or_py_eos
+! This SUBROUTINE checks if the number of implicit species is not different from 1
+SUBROUTINE is_it_only_one_species
 use system , only : nb_species
-implicit none
+IMPLICIT NONE
 if ( nb_species /= 1 ) then
-  print *, 'subroutine cs_of_k_hard_sphere.f90 which is used to generate cs(k) for the hard sphere is only written for one species.'
+  print *, 'SUBROUTINE cs_of_k_hard_sphere.f90 which is used to generate cs(k) for the hard sphere is only written for one species.'
   print *, 'sorry.'
   stop
-end if
-end subroutine is_it_only_one_species
-end subroutine cs_of_k_hard_sphere
+END IF
+END SUBROUTINE is_it_only_one_species
+END SUBROUTINE cs_of_k_hard_sphere

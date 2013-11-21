@@ -1,9 +1,9 @@
 !> Print an XSF file of the supercell for visualisation in VMD for instance.
 !! Type vmd --xsf output/supercell.xsf to visualise it.
-subroutine print_supercell_xsf
+SUBROUTINE print_supercell_xsf
  use precision_kinds
  use system
- implicit none
+ IMPLICIT NONE
  integer(i2b) :: i
  open(5,file='output/supercell.xsf')
  100 format (xA)
@@ -38,6 +38,6 @@ subroutine print_supercell_xsf
  write(5,102) nb_solute_sites, 1
  do i = 1, nb_solute_sites
   write(5,103) atomic_nbr(i), x_mol(i), y_mol(i), z_mol(i)
- end do
+ END DO
  close(5)
-end subroutine print_supercell_xsf
+END SUBROUTINE print_supercell_xsf

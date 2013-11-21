@@ -1,11 +1,11 @@
-subroutine get_charge_density
+SUBROUTINE get_charge_density
 use precision_kinds, only : i2b, dp
 use system, only : nfft1, nfft2, nfft3, deltaV , nb_species, rho_0_multispec
 use quadrature, only : molRotGrid, angGrid, molRotGrid
 use external_potential, only : x_charge ,y_charge ,z_charge ,q_charge ,nb_of_interpolation,Fcoul, v_c
 USE cg, ONLY: CG_vect
 use constants, only : qfact
-implicit none
+IMPLICIT NONE
 real (dp ) :: rho, psi, time1,time0
 real ( dp) , allocatable , dimension ( : , : ,  :) :: charge_density
 integer ( i2b) :: i , j , k , o , p , species , n,convert_coordinate_into_icg, xtemp, ytemp, ztemp
@@ -32,13 +32,13 @@ do species = 1 , nb_species
             
             charge_density (i , j , k ) =  charge_density (i , j , k ) + deltaV * angGrid%weight ( o ) * molRotGrid%weight ( p )&
                                               * rho *q_charge (n , p , o )*rho_0_multispec (species)
-            end do   !n
-          end do    !psi
-        end do  !omega
-      end do    !i
-    end do      !j
-  end do        !k
-end do        !species
+            END DO   !n
+          END DO    !psi
+        END DO  !omega
+      END DO    !i
+    END DO      !j
+  END DO        !k
+END DO        !species
 print*, 'charge_density', minval(charge_density), maxval(charge_density)
 !call write_to_cube_file ( charge_density(:,:,:), 'output/charge_density.cube')
 do i =1, nfft1
@@ -46,8 +46,8 @@ do i =1, nfft1
     do k=1, nfft3
      Fcoul=Fcoul + charge_density (i ,j , k)*V_c(i,j,k)*qfact
  
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 call cpu_time(time1)
-end subroutine
+END SUBROUTINE

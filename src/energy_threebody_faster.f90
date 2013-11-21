@@ -1,4 +1,4 @@
-subroutine energy_threebody_faster
+SUBROUTINE energy_threebody_faster
 use precision_kinds, only:i2b, dp
 use input , only : input_line , input_log
 use constants, only: twopi
@@ -9,7 +9,7 @@ use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , 
 USE cg, ONLY:cg_vect,dF,FF
 use fft, only : fftw3
 
-implicit none
+IMPLICIT NONE
 real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
 integer(i2b)::icg
 integer(i2b) :: i,j,k,o,p,n, i1, j1, k1
@@ -44,7 +44,7 @@ deltaVk=(twopi)**3/(Lx*Ly*Lz)
 do i = 1 , size ( input_line )
   j = len ( 'threebody' )
   if ( input_line (i) ( 1 : j ) == 'threebody' .and. input_line ( i ) ( j + 4 : j + 4 ) == 'F' ) return
-end do
+END DO
 if (.not. input_log('F3B_new')) return
 !> start timer
 call cpu_time(time0)
@@ -59,11 +59,11 @@ do i=1,nfft1
         do p=1, molRotGrid%n_angles
           icg=icg+1
           rho(i,j,k) = rho(i,j,k) + rho_0*angGrid%weight(o)*molRotGrid%weight(p)*cg_vect(icg)**2
-        end do
-      end do
-    end do
-  end do
-end do
+        END DO
+      END DO
+    END DO
+  END DO
+END DO
 !rho_temp=rho
 !rho=0.0_dp
       Axx=0.0_dp
@@ -111,10 +111,10 @@ do i=1, nfft1
         Ax(i,j,k)=fw*x/r
         Ay(i,j,k)=fw*y/r
         Az(i,j,k)=fw*z/r
-       end if
-    end do     !k,z
-  end do       !j,y
-end do         !i,x
+       END IF
+    END DO     !k,z
+  END DO       !j,y
+END DO         !i,x
 !stop
 allocate(rho_k(nfft1/2+1,nfft2,nfft3))
 fftw3%in_forward=rho
@@ -296,12 +296,12 @@ iz = int(z_mol(n)/deltaz) + 1
           DHz(i,j,k,n)= DHz_ijk
           DHyz(i,j,k,n)=DHyz_ijk
           DH0(i,j,k,n)= DH0_ijk         
-        end if
-      end do
-    end do
-  end do
-end if
-end do
+        END IF
+      END DO
+    END DO
+  END DO
+END IF
+END DO
 do n=1, nb_solute_sites
 if (lambda1_mol(n)/=0.0_dp) then
 nmax2x = int(rmax1/deltax)
@@ -331,13 +331,13 @@ iz = int(z_mol(n)/deltaz) + 1
           Gz(i,j,k)=Gz(i,j,k)+lambda2_mol(n)*fk2*(zk2)/rk2
 !if (Gx(i,j,k)/=0.0_dp) then
 !print*, i,j,j,Gx(i,j,k)
-!end if
-!        end if
-      end do
-    end do
-  end do
-end if
-end do
+!END IF
+!        END IF
+      END DO
+    END DO
+  END DO
+END IF
+END DO
 Gxx_k=0.0_dp
 Gyy_k=0.0_dp
 Gzz_k=0.0_dp
@@ -439,7 +439,7 @@ do n=1, nb_solute_sites
   F3B1=F3B1+lambda1_mol(n)*kBT*0.5_dp*((Hxx(n))**2+(Hyy(n))**2+(Hzz(n))**2+&
             2.0_dp*(Hxy(n))**2+2.0_dp*(Hxz(n))**2+2.0_dp*(Hyz(n))**2&
            -2.0_dp*costheta0*((Hx(n))**2+(Hy(n))**2+(Hz(n))**2)+costheta0**2*(H0(n))**2)
-end do
+END DO
 do i=ix-nmax2x, ix+nmax2x
   do j=iy-nmax2y, iy+nmax2y
     do k=iz-nmax2z,iz+nmax2z
@@ -448,9 +448,9 @@ do i=ix-nmax2x, ix+nmax2x
                 - 2.0_dp*costheta0*kBT*0.5_dp*(Fx(i,j,k)*Gx(i,j,k)+Fy(i,j,k)*Gy(i,j,k)+Fz(i,j,k)*Gz(i,j,k))&
                 +costheta0**2*F0(i,j,k)*G0(i,j,k)*kBT*0.5_dp)*deltaV*rho(i,j,k)
     
-    end do
-  end do
-end do
+    END DO
+  END DO
+END DO
 !F3B_ww=0.0_dp
 !do i=1,nfft1
 !  do j=1, nfft2
@@ -458,9 +458,9 @@ end do
 !      F3B_ww=F3B_ww+0.5_dp*kbT*deltaV*rho(i,j,k)*lambda_w*(FAxx(i,j,k)**2+FAyy(i,j,k)**2+FAzz(i,j,k)**2+&
 !             2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2+FAz(i,j,k)**2)&
 !             +costheta0**2*FA0(i,j,k)**2)
-!    end do
-!  end do
-!end do
+!    END DO
+!  END DO
+!END DO
 print*,'F3B_ww = ', F3B_ww
 icg=0
 open(12,file='output/dF_2S_new.dat')
@@ -498,24 +498,24 @@ do i=1,nfft1
 Hzz(n)*DHzz(i,j,k,n)&
             +2.0_dp*Hxy(n)*DHxy(i,j,k,n)+2.0_dp*Hxz(n)*DHxz(i,j,k,n)+2.0_dp*Hyz(n)*DHyz(i,j,k,n))&
       -2.0_dp*costheta0*(Hx(n)*DHx(i,j,k,n)+Hy(n)*DHy(i,j,k,n)+Hz(n)*DHz(i,j,k,n))+costheta0**2*H0(n)*DH0(i,j,k,n))*rho_0*2.0_dp
-          end do
+          END DO
          
-        end do
-      end do
-    end do
-  end do
-end do
+        END DO
+      END DO
+    END DO
+  END DO
+END DO
 close(12)
 call cpu_time(time1)
 print*, 'F3B1=', F3B1
 print*, 'F3B2=', F3B2
 print*, 'in' , time1-time0, 'sec'
 FF=FF+F3B2+F3B1!+F3B_ww
-end subroutine
+END SUBROUTINE
 
 function f_ww( r , rmin, rsw, rmax )
     use precision_kinds, only: dp,i2b
-    implicit none
+    IMPLICIT NONE
     real(dp) :: f_ww, r, rmin, rsw, rmax
     real(dp) , parameter :: gam = 2.0_dp/3.0_dp
     real(dp) :: deltar, exp_term, Switch
@@ -524,12 +524,12 @@ function f_ww( r , rmin, rsw, rmax )
         exp_term = exp(gam*rmax/(r-rmax))
         if(r<rsw) then
             Switch = (r-rmin)**2*(-2.0_dp*(r-rmin)/deltar+3.0_dp)/deltar**2
-        else
+        ELSE
             Switch = 1.0_dp
-        end if
+        END IF
         f_ww = Switch*exp_term
-    else
+    ELSE
         f_ww = 0.0_dp
-    end if
+    END IF
     RETURN
 end function f_ww

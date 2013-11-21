@@ -1,5 +1,5 @@
-! This subroutinen calculates every output asked by user.
-subroutine process_output
+! This SUBROUTINEn calculates every output asked by user.
+SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     use precision_kinds , only: dp , i2b
@@ -7,7 +7,7 @@ subroutine process_output
     use input, only: input_line
     use solute_geometry, only: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     
-    implicit none
+    IMPLICIT NONE
     
     real(dp), dimension( nfft1 , nfft2 , nfft3 , nb_species ) :: neq ! equilibrium density(position)
     real(dp), dimension( nfft1 , nfft2 , nfft3 , nb_species ) :: Px , Py , Pz ! equilibrium polarization(position)
@@ -35,11 +35,11 @@ subroutine process_output
             call write_to_cube_file ( temparray ( : , : , : , 1 ) , filename ) ! TODO for now only write for the first species
             deallocate ( temparray )
             exit
-        end if
-    end do
+        END IF
+    END DO
 
     !> Get radial distribution functions
-    ! TODO for now it's only if nb_solute_sites is not too big because else mmalloc CRASH
+    ! TODO for now it's only if nb_solute_sites is not too big because ELSE mmalloc CRASH
     filename = 'output/g.rdf'
     call compute_rdf ( neq , filename )
     ! If calculation is for hard sphere fluid in presence of a hard wall compute profile perp wall
@@ -50,24 +50,24 @@ subroutine process_output
 
     if( soluteIsLinear() ) then
         ! nothing for now
-    end if
+    END IF
     
     if( soluteIsPlanar() ) then
         filename = 'output/planardensity.out'
         call compute_planar_density ( neq ( : , : , : , 1 ) , filename ) ! TODO for now only write for the first species
-    end if
+    END IF
 
     contains
 
-        subroutine print_cg_vect
+        SUBROUTINE print_cg_vect
             USE cg, ONLY: cg_vect
             if ( .not. allocated ( cg_vect ) ) then
-                print *, 'cg_vect is not allocated in subroutine print_cg_vect in process_output.f90. STOP.'
+                print *, 'cg_vect is not allocated in SUBROUTINE print_cg_vect in process_output.f90. STOP.'
                 stop
-            end if
+            END IF
             open( unit = 10 , file = 'output/density.bin' , form = 'unformatted' )
             write ( 10 ) cg_vect
             print *, ' output/density.bin                                 written'
-        end subroutine print_cg_vect
+        END SUBROUTINE print_cg_vect
 
-end subroutine process_output
+END SUBROUTINE process_output
