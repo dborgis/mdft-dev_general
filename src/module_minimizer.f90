@@ -2,7 +2,7 @@
 !! Could be CG+ or L-BFGS parameters, depending on input file.
 module minimizer
 
-    USE precision_kinds , only: i2b , dp
+    USE precision_kinds,only: i2b , dp
     
     IMPLICIT NONE
 

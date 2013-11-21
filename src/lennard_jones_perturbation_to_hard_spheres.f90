@@ -2,12 +2,12 @@
 ! 201109121332 creation by Maximilien Levesque
 ! 201109151545 added the calculation of the perturbation potential
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
-use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
-use quadrature , only : angGrid
+use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
+use quadrature,only : angGrid
 USE minimizer, ONLY: cg_vect , dF , FF
-USE precision_kinds , only : dp , i2b
-use constants , only : fourpi , twopi
-use fft , only : fftw3
+USE precision_kinds,only : dp , i2b
+use constants,only : fourpi , twopi
+use fft,only : fftw3
 IMPLICIT NONE
 real(dp), allocatable , dimension ( : , : , : ) :: rho_n ! local density
 complex(dp), allocatable , dimension ( : , : , : ) :: rho_k ! fourier transformed rho_n
@@ -138,8 +138,8 @@ contains
   ! Here we compute Uperturbation in kspace. it's an integration we do numericaly
 
   function vlj_wca_k ( k , sigma_lj , epsilon_lj )
-  USE precision_kinds , only : dp , i2b
-  use constants , only : fourpi
+  USE precision_kinds,only : dp , i2b
+  use constants,only : fourpi
   IMPLICIT NONE
   complex(dp):: vlj_wca_k ! which computes the reciprocal value of the potential 'vk'
   real(dp), intent(in) :: k ! one gives the k point 'k' to eat to the routine

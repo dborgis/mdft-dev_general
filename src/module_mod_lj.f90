@@ -9,7 +9,7 @@ MODULE mod_lj
                    ,sig_solv,sig_mol , nb_species, id_mol, id_solv, chg_mol , chg_solv, eps_solv, &
                    x_solv,y_solv,z_solv, nb_solvent_sites
     use constants, only:fourpi
-    use input , only : input_line, verbose
+    use input,only : input_line, verbose
     use quadrature, only: angGrid, molRotGrid
     IMPLICIT NONE
     integer(i2b), private :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites

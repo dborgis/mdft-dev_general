@@ -2,8 +2,8 @@
 ! so that all files needed to understand the outputs are in the output folder.
 ! written by Maximilien Levesque, 2011, @ Ecole Normale Superieure
 SUBROUTINE print_input_to_output_folder
-  use input , only : input_line
-  USE precision_kinds , only : i2b
+  use input,only : input_line
+  USE precision_kinds,only : i2b
   IMPLICIT NONE
   integer(i2b):: i ! dummy for loop
  

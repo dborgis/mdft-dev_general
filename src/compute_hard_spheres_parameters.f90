@@ -9,7 +9,7 @@
 ! compute accordingly the chemical potential and the reference bulk density
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE compute_hard_spheres_parameters
-use system , only : radius , nb_species , muexc_0_multispec , Fexc_0_multispec , n_0_multispec
+use system,only : radius , nb_species , muexc_0_multispec , Fexc_0_multispec , n_0_multispec
 IMPLICIT NONE
 character ( 4 ) :: hs_functional
 !> Warn user
@@ -35,9 +35,9 @@ contains
 ! they would be unphysical. 0.74 is the maximum packing of a solid crystal.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE compute_packing_fractions_and_check_legality
-    USE precision_kinds , only : dp , i2b
-    use constants , only : fourpi
-    use system , only : nb_species , n_0_multispec , radius
+    USE precision_kinds,only : dp , i2b
+    use constants,only : fourpi
+    use system,only : nb_species , n_0_multispec , radius
     IMPLICIT NONE
     real(dp), dimension ( nb_species ) :: eta
     integer(i2b):: species ! dummy
@@ -58,8 +58,8 @@ contains
 ! Reads hard sphere excess functional
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE read_hs_functional ( hs_functional )
-    USE precision_kinds , only : i2b
-    use input , only : input_line, input_char
+    USE precision_kinds,only : i2b
+    use input,only : input_line, input_char
     IMPLICIT NONE
     integer(i2b):: i , j ! dummy
     character ( 4 ) , intent(out) :: hs_functional
@@ -76,8 +76,8 @@ contains
 ! this SUBROUTINE checks if the functional asked in input file is legal. Else, stop execution.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE check_functional_legality ( hs_functional )
-    USE precision_kinds , only : i2b
-    use system , only : nb_species
+    USE precision_kinds,only : i2b
+    use system,only : nb_species
     IMPLICIT NONE
     integer(i2b):: i ! dummy
     character ( 4 ) , intent ( inout ) :: hs_functional
@@ -103,9 +103,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential &
                ( nb_species , n_0_multispec , radius , muexc_0_multispec , Fexc_0_multispec , hs_functional )
-    USE precision_kinds , only : dp , i2b
-    use constants , only : fourpi , pi
-    use system , only : kbT , Lx , Ly , Lz
+    USE precision_kinds,only : dp , i2b
+    use constants,only : fourpi , pi
+    use system,only : kbT , Lx , Ly , Lz
     IMPLICIT NONE
  
     integer(i2b), intent(in) :: nb_species
@@ -186,11 +186,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE compute_hard_sphere_weight_functions_k
   
-        USE precision_kinds , only : dp , i2b
-        USE constants , only : FourPi
-        USE system , only : nb_species, radius, spaceGrid,&
+        USE precision_kinds,only : dp , i2b
+        USE constants,only : FourPi
+        USE system,only : nb_species, radius, spaceGrid,&
                     weight_function_3_k , weight_function_2_k , weight_function_1_k , weight_function_0_k
-        USE fft , only : norm_k
+        USE fft,only : norm_k
   
         IMPLICIT NONE
   

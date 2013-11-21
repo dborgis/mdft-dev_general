@@ -1,12 +1,12 @@
 !This routine evaluate the excess free energy plus an hydrophobic part
 SUBROUTINE energy_hydro
- USE precision_kinds , only : dp , i2b
-  use system , only : nfft1 , nfft2 , nfft3 , deltaV, nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_species,n_0,&
+ USE precision_kinds,only : dp , i2b
+  use system,only : nfft1 , nfft2 , nfft3 , deltaV, nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_species,n_0,&
                             Lx,Ly,Lz
-  use constants , only : fourpi , i_complex,twopi
+  use constants,only : fourpi , i_complex,twopi
   USE minimizer, ONLY: cg_vect , FF , dF
   use quadrature, only: sym_order, angGrid, molRotGrid
-  use fft , only : fftw3 , norm_k,kx,ky,kz,k2,&
+  use fft,only : fftw3 , norm_k,kx,ky,kz,k2,&
                 timesExpPrefactork2
   use input, only : input_log
   

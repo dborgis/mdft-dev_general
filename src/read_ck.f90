@@ -1,11 +1,11 @@
 ! This SUBROUTINEs reads files containing the direct correlation functions of the first three rotational invariants
 ! in k-space. This files are input/cs.in input/cdelta.in and input/cd.in
 SUBROUTINE read_ck
-  USE precision_kinds , only: i2b,dp
+  USE precision_kinds,only: i2b,dp
   use system
   use constants
   use quadrature
-  use input , only : input_line , input_char, input_log, n_linesInFile
+  use input,only : input_line , input_char, input_log, n_linesInFile
   IMPLICIT NONE
   integer(i2b) :: nk, i, j
   character(len=5) :: ck_species

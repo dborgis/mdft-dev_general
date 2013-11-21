@@ -3,12 +3,12 @@
 ! Vext_q is the electrostatic part of Vext_total, and is pathologic (it sometimes diverges)
 ! we thus init the density not using vext, but Vext_total - Vext_q
 SUBROUTINE init_density
-USE precision_kinds , only : dp , i2b
-use system , only : nfft1 , nfft2 , nfft3 , beta , nb_species
+USE precision_kinds,only : dp , i2b
+use system,only : nfft1 , nfft2 , nfft3 , beta , nb_species
 use quadrature, only: angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect
-use external_potential , only : Vext_total , Vext_q
-use input , only : input_log
+use external_potential,only : Vext_total , Vext_q
+use input,only : input_log
 IMPLICIT NONE
 real(dp):: local_density0 !> @var local_density0 is the density at a space and angular grid point
 integer(i2b):: i , j , k , o , p , icg ! dummy

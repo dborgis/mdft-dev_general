@@ -1,6 +1,6 @@
 SUBROUTINE lebedev_integration_roots_and_weights (order, roots_x, roots_y, roots_z, weights)
 
-    USE precision_kinds , only : dp, i2b
+    USE precision_kinds,only : dp, i2b
     
     IMPLICIT NONE
     

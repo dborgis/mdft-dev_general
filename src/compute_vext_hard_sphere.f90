@@ -1,11 +1,11 @@
 !> Compute external potential in a basic way
 !> Solvation of a hard sphere in a hard sphere fluid
 SUBROUTINE compute_Vext_hard_sphere
-USE precision_kinds , only : i2b , dp
-use input , only : input_line,input_dp
-use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species &
+USE precision_kinds,only : i2b , dp
+use input,only : input_line,input_dp
+use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species &
                     , deltax , deltay , deltaz
-use external_potential , only : Vext_total , Vext_hard
+use external_potential,only : Vext_total , Vext_hard
 use quadrature, only: angGrid, molRotGrid
 IMPLICIT NONE
 integer(i2b):: i , j , k !> @var dummy

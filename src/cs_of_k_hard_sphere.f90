@@ -1,16 +1,16 @@
 ! This SUBROUTINE computes the radial distribution function c_s (k) 
 ! For now it only works for 1 SPECIES. BEWARE !!!
 SUBROUTINE cs_of_k_hard_sphere
-USE precision_kinds , only : i2b , dp
+USE precision_kinds,only : i2b , dp
 ! i2b for integer simple precision
 ! dp for real double precision
-use system , only : radius , n_0_multispec , c_s_hs , nb_species
+use system,only : radius , n_0_multispec , c_s_hs , nb_species
 ! radius = radius(nb_species) = radius of each species
 ! n_0_multispec (nb_species) = reference bulk density (0.0332891 molecule per angsrom^3 for water, etc).
 ! c_s_hs (nb_k) = tabulated values of cs in kspace it is the goal of this routine to tabulate this.
-use input , only : input_line
+use input,only : input_line
 ! input_line is an array containing dft.in
-use constants , only : fourpi , pi
+use constants,only : fourpi , pi
 ! fourpi = 4pi
 ! pi = 3.14159...
 IMPLICIT NONE
@@ -170,8 +170,8 @@ kloop : do i = 0, nb_k-1
 END DO kloop
 contains
 SUBROUTINE do_we_use_cs_or_py_eos ( PY , CS )
-USE precision_kinds , only : i2b
-use input , only : input_line
+USE precision_kinds,only : i2b
+use input,only : input_line
 IMPLICIT NONE
 logical , intent( out ) :: CS , PY
 integer(i2b) :: i , j! dummy
@@ -185,7 +185,7 @@ END DO
 END SUBROUTINE do_we_use_cs_or_py_eos
 ! This SUBROUTINE checks if the number of implicit species is not different from 1
 SUBROUTINE is_it_only_one_species
-use system , only : nb_species
+use system,only : nb_species
 IMPLICIT NONE
 if ( nb_species /= 1 ) then
   print *, 'SUBROUTINE cs_of_k_hard_sphere.f90 which is used to generate cs(k) for the hard sphere is only written for one species.'

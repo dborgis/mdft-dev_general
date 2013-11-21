@@ -1,6 +1,6 @@
 SUBROUTINE energy_threebody_faster
 USE precision_kinds, only:i2b, dp
-use input , only : input_line , input_log
+use input,only : input_line , input_log
 use constants, only: twopi
 use quadrature, only : angGrid, molRotGrid
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , Lx , Ly , Lz ,&

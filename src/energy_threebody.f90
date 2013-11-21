@@ -12,7 +12,7 @@ use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0_multispec , sig_mol , s
 USE minimizer, ONLY: cg_vect,FF,dF
 use quadrature, only: angGrid, molRotGrid
 use constants, only: fourpi
-use input , only : input_line, input_log
+use input,only : input_line, input_log
 IMPLICIT NONE
 ! 3-BODY PARAMETERS
 real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp

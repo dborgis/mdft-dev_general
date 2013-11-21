@@ -53,7 +53,7 @@
 !local maximum = 4.000000
 !total number of steps: 30
 SUBROUTINE steepest_descent_main(xdim,conv_criteria,itermax,X)
-USE precision_kinds,only: dp,i2b
+USE precision_kinds, ONLY: dp,i2b
 IMPLICIT NONE
 real(dp),dimension(xdim),intent(inout) :: X ! variables of Y
 real(dp),dimension(xdim) :: XOLD ! backup of X
@@ -73,8 +73,9 @@ write(*,*)'----- results -----'
 !write(*,*)'Maximum found = ',eval_Y_and_dY(xdim,X,dY)
 write(*,*)'Number of iterations = ',n
 END SUBROUTINE steepest_descent_main
+
 SUBROUTINE steepds(xdim,conv_criteria,itermax,stepsize,X,XOLD,Y,dY,n)
-USE precision_kinds,only: dp,i2b
+USE precision_kinds, ONLY: dp,i2b
 IMPLICIT NONE
 real(dp), parameter :: macheps=epsilon(1.0d0) ! machine precision given by fortran function epsilon
 real(dp),intent(in) :: conv_criteria !convergence criteria
@@ -130,9 +131,10 @@ END DO
 !close iteration output
 close(10)
 END SUBROUTINE steepds
+
 !this function is the one to replace with any compute energy and gradient you wish for
 function eval_Y_and_dY(xdim,X,dY)
-USE precision_kinds,only: dp,i2b
+USE precision_kinds, ONLY: dp,i2b
 USE minimizer, ONLY: cg_vect,FF,dF
 IMPLICIT NONE
 real(dp) :: eval_Y_and_dY ! value of Y(X) and its partial derivatives dY
@@ -145,24 +147,25 @@ call energy_and_gradient
 eval_Y_and_dY=FF
 dY=dF
 end function eval_Y_and_dY
+
 SUBROUTINE updateX(xdim,stepsize,dY,X,XOLD)
-USE precision_kinds,only: dp,i2b
-integer(i2b),intent(in) :: xdim!dimension of variables X
-real(dp),intent(in) :: stepsize ! initial guess for step size (how fast we follow dY)
-real(dp),dimension(xdim),intent(inout) :: X!variables of Y
-real(dp),dimension(xdim),intent(out) :: XOLD!backup of X
-real(dp),dimension(xdim),intent(inout) :: dY!partial derivatives of Y with respect to Xi
-integer(i2b) :: i!dummy
-real(dp) :: dYnorm ! norm of the gradient
-!Find the magnitude of the gradient (norm2 is fortran2008 language)
-!dYnorm=norm2(dY)
-dYnorm=0.0_dp
-do i=1,xdim
-  dYnorm=dYnorm+dY(xdim)**2
-END DO
-dYnorm=sqrt(dYnorm)
-!Backup the X(i)
-XOLD=X
-!Update the X(i)
-X=X-stepsize*dY/dYnorm
+    USE precision_kinds, ONLY: dp,i2b
+    integer(i2b),intent(in) :: xdim!dimension of variables X
+    real(dp),intent(in) :: stepsize ! initial guess for step size (how fast we follow dY)
+    real(dp),dimension(xdim),intent(inout) :: X!variables of Y
+    real(dp),dimension(xdim),intent(out) :: XOLD!backup of X
+    real(dp),dimension(xdim),intent(inout) :: dY!partial derivatives of Y with respect to Xi
+    integer(i2b) :: i!dummy
+    real(dp) :: dYnorm ! norm of the gradient
+    !Find the magnitude of the gradient (norm2 is fortran2008 language)
+    !dYnorm=norm2(dY)
+    dYnorm=0.0_dp
+    do i=1,xdim
+    dYnorm=dYnorm+dY(xdim)**2
+    END DO
+    dYnorm=sqrt(dYnorm)
+    !Backup the X(i)
+    XOLD=X
+    !Update the X(i)
+    X=X-stepsize*dY/dYnorm
 END SUBROUTINE updateX

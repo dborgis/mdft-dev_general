@@ -10,7 +10,7 @@
 ! 20110919  Maximilien Levesque, clean version for Virginie M.
 subroutine write_to_cube_file ( array , filename )
     
-    use system , only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , atomic_nbr , x_mol , y_mol , z_mol
+    use system,only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , atomic_nbr , x_mol , y_mol , z_mol
     ! nfft1, nfft2 and nfft3 are the number of points (resolution) in directions x y and z
     ! Lx, Ly and Lz are the length of the supercell primary vectors. They are in Angstroms and thus need to be multiplied by angtobohr to be in bohr.
     ! atomic_nbr is the atomic number (periodic classification) of the atoms

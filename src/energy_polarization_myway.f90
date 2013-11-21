@@ -1,14 +1,14 @@
 SUBROUTINE energy_polarization_myway
-USE precision_kinds , only : i2b , dp
-use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
+USE precision_kinds,only : i2b , dp
+use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, molec_polarx_k,molec_polary_k, molec_polarz_k,delta_k,nb_k,kBT,&
                    rho_0_multispec, nb_species,pola_tot_x_k , pola_tot_y_k , pola_tot_z_k, deltax, rho_c_k_myway, chi_l, chi_t,&
                    n_0, beta,deltax,deltay,deltaz
-use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
+use quadrature,only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
-use constants , only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
-use fft , only : fftw3, kx, ky, kz, k2, norm_k
-use input , only : input_line,input_log, input_char
+use constants,only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
+use fft,only : fftw3, kx, ky, kz, k2, norm_k
+use input,only : input_line,input_log, input_char
 
 IMPLICIT NONE
 real (dp) , dimension (nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ::dF_pol_long , dF_pol_trans, dF_pol_tot

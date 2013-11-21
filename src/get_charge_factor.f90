@@ -1,7 +1,7 @@
 !TO DO use a smaller array to store sigma by finding the larger indexes (on x, y, z) on which some charges are projected
 SUBROUTINE get_charge_factor ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
-USE precision_kinds , only : i2b , dp
-use system , only : nfft1 , nfft2 , nfft3 , x_solv  ,y_solv , z_solv , chg_solv , id_solv , &
+USE precision_kinds,only : i2b , dp
+use system,only : nfft1 , nfft2 , nfft3 , x_solv  ,y_solv , z_solv , chg_solv , id_solv , &
  nb_solvent_sites, &
  Lx , Ly , Lz , deltax , deltay , deltaz
 use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation

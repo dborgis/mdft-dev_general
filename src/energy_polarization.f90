@@ -1,12 +1,12 @@
 SUBROUTINE energy_polarization
-USE precision_kinds , only : i2b , dp
-use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
+USE precision_kinds,only : i2b , dp
+use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, deltax,deltay,deltaz
-use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
+use quadrature,only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
-use constants , only : twopi
-use fft , only : fftw3
-use input , only : input_log, input_char, verbose
+use constants,only : twopi
+use fft,only : fftw3
+use input,only : input_log, input_char, verbose
 IMPLICIT NONE
 integer(i2b):: icg , i , j , k , l , m , n , m1 , m2 , m3 , o , p!> Dummy
 integer(i2b):: nf1 , nf2 , nf3 ! dummy nfft1/2 , nfft2/2 , nfft3/2

@@ -7,8 +7,8 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     USE precision_kinds, only: dp,i2b
     use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species, RC
-    use constants , only : fourpi , qfact
-    use external_potential , only : Vext_q
+    use constants,only : fourpi , qfact
+    use external_potential,only : Vext_q
     use quadrature, only: angGrid, molRotGrid
     USE input, ONLY: verbose
 

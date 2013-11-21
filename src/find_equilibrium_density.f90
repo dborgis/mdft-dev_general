@@ -5,8 +5,8 @@
 
 SUBROUTINE find_equilibrium_density
 
-    USE precision_kinds , only : i2b , dp
-    use input , only : input_line
+    USE precision_kinds,only : i2b , dp
+    use input,only : input_line
     USE minimizer
     use bfgs, ONLY: startBFGS => setulb
     
@@ -66,7 +66,7 @@ END SUBROUTINE find_equilibrium_density
 
 SUBROUTINE interface_compute_energy_and_gradients ( n , x , f , g , stopouencore )
 
-    USE precision_kinds , only : dp , i2b
+    USE precision_kinds,only : dp , i2b
     USE minimizer, ONLY: ncg , cg_vect , FF , dF , minimizer_iter , itermax
 
     IMPLICIT NONE

@@ -1,5 +1,5 @@
 module input
-  USE precision_kinds , only : i2b, dp
+  USE precision_kinds,only : i2b, dp
   IMPLICIT NONE
   character (len = 100) , allocatable , dimension (:) :: input_line ! array containing all input lines
   integer(i2b):: TotalNumberOfInputLines

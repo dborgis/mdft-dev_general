@@ -11,7 +11,7 @@
 ! It now comes as a simple toolbox for MDFT code
 ! *****************************************************************************
 MODULE periodic_table
-  USE precision_kinds , only : dp
+  USE precision_kinds,only : dp
   IMPLICIT NONE
   PUBLIC :: init_periodic_table, ptable, element, nelem, atom
 ! *****************************************************************************

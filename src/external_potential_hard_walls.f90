@@ -7,16 +7,16 @@
 ! Step 4/ we compute the external potential created by the walls, which depends upon the fluid radius
 SUBROUTINE external_potential_hard_walls
 ! precision_kinds defines the precision of the real, double, integer variables.
-USE precision_kinds , only : i2b , dp
+USE precision_kinds,only : i2b , dp
 ! i2b = integer simple precision_kind
 ! dp = double precision real
 ! contains input/dft.in put in input_line
-use input , only : input_line
+use input,only : input_line
 ! input_line (:) contains all lines in dft.in
-use system , only : nfft1 , nfft2 , nfft3 , Lz , radius , nb_species , deltax , deltay , deltaz
+use system,only : nfft1 , nfft2 , nfft3 , Lz , radius , nb_species , deltax , deltay , deltaz
 ! nfft1 = number of grid nodes in X direction
 ! Lz = Length (Angstroms) of the supercell in X direction
-use external_potential , only : Vext_total
+use external_potential,only : Vext_total
 use quadrature, only: angGrid, molRotGrid
 ! Vext_total = external potential as used in the total free energy calculation
 IMPLICIT NONE

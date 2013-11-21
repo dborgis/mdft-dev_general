@@ -10,7 +10,7 @@ use constants, only : i_complex, twopi
 use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly, Lz,nb_solvent_sites, id_solv&
 , sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k,nb_species
 use quadrature, only : angGrid, molRotGrid
-use fft , only : kx, ky, kz, k2
+use fft,only : kx, ky, kz, k2
 
 IMPLICIT NONE
 integer (i2b) :: i, j, k, o , p , n,species!dummy

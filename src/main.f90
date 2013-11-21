@@ -2,7 +2,7 @@
 ! main program : skeleton of the structure.
 program mdft
 
-    USE precision_kinds , only : dp ! definition of the precision kinds
+    USE precision_kinds,only : dp ! definition of the precision kinds
     IMPLICIT NONE
     real(dp) :: time0, time1 ! time steps
 

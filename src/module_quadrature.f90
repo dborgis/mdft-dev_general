@@ -2,7 +2,7 @@
 module quadrature
 
     USE precision_kinds, only: dp, i2b
-    use constants , only : pi, twopi, fourpi
+    use constants,only : pi, twopi, fourpi
     use input, only: input_log, input_char, input_int
 
     IMPLICIT NONE

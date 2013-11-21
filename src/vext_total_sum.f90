@@ -3,16 +3,16 @@
 ! then it gives a upper value (100 kJ/mol) to vext_total.
 SUBROUTINE vext_total_sum
 
-    use precision_kinds , only : dp , i2b
-    use system , only : nfft1 , nfft2 , nfft3 , soluteSite
+    use precision_kinds,only : dp , i2b
+    use system,only : nfft1 , nfft2 , nfft3 , soluteSite
     use quadrature, only : angGrid, molRotGrid
-    use constants , only : fourpi, zero
-    use external_potential , only : Vext_total , Vext_lj , Vext_q , vext_hard_core
+    use constants,only : fourpi, zero
+    use external_potential,only : Vext_total , Vext_lj , Vext_q , vext_hard_core
     ! vext_total = total external potential used for minimization
     ! vext_lj = lennard jones part
     ! vext_q = electrostatic part
     ! vext_hard_core = vdw hard core repulsion
-    use quadrature , only : sym_order
+    use quadrature,only : sym_order
     USE input, ONLY: verbose
     
     implicit none
