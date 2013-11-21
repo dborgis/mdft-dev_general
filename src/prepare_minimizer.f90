@@ -28,7 +28,7 @@ SUBROUTINE prepare_minimizer
         ALLOCATE ( nbd(ncg), SOURCE=0)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
         epsmch = EPSILON(1.0_dp)  !  Precision de la machine
         factr = epsg / epsmch ! convergence criteria over energy
-        iprint = 1
+        iprint = -1
         ALLOCATE ( iwa ( 3 * ncg ) )
         ALLOCATE ( wa ( 2 * mcg * ncg + 4 * ncg + 11 * mcg **2 + 8 * mcg ) )
     END IF

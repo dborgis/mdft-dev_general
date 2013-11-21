@@ -1,12 +1,13 @@
 !> Gets the final density from the last minimizer step.
 SUBROUTINE get_final_density ( neq )
 
-    USE precision_kinds , ONLY: dp , i2b
-    USE system , ONLY : nb_species, spaceGrid
-    USE constants , ONLY : twopi
+    USE precision_kinds, ONLY: dp , i2b
+    USE system, ONLY : nb_species, spaceGrid
+    USE constants, ONLY : twopi
     USE minimizer, ONLY: CG_vect
-    USE quadrature , ONLY : sym_order, angGrid, molRotGrid
-    USE fft , ONLY : fftw3 , timesExpPrefactork2
+    USE quadrature, ONLY : sym_order, angGrid, molRotGrid
+    USE fft, ONLY: fftw3 , timesExpPrefactork2
+    USE input, ONLY: verbose
     
     IMPLICIT NONE
 
@@ -50,23 +51,25 @@ SUBROUTINE get_final_density ( neq )
             neq (:,:,:,species ) = fftw3%out_backward/Nk 
         END DO
     END IF
+
+    IF (verbose) THEN
+        open(11,file='output/density_along_x.dat')
+            do i=1,nfft1
+                write(11,*) (i-1)*dl(1), neq(i,nfft2/2+1,nfft3/2+1,1)
+            END DO
+        close(11)
     
-    open(11,file='output/density_along_x.dat')
-        do i=1,nfft1
-            write(11,*) (i-1)*dl(1), neq(i,nfft2/2+1,nfft3/2+1,1)
-        END DO
-    close(11)
+        open(12,file='output/density_along_y.dat')
+            do i=1,nfft2
+                write(12,*) (i-1)*dl(2), neq(nfft1/2+1,i,nfft3/2+1,1)
+            END DO
+        close(12)
     
-    open(12,file='output/density_along_y.dat')
-        do i=1,nfft2
-            write(12,*) (i-1)*dl(2), neq(nfft1/2+1,i,nfft3/2+1,1)
-        END DO
-    close(12)
-    
-    open(13,file='output/density_along_z.dat')
-        do i=1,nfft3
-            write(13,*) (i-1)*dl(3), neq(nfft1/2+1,nfft2/2+1,i,1)
-        END DO
-    close(13)
+        open(13,file='output/density_along_z.dat')
+            do i=1,nfft3
+                write(13,*) (i-1)*dl(3), neq(nfft1/2+1,nfft2/2+1,i,1)
+            END DO
+        close(13)
+    END IF
 
 END SUBROUTINE get_final_density

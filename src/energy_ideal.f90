@@ -1,18 +1,19 @@
 ! This SUBROUTINE computes the ideal part of the free energy functional.
 ! It sum over species of n(log(n)-1)
 
-SUBROUTINE energy_ideal
+SUBROUTINE energy_ideal (Fideal)
 
     USE precision_kinds, ONLY: i2b, dp
     USE minimizer, ONLY: cg_vect, FF, dF
     USE system, ONLY: kBT, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
     USE quadrature, ONLY: sym_order, angGrid, molRotGrid
-    USE input, ONLY: input_log, input_char
+    USE input, ONLY: input_log, input_char, verbose
     USE constants, ONLY: fourpi
 
     IMPLICIT NONE
     
-    REAL(dp) :: Fideal, Fid_lin ! ideal free energy, linearized ideal free energy 
+    REAL(dp), INTENT(OUT) :: Fideal
+    REAL(dp) :: Fid_lin ! ideal free energy, linearized ideal free energy 
     REAL(dp) :: Fid_lin_temp, dFid_lin_temp !dummy for temporary store linearized ideal free energy and the corresponding gradient
     INTEGER(i2b) :: icg , i , j , k , o , p, s! dummy for loops
     REAL(dp) :: psi ! dummy for cg_vext(i)
@@ -138,9 +139,10 @@ SUBROUTINE energy_ideal
 
     FF = FF + Fideal + Fid_lin
     
+    Fideal = Fideal + Fid_lin
+    
     CALL CPU_TIME (time1)
-    WRITE(*,*) 'Fideal      = ' , Fideal , 'computed in (sec)' , time1 - time0
-
+    IF (verbose) WRITE(*,'(''    Ideal              = '',f11.3,'' in '',I5,'' sec'')') Fideal , NINT(time1-time0)
 
     CONTAINS
 

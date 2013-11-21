@@ -1,15 +1,16 @@
 ! this SUBROUTINE compute the external part of the free energy functional
-SUBROUTINE energy_external
+SUBROUTINE energy_external (Fext)
 
     USE precision_kinds, ONLY: dp , i2b
     USE system, ONLY: rhoBulk=>rho_0_multispec, soluteSite, spaceGrid
     USE quadrature, ONLY: angGrid, molRotGrid
     USE minimizer, ONLY: CG_vect , FF , dF
     USE external_potential, ONLY: Vext_total
+    USE input, ONLY: verbose
     
     IMPLICIT NONE
 
-    REAL(dp) :: Fext
+    REAL(dp), INTENT(OUT) :: Fext
     INTEGER(i2b) :: icg , i , j , k , o , p! dummy for loops
     REAL(dp) :: psi
     REAL(dp) :: wdfve
@@ -44,6 +45,6 @@ SUBROUTINE energy_external
     FF = FF + Fext
 
     CALL CPU_TIME (time1)
-    WRITE(*,*) 'external    = ' , Fext , 'computed in (sec)' , time1 - time0
+    IF (verbose) WRITE(*,'(''    External           = '',f11.3,'' in '',I5,'' sec'')') Fext , NINT(time1-time0)
 
 END SUBROUTINE energy_external

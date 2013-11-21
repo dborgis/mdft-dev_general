@@ -13,6 +13,7 @@ SUBROUTINE electrostatic_potential_from_charge_density
     USE fft , ONLY : fftw3 , norm_k , k2
     USE constants , ONLY : fourpi , twopi
     USE external_potential , ONLY : V_c
+    USE input, ONLY: verbose
     ! V_c = electrostatic potential from charge density and poisson equation
     
     IMPLICIT NONE
@@ -51,10 +52,12 @@ SUBROUTINE electrostatic_potential_from_charge_density
     CALL dfftw_execute ( fftw3%plan_backward )
     V_c = fftw3%out_backward / REAL ( nfft1 * nfft2 * nfft3 , dp )
     
-    OPEN(11,FILE='output/V_cmax.dat')
-        DO i=1, nfft1
-            WRITE(11,*), i , V_c(i, nfft2/2, nfft3/2 )
-        END DO
-    CLOSE(11)
+    IF (verbose) THEN
+        OPEN(11,FILE='output/V_cmax.dat')
+            DO i=1, nfft1
+                WRITE(11,*), i , V_c(i, nfft2/2, nfft3/2 )
+            END DO
+        CLOSE(11)
+    END IF
 
 END SUBROUTINE electrostatic_potential_from_charge_density

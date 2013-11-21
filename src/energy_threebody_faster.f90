@@ -1,6 +1,7 @@
-SUBROUTINE energy_threebody_faster
+SUBROUTINE energy_threebody_faster (Fint)
+
 USE precision_kinds, only:i2b, dp
-use input,only : input_line , input_log
+use input, only : input_line, input_log, verbose
 use constants, only: twopi
 use quadrature, only : angGrid, molRotGrid
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , Lx , Ly , Lz ,&
@@ -10,6 +11,7 @@ USE minimizer, ONLY:cg_vect,dF,FF
 use fft, only : fftw3
 
 IMPLICIT NONE
+REAL(dp), INTENT(OUT) :: Fint
 real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
 integer(i2b)::icg
 integer(i2b) :: i,j,k,o,p,n, i1, j1, k1
@@ -461,9 +463,9 @@ END DO
 !    END DO
 !  END DO
 !END DO
-print*,'F3B_ww = ', F3B_ww
+!print*,'F3B_ww = ', F3B_ww
+
 icg=0
-open(12,file='output/dF_2S_new.dat')
 do i=1,nfft1
   do j=1, nfft2
     do k=1, nfft3
@@ -505,12 +507,18 @@ Hzz(n)*DHzz(i,j,k,n)&
     END DO
   END DO
 END DO
-close(12)
-call cpu_time(time1)
-print*, 'F3B1=', F3B1
-print*, 'F3B2=', F3B2
-print*, 'in' , time1-time0, 'sec'
-FF=FF+F3B2+F3B1!+F3B_ww
+
+    FF=FF+F3B2+F3B1!+F3B_ww
+
+    CALL CPU_TIME (time1)
+
+    IF (verbose) THEN
+        WRITE(*,'(''    F3B1               = '',f11.3,'' in '',I5,'' sec'')') F3B1 , NINT(time1-time0)
+        WRITE(*,'(''    F3B2               = '',f11.3,'' in '',I5,'' sec'')') F3B2 , NINT(time1-time0)
+    END IF
+
+    Fint = F3B2+F3B1
+
 END SUBROUTINE
 
 function f_ww( r , rmin, rsw, rmax )

@@ -90,5 +90,5 @@ close(10)
 deallocate ( recurrence_bin )
 deallocate ( rdf )
 
-write(*,*)filename,' written'
+write(*,'(a,a)')'Written: ',filename
 END SUBROUTINE compute_rdf

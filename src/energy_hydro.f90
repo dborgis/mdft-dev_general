@@ -1,5 +1,5 @@
 !This routine evaluate the excess free energy plus an hydrophobic part
-SUBROUTINE energy_hydro
+SUBROUTINE energy_hydro (Fint)
  USE precision_kinds,only : dp , i2b
   use system,only : nfft1 , nfft2 , nfft3 , deltaV, nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_species,n_0,&
                             Lx,Ly,Lz
@@ -8,7 +8,7 @@ SUBROUTINE energy_hydro
   use quadrature, only: sym_order, angGrid, molRotGrid
   use fft,only : fftw3 , norm_k,kx,ky,kz,k2,&
                 timesExpPrefactork2
-  use input, only : input_log
+  use input, only : input_log, verbose
   
   IMPLICIT NONE
   real(dp) :: mu_0 ! phenomenological potential
@@ -274,10 +274,13 @@ SUBROUTINE energy_hydro
   END DO
   
   ! conclude
-  FF = FF + Fint  + S_cg+ F_cg
-  
+    FF = FF + Fint + F_cg + S_cg
+    Fint = Fint + F_cg + S_cg
   ! warn user
-  call cpu_time ( time1 )
-  write(*,*) 'Fexc(rad)   = ' , Fint , 'computed in (sec)'
-  write(*,*) 'Fexc(rad+cg)= ' , F_cg + S_cg , 'computed in (sec)' , time1 - time0
+    call cpu_time ( time1 )
+    IF (verbose) THEN
+        WRITE(*,'(''    Exces / radial     = '',f11.3,'' in '',I5,'' sec'')') Fint , NINT(time1-time0)
+        WRITE(*,'(''    Exces / radial+cg  = '',f11.3,'' in '',I5,'' sec'')') F_cg + S_cg , NINT(time1-time0)
+    END IF
+
 END SUBROUTINE

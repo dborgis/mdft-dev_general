@@ -48,16 +48,6 @@ integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites wi
             END DO
         CLOSE (5)
 
-    IF ( ABS(SUM( soluteSite%q )) >= 1.E-7 ) THEN ! warn user if total charge is not zero
-        PRINT*,
-        PRINT*,'*******************************************************************'
-        PRINT*,'          TOTAL CHARGE IS NOT ZERO.'
-        PRINT*,'          IT IS ' , SUM( soluteSite%q )
-        PRINT*,'          CONTINUE AT YOUR OWN RISK'
-        PRINT*,'*******************************************************************'
-        PRINT*,
-    END IF
-
     CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
     CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
     CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell

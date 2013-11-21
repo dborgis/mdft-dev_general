@@ -1,5 +1,6 @@
 !> Compute total energy and gradients using direct correlation functions c_s
-SUBROUTINE cs_from_dcf
+SUBROUTINE cs_from_dcf (Fint)
+
 USE precision_kinds, only: i2b,dp
 use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
                   nb_species
@@ -7,11 +8,14 @@ use quadrature, only: sym_order, angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi
 use fft, only: fftw3, norm_k
+USE input, ONLY: verbose
+
 IMPLICIT NONE
+
 integer(i2b) :: i, j, k, l, m, n, o, p , icg, species !> Dummy
 integer(i2b) :: k_index
 real(dp) :: Nk !> Total number of k points = nfft1*nfft2*nfft3
-real(dp) :: Fint !> Internal part of the free energy
+real(dp), INTENT(OUT) :: Fint !> Internal part of the free energy
 real(dp) :: Vint !> Dummy for calculation of Vint
 real(dp) :: fact !> facteur d'integration
 real(dp) :: psi ! Dummy
@@ -98,6 +102,6 @@ deallocate(Vpair)
 ! conclude
 FF = FF + Fint
 call cpu_time(time1)
-write(*,*) 'Fexc(rad)   = ' , Fint , 'computed in (sec)' , time1 - time0
+    IF (verbose) WRITE(*,'(''    Exces / radial     = '',f11.3,'' in '',I5,'' sec'')') Fint , NINT(time1-time0)
  
 END SUBROUTINE cs_from_dcf

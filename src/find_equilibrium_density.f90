@@ -12,43 +12,44 @@ SUBROUTINE find_equilibrium_density
     
     IMPLICIT NONE
     
-    integer(i2b):: iter ! step number ...
-    integer(i2b):: i , j ! dummy
-    real(dp):: time1 , time2
+    integer(i2b):: iter
+    integer(i2b):: i, j
+    real(dp):: time1, time2
     real(dp):: energy_before, dfoverf
 
 
-    if ( minimizer_type ( 1 : 4 ) == 'bfgs' ) then
+    WRITE(*,'(''Iter.     FF       |dF|       Fext        Fid      Fexc/rad   Fexc/pol     F3B1       F3B2'')')
+
+    IF ( minimizer_type(1:4) == 'bfgs' ) then
         iter = 0
         task = 'START' ! task is modified by lbfgs itself to communicate the state of the convergence
         111 continue
         CALL CPU_TIME ( time1 )
         CALL startBFGS (ncg, mcg, cg_vect, ll, uu, nbd, FF, dF, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave , dsave )
 
-        if ( task (1:2) == 'FG' ) then ! continue one more step
+        IF ( task (1:2) == 'FG' ) then ! continue one more step
             iter = iter + 1
-            write (*,*)
-            write (*,*)
-            write (*,*)
-            write (*,'(a,I4)') '# L-BFGS iteration ' , iter
+!~             WRITE(*,*)
+!~             WRITE(*,'(a,I4)') '# iteration ' , iter
             IF ( iter > iterMAX ) go to 999 ! get out of minimizer.
             energy_before = FF
-            call energy_and_gradient
+            call energy_and_gradient (iter)
             call cpu_time(time2)
             dfoverf = (FF-energy_before)/FF*100._dp
-            write(*,'(''At iter '',i3,'' Fsolv= '',f9.3,'' kJ/mol changed of '',f8.3,''% w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
-                iter, FF, dfoverf, NORM2(dF), nint(time2-time1)
+!~             write(*,'(''#'',i3,'' # Fsolv= '',f9.3,'' kJ/mol changed of '',f11.6,''% w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
+!~                 iter, FF, dfoverf, NORM2(dF), nint(time2-time1)
             
             ! L-BFGS knows when it is converged but I prefer to control it here by myself ...
             if ( abs ( FF - energy_before ) <= epsg ) goto 999
             goto 111 ! minimization continues ...
+            
         ELSE IF ( task (1:5) == 'NEW_X' ) then
             goto 111
         ELSE
             if ( iprint <= -1 .and. task (1:4) /= 'STOP' ) write (6,*) task
         END IF
-        ! loops to find the minima is ended for one reason or the other
-        999 continue
+        
+        999 continue ! loops to find the minima is ended for one reason or the other
         CALL finalizeMinimizer
     ELSE
         STOP "The minimizer you asked is not implemented yet."
