@@ -5,7 +5,7 @@ subroutine energy_ideal
 
     USE precision_kinds, ONLY: i2b, dp
     USE cg, ONLY: cg_vect, FF, dF
-    USE system, ONLY: rho_0, kBT, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
+    USE system, ONLY: kBT, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
     USE quadrature, ONLY: sym_order, angGrid, molRotGrid
     USE input, ONLY: input_log, input_char
     USE constants, ONLY: fourpi

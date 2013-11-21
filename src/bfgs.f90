@@ -3845,7 +3845,7 @@ endif
  !     Modified October 1990 by Brett M. Averick.                         
  !                                                                        
  !     **********                                                         
-       REAL*8  a,b                                                        
+!~        REAL*8  a,b                                                        
                                                                           
  !     The first element of the array tarray specifies user time          
                                                                           

@@ -1,15 +1,13 @@
-subroutine gauss_legendre_integration_roots_and_weights (order, weight , root)
+SUBROUTINE gauss_legendre_integration_roots_and_weights (order, weight, root)
 
-    use precision_kinds , only : dp , i2b
-    use input , only : input_line, input_int
+    USE precision_kinds, ONLY: dp, i2b
     
-    implicit none
+    IMPLICIT NONE
     
     integer(i2b), intent(in) :: order
     real(dp), dimension(order), intent(out) :: weight, root
     real(dp), dimension(11,11) :: w_gl ! tabulated weights for gauss legendre integration of order 1 to 6
     real(dp), dimension(11,11) :: x_gl ! tabulated roots for gauss legendre integration of order 1 to 6
-    integer(i2b):: i , j ! dummy
 
 
     if (order > size(x_gl,1)) then
@@ -167,4 +165,5 @@ subroutine gauss_legendre_integration_roots_and_weights (order, weight , root)
 
     weight = w_gl (1:order,order)
     root = x_gl (1:order,order)
-end subroutine gauss_legendre_integration_roots_and_weights
+
+END SUBROUTINE gauss_legendre_integration_roots_and_weights

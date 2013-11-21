@@ -2,13 +2,15 @@ SUBROUTINE vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotz
 
     USE precision_kinds, ONLY: dp, i2b
     USE system, ONLY: chg_mol , chg_solv , x_solv , y_solv , z_solv , nb_solvent_sites , nb_species , Lx , Ly , &
-                        Lz , deltax , deltay , deltaz , beta , id_solv , beta , nfft1 , nfft2 , nfft3, spaceGrid, soluteSite
+                        Lz , deltax , deltay , deltaz , beta , id_solv , beta , nfft1 , nfft2 , nfft3, spaceGrid, soluteSite, &
+                        solventSite
     USE quadrature, ONLY: angGrid, molRotGrid
     USE external_potential, ONLY: v_c , vext_q , vext_lj
     ! v_c = electrostatic potential from charge density and poisson equation
     ! vext_q = electrostatic potential energy in general and as used in the calculation of the total external potential
-    USE constants, ONLY: fourpi, qfact, qunit
+    USE constants, ONLY: fourpi, qfact, qunit, zero
     ! qfact = qunit ** 2 * 1.0e-3_dp * Navo / ( fourpi * eps0 * 1.0e-10_dp ) ! electrostatic potential unit so that QFACT*q*q/r is kJ/mol
+    USE input, ONLY: verbose
 
     IMPLICIT NONE
 
@@ -32,21 +34,19 @@ SUBROUTINE vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotz
     IF(.NOT. ALLOCATED(vext_q)) ALLOCATE( vext_q (spaceGrid%n_nodes(1), spaceGrid%n_nodes(2), spaceGrid%n_nodes(3),&
         angGrid%n_angles, molRotGrid%n_angles, nb_species ), SOURCE=0._dp )
     
-    IF ( ALL( soluteSite%q == 0._dp )) THEN
-        RETURN
-    ELSE IF ( minval ( chg_solv ) == 0.0_dp .and. maxval ( chg_solv ) == 0.0_dp ) then   ! solvent is not charged
-        RETURN
-    END IF
-    
-    OPEN(11, file='output/v_c.dat')
-        do i=1, nfft1
-            do j=1, nfft2
-                do k=1, nfft3
-                    write(11,*) v_c(i , j , k)
+    IF ( ALL(soluteSite%q == zero) .OR. ALL(solventSite%q == zero) ) RETURN ! uncharged system
+
+    IF (verbose) THEN
+        OPEN(11, file='output/v_c.dat')
+            do i=1, nfft1
+                do j=1, nfft2
+                    do k=1, nfft3
+                        write(11,*) v_c(i , j , k)
+                    end do
                 end do
             end do
-        end do
-    CLOSE(11)
+        CLOSE(11)
+    END IF
 
     ! Tabulate rotation matrix * solvent coordinates
     do o = 1 , angGrid%n_angles
@@ -132,9 +132,8 @@ SUBROUTINE vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotz
         end do ! j
     end do ! i
     end do ! species
-    ! warn user about min and max values and time
+
     call cpu_time(time1)
-    print *, 'vext_q_from_v_c : min = ' , minval ( Vext_q ) , ' ; max = ' , maxval ( Vext_q ) , ' ; in (sec) ' , time1 - time0
     
     ! Get the external potential over orientations and print it
     !allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
@@ -147,9 +146,13 @@ SUBROUTINE vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotz
     !deallocate ( temparray )
     ! DEBUG ONLY
     
-    OPEN (10, FILE= 'output/vext_q_from_v_c_along-z_no_planar_average.dat' )
-        DO k=1,spaceGrid%n_nodes(3)
-            WRITE (10,*) (real(k-1,dp)*deltaz-Lz/2.0_dp) , (Vext_q(nfft1/2,nfft2/2,k,1,1,1) / QFACT)
-        END DO
-    CLOSE (10)
-end subroutine vext_q_from_v_c
+    IF (verbose) THEN
+        PRINT*, 'vext_q_from_v_c : min = ' , minval ( Vext_q ) , ' ; max = ' , maxval ( Vext_q ) , ' ; in (sec) ' , time1 - time0
+        OPEN (10, FILE= 'output/vext_q_from_v_c_along-z_no_planar_average.dat' )
+            DO k=1,spaceGrid%n_nodes(3)
+                WRITE (10,*) (real(k-1,dp)*deltaz-Lz/2.0_dp) , (Vext_q(nfft1/2,nfft2/2,k,1,1,1) / QFACT)
+            END DO
+        CLOSE (10)
+    END IF
+    
+END SUBROUTINE vext_q_from_v_c

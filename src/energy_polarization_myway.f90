@@ -36,6 +36,11 @@ end if
 ! look for tag polarization in input
 if (.not. input_log('polarization')) return
 
+IF (.NOT. ALLOCATED (rho_c_k_myway)) THEN
+    ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3) )
+    rho_c_k_myway = (0._dp,0._dp)
+END IF
+
 !Check if you want to compute Polarization from a macroscopic point of view
 !do i = 1 , size ( input_line )
 !  j = len ( 'evaluate_polarization' )

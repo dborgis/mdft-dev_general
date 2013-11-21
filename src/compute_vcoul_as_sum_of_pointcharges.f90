@@ -10,6 +10,7 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     use constants , only : fourpi , qfact
     use external_potential , only : Vext_q
     use quadrature, only: angGrid, molRotGrid
+    USE input, ONLY: verbose
 
     implicit none
 
@@ -29,7 +30,6 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     real(dp) :: qfactcc ! qfact*chg_solv()*chg_mol()
     real(dp) :: rc2 ! charge pseudo radius **2   == Rc**2
     real(dp) :: tempVcoul ! temporary Vcoul(i,j,k,o)
-    integer(i2b) :: ou_on_en_est ! where we are in the loop to follow on screen. goes from nfft3 to 0 when finished
     integer(i2b):: species ! dummy for loops over species
 
     print*,'!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!'
@@ -43,16 +43,15 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     py=0
     pz=0
     Rc2=Rc**2
-    ou_on_en_est = nfft3
 
     ! test if all solutes have zero charge then don't waste your time : go to end of subroutine
-    if (minval(chg_mol)==0.0_dp .and. maxval(chg_mol)==0.0_dp) then   ! solute is not charged
-        write(*,*)'solute has no charge'
-        go to 999 ! end of subroutine
-    else if (minval(chg_solv)==0.0_dp .and. maxval(chg_solv)==0.0_dp) then   ! solvent is not charged
-        write(*,*)'solvent has no charge'
-        go to 999 ! end of subroutine
-    end if
+    IF (MINVAL(chg_mol)==0.0_dp .and. MAXVAL(chg_mol)==0.0_dp) THEN   ! solute is not charged
+        IF (verbose) WRITE(*,*)'solute has no charge'
+        RETURN
+    ELSE IF (MINVAL(chg_solv)==0.0_dp .and. MAXVAL(chg_solv)==0.0_dp) THEN   ! solvent is not charged
+        IF (verbose) WRITE(*,*)'solvent has no charge'
+        RETURN
+    END IF
     
     ! precompute Rot_ij(omega,psi)*k_solv(a) for speeding up
     do o=1,angGrid%n_angles
@@ -65,16 +64,8 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
         end do
     end do
 
-!$OMP PARALLEL DO &
-!$OMP DEFAULT(private) & ! variables are all private by default, but the ones in next SHARED(..)
-!$OMP SHARED(nfft3,nfft2,nfft1,ou_on_en_est,deltaz,deltay,deltax,angGrid%n_angles,molRotGrid%n_angles,nb_solvent_sites, &
-!$OMP id_solv,chg_solv,xmod,ymod,zmod,nb_solute_sites,id_mol,chg_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz, &
-!$OMP Rc2,beta,Vcoul) &
-!$OMP SCHEDULE(DYNAMIC) ! dynamic allocation of work over nodes (no node is sleeping while others work)
     do species = 1 , nb_species
         do k=1,nfft3
-            ou_on_en_est=ou_on_en_est-1
-            write(*,*)ou_on_en_est
             z_grid=real(k-1,dp)*deltaz
             !  if(z_grid>12.0_dp .and. z_grid<30.0_dp) then
             !    Vcoul(:,:,k,:)=100.0_dp
@@ -142,19 +133,22 @@ subroutine compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
 !$OMP END PARALLEL DO
     
     999 continue
-    write(*,*) 'minval(Vcoul)= ' , minval( Vext_q (:,:,:,:,:,:) )
-    write(*,*) 'maxval(Vcoul)= ' , maxval( Vext_q (:,:,:,:,:,:) )
+    
     call cpu_time(time1)
-    write(*,*)'runtime for compute_vcoul_ijko_from_tabulated ' , time1 - time0
+    
+    IF (verbose) THEN
+        write(*,*) 'minval(Vcoul)= ' , minval( Vext_q (:,:,:,:,:,:) )
+        write(*,*) 'maxval(Vcoul)= ' , maxval( Vext_q (:,:,:,:,:,:) )
+        write(*,*) 'runtime for compute_vcoul_ijko_from_tabulated ' , time1 - time0
+        ! Get the external potential over orientations and print it
+        allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
+        call mean_over_orientations ( Vext_q (:,:,:,:,:,1) , temparray )
+        temparray = temparray / fourpi
+        filename = 'output/Vcoul.cube'
+        call write_to_cube_file ( temparray , filename )
+        filename = 'output/Vcoul_along-z.dat'
+        call compute_z_density ( temparray , filename )
+        deallocate(temparray)
+    END IF
 
-    ! Get the external potential over orientations and print it
-    allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
-    call mean_over_orientations ( Vext_q (:,:,:,:,:,1) , temparray )
-    temparray = temparray / fourpi
-    filename = 'output/Vcoul.cube'
-    call write_to_cube_file ( temparray , filename )
-    filename = 'output/Vcoul_along-z.dat'
-    call compute_z_density ( temparray , filename )
-    deallocate(temparray)
-
-end subroutine
+END SUBROUTINE

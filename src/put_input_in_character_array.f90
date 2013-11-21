@@ -1,10 +1,11 @@
 SUBROUTINE put_input_in_character_array
     
-    USE precision_kinds , only : i2b
-    use input , only : input_line , n_linesInFile
-    implicit none
+    USE precision_kinds, ONLY: i2b
+    USE input, ONLY: input_line, n_linesInFile, verbose
+    
+    IMPLICIT NONE
+    
     integer(i2b):: i , j , k , n, n_lines ! dummy
-    integer(i2b):: ios ! input output status of readen file
     character ( len = 100 ) :: text ! temporary input line
     character ( len = 100 ) , allocatable , dimension ( : ):: arraytemp  ! Temporary array to stock data for resizing input_line
 

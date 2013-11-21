@@ -1,11 +1,14 @@
 ! Here are allocated variables declared in modules
 subroutine allocate_from_input
+
     use precision_kinds , only : i2b , dp
     use input , only : input_line, input_int, input_dp, input_log
     USE system, ONLY: n_0, rho_0, temp, beta, kbT, Rc, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
     use constants , only : fourpi , boltz, navo , twopi
     use quadrature , only : sym_order
+
     implicit none
+
     integer(i2b):: i , j ! dummy
     integer(i2b):: species ! dummy between 1 and nb_species
     
@@ -51,7 +54,6 @@ subroutine allocate_from_input
         if ( input_line ( i ) ( 1 : len ( 'ref_bulk_density' ) ) == 'ref_bulk_density' ) then
             do species = 1 , nb_species
                 read ( input_line ( i + species ) , * ) n_0_multispec ( species )
-                write (*,*) 'Reference bulk density (' , species , ') = ' , n_0_multispec ( species )
             end do
             exit
         end if
@@ -103,7 +105,6 @@ subroutine allocate_from_input
         if ( input_line (i) (1:j) == 'mole_fractions' ) then
             do species = 1 , nb_species
                 read ( input_line ( i + species ) , * ) mole_fraction ( species )
-                write (*,*) 'Mole fraction (' , species , ') = ' , mole_fraction ( species )
             end do
             exit ! loop over i
         end if
@@ -112,6 +113,8 @@ subroutine allocate_from_input
         ! check error in mole fraction : sum of all mole fractions should be equal to 1
         call check_error_in_mole_fraction ( mole_fraction )
     end subroutine read_mole_fractions
+
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! check_error_in_mole_fraction checks if there are errors in mole fractions
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -145,4 +148,7 @@ subroutine allocate_from_input
             end if
         end do
     end subroutine check_error_in_mole_fraction
+
+
+
 end subroutine allocate_from_input

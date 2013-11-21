@@ -2,7 +2,7 @@
 subroutine compute_rdf ( array , filename )
 
     USE precision_kinds, ONLY: dp , i2b
-    USE system, ONLY: nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , id_mol , id_solv, nb_species, spaceGrid, soluteSite
+    USE system, ONLY: x_mol , y_mol , z_mol , id_mol , id_solv, nb_species, spaceGrid, soluteSite
     USE input, ONLY: input_dp, input_int
     
     IMPLICIT NONE
@@ -20,9 +20,6 @@ subroutine compute_rdf ( array , filename )
     INTEGER(i2b):: i , j , k , n , bin, s
     REAL(dp):: xnm2 , ynm2 , znm2 ! dummy
 
-!~ do i=1,4
-!~ PRINT*,FILENAME,size(array,i)
-!~ end do;STOP
 !> Get the total number of solute kinds and solvent kinds
 !TODO pour l'instant ne sert a rien mais ensuite ce n'est plus chaque site de solute qui doit compter mais chaque type de site
 ! on devra faire une moyenne sur tous les sites d'un meme type
@@ -76,6 +73,7 @@ do s = 1 , nb_species
   elsewhere
      rdf = 0.0_dp
   end where
+
   ! Write rdf in output folder
   do n = 1 , SIZE(soluteSite)
      write ( 10 , * ) '#site ' , n

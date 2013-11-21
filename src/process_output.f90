@@ -3,7 +3,7 @@ subroutine process_output
 
     ! defines precision of reals and intergers
     use precision_kinds , only: dp , i2b
-    use system, only: nfft1 , nfft2 , nfft3 , nb_solute_sites , nb_species
+    use system, only: nfft1 , nfft2 , nfft3 , nb_species
     use input, only: input_line
     use solute_geometry, only: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     

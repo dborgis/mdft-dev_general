@@ -3,6 +3,7 @@ module input
   implicit none
   character (len = 100) , allocatable , dimension (:) :: input_line ! array containing all input lines
   integer(i2b):: TotalNumberOfInputLines
+  LOGICAL, PARAMETER, PUBLIC :: verbose = .false.
   private
   public :: input_line, input_dp, input_int, TotalNumberOfInputLines,input_log, input_char,n_linesInFile
   contains

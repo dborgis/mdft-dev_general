@@ -1,13 +1,15 @@
 ! In module mod_lj, we compute the array Vext_lj that contains the lennard jones part of the external potential
 ! It is perhaps not the best idea to have a module for that, but is simpler for me (Max) to code, at least at the beginning.
-module mod_lj
+
+MODULE mod_lj
+
     use external_potential, only: Vext_lj
     use precision_kinds, only: dp, i2b
     use system, only: nfft1, nfft2, nfft3, deltax,deltay,deltaz,nb_solute_sites,eps_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz&
                    ,sig_solv,sig_mol , nb_species, id_mol, id_solv, chg_mol , chg_solv, eps_solv, &
                    x_solv,y_solv,z_solv, nb_solvent_sites
     use constants, only:fourpi
-    use input , only : input_line
+    use input , only : input_line, verbose
     use quadrature, only: angGrid, molRotGrid
     implicit none
     integer(i2b), private :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
@@ -23,13 +25,12 @@ module mod_lj
         
         subroutine calculate
         
-            integer(i2b) :: i,j,k,n ! dummy
+            integer(i2b) :: i,j,k
             real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
             real(dp) :: V_node ! sum of all solute contributions to a given grid node
             integer(i2b) :: idm, ids ! id of the solute and solvent site that is being used
             real(dp) :: time0, time1 ! timer start and end
             integer(i2b) :: species ! dummy for loops over species
-            integer(i2b) ::  i_mol, i_solv
             real(dp):: dx, dy, dz ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
             integer(i2b) :: solute_site, solvent_site
             ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species ) 
@@ -109,48 +110,52 @@ module mod_lj
                 end do ! solvent sites
             end do ! species
             
-            block
-                real(dp), dimension(:,:,:), allocatable :: temparray
-                character(50):: filename
-                !> Get the lennard jones potential over orientations and print it
-                allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
-                temparray=Vext_lj(:,:,:,1,1,1)
-                filename='output/Vlj.cube'
-                call write_to_cube_file(temparray,filename)
-                filename='output/Vlj_along-z.dat'
-                call compute_z_density(temparray,filename)
-                open(11,file='Vlj_aumilieu.dat')
-                do i=1,nfft3
-                    write(11,*) i*deltaz, Vext_lj(nfft1/2,nfft2/2,i,1,1,1)
-                end do
-                close(11)
-                deallocate(temparray)
-            end block
+            IF (verbose) THEN
+                BLOCK
+                    real(dp), dimension(:,:,:), allocatable :: temparray
+                    character(50):: filename
+                    !> Get the lennard jones potential over orientations and print it
+                    allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
+                    temparray=Vext_lj(:,:,:,1,1,1)
+                    filename='output/Vlj.cube'
+                    call write_to_cube_file(temparray,filename)
+                    filename='output/Vlj_along-z.dat'
+                    call compute_z_density(temparray,filename)
+                    open(11,file='Vlj_aumilieu.dat')
+                        do i=1,nfft3
+                            write(11,*) i*deltaz, Vext_lj(nfft1/2,nfft2/2,i,1,1,1)
+                        end do
+                    close(11)
+                    deallocate(temparray)
+                    call cpu_time(time1)
+                    print *, 'Vext_lj : min = ' , minval(Vext_lj) , ' ; max = ' , maxval(Vext_lj) , ' ; in (sec) ' , time1-time0
+                END BLOCK
+            END IF
             
-            call cpu_time(time1)
-            print *, 'Vext_lj : min = ' , minval(Vext_lj) , ' ; max = ' , maxval(Vext_lj) , ' ; in (sec) ' , time1-time0
-        end subroutine
-        
-        pure function vlj(eps,sig,d)
-            ! v_lj(d) = 4ε[(σ/d)^12-(σ/d)^6]
+
+        END SUBROUTINE calculate
+
+
+        PURE FUNCTION vlj(eps,sig,d) ! v_lj(d) = 4ε[(σ/d)^12-(σ/d)^6]
             real(dp) :: vlj
-            real(dp), intent(in) :: eps, sig ! ε,σ
-            real(dp), intent(in) :: d ! distance
+            real(dp), intent(in) :: eps, sig, d ! ε,σ,distance
             real(dp) :: div
             div = (sig/d)**6
             vlj = 4._dp*eps*div*(div-1._dp)
-        end function
-        pure function arithmetic_mean( A, B)
+        END FUNCTION vlj
+        
+        PURE FUNCTION arithmetic_mean( A, B)
             ! = sum_i^N a_i/N
             real(dp) :: arithmetic_mean
             real(dp), intent(in) :: A, B
             arithmetic_mean = (A+B)/2._dp
-        end function
-        pure function geometric_mean( A, B)
+        END FUNCTION arithmetic_mean
+        
+        PURE FUNCTION geometric_mean( A, B)
             ! = (product_i^N a_i)^(1/N)
             real(dp) :: geometric_mean
             real(dp), intent(in) :: A, B
             geometric_mean = sqrt(A*B)
-        end function
+        END FUNCTION geometric_mean
    
-end module
+END MODULE mod_lj

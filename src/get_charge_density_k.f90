@@ -1,15 +1,15 @@
-subroutine get_charge_density_k ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
 !This routine compute : -The solvent molecular charge density, which can be used into Vcoul_from_solvent_charge_density.f90 to 
 !evaluate the electrostatic potential.
 !                       -The solvent molecular polarization (from Ranieriet al : J. Chem. Phys. 98 (11) 1993) which ca be used
 !into energy_polarization_myway.f90 to compute the (multipolar) polarization Free energy.
+
+SUBROUTINE get_charge_density_k ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
+
 use precision_kinds, only : i2b, dp
-use constants, only : i_complex, twopi, fourpi
+use constants, only : i_complex, twopi
 use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly, Lz,nb_solvent_sites, id_solv&
 , sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k,nb_species
-use external_potential, only : x_charge, y_charge, z_charge, q_charge, nb_of_interpolation
-use cg , only : cg_vect
-use quadrature, only : Omx , Omy , Omz, angGrid, molRotGrid
+use quadrature, only : angGrid, molRotGrid
 use fft , only : kx, ky, kz, k2
 
 implicit none
@@ -18,7 +18,7 @@ real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,R
 integer (i2b) :: nf1
 real (dp) :: xmod, ymod, zmod
 real (dp) :: deltaVk, Rc
-real (dp), dimension(nfft1,nfft2,nfft3)::molecpolarx,molecpolary,molecpolarz
+!~ real (dp), dimension(nfft1,nfft2,nfft3)::molecpolarx,molecpolary,molecpolarz
 !            ====================================================
 !            !    	Initialization				!
 !            !							!

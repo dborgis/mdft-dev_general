@@ -5,6 +5,7 @@ SUBROUTINE charge_density_from_point_charge_positions
     
     USE precision_kinds, ONLY: i2b , dp
     USE system, ONLY: rho_c, spaceGrid, soluteSite
+    USE input, ONLY: verbose
     
     IMPLICIT NONE
     
@@ -57,6 +58,6 @@ SUBROUTINE charge_density_from_point_charge_positions
     END DO
     rho_c = rho_c / spaceGrid%dv ! charge density is in charge per unit volume
 
-    CALL write_to_cube_file ( rho_c , 'output/charge_density.cube' )
+    IF (verbose) CALL write_to_cube_file ( rho_c , 'output/charge_density.cube' )
     
-end subroutine charge_density_from_point_charge_positions
+END SUBROUTINE charge_density_from_point_charge_positions

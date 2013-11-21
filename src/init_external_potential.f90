@@ -4,22 +4,24 @@
 
 subroutine init_external_potential
 
-    use precision_kinds , only : dp , i2b
-    use input, only: input_line, input_log, input_char
-    use system , only: chg_mol, chg_solv, eps_solv, eps_mol, sig_solv, sig_mol, Lx, Ly, Lz, &
-                    nfft1, nfft2, nfft3, nb_species, soluteSite, spaceGrid
-    use external_potential, only: Vext_total, Vext_q
-    use mod_lj, only: initLJ => init
-    use quadrature, only: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
+    USE precision_kinds, ONLY: dp , i2b
+    USE input, ONLY: input_log, input_char
+    USE system , ONLY: chg_solv, soluteSite, spaceGrid
+    USE external_potential, ONLY: Vext_total, Vext_q
+    USE mod_lj, ONLY: initLJ => init
+    USE quadrature, ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
+    USE constants, ONLY: zero
     
     implicit none
     
     integer(i2b):: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
-    integer(i2b):: i, j
+    INTEGER(i2b), DIMENSION(3) :: nfft
+
+    nfft = spaceGrid%n_nodes
 
     IF( .NOT. ALLOCATED( Vext_total )) THEN
         allocate( Vext_total(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),angGrid%n_angles,&
-                            molRotGrid%n_angles,nb_species), source=0._dp )
+                            molRotGrid%n_angles,SIZE(soluteSite)), source=0._dp )
     ELSE
         STOP "see init_external_potential.f90 vext_total is already allocated."
     END IF
@@ -33,25 +35,29 @@ subroutine init_external_potential
         call get_charge_density_k ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz )  
     end if
 
-    ! Pseudopotential
-    !allocate(Vpseudo(nfft1,nfft2,nfft3,angGrid%n_angles))
-    !call compute_vpseudo_ijko
-
     ! Hard walls
     call external_potential_hard_walls
 
-    ! Charges : treatment as point charges
-    if (input_log('point_charge_electrostatic')) then
-        ! Compute Vcoul(i,j,k,omega)
-        if (.not. allocated(Vext_q)) allocate( Vext_q(nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species), &
-                                                                                                    source=0._dp )
-        call compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
-    end if
+    IF (input_log('point_charge_electrostatic')) THEN ! Charges : treatment as point charges
+        IF (.NOT. ALLOCATED(Vext_q)) THEN
+            BLOCK
+                INTEGER(i2b), DIMENSION(6) :: al
+                al(1) = nfft(1)
+                al(2) = nfft(2)
+                al(3) = nfft(3)
+                al(4) = angGrid%n_angles
+                al(5) = molRotGrid%n_angles
+                al(6) = SIZE(soluteSite)
+                ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zero )
+            END BLOCK
+        END IF
+        CALL compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
+    END IF
 
     ! Charges : Poisson solver
     if (input_log('poisson_solver')) then
-        if (.not. allocated(Vext_q) ) allocate ( Vext_q ( nfft1 , nfft2 , nfft3 , angGrid%n_angles,molRotGrid%n_angles,nb_species))
-        Vext_q=0.0_dp
+        if (.not. allocated(Vext_q) ) &
+            allocate ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,SIZE(soluteSite)), SOURCE=zero)
         call electrostatic_potential_from_charge_density ! Electrostatic potential using FFT of Poisson equation Laplacian(V(r))= - charge_density / Epsilon_0
         call vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
     end if
@@ -77,12 +83,6 @@ subroutine init_external_potential
         call compute_vext_hard_cylinder
     end if
     
-    ! hard square well
-    !do i = 1 , size ( input_line )
-    !  j = len ( 'vext_hard_square_well' )
-    !  if ( input_line (i) (1:j) == 'vext_hard_square_well' .and. input_line (i) (j+4:j+4) == 'T' ) call vext_hard_square_well
-    !end do
-
     ! personnal vext as implemented in personnal_vext.f90
     if (input_log('personnal_vext')) then
         call compute_vext_perso

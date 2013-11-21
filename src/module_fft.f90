@@ -25,7 +25,6 @@ CONTAINS
         USE system , ONLY: spaceGrid
         INTEGER(i2b), DIMENSION(3) :: nfft
         INTEGER(i2b):: l
-        REAL(dp), PARAMETER :: twopi = ACOS(-1._dp)*2._dp
         nfft = spaceGrid%n_nodes
         ALLOCATE ( kx (nfft(1)/2+1), ky (nfft(2)), kz (nfft(3)), source=0._dp)
         DO CONCURRENT ( l=1:nfft(1)/2+1 )
@@ -67,7 +66,9 @@ CONTAINS
     PURE FUNCTION kvec (l,m,n)
         INTEGER(i2b), INTENT(IN) :: l,m,n
         REAL(dp), DIMENSION(3) :: kvec
-        kvec = [ kproj(1,l), kproj(2,m), kproj(3,n) ]
+        kvec(1) = kproj(1,l)
+        kvec(2) = kproj(2,m)
+        kvec(3) = kproj(3,n)
     END FUNCTION kvec
 
     SUBROUTINE deallocate_everything_fft

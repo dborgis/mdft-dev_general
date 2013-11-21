@@ -8,7 +8,7 @@ use system , only : nfft1 , nfft2 , nfft3 , beta , nb_species
 use quadrature, only: angGrid, molRotGrid
 use cg , only : cg_vect
 use external_potential , only : Vext_total , Vext_q
-use input , only : input_line, input_log
+use input , only : input_log
 implicit none
 real(dp):: local_density0 !> @var local_density0 is the density at a space and angular grid point
 integer(i2b):: i , j , k , o , p , icg ! dummy
