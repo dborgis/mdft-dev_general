@@ -9,7 +9,7 @@ use precision_kinds, only: dp,i2b
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0_multispec , sig_mol , sig_solv , Lx , Ly , Lz ,&
 &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
 & , lambda1_mol , lambda2_mol
-USE cg, ONLY: cg_vect,FF,dF
+USE minimizer, ONLY: cg_vect,FF,dF
 use quadrature, only: angGrid, molRotGrid
 use constants, only: fourpi
 use input , only : input_line, input_log

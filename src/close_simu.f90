@@ -1,7 +1,7 @@
 ! This SUBROUTINE closes the program properly.
 ! It deallocates memory and destroys FFTW3 plans.
 SUBROUTINE close_simu
-    USE cg, ONLY: finalizeMinimizer
+    USE minimizer, ONLY: finalizeMinimizer
     USE fft, ONLY : deallocate_everything_fft
     USE external_potential, ONLY : deallocate_everything_external_potential
 

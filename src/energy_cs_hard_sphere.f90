@@ -4,7 +4,7 @@ use precision_kinds, only: i2b,dp
 use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s_hs , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
                   nb_species
 use quadrature, only: sym_order, angGrid, molRotGrid
-USE cg, ONLY: cg_vect , FF , dF
+USE minimizer, ONLY: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi
 use fft, only: fftw3, norm_k
 IMPLICIT NONE

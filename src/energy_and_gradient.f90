@@ -9,7 +9,7 @@ SUBROUTINE energy_and_gradient
 
     USE precision_kinds, ONLY: i2b , dp
     USE input, ONLY: input_log, input_char, verbose
-    USE cg, ONLY: FF , dF
+    USE minimizer, ONLY: FF , dF
     
     IMPLICIT NONE
 

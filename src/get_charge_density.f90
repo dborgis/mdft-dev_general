@@ -3,7 +3,7 @@ use precision_kinds, only : i2b, dp
 use system, only : nfft1, nfft2, nfft3, deltaV , nb_species, rho_0_multispec
 use quadrature, only : molRotGrid, angGrid, molRotGrid
 use external_potential, only : x_charge ,y_charge ,z_charge ,q_charge ,nb_of_interpolation,Fcoul, v_c
-USE cg, ONLY: CG_vect
+USE minimizer, ONLY: CG_vect
 use constants, only : qfact
 IMPLICIT NONE
 real (dp ) :: rho, psi, time1,time0

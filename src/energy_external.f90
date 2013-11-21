@@ -4,7 +4,7 @@ SUBROUTINE energy_external
     USE precision_kinds, ONLY: dp , i2b
     USE system, ONLY: rhoBulk=>rho_0_multispec, soluteSite, spaceGrid
     USE quadrature, ONLY: angGrid, molRotGrid
-    USE cg, ONLY: CG_vect , FF , dF
+    USE minimizer, ONLY: CG_vect , FF , dF
     USE external_potential, ONLY: Vext_total
     
     IMPLICIT NONE

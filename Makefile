@@ -38,7 +38,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/module_quadrature.f90 \
        $(SRCDIR)/module_fft.f90 \
        $(SRCDIR)/module_external_potential.f90 \
-       $(SRCDIR)/module_cg.f90 \
+       $(SRCDIR)/module_minimizer.f90 \
        $(SRCDIR)/module_periodic_table.f90 \
        $(SRCDIR)/module_mod_lj.f90 \
        $(SRCDIR)/module_solute_geometry.f90 \

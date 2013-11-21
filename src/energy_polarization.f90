@@ -3,7 +3,7 @@ use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, deltax,deltay,deltaz
 use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
-USE cg, ONLY: cg_vect , FF , dF
+USE minimizer, ONLY: cg_vect , FF , dF
 use constants , only : twopi
 use fft , only : fftw3
 use input , only : input_log, input_char, verbose

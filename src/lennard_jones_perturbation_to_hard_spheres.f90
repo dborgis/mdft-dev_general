@@ -4,7 +4,7 @@
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
 use quadrature , only : angGrid
-USE cg, ONLY: cg_vect , dF , FF
+USE minimizer, ONLY: cg_vect , dF , FF
 use precision_kinds , only : dp , i2b
 use constants , only : fourpi , twopi
 use fft , only : fftw3

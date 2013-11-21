@@ -4,7 +4,7 @@ SUBROUTINE prepare_minimizer
     
     USE precision_kinds, ONLY: dp
     USE input, ONLY: input_int, input_dp,input_char
-    USE cg, ONLY: nbd , iwa , ll , uu , wa , dF , cg_vect , epsmch , factr , epsg , ncg , mcg , iprint , minimizer_type ,&
+    USE minimizer, ONLY: nbd , iwa , ll , uu , wa , dF , cg_vect , epsmch , factr , epsg , ncg , mcg , iprint , minimizer_type ,&
                     itermax , minimizer_iter , pgtol, FF
     USE system , ONLY: spaceGrid, soluteSite
     USE quadrature, ONLY: angGrid, molRotGrid

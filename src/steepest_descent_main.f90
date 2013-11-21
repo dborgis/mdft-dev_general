@@ -133,7 +133,7 @@ END SUBROUTINE steepds
 !this function is the one to replace with any compute energy and gradient you wish for
 function eval_Y_and_dY(xdim,X,dY)
 use precision_kinds,only: dp,i2b
-USE cg, ONLY: cg_vect,FF,dF
+USE minimizer, ONLY: cg_vect,FF,dF
 IMPLICIT NONE
 real(dp) :: eval_Y_and_dY ! value of Y(X) and its partial derivatives dY
 integer(i2b),intent(in) :: xdim !dimension of X

@@ -6,7 +6,7 @@ SUBROUTINE init_density
 use precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , beta , nb_species
 use quadrature, only: angGrid, molRotGrid
-USE cg, ONLY: cg_vect
+USE minimizer, ONLY: cg_vect
 use external_potential , only : Vext_total , Vext_q
 use input , only : input_log
 IMPLICIT NONE

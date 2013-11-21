@@ -1,6 +1,6 @@
 !> Defines the parameters of minimizer.
 !! Could be CG+ or L-BFGS parameters, depending on input file.
-module cg
+module minimizer
 
     use precision_kinds , only: i2b , dp
     
@@ -40,4 +40,4 @@ module cg
             IF (ALLOCATED ( indicg ) ) deallocate ( indicg )
         END SUBROUTINE finalizeMinimizer
 
-end module cg
+end module minimizer

@@ -6,7 +6,7 @@ use quadrature, only : angGrid, molRotGrid
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , Lx , Ly , Lz ,&
 &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
 & , lambda1_mol , lambda2_mol, deltaV,n_0
-USE cg, ONLY:cg_vect,dF,FF
+USE minimizer, ONLY:cg_vect,dF,FF
 use fft, only : fftw3
 
 IMPLICIT NONE

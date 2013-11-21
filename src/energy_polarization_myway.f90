@@ -5,7 +5,7 @@ use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT ,
                    rho_0_multispec, nb_species,pola_tot_x_k , pola_tot_y_k , pola_tot_z_k, deltax, rho_c_k_myway, chi_l, chi_t,&
                    n_0, beta,deltax,deltay,deltaz
 use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
-USE cg, ONLY: cg_vect , FF , dF
+USE minimizer, ONLY: cg_vect , FF , dF
 use constants , only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
 use fft , only : fftw3, kx, ky, kz, k2, norm_k
 use input , only : input_line,input_log, input_char
