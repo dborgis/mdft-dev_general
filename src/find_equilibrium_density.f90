@@ -7,7 +7,7 @@ SUBROUTINE find_equilibrium_density
 
     use precision_kinds , only : i2b , dp
     use input , only : input_line
-    use cg
+    USE cg
     use bfgs, ONLY: startBFGS => setulb
     
     implicit none
@@ -18,22 +18,21 @@ SUBROUTINE find_equilibrium_density
     real(dp):: energy_before ! value of total energy (FF) at step actual and before for comparison
     
     ! get from input the type of minimization one wants to do
-    do i = 1 , size ( input_line )
+    DO i = 1 , size ( input_line )
         j = len ( 'minimizer' )
         IF ( input_line (i) (1:j) == 'minimizer' ) THEN
             minimizer_type = input_line (i) (j+4:j+8)
             EXIT
         END IF
-    end do
+    END DO
     
     ! call the correct minimization technique
     if ( minimizer_type ( 1 : 4 ) == 'bfgs' ) then
-
         iter = 0
         task = 'START' ! task is modified by lbfgs itself to communicate the state of the convergence
         111 continue
-        call cpu_time ( time1 )
-        call startBFGS (ncg, mcg, cg_vect, ll, uu, nbd, FF, dF, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave , dsave )
+        CALL CPU_TIME ( time1 )
+        CALL startBFGS (ncg, mcg, cg_vect, ll, uu, nbd, FF, dF, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave , dsave )
 
         if ( task (1:2) == 'FG' ) then ! continue one more step
             iter = iter + 1
@@ -46,8 +45,8 @@ SUBROUTINE find_equilibrium_density
             call energy_and_gradient
             call cpu_time(time2)
 
-            write (*,'(''Fsolv= '',f9.3,'' at iter '',i3,'' converged of '',f11.6,'' kJ/mol w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
-                FF, iter, FF-energy_before, NORM2(dF), nint(time2-time1)
+            write (*,'(''At iter '',i3,'' Fsolv= '',f9.3,'' kJ/mol converged of '',f11.6,'' w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
+                iter, FF, FF-energy_before, NORM2(dF), nint(time2-time1)
             
             ! L-BFGS knows when it is converged but I prefer to control it here by myself ...
             if ( abs ( FF - energy_before ) <= epsg ) goto 999
@@ -59,13 +58,7 @@ SUBROUTINE find_equilibrium_density
         end if
         ! loops to find the minima is ended for one reason or the other
         999 continue
-        ! close properly lbfgs
-        deallocate (nbd)
-        deallocate (iwa)
-        deallocate (ll)
-        deallocate (uu)
-        deallocate (wa)
-        deallocate (dF)
+        CALL finalizeMinimizer
     ELSE
         STOP "The minimizer you asked is not implemented yet."
     END IF
@@ -83,7 +76,7 @@ END SUBROUTINE find_equilibrium_density
 subroutine interface_compute_energy_and_gradients ( n , x , f , g , stopouencore )
 
     use precision_kinds , only : dp , i2b
-    use cg , only : ncg , cg_vect , FF , dF , minimizer_iter , itermax
+    USE cg, ONLY: ncg , cg_vect , FF , dF , minimizer_iter , itermax
 
     implicit none
     integer(i2b):: n

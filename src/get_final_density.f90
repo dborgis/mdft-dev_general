@@ -4,7 +4,7 @@ SUBROUTINE get_final_density ( neq )
     USE precision_kinds , ONLY: dp , i2b
     USE system , ONLY : nb_species, spaceGrid
     USE constants , ONLY : twopi
-    USE cg , ONLY : CG_vect
+    USE cg, ONLY: CG_vect
     USE quadrature , ONLY : sym_order, angGrid, molRotGrid
     USE fft , ONLY : fftw3 , timesExpPrefactork2
     

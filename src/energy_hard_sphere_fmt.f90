@@ -4,7 +4,7 @@ use system , only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_functio
                     weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
                     muexc_0_multispec , Fexc_0_multispec , mole_fraction , rho_0_multispec
 use quadrature , only : sym_order , angGrid, molRotGrid
-use cg , only : cg_vect , FF , dF
+USE cg, ONLY: cg_vect , FF , dF
 use constants , only : pi , FourPi , twopi
 use fft , only : fftw3
 use input, only : input_line

@@ -5,7 +5,7 @@ use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT ,
                    rho_0_multispec, nb_species,pola_tot_x_k , pola_tot_y_k , pola_tot_z_k, deltax, rho_c_k_myway, chi_l, chi_t,&
                    n_0, beta,deltax,deltay,deltaz
 use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
-use cg , only : cg_vect , FF , dF
+USE cg, ONLY: cg_vect , FF , dF
 use constants , only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
 use fft , only : fftw3, kx, ky, kz, k2, norm_k
 use input , only : input_line,input_log, input_char
@@ -28,6 +28,7 @@ complex(dp) :: k_tens_k_Px,k_tens_k_Py,k_tens_k_Pz
 real(dp):: time1 , time0 ,time2 , time3 ,rhot! timestamps
 complex(dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k 
 real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
+
 if (nb_species/=1) then
     print*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
     stop
@@ -377,19 +378,19 @@ end do
 !					Check if Polarization Free energy is Real
 !========================================================================================================================
 if (aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)<tiny(0.0_dp)) then 
-F_pol_tot=real( F_pol_tot_k , dp)
-F_pol_long=real( F_pol_long_k,  dp)
-F_pol_trans=real( F_pol_trans_k, dp)
+    F_pol_tot=real( F_pol_tot_k , dp)
+    F_pol_long=real( F_pol_long_k,  dp)
+    F_pol_trans=real( F_pol_trans_k, dp)
 else
-print*, 'Error in energy_polarization_myway Free energy is not Real'
-print*,aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)
-print*,F_pol_tot_k+F_pol_long_k+F_pol_trans_k
-stop
+    print*, 'Error in energy_polarization_myway Free energy is not Real'
+    print*,aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)
+    print*,F_pol_tot_k+F_pol_long_k+F_pol_trans_k
+    stop
 end if
 !========================================================================================================================
 F_pol=F_pol_tot+F_pol_long+F_pol_trans
 FF=FF+F_pol
 ! stop timer
 call cpu_time ( time1 )
-print*, 'F_polarization =' , F_pol  , 'computed in (sec)' , time1 - time0
+PRINT*, 'F_polarization =' , F_pol  , 'computed in (sec)' , time1 - time0
 end subroutine

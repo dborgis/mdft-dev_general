@@ -4,7 +4,7 @@ subroutine energy_hydro
   use system , only : nfft1 , nfft2 , nfft3 , deltaV, nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_species,n_0,&
                             Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi
-  use cg , only : cg_vect , FF , dF
+  USE cg, ONLY: cg_vect , FF , dF
   use quadrature, only: sym_order, angGrid, molRotGrid
   use fft , only : fftw3 , norm_k,kx,ky,kz,k2,&
                 timesExpPrefactork2

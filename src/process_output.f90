@@ -60,7 +60,7 @@ subroutine process_output
     contains
 
         subroutine print_cg_vect
-            use cg , only : cg_vect
+            USE cg, ONLY: cg_vect
             if ( .not. allocated ( cg_vect ) ) then
                 print *, 'cg_vect is not allocated in subroutine print_cg_vect in process_output.f90. STOP.'
                 stop

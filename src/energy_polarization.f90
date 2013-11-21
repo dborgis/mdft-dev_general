@@ -3,10 +3,10 @@ use precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, deltax,deltay,deltaz
 use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
-use cg , only : cg_vect , FF , dF
+USE cg, ONLY: cg_vect , FF , dF
 use constants , only : twopi
 use fft , only : fftw3
-use input , only : input_line, input_log,input_char
+use input , only : input_log, input_char, verbose
 implicit none
 integer(i2b):: icg , i , j , k , l , m , n , m1 , m2 , m3 , o , p!> Dummy
 integer(i2b):: nf1 , nf2 , nf3 ! dummy nfft1/2 , nfft2/2 , nfft3/2
@@ -17,7 +17,7 @@ real(dp):: Vint !> Dummy for calculation of Vint
 real(dp):: fact !> facteur d'integration
 real(dp):: rho , psi !> Dummy
 real(dp), allocatable , dimension ( : , : , : ) :: Px , Py , Pz , Ex , Ey , Ez
-real(dp), allocatable , dimension ( : , : , : , : ) :: polatot, polascal
+real(dp), allocatable , dimension ( : , : , : , : ) :: polascal
 complex(dp), allocatable , dimension ( : , : , : ) :: Pkx , Pky , Pkz , Ekx , Eky , Ekz
 complex(dp):: k_dot_P
 real(dp):: c_deltat , c_dt ! dummy local values of c_delta and c_d in loops
@@ -29,17 +29,12 @@ real(dp):: Nk ! total number of k grid points
 real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
 character (50) :: filename
 
-    if (.not. input_log('polarization')) return ! look for tag polarization in input
+if (.not. input_log('polarization')) return ! look for tag polarization in input
 
-!Check if you want to compute Polarization from a macroscopic point of view
-!do i = 1 , size ( input_line )
-!  j = len ( 'evaluate_polarization' )
-!  if ( input_line (i) (1:j) == 'evaluate_polarization' .and. input_line (i) (j+4:j+8) == 'Micro' ) return ! exit this routine to get back to energy calculation skeleton.  
-!end do
 if (trim(adjustl(input_char('evaluate_polarization')))== 'multi') return
-! init timer
+
 call cpu_time(time0)
-! init variables
+
 nf1 = nfft1 / 2
 nf2 = nfft2 / 2
 nf3 = nfft3 / 2
@@ -49,16 +44,11 @@ twopioLz = twopi / Lz
 ! total number of k grid points
 Nk = real ( nfft1 * nfft2 * nfft3 , dp )
 ! allocate and init polarization vector
-allocate ( Px ( nfft1 , nfft2 , nfft3 ) )
-allocate ( Py ( nfft1 , nfft2 , nfft3 ) )
-allocate ( Pz ( nfft1 , nfft2 , nfft3 ) )
-allocate ( Polatot ( nfft1 , nfft2 , nfft3 , 1) )
-Polatot=0.0_dp
-allocate ( Polascal ( nfft1 , nfft2 , nfft3 , 1) )
-Polascal=0.0_dp
-Px = 0.0_dp
-Py = 0.0_dp
-Pz = 0.0_dp
+allocate ( Px ( nfft1 , nfft2 , nfft3 ), SOURCE=0.0_dp )
+allocate ( Py ( nfft1 , nfft2 , nfft3 ), SOURCE=0.0_dp )
+allocate ( Pz ( nfft1 , nfft2 , nfft3 ), SOURCE=0.0_dp )
+allocate ( Polascal ( nfft1 , nfft2 , nfft3 , 1), SOURCE=0.0_dp )
+
 ! put density of last minimization step in delta_rho and P
 ! but first prepare the product angGrid%weight(omega)*Omx in order not to repeat it
 allocate ( weight_omx ( angGrid%n_angles ) )
@@ -99,18 +89,24 @@ do i = 1 , nfft1
     end do
   end do
 end do
-open(11,file='output/polatotxmax')
-do i=1,nfft1
-write(11,*) i*deltax, 0.4894_dp*Px(i,nfft2/2+1,nfft3/2+1)
-end do
-close(11)
-!Compute Radial Polarization
-filename='output/radial_polarization_dipolar'
-polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*rho_0
-call compute_rdf(polatot, filename)
-filename='output/radial_polarization_scalar'
-call compute_rdf(polascal*rho_0*0.4894_dp, filename)
-! deallocate now useless dummy arrays
+
+IF (verbose) THEN
+    BLOCK
+        REAL(dp), DIMENSION (nfft1,nfft2,nfft3,1) ::  polatot
+        open(11,file='output/polatotxmax')
+            do i=1,nfft1
+                write(11,*) i*deltax, 0.4894_dp*Px(i,nfft2/2+1,nfft3/2+1)
+            end do
+        close(11)
+        !Compute Radial Polarization
+        filename='output/radial_polarization_dipolar'
+        polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*rho_0
+        call compute_rdf(polatot, filename)
+        filename='output/radial_polarization_scalar'
+        call compute_rdf(polascal*rho_0*0.4894_dp, filename)
+    END BLOCK
+END IF
+
 deallocate ( weight_omx )
 deallocate ( weight_omy )
 deallocate ( weight_omz )
@@ -123,7 +119,7 @@ fftw3%in_forward = Px
 call dfftw_execute ( fftw3%plan_forward )
 Pkx = fftw3%out_forward
 call cpu_time(time3)
-print*, 'Duree FFT=', time3-time2
+IF (verbose) print*, 'Duree FFT=', time3-time2
 fftw3%in_forward = Py
 call dfftw_execute ( fftw3%plan_forward )
 Pky = fftw3%out_forward

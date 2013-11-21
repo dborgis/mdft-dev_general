@@ -4,7 +4,7 @@ use precision_kinds , only: dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , nb_species
 use constants , only : fourpi
 ! cg contains everything related to the minimizer
-use cg , only : CG_vect
+USE cg, ONLY: CG_vect
 ! cg_vect = density for at each grid point for each angle and each species
 use quadrature , only : Omx , Omy , Omz, angGrid
 implicit none
