@@ -39,15 +39,15 @@ SUBROUTINE find_equilibrium_density
             iter = iter + 1
             write (*,*)
             write (*,*)
-            write (*,*) 'start L-BFGS iteration ' , iter
+            write (*,*)
+            write (*,'(a,I4)') '# L-BFGS iteration ' , iter
             IF ( iter > iterMAX ) go to 999 ! get out of minimizer.
             energy_before = FF
             call energy_and_gradient
             call cpu_time(time2)
 
-            write (*,*) 'F(n)-F(n-1) = ' , FF - energy_before! tell user the difference in energy in between steps i-1 and i
-            write (*,*) 'norm2(dF) = ' , norm2 ( dF ) ! tell user the norm of the gradient vector
-            write (*,*) 'in (sec) =' , time2 - time1 ! tell user the time needed to make the iteration
+            write (*,'(''Fsolv= '',f9.3,'' at iter '',i3,'' converged of '',f11.6,'' kJ/mol w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
+                FF, iter, FF-energy_before, NORM2(dF), nint(time2-time1)
             
             ! L-BFGS knows when it is converged but I prefer to control it here by myself ...
             if ( abs ( FF - energy_before ) <= epsg ) goto 999
