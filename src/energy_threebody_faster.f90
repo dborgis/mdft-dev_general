@@ -1,5 +1,5 @@
 SUBROUTINE energy_threebody_faster
-use precision_kinds, only:i2b, dp
+USE precision_kinds, only:i2b, dp
 use input , only : input_line , input_log
 use constants, only: twopi
 use quadrature, only : angGrid, molRotGrid
@@ -514,7 +514,7 @@ FF=FF+F3B2+F3B1!+F3B_ww
 END SUBROUTINE
 
 function f_ww( r , rmin, rsw, rmax )
-    use precision_kinds, only: dp,i2b
+    USE precision_kinds, only: dp,i2b
     IMPLICIT NONE
     real(dp) :: f_ww, r, rmin, rsw, rmax
     real(dp) , parameter :: gam = 2.0_dp/3.0_dp

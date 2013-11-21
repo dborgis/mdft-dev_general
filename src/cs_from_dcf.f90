@@ -1,6 +1,6 @@
 !> Compute total energy and gradients using direct correlation functions c_s
 SUBROUTINE cs_from_dcf
-use precision_kinds, only: i2b,dp
+USE precision_kinds, only: i2b,dp
 use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
                   nb_species
 use quadrature, only: sym_order, angGrid, molRotGrid

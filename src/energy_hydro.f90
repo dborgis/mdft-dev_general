@@ -1,6 +1,6 @@
 !This routine evaluate the excess free energy plus an hydrophobic part
 SUBROUTINE energy_hydro
- use precision_kinds , only : dp , i2b
+ USE precision_kinds , only : dp , i2b
   use system , only : nfft1 , nfft2 , nfft3 , deltaV, nb_k , c_s ,c_s_hs ,  kBT , delta_k , nb_species,n_0,&
                             Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi

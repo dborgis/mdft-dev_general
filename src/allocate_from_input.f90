@@ -1,7 +1,7 @@
 ! Here are allocated variables declared in modules
 SUBROUTINE allocate_from_input
 
-    use precision_kinds , only : i2b , dp
+    USE precision_kinds , only : i2b , dp
     use input , only : input_line, input_int, input_dp, input_log
     USE system, ONLY: n_0, rho_0, temp, beta, kbT, Rc, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
     use constants , only : fourpi , boltz, navo , twopi
@@ -94,7 +94,7 @@ SUBROUTINE allocate_from_input
     ! Then, it reads, one line after the other, the mole fractions of every constituant.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE read_mole_fractions ( nb_species , mole_fraction )
-        use precision_kinds , only : dp , i2b
+        USE precision_kinds , only : dp , i2b
         use input , only : input_line
         IMPLICIT NONE
         integer(i2b), intent(in) :: nb_species
@@ -121,7 +121,7 @@ SUBROUTINE allocate_from_input
     ! It checks that the sum of all mole fractions is 1, and that every mole fractions are between 0 and 1.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE check_error_in_mole_fraction ( mole_fraction )
-        use precision_kinds , only : i2b , dp
+        USE precision_kinds , only : i2b , dp
         use system , only : nb_species
         IMPLICIT NONE
         real(dp), dimension ( nb_species ) , intent(in) :: mole_fraction

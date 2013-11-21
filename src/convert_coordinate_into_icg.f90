@@ -1,6 +1,6 @@
 !This SUBROUTINE find the index icg in the minimizer for a vector ( species, i, j, k, o, p)
 integer (i2b) function convert_coordinate_into_icg ( species, i, j, k, o, p)
-use precision_kinds , only : i2b , dp
+USE precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 ,nfft3
 use quadrature, only: angGrid, molRotGrid
 IMPLICIT NONE

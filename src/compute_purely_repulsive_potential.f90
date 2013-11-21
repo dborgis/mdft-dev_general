@@ -6,7 +6,7 @@
 
 SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz )
 
-    use precision_kinds , only : dp, i2b
+    USE precision_kinds , only : dp, i2b
     use input , only : input_line, input_dp, verbose
     use system, only: nfft1 , nfft2 , nfft3 , x_solv , y_solv , z_solv , x_mol , y_mol , z_mol , &
                             beta , nb_solute_sites , nb_solvent_sites , Lx , Ly , Lz, spaceGrid

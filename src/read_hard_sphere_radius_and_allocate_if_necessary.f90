@@ -7,7 +7,7 @@
 ! It then reads line after line the hard sphere radius of each constituant
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE read_hard_sphere_radius_and_allocate_if_necessary
-    use precision_kinds , only : dp , i2b
+    USE precision_kinds , only : dp , i2b
     use input , only : input_line
     use system , only : radius , n_0_multispec , temp , sig_solv , eps_solv , Lx , Ly , Lz , nfft1 , nfft2 , nfft3 , nb_species
     IMPLICIT NONE

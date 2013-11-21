@@ -2,7 +2,7 @@
 !! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
 SUBROUTINE read_solute
 
-use precision_kinds , only : i2b,dp
+USE precision_kinds , only : i2b,dp
 use system , only : nb_solute_sites , x_mol , y_mol , z_mol , chg_mol , sig_mol , eps_mol , atomic_nbr , id_mol , Lx , Ly , Lz&
 &, lambda1_mol , lambda2_mol, soluteSite
 use input , only : input_line

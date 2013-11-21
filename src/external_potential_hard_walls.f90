@@ -7,7 +7,7 @@
 ! Step 4/ we compute the external potential created by the walls, which depends upon the fluid radius
 SUBROUTINE external_potential_hard_walls
 ! precision_kinds defines the precision of the real, double, integer variables.
-use precision_kinds , only : i2b , dp
+USE precision_kinds , only : i2b , dp
 ! i2b = integer simple precision_kind
 ! dp = double precision real
 ! contains input/dft.in put in input_line

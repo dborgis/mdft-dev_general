@@ -1,5 +1,5 @@
 SUBROUTINE energy_polarization
-use precision_kinds , only : i2b , dp
+USE precision_kinds , only : i2b , dp
 use system , only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
                    deltav, deltax,deltay,deltaz
 use quadrature , only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid

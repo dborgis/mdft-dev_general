@@ -35,7 +35,7 @@ contains
 ! they would be unphysical. 0.74 is the maximum packing of a solid crystal.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE compute_packing_fractions_and_check_legality
-    use precision_kinds , only : dp , i2b
+    USE precision_kinds , only : dp , i2b
     use constants , only : fourpi
     use system , only : nb_species , n_0_multispec , radius
     IMPLICIT NONE
@@ -58,7 +58,7 @@ contains
 ! Reads hard sphere excess functional
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE read_hs_functional ( hs_functional )
-    use precision_kinds , only : i2b
+    USE precision_kinds , only : i2b
     use input , only : input_line, input_char
     IMPLICIT NONE
     integer(i2b):: i , j ! dummy
@@ -76,7 +76,7 @@ contains
 ! this SUBROUTINE checks if the functional asked in input file is legal. Else, stop execution.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE check_functional_legality ( hs_functional )
-    use precision_kinds , only : i2b
+    USE precision_kinds , only : i2b
     use system , only : nb_species
     IMPLICIT NONE
     integer(i2b):: i ! dummy
@@ -103,7 +103,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential &
                ( nb_species , n_0_multispec , radius , muexc_0_multispec , Fexc_0_multispec , hs_functional )
-    use precision_kinds , only : dp , i2b
+    USE precision_kinds , only : dp , i2b
     use constants , only : fourpi , pi
     use system , only : kbT , Lx , Ly , Lz
     IMPLICIT NONE

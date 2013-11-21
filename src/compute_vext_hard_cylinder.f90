@@ -1,7 +1,7 @@
 ! compute the external potential as created by a hard cylinder solute
 ! hard cylinder is along axe z=0, x=Lx/2, y=Ly/2
 SUBROUTINE compute_Vext_hard_cylinder
-use precision_kinds , only : i2b , dp
+USE precision_kinds , only : i2b , dp
 use input , only : input_line, input_dp
 use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , nb_solute_sites , Lx , Ly , radius , nb_species
 use external_potential , only : Vext_total

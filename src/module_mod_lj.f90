@@ -4,7 +4,7 @@
 MODULE mod_lj
 
     use external_potential, only: Vext_lj
-    use precision_kinds, only: dp, i2b
+    USE precision_kinds, only: dp, i2b
     use system, only: nfft1, nfft2, nfft3, deltax,deltay,deltaz,nb_solute_sites,eps_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz&
                    ,sig_solv,sig_mol , nb_species, id_mol, id_solv, chg_mol , chg_solv, eps_solv, &
                    x_solv,y_solv,z_solv, nb_solvent_sites

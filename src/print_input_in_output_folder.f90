@@ -3,7 +3,7 @@
 ! written by Maximilien Levesque, 2011, @ Ecole Normale Superieure
 SUBROUTINE print_input_to_output_folder
   use input , only : input_line
-  use precision_kinds , only : i2b
+  USE precision_kinds , only : i2b
   IMPLICIT NONE
   integer(i2b):: i ! dummy for loop
  

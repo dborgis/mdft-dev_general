@@ -1,5 +1,5 @@
 SUBROUTINE energy_hard_sphere_fmt
-use precision_kinds , only : dp , i2b
+USE precision_kinds , only : dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
                     weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
                     muexc_0_multispec , Fexc_0_multispec , mole_fraction , rho_0_multispec
@@ -254,7 +254,7 @@ CONTAINS
     ! this SUBROUTINE prints error message related to SUBROUTINE excess_cs_hard_sphere
     ! it may stop program execution depending on the error.
     SUBROUTINE error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
-        use precision_kinds , only : i2b , dp
+        USE precision_kinds , only : i2b , dp
         IMPLICIT NONE
         integer(i2b), intent(in) :: i , j , k
         real(dp), intent(in) :: w0 , w1 , w2 , w3

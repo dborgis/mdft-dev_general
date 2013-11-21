@@ -5,7 +5,7 @@
 
 SUBROUTINE get_charge_density_k ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
 
-use precision_kinds, only : i2b, dp
+USE precision_kinds, only : i2b, dp
 use constants, only : i_complex, twopi
 use system, only : chg_solv, x_solv, y_solv, z_solv, nfft1, nfft2, nfft3, Lx, Ly, Lz,nb_solvent_sites, id_solv&
 , sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k,nb_species

@@ -1,6 +1,6 @@
 !> Gets the final density from the last minimizer step.
 SUBROUTINE get_final_polarization ( Px , Py , Pz )
-use precision_kinds , only: dp , i2b
+USE precision_kinds , only: dp , i2b
 use system , only : nfft1 , nfft2 , nfft3 , nb_species
 use constants , only : fourpi
 ! cg contains everything related to the minimizer

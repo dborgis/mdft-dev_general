@@ -1,5 +1,5 @@
 module solute_geometry
-    use precision_kinds
+    USE precision_kinds
     use system, only: nb_solute_sites, x_mol, y_mol, z_mol ! TODO should be generalized. nb_solute_sites is useless as it is the dimension of x_mol. isLinear and isPlanar could be usefull for any coordinates, not only the ones of the solute. the coordinates should thus be intent(in) of the functions.
     IMPLICIT NONE
     private

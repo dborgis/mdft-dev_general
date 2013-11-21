@@ -6,7 +6,7 @@
 ! 201109122158 Maximilien Levesque   Better notations, equations, explicit interface for function, more coherent declaration of kb
 ! 201109182054 Maximilien Levesque   Comment about reduced units
 SUBROUTINE compute_wca_diameter ( n_0 , temp , sig , eps , d_wca )
-use precision_kinds , only : dp , i2b
+USE precision_kinds , only : dp , i2b
 use constants , only : Boltz , Navo
 IMPLICIT NONE
 real(dp), intent(in) :: temp ! temperature
@@ -49,7 +49,7 @@ d_wca = d_wca * sig
 write(*,*)'WCA calculated hard sphere diameter is d = ',d_wca
 contains
   function sig1_over_2sig0 ( n_0 , d_wca )
-  use precision_kinds , only : dp
+  USE precision_kinds , only : dp
   use constants , only : pi
   IMPLICIT NONE
   real(dp):: sig1_over_2sig0

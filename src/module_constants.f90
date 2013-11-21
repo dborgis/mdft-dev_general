@@ -7,7 +7,7 @@
 ! 20111120 20h00 Maximilien Levesque         addition sqpi ! square root of pi
 ! 20111216 08h36 Maximilien Levesque         addition of infty = huge(1.0_dp)
 module constants ! fondamental_constants
-use precision_kinds , only : dp
+USE precision_kinds , only : dp
 IMPLICIT NONE
 real(dp)   , parameter :: ln2           = log ( 2.0_dp )
 real(dp)   , parameter :: pi            = acos ( -1.0_dp )

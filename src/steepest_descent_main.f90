@@ -53,7 +53,7 @@
 !local maximum = 4.000000
 !total number of steps: 30
 SUBROUTINE steepest_descent_main(xdim,conv_criteria,itermax,X)
-use precision_kinds,only: dp,i2b
+USE precision_kinds,only: dp,i2b
 IMPLICIT NONE
 real(dp),dimension(xdim),intent(inout) :: X ! variables of Y
 real(dp),dimension(xdim) :: XOLD ! backup of X
@@ -74,7 +74,7 @@ write(*,*)'----- results -----'
 write(*,*)'Number of iterations = ',n
 END SUBROUTINE steepest_descent_main
 SUBROUTINE steepds(xdim,conv_criteria,itermax,stepsize,X,XOLD,Y,dY,n)
-use precision_kinds,only: dp,i2b
+USE precision_kinds,only: dp,i2b
 IMPLICIT NONE
 real(dp), parameter :: macheps=epsilon(1.0d0) ! machine precision given by fortran function epsilon
 real(dp),intent(in) :: conv_criteria !convergence criteria
@@ -132,7 +132,7 @@ close(10)
 END SUBROUTINE steepds
 !this function is the one to replace with any compute energy and gradient you wish for
 function eval_Y_and_dY(xdim,X,dY)
-use precision_kinds,only: dp,i2b
+USE precision_kinds,only: dp,i2b
 USE minimizer, ONLY: cg_vect,FF,dF
 IMPLICIT NONE
 real(dp) :: eval_Y_and_dY ! value of Y(X) and its partial derivatives dY
@@ -146,7 +146,7 @@ eval_Y_and_dY=FF
 dY=dF
 end function eval_Y_and_dY
 SUBROUTINE updateX(xdim,stepsize,dY,X,XOLD)
-use precision_kinds,only: dp,i2b
+USE precision_kinds,only: dp,i2b
 integer(i2b),intent(in) :: xdim!dimension of variables X
 real(dp),intent(in) :: stepsize ! initial guess for step size (how fast we follow dY)
 real(dp),dimension(xdim),intent(inout) :: X!variables of Y

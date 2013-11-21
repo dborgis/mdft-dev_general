@@ -4,7 +4,7 @@
 
 SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
 
-    use precision_kinds, only: dp,i2b
+    USE precision_kinds, only: dp,i2b
     use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species, RC
     use constants , only : fourpi , qfact

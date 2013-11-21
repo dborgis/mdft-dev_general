@@ -1,7 +1,7 @@
 ! This SUBROUTINE computes the radial distribution function c_s (k) 
 ! For now it only works for 1 SPECIES. BEWARE !!!
 SUBROUTINE cs_of_k_hard_sphere
-use precision_kinds , only : i2b , dp
+USE precision_kinds , only : i2b , dp
 ! i2b for integer simple precision
 ! dp for real double precision
 use system , only : radius , n_0_multispec , c_s_hs , nb_species
@@ -170,7 +170,7 @@ kloop : do i = 0, nb_k-1
 END DO kloop
 contains
 SUBROUTINE do_we_use_cs_or_py_eos ( PY , CS )
-use precision_kinds , only : i2b
+USE precision_kinds , only : i2b
 use input , only : input_line
 IMPLICIT NONE
 logical , intent( out ) :: CS , PY

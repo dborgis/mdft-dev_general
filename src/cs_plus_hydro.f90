@@ -1,7 +1,7 @@
 ! this SUBROUTINE computes the radial excess free energy + its associated hydrophobic part.
 ! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
 SUBROUTINE cs_plus_hydro
-  use precision_kinds , only : dp , i2b
+  USE precision_kinds , only : dp , i2b
   use system , only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , c_s , kBT , delta_k , nb_species,n_0, Lx,Ly,Lz
   use constants , only : fourpi , i_complex,twopi
   USE minimizer, ONLY: cg_vect , FF , dF

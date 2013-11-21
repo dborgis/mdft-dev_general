@@ -1,6 +1,6 @@
 ! Here is a module dedicated to the calculation and the use of the external potential
 module external_potential
-use precision_kinds , only : dp, i2b
+USE precision_kinds , only : dp, i2b
 IMPLICIT NONE
 !real(dp), allocatable, dimension(:,:,:,:) :: Vext ! external potential of the whole solute on a position and angular grid
 !real(dp), allocatable, dimension(:,:,:,:) :: Vlj ! lennard jones potential of the whole solute on a position and angular grid

@@ -1,7 +1,7 @@
 !> Compute planar density or planar polarization
 !! For now only works with plans in x, y or z direction
 SUBROUTINE compute_planar_density(array,filename)
-use precision_kinds, only: dp
+USE precision_kinds, only: dp
 use system, only: nfft1,nfft2,nfft3,nb_solute_sites,x_mol,y_mol,z_mol,Lx,Ly,Lz
 IMPLICIT NONE
  character(50),intent(in):: filename

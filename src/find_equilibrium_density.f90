@@ -5,7 +5,7 @@
 
 SUBROUTINE find_equilibrium_density
 
-    use precision_kinds , only : i2b , dp
+    USE precision_kinds , only : i2b , dp
     use input , only : input_line
     USE minimizer
     use bfgs, ONLY: startBFGS => setulb
@@ -36,7 +36,7 @@ SUBROUTINE find_equilibrium_density
             call energy_and_gradient
             call cpu_time(time2)
             dfoverf = (FF-energy_before)/FF*100._dp
-            write (*,'(''At iter '',i3,'' Fsolv= '',f9.3,'' kJ/mol converged of '',f8.3,''% w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
+            write(*,'(''At iter '',i3,'' Fsolv= '',f9.3,'' kJ/mol changed of '',f8.3,''% w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
                 iter, FF, dfoverf, NORM2(dF), nint(time2-time1)
             
             ! L-BFGS knows when it is converged but I prefer to control it here by myself ...
@@ -66,7 +66,7 @@ END SUBROUTINE find_equilibrium_density
 
 SUBROUTINE interface_compute_energy_and_gradients ( n , x , f , g , stopouencore )
 
-    use precision_kinds , only : dp , i2b
+    USE precision_kinds , only : dp , i2b
     USE minimizer, ONLY: ncg , cg_vect , FF , dF , minimizer_iter , itermax
 
     IMPLICIT NONE

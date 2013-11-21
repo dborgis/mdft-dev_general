@@ -5,7 +5,7 @@
 ! have dimension nb_solute_sites
 ! See the paper by Borgis et al. JCP 134 194102 (2011), a_1 = rmax1, a_2 = rmax2
 SUBROUTINE energy_threebody
-use precision_kinds, only: dp,i2b
+USE precision_kinds, only: dp,i2b
 use system, only: nfft1 , nfft2 , nfft3 , deltaV , rho_0_multispec , sig_mol , sig_solv , Lx , Ly , Lz ,&
 &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
 & , lambda1_mol , lambda2_mol
@@ -189,7 +189,7 @@ call cpu_time ( time1 )
 write(*,*) 'F3body      = ',F3,'computed in (sec)',time1-time0
 END SUBROUTINE energy_threebody
 function f_w( r , rmin, rsw, rmax )
-use precision_kinds, only: dp,i2b
+USE precision_kinds, only: dp,i2b
 IMPLICIT NONE
 real(dp) :: f_w, r, rmin, rsw, rmax
 real(dp) , parameter :: gam = 2.0_dp/3.0_dp

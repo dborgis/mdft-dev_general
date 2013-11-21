@@ -7,7 +7,7 @@
 ! 3/ on en déduit l'interpolation trilineaire. La forme très simple utilisée pour le calcul est due au travail dans l'espace des indices
 ! ainsi on a toujours un pas entre les indices discrets = 1.
 SUBROUTINE trilinear_interpolation_v(x, y, z, V_interpolated)
- use precision_kinds , only : dp , i2b
+ USE precision_kinds , only : dp , i2b
  use system, only : V_coulomb, nfft1, nfft2, nfft3, Lx, Ly, Lz, deltax, deltay, deltaz
  IMPLICIT NONE
 ! real(dp), dimension (nfft1, nfft2, nfft3), intent(in) :: V_grid ! potentiel connu sur une grille discrete

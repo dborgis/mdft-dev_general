@@ -1,6 +1,6 @@
 ! this is the routine where you may want to build a personnal vext, something that is not implemented automaticaly
 SUBROUTINE compute_vext_perso
-use precision_kinds , only : i2b , dp
+USE precision_kinds , only : i2b , dp
 use input , only : input_line,input_dp
 use system , only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species
 use external_potential , only : Vext_total

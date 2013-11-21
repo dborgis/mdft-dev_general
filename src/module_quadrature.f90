@@ -1,7 +1,7 @@
 ! Module for numerical integration
 module quadrature
 
-    use precision_kinds, only: dp, i2b
+    USE precision_kinds, only: dp, i2b
     use constants , only : pi, twopi, fourpi
     use input, only: input_log, input_char, input_int
 

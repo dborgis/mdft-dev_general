@@ -1,6 +1,6 @@
 !> This SUBROUTINE do the legendre integration over all orientations of any array (density, vext, ...)
 SUBROUTINE mean_over_orientations(arrayin,arrayout)
-use precision_kinds, only: dp,i2b
+USE precision_kinds, only: dp,i2b
 use system, only: nfft1,nfft2,nfft3
 use quadrature, only: angGrid, molRotGrid
 IMPLICIT NONE
