@@ -1,15 +1,20 @@
+MODULE bfgs
+
+    USE precision_kinds, ONLY: dp, i2b
+    PUBLIC :: setulb
+    PRIVATE
+
+    CONTAINS
+
  !================    L-BFGS-B (version 2.3)   ========================== 
                                                                           
-       subroutine setulb(n, m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa,&
-                        task, iprint, csave, lsave, isave, dsave)         
-                                                                          
+    SUBROUTINE setulb (n, m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave, dsave)         
+
        character*60     task, csave                                       
        logical          lsave(4)                                          
-       integer          n, m, iprint,                                    &
-                        nbd(n), iwa(3*n), isave(44)                       
-       double precision f, factr, pgtol, x(n), l(n), u(n), g(n),         &
-                        wa(2*m*n+4*n+11*m*m+8*m), dsave(29)               
-                                                                          
+       integer          n, m, iprint, nbd(n), iwa(3*n), isave(44)                       
+       double precision f, factr, pgtol, x(n), l(n), u(n), g(n), wa(2*m*n+4*n+11*m*m+8*m), dsave(29)               
+
  !     ************                                                       
  !                                                                        
  !     Subroutine setulb                                                  
@@ -232,13 +237,11 @@
          wa(lwa),iwa(1),iwa(n+1),iwa(2*n+1),task,iprint,                 &
          csave,lsave,isave(22),dsave)                                     
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
-                                                                          
+    END SUBROUTINE setulb
+
  !======================= The end of setulb ============================= 
                                                                           
-       subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, &
+    SUBROUTINE mainlb (n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, &
                          sy, ss, wt, wn, snd, z, r, d, t, wa,            &
                          index, iwhere, indx2, task, iprint,             &
                          csave, lsave, isave, dsave)                      
@@ -448,7 +451,7 @@
                                                                           
  !        Generate the current machine precision.                         
                                                                           
-          epsmch = dpmeps()                                               
+          epsmch = epsilon(1.0_dp) !dpmeps()
           fold   = 0.0d0                                                  
           dnorm  = 0.0d0                                                  
           cpu1   = 0.0d0                                                  
@@ -947,13 +950,11 @@
        ' Bad direction in the line search;',/,                           &
        '   refresh the lbfgs memory and restart the iteration.')          
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
+    END SUBROUTINE mainlb
                                                                           
  !======================= The end of mainlb ============================= 
                                                                           
-       subroutine active(n, l, u, nbd, x, iwhere, iprint,                &
+    SUBROUTINE active(n, l, u, nbd, x, iwhere, iprint,                &
                          prjctd, cnstnd, boxed)                           
                                                                           
        logical          prjctd, cnstnd, boxed                             
@@ -1049,13 +1050,11 @@
                                                                           
   1001 format (/,'At X0 ',i9,' variables are exactly at the bounds')      
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
-                                                                          
+    END SUBROUTINE active
+    
  !======================= The end of active ============================= 
                                                                           
-       subroutine bmv(m, sy, wt, col, v, p, info)                         
+    SUBROUTINE bmv (m, sy, wt, col, v, p, info)                         
                                                                           
        integer m, col, info                                               
        double precision sy(m, m), wt(m, m), v(2*col), p(2*col)            
@@ -1165,13 +1164,11 @@
           p(i) = p(i) + sum                                               
    60  continue                                                           
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
+    END SUBROUTINE bmv
                                                                           
  !======================== The end of bmv =============================== 
                                                                           
-       subroutine cauchy(n, x, l, u, nbd, g, iorder, iwhere, t, d, xcp,  &
+    SUBROUTINE cauchy (n, x, l, u, nbd, g, iorder, iwhere, t, d, xcp,  &
                          m, wy, ws, sy, wt, theta, col, head, p, c, wbp, &
                          v, nint, iprint, sbgnrm, info, epsmch)           
                                                                           
@@ -1660,13 +1657,11 @@
   5010 format ('Distance to the next break point =  ',1p,d11.4)           
   6010 format ('Distance to the stationary point =  ',1p,d11.4)           
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
-                                                                          
+    END SUBROUTINE cauchy
+
  !====================== The end of cauchy ============================== 
                                                                           
-       subroutine cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index,    &
+    SUBROUTINE cmprlb (n, m, x, g, ws, wy, sy, wt, z, r, wa, index,    &
                         theta, col, head, nfree, cnstnd, info)            
                                                                           
        logical          cnstnd                                            
@@ -1728,13 +1723,11 @@
    34     continue                                                        
        endif                                                              
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
+    END SUBROUTINE cmprlb                                                             
                                                                           
  !======================= The end of cmprlb ============================= 
                                                                           
-       subroutine errclb(n, m, factr, l, u, nbd, task, info, k)           
+    SUBROUTINE errclb (n, m, factr, l, u, nbd, task, info, k)           
                                                                           
        character*60     task                                              
        integer          n, m, info, k, nbd(n)                             
@@ -1788,13 +1781,11 @@
           endif                                                           
    10  continue                                                           
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
+    END SUBROUTINE errclb                                                               
                                                                           
  !======================= The end of errclb ============================= 
                                                                           
-       subroutine formk(n, nsub, ind, nenter, ileave, indx2, iupdat,     &
+    SUBROUTINE formk (n, nsub, ind, nenter, ileave, indx2, iupdat,     &
                         updatd, wn, wn1, m, ws, wy, sy, theta, col,      &
                         head, info)                                       
                                                                           
@@ -2114,13 +2105,11 @@
           return                                                          
        endif                                                              
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
+    END SUBROUTINE formk                                                               
                                                                           
  !======================= The end of formk ============================== 
                                                                           
-       subroutine formt(m, wt, sy, ss, col, theta, info)                  
+    subroutine formt (m, wt, sy, ss, col, theta, info)                  
                                                                           
        integer          m, col, info                                      
        double precision theta, wt(m, m), sy(m, m), ss(m, m)               
@@ -3852,9 +3841,7 @@ endif
  !     CALL timer(a,ttime,b)                                              
        CALL temps(ttime)                                                  
                                                                           
-       return                                                             
-                                                                          
-       end                                                                
+    END SUBROUTINE timer_BDGS
                                                                           
  !====================== The end of timer_BDGS=========================== 
                                                                           
@@ -3950,7 +3937,7 @@ endif
                                                                           
     70 return                                                             
                                                                           
-       end                                                                
+    END FUNCTION
                                                                           
  !====================== The end of dpmeps ============================== 
                                                                           
@@ -4161,15 +4148,16 @@ endif
    130       continue                                                     
    140    continue                                                        
    150 continue                                                           
-       return                                                             
-       end                                                                
+    END SUBROUTINE
                                                                           
  !***** donne le temps cpu en secondes ************                       
-       SUBROUTINE temps(ZTIME)                                            
+    SUBROUTINE temps (ZTIME)                                            
        REAL*8 ZTIME                                                       
        dimension T(2)                                                     
         time=ETIME(T)                                                     
         ZTIME=dble(T(1))                                                  
  !     ztime=0.0                                                          
-       RETURN                                                             
-       END                                                                
+    END SUBROUTINE temps
+
+
+END MODULE bfgs

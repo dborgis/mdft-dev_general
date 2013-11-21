@@ -1,6 +1,6 @@
-! this subroutine gets the informations in input file and then allocate, prepare, compute
-! needed data
-subroutine prepare_minimizer
+! this subroutine gets the informations in input file and then allocate, prepare, compute needed data
+
+SUBROUTINE prepare_minimizer
     
     USE precision_kinds, ONLY: dp
     USE input, ONLY: input_int, input_dp,input_char
