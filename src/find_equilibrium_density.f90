@@ -15,18 +15,9 @@ SUBROUTINE find_equilibrium_density
     integer(i2b):: iter ! step number ...
     integer(i2b):: i , j ! dummy
     real(dp):: time1 , time2
-    real(dp):: energy_before ! value of total energy (FF) at step actual and before for comparison
-    
-    ! get from input the type of minimization one wants to do
-    DO i = 1 , size ( input_line )
-        j = len ( 'minimizer' )
-        IF ( input_line (i) (1:j) == 'minimizer' ) THEN
-            minimizer_type = input_line (i) (j+4:j+8)
-            EXIT
-        END IF
-    END DO
-    
-    ! call the correct minimization technique
+    real(dp):: energy_before, dfoverf
+
+
     if ( minimizer_type ( 1 : 4 ) == 'bfgs' ) then
         iter = 0
         task = 'START' ! task is modified by lbfgs itself to communicate the state of the convergence
@@ -44,9 +35,9 @@ SUBROUTINE find_equilibrium_density
             energy_before = FF
             call energy_and_gradient
             call cpu_time(time2)
-
-            write (*,'(''At iter '',i3,'' Fsolv= '',f9.3,'' kJ/mol converged of '',f11.6,'' w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
-                iter, FF, FF-energy_before, NORM2(dF), nint(time2-time1)
+            dfoverf = (FF-energy_before)/FF*100._dp
+            write (*,'(''At iter '',i3,'' Fsolv= '',f9.3,'' kJ/mol converged of '',f8.3,''% w/ |dF|='',f11.6,'' in '',i5,'' s'')')&
+                iter, FF, dfoverf, NORM2(dF), nint(time2-time1)
             
             ! L-BFGS knows when it is converged but I prefer to control it here by myself ...
             if ( abs ( FF - energy_before ) <= epsg ) goto 999
