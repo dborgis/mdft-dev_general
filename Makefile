@@ -59,9 +59,9 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/steepest_descent_main.f90 \
        $(SRCDIR)/mean_over_orientations.f90 \
        $(SRCDIR)/init_simu.f90 \
-       $(SRCDIR)/charge_density_from_point_charge_positions.f90 \
+       $(SRCDIR)/soluteChargeDensityFromSoluteChargeCoordinates.f90 \
        $(SRCDIR)/convert_coordinate_into_icg.f90\
-       $(SRCDIR)/electrostatic_potential_from_charge_density.f90 \
+       $(SRCDIR)/poissonSolver.f90 \
        $(SRCDIR)/vext_q_from_v_c.f90 \
        $(SRCDIR)/read_hard_sphere_radius_and_allocate_if_necessary.f90 \
        $(SRCDIR)/cs_of_k_hard_sphere.f90 \

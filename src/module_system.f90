@@ -29,7 +29,6 @@ MODULE system
     REAL(dp) :: temp  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
     REAL(dp) :: kBT , beta
     
-    ! Grille pour FFT
     TYPE :: spaceGridType
         INTEGER(i2b), DIMENSION(3) :: n_nodes ! number of grid nodes in direction x, y and z
         REAL(dp), DIMENSION(3) :: length ! total length in direction x, y and z
@@ -53,7 +52,7 @@ MODULE system
     ! Electrostatics
     ! charge factor & molecule polarization factor
     COMPLEX ( dp ) , ALLOCATABLE , DIMENSION (:,:,:,:,:,:) :: sigma_k
-    REAL(dp), ALLOCATABLE , DIMENSION (:,:,:) :: rho_c ! charge density at each grid node
+    REAL(dp), ALLOCATABLE , DIMENSION (:,:,:) :: soluteChargeDensity
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: rho_c_k, rho_c_k_myway
     !Polarization
     COMPLEX (dp) , ALLOCATABLE,DIMENSION (:,:,:,:) :: pola_tot_x_k , pola_tot_y_k , pola_tot_z_k

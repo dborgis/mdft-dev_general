@@ -1,10 +1,10 @@
-! This SUBROUTINE reads the positions of the charges of the solute sites. It extrapolates them to the grid points in order to 
-! get a charge density rho_c ( i , j , k )
+! This subroutine uses the positions of the charges of the solute to extrapolate them on the grid nodes in order to 
+! get the solute charge density soluteChargeDensity (i,j,k).
 
-SUBROUTINE charge_density_from_point_charge_positions
+SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates
     
     USE precision_kinds, ONLY: i2b , dp
-    USE system, ONLY: rho_c, spaceGrid, soluteSite
+    USE system, ONLY: soluteChargeDensity, spaceGrid, soluteSite
     USE input, ONLY: verbose
     
     IMPLICIT NONE
@@ -15,7 +15,7 @@ SUBROUTINE charge_density_from_point_charge_positions
     REAL(dp) :: wim , wjm , wkm , wip , wjp , wkp ! weight associated to each index
     CHARACTER(50) :: filename
 
-    ALLOCATE( rho_c ( spaceGrid%n_nodes(1), spaceGrid%n_nodes(2), spaceGrid%n_nodes(3) ), SOURCE=0._dp )
+    ALLOCATE( soluteChargeDensity ( spaceGrid%n_nodes(1), spaceGrid%n_nodes(2), spaceGrid%n_nodes(3) ), SOURCE=0._dp )
 
     ! extrapolate each solute point charge to grid nodes
     DO s = 1 , SIZE(soluteSite)
@@ -47,17 +47,17 @@ SUBROUTINE charge_density_from_point_charge_positions
         wjp = (             (   yq - real(int(yq,i2b),dp)   )    )
         wkp = (             (   zq - real(int(zq,i2b),dp)   )    )
         ! increase density accordingly
-        rho_c ( im , jm , km ) = rho_c ( im , jm , km ) + soluteSite(s)%q * wim * wjm * wkm
-        rho_c ( ip , jm , km ) = rho_c ( ip , jm , km ) + soluteSite(s)%q * wip * wjm * wkm
-        rho_c ( im , jp , km ) = rho_c ( im , jp , km ) + soluteSite(s)%q * wim * wjp * wkm
-        rho_c ( im , jm , kp ) = rho_c ( im , jm , kp ) + soluteSite(s)%q * wim * wjm * wkp
-        rho_c ( ip , jp , km ) = rho_c ( ip , jp , km ) + soluteSite(s)%q * wip * wjp * wkm
-        rho_c ( ip , jm , kp ) = rho_c ( ip , jm , kp ) + soluteSite(s)%q * wip * wjm * wkp
-        rho_c ( im , jp , kp ) = rho_c ( im , jp , kp ) + soluteSite(s)%q * wim * wjp * wkp
-        rho_c ( ip , jp , kp ) = rho_c ( ip , jp , kp ) + soluteSite(s)%q * wip * wjp * wkp
+        soluteChargeDensity ( im , jm , km ) = soluteChargeDensity ( im , jm , km ) + soluteSite(s)%q * wim * wjm * wkm
+        soluteChargeDensity ( ip , jm , km ) = soluteChargeDensity ( ip , jm , km ) + soluteSite(s)%q * wip * wjm * wkm
+        soluteChargeDensity ( im , jp , km ) = soluteChargeDensity ( im , jp , km ) + soluteSite(s)%q * wim * wjp * wkm
+        soluteChargeDensity ( im , jm , kp ) = soluteChargeDensity ( im , jm , kp ) + soluteSite(s)%q * wim * wjm * wkp
+        soluteChargeDensity ( ip , jp , km ) = soluteChargeDensity ( ip , jp , km ) + soluteSite(s)%q * wip * wjp * wkm
+        soluteChargeDensity ( ip , jm , kp ) = soluteChargeDensity ( ip , jm , kp ) + soluteSite(s)%q * wip * wjm * wkp
+        soluteChargeDensity ( im , jp , kp ) = soluteChargeDensity ( im , jp , kp ) + soluteSite(s)%q * wim * wjp * wkp
+        soluteChargeDensity ( ip , jp , kp ) = soluteChargeDensity ( ip , jp , kp ) + soluteSite(s)%q * wip * wjp * wkp
     END DO
-    rho_c = rho_c / spaceGrid%dv ! charge density is in charge per unit volume
+    soluteChargeDensity = soluteChargeDensity / spaceGrid%dv ! charge density is in charge per unit volume
 
-    IF (verbose) CALL write_to_cube_file ( rho_c , 'output/charge_density.cube' )
+    IF (verbose) CALL write_to_cube_file ( soluteChargeDensity , 'output/charge_density.cube' )
     
-END SUBROUTINE charge_density_from_point_charge_positions
+END SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates

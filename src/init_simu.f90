@@ -12,7 +12,7 @@ SUBROUTINE init_simu
     CALL prepare_fft
     CALL read_solvent! Read solvent atomic positions, charge and Lennard-Jones param
     CALL read_solute! Read solute atomic positions, charge and Lennard-Jones param
-    CALL charge_density_from_point_charge_positions! Get charge density rho_c from point charge positions
+    CALL soluteChargeDensityFromSoluteChargeCoordinates
     CALL print_input_to_output_folder! Print input parameters found in input files to output folder
     CALL prepare_quadrature ! prepare numerical integration (for angles)
     IF (input_log('read_ck_or_chi')) CALL read_ck! If calculation based on direct correlation functions read them in kspace in cs.in, cd.in, cdelta.in. depends on tag read_ck = T    or read_ck = F  in input/dft.in

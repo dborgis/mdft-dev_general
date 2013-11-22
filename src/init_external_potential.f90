@@ -58,7 +58,7 @@ SUBROUTINE init_external_potential
     if (input_log('poisson_solver')) then
         if (.not. allocated(Vext_q) ) &
             allocate ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,SIZE(soluteSite)), SOURCE=zero)
-        call electrostatic_potential_from_charge_density ! Electrostatic potential using FFT of Poisson equation Laplacian(V(r))= - charge_density / Epsilon_0
+        call poissonSolver
         call vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
     END IF
 

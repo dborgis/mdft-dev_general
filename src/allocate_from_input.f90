@@ -13,7 +13,7 @@ SUBROUTINE allocate_from_input
     integer(i2b):: species ! dummy between 1 and nb_species
     
     sym_order = input_int('sym_order') !Get the order of the main symmetry axis of the solvent
-    if( sym_order <= 1 ) then
+    if( sym_order < 1 ) then
         print*,'order of main symetric axe cannot be less than 1. sym_order is declared as ',sym_order
         stop 'CRITICAL STOP. CHANGE sym_order IN INPUT'
     END IF
@@ -67,8 +67,8 @@ SUBROUTINE allocate_from_input
     END IF
     allocate ( rho_0_multispec ( nb_species ) )
     rho_0_multispec = sym_order*n_0_multispec / (2.0_dp*twopi**2) ! for single specie compatibility while not fully complete :
-    n_0 = n_0_multispec ( 1 ) ! for single specie compatibility while not fully complete : 
-    rho_0 = sym_order*n_0 / ( twopi**2*2.0_dp) ! rho is the density per angle
+    n_0 = n_0_multispec(1) ! for single specie compatibility while not fully complete : 
+    rho_0 = rho_0_multispec(1) ! rho is the density per angle
 
     if (allocated(mole_fraction)) then
         write(*,*)'something is not under control with respect to mole fraction reading and definition in allocate_from_input.f90'

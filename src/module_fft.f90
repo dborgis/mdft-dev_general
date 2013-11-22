@@ -26,7 +26,7 @@ CONTAINS
         INTEGER(i2b), DIMENSION(3) :: nfft
         INTEGER(i2b):: l
         nfft = spaceGrid%n_nodes
-        ALLOCATE ( kx (nfft(1)/2+1), ky (nfft(2)), kz (nfft(3)), source=0._dp)
+        ALLOCATE ( kx (nfft(1)/2+1), ky (nfft(2)), kz (nfft(3)), SOURCE=0._dp)
         DO CONCURRENT ( l=1:nfft(1)/2+1 )
             kx(l) = kproj(1,l)
         END DO
