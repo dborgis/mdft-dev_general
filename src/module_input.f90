@@ -2,10 +2,9 @@ module input
   USE precision_kinds,only : i2b, dp
   IMPLICIT NONE
   character (len = 100) , allocatable , dimension (:) :: input_line ! array containing all input lines
-  integer(i2b):: TotalNumberOfInputLines
   LOGICAL, PARAMETER, PUBLIC :: verbose = .false.
   private
-  public :: input_line, input_dp, input_int, TotalNumberOfInputLines,input_log, input_char,n_linesInFile
+  public :: input_line, input_dp, input_int, input_log, input_char, n_linesInFile
   contains
 
 
@@ -79,8 +78,7 @@ FUNCTION n_linesInFile (filename)
         DO WHILE (.true.)
             READ (77,*,IOSTAT=ios)
             IF (ios>0) THEN
-                WRITE(*,*)'Error in compute_ck_dipolar.f90'
-                WRITE(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
+                WRITE(*,*)'Error in file:',filename
                 STOP
             ELSE IF (ios<0) THEN ! end of file reached
                 EXIT

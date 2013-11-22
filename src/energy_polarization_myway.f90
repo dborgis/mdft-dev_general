@@ -1,7 +1,7 @@
 SUBROUTINE energy_polarization_myway (F_pol)
 
     USE precision_kinds,only : i2b , dp
-    use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_delta , c_d , kBT , rho_0 , delta_k , nb_k ,&
+    use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , rho_0 , delta_k , nb_k ,&
                     deltav, molec_polarx_k,molec_polary_k, molec_polarz_k,delta_k,nb_k,kBT,&
                     rho_0_multispec, nb_species,pola_tot_x_k , pola_tot_y_k , pola_tot_z_k, deltax, rho_c_k_myway, chi_l, chi_t,&
                     n_0, beta,deltax,deltay,deltaz
