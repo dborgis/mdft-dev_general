@@ -31,7 +31,7 @@ character (50) :: filename
 
 if (.not. input_log('polarization')) return ! look for tag polarization in input
 
-if (trim(adjustl(input_char('evaluate_polarization')))== 'multi') return
+if (trim(adjustl(input_char('polarization_order')))== 'multi') return
 
 call cpu_time(time0)
 

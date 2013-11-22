@@ -29,7 +29,7 @@ ref_bulk_density
 0.0332891
 temperature = 300 # K
 sym_order = 2  # n in Cn. 2 for H2O
-evaluate_polarization = dipol # multi or dipol
+polarization_order = dipol # multi or dipol
 
 ############################
 # SOLVER

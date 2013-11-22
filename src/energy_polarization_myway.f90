@@ -44,14 +44,8 @@ IF (.NOT. ALLOCATED (rho_c_k_myway)) THEN
     rho_c_k_myway = (0._dp,0._dp)
 END IF
 
-!Check if you want to compute Polarization from a macroscopic point of view
-!do i = 1 , size ( input_line )
-!  j = len ( 'evaluate_polarization' )
-!  if ( input_line (i) (1:j) == 'evaluate_polarization' .and. input_line (i) (j+4:j+8) == 'Macro' ) return ! exit this routine to get back to energy calculation skeleton.
-!  
-!END DO
-if (trim(adjustl(input_char('evaluate_polarization')))== 'dipol') return
-! init timer
+if (trim(adjustl(input_char('polarization_order')))== 'dipol') return
+
 call cpu_time(time0)
 !            ====================================================
 !            !    	Initialization				!
