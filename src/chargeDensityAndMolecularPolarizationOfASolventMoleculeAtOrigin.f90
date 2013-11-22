@@ -3,7 +3,7 @@
 !                       -The solvent molecular polarization (from Ranieriet al : J. Chem. Phys. 98 (11) 1993) which ca be used
 !into energy_polarization_myway.f90 to compute the (multipolar) polarization Free energy.
 
-SUBROUTINE get_charge_density_k ( Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ) 
+SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
 
 USE precision_kinds, only : i2b, dp
 use constants, only : i_complex, twopi
@@ -88,28 +88,5 @@ do i = 1 , nf1 + 1
    END DO  !j
 END DO  !i
 END DO!species
-!in_backward=molec_polarx_k (:,:,:,1,1,1)
-!call dfftw_execute(plan_backward)
-!molecpolarx=out_backward*deltaVk/(twopi)**3
-!in_backward=molec_polary_k (:,:,:,1,1,1)
-!call dfftw_execute(plan_backward)
-!molecpolary=out_backward*deltaVk/(twopi)**3
-!in_backward=molec_polarz_k (:,:,:,1,1,1)
-!call dfftw_execute(plan_backward)
-!molecpolarz=out_backward*deltaVk/(twopi)**3
-!open(11,file='output/mux')
-!do i =1,nfft1
-!write(11,*) i*deltax, molecpolarx(i,1,1)
-!END DO
-!close(11)
-!open(11,file='output/muy')
-!do i =1,nfft1
-!write(11,*) i*deltax, molecpolary(i,1,1)
-!END DO
-!close(11)
-!open(11,file='output/muz')
-!do i =1,nfft1
-!write(11,*) i*deltax, molecpolarz(i,1,1)
-!END DO
-!close(11)
-END SUBROUTINE
+
+END SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin

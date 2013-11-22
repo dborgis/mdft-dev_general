@@ -52,7 +52,6 @@ MODULE system
     ! Electrostatics
     ! charge factor & molecule polarization factor
     COMPLEX ( dp ) , ALLOCATABLE , DIMENSION (:,:,:,:,:,:) :: sigma_k
-    REAL(dp), ALLOCATABLE , DIMENSION (:,:,:) :: soluteChargeDensity
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: rho_c_k, rho_c_k_myway
     !Polarization
     COMPLEX (dp) , ALLOCATABLE,DIMENSION (:,:,:,:) :: pola_tot_x_k , pola_tot_y_k , pola_tot_z_k

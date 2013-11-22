@@ -4,10 +4,10 @@
 ! => laplacien(V(r))=-soluteChargeDensity(r)/eps0
 ! => V(k)=soluteChargeDensity(k)/(esp0*k^2)
 ! FFT(V(k)) = V(r)
-SUBROUTINE poissonSolver
+SUBROUTINE poissonSolver (soluteChargeDensity)
 
     USE precision_kinds, ONLY : dp, i2b
-    USE system , ONLY : nfft1 , nfft2 , nfft3 , soluteChargeDensity
+    USE system , ONLY : nfft1 , nfft2 , nfft3, spaceGrid
     USE fft , ONLY : fftw3 , norm_k , k2
     USE constants , ONLY : fourpi , twopi
     USE external_potential , ONLY : V_c
@@ -15,15 +15,10 @@ SUBROUTINE poissonSolver
     ! V_c = electrostatic potential from charge density and poisson equation
     
     IMPLICIT NONE
+    REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: soluteChargeDensity
     COMPLEX(dp), DIMENSION ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: soluteChargeDensity_k
     COMPLEX(dp), DIMENSION ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: V_c_k
     INTEGER (i2b) :: i,j,k
-
-    ! check if soluteChargeDensity exists and is allocated
-    IF ( .NOT. ALLOCATED ( soluteChargeDensity ) ) THEN
-        PRINT*, 'soluteChargeDensity is not allocated in electrostatic_potential_from_charge_density.f90'
-        STOP
-    END IF
 
     IF ( MAXVAL(ABS(soluteChargeDensity)) < TINY(1.0_dp)) THEN
         ALLOCATE ( V_c ( nfft1 , nfft2 , nfft3 ), SOURCE=0._dp ) !~ v_c = 0.0_dp

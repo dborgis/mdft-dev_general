@@ -46,9 +46,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/main.f90 \
        $(SRCDIR)/dblas1.f90 \
        $(SRCDIR)/trilinear_interpolation_v.f90 \
-       $(SRCDIR)/get_charge_factor.f90 \
-       $(SRCDIR)/get_charge_density.f90\
-       $(SRCDIR)/get_charge_density_k.f90 \
+       $(SRCDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.f90 \
        $(SRCDIR)/find_equilibrium_density.f90 \
        $(SRCDIR)/close_simu.f90 \
        $(SRCDIR)/print_supercell_xsf.f90 \
@@ -83,6 +81,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/compute_planar_density.f90 \
        $(SRCDIR)/write_to_cube_file.f90 \
        $(SRCDIR)/vext_total_sum.f90 \
+       $(SRCDIR)/init_solvent_polarization.f90 \
        $(SRCDIR)/compute_vcoul_as_sum_of_pointcharges.f90 \
        $(SRCDIR)/compute_vext_hard_sphere.f90 \
        $(SRCDIR)/external_potential_hard_walls.f90 \
