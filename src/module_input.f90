@@ -7,35 +7,39 @@ module input
   private
   public :: input_line, input_dp, input_int, TotalNumberOfInputLines,input_log, input_char,n_linesInFile
   contains
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 REAL(DP) PURE FUNCTION INPUT_DP( That)
   IMPLICIT NONE
   character(*), intent(in) :: That
   integer(i2b) :: i, j
   j=len(That)
   do i = 1, size( input_line) 
-    if( input_line( i)( 1:j) == That ) read ( input_line (i) (j+4:j+50) , * ) input_dp
+    if( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) read ( input_line (i) (j+4:j+50) , * ) input_dp
   END DO
 END FUNCTION INPUT_DP
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 INTEGER(I2B) PURE FUNCTION INPUT_INT( That)
   IMPLICIT NONE
   character(*), intent(in) :: That
   integer(i2b) :: i, j
   j=len(That)
   do i = 1, size( input_line) 
-    if( input_line( i)( 1:j) == That ) read ( input_line (i) (j+4:j+50) , * ) input_int
+    if( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) read ( input_line (i) (j+4:j+50) , * ) input_int
   END DO
 END FUNCTION INPUT_INT
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 LOGICAL FUNCTION INPUT_LOG( That)
   IMPLICIT NONE
   character(*), intent(in) :: That
-  character :: text ! dummy
+  character :: text
   integer(i2b) :: i, j
   j=len(That)
   do  i = 1, size( input_line) 
-    if( input_line( i)( 1:j) == That ) read ( input_line (i) (j+4:j+50) , * ) text
+    if( input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ' ) read ( input_line (i) (j+4:j+50) , * ) text
   END DO
   j = 999 ! means error in reading
   if( text(1:1) == 'T' ) j = 1 ! means true, 2 means false
@@ -49,17 +53,21 @@ LOGICAL FUNCTION INPUT_LOG( That)
   if( j == 1 ) input_log = .true.
   if( j == 2 ) input_log = .false.
 END FUNCTION INPUT_LOG
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 CHARACTER(50) PURE FUNCTION INPUT_CHAR( That)
   IMPLICIT NONE
   character(*), intent(in) :: That
   integer(i2b) :: i, j
   j=len(That)
-  do i = 1, size( input_line) 
-    if( input_line( i)( 1:j) == That ) read ( input_line (i) (j+4:j+50) , * ) input_char
+  DO i = 1, size( input_line) 
+    if( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) read ( input_line (i) (j+4:j+50) , * ) input_char
   END DO
 END FUNCTION INPUT_CHAR
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 
 FUNCTION n_linesInFile (filename)
     IMPLICIT NONE
