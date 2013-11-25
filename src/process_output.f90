@@ -36,6 +36,7 @@ SUBROUTINE process_output
                 exit
             END IF
         END DO
+        
         ! If calculation is for hard sphere fluid in presence of a hard wall compute profile perp wall
         ! TODO: DONT HAVE TIME TO WRITE THE TEST TODAY
         filename = 'output/z_density.dat'
@@ -51,8 +52,10 @@ SUBROUTINE process_output
         END IF
     END IF
 
+
     filename = 'output/rdf.out'
     call compute_rdf ( neq , filename ) ! Get radial distribution functions
+
 
     CONTAINS
 
