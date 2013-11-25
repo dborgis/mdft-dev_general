@@ -15,6 +15,7 @@ SUBROUTINE energy_and_gradient (iter)
     
     INTEGER(i2b), INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,FexcRad,FexcPol,F3B1,F3B2,Ffmt
+    
     Fext = 0._dp
     Fid = 0._dp
     Ffmt = 0._dp
@@ -51,9 +52,16 @@ SUBROUTINE energy_and_gradient (iter)
     ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
     IF (input_log('bridge_hard_sphere')) CALL energy_cs_hard_sphere ! better name should be given
 
-    ! Dipolar polarization. What user wants (use it or not) is checked in SUBROUTINE for clearer code.
-    CALL energy_polarization (FexcPol)
-    CALL energy_polarization_myway (FexcPol)
+
+    IF ( input_log('polarization') ) THEN
+        IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='dipol' ) THEN ! cs cdelta cd ( polarization_order = dipol )
+            CALL energy_polarization_dipol (FexcPol)
+        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' ) THEN ! ( polarization_order = multi )
+            CALL energy_polarization_multi (FexcPol)
+        ELSE
+            STOP "you ask for polarization but polarization order is neither dipol or multi"
+        END IF
+    END IF
 
     ! Threebody term that is needed to empiricaly force H-bonding in water. What user wants (use it or not) is checked in SUBROUTINE for clearer code
     CALL energy_threebody

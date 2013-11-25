@@ -1,4 +1,4 @@
-SUBROUTINE energy_polarization (Fint)
+SUBROUTINE energy_polarization_dipol (Fint)
 
 USE precision_kinds,only : i2b , dp
 use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , rho_0 , delta_k , nb_k ,&
@@ -232,4 +232,4 @@ END DO
     call cpu_time ( time1 )
     IF (verbose) WRITE(*,'(''    Exces / polar      = '',f11.3,'' in '',I5,'' sec'')') Fint , NINT(time1-time0)
 
-END SUBROUTINE energy_polarization
+END SUBROUTINE energy_polarization_dipol

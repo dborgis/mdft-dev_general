@@ -93,8 +93,8 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/energy_cs_hard_sphere.f90 \
        $(SRCDIR)/energy_external.f90 \
        $(SRCDIR)/energy_ideal.f90 \
-       $(SRCDIR)/energy_polarization.f90 \
-       $(SRCDIR)/energy_polarization_myway.f90 \
+       $(SRCDIR)/energy_polarization_dipol.f90 \
+       $(SRCDIR)/energy_polarization_multi.f90 \
        $(SRCDIR)/energy_threebody.f90 \
        $(SRCDIR)/energy_threebody_faster.f90 \
        $(SRCDIR)/lennard_jones_perturbation_to_hard_spheres.f90 \
