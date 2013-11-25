@@ -208,21 +208,21 @@ fact = deltav * rho_0
 ! init energy and gradient
 Fint = 0.0_dp
 icg = 0
-do i = 1 , nfft1
-  do j = 1 , nfft2
-    do k = 1 , nfft3
-      do o = 1 , angGrid%n_angles
-        do p=1 , molRotGrid%n_angles
-          icg = icg + 1
-          psi = cg_vect ( icg )
-          rho = psi ** 2
-          Vint = - kBT * rho_0 * ( Omx ( o ) * Ex ( i ,  j , k ) + Omy ( o ) * Ey ( i , j , k ) + Omz ( o ) * Ez ( i , j , k ) )
-          Fint = Fint + (rho - 1.0_dp) * angGrid%weight(o) * molRotGrid%weight(p) * Vint
-          dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * molRotGrid%weight(p) * fact * Vint
-        END DO  
-      END DO
+DO i = 1 , nfft1
+    DO j = 1 , nfft2
+        DO k = 1 , nfft3
+            DO o = 1 , angGrid%n_angles
+                DO p=1 , molRotGrid%n_angles
+                    icg = icg + 1
+                    psi = cg_vect ( icg )
+                    rho = psi ** 2
+                    Vint = - kBT * rho_0 * ( Omx(o) * Ex(i,j,k) + Omy(o) * Ey(i,j,k) + Omz(o) * Ez(i,j,k) )
+                    Fint = Fint + (rho - 1.0_dp) * angGrid%weight(o) * molRotGrid%weight(p) * Vint
+                    dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * molRotGrid%weight(p) * fact * Vint
+                END DO  
+            END DO
+        END DO
     END DO
-  END DO
 END DO
 
     Fint = Fint * 0.5_dp * deltav * rho_0
