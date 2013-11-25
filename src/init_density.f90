@@ -13,19 +13,33 @@ IMPLICIT NONE
 real(dp):: local_density0 !> @var local_density0 is the density at a space and angular grid point
 integer(i2b):: i , j , k , o , p , icg ! dummy
 real(dp):: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
-integer(i2b):: species ! dummy between 1 and nb_species
-! If reuse_density then just read density in binary format
-if (input_log('reuse_density')) then
-  open( 10 , file = 'input/density.bin' , form = 'unformatted' , iostat = k )
-  if ( k /= 0 ) then
-    print *, 'density.bin not found. stop. bug at init_density.f90'
-    stop
-  END IF
-  read ( 10 ) cg_vect
-  print *, 'cg_vect has been read'
-  return ! get out of SUBROUTINE
+integer(i2b):: species, ios
+LOGICAL :: exists
+
+IF (input_log('reuse_density')) THEN
+    INQUIRE (file='input/density.bin.in', EXIST=exists)
+        IF ( .NOT. exists) STOP "input/density.bin.in not found"
+    OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
+        IF ( ios /= 0 ) then
+            print *, 'problem while opening input/density.bin.in. bug at init_density.f90'
+            stop
+        END IF
+        READ ( 10, iostat=ios ) cg_vect
+            IF ( ios<0 ) THEN
+                STOP "input/density.bin.in is empty"
+            ELSE IF ( ios>0 ) THEN
+                STOP "problem while trying to read cg_vect in input/density.bin.in"
+            END IF
+        PRINT*, '*** RESTART ***'
+    CLOSE (10, STATUS="DELETE")
+    OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
+        WRITE ( 10 ) cg_vect
+    CLOSE (10)
+    WRITE(*,'(a)') 'Written: output/density.bin.in.out'
+    RETURN
 END IF
-  
+
+
 ! We minimize with respect to sqrt(density) and not directly with respect to the density.
 ! This allows the variable (sqrt(density)) to be strictly positive.
 ! icg is the index of the cg_vect 1dimensional array. it obliges us to loop over x then y then z then omega
