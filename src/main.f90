@@ -10,7 +10,7 @@ program mdft
     call init_simu ! initialization of simulation. read, allocate etc.
     call find_equilibrium_density ! DFT part! Minimize functional of the density(position, orientation)
     call process_output ! process results
-    call close_simu
+!~     call close_simu
     call cpu_time ( time1 ) ! close timer and tell user runtime
     print*,'Total execution time =' , time1 - time0
 

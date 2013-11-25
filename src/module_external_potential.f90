@@ -25,15 +25,18 @@ integer (i2b) , allocatable , dimension (: , : , : ) :: x_charge, y_charge, z_ch
 integer (i2b) :: nb_of_interpolation
 real (dp) :: Fcoul
 ! here is contained the SUBROUTINE that deallocates everything properly
+
+
 contains 
-  SUBROUTINE deallocate_everything_external_potential
-    IMPLICIT NONE
-    if ( allocated ( Vext_total ) ) deallocate ( Vext_total )
-    if ( allocated ( Vext_lj ) ) deallocate ( Vext_lj )
-    if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
-    if ( allocated ( x_charge ) ) deallocate ( x_charge )
-     if ( allocated ( y_charge ) ) deallocate ( y_charge )
-     if ( allocated ( z_charge ) ) deallocate ( z_charge )
-      if ( allocated ( q_charge ) ) deallocate ( q_charge )
-  END SUBROUTINE deallocate_everything_external_potential
+    SUBROUTINE deallocate_everything_external_potential
+        IMPLICIT NONE
+        if ( allocated ( Vext_total ) ) deallocate ( Vext_total )
+        if ( allocated ( Vext_lj ) ) deallocate ( Vext_lj )
+        if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
+        if ( allocated ( x_charge ) ) deallocate ( x_charge )
+        if ( allocated ( y_charge ) ) deallocate ( y_charge )
+        if ( allocated ( z_charge ) ) deallocate ( z_charge )
+        if ( allocated ( q_charge ) ) deallocate ( q_charge )
+    END SUBROUTINE deallocate_everything_external_potential
+
 end module external_potential
