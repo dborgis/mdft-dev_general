@@ -21,13 +21,15 @@ nb_psi = 2     # rotation angle psi around the omega orientation of the gauss le
 nb_implicit_species = 1
 mole_fractions
 1.0
+
+
+ck_species = spc   # spc or spce or stock or perso
+readDensityDensityCorrelationFunction = T
+xxxxxxxxxread_ck_or_chi = T # cs cdelta and cd are read from input/cs.in input/cdelta.in input/cd.in
+read_chi = T
+polarization = T    # use c_delta and c_d
 polarization_order = dipol # multi or dipol
 
-read_ck_or_chi = T # cs cdelta and cd are read from input/cs.in input/cdelta.in input/cd.in
-read_chi = T
-ck_species = spc   # spc or spce or stock or perso
-
-polarization = T    # use c_delta and c_d
 ref_bulk_density
 0.0332891
 temperature = 300 # K

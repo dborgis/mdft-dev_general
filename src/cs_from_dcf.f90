@@ -2,8 +2,9 @@
 SUBROUTINE cs_from_dcf (Fint)
 
 USE precision_kinds, only: i2b,dp
-use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
+use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
                   nb_species
+use dcf, ONLY: c_s
 use quadrature, only: sym_order, angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi

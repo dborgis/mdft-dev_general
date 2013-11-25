@@ -36,7 +36,7 @@ SUBROUTINE energy_and_gradient (iter)
     ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
     IF (input_log('lennard_jones_perturbation_to_hard_spheres') ) CALL lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
 
-    IF (input_log('read_ck_or_chi')) THEN
+    IF (input_log('readDensityDensityCorrelationFunction')) THEN
         IF (input_log('hydrophobicity')) THEN
             IF (TRIM(ADJUSTL(input_char('treatment_of_hydro')))=='C')  THEN
                 CALL cs_plus_hydro (FexcRad)

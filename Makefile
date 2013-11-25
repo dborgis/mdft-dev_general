@@ -71,7 +71,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/print_input_in_output_folder.f90 \
        $(SRCDIR)/get_gauss_legendre_integration_roots_and_weights.f90 \
        $(SRCDIR)/get_lebedev_integration_roots_and_weights.f90 \
-       $(SRCDIR)/read_ck.f90 \
        $(SRCDIR)/read_solvent.f90 \
        $(SRCDIR)/read_solute.f90 \
        $(SRCDIR)/allocate_from_input.f90 \
