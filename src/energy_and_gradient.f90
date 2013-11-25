@@ -14,12 +14,12 @@ SUBROUTINE energy_and_gradient (iter)
     IMPLICIT NONE
     
     INTEGER(i2b), INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,FexcRad,FexcPol,F3B1,F3B2,Ffmt
+    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt
     
     Fext = 0._dp
     Fid = 0._dp
     Ffmt = 0._dp
-    FexcRad = 0._dp
+    Fexcnn = 0._dp
     FexcPol = 0._dp
     F3B1 = 0._dp
     F3B2 = 0._dp
@@ -40,12 +40,12 @@ SUBROUTINE energy_and_gradient (iter)
     IF (input_log('readDensityDensityCorrelationFunction')) THEN
         IF (input_log('hydrophobicity')) THEN
             IF (TRIM(ADJUSTL(input_char('treatment_of_hydro')))=='C')  THEN
-                CALL cs_plus_hydro (FexcRad)
+                CALL energy_nn_cs_plus_nbar (Fexcnn)
             ELSE IF (TRIM(ADJUSTL(input_char('treatment_of_hydro')))=='VdW')  THEN
-                CALL energy_hydro (FexcRad)
+                CALL energy_hydro (Fexcnn)
             END IF
         ELSE
-            CALL cs_from_dcf (FexcRad)
+            CALL energy_nn_cs (Fexcnn)
         END IF
     END IF
 
@@ -72,7 +72,7 @@ SUBROUTINE energy_and_gradient (iter)
         WRITE(*,*)'-----------------------'
     END IF
 
-    WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')iter,FF,norm2(dF),Fext,Fid,FexcRad,FexcPol,F3B1,F3B2
+    WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2
 
     CONTAINS
     

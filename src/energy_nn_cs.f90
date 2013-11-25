@@ -1,5 +1,5 @@
 !> Compute total energy and gradients using direct correlation functions c_s
-SUBROUTINE cs_from_dcf (Fint)
+SUBROUTINE energy_nn_cs (Fint)
 
 USE precision_kinds, only: i2b,dp
 use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , nb_k , delta_k , deltaV , rho_0_multispec ,&
@@ -105,4 +105,4 @@ FF = FF + Fint
 call cpu_time(time1)
     IF (verbose) WRITE(*,'(''    Exces / radial     = '',f11.3,'' in '',I5,'' sec'')') Fint , NINT(time1-time0)
  
-END SUBROUTINE cs_from_dcf
+END SUBROUTINE energy_nn_cs

@@ -1,6 +1,6 @@
 ! this SUBROUTINE computes the radial excess free energy + its associated hydrophobic part.
 ! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
-SUBROUTINE cs_plus_hydro (Fint)
+SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   USE precision_kinds,only : dp , i2b
   use system,only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , kBT , delta_k , nb_species,n_0, Lx,Ly,Lz
   USE dcf, ONLY: c_s
@@ -301,4 +301,4 @@ SUBROUTINE cs_plus_hydro (Fint)
     END IF
     
 
-END SUBROUTINE cs_plus_hydro
+END SUBROUTINE energy_nn_cs_plus_nbar
