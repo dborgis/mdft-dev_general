@@ -2,7 +2,7 @@ MODULE dcf
 
     USE precision_kinds, ONLY: dp, i2b
     USE input, ONLY: input_log, input_char, n_linesInFile, deltaAbscissa
-    USE system, ONLY: delta_kSYS => delta_k, nb_kSYS => nb_k, c_sSYS => c_s, c_deltaSYS => c_delta, c_dSYS => c_d
+    USE system, ONLY: delta_kSYS => delta_k, nb_kSYS => nb_k
 
     IMPLICIT NONE
 
@@ -139,7 +139,6 @@ MODULE dcf
         nb_kSYS = nb_k !should be removed when nb_k will be used from module_dcf everywhere
         
         ALLOCATE ( c_s(nb_k), SOURCE=0._dp )
-        ALLOCATE ( c_sSYS(nb_k), SOURCE=0._dp ) !should be removed when c_s will be used from module_dcf everywhere
         
         OPEN (13, FILE=filename, IOSTAT=ios)
             IF (ios/=0) THEN
