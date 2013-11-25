@@ -54,7 +54,7 @@ SUBROUTINE process_output
     filename = 'output/rdf.out'
     call compute_rdf ( neq , filename ) ! Get radial distribution functions
 
-    contains
+    CONTAINS
 
         SUBROUTINE print_cg_vect
             USE minimizer, ONLY: cg_vect

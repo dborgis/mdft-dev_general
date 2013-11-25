@@ -63,9 +63,9 @@ SUBROUTINE energy_and_gradient (iter)
         END IF
     END IF
 
-    ! Threebody term that is needed to empiricaly force H-bonding in water. What user wants (use it or not) is checked in SUBROUTINE for clearer code
-    CALL energy_threebody
-    CALL energy_threebody_faster
+    IF ( input_log('threebody') ) THEN
+        CALL energy_threebody_faster (F3B1, F3B2)
+    END IF
 
     IF (verbose) THEN
         WRITE(*,*)'SOLVATION FREE ENERGY AT THIS STEP = ',FF

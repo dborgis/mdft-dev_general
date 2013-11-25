@@ -1,4 +1,4 @@
-SUBROUTINE energy_threebody_faster (Fint)
+SUBROUTINE energy_threebody_faster (F3B1,F3B2)
 
 USE precision_kinds, only:i2b, dp
 use input, only : input_line, input_log, verbose
@@ -11,7 +11,7 @@ USE minimizer, ONLY:cg_vect,dF,FF
 use fft, only : fftw3
 
 IMPLICIT NONE
-REAL(dp), INTENT(OUT) :: Fint
+REAL(dp), INTENT(OUT) :: F3B1, F3B2
 real(dp), parameter :: rmin1 = 1.5_dp, rsw1 = 2.0_dp, rmin2 = 2.25_dp, rsw2 = 2.5_dp, rmax2 = 5.0_dp, d_w = 1.9_dp
 integer(i2b)::icg
 integer(i2b) :: i,j,k,o,p,n, i1, j1, k1
@@ -30,7 +30,7 @@ complex(dp), dimension(nfft1/2+1,nfft2,nfft3) :: Axx_k,Ayy_k,Azz_k,Axy_k,Axz_k,A
 real(dp) :: fk1,rmax1,fk2,rho_temp,psi
 integer(i2b)::nmax1x,nmax1y,nmax1z,ix,iy,iz,nmax2x,nmax2y,nmax2z
 real(dp)::deltaVk,Hxxpreviousstep
-real(dp)::fw,f_ww,F3B1,F3B2,costheta0
+real(dp)::fw, f_ww, costheta0
 real(dp)::rb
 complex(dp), dimension(nfft1/2+1,nfft2,nfft3) ::Gxx_k,Gyy_k,Gzz_k,Gxy_k,Gxz_k,Gyz_k,Gx_k,Gy_k,Gz_k,G0_k , function_rho_0k
 real(dp), dimension(nfft1,nfft2,nfft3) :: FGxx,FGyy,FGzz,FGxy,FGxz,FGyz,FGx,FGy,FGz,FG0, function_rho_0
@@ -43,14 +43,9 @@ costheta0=-1.0_dp/3.0_dp
 deltaVk=(twopi)**3/(Lx*Ly*Lz)
 !lambda_w=20.0_dp
 ! check if user wants to use this part of the functional
-do i = 1 , size ( input_line )
-  j = len ( 'threebody' )
-  if ( input_line (i) ( 1 : j ) == 'threebody' .and. input_line ( i ) ( j + 4 : j + 4 ) == 'F' ) return
-END DO
-if (.not. input_log('F3B_new')) return
-!> start timer
+
 call cpu_time(time0)
-! get density
+
 allocate(rho(nfft1,nfft2,nfft3))
 rho=0.0_dp
 icg=0
@@ -517,11 +512,12 @@ END DO
         WRITE(*,'(''    F3B2               = '',f11.3,'' in '',I5,'' sec'')') F3B2 , NINT(time1-time0)
     END IF
 
-    Fint = F3B2+F3B1
+END SUBROUTINE energy_threebody_faster
 
-END SUBROUTINE
 
-function f_ww( r , rmin, rsw, rmax )
+
+
+FUNCTION f_ww( r , rmin, rsw, rmax )
     USE precision_kinds, only: dp,i2b
     IMPLICIT NONE
     real(dp) :: f_ww, r, rmin, rsw, rmax
@@ -539,5 +535,4 @@ function f_ww( r , rmin, rsw, rmax )
     ELSE
         f_ww = 0.0_dp
     END IF
-    RETURN
-end function f_ww
+END FUNCTION f_ww

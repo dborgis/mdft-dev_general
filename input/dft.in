@@ -85,8 +85,6 @@ lennard_jones_perturbation_to_hard_spheres = F # WCA type
 hydrophobicity = F
 treatment_of_hydro = C    #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
 threebody = T
-F3B_old = F
-F3B_new = T
 
 Rc = 1.0  # CAREFULL
 verbose = T
