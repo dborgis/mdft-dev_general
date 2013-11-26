@@ -1,14 +1,13 @@
 SUBROUTINE energy_polarization_dipol (Fint)
 
 USE precision_kinds,only : i2b , dp
-use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , rho_0 , delta_k , nb_k ,&
-                   deltav, deltax,deltay,deltaz
+use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , rho_0 , deltav, deltax,deltay,deltaz
 use quadrature,only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants,only : twopi
 use fft,only : fftw3
 use input,only : input_log, input_char, verbose
-USE dcf, ONLY: c_delta , c_d
+USE dcf, ONLY: c_delta , c_d, delta_k, nb_k
 
 IMPLICIT NONE
 
@@ -33,9 +32,6 @@ real(dp):: Nk ! total number of k grid points
 real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
 character (50) :: filename
 
-if (.not. input_log('polarization')) return ! look for tag polarization in input
-
-if (trim(adjustl(input_char('polarization_order')))== 'multi') return
 
 call cpu_time(time0)
 

@@ -5,7 +5,7 @@ Lx  = 40
 Ly  = 40
 Lz  = 40
 nfft1 = 32
-nfft2 = 32
+nfft2 = 32 
 nfft3 = 32
 quadrature = L # GL or L
 
@@ -25,10 +25,8 @@ mole_fractions
 
 ck_species = spc   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-xxxxxxxxxread_ck_or_chi = T # cs cdelta and cd are read from input/cs.in input/cdelta.in input/cd.in
-read_chi = T
 polarization = T    # use c_delta and c_d
-polarization_order = dipol # multi or dipol
+polarization_order = multi # multi or dipol
 
 ref_bulk_density
 0.0332891
@@ -65,8 +63,8 @@ reuse_density = F
 # POST-PROCESSING
 ############################
 translate_solute_to_center = T
-rdfmaxrange = 20.0
-nbinsrdf = 100
+rdfmaxrange = 10.0
+nbinsrdf = 80
 
 ############################
 # HARD SPHERES
@@ -100,16 +98,6 @@ radius_of_hard_sphere_solute = 15.0     # hard sphere solute radius for calculat
 
 # HARD WALL
 hard_wall_number = 0                 # total number of hard walls in the supercell. They will all have same thickness for now
-0.2   0.0 0.0 1.0   0.0 0.0 2.0
-0.2   0.0 1.0 0.0   0.0 0.0 2.0
-5.0   0.0 0.0 1.0   0.0 0.0 43.32     # one line per hard wall: thickness, coordinates of vector normal to plan defining wall, and coordinates of point in plan
-5.0   0.0 0.0 1.0   0.0 0.0 40.64
-5.0   0.0 0.0 1.0   0.0 0.0 0.59
-5.0   0.0 0.0 1.0   0.0 0.0 40.05
-5.0   0.0 0.0 1.0   0.0 0.0 44.41
-5.0   0.0 0.0 1.0   0.0 0.0 42.23
-5.0   0.0 0.0 1.0   0.0 0.0 44.32
-5.0   0.0 0.0 1.0   0.0 0.0 42.32
 
 # HARD CORE with vdw radius
 vdw_hard_core = F                    # a hard core with vdw radius is like a hard sphere with vdw radius for the solute sites.

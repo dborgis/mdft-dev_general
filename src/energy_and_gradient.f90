@@ -63,6 +63,14 @@ SUBROUTINE energy_and_gradient (iter)
         END IF
     END IF
 
+
+
+
+!~     IF ( input_log('FULLBORDEL') ) call energy_polarization_multi_with_nccoupling
+
+
+
+
     IF ( input_log('threebody') ) THEN
         CALL energy_threebody_faster (F3B1, F3B2)
     END IF

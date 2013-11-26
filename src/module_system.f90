@@ -43,18 +43,23 @@ MODULE system
 
     REAL(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
-    REAL(dp), ALLOCATABLE, DIMENSION(:) ::chi_L, chi_T
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s_hs ! c(2)(k) of a hard sphere
     COMPLEX(dp),ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
-    REAL(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
-    INTEGER(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
+
+
+
+!~     REAL(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
+!~     INTEGER(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
+
+
+
     ! Electrostatics
     ! charge factor & molecule polarization factor
-    COMPLEX ( dp ) , ALLOCATABLE , DIMENSION (:,:,:,:,:,:) :: sigma_k
-    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: rho_c_k, rho_c_k_myway
+    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: sigma_k
+    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: rho_c_k
     !Polarization
-    COMPLEX (dp) , ALLOCATABLE,DIMENSION (:,:,:,:) :: pola_tot_x_k , pola_tot_y_k , pola_tot_z_k
-    COMPLEX ( dp ) , ALLOCATABLE , DIMENSION (:,:,:,:,:,:) ::  molec_polarx_k,molec_polary_k,molec_polarz_k 
+    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) ::  molec_polarx_k,molec_polary_k,molec_polarz_k 
+    
     !> 3body parameters
     !NEW
     !!a=100.0_dp

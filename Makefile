@@ -19,7 +19,8 @@ LDFLAGS = -lfftw3
 
 #FLAGS = -lfftw3 -J $(MODDIR)
 
-DEBUGFLAGS = -g -Wall -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter
+DEBUGFLAGS = -fbounds-check -Wconversion -Wall
+#DEBUGFLAGS = -g -Wall -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter
 #-g turns on debugging
 #-p turns on profiling
 

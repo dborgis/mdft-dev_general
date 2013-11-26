@@ -2,8 +2,8 @@
 ! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
 SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   USE precision_kinds,only : dp , i2b
-  use system,only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 , nb_k , kBT , delta_k , nb_species,n_0, Lx,Ly,Lz
-  USE dcf, ONLY: c_s
+  use system,only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 ,  kBT ,  nb_species,n_0, Lx,Ly,Lz
+  USE dcf, ONLY: c_s, nb_k ,delta_k
   use constants,only : fourpi , i_complex,twopi
   USE minimizer, ONLY: cg_vect , FF , dF
   use quadrature, only: sym_order,angGrid, molRotGrid

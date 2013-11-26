@@ -1,50 +1,48 @@
 SUBROUTINE energy_polarization_multi (F_pol)
 
-    USE precision_kinds,only : i2b , dp
-    use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , rho_0 , delta_k , nb_k ,&
-                    deltav, molec_polarx_k,molec_polary_k, molec_polarz_k,delta_k,nb_k,kBT,&
-                    rho_0_multispec, nb_species,pola_tot_x_k , pola_tot_y_k , pola_tot_z_k, deltax, rho_c_k_myway, chi_l, chi_t,&
-                    n_0, beta,deltax,deltay,deltaz
+    USE precision_kinds, ONLY: i2b , dp
+    USE system, ONLY: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , rho_0 , &
+                    deltav, molec_polarx_k,molec_polary_k, molec_polarz_k, kBT,&
+                    rho_0_multispec, nb_species, deltax, n_0, beta,deltax,deltay,deltaz, spaceGrid
+    USE dcf, ONLY: chi_l, chi_t, c_s, nb_k, delta_k
     use quadrature,only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
     USE minimizer, ONLY: cg_vect , FF , dF
     use constants,only : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
     use fft,only : fftw3, kx, ky, kz, k2, norm_k
     use input,only : input_line,input_log, input_char, verbose
 
-IMPLICIT NONE
-    
+    IMPLICIT NONE
+
     REAL(dp), INTENT(OUT) :: F_pol
-real(dp), dimension (nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ::dF_pol_long,dF_pol_trans,dF_pol_tot
-complex (dp) , dimension (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: rho_k, dF_pol_long_k ,&
-    dF_pol_trans_k, dF_pol_tot_k
-real (dp) , dimension (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) ::rho
-real (dp) , dimension (nfft1, nfft2, nfft3, nb_species) ::Px,Py,Pz,pola_tot_x,pola_tot_y,pola_tot_z,P_long_x,P_long_y,P_long_z
-integer (i2b) :: icg   !dummy counter for cg_vect
-real(dp) ::  deltaVk, F_pol_long, F_pol_trans , F_pol_tot  !Longitudinal , transverse and total Polarization free energy
-complex(dp), allocatable, dimension(:,:,:,:) :: P_trans_x_k,P_trans_y_k,P_trans_z_k,P_long_x_k,P_long_y_k,P_long_z_k,&
-pxk,pyk,pzk  !transverse part of polarization in Fourier space .
- 
-integer (i2b) :: i , j , k, o, p , n , species, k_index , m1, m2, m3!dummy
-real(dp) :: mu_SPCE, facsym,Pxt,Pyt,Pzt
-complex(dp) :: k_tens_k_Px,k_tens_k_Py,k_tens_k_Pz     
-real(dp):: time1 , time0 ,time2 , time3 ,rhot! timestamps
-complex(dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k 
-real(dp), allocatable , dimension ( : ) :: weight_omx , weight_omy , weight_omz ! dummy
+    REAL(dp), DIMENSION (nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ::dF_pol_long,dF_pol_trans,dF_pol_tot
+    COMPLEX(dp), DIMENSION (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: rho_k, dF_pol_long_k ,&
+                        dF_pol_trans_k, dF_pol_tot_k
+    REAL(dp), DIMENSION (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) ::rho
+    REAL(dp), DIMENSION (nfft1, nfft2, nfft3, nb_species) ::Px,Py,Pz,pola_tot_x,pola_tot_y,pola_tot_z,P_long_x,P_long_y,P_long_z
+    INTEGER(i2b) :: icg   !dummy counter for cg_vect
+    REAL(dp) ::  deltaVk, F_pol_long, F_pol_trans , F_pol_tot  !Longitudinal , transverse and total Polarization free energy
+    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: P_trans_x_k,P_trans_y_k,P_trans_z_k,P_long_x_k,P_long_y_k,P_long_z_k
+    INTEGER(i2b) :: i , j , k, o, p , n , species, k_index , m1, m2, m3!dummy
+    REAL(dp) :: mu_SPCE, facsym
+    COMPLEX(dp) :: k_tens_k_Px,k_tens_k_Py,k_tens_k_Pz     
+    REAL(dp) :: time1 , time0 ,time2 , time3 ,rhot! timestamps
+    COMPLEX(dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k 
+    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: pola_tot_x_k , pola_tot_y_k , pola_tot_z_k
+    COMPLEX(dp), DIMENSION (nfft1/2+1, nfft2, nfft3) :: rho_c_k_myway
 
 if (nb_species/=1) then
-    print*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
-    stop
+    PRINT*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
+    STOP
 END IF
 
-! look for tag polarization in input
-if (.not. input_log('polarization')) return
 
-IF (.NOT. ALLOCATED (rho_c_k_myway)) THEN
-    ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3) )
+IF ( (SIZE(c_s) /= SIZE(chi_l)) .OR. (SIZE(c_s)/=SIZE(chi_t))) THEN
+    WRITE(*,*)"c_s, chi_l and chi_t should have the same number of points, at least for now"
+    STOP
+END IF
+
     rho_c_k_myway = (0._dp,0._dp)
-END IF
 
-if (trim(adjustl(input_char('polarization_order')))== 'dipol') return
 
 call cpu_time(time0)
 !            ====================================================
@@ -52,21 +50,12 @@ call cpu_time(time0)
 !            !							!
 !            ====================================================
 deltaVk=twopi**3/(Lx*Ly*Lz)
-allocate (Pxk (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (Pyk (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (Pzk (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (P_trans_x_k (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (P_trans_y_k (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (P_trans_z_k (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (P_long_x_k (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (P_long_y_k (nfft1/2+1, nfft2, nfft3, nb_species))
-allocate (P_long_z_k (nfft1/2+1, nfft2, nfft3, nb_species))
-P_trans_x_k=(0.0_dp,0.0_dp)
-P_trans_y_k=(0.0_dp,0.0_dp)
-P_trans_z_k=(0.0_dp,0.0_dp)
-P_long_x_k=(0.0_dp,0.0_dp)
-P_long_y_k=(0.0_dp,0.0_dp)
-P_long_z_k=(0.0_dp,0.0_dp)
+allocate (P_trans_x_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
+allocate (P_trans_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
+allocate (P_trans_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
+allocate (P_long_x_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
+allocate (P_long_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
+allocate (P_long_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
 F_pol_long=0.0_dp
 F_pol_trans=0.0_dp
 F_pol_tot=0.0_dp
@@ -77,18 +66,16 @@ F_pol=0.0_dp
 dF_pol_long=0.0_dp
 dF_pol_trans=0.0_dp
 dF_pol_tot=0.0_dp
-dF_pol_long_k=0.0_dp
-dF_pol_trans_k=0.0_dp
-dF_pol_tot_k=0.0_dp
+dF_pol_long_k=(0.0_dp,0.0_dp)
+dF_pol_trans_k=(0.0_dp,0.0_dp)
+dF_pol_tot_k=(0.0_dp,0.0_dp)
 icg=0
 rho=0.0_dp
 rho_k=(0.0_dp,0.0_dp)
-if (.not. allocated (pola_tot_x_k ) )  allocate (pola_tot_x_k ( nfft1/2+1,nfft2,nfft3,nb_species) )
-if (.not. allocated (pola_tot_y_k ) ) allocate (pola_tot_y_k ( nfft1/2+1,nfft2,nfft3,nb_species) )
-if (.not. allocated (pola_tot_z_k ) ) allocate (pola_tot_z_k ( nfft1/2+1,nfft2,nfft3,nb_species) )
-pola_tot_x_k=(0.0_dp,0.0_dp)
-pola_tot_y_k=(0.0_dp,0.0_dp)
-pola_tot_z_k=(0.0_dp,0.0_dp)
+
+ALLOCATE (pola_tot_x_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=(0.0_dp,0.0_dp) )
+ALLOCATE (pola_tot_y_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=(0.0_dp,0.0_dp) )
+ALLOCATE (pola_tot_z_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=(0.0_dp,0.0_dp) )
 mu_SPCE=0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
 !======================================================================================================
 !            ====================================================
@@ -127,11 +114,6 @@ DO species = 1, nb_species
     END DO
 END DO
 call cpu_time(time3)
-!do o=1,angGrid%n_angles
-!    molec_polarx_k(:,:,:,o,:,:) = mu_SPCE*Omx(o)
-!    molec_polary_k(:,:,:,o,:,:) = mu_SPCE*Omy(o)
-!    molec_polarz_k(:,:,:,o,:,:) = mu_SPCE*Omz(o)
-!END DO
 !======================================================================================================
 !            ====================================================
 !            !    		Compute 			!
@@ -168,62 +150,6 @@ DO species=1,nb_species
     pola_tot_z(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
 END DO
 
-!allocate ( weight_omx ( angGrid%n_angles ) )
-!allocate ( weight_omy ( angGrid%n_angles ) )
-!allocate ( weight_omz ( angGrid%n_angles ) )
-!weight_omx = angGrid%weight * Omx
-!weight_omy = angGrid%weight * Omy
-!weight_omz = angGrid%weight * Omz
-!icg=0
-!do species=1,nb_species
-!do i = 1 , nfft1
-!    
-!    m1=i-1
-!    if (i> nfft1/2) m1=i-1-nfft1
-!  do j = 1 , nfft2
-!    m2=j-1
-!    if (i>nfft2/2) m2=j-1-nfft2
-!    do k = 1 , nfft3    
-!    m3=k-1
-!    if (k>nfft3/2) m3=k-1-nfft3
-!      ! init dummy variables tpx , tpy and tpz in order not to loop directly over big arrays
-!      pxt = 0.0_dp
-!      pyt = 0.0_dp
-!      pzt = 0.0_dp
-!      do o = 1 , angGrid%n_angles
-!        do p=1, molRotGrid%n_angles
-!          icg = icg + 1
-!          rhot = cg_vect (icg) ** 2
-!          pxt = pxt + weight_Omx ( o ) * molRotGrid%weight(p) * rhot
-!          pyt = pyt + weight_Omy ( o ) * molRotGrid%weight(p) * rhot
-!          pzt = pzt + weight_Omz ( o ) * molRotGrid%weight(p) * rhot
-!        END DO
-!      END DO
-!      Px ( i , j , k,species ) = pxt
-!      Py ( i , j , k ,species) = pyt
-!      Pz ( i , j , k ,species) = pzt
-!    END DO
-!  END DO
-!END DO
-!END DO
-!======================================================================================================
-!            ====================================================
-!            !    	Compute 				!
-!            !	FFT Polarization	!
-!            ====================================================
-!do species=1,nb_species
-!print*, shape(Pz(:,:,:,:)),shape(in_forward), shape(pola_tot_z_k(:,:,:,:)) , shape(out_forward)
-!in_forward=pola_tot_x(:,:,:,species)
-!call dfftw_execute ( plan_forward )
-!pola_tot_x_k(:,:,:,species)=out_forward*deltaV*mu_SPCE
-!in_forward=pola_tot_x_k(:,:,:,species)
-!call dfftw_execute ( plan_forward )
-!pola_tot_y_k(:,:,:,species)=out_forward*deltaV*mu_SPCE
-!in_forward=Pz(:,:,:,species)
-!call dfftw_execute ( plan_forward )
-!pola_tot_z_k(:,:,:,species)=out_forward*deltaV*mu_SPCE
-!END DO
-!!======================================================================================================
 !            ====================================================
 !            !    	Compute 				!
 !            !	Transverse and longitudinal Polarization	!
@@ -237,9 +163,9 @@ do n=1, nb_species
       P_long_z_k(i,j,k,n)=(pola_tot_x_k(i,j,k,n)*kx(i)+pola_tot_y_k(i,j,k,n)*ky(j)+pola_tot_z_k(i,j,k,n)*kz(k))*kz(k)/k2(i,j,k)
       
       if (k2(i,j,k)==0.0_dp) then
-      P_long_x_k(i,j,k,n)=0.0_dp
-      P_long_y_k(i,j,k,n)=0.0_dp
-      P_long_z_k(i,j,k,n)=0.0_dp
+      P_long_x_k(i,j,k,n)=(0.0_dp,0.0_dp)
+      P_long_y_k(i,j,k,n)=(0.0_dp,0.0_dp)
+      P_long_z_k(i,j,k,n)=(0.0_dp,0.0_dp)
       END IF
       P_trans_x_k(i,j,k,n)=pola_tot_x_k(i,j,k,n)- P_long_x_k(i,j,k,n)
       P_trans_y_k(i,j,k,n)=pola_tot_y_k(i,j,k,n)- P_long_y_k(i,j,k,n)
@@ -260,17 +186,6 @@ call dfftw_execute(fftw3%plan_backward)
 P_long_z(:,:,:,species)=fftw3%out_backward*deltaVk/(twopi)**3
 END DO
 
-open (11, file='output/pola_tot_x')
-open (12, file='output/pola_tot_y')
-open (13, file='output/pola_tot_z')
-    do i=1,nfft1
-        write(11,*) , i*deltax, pola_tot_x(i,nfft2/2+1,nfft3/2+1,1), Px(i,nfft2/2+1,nfft3/2+1,1),P_long_x(i,nfft2/2+1,nfft3/2+1,1) 
-        write(12,*) , i*deltay, pola_tot_y(nfft1/2+1,i,nfft3/2+1,1), Py(nfft1/2+1,i,nfft3/2+1,1),P_long_y(nfft1/2+1,i,nfft3/2+1,1) 
-        write(13,*) , i*deltaz, pola_tot_z(nfft1/2+1,nfft2/2+1,i,1), Pz(nfft1/2+1,nfft1/2+1,i,1),P_long_z(nfft1/2+1,nfft1/2+1,i,1)
-    END DO
-close(11)
-close(12)
-close(13)
 !            ====================================================
 !            !    	Compute Free energy due to		!
 !            !	Transverse and longitudinal Polarization	!
@@ -279,9 +194,9 @@ do species=1, nb_species
   do i=1, nfft1/2+1
   
     if (i>1 .and. i<nfft1/2+1) then
-    facsym=2.0_dp
+        facsym=2.0_dp
     ELSE
-    facsym=1.0_dp
+        facsym=1.0_dp
     END IF
     do j=1, nfft2
       do k=1, nfft3
@@ -354,39 +269,39 @@ icg=0
 !========================================================================================================================
 !						Allocate it for minimizing
 !========================================================================================================================
-do species=1, nb_species
-  do i=1,nfft1
-    do j=1, nfft2
-      do k=1,nfft3
-    
-        do o=1,angGrid%n_angles
-          do p=1, molRotGrid%n_angles
-          icg=icg+1
-          dF(icg)=dF(icg)+  dF_pol_tot (i,j,k,o,p,species)*cg_vect(icg)*rho_0*2.0_dp * deltav!* angGrid%weight(o) * molRotGrid%weight(p) 
-          END DO
- 
+    DO species=1, nb_species
+        DO i=1,nfft1
+            DO j=1, nfft2
+                DO k=1,nfft3
+                    DO o=1,angGrid%n_angles
+                        DO p=1, molRotGrid%n_angles
+                            icg = icg + 1
+                            dF(icg)=dF(icg)+  dF_pol_tot (i,j,k,o,p,species)*cg_vect(icg)*rho_0*2.0_dp * deltav!* angGrid%weight(o) * molRotGrid%weight(p) 
+                        END DO
+                    END DO
+                END DO
+            END DO
         END DO
-      END DO
     END DO
-  END DO
-END DO
-!========================================================================================================================
+!===================================================================================================================================
 !					Check if Polarization Free energy is Real
-!========================================================================================================================
-if (aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)<tiny(0.0_dp)) then 
-    F_pol_tot=real( F_pol_tot_k , dp)
-    F_pol_long=real( F_pol_long_k,  dp)
-    F_pol_trans=real( F_pol_trans_k, dp)
-ELSE
-    print*, 'Error in energy_polarization_myway Free energy is not Real'
-    print*,aimag(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)
-    print*,F_pol_tot_k+F_pol_long_k+F_pol_trans_k
-    stop
-END IF
-!========================================================================================================================
-F_pol=F_pol_tot+F_pol_long+F_pol_trans
-FF=FF+F_pol
-! stop timer
-call cpu_time ( time1 )
-IF (verbose) PRINT*, 'F_polarization =' , F_pol  , 'computed in (sec)' , time1 - time0
+!===================================================================================================================================
+    IF ( AIMAG(F_pol_tot_k)==0._dp .AND. AIMAG(F_pol_long_k)==0._dp .AND. AIMAG(F_pol_trans_k)==0._dp ) THEN
+        F_pol_tot   = REAL( F_pol_tot_k , dp)
+        F_pol_long  = REAL( F_pol_long_k,  dp)
+        F_pol_trans = REAL( F_pol_trans_k, dp)
+    ELSE
+        WRITE(*,*) 'Error in energy_polarization_myway Free energy is not Real'
+        WRITE(*,*) 'Imaginary part of F_pol_tot_k, F_pol_long_k and F_pol_trans_k:'
+        WRITE(*,*) AIMAG(F_pol_tot_k), AIMAG(F_pol_long_k), AIMAG(F_pol_trans_k)
+        STOP
+    END IF
+!===================================================================================================================================
+
+    F_pol = F_pol_tot + F_pol_long + F_pol_trans
+    FF = FF + F_pol
+
+    CALL CPU_TIME ( time1 )
+    IF (verbose) PRINT*, 'F_polarization =' , F_pol  , 'computed in (sec)' , time1 - time0
+
 END SUBROUTINE energy_polarization_multi
