@@ -8,7 +8,7 @@ MODULE fft
     TYPE :: fftw3Needs
         INTEGER(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
         REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
-        COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT        
+        COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT        
     END TYPE
     TYPE( fftw3Needs ) :: fftw3
     REAL(dp), PRIVATE, PARAMETER :: twopi = 2._dp*ACOS(-1._dp)
@@ -60,7 +60,7 @@ CONTAINS
         ELSE
             m1 = l - 1 - spaceGrid%n_nodes(dir)
         END IF
-        kproj = twopi/spaceGrid%length(1)*REAL(m1,dp)
+        kproj = twopi/spaceGrid%length(dir)*REAL(m1,dp)
     END FUNCTION
     
     PURE FUNCTION kvec (l,m,n)
