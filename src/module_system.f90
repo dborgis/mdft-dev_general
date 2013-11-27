@@ -7,7 +7,7 @@ MODULE system
 
     TYPE :: sites
         CHARACTER(100) :: name
-        INTEGER(i2b) :: type
+        INTEGER(i2b) :: type, n_sites
         REAL(dp), DIMENSION(3) :: r
         REAL(dp) :: q, sig, eps, lambda1, lambda2
         INTEGER(i2b) :: Z ! atomic number
@@ -58,7 +58,7 @@ MODULE system
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: sigma_k
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: rho_c_k
     !Polarization
-    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) ::  molec_polarx_k,molec_polary_k,molec_polarz_k 
+    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) ::  molec_polarx_k, molec_polary_k, molec_polarz_k 
     
     !> 3body parameters
     !NEW

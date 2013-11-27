@@ -20,7 +20,7 @@ SUBROUTINE energy_ideal (Fideal)
     REAL(dp) :: rho, rhon ! local density
     REAL(dp) :: logrho ! dummy for log(rho)
     REAL(dp) :: time0, time1
-    REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) :: rho_n  !one-particle number density
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n
     
     CALL CPU_TIME (time0) ! init timer
 
@@ -28,6 +28,7 @@ SUBROUTINE energy_ideal (Fideal)
 
     icg=0
     Fid_lin=0.0_dp
+    ALLOCATE ( rho_n (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), SOURCE=0._dp )
     IF (input_log('Linearize_entropy').and. trim(adjustl(input_char('if_Linearize_entropy'))) == '1' ) then
         IF (nb_species/=1 ) STOP 'the linearized ideal F is only implemented for 1 specie for the moment'
         do i=1,spaceGrid%n_nodes(1)

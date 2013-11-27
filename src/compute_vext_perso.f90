@@ -1,17 +1,21 @@
 ! this is the routine where you may want to build a personnal vext, something that is not implemented automaticaly
 SUBROUTINE compute_vext_perso
+
 USE precision_kinds,only : i2b , dp
 use input,only : input_line,input_dp
 use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species
 use external_potential,only : Vext_total
+
 IMPLICIT NONE
-integer(i2b):: i , j , k , n !> @var dummy
-real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
-real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
-real(dp):: solute_radius ! radius of the hard sphere solute. tag in dft.in
-real(dp):: radius_sum_sq ! sum of solute and solvent radius
-real(dp):: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
-integer(i2b):: species ! dummy for loops over species from 1 to nb_species
+
+    integer(i2b):: i , j , k , n !> @var dummy
+    real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
+    real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
+    real(dp):: solute_radius ! radius of the hard sphere solute. tag in dft.in
+    real(dp):: radius_sum_sq ! sum of solute and solvent radius
+    real(dp):: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
+    integer(i2b):: species ! dummy for loops over species from 1 to nb_species
+
 ! tell user
 write (*,*) '*************************'
 write (*,*) 'Compute personnal_vext'

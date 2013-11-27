@@ -19,8 +19,7 @@ LDFLAGS = -lfftw3
 
 #FLAGS = -lfftw3 -J $(MODDIR)
 
-DEBUGFLAGS = -fbounds-check -Wconversion -Wall
-#DEBUGFLAGS = -g -Wall -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter
+DEBUGFLAGS = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -Wimplicit-interface -frecursive
 #-g turns on debugging
 #-p turns on profiling
 
