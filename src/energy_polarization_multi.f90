@@ -15,7 +15,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
     REAL(dp), INTENT(OUT) :: F_pol
     REAL(dp) :: F_pol_long, F_pol_trans , F_pol_tot  !Longitudinal , transverse and total Polarization free energy
     REAL(dp) :: mu_SPCE, facsym, deltaVk, time0, time1, Lweight
-    REAL(dp), DIMENSION (nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) :: &
+    REAL(dp), DIMENSION (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: &
                                                                                 dF_pol_tot
     COMPLEX(dp), DIMENSION (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: &
                                                                                 dF_pol_tot_k, dF_pol_long_k, dF_pol_trans_k

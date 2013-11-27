@@ -4,9 +4,9 @@
 Lx  = 40
 Ly  = 40
 Lz  = 40
-nfft1 = 64
-nfft2 = 64 
-nfft3 = 64
+nfft1 = 32
+nfft2 = 32 
+nfft3 = 32
 quadrature = L # GL or L
 
 # order of gauss legendre integration. 3 for water. 2*order^2 angles
@@ -38,7 +38,7 @@ sym_order = 2  # n in Cn. 2 for H2O
 # SOLVER
 ############################
 minimizer = bfgs
-maximum_iteration_nbr = 05
+maximum_iteration_nbr = 50
 epsg =  0.00001  # default 0.0001
 pgtol = 0.00001  # default 0.00001
 
