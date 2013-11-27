@@ -13,7 +13,6 @@ SUBROUTINE find_equilibrium_density
     IMPLICIT NONE
     
     INTEGER(i2b):: iter
-    INTEGER(i2b):: i, j
     REAL(dp):: time1, time2
     REAL(dp):: energy_before, dfoverf
 

@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
 
 USE precision_kinds,only : i2b , dp
 use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT , rho_0 , deltav, deltax,deltay,deltaz
-use quadrature,only : Omx , Omy , Omz, sym_order , angGrid, molRotGrid
+use quadrature,only : Omx , Omy , Omz, angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants,only : twopi
 use fft,only : fftw3
