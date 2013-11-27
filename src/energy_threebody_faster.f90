@@ -115,6 +115,7 @@ END DO         !i,x
 !stop
 allocate(rho_k(nfft1/2+1,nfft2,nfft3))
 fftw3%in_forward=rho
+
 call dfftw_execute(fftw3%plan_forward)
 rho_k=fftw3%out_forward*deltaV
       fftw3%in_forward=Axx
@@ -316,7 +317,7 @@ iz = int(z_mol(n)/deltaz) + 1
       zk2=-(z_mol(n)-(k-1)*deltaz)
       fk2=f_ww(rk2,rmin1,rsw1,rmax1)
           G0(i,j,k)=G0(i,j,k)+lambda2_mol(n)*fk2
-!        if (rk2 /= 0.0_dp)then
+        IF (rk2 /= 0.0_dp)then
           Gxx(i,j,k)=Gxx(i,j,k)+lambda2_mol(n)*fk2*xk2**2/(rk2**2)
           Gyy(i,j,k)=Gyy(i,j,k)+lambda2_mol(n)*fk2*yk2**2/(rk2**2)
           Gzz(i,j,k)=Gzz(i,j,k)+lambda2_mol(n)*fk2*zk2**2/(rk2**2)
@@ -326,10 +327,7 @@ iz = int(z_mol(n)/deltaz) + 1
           Gx(i,j,k)=Gx(i,j,k)+lambda2_mol(n)*fk2*(xk2)/rk2
           Gy(i,j,k)=Gy(i,j,k)+lambda2_mol(n)*fk2*(yk2)/rk2
           Gz(i,j,k)=Gz(i,j,k)+lambda2_mol(n)*fk2*(zk2)/rk2
-!if (Gx(i,j,k)/=0.0_dp) then
-!print*, i,j,j,Gx(i,j,k)
-!END IF
-!        END IF
+        END IF
       END DO
     END DO
   END DO
@@ -523,7 +521,8 @@ FUNCTION f_ww( r , rmin, rsw, rmax )
     real(dp) :: f_ww, r, rmin, rsw, rmax
     real(dp) , parameter :: gam = 2.0_dp/3.0_dp
     real(dp) :: deltar, exp_term, Switch
-    deltar = rsw-rmin 
+    deltar = rsw-rmin
+    IF(DELTAR==0._dp)STOP "OUCH"
     if(r > rmin .and. r<rmax) then
         exp_term = exp(gam*rmax/(r-rmax))
         if(r<rsw) then
