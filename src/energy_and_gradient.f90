@@ -4,7 +4,6 @@
 ! for computing the total energy and associated gradient
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF is the gradient of FF with respect to all coordinates. Remember it is of the kind dF ( number of variables over density (ie angles etc))
-
 SUBROUTINE energy_and_gradient (iter)
 
     USE precision_kinds, ONLY: i2b , dp
@@ -45,7 +44,9 @@ SUBROUTINE energy_and_gradient (iter)
                 CALL energy_hydro (Fexcnn)
             END IF
         ELSE
-            CALL energy_nn_cs (Fexcnn)
+            IF   (.NOT. input_log('FULLBORDEL')) THEN
+                 CALL energy_nn_cs (Fexcnn)
+            END IF
         END IF
     END IF
 
@@ -56,19 +57,14 @@ SUBROUTINE energy_and_gradient (iter)
     IF ( input_log('polarization') ) THEN
         IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='dipol' ) THEN ! cs cdelta cd ( polarization_order = dipol )
             CALL energy_polarization_dipol (FexcPol)
-        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' ) THEN ! ( polarization_order = multi )
+        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' .AND. (.NOT. input_log('FULLBORDEL')) ) THEN ! ( polarization_order = multi )
             CALL energy_polarization_multi (FexcPol)
+        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' .AND. ( input_log('FULLBORDEL')) ) THEN ! ( polarization_order = multi )
+            CALL energy_polarization_multi_with_nccoupling(FexcPol)
         ELSE
-            STOP "you ask for polarization but polarization order is neither dipol or multi"
+        STOP "You want to include polarization but the tag for polarization order is neither dipol nor multi"
         END IF
     END IF
-
-
-
-
-!~     IF ( input_log('FULLBORDEL') ) call energy_polarization_multi_with_nccoupling
-
-
 
 
     IF ( input_log('threebody') ) THEN
