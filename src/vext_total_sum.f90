@@ -4,7 +4,7 @@
 SUBROUTINE vext_total_sum
 
     use precision_kinds,only : dp , i2b
-    use system,only : nfft1 , nfft2 , nfft3 , soluteSite
+    use system,only : nfft1 , nfft2 , nfft3 , nb_species
     use quadrature, only : angGrid, molRotGrid
     use constants,only : fourpi, zero
     use external_potential,only : Vext_total , Vext_lj , Vext_q , vext_hard_core
@@ -20,7 +20,7 @@ SUBROUTINE vext_total_sum
     
    
     IF ( .NOT. ALLOCATED ( Vext_total ) ) THEN ! be sure Vext_total is allocated
-        ALLOCATE ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, SIZE(soluteSite) ), SOURCE=zero )
+        ALLOCATE ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ), SOURCE=zero )
     END IF
 
     !    Vext_total = 0.0_dp

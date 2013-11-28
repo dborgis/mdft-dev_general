@@ -4,7 +4,7 @@
 SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
     
     USE precision_kinds, ONLY: i2b , dp
-    USE system, ONLY: spaceGrid, soluteSite
+    USE system, ONLY: spaceGrid, soluteSite, nb_species
     USE input, ONLY: verbose
     
     IMPLICIT NONE

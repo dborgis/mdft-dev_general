@@ -6,7 +6,7 @@ SUBROUTINE init_external_potential
 
     USE precision_kinds, ONLY: dp , i2b
     USE input, ONLY: input_log, input_char
-    USE system , ONLY: chg_solv, soluteSite, spaceGrid
+    USE system , ONLY: chg_solv, soluteSite, spaceGrid, nb_species
     USE external_potential, ONLY: Vext_total, Vext_q
     USE mod_lj, ONLY: initLJ => init
     USE quadrature, ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
@@ -21,7 +21,7 @@ SUBROUTINE init_external_potential
 
     IF( .NOT. ALLOCATED( Vext_total )) THEN
         allocate( Vext_total(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),angGrid%n_angles,&
-                            molRotGrid%n_angles,SIZE(soluteSite)), source=0._dp )
+                            molRotGrid%n_angles,nb_species), source=0._dp )
     ELSE
         STOP "see init_external_potential.f90 vext_total is already allocated."
     END IF
@@ -42,7 +42,7 @@ SUBROUTINE init_external_potential
                 al(3) = nfft(3)
                 al(4) = angGrid%n_angles
                 al(5) = molRotGrid%n_angles
-                al(6) = SIZE(soluteSite)
+                al(6) = nb_species
                 ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zero )
             END BLOCK
         END IF
@@ -54,7 +54,7 @@ SUBROUTINE init_external_potential
         BLOCK
             REAL(dp), DIMENSION (nfft(1),nfft(2),nfft(3)) :: soluteChargeDensity
             if (.not. allocated(Vext_q) ) &
-                allocate ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,SIZE(soluteSite)), SOURCE=zero)
+                allocate ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zero)
             CALL soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
             call poissonSolver (soluteChargeDensity)
             call vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)

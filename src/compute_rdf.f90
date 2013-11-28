@@ -2,7 +2,7 @@
 SUBROUTINE compute_rdf ( array , filename )
 
     USE precision_kinds, ONLY: dp , i2b
-    USE system, ONLY: x_mol , y_mol , z_mol , id_mol , id_solv, nb_species, spaceGrid, soluteSite
+    USE system, ONLY: x_mol , y_mol , z_mol , id_mol , id_solv, nb_species, spaceGrid
     USE input, ONLY: input_dp, input_int
     
     IMPLICIT NONE
@@ -39,8 +39,8 @@ open ( 10 , file = filename , form = 'formatted' )
 100 format ( 2 ( xF10.5 ) )
 write ( 10 , * ) '# r  rdf'
 ! prepare histogram
-allocate ( recurrence_bin ( SIZE(soluteSite), 0:nbins ) )
-allocate ( rdf ( SIZE(soluteSite), 0:nbins ) )
+allocate ( recurrence_bin ( nb_species, 0:nbins ) )
+allocate ( rdf ( nb_species, 0:nbins ) )
 
 ! FOR EACH SPECIES
 do s = 1 , nb_species
@@ -49,7 +49,7 @@ do s = 1 , nb_species
   write ( 10 , * ) '# species number ', s
   !> Transform array(position) in rdf(radialdistance)
   ! counts the total number of appearence of a value in each bin
-  do n = 1 , SIZE(soluteSite)
+  do n = 1 , nb_species
     do i = 1 , spaceGrid%n_nodes(1)
       xnm2 = ( REAL ( i - 1 , dp ) * spaceGrid%dl(1) - x_mol ( n ) ) ** 2
       do j = 1 , spaceGrid%n_nodes(2)
@@ -75,7 +75,7 @@ do s = 1 , nb_species
   end where
 
   ! Write rdf in output folder
-  do n = 1 , SIZE(soluteSite)
+  do n = 1 , nb_species
      write ( 10 , * ) '#site ' , n
      do bin = 0 , nbins
            write ( 10 , 100 ) (REAL ( bin , dp )) * delta_r , rdf ( n , bin ) 

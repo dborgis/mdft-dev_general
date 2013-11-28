@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
     USE system, ONLY: nfft1, nfft2, nfft3, kBT, rho_0, molec_polarx_k, molec_polary_k, molec_polarz_k, &
-                    nb_species, n_0, spaceGrid, soluteSite
+                    nb_species, n_0, spaceGrid
     USE dcf, ONLY: chi_l, chi_t, c_s, nb_k, delta_k
     USE quadrature,ONLY : angGrid, molRotGrid
     USE minimizer, ONLY: cg_vect, FF, dF
@@ -58,7 +58,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
     ALLOCATE ( rho (spaceGrid%n_nodes(1), spaceGrid%n_nodes(2), spaceGrid%n_nodes(3),&
                         angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=0._dp )
     icg=0
-    DO s=1,SIZE(soluteSite)
+    DO s=1, nb_species
         DO i=1,nfft1
             DO j=1, nfft2
                 DO k=1, nfft3

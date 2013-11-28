@@ -6,12 +6,12 @@ SUBROUTINE prepare_minimizer
     USE input, ONLY: input_int, input_dp,input_char
     USE minimizer, ONLY: nbd , iwa , ll , uu , wa , dF , cg_vect , epsmch , factr , epsg , ncg , mcg , iprint , minimizer_type ,&
                     itermax , minimizer_iter , pgtol, FF
-    USE system , ONLY: spaceGrid, soluteSite
+    USE system , ONLY: spaceGrid, nb_species
     USE quadrature, ONLY: angGrid, molRotGrid
     
     IMPLICIT NONE
     
-    ncg = PRODUCT(spaceGrid%n_nodes) * angGrid%n_angles *molRotGrid%n_angles* SIZE(soluteSite)! total number of variables to optimize
+    ncg = PRODUCT(spaceGrid%n_nodes) * angGrid%n_angles *molRotGrid%n_angles* nb_species! total number of variables to optimize
     itermax=input_int('maximum_iteration_nbr')
     epsg=input_dp('epsg')
     pgtol=input_dp('pgtol')

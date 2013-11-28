@@ -2,7 +2,7 @@
 SUBROUTINE energy_external (Fext)
 
     USE precision_kinds, ONLY: dp , i2b
-    USE system, ONLY: rhoBulk=>rho_0_multispec, soluteSite, spaceGrid
+    USE system, ONLY: rhoBulk=>rho_0_multispec, nb_species, spaceGrid
     USE quadrature, ONLY: angGrid, molRotGrid
     USE minimizer, ONLY: CG_vect , FF , dF
     USE external_potential, ONLY: Vext_total
@@ -24,7 +24,7 @@ SUBROUTINE energy_external (Fext)
     ! F_{ext}[\rho(\vec{r},\vec{\Omega})]=\int d \vec{r} d \vec{\Omega} V_{ext}(\vec{r},\vec{\Omega})\rho(\vec{r},\vec{\Omega})
 
     icg = 0
-    DO spec = 1 , SIZE(soluteSite)
+    DO spec = 1 , nb_species
         DO i = 1 , spaceGrid%n_nodes(1)
         DO j = 1 , spaceGrid%n_nodes(2)
         DO k = 1 , spaceGrid%n_nodes(3)
