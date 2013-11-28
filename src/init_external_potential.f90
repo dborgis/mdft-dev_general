@@ -73,9 +73,6 @@ SUBROUTINE init_external_potential
     if (input_log('hard_sphere_solute')) then
         call compute_vext_hard_sphere
     END IF
-    
-    ! potential created by hard wall(s) ! CALLED TWICE BUG
-    call external_potential_hard_walls
 
     ! hard cylinder
     if (input_log('hard_cylinder_solute')) then

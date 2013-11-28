@@ -40,8 +40,8 @@ sym_order = 2  # n in Cn. 2 for H2O
 ############################
 minimizer = bfgs
 maximum_iteration_nbr = 50
-epsg =  0.0001  # default 0.0001
-pgtol = 0.0001  # default 0.00001
+epsg =  0.00001  # default 0.0001
+pgtol = 0.00001  # default 0.00001
 
 ###########################
 #  IDEAL TERM
