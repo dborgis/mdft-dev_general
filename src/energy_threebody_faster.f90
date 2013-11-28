@@ -445,9 +445,9 @@ F3B1 = kBT*0.5_dp* SUM ( lambda1_mol*(&
 
 
 F3B2=0.0_dp
-DO i=ix-nmax2x, ix+nmax2x
-  DO j=iy-nmax2y, iy+nmax2y
-    DO k=iz-nmax2z, iz+nmax2z
+DO i= 1, nfft1
+  DO j= 1, nfft2
+    DO k= 1, nfft3
        F3B2=F3B2+(kBT*0.5_dp*(Fxx(i,j,k)*Gxx(i,j,k)+Fyy(i,j,k)*Gyy(i,j,k)+Fzz(i,j,k)*Gzz(i,j,k)&
                 +2.0_dp*Fxy(i,j,k)*Gxy(i,j,k)+ 2.0_dp*Fxz(i,j,k)*Gxz(i,j,k)+ 2.0_dp*Fyz(i,j,k)*Gyz(i,j,k))&
                 - 2.0_dp*costheta0*kBT*0.5_dp*(Fx(i,j,k)*Gx(i,j,k)+Fy(i,j,k)*Gy(i,j,k)+Fz(i,j,k)*Gz(i,j,k))&
