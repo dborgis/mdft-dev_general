@@ -28,7 +28,6 @@ integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites wi
         READ (5,*) ! comment line
         READ (5,*) nb_solute_sites, nb_id_mol ! total number of atom sites of the solute AND the total number of different types of atoms
         ALLOCATE(soluteSite(nb_solute_sites))
-        
         ALLOCATE(x_mol(nb_solute_sites))
         ALLOCATE(y_mol(nb_solute_sites))
         ALLOCATE(z_mol(nb_solute_sites))

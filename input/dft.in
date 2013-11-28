@@ -1,4 +1,3 @@
-FULLBORDEL = T
 ############################
 # SUPERCELL
 ############################
@@ -28,6 +27,7 @@ ck_species = spc   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
 polarization = T    # use c_delta and c_d
 polarization_order = multi # multi or dipol
+include_nc_coupling = T
 
 ref_bulk_density
 0.0332891

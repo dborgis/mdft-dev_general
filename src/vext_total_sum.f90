@@ -12,7 +12,7 @@ SUBROUTINE vext_total_sum
     ! vext_lj = lennard jones part
     ! vext_q = electrostatic part
     ! vext_hard_core = vdw hard core repulsion
-    use quadrature,only : sym_order
+    use quadrature, ONLY: sym_order
     USE input, ONLY: verbose
     
     implicit none
