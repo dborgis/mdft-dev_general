@@ -44,7 +44,7 @@ SUBROUTINE energy_and_gradient (iter)
                 CALL energy_hydro (Fexcnn)
             END IF
         ELSE
-            IF   (.NOT. input_log('FULLBORDEL')) THEN
+            IF   (.NOT. input_log('include_nc_coupling')) THEN
                  CALL energy_nn_cs (Fexcnn)
             END IF
         END IF
@@ -57,9 +57,9 @@ SUBROUTINE energy_and_gradient (iter)
     IF ( input_log('polarization') ) THEN
         IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='dipol' ) THEN ! cs cdelta cd ( polarization_order = dipol )
             CALL energy_polarization_dipol (FexcPol)
-        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' .AND. (.NOT. input_log('FULLBORDEL')) ) THEN ! ( polarization_order = multi )
+        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' .AND. (.NOT. input_log('include_nc_coupling')) ) THEN ! ( polarization_order = multi )
             CALL energy_polarization_multi (FexcPol)
-        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' .AND. ( input_log('FULLBORDEL')) ) THEN ! ( polarization_order = multi )
+        ELSE IF ( TRIM(ADJUSTL(input_char('polarization_order')))=='multi' .AND. ( input_log('include_nc_coupling')) ) THEN ! ( polarization_order = multi )
             CALL energy_polarization_multi_with_nccoupling(FexcPol)
         ELSE
         STOP "You want to include polarization but the tag for polarization order is neither dipol nor multi"
