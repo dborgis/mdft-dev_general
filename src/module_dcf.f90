@@ -5,13 +5,14 @@ MODULE dcf
 
     IMPLICIT NONE
 
-    REAL(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
-    INTEGER(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
+    REAL(dp) :: delta_k , delta_k_in_C! distance between two k points in cs.in, cdelta.in, cd.in
+    INTEGER(i2b) :: nb_k, nb_k_in_c ! nb of k points in cs.in, cdelta.in, cd.in
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s ! density density correlation function
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_delta, c_d ! polarization polarization correlation function
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: chi_l, chi_t ! longitudinal and transverse dielectric susceptibilities
+    REAL(dp), ALLOCATABLE, DIMENSION (:) :: Cnn, Cnc, Ccc ! longitudinal and transverse dielectric susceptibilities
     
-    REAL(dp) :: delta_k_cs, delta_k_cd, delta_k_cdelta, delta_k_chi_l, delta_k_chi_t
+    REAL(dp) :: delta_k_cs, delta_k_cd, delta_k_cdelta, delta_k_chi_l, delta_k_chi_t, delta_k_Cnn, delta_k_Cnc, delta_k_Ccc
 
 
     CONTAINS
@@ -26,8 +27,11 @@ MODULE dcf
         IF ( input_log('polarization') ) THEN
             IF ( input_char('polarization_order')=='dipol' ) THEN
                 CALL readPolarizationPolarizationCorrelationFunction
-            ELSE IF ( input_char('polarization_order')=='multi' ) THEN
-                CALL readDielectricSusceptibilities
+            ELSE IF (( input_char('polarization_order')=='multi') .AND. (.NOT. input_log('include_nc_coupling'))) THEN
+                CALL readDielectricSusceptibilities   
+            ELSE IF (( input_char('polarization_order')=='multi') .AND. (input_log('include_nc_coupling'))) THEN
+                CALL readDielectricSusceptibilities 
+                CALL readTotalPolarizationCorrelationFunction
             END IF
         END IF
 
@@ -38,18 +42,6 @@ MODULE dcf
  
        
     END SUBROUTINE init
-    
-
-
-
-
-
-
-
-
-
-
-
 
 
     SUBROUTINE readDielectricSusceptibilities ! chi_l, chi_t
@@ -118,8 +110,85 @@ MODULE dcf
     END SUBROUTINE readDielectricSusceptibilities
 
 
+    SUBROUTINE readTotalPolarizationCorrelationFunction !Cnn, Cnc, Ccc
+        
+        IMPLICIT NONE
+        
+        REAL(dp) :: norm_k
+        LOGICAL :: exists
+        CHARACTER(80) :: file_nn, file_nc, file_cc
+        INTEGER(i2b) :: ios, nb_k_in_Cnn, i,nb_k_in_Cnc,nb_k_in_Ccc
 
+        
+        file_nn = 'input/direct_correlation_functions/water/Cnn.dat'
+        file_nc = 'input/direct_correlation_functions/water/Cnc.dat'
+        file_cc = 'input/direct_correlation_functions/water/Ccc.dat'
+        
+        INQUIRE (FILE=file_nn, EXIST=exists )
+            IF (.NOT. exists) THEN
+                WRITE(*,*) "Cnn not found in ", file_nn
+                STOP
+            END IF
+        INQUIRE (FILE=file_nc, EXIST=exists )
+            IF (.NOT. exists) THEN
+                WRITE(*,*) "Cnc not found in ", file_nc
+                STOP
+            END IF
+        INQUIRE (FILE=file_cc, EXIST=exists )
+            IF (.NOT. exists) THEN
+                WRITE(*,*) "Ccc not found in ", file_cc
+                STOP
+            END IF
+                        
+        nb_k_in_c = MIN( n_linesInFile(file_nn), n_linesInFile(file_nc), n_linesInFile(file_cc) )
+        
+        ALLOCATE ( Cnn (nb_k_in_c), SOURCE=0._dp)
+        ALLOCATE ( Cnc (nb_k_in_c), SOURCE=0._dp)
+        ALLOCATE ( Ccc (nb_k_in_c), SOURCE=0._dp)
 
+        delta_k_Cnn = deltaAbscissa(file_nn)
+        delta_k_Cnc = deltaAbscissa(file_nc)
+        delta_k_Ccc = deltaAbscissa(file_cc)
+        
+        IF ( (delta_k_Cnn-delta_k_Cnc)/delta_k_Cnn >= 1.E-10 ) THEN
+            WRITE(*,*)"Cnn and Cnc should have same delta k, i.e., same step in abscissa"
+            STOP
+        END IF
+        IF ( (delta_k_Cnn-delta_k_Ccc)/delta_k_Cnn >= 1.E-10 ) THEN
+            WRITE(*,*)"Cnn and Ccc should have same delta k, i.e., same step in abscissa"
+            STOP
+        END IF
+        delta_k_in_C = delta_k_Cnn
+
+        OPEN (10, FILE=file_nn, iostat=ios)
+            DO i = 1, SIZE(Cnn)
+                READ (10,*,IOSTAT=ios) norm_k, Cnn(i)
+                    IF (ios>0 .OR. ios<0) THEN
+                        WRITE(*,*)'Error while reading ',Cnn, 'in readTotalPolarizationCorrelationFunction (Cnn)'
+                        STOP
+                    END IF
+            END DO
+        CLOSE (10)
+        OPEN (10, FILE=file_nc, iostat=ios)
+            DO i = 1, SIZE(Cnc)
+                READ (10,*,IOSTAT=ios) norm_k, Cnc(i)
+                    IF (ios>0 .OR. ios<0) THEN
+                        WRITE(*,*)'Error while reading ',Cnc, 'in readTotalPolarizationCorrelationFunction (Cnc)'
+                        STOP
+                    END IF
+            END DO
+        CLOSE (10)
+        OPEN (10, FILE=file_cc, iostat=ios)
+            DO i = 1, SIZE(Ccc)
+                READ (10,*,IOSTAT=ios) norm_k, Ccc(i)
+                    IF (ios>0 .OR. ios<0) THEN
+                        WRITE(*,*)'Error while reading ',Ccc, 'in readTotalPolarizationCorrelationFunction (Ccc)'
+                        STOP
+                    END IF
+            END DO
+        CLOSE (10)
+
+    END SUBROUTINE readTotalPolarizationCorrelationFunction
 
 
 

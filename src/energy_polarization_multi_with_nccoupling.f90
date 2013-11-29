@@ -4,7 +4,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
     USE system, ONLY : nfft1 , nfft2 , nfft3, Lx, Ly, Lz, kBT, rho_0,&
                    deltav, molec_polarx_k, molec_polary_k, molec_polarz_k,&
                    rho_0_multispec, nb_species, n_0, beta, deltax, deltay, deltaz, sigma_k, spaceGrid
-    USE dcf, ONLY: chi_l, chi_t, c_s, nb_k, delta_k
+    USE dcf, ONLY: Cnn, Cnc, Ccc, chi_t, c_s, nb_k, delta_k, delta_k_in_C, nb_k_in_c
     USE quadrature, ONLY: angGrid, molRotGrid,sym_order
     USE minimizer, ONLY: cg_vect , FF , dF
     USE constants, ONLY : twopi, i_complex, fourpi, eps0,qunit,Navo, qfact
@@ -18,7 +18,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
      dF_pol_trans_k,dF_pol_tot_k
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: rho
     REAL(dp), DIMENSION (nfft1, nfft2, nfft3, nb_species) ::Px,Py,Pz,P_long_x,P_long_y,P_long_z
-    INTEGER(i2b) :: icg ,nb_k_in_c  !dummy counter for cg_vect
+    INTEGER(i2b) :: icg  !dummy counter for cg_vect
     REAL(dp) ::  deltaVk, F_pol_long, F_pol_trans , F_pol ,F_pol_tot  !Longitudinal , transverse and total Polarization free energy
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: rho_c_k_myway  !transverse part of polarization in Fourier space .
     INTEGER(i2b) :: i , j , k, o, p , n ,m,l, species, k_index , m1, m2, m3!dummy
@@ -27,10 +27,9 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
     REAL(dp):: time1 , time0 ,time2 , time3 ,rhot! timestamps
     COMPLEX(dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k, molec_polarx_k_local, molec_polary_k_local, molec_polarz_k_local
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx , weight_omy , weight_omz ! dummy
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: Ccc, Cnc, norm_k_in_c , Cnn
     INTEGER(i2b) :: ios ! iostat of the read statement: 
     INTEGER(i2b) :: kindex_in_C
-    REAL(dp) :: delta_k_in_C, rhon, fact,psi,Vint,Fint
+    REAL(dp) ::  rhon, fact,psi,Vint,Fint
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: rho_n  !one-particle number density
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n_k
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: Vpair
@@ -67,50 +66,50 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
     mu_SPCE=0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
     IF (.NOT. ALLOCATED (rho_c_k_myway) ) ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp, 0.0_dp))
     
-    
+
     !======================================================================================================
     !            ====================================================
     !            !    	Read Cnn(k), Cnc(k) and Ccc(k) 		!
     !            ====================================================
     
-    OPEN(10,file='input/direct_correlation_functions/water/Ccc.dat')
-    
-      nb_k_in_C=0
-      DO WHILE(.true.)
-        READ(10,*,iostat=ios)
-        IF (ios>0) THEN
-          WRITE(*,*)'Error in compute_ck_dipolar.f90'
-          WRITE(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
-          STOP
-        ELSE IF (ios<0) THEN
-          ! end of file reached
-          EXIT
-        ELSE
-          nb_k_in_C=nb_k_in_C+1
-        END IF
-      END DO
-    
-    CLOSE(10)
-    
-    ALLOCATE(norm_k_in_c(nb_k_in_c))
-    ALLOCATE(Ccc(nb_k_in_c))
-    ALLOCATE(Cnc(nb_k_in_c))
-    ALLOCATE(Cnn(nb_k_in_c))
-    
-    OPEN(10,file='input/direct_correlation_functions/water/Ccc.dat')
-    OPEN(11,file='input/direct_correlation_functions/water/Cnc.dat')
-    OPEN(12,file='input/direct_correlation_functions/water/Cnn.dat')
-    
-    DO i=1, nb_k_in_c
-      READ(10,*) norm_k_in_c(i), Ccc(i)
-      READ(11,*) norm_k_in_c(i), Cnc(i)
-      READ(12,*) norm_k_in_c(i), Cnn(i)
-    END DO
-    delta_k_in_c = norm_k_in_c(2) - norm_k_in_c(1)
-    
-    CLOSE(10)
-    CLOSE(11)
-    CLOSE(12)
+!    OPEN(10,file='input/direct_correlation_functions/water/Ccc.dat')
+!    
+!      nb_k_in_C=0
+!      DO WHILE(.true.)
+!        READ(10,*,iostat=ios)
+!        IF (ios>0) THEN
+!          WRITE(*,*)'Error in compute_ck_dipolar.f90'
+!          WRITE(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
+!          STOP
+!        ELSE IF (ios<0) THEN
+!          ! end of file reached
+!          EXIT
+!        ELSE
+!          nb_k_in_C=nb_k_in_C+1
+!        END IF
+!      END DO
+!    
+!    CLOSE(10)
+!    
+!    ALLOCATE(norm_k_in_c(nb_k_in_c))
+!    ALLOCATE(Ccc(nb_k_in_c))
+!    ALLOCATE(Cnc(nb_k_in_c))
+!    ALLOCATE(Cnn(nb_k_in_c))
+!    
+!    OPEN(10,file='input/direct_correlation_functions/water/Ccc.dat')
+!    OPEN(11,file='input/direct_correlation_functions/water/Cnc.dat')
+!    OPEN(12,file='input/direct_correlation_functions/water/Cnn.dat')
+!    
+!    DO i=1, nb_k_in_c
+!      READ(10,*) norm_k_in_c(i), Ccc(i)
+!      READ(11,*) norm_k_in_c(i), Cnc(i)
+!      READ(12,*) norm_k_in_c(i), Cnn(i)
+!    END DO
+!    delta_k_in_c = norm_k_in_c(2) - norm_k_in_c(1)
+!    
+!    CLOSE(10)
+!    CLOSE(11)
+!    CLOSE(12)
     !======================================================================================================
     !            ====================================================
     !            !    	Compute density in real and 		!
@@ -160,8 +159,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
         END DO
     END DO
     DEALLOCATE (rho)
-        
-           
+       
     CALL cpu_time(time3)
     
     !======================================================================================================
@@ -185,7 +183,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
             END DO
         END DO
     END DO
-    
     fftw3%in_backward = Vpair_k
     DEALLOCATE (Vpair_k)
     CALL dfftw_execute (fftw3%plan_backward)
@@ -213,7 +210,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
         END DO
     END DO
     DEALLOCATE (Vpair)
-    
+
     !======================================================================================================
     !            ====================================================
     !            !    		Compute 		                      	!
@@ -348,7 +345,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
     !            !    	Compute Free energy due to		            !
     !            !	Transverse and longitudinal Polarization	    !
     !            ====================================================
-
 
     DO species=1, nb_species 
         DO i=1, nfft1/2+1

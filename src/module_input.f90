@@ -137,6 +137,7 @@ module input
                     EXIT
                 ELSE
                     IF ((abscissa-previousAbscissa-deltaAbscissa)/deltaAbscissa > 1E-5) THEN
+                        PRINT*, abscissa, previousAbscissa,abscissa-previousAbscissa ,deltaAbscissa
                         PRINT*, 'STOP. Non uniform absissa in ', filename
                         STOP
                     END IF
