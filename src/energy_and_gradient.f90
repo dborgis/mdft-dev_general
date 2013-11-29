@@ -68,7 +68,7 @@ SUBROUTINE energy_and_gradient (iter)
 
 
     IF ( input_log('threebody') ) THEN
-        IF (SUM(ABS(lambda1_mol(:))+ABS(lambda2_mol(:)))==0.0_dp ) THEN
+        IF (SUM(ABS(lambda1_mol(:))+ABS(lambda2_mol(:)))/=0.0_dp ) THEN
             CALL energy_threebody_faster (F3B1, F3B2)
         END IF
     END IF
