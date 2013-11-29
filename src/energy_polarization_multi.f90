@@ -30,6 +30,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     IF ( (SIZE(c_s) /= SIZE(chi_l)) .OR. (SIZE(c_s)/=SIZE(chi_t))) THEN
         WRITE(*,*)"c_s, chi_l and chi_t should have the same number of points, at least for now"
+        PRINT*, SIZE(c_s), SIZE(chi_l), SIZE(chi_t)
         STOP
     END IF
 

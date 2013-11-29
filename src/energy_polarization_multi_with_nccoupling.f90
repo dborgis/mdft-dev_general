@@ -460,19 +460,21 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
     !!========================================================================================================================
     !!					Check if Polarization Free energy is Real
     !!========================================================================================================================
-    IF (AIMAG(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)<tiny(0.0_dp)) THEN 
-       F_pol_tot=REAL( F_pol_tot_k , dp)
-       F_pol_long=REAL( F_pol_long_k,  dp)
-       F_pol_trans=REAL( F_pol_trans_k, dp)
-    ELSE
-        PRINT*, 'Error in energy_polarization_myway Free energy is not Real'
-        PRINT*,AIMAG(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)
-        PRINT*,F_pol_tot_k+F_pol_long_k+F_pol_trans_k
-        STOP
-    END IF
+!    IF (AIMAG(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)<tiny(0.0_dp)) THEN 
+!       F_pol_tot=REAL( F_pol_tot_k , dp)
+!       F_pol_long=REAL( F_pol_long_k,  dp)
+!       F_pol_trans=REAL( F_pol_trans_k, dp)
+!    ELSE
+!        PRINT*, 'Error in energy_polarization_myway Free energy is not Real'
+!        PRINT*,AIMAG(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)
+!        PRINT*,F_pol_tot_k+F_pol_long_k+F_pol_trans_k
+!        STOP
+!    END IF
+
     !!!========================================================================================================================
-    F_pol=F_pol_tot+F_pol_long+F_pol_trans
-    FF=FF+F_pol+Fint
+    F_pol=F_pol_tot+F_pol_long+F_pol_trans+Fint
+    FF=FF+F_pol
+!    Print*, 'Fpol=', F_pol, 'Fint=', Fint
     ! stop timer
     CALL cpu_time ( time1 )
 
