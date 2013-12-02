@@ -466,7 +466,6 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         END DO
       END DO
     END DO
-    print*,'F3B_ww = ', F3B_ww
     
     icg=0
     do i=1,nfft1
