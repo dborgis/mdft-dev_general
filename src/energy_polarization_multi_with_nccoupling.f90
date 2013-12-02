@@ -461,9 +461,9 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
     !!					Check if Polarization Free energy is Real
     !!========================================================================================================================
 !    IF (AIMAG(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)<tiny(0.0_dp)) THEN 
-!       F_pol_tot=REAL( F_pol_tot_k , dp)
-!       F_pol_long=REAL( F_pol_long_k,  dp)
-!       F_pol_trans=REAL( F_pol_trans_k, dp)
+       F_pol_tot=REAL( F_pol_tot_k , dp)
+       F_pol_long=REAL( F_pol_long_k,  dp)
+       F_pol_trans=REAL( F_pol_trans_k, dp)
 !    ELSE
 !        PRINT*, 'Error in energy_polarization_myway Free energy is not Real'
 !        PRINT*,AIMAG(F_pol_tot_k+F_pol_long_k+F_pol_trans_k)

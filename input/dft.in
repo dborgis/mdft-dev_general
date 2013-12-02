@@ -26,7 +26,7 @@ mole_fractions
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
 polarization = T    # use c_delta and c_d
-polarization_order = dipol # multi or dipol
+polarization_order = multi # multi or dipol
 include_nc_coupling = T
 
 ref_bulk_density
@@ -83,7 +83,7 @@ lennard_jones_perturbation_to_hard_spheres = F # WCA type
 ############################
 hydrophobicity = F
 treatment_of_hydro = C    #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
-threebody = T
+threebody = F
 
 Rc = 1.0  # CAREFULL
 verbose = F
