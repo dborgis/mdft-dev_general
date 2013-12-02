@@ -5,6 +5,11 @@ Na+ Suangliang
 
 ====================================================================================================================================
 #    Hard    sphere 
+1 1
+#    charge     sigma     epsilon    lambda1_mol   lambda2_mol   x            y           z      Zatomic   Atom Name  Surname
+1    0.00000    0.00000  0.0000000  0.0000000000  0.00000    0.000   0.0000000 0.0000000    16         HS   HS
+
+====================================================================================================================================
 Ethane, Jorgensen et al., J. Phys. Chem. 94, 1683-1868 (1990)
 2 1
 #    charge    sigma      epsilon  lambda1_mol   lambda2_mol     x           y           z        Z   Atom name  Surname
@@ -21,10 +26,6 @@ Methanol
 3   0.43128    0.00000    0.00000      0.0         0.0     0.30035    0.896104    0.000000       1     X    point    charge    
 
 ===========
-
-1 1
-#    charge     sigma     epsilon    lambda1_mol   lambda2_mol   x            y           z      Zatomic   Atom Name  Surname
-1    0.00000    0.00000  0.0000000  0.0000000000  0.00000    0.1000   0.10000000 0.0000000    16         HS   HS
 
 ====================================================================================================================================
 Setny flat wall 35*33 angstrom composed of 4 layers of Setny C witj modified LJ with parameter 1.25 (  J. Chem. Phys. 125, 144717 (2006); doi: 10.1063/1.2355487 ) 

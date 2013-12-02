@@ -1,7 +1,7 @@
 SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     
     USE precision_kinds, ONLY: i2b, dp
-    USE input, ONLY: input_line, input_log, verbose
+    USE input, ONLY: input_line, input_log, verbose, input_dp
     USE constants, ONLY: twopi
     USE quadrature, ONLY: angGrid, molRotGrid
     USE system, ONLY: nfft1 , nfft2 , nfft3 , deltaV , rho_0 , sig_mol , sig_solv , Lx , Ly , Lz ,&
@@ -33,10 +33,10 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     complex(dp), dimension(nfft1/2+1,nfft2,nfft3) :: Gxx_k,Gyy_k,Gzz_k,Gxy_k,Gxz_k,Gyz_k,Gx_k,Gy_k,Gz_k,G0_k , function_rho_0k
     real(dp), dimension(nfft1,nfft2,nfft3) :: FGxx,FGyy,FGzz,FGxy,FGxz,FGyz,FGx,FGy,FGz,FG0, function_rho_0
     real(dp) :: lambda_w , F3B_ww, rmax_w!lambda parameter for water water interaction
-    !real(dp), dimension(nfft1,nfft2,nfft3) :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
+    real(dp), dimension(nfft1,nfft2,nfft3) :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
     deltaVk=(twopi)**3/(Lx*Ly*Lz)
-    !lambda_w=20.0_dp
+    lambda_w=input_dp ('lambda_solvent')!5.0_dp
     ! check if user wants to use this part of the functional
         
     call cpu_time(time0)
@@ -202,40 +202,40 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         fftw3%in_backward=F0_k
         call dfftw_execute(fftw3%plan_backward)
         F0=fftw3%out_backward*deltaVk/(twopi)**3
-    !      function_rho_0=n_0
-    !      in_forward=function_rho_0
-    !      call dfftw_execute(plan_forward)
-    !      function_rho_0k=out_forward
-    !      in_backward=(rho_k-function_rho_0k)*Axx_k
-    !      call dfftw_execute(plan_backward)
-    !      FAxx=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Ayy_k
-    !      call dfftw_execute(plan_backward)
-    !      FAyy=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Azz_k
-    !      call dfftw_execute(plan_backward)
-    !      FAzz=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Axy_k
-    !      call dfftw_execute(plan_backward)
-    !      FAxy=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Axz_k
-    !      call dfftw_execute(plan_backward)
-    !      FAxz=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Ayz_k
-    !      call dfftw_execute(plan_backward)
-    !      FAyz=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Ax_k
-    !      call dfftw_execute(plan_backward)
-    !      FAx=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Ay_k
-    !      call dfftw_execute(plan_backward)
-    !      FAy=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*Az_k
-    !      call dfftw_execute(plan_backward)
-    !      FAz=out_backward*deltaVk/(twopi)**3
-    !      in_backward=(rho_k-function_rho_0k)*A0_k
-    !      call dfftw_execute(plan_backward)
-    !      FA0=out_backward*deltaVk/(twopi)**3
+          function_rho_0=n_0
+          fftw3%in_forward=function_rho_0
+          call dfftw_execute(fftw3%plan_forward)
+          function_rho_0k=fftw3%out_forward
+          fftw3%in_backward=(rho_k-function_rho_0k)*Axx_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAxx=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Ayy_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAyy=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Azz_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAzz=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Axy_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAxy=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Axz_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAxz=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Ayz_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAyz=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Ax_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAx=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Ay_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAy=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*Az_k
+          call dfftw_execute(fftw3%plan_backward)
+          FAz=fftw3%out_backward*deltaVk/(twopi)**3
+          fftw3%in_backward=(rho_k-function_rho_0k)*A0_k
+          call dfftw_execute(fftw3%plan_backward)
+          FA0=fftw3%out_backward*deltaVk/(twopi)**3
     !  
     Hxx=0.0_dp
     Hyy=0.0_dp
@@ -456,17 +456,17 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         END DO
       END DO
     END DO
-    !F3B_ww=0.0_dp
-    !do i=1,nfft1
-    !  do j=1, nfft2
-    !    do k=1, nfft3
-    !      F3B_ww=F3B_ww+0.5_dp*kbT*deltaV*rho(i,j,k)*lambda_w*(FAxx(i,j,k)**2+FAyy(i,j,k)**2+FAzz(i,j,k)**2+&
-    !             2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2+FAz(i,j,k)**2)&
-    !             +costheta0**2*FA0(i,j,k)**2)
-    !    END DO
-    !  END DO
-    !END DO
-    !print*,'F3B_ww = ', F3B_ww
+    F3B_ww=0.0_dp
+    do i=1,nfft1
+      do j=1, nfft2
+        do k=1, nfft3
+          F3B_ww=F3B_ww+0.5_dp*kbT*deltaV*rho(i,j,k)*lambda_w*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+FAzz(i,j,k)**2+&
+                 2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2+FAz(i,j,k)**2)&
+                 +costheta0**2*FA0(i,j,k)**2))
+        END DO
+      END DO
+    END DO
+    print*,'F3B_ww = ', F3B_ww
     
     icg=0
     do i=1,nfft1
@@ -491,12 +491,12 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     !                  +2.0_dp*(FAxx(i,j,k)+FAyy(i,j,k)+FAzz(i,j,k)+2.0_dp*FAxy(i,j,k)+2.0_dp*FAyz(i,j,k)+2.0_dp*FAxz(i,j,k)&
     !                  -2.0_dp*costheta0*(FAx(i,j,k)+FAy(i,j,k)+FAz(i,j,k))+costheta0**2*FA0(i,j,k) ))
     !                  
-    !          dF(icg)=dF(icg)+kbT*deltaV*angGrid%weight(o)*molRotGrid%weight(p)*rho_0*lambda_w*psi*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+FAzz(i,j,k)**2+&
-    !                 2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2+FAz(i,j,k)**2)&
-    !                  +costheta0**2*FA0(i,j,k)**2)&
-    !                  +2.0_dp*(FAxx(i,j,k)*Axx(i,j,k)+FAyy(i,j,k)*Ayy(i,j,k)+FAzz(i,j,k)*Azz(i,j,k)+2.0_dp*FAxy(i,j,k)*Axy(i,j,k)+&
-    !                  2.0_dp*FAyz(i,j,k)*Ayz(i,j,k)+2.0_dp*FAxz(i,j,k)*Axz(i,j,k)&
-    !              -2.0_dp*costheta0*(FAx(i,j,k)*Ax(i,j,k)+FAy(i,j,k)*Ay(i,j,k)+FAz(i,j,k)*Az(i,j,k))+costheta0**2*FA0(i,j,k)*A0(i,j,k)))
+              dF(icg)=dF(icg)+kbT*deltaV*angGrid%weight(o)*molRotGrid%weight(p)*rho_0*lambda_w*psi*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
+              FAzz(i,j,k)**2+2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2&
+              +FAz(i,j,k)**2)+costheta0**2*FA0(i,j,k)**2)&
+                      +2.0_dp*(FAxx(i,j,k)*Axx(i,j,k)+FAyy(i,j,k)*Ayy(i,j,k)+FAzz(i,j,k)*Azz(i,j,k)+2.0_dp*FAxy(i,j,k)*Axy(i,j,k)+&
+                      2.0_dp*FAyz(i,j,k)*Ayz(i,j,k)+2.0_dp*FAxz(i,j,k)*Axz(i,j,k)&
+              -2.0_dp*costheta0*(FAx(i,j,k)*Ax(i,j,k)+FAy(i,j,k)*Ay(i,j,k)+FAz(i,j,k)*Az(i,j,k))+costheta0**2*FA0(i,j,k)*A0(i,j,k)))
                       
               DO n=1,nb_solute_sites
                 dF(icg)=dF(icg)+lambda1_mol(n)*kBT*psi*angGrid%weight(o)*&
@@ -512,7 +512,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
       END DO
     END DO
     
-        FF=FF+F3B2+F3B1!+F3B_ww
+        FF=FF+F3B2+F3B1+F3B_ww
     
         CALL CPU_TIME (time1)
     
