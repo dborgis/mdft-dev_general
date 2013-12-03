@@ -109,13 +109,13 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
 # symbol '@' in front of a line makes it silent. Otherwise it is printed in terminal when called
 
  all: $(OBJS)
-	 $(FC) $(FCFLAGS) $(LDFLAGS) -o $(EXE) $(OBJS)
+	 $(FC) $(FCFLAGS) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  optim: $(OBJS)
-	 $(FC) $(FCFLAGS) $(LDFLAGS) $(OPTIM) -o $(EXE) $(OBJS)
+	 $(FC) $(FCFLAGS) $(OPTIM) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  debug: $(OBJS)
-	 $(FC) $(FCFLAGS) $(LDFLAGS) $(DEBUGFLAGS) -o $(EXE) $(OBJS)
+	 $(FC) $(FCFLAGS) $(DEBUGFLAGS) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  clean:
 	rm -vf gmon.out $(EXE) $(MODDIR)/* 
