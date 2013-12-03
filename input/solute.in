@@ -1,7 +1,7 @@
 Na+ Suangliang
 1 1
 #    charge     sigma     epsilon    lambda1_mol   lambda2_mol   x            y           z      Zatomic   Atom Name  Surname
-1     0.5    2.58400    0.41840       40.00000      40.000000    0.000        0.0000   0.00000   11          Na       Na+   Sodium     shuangliang q=1
+1     1.0    2.58400    0.41840       40.00000      40.000000    0.000        0.0000   0.00000   11          Na       Na+   Sodium     shuangliang q=1
 
 ====================================================================================================================================
 #    Hard    sphere 

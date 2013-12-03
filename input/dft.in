@@ -8,10 +8,7 @@ nfft1 = 32
 nfft2 = 32 
 nfft3 = 32
 quadrature = L # GL or L
-
-# order of gauss legendre integration. 3 for water. 2*order^2 angles
-# order of Lebedev integration. theoritically 2/3 of angles of GL integration. routine is written for order = 6, 14 , 26 , 38 
-order_of_quadrature = 38
+order_of_quadrature = 6
 nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
@@ -53,9 +50,6 @@ if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
 # POTENTIALS
 ############################
 
-#electrostatic_solver = poisson       # 'poisson' for poisson solver
-#                                     # 'point' for qq'/r
-#                                     # 'none' for no electrostatics
 poisson_solver = T   #Warning you should never have 2 tags true for Poisson_solver and point_charge_electrostatic!!!
 point_charge_electrostatic = F
 reuse_density = F
@@ -87,7 +81,7 @@ threebody = T
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 Rc = 1.0  # CAREFULL
-verbose = T
+verbose = F
 
 
 
