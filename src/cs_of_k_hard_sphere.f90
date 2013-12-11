@@ -1,23 +1,19 @@
 ! This SUBROUTINE computes the radial distribution function c_s (k) 
-! For now it only works for 1 SPECIES. BEWARE !!!
+!@GUILLAUME THIS ROUTINE SHOULD BE MOVED INTO MODULE DCF
 SUBROUTINE cs_of_k_hard_sphere
-USE precision_kinds,only : i2b , dp
-! i2b for integer simple precision
-! dp for real double precision
-use system,only : radius , n_0_multispec , c_s_hs , nb_species
-! radius = radius(nb_species) = radius of each species
-! n_0_multispec (nb_species) = reference bulk density (0.0332891 molecule per angsrom^3 for water, etc).
-! c_s_hs (nb_k) = tabulated values of cs in kspace it is the goal of this routine to tabulate this.
-use input,only : input_line
-! input_line is an array containing dft.in
-use constants,only : fourpi , pi
-! fourpi = 4pi
-! pi = 3.14159...
+
+USE precision_kinds, ONLY: i2b, dp
+USE system, ONLY: radius, n_0_multispec, c_s_hs, nb_species !@GUILLAUME c_s_hs should go into MODULE DCF
+USE input, ONLY: input_line, n_linesInFile
+USE constants, ONLY: fourpi, pi
+USE dcf, ONLY: c_s, delta_k
+
 IMPLICIT NONE
+
 real (dp) :: phi ! excess free energy density
 real (dp) :: n0, n1, n2, n3 ! weighted densities
 real (dp) :: w0, w1, w2, w3 ! weight functions
-real (dp) :: R ! ==radius (for easier equations)
+real (dp) :: R ! ==radius
 real (dp) :: FourPiR ! FourPi*radius
 real (dp) :: kR ! k*R
 real (dp) :: coskR, sinkR ! cos(k*R), sin(k*R)
@@ -29,43 +25,17 @@ integer (i2b) :: nb_k ! number of k points
 real (dp) :: value1, value2 ! dummy
 real (dp) :: k ! k-space vector norm
 logical :: PY , CS ! the one which is true is the right equation of state
-! Look at hard sphere radius
+
 if ( .not. allocated ( radius ) ) call read_hard_sphere_radius_and_allocate_if_necessary
 call is_it_only_one_species! Works only for one implicit species
 call do_we_use_cs_or_py_eos ( PY , CS )! Check if you want to use Perkus-Yevick or Carnahan Starling equation of state
+
 ! Here we could generate as many points as wanted. In order to be coherent, we will use the same number of points as in cs.in
 ! read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
-open(11,file='input/cs.in')
-nb_k=0
-do while(.true.)
-  read(11,*,iostat=ios)
-  if (ios>0) then
-    write(*,*)'Error in compute_ck_dipolar.f90'
-    write(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
-    stop
-  ELSE IF (ios<0) then
-    ! end of file reached
-    IF (nb_k==0) STOP "Your file input/cs.in that should contain cs of the HS fluid is empty"
-    exit
-  ELSE
-    nb_k=nb_k+1
-  END IF
-END DO
-close(11)
-print*, nb_k , '#########@@@@@@@@@@@################'
-! allocate accordingly
-allocate ( c_s_hs ( nb_k ) )
-! Same reasoning for kmax
-! read the distance between two k points in input/cs.in  (which is the same as in input/cd.in and input/cdelta.in
-open(11,file='input/cs.in')    !TODO AUTOMIZATION
-read(11,*)value1, k
-read(11,*)value2, k
-close(11)
-
-kmin = 0.0_dp
-kmax = ( value2 - value1 ) * real ( nb_k - 1 ,dp)
-kloop : do i = 0, nb_k-1
-  k = real(i,dp)*(kmax-kmin)/real(nb_k-1,dp) ! pay attention to k=0
+nb_k = SIZE(c_s) ! @GUILLAUME PLEASE CHECK THIS. WITH Cnn etc.,
+ALLOCATE ( c_s_hs ( nb_k ), SOURCE=0._dp )
+do i = 0, nb_k-1
+    k = REAL(i,dp)*delta_k !@GUILLAUME delta_k, delta_k_c_s, ... ?
   ! weight functions
   R = radius ( 1 )
   kR = k*R
@@ -166,8 +136,8 @@ kloop : do i = 0, nb_k-1
                     + d2phi(3,1)*w3*w1 &
                     + d2phi(3,2)*w3*w2 &
                     + d2phi(3,3)*w3*w3 ) * (-1.d0)
-  write(99,*) k, c_s_hs ( i + 1 )
-END DO kloop
+  write(99,*) k, c_s_hs ( i + 1 ) !@GUILLAUME SHOULD BE REMOVED WHEN TESTS DONE
+END DO
 
 
 contains
