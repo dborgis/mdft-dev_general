@@ -1,4 +1,4 @@
-SUBROUTINE energy_hard_sphere_fmt
+SUBROUTINE energy_hard_sphere_fmt (Fint)
 USE precision_kinds,only : dp , i2b
 use system,only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
                     weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
@@ -7,13 +7,13 @@ use quadrature,only : sym_order , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants,only : pi , FourPi , twopi
 use fft,only : fftw3
-use input, only : input_line
+use input, only : input_line, verbose
 IMPLICIT NONE
 integer(i2b):: icg , i , j , k , o , p ! dummy
 integer(i2b):: species ! dummy between 1 and nb_species
-real(dp):: Nk ! Total number of k points = nfft1*nfft2*nfft3
-real(dp):: Fint !> @var Internal part of free energy
-real(dp):: local_density, psi !> Dummy , psi is sqrt(local_density)
+real(dp) :: Nk ! Total number of k points = nfft1*nfft2*nfft3
+real(dp), INTENT(OUT) :: Fint !> @var Internal part of free energy
+real(dp) :: local_density, psi !> Dummy , psi is sqrt(local_density)
 real(dp), allocatable , dimension ( : ) :: nb_molecules ! temp before full implementation of multispecies
 real(dp), allocatable , dimension ( : , : , : , : ) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
 complex(dp), allocatable , dimension ( : , : , : , :) :: rho_k !> @var Density in k space
@@ -247,7 +247,7 @@ deallocate ( dFex )
  !stop timer
 call cpu_time ( time1 )
 ! print info for user
-write (*,*) 'Fexc fmt    = ' , Fint , 'computed in (sec)' , time1 - time0
+IF (verbose) write (*,*) 'Fexc fmt    = ' , Fint , 'computed in (sec)' , time1 - time0
 
 CONTAINS
 

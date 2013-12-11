@@ -13,16 +13,16 @@ SUBROUTINE energy_and_gradient (iter)
     IMPLICIT NONE
     
     INTEGER(i2b), INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt
+    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
     
     Fext = 0._dp
     Fid = 0._dp
     Ffmt = 0._dp
+    Ffmtcs = 0._dp
     Fexcnn = 0._dp
     FexcPol = 0._dp
     F3B1 = 0._dp
     F3B2 = 0._dp
-    Ffmt = 0._dp
     
 
     CALL init_functional_and_gradient_to_zero( FF, dF )
@@ -31,7 +31,7 @@ SUBROUTINE energy_and_gradient (iter)
     CALL energy_ideal (Fid)
 
     ! compute radial part of the excess free energy
-    IF (input_log('hard_sphere_fluid') ) CALL energy_hard_sphere_fmt ! => pure hard sphere contribution
+    IF (input_log('hard_sphere_fluid') ) CALL energy_hard_sphere_fmt (Ffmt) ! => pure hard sphere contribution
 
     ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
     IF (input_log('lennard_jones_perturbation_to_hard_spheres') ) CALL lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
@@ -54,7 +54,7 @@ SUBROUTINE energy_and_gradient (iter)
     IF (input_log('bridge_hard_sphere') .AND. .NOT. input_log('hard_sphere_fluid')) THEN
         STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
     END IF
-    IF (input_log('bridge_hard_sphere')) CALL energy_cs_hard_sphere ! better name should be given
+    IF (input_log('bridge_hard_sphere')) CALL energy_cs_hard_sphere (Ffmtcs) ! better name should be given
 
 
     IF ( input_log('polarization') ) THEN
@@ -81,7 +81,8 @@ SUBROUTINE energy_and_gradient (iter)
         WRITE(*,*)'-----------------------'
     END IF
 
-    WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2
+    WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
+        iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
 
     CONTAINS
     
