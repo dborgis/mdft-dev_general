@@ -68,10 +68,14 @@ DO CONCURRENT ( species = 1 : nb_species )
   nb_molecules ( species ) = sum ( rho ( : , : , : , species ) ) * n_0_multispec ( species ) * mole_fraction ( species ) * deltav
 END DO
 ! tell user about the number of molecule of each species in the supercell
-do species = 1 , nb_species
-  write (*,*) 'nb_molecule (' , species , ') = ' , nb_molecules ( species )
-END DO
-write (*,*) 'total number of molecules = ' , sum ( nb_molecules )
+
+IF (verbose) THEN
+    do species = 1 , nb_species
+        write (*,*) 'nb_molecule (' , species , ') = ' , nb_molecules ( species )
+    END DO
+    write (*,*) 'total number of molecules = ' , sum ( nb_molecules )
+END IF
+
 ! fourier transform the density rho => rho_k
 allocate ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) )
 do species = 1 , nb_species
