@@ -31,12 +31,10 @@ real (dp) :: k ! k-space vector norm
 logical :: PY , CS ! the one which is true is the right equation of state
 ! Look at hard sphere radius
 if ( .not. allocated ( radius ) ) call read_hard_sphere_radius_and_allocate_if_necessary
-! Works only for one implicit species
-call is_it_only_one_species
-! Check if you want to use Perkus-Yevick or Carnahan Starling equation of state
-call do_we_use_cs_or_py_eos ( PY , CS )
+call is_it_only_one_species! Works only for one implicit species
+call do_we_use_cs_or_py_eos ( PY , CS )! Check if you want to use Perkus-Yevick or Carnahan Starling equation of state
 ! Here we could generate as many points as wanted. In order to be coherent, we will use the same number of points as in cs.in
-!> read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
+! read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
 open(11,file='input/cs.in')
 nb_k=0
 do while(.true.)
@@ -47,6 +45,7 @@ do while(.true.)
     stop
   ELSE IF (ios<0) then
     ! end of file reached
+    IF (nb_k==0) STOP "Your file input/cs.in that should contain cs of the HS fluid is empty"
     exit
   ELSE
     nb_k=nb_k+1
@@ -62,6 +61,7 @@ open(11,file='input/cs.in')    !TODO AUTOMIZATION
 read(11,*)value1, k
 read(11,*)value2, k
 close(11)
+
 kmin = 0.0_dp
 kmax = ( value2 - value1 ) * real ( nb_k - 1 ,dp)
 kloop : do i = 0, nb_k-1
@@ -168,29 +168,41 @@ kloop : do i = 0, nb_k-1
                     + d2phi(3,3)*w3*w3 ) * (-1.d0)
   write(99,*) k, c_s_hs ( i + 1 )
 END DO kloop
+
+
 contains
+
+
+
 SUBROUTINE do_we_use_cs_or_py_eos ( PY , CS )
-USE precision_kinds,only : i2b
-use input,only : input_line
-IMPLICIT NONE
-logical , intent( out ) :: CS , PY
-integer(i2b) :: i , j! dummy
-CS = .false.
-PY = .false.
-do i = 1 , size ( input_line )
-  j = len ( 'hs_functional' )
-  if ( input_line (i) (1:j) == 'hs_functional' .and. input_line (i) (j+4:j+5) == 'CS' ) CS = .true.
-  if ( input_line (i) (1:j) == 'hs_functional' .and. input_line (i) (j+4:j+5) == 'PY' ) PY = .true.
-END DO
+    USE precision_kinds,only : i2b
+    use input,only : input_line
+    IMPLICIT NONE
+    logical , intent( out ) :: CS , PY
+    integer(i2b) :: i , j! dummy
+    CS = .false.
+    PY = .false.
+    do i = 1 , size ( input_line )
+        j = len ( 'hs_functional' )
+        if ( input_line (i) (1:j) == 'hs_functional' .and. input_line (i) (j+4:j+5) == 'CS' ) CS = .true.
+        if ( input_line (i) (1:j) == 'hs_functional' .and. input_line (i) (j+4:j+5) == 'PY' ) PY = .true.
+    END DO
 END SUBROUTINE do_we_use_cs_or_py_eos
+
+
+
 ! This SUBROUTINE checks if the number of implicit species is not different from 1
 SUBROUTINE is_it_only_one_species
-use system,only : nb_species
-IMPLICIT NONE
-if ( nb_species /= 1 ) then
-  print *, 'SUBROUTINE cs_of_k_hard_sphere.f90 which is used to generate cs(k) for the hard sphere is only written for one species.'
-  print *, 'sorry.'
-  stop
-END IF
+    use system,only : nb_species
+    IMPLICIT NONE
+    if ( nb_species /= 1 ) then
+        print *, 'SUBROUTINE cs_of_k_hard_sphere.f90 used to generate cs(k) for HS is only written for one solvant species.'
+        print *, 'sorry.'
+        stop
+    END IF
 END SUBROUTINE is_it_only_one_species
+
+
+
+
 END SUBROUTINE cs_of_k_hard_sphere
