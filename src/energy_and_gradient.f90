@@ -51,6 +51,9 @@ SUBROUTINE energy_and_gradient (iter)
     END IF
 
     ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
+    IF (input_log('bridge_hard_sphere') .AND. .NOT. input_log('hard_sphere_fluid')) THEN
+        STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
+    END IF
     IF (input_log('bridge_hard_sphere')) CALL energy_cs_hard_sphere ! better name should be given
 
 
