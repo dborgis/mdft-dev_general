@@ -36,7 +36,6 @@
             call compute_wca_diameter ( n_0_multispec ( species ) , temp, sig_solv ( species ) , eps_solv ( species ) , d_wca )
             radius ( species ) = d_wca / 2.0_dp
           END IF
-          write (*,*) 'Hard sphere radius (' , species , ') = ' , radius ( species )
         END DO
         exit
       END IF

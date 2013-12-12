@@ -12,8 +12,6 @@ SUBROUTINE compute_hard_spheres_parameters
 use system,only : radius , nb_species , muexc_0_multispec , Fexc_0_multispec , n_0_multispec
 IMPLICIT NONE
 character ( 4 ) :: hs_functional
-!> Warn user
-write(*,*)'>>> Compute hard sphere parameters in compute_hs_parameters.f90'
 ! read hard sphere radius and allocate if necessary
 call read_hard_sphere_radius_and_allocate_if_necessary
 !> Compute hard sphere weight functions in k-space. There are needed for later convolutions for calculation of weighted densities n_{alpha}^i
@@ -38,13 +36,14 @@ contains
     USE precision_kinds,only : dp , i2b
     use constants,only : fourpi
     use system,only : nb_species , n_0_multispec , radius
+    USE input, ONLY: verbose
     IMPLICIT NONE
     real(dp), dimension ( nb_species ) :: eta
     integer(i2b):: species ! dummy
     ! packing fraction : eta = 4/3 * pi * R^3 * solvent density of the constituant ( /= total solvent density)
     do species = 1 , nb_species
       eta ( species ) = fourpi / 3.0_dp * n_0_multispec ( species ) * radius ( species ) ** 3
-      write ( * , * ) 'Packing fraction (eta) (' , species , ') = ' , eta ( species )
+      IF (verbose) write ( * , * ) 'Packing fraction (eta) (' , species , ') = ' , eta ( species )
     ! compute homogeneous fluid reference with Perkus Yevick
     ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.
     ! although the Percus-Yevick equation shows no singularities for eta < 1 , the region beyond eta = pi / (3 sqrt(2) ) = 0.74 is unphysical, since the fluid then has a packing density greater than that of a closed packed solid.
@@ -106,6 +105,7 @@ contains
     USE precision_kinds,only : dp , i2b
     use constants,only : fourpi , pi
     use system,only : kbT , Lx , Ly , Lz
+    USE input, ONLY: verbose
     IMPLICIT NONE
  
     integer(i2b), intent(in) :: nb_species
@@ -154,7 +154,7 @@ contains
                                             + partial_phi_over_partial_n1 * partial_n1_over_partial_rho &
                                             + partial_phi_over_partial_n2 * partial_n2_over_partial_rho &
                                             + partial_phi_over_partial_n3 * partial_n3_over_partial_rho )
-      write ( * , * ) 'chemical potential mu_exc0 ( ' , species , ' ) = ' , muexc_0_multispec ( species )
+      IF (verbose) write ( * , * ) 'chemical potential mu_exc0 ( ' , species , ' ) = ' , muexc_0_multispec ( species )
       ! compute reference bulk grand-potential Omega(rho = rho_0) !! Do not forget the solver minimizes Omega[rho]-Omega[rho_0] = Fsolvatation
       if ( hs_functional ( 1 : 2 ) == 'PY' ) then
         Fexc_0_multispec ( species ) = kBT * ( - n0 * log ( 1.0_dp - n3 )                            &
@@ -168,7 +168,7 @@ contains
       ! integration factors
       Fexc_0_multispec ( species ) = Fexc_0_multispec ( species ) * Lx * Ly * Lz &
                                    - muexc_0_multispec ( species) * Lx * Ly * Lz * n_0_multispec ( species )  ! integration factor
-      write ( * , * ) 'Fexc0 ( ' , species , ' ) = ' , Fexc_0_multispec ( species )
+      IF (verbose) write ( * , * ) 'Fexc0 ( ' , species , ' ) = ' , Fexc_0_multispec ( species )
     END DO
     END SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
 
