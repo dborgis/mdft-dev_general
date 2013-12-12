@@ -22,9 +22,9 @@ mole_fractions
 
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = T    # use c_delta and c_d
-polarization_order = dipol # multi or dipol
-include_nc_coupling = F
+polarization = T    
+polarization_order = multi # multi or dipol
+include_nc_coupling = T
 
 ref_bulk_density
 0.0332891
@@ -67,7 +67,7 @@ nbinsrdf = 80
 bridge_hard_sphere = F
 hard_sphere_fluid = F
 hard_sphere_radius
-1.25
+1.0
 hs_functional = CS # PY or CS
 lennard_jones_perturbation_to_hard_spheres = F # WCA type
 

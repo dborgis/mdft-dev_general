@@ -6,7 +6,7 @@ USE precision_kinds, ONLY: i2b, dp
 USE system, ONLY: radius, n_0_multispec, c_s_hs, nb_species !@GUILLAUME c_s_hs should go into MODULE DCF
 USE input, ONLY: input_line, n_linesInFile
 USE constants, ONLY: fourpi, pi
-USE dcf, ONLY: c_s, delta_k
+USE dcf, ONLY: c_s, delta_k, nb_k, chi_l
 
 IMPLICIT NONE
 
@@ -21,7 +21,6 @@ real (dp), dimension (0:3,0:3) :: d2phi ! second partial derivative of phi wrt n
 real (dp) :: kmin, kmax ! min and max values of k
 integer (i2b) :: i , j ! dummy
 integer (i2b) :: ios ! input output status
-integer (i2b) :: nb_k ! number of k points
 real (dp) :: value1, value2 ! dummy
 real (dp) :: k ! k-space vector norm
 logical :: PY , CS ! the one which is true is the right equation of state
@@ -32,7 +31,16 @@ call do_we_use_cs_or_py_eos ( PY , CS )! Check if you want to use Perkus-Yevick 
 
 ! Here we could generate as many points as wanted. In order to be coherent, we will use the same number of points as in cs.in
 ! read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
-nb_k = SIZE(c_s) ! @GUILLAUME PLEASE CHECK THIS. WITH Cnn etc.,
+!IF (ALLOCATED(c_s)) THEN
+!nb_k = SIZE(c_s) ! @GUILLAUME PLEASE CHECK THIS. WITH Cnn etc.,
+!IF (.NOT. ALLOCATED(cs)) .AND. (ALLOCATED(chi_t)) THEN
+
+IF (.NOT. ((ALLOCATED(c_s)) .OR. (ALLOCATED(chi_l)))) THEN
+    PRINT*, "YOU WANT TO COMPUTE correlation function for HS, i.e you want to compute HSB, but you have not included any other"
+    PRINT*, " excess FUNCTIONAL. THIS IS NON-SENSE"
+    STOP
+END IF
+
 ALLOCATE ( c_s_hs ( nb_k ), SOURCE=0._dp )
 do i = 0, nb_k-1
     k = REAL(i,dp)*delta_k !@GUILLAUME delta_k, delta_k_c_s, ... ?
