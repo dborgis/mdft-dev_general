@@ -4,7 +4,7 @@ SUBROUTINE cs_of_k_hard_sphere
 
 USE precision_kinds, ONLY: i2b, dp
 USE system, ONLY: radius, n_0_multispec, c_s_hs, nb_species !@GUILLAUME c_s_hs should go into MODULE DCF
-USE input, ONLY: input_line, n_linesInFile
+USE input, ONLY: input_line, n_linesInFile, verbose
 USE constants, ONLY: fourpi, pi
 USE dcf, ONLY: c_s, delta_k, nb_k, chi_l
 
@@ -31,9 +31,6 @@ call do_we_use_cs_or_py_eos ( PY , CS )! Check if you want to use Perkus-Yevick 
 
 ! Here we could generate as many points as wanted. In order to be coherent, we will use the same number of points as in cs.in
 ! read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
-!IF (ALLOCATED(c_s)) THEN
-!nb_k = SIZE(c_s) ! @GUILLAUME PLEASE CHECK THIS. WITH Cnn etc.,
-!IF (.NOT. ALLOCATED(cs)) .AND. (ALLOCATED(chi_t)) THEN
 
 IF (.NOT. ((ALLOCATED(c_s)) .OR. (ALLOCATED(chi_l)))) THEN
     PRINT*, "YOU WANT TO COMPUTE correlation function for HS, i.e you want to compute HSB, but you have not included any other"
@@ -43,7 +40,7 @@ END IF
 
 ALLOCATE ( c_s_hs ( nb_k ), SOURCE=0._dp )
 do i = 0, nb_k-1
-    k = REAL(i,dp)*delta_k !@GUILLAUME delta_k, delta_k_c_s, ... ?
+    k = REAL(i,dp)*delta_k
   ! weight functions
   R = radius ( 1 )
   kR = k*R
@@ -144,8 +141,16 @@ do i = 0, nb_k-1
                     + d2phi(3,1)*w3*w1 &
                     + d2phi(3,2)*w3*w2 &
                     + d2phi(3,3)*w3*w3 ) * (-1.d0)
-  write(99,*) k, c_s_hs ( i + 1 ) !@GUILLAUME SHOULD BE REMOVED WHEN TESTS DONE
 END DO
+
+IF (verbose) THEN
+    OPEN (99, FILE='output/cs_of_k_hard_sphere.out')
+        DO i = 0, nb_k-1
+            k = REAL(i,dp)*delta_k
+            WRITE(99,*) k, c_s_hs ( i + 1 )
+        END DO
+    CLOSE (99)
+END IF
 
 
 contains
