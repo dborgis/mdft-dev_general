@@ -78,8 +78,9 @@ MODULE dcf
             WRITE(*,*)"chi_t and chi_l should have same delta k, i.e., same step in abscissa"
             STOP
         END IF
-        delta_k_chi_l = delta_k
+        delta_k= delta_k_chi_t
 
+    If (.NOT. input_log('include_nc_coupling')) THEN
         IF ( (delta_k_chi_t-delta_k_cs)/delta_k_cs >=1.E-10 ) THEN
             WRITE(*,*)"chi_l, chi_t and c_s shoud have same delta k. THIS COULD BE IMPLEMENTED. ASK GUILLAUME"
             WRITE(*,*)'delta( chi_l )=',delta_k_chi_l
@@ -87,6 +88,7 @@ MODULE dcf
             WRITE(*,*)'delta( cs )=',delta_k_cs
             STOP
         END IF
+   END IF
 
         OPEN (10, FILE=file_l, iostat=ios)
             DO i = 1, SIZE(chi_l)
@@ -106,6 +108,8 @@ MODULE dcf
                     END IF
             END DO
         CLOSE (10)
+        
+        nb_k=n_k
 
     END SUBROUTINE readDielectricSusceptibilities
 
