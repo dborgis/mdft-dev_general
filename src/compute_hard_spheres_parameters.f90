@@ -197,7 +197,6 @@ contains
         REAL(dp) :: kR , FourPiR , sinkR , coskR, norm_k_local ! dummy for speeding up
         INTEGER(i2b):: l , m , n, s ! dummy for loops
         INTEGER(i2b), DIMENSION(3) :: nfft
-        
         nfft = spaceGrid%n_nodes
         ALLOCATE ( weight_function_3_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
         ALLOCATE ( weight_function_2_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
@@ -207,9 +206,8 @@ contains
         ! density weights for hard spheres are known analyticaly
         ! they only depends on fundamental measures of hard spheres
         ! here is the Kierlik and Rosinberg FMT : 4 scalar weight function by species
-
         ! Compute hard sphere weight functions as defined by Kierlik and Rosinberg, PRA1990
-        DO CONCURRENT ( s=1:nb_species, l=1:nfft(1), m=1:nfft(2), n=1:nfft(3) )
+        DO CONCURRENT ( s=1:nb_species, l=1:nfft(1)/2+1, m=1:nfft(2), n=1:nfft(3) )
             FourPiR = FourPi * radius (s)
             norm_k_local = norm_k (l,m,n)
             IF ( norm_k_local /= 0.0_dp ) THEN
@@ -227,7 +225,6 @@ contains
                 weight_function_0_k (l,m,n,s) = 1.0_dp ! unity
             END IF
         END DO
-        
     END SUBROUTINE compute_hard_sphere_weight_functions_k
 
 END SUBROUTINE compute_hard_spheres_parameters
