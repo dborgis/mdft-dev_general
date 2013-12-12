@@ -64,10 +64,10 @@ nbinsrdf = 80
 ############################
 # HARD SPHERES
 ############################
-bridge_hard_sphere = F
-hard_sphere_fluid = F
+hard_sphere_fluid = T
+bridge_hard_sphere = T
 hard_sphere_radius
-1.0
+1.4
 hs_functional = CS # PY or CS
 lennard_jones_perturbation_to_hard_spheres = F # WCA type
 
