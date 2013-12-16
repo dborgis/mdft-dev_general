@@ -1,7 +1,7 @@
 # modules directory
 MODDIR = mod
 
-# sources directory
+# sources directories
 SRCDIR = src
 
 # The compiler
