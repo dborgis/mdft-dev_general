@@ -11,6 +11,7 @@ MDFT is developped in the group of Daniel Borgis at the Ecole Normale Superieure
 	- Daniel Borgis
 	- Maximilien Levesque
 	- Guillaume Jeanmairet
+        - Volodymyr Sergiievskyi
 
 ## Installation
 
