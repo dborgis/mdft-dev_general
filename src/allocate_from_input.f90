@@ -13,12 +13,6 @@ SUBROUTINE allocate_from_input
     integer(i2b):: species ! dummy between 1 and nb_species
 
     verbose = input_log('verbose')
-    IF(verbose) THEN
-        PRINT*,"verbose"
-    else
-        PRINT*,"not_verbose"
-    END IF
-    STOP
     
     sym_order = input_int('sym_order') !Get the order of the main symmetry axis of the solvent
     if( sym_order < 1 ) then
