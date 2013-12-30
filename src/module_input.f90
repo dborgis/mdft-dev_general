@@ -4,9 +4,9 @@ module input
     
     IMPLICIT NONE
     character (len = 100) , allocatable , dimension (:) :: input_line ! array containing all input lines
-    LOGICAL, PARAMETER, PUBLIC :: verbose = .false.
+    LOGICAL :: verbose
     PRIVATE
-    PUBLIC :: input_line, input_dp, input_int, input_log, input_char, n_linesInFile, deltaAbscissa
+    PUBLIC :: verbose, input_line, input_dp, input_int, input_log, input_char, n_linesInFile, deltaAbscissa
   
     CONTAINS
 

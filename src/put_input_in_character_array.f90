@@ -1,7 +1,7 @@
 SUBROUTINE put_input_in_character_array
     
     USE precision_kinds, ONLY: i2b
-    USE input, ONLY: input_line, n_linesInFile, verbose
+    USE input, ONLY: input_line, n_linesInFile
     
     IMPLICIT NONE
     

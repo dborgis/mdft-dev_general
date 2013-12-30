@@ -2,7 +2,7 @@
 SUBROUTINE allocate_from_input
 
     USE precision_kinds,only : i2b , dp
-    use input,only : input_line, input_int, input_dp, input_log
+    use input,only : input_line, input_int, input_dp, input_log, verbose
     USE system, ONLY: n_0, rho_0, temp, beta, kbT, Rc, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
     use constants,only : fourpi , boltz, navo , twopi
     use quadrature,only : sym_order
@@ -11,6 +11,14 @@ SUBROUTINE allocate_from_input
 
     integer(i2b):: i , j ! dummy
     integer(i2b):: species ! dummy between 1 and nb_species
+
+    verbose = input_log('verbose')
+    IF(verbose) THEN
+        PRINT*,"verbose"
+    else
+        PRINT*,"not_verbose"
+    END IF
+    STOP
     
     sym_order = input_int('sym_order') !Get the order of the main symmetry axis of the solvent
     if( sym_order < 1 ) then
