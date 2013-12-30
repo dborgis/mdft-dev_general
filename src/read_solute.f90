@@ -5,7 +5,7 @@ SUBROUTINE read_solute
 USE precision_kinds,only : i2b,dp
 use system,only : nb_solute_sites , x_mol , y_mol , z_mol , chg_mol , sig_mol , eps_mol , atomic_nbr , id_mol , Lx , Ly , Lz&
 &, lambda1_mol , lambda2_mol, soluteSite, nb_species
-use input,only : input_line
+use input,only : input_line, input_log
 use periodic_table,only : init_periodic_table , ptable
 
 IMPLICIT NONE
@@ -43,9 +43,10 @@ integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites wi
             DO n = 1, SIZE(soluteSite)
                 READ(5,*) id_mol(n), soluteSite(n)%q, soluteSite(n)%sig, soluteSite(n)%eps, &
                         soluteSite(n)%lambda1, soluteSite(n)%lambda2, soluteSite(n)%r, soluteSite(n)%Z
-!~ READ(5,*) id_mol(n), chg_mol(id_mol(n)) , sig_mol(id_mol(n)) , eps_mol(id_mol(n)) ,lambda1_mol(n) , lambda2_mol(n), x_mol(n) , y_mol(n) , z_mol(n) ,atomic_nbr(n)
             END DO
         CLOSE (5)
+
+    IF (input_log('annihilate_solute_charges')) soluteSite%q = 0._dp
 
     CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
     CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
