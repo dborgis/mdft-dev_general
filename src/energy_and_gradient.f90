@@ -7,7 +7,7 @@
 SUBROUTINE energy_and_gradient (iter)
 
     USE precision_kinds, ONLY: i2b , dp
-    USE input, ONLY: input_log, input_char, verbose, input_dp
+    USE input, ONLY: input_log, input_char, input_dp
     USE minimizer, ONLY: FF , dF
     USE system, ONLY : lambda1_mol, lambda2_mol
     IMPLICIT NONE
@@ -74,11 +74,6 @@ SUBROUTINE energy_and_gradient (iter)
         IF (SUM(ABS(lambda1_mol(:))+ABS(lambda2_mol(:)))/=0.0_dp .OR. input_dp('lambda_solvent')/=0.0_dp) THEN
             CALL energy_threebody_faster (F3B1, F3B2)
         END IF
-    END IF
-
-    IF (verbose) THEN
-        WRITE(*,*)'SOLVATION FREE ENERGY AT THIS STEP = ',FF
-        WRITE(*,*)'-----------------------'
     END IF
 
     WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&

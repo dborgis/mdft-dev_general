@@ -6,7 +6,6 @@ SUBROUTINE energy_external (Fext)
     USE quadrature, ONLY: angGrid, molRotGrid
     USE minimizer, ONLY: CG_vect , FF , dF
     USE external_potential, ONLY: Vext_total
-    USE input, ONLY: verbose
     
     IMPLICIT NONE
 
@@ -45,6 +44,4 @@ SUBROUTINE energy_external (Fext)
     FF = FF + Fext
 
     CALL CPU_TIME (time1)
-    IF (verbose) WRITE(*,'(''    External           = '',f11.3,'' in '',I5,'' sec'')') Fext , NINT(time1-time0)
-
 END SUBROUTINE energy_external

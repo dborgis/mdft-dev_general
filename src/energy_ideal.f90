@@ -7,7 +7,7 @@ SUBROUTINE energy_ideal (Fideal)
     USE minimizer, ONLY: cg_vect, FF, dF
     USE system, ONLY: kBT, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
     USE quadrature, ONLY: sym_order, angGrid, molRotGrid
-    USE input, ONLY: input_log, input_char, verbose
+    USE input, ONLY: input_log, input_char
     USE constants, ONLY: fourpi
 
     IMPLICIT NONE
@@ -143,7 +143,6 @@ SUBROUTINE energy_ideal (Fideal)
     Fideal = Fideal + Fid_lin
     
     CALL CPU_TIME (time1)
-    IF (verbose) WRITE(*,'(''    Ideal              = '',f11.3,'' in '',I5,'' sec'')') Fideal , NINT(time1-time0)
 
     CONTAINS
 

@@ -119,7 +119,6 @@ fftw3%in_forward = Px
 call dfftw_execute ( fftw3%plan_forward )
 Pkx = fftw3%out_forward
 call cpu_time(time3)
-IF (verbose) print*, 'Duree FFT=', time3-time2
 fftw3%in_forward = Py
 call dfftw_execute ( fftw3%plan_forward )
 Pky = fftw3%out_forward
@@ -226,6 +225,5 @@ END DO
 
     deallocate ( Ex, Ey, Ez )
     call cpu_time ( time1 )
-    IF (verbose) WRITE(*,'(''    Exces / polar      = '',f11.3,'' in '',I5,'' sec'')') Fint , NINT(time1-time0)
 
 END SUBROUTINE energy_polarization_dipol

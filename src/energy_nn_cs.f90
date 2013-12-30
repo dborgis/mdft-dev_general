@@ -9,7 +9,6 @@ use quadrature, only: sym_order, angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants, only: fourpi , pi , twopi
 use fft, only: fftw3, norm_k
-USE input, ONLY: verbose
 
 IMPLICIT NONE
 
@@ -103,6 +102,5 @@ deallocate(Vpair)
 ! conclude
 FF = FF + Fint
 call cpu_time(time1)
-    IF (verbose) WRITE(*,'(''    Exces / radial     = '',f11.3,'' in '',I5,'' sec'')') Fint , NINT(time1-time0)
  
 END SUBROUTINE energy_nn_cs

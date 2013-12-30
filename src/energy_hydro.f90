@@ -8,7 +8,7 @@ SUBROUTINE energy_hydro (Fint)
   use quadrature, only: sym_order, angGrid, molRotGrid
   use fft,only : fftw3 , norm_k,kx,ky,kz,k2,&
                 timesExpPrefactork2
-  use input, only : input_log, verbose
+  use input, only : input_log
   
   IMPLICIT NONE
   real(dp) :: mu_0 ! phenomenological potential
@@ -278,9 +278,5 @@ SUBROUTINE energy_hydro (Fint)
     Fint = Fint + F_cg + S_cg
   ! warn user
     call cpu_time ( time1 )
-    IF (verbose) THEN
-        WRITE(*,'(''    Exces / radial     = '',f11.3,'' in '',I5,'' sec'')') Fint , NINT(time1-time0)
-        WRITE(*,'(''    Exces / radial+cg  = '',f11.3,'' in '',I5,'' sec'')') F_cg + S_cg , NINT(time1-time0)
-    END IF
 
 END SUBROUTINE
