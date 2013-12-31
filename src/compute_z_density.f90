@@ -21,7 +21,6 @@ SUBROUTINE compute_z_density (array,filename)
             mean_density = SUM(array(:,:,k)) / REAL(nfft1*nfft2,dp)
             WRITE (10,*)z,mean_density
         END DO
-        WRITE (*,*) filename,' written'
     CLOSE (10)
 
 END SUBROUTINE compute_z_density

@@ -55,6 +55,5 @@ ELSE IF (plandir==3) then
    END DO ; END DO
 END IF
  close(10)
-write(*,*)filename,' written'
 777 continue
 END SUBROUTINE

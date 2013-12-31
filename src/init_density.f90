@@ -35,7 +35,6 @@ IF (input_log('reuse_density')) THEN
     OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
         WRITE ( 10 ) cg_vect
     CLOSE (10)
-    WRITE(*,'(a)') 'Written: output/density.bin.in.out'
     RETURN
 END IF
 

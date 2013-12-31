@@ -68,7 +68,6 @@ SUBROUTINE process_output
             OPEN (10, file = 'output/density.bin.out' , form = 'unformatted' )
                 write ( 10 ) cg_vect
             CLOSE (10)
-            WRITE(*,'(a)') 'Written: output/density.bin.out'
         END SUBROUTINE print_cg_vect
 
 END SUBROUTINE process_output
