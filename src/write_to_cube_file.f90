@@ -8,48 +8,44 @@
 ! output : a file called 'filename' containing 3dimensional data in .cube format
 ! written by Maximilien Levesque, while in post doc at Ecole Normale Superieure, Paris in Daniel Borgis's theoretical chemistry group
 ! 20110919  Maximilien Levesque, clean version for Virginie M.
-subroutine write_to_cube_file ( array , filename )
+SUBROUTINE write_to_cube_file ( array , filename )
     
-    use system,only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , atomic_nbr , x_mol , y_mol , z_mol
-    ! nfft1, nfft2 and nfft3 are the number of points (resolution) in directions x y and z
-    ! Lx, Ly and Lz are the length of the supercell primary vectors. They are in Angstroms and thus need to be multiplied by angtobohr to be in bohr.
-    ! atomic_nbr is the atomic number (periodic classification) of the atoms
-    ! x_mol, y_mol and z_mol are the x, y and z coordinates of the atoms
-    use precision_kinds ! defines the precision associated to simple and double
+    USE system, ONLY: spaceGrid, soluteSite
+    USE precision_kinds, ONLY: i2b, dp
     
-    implicit none
+    IMPLICIT NONE
     
-    integer(i2b) :: i , j , k , n ! dummy variables
-    character ( 50 ) , intent(in) :: filename ! filename of .cube file. For example : "density.cube"
-    real(dp), intent(in) , dimension ( nfft1 , nfft2 , nfft3 ) :: array ! array printed in .cube file
-    real(dp), parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
+    INTEGER(i2b) :: i , j , k , n ! dummy variables
+    CHARACTER(50), INTENT(IN) :: filename ! filename of .cube file. For example : "density.cube"
+    REAL(dp), INTENT(IN), DIMENSION(spaceGrid%n_nodes(1), spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) :: array
+    REAL(dp), PARAMETER :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
 
     ! define formats for writing to file
-    104 format ( xI3 , xA , 3(xxF10.5) )
-    102 format ( 1(xF10.5) )
+    104 FORMAT ( xI3 , xA , 3(xxF10.5) )
+    102 FORMAT ( 1(xF10.5) )
 
     ! first open the file you want to print array in. It's a formatted file.
     open ( 10 , file = filename , form = 'formatted' )
-    write ( 10 , * ) ' CPMD CUBE FILE.' ! default text
-    write ( 10 , * ) ' OUTER LOOP: X, MIDDLE LOOP: Y, INNER LOOP: Z' ! default text, for remembering
-    ! write the total number of sites and a default text nobody knows it meaning
-    write ( 10 , * ) size ( x_mol ) ,' 0.0 0.0 0.0 ' ! 0 0 0 ou Lx/2 Ly/2 Lz/2 ?  Size(x_mol) is the total number of atoms
-    ! write primary vectors
-    write ( 10 , * ) nfft1 , Lx / real ( nfft1 , dp ) * angtobohr , ' 0.0 0.0'
-    write ( 10 , * ) nfft2 , ' 0.0 ' , Ly / real ( nfft2 , dp ) * angtobohr , ' 0.0'
-    write ( 10 , * ) nfft3 , ' 0.0 0.0 ' , Lz / real ( nfft3 , dp ) * angtobohr
-    ! write the atoms and their coordinates in Bohr
-    do n = 1 , size ( x_mol , dim = 1 )
-        write ( 10 , 104 ) atomic_nbr ( n ) , ' 0.0 ' , x_mol ( n ) * angtobohr , y_mol ( n ) * angtobohr , z_mol ( n ) * angtobohr
-    end do
-    ! write .cube file. One value per line. As said earlier, run over x then y then z. The one varying the most rapidly is z.
-    do i = 1 , nfft1
-        do j = 1 , nfft2
-            do k = 1 , nfft3
-                write ( 10 , 102 ) array ( i , j , k )
+        write ( 10 , * ) ' CPMD CUBE FILE.' ! default text
+        write ( 10 , * ) ' OUTER LOOP: X, MIDDLE LOOP: Y, INNER LOOP: Z' ! default text, for remembering
+        ! write the total number of sites and a default text nobody knows it meaning
+        write ( 10 , * ) SIZE(soluteSite) ,' 0.0 0.0 0.0 '
+        ! write primary vectors
+        write ( 10 , * ) spaceGrid%n_nodes(1),spaceGrid%dl(1)*angtobohr,' 0.0 0.0'
+        write ( 10 , * ) spaceGrid%n_nodes(2),' 0.0 ',spaceGrid%dl(2)*angtobohr, ' 0.0'
+        write ( 10 , * ) spaceGrid%n_nodes(3),' 0.0 0.0 ',spaceGrid%dl(3)*angtobohr
+        ! write the atoms and their coordinates in Bohr
+        DO n = 1, SIZE(soluteSite)! , dim = 1 )
+            WRITE(10,104) soluteSite(n)%Z, ' 0.0 ' , &
+                    soluteSite(n)%r(1)*angtobohr, soluteSite(n)%r(2)*angtobohr, soluteSite(n)%r(3)*angtobohr
+        END DO
+        ! write .cube file. One value per line. As said earlier, run over x then y then z. The one varying the most rapidly is z.
+        do i = 1 , spaceGrid%n_nodes(1)
+            do j = 1 , spaceGrid%n_nodes(2)
+                do k = 1 , spaceGrid%n_nodes(3)
+                    WRITE(10,102) array(i,j,k)
+                end do
             end do
         end do
-    end do
-    close(10)    ! close the .cube file called filename
-    write ( * , * ) filename , ' written'
+    close(10)
 end subroutine
