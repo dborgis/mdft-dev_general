@@ -49,10 +49,8 @@ integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites wi
     IF (input_log('annihilate_solute_charges')) soluteSite%q = 0._dp
 
     CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
-    CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
     CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell
-
-
+    CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
 
     ! As a first step toward removing all x_mol etc, I make them as pointers to our new derived type
     x_mol = soluteSite%r(1)
