@@ -1,8 +1,8 @@
 !> Print an XSF file of the supercell for visualisation in VMD for instance.
 !! Type vmd --xsf output/supercell.xsf to visualise it.
 SUBROUTINE print_supercell_xsf
- USE precision_kinds
- use system
+ USE precision_kinds, ONLY: i2b
+ USE system, ONLY: spaceGrid, soluteSite
  IMPLICIT NONE
  integer(i2b) :: i
  open(5,file='output/supercell.xsf')
@@ -26,18 +26,18 @@ SUBROUTINE print_supercell_xsf
  write(5,100)'# pay attention to vectors as they are written in horizontal way which is quite unusual'
  write(5,100)'# for now only orthorhombic structures are allowed (free norms of lattice vectors, all angles are 90 degrees)'
  write(5,100)'PRIMVEC'
- write(5,101) Lx, 0., 0.
- write(5,101) 0., Ly, 0.
- write(5,101) 0., 0., Lz
+ write(5,101) spaceGrid%length(1), 0., 0.
+ write(5,101) 0., spaceGrid%length(2), 0.
+ write(5,101) 0., 0., spaceGrid%length(3)
  write(5,*)
  write(5,100)'# Then one needs to specify the atoms belonging to the unit cell. '
  write(5,100)'# First number stands for number of atoms in the primitive cell (2 in this case).'
  write(5,100)'# The second number is always 1 for PRIMCOORD coordinates.'
  write(5,100)'# in angstroms and cartesian coordinates'
  write(5,100)'PRIMCOORD'
- write(5,102) nb_solute_sites, 1
- do i = 1, nb_solute_sites
-  write(5,103) atomic_nbr(i), x_mol(i), y_mol(i), z_mol(i)
+ write(5,102) SIZE(soluteSite), 1
+ do i = 1, SIZE(soluteSite)
+  write(5,103) soluteSite(i)%Z, soluteSite(i)%r
  END DO
  close(5)
 END SUBROUTINE print_supercell_xsf
