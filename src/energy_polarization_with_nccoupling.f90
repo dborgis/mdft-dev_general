@@ -34,14 +34,9 @@ real(dp), dimension(nfft1,nfft2,nfft3) :: rho_n  !one-particle number density
 complex(dp), dimension(nfft1/2+1, nfft2, nfft3) :: rho_n_k
 real(dp) ,  dimension ( nfft1 , nfft2 , nfft3 ) :: Vpair
 complex(dp),  dimension(nfft1/2+1,nfft2,nfft3) :: Vpair_k
-if (nb_species/=1) then
-print*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
-stop
-end if
+if (nb_species/=1) stop 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
 ! look for tag polarization in input
-if (.not. input_log('polarization')) then
-return
-end if
+if (.not. input_log('polarization')) return
 !Check if you want to compute Polarization from a macroscopic point of view
 !do i = 1 , size ( input_line )
 !  j = len ( 'evaluate_polarization' )
@@ -102,7 +97,6 @@ if (.not. allocated (rho_c_k_myway) ) allocate (rho_c_k_myway(nfft1/2+1, nfft2, 
 rho_c_k_myway=(0.0_dp, 0.0_dp)
 icg=0
 
-print*,"This is the routine with nc coupling $$$$$$$$$$$"
 
 !======================================================================================================
 !            ====================================================
@@ -145,7 +139,6 @@ do i=1, nb_k_in_c
   read(12,*) norm_k_in_c(i), Cnn(i)
 end do
 delta_k_in_c=norm_k_in_c(2)-norm_k_in_c(1)
-print*, delta_k_in_c
 
 close(10)
 close(11)
@@ -262,7 +255,6 @@ do species = 1 , nb_species
   end do
 end do ! species
 
-print*, 'Fnn=', Fint
 
 
 !======================================================================================================

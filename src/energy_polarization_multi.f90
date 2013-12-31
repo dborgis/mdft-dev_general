@@ -240,6 +240,5 @@ SUBROUTINE energy_polarization_multi (F_pol)
     FF = FF + F_pol
 
     CALL CPU_TIME ( time1 )
-    IF (verbose) PRINT*, 'F_polarization =' , F_pol  , 'computed in (sec)' , time1 - time0
 
 END SUBROUTINE energy_polarization_multi
