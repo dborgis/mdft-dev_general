@@ -22,5 +22,4 @@ SUBROUTINE init_simu
     CALL init_external_potential
     CALL init_solvent_polarization
     CALL init_density
-!test
 END SUBROUTINE init_simu
