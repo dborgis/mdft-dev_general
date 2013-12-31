@@ -1,25 +1,12 @@
-# modules directory
 MODDIR = mod
-
-# sources directories
 SRCDIR = src
-
-# The compiler
 FC = gfortran
-# flags for debugging or for maximum performance, comment as necessary
 # flags forall (e.g. look for system .mod files, required in gfortran)
 FCFLAGS = -J $(MODDIR)
 # libraries needed for linking, unused in the examples
 LDFLAGS = -lfftw3
 
-
-#FLAGS = -g -fopenmp -lfftw3 -lfftw3f -lfftw3l -Jmodules
-#-g Turns on code generating options for debugging
-#-fopenmp enables openmp parallel compiling
-
-#FLAGS = -lfftw3 -J $(MODDIR)
-
-DEBUGFLAGS = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -Wimplicit-interface -frecursive
+DEBUG = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -Wimplicit-interface -frecursive
 #-g turns on debugging
 #-p turns on profiling
 
@@ -29,7 +16,6 @@ OPTIM = -O3 -march=native
 # -fopenmp for OPENMP support
 
 EXE = mdft
-
 
 OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/module_constants.f90 \
@@ -115,7 +101,7 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
 	 $(FC) $(FCFLAGS) $(OPTIM) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  debug: $(OBJS)
-	 $(FC) $(FCFLAGS) $(DEBUGFLAGS) -o $(EXE) $(OBJS) $(LDFLAGS)
+	 $(FC) $(FCFLAGS) $(DEBUG) -o $(EXE) $(OBJS) $(LDFLAGS)
 
  clean:
 	rm -vf gmon.out $(EXE) $(MODDIR)/* 
