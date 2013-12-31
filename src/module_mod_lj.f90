@@ -121,7 +121,7 @@ MODULE mod_lj
                     call write_to_cube_file(temparray,filename)
                     filename='output/Vlj_along-z.dat'
                     call compute_z_density(temparray,filename)
-                    open(11,file='Vlj_aumilieu.dat')
+                    open(11,file='output/Vlj_aumilieu.dat')
                         do i=1,nfft3
                             write(11,*) i*deltaz, Vext_lj(nfft1/2,nfft2/2,i,1,1,1)
                         END DO
