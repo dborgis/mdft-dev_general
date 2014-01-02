@@ -10,8 +10,7 @@ DEBUG = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -f
 #-g turns on debugging
 #-p turns on profiling
 
-OPTIM = -O3 -march=native
-#-Ofast -funroll-loops -march=native
+OPTIM = -O3 -march=native #-ffast-math -funroll-loops
 # FOR BACKUP : -march=native -O3 -ffast-math -funroll-loops   VERY AGRESSIVE
 # -fopenmp for OPENMP support
 
