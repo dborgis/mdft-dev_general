@@ -1,12 +1,12 @@
 ############################
 # SUPERCELL
 ############################
-Lx  = 20
-Ly  = 20
-Lz  = 20
-nfft1 = 32
-nfft2 = 32 
-nfft3 = 32
+Lx  = 41.44
+Ly  = 35.88
+Lz  = 42.30
+nfft1 = 64 
+nfft2 = 64 
+nfft3 = 64 
 quadrature = L # GL or L
 order_of_quadrature = 6
 nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
@@ -19,17 +19,16 @@ nb_implicit_species = 1
 mole_fractions
 1.0
 
-
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = T    
+polarization = F
 polarization_order = multi # multi or dipol
-include_nc_coupling = T
+include_nc_coupling = F
 
 ref_bulk_density
 0.0332891
 temperature = 300 # K
-sym_order = 2  # n in Cn. 2 for H2O
+sym_order = 2  # n in Cn, i.e., 2 for H2O
 
 
 ############################
@@ -40,19 +39,22 @@ maximum_iteration_nbr = 50
 epsg =  0.0001  # default 0.0001
 pgtol = 0.0001 # default 0.00001
 
+
 ###########################
 #  IDEAL TERM
 ###########################
 Linearize_entropy = F
 if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
 
+
 ############################
 # POTENTIALS
 ############################
-
-poisson_solver = T   #Warning you should never have 2 tags true for Poisson_solver and point_charge_electrostatic!!!
+annihilate_solute_charges = T
+poisson_solver = T
 point_charge_electrostatic = F
 reuse_density = F
+
 
 ############################
 # POST-PROCESSING
@@ -61,11 +63,12 @@ translate_solute_to_center = T
 rdfmaxrange = 10.0
 nbinsrdf = 80
 
+
 ############################
 # HARD SPHERES
 ############################
-hard_sphere_fluid = T
-bridge_hard_sphere = T
+hard_sphere_fluid = F
+bridge_hard_sphere = F
 hard_sphere_radius
 1.4
 hs_functional = CS # PY or CS
@@ -77,11 +80,11 @@ lennard_jones_perturbation_to_hard_spheres = F # WCA type
 ############################
 hydrophobicity = F
 treatment_of_hydro = C    #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
-threebody = T
+threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 Rc = 1.0  # CAREFULL
-verbose = F
+verbose = T
 
 
 
@@ -101,7 +104,6 @@ vdw_hard_core = F                    # a hard core with vdw radius is like a har
 # HARD CYLINDER
 hard_cylinder_solute = F             # if there is a hard cylinder in the box (in z direction, at x=Lx/2, y=Ly/2)
 radius_of_hard_cylinder = 0.5           # radius of the hard cylinder solute (Ang)
-
 
 # PERSONAL VEXT
 personnal_vext = F                   # if you want to use the external potential calculated in personnal_vext.f90 that you may want to edit to make something complicated
