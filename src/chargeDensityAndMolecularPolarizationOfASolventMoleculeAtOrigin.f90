@@ -34,7 +34,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     !            !    	Initialization				!
     !            !							!
     !            ====================================================
-    Rc=0.5_dp
+    Rc=2._dp
     IF (Rc/=0.0_dp) THEN
         PRINT*,'WARNING: you convolute molecular Charge Density and POLARIZATION with a Gaussian be sure that is what you want!!!'
     END IF
