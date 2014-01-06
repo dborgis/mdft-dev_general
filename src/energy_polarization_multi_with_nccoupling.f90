@@ -1,4 +1,4 @@
-SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
+SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     USE precision_kinds, ONLY : i2b , dp
     USE system, ONLY : nfft1 , nfft2 , nfft3, Lx, Ly, Lz, kBT, rho_0,&
@@ -263,9 +263,9 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_Pol)
                             P_long_y_k(i,j,k,n)= toto * ky(j)
                             P_long_z_k(i,j,k,n)= toto * kz(k)
                         ELSE
-                            P_long_x_k(i,j,k,n)=0.0_dp
-                            P_long_y_k(i,j,k,n)=0.0_dp
-                            P_long_z_k(i,j,k,n)=0.0_dp
+                            P_long_x_k(i,j,k,n)=(0.0_dp,0.0_dp)
+                            P_long_y_k(i,j,k,n)=(0.0_dp,0.0_dp)
+                            P_long_z_k(i,j,k,n)=(0.0_dp,0.0_dp)
                         END IF
                         P_trans_x_k(i,j,k,n) = pola_tot_x_k(i,j,k,n)- P_long_x_k(i,j,k,n)
                         P_trans_y_k(i,j,k,n) = pola_tot_y_k(i,j,k,n)- P_long_y_k(i,j,k,n)
