@@ -32,7 +32,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     !            !    	Initialization				!
     !            !							!
     !            ====================================================
-    Rc=2._dp
+    Rc=0.5_dp
     IF (Rc/=0.0_dp) THEN
         PRINT*,'WARNING: you convolute the solvent molecular charge density and the solvent molecular polarization &
                 with a Gaussian of radius 2. Angstroms in chargeDensity...'
