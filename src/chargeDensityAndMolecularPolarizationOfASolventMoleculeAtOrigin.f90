@@ -8,7 +8,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     USE precision_kinds, ONLY: i2b, dp
     USE constants, ONLY: iC=>i_complex
     USE system, ONLY: chg_solv, x_solv, y_solv, z_solv, nb_solvent_sites, id_solv,&
-                      sigma_k,molec_polarx_k, molec_polary_k, molec_polarz_k, nb_species, spaceGrid
+                      sigma_k, molec_polarx_k, molec_polary_k, molec_polarz_k, nb_species, spaceGrid
     USE quadrature, ONLY: angGrid, molRotGrid
     USE fft, ONLY: kx, ky, kz, k2
     

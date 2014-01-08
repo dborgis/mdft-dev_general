@@ -25,6 +25,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
         P_trans_x_k, P_trans_y_k, P_trans_z_k, P_long_x_k, P_long_y_k, P_long_z_k, pola_tot_x_k, pola_tot_y_k, pola_tot_z_k
     INTEGER(i2b) :: icg, i, j, k, o, p, n, s, k_index
     COMPLEX(dp) :: k_tens_k_Px, k_tens_k_Py, k_tens_k_Pz, toto
+    COMPLEX(dp), PARAMETER :: zeroC=(0.0_dp,0.0_dp)
 
     IF (nb_species/=1) STOP 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
 
@@ -45,9 +46,9 @@ SUBROUTINE energy_polarization_multi (F_pol)
     F_pol_trans = 0.0_dp
     F_pol_tot = 0.0_dp
     dF_pol_tot = 0.0_dp
-    dF_pol_long_k = (0.0_dp,0.0_dp)
-    dF_pol_trans_k = (0.0_dp,0.0_dp)
-    dF_pol_tot_k = (0.0_dp,0.0_dp)
+    dF_pol_long_k = zeroC
+    dF_pol_trans_k = zeroC
+    dF_pol_tot_k = zeroC
     mu_SPCE=0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
 !======================================================================================================
 !            ====================================================
@@ -94,9 +95,9 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !            !    		Compute 			
 !            !		Total Polarization			
 !===================================================================================================================================
-    ALLOCATE (pola_tot_x_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
-    ALLOCATE (pola_tot_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
-    ALLOCATE (pola_tot_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )    
+    ALLOCATE (pola_tot_x_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
+    ALLOCATE (pola_tot_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
+    ALLOCATE (pola_tot_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )    
     DO CONCURRENT ( s=1:nb_species, i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         pola_tot_x_k(i,j,k,s) = &
             pola_tot_x_k(i,j,k,s)+angGrid%weight(o)*molRotGrid%weight(p) * molec_polarx_k(i,j,k,o,p,s)*rho_k(i,j,k,o,p,s)
@@ -111,14 +112,14 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !            !    	Compute 				!
 !            !	Transverse and longitudinal Polarization	!
 !            ====================================================
-    ALLOCATE (P_long_x_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
-    ALLOCATE (P_long_y_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
-    ALLOCATE (P_long_z_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp,0.0_dp) )
+    ALLOCATE (P_long_x_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
+    ALLOCATE (P_long_y_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
+    ALLOCATE (P_long_z_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
     DO CONCURRENT ( s=1:nb_species, i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
         IF (k2(i,j,k)==0.0_dp) THEN
-            P_long_x_k(i,j,k,s) = (0.0_dp,0.0_dp)
-            P_long_y_k(i,j,k,s) = (0.0_dp,0.0_dp)
-            P_long_z_k(i,j,k,s) = (0.0_dp,0.0_dp)
+            P_long_x_k(i,j,k,s) = zeroC
+            P_long_y_k(i,j,k,s) = zeroC
+            P_long_z_k(i,j,k,s) = zeroC
         ELSE
             toto = (pola_tot_x_k(i,j,k,s)*kx(i)+pola_tot_y_k(i,j,k,s)*ky(j)+pola_tot_z_k(i,j,k,s)*kz(k)) / k2(i,j,k)
             P_long_x_k(i,j,k,s) = toto * kx(i)
