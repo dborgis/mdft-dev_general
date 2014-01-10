@@ -4,20 +4,20 @@
 ! => laplacien(V(r))=-soluteChargeDensity(r)/eps0
 ! => V(k)=soluteChargeDensity(k)/(esp0*k^2)
 ! FFT(V(k)) = V(r)
+
 SUBROUTINE poissonSolver (soluteChargeDensity)
 
-    USE precision_kinds, ONLY : dp, i2b
-    USE system , ONLY : nfft1 , nfft2 , nfft3, spaceGrid
-    USE fft , ONLY : fftw3 , norm_k , k2
-    USE constants , ONLY : fourpi , twopi
-    USE external_potential , ONLY : V_c
-    USE input, ONLY: verbose
+    USE precision_kinds,    ONLY: dp, i2b
+    USE system,             ONLY: nfft1 , nfft2 , nfft3, spaceGrid
+    USE fft,                ONLY: fftw3 , norm_k , k2
+    USE constants,          ONLY: fourpi , twopi
+    USE external_potential, ONLY: V_c
+    USE input,              ONLY: verbose
     ! V_c = electrostatic potential from charge density and poisson equation
-    
+
     IMPLICIT NONE
     REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: soluteChargeDensity
-    COMPLEX(dp), DIMENSION ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: soluteChargeDensity_k
-    COMPLEX(dp), DIMENSION ( nfft1 / 2 + 1 , nfft2 , nfft3 ) :: V_c_k
+    COMPLEX(dp), DIMENSION (nfft1/2+1, nfft2, nfft3 ) :: soluteChargeDensity_k, V_c_k
     INTEGER (i2b) :: i,j,k
 
     IF ( MAXVAL(ABS(soluteChargeDensity)) < TINY(1.0_dp)) THEN
@@ -32,7 +32,7 @@ SUBROUTINE poissonSolver (soluteChargeDensity)
     ! V(k) = 4Pi rho(k) / k^2
 
     DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
-        IF ( K2(i,j,k) /= 0._dp ) THEN
+        IF ( k2(i,j,k) /= 0._dp ) THEN
             V_c_k(i,j,k) = soluteChargeDensity_k(i,j,k) * fourpi/k2(i,j,k) ! in electrostatic units : V=-4pi rho
         ELSE
             V_c_k(i,j,k) = 0._dp
@@ -44,7 +44,7 @@ SUBROUTINE poissonSolver (soluteChargeDensity)
     fftw3%in_backward = V_c_k
     CALL dfftw_execute ( fftw3%plan_backward )
     V_c = fftw3%out_backward / REAL ( nfft1 * nfft2 * nfft3 , dp )
-    
+
     IF (verbose) THEN
         OPEN(11,FILE='output/V_cmax.dat')
             DO i=1, nfft1
