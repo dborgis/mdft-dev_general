@@ -1,8 +1,7 @@
 SUBROUTINE energy_polarization_multi (F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
-    USE system, ONLY: nfft1, nfft2, nfft3, kBT, rho_0, molec_polarx_k, molec_polary_k, molec_polarz_k, &
-                    nb_species, n_0, spaceGrid
+    USE system, ONLY: nfft1, nfft2, nfft3, kBT, rho_0, molec_polarx_k, molec_polary_k, molec_polarz_k, nb_species, n_0, spaceGrid
     USE dcf, ONLY: chi_l, chi_t, c_s, nb_k, delta_k
     USE quadrature,ONLY : angGrid, molRotGrid
     USE minimizer, ONLY: cg_vect, FF, dF
@@ -14,18 +13,17 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     REAL(dp), INTENT(OUT) :: F_pol
     REAL(dp) :: F_pol_long, F_pol_trans , F_pol_tot  !Longitudinal , transverse and total Polarization free energy
-    REAL(dp) :: mu_SPCE, facsym, deltaVk, time0, time1, Lweight
-    REAL(dp), DIMENSION (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: &
-                                                                                dF_pol_tot
+    REAL(dp) :: mu_SPCE, facsym, deltaVk, Lweight
+    REAL(dp), DIMENSION (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: dF_pol_tot
     COMPLEX(dp), DIMENSION (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species) :: &
-                                                                                dF_pol_tot_k, dF_pol_long_k, dF_pol_trans_k
+                                                                        dF_pol_tot_k, dF_pol_long_k, dF_pol_trans_k
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: rho
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: rho_k
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: &
         P_trans_x_k, P_trans_y_k, P_trans_z_k, P_long_x_k, P_long_y_k, P_long_z_k, pola_tot_x_k, pola_tot_y_k, pola_tot_z_k
     INTEGER(i2b) :: icg, i, j, k, o, p, n, s, k_index
-    COMPLEX(dp) :: k_tens_k_Px, k_tens_k_Py, k_tens_k_Pz, toto
-    COMPLEX(dp), PARAMETER :: zeroC=(0.0_dp,0.0_dp)
+    COMPLEX(dp) :: k_tens_k_Px, k_tens_k_Py, k_tens_k_Pz, toto, t_
+    COMPLEX(dp), PARAMETER :: zeroC = (0.0_dp,0.0_dp)
 
     IF (nb_species/=1) STOP 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
 
@@ -35,7 +33,6 @@ SUBROUTINE energy_polarization_multi (F_pol)
         STOP
     END IF
 
-    CALL CPU_TIME (time0)
 !===================================================================================================================================
 !                	Initialization				
 !            							
@@ -49,22 +46,21 @@ SUBROUTINE energy_polarization_multi (F_pol)
     dF_pol_long_k = zeroC
     dF_pol_trans_k = zeroC
     dF_pol_tot_k = zeroC
-    mu_SPCE=0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
+    mu_SPCE = 0.4238_dp * 0.5773525_dp * 2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
 !======================================================================================================
 !            ====================================================
-!            !    	Compute density in real and 		!
-             !       		Fourier space			!
-             !							!
+!                 	Compute density in real and 		        !
+!       		            Fourier space		            	!
+!							                                    !
 !            ====================================================
-!Compute rho_k
     ALLOCATE ( rho (spaceGrid%n_nodes(1), spaceGrid%n_nodes(2), spaceGrid%n_nodes(3),&
                         angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=0._dp )
     icg=0
     DO s=1, nb_species
-        DO i=1,nfft1
+        DO i=1, nfft1
             DO j=1, nfft2
                 DO k=1, nfft3
-                    DO o = 1 , angGrid%n_angles
+                    DO o=1, angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg + 1
                             rho(i,j,k,o,p,s) = cg_vect(icg)**2
@@ -99,12 +95,11 @@ SUBROUTINE energy_polarization_multi (F_pol)
     ALLOCATE (pola_tot_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
     ALLOCATE (pola_tot_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )    
     DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles, s=1:nb_species )
-        pola_tot_x_k(i,j,k,s) = &
-            pola_tot_x_k(i,j,k,s)+angGrid%weight(o)*molRotGrid%weight(p) * molec_polarx_k(i,j,k,o,p,s)*rho_k(i,j,k,o,p,s)
-        pola_tot_y_k(i,j,k,s) = &
-            pola_tot_y_k(i,j,k,s)+angGrid%weight(o)*molRotGrid%weight(p) * molec_polary_k(i,j,k,o,p,s)*rho_k(i,j,k,o,p,s)
-        pola_tot_z_k(i,j,k,s) = &
-            pola_tot_z_k(i,j,k,s)+angGrid%weight(o)*molRotGrid%weight(p) * molec_polarz_k(i,j,k,o,p,s)*rho_k(i,j,k,o,p,s)
+        t_ = angGrid%weight(o)*molRotGrid%weight(p)
+        toto = rho_k(i,j,k,o,p,s)
+        pola_tot_x_k(i,j,k,s) = pola_tot_x_k(i,j,k,s)+t_ * molec_polarx_k(i,j,k,o,p,s)*toto
+        pola_tot_y_k(i,j,k,s) = pola_tot_y_k(i,j,k,s)+t_ * molec_polary_k(i,j,k,o,p,s)*toto
+        pola_tot_z_k(i,j,k,s) = pola_tot_z_k(i,j,k,s)+t_ * molec_polarz_k(i,j,k,o,p,s)*toto
     END DO
     DEALLOCATE (rho_k)
 
@@ -223,13 +218,13 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !========================================================================================================================
     icg = 0
     DO s=1, nb_species
-        DO i=1,nfft1
+        DO i=1, nfft1
             DO j=1, nfft2
                 DO k=1,nfft3
                     DO o=1,angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg + 1
-                            dF(icg)=dF(icg)+ dF_pol_tot (i,j,k,o,p,s)*cg_vect(icg)*rho_0*2.0_dp * spaceGrid%dv
+                            dF(icg) = dF(icg) + dF_pol_tot (i,j,k,o,p,s) * cg_vect(icg) * rho_0 * 2.0_dp * spaceGrid%dv
                         END DO
                     END DO
                 END DO
@@ -239,7 +234,5 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     F_pol = F_pol_tot + F_pol_long + F_pol_trans
     FF = FF + F_pol
-
-    CALL CPU_TIME ( time1 )
 
 END SUBROUTINE energy_polarization_multi
