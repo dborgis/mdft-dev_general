@@ -81,8 +81,8 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !===================================================================================================================================
     ALLOCATE (rho_k (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=(0._dp,0._dp))
     DO s = 1, nb_species
-        DO o = 1, angGrid%n_angles
-            DO p = 1, molRotGrid%n_angles
+        DO p = 1, molRotGrid%n_angles
+            DO o = 1, angGrid%n_angles
                 fftw3%in_forward = rho(:,:,:,o,p,s)
                 CALL dfftw_execute (fftw3%plan_forward)
                 rho_k(:,:,:,o,p,s) = fftw3%out_forward *spacegrid%dv
@@ -98,7 +98,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
     ALLOCATE (pola_tot_x_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
     ALLOCATE (pola_tot_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
     ALLOCATE (pola_tot_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )    
-    DO CONCURRENT ( s=1:nb_species, i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
+    DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles, s=1:nb_species )
         pola_tot_x_k(i,j,k,s) = &
             pola_tot_x_k(i,j,k,s)+angGrid%weight(o)*molRotGrid%weight(p) * molec_polarx_k(i,j,k,o,p,s)*rho_k(i,j,k,o,p,s)
         pola_tot_y_k(i,j,k,s) = &
@@ -115,7 +115,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
     ALLOCATE (P_long_x_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
     ALLOCATE (P_long_y_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
     ALLOCATE (P_long_z_k  (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
-    DO CONCURRENT ( s=1:nb_species, i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
+    DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species )
         IF (k2(i,j,k)==0.0_dp) THEN
             P_long_x_k(i,j,k,s) = zeroC
             P_long_y_k(i,j,k,s) = zeroC
@@ -136,7 +136,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !            !	Transverse and longitudinal Polarization	!
 !            ====================================================
 
-    DO CONCURRENT ( s=1:nb_species, i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
+    DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species )
             
         IF (i>1 .AND. i<nfft1/2+1) THEN
             facsym=2.0_dp
@@ -210,8 +210,8 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !						Get gradient in real space
 !========================================================================================================================
     DO s=1,nb_species
-        DO o=1,angGrid%n_angles
-            DO p=1, molRotGrid%n_angles
+        DO p=1, molRotGrid%n_angles
+            DO o=1,angGrid%n_angles
                 fftw3%in_backward= (dF_pol_trans_k (:,:,:,o,p,s)+dF_pol_long_k (:,:,:,o,p,s)+dF_pol_tot_k (:,:,:,o,p,s))
                 call dfftw_execute (fftw3%plan_backward)
                 dF_pol_tot (:,:,:,o,p,s)=fftw3%out_backward*deltaVk/(twopi)**3
@@ -229,7 +229,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
                     DO o=1,angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg + 1
-                            dF(icg)=dF(icg)+ dF_pol_tot (i,j,k,o,p,s)*cg_vect(icg)*rho_0*2.0_dp * spaceGrid%dv!* angGrid%weight(o) * molRotGrid%weight(p) 
+                            dF(icg)=dF(icg)+ dF_pol_tot (i,j,k,o,p,s)*cg_vect(icg)*rho_0*2.0_dp * spaceGrid%dv
                         END DO
                     END DO
                 END DO
