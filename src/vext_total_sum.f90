@@ -3,41 +3,34 @@
 ! then it gives a upper value (100 kJ/mol) to vext_total.
 SUBROUTINE vext_total_sum
 
-    use precision_kinds,only : dp , i2b
-    use system,only : nfft1 , nfft2 , nfft3 , nb_species
-    use quadrature, only : angGrid, molRotGrid
-    use constants,only : fourpi, zero
-    use external_potential,only : Vext_total , Vext_lj , Vext_q , vext_hard_core
-    ! vext_total = total external potential used for minimization
-    ! vext_lj = lennard jones part
-    ! vext_q = electrostatic part
-    ! vext_hard_core = vdw hard core repulsion
-    use quadrature, ONLY: sym_order
-    USE input, ONLY: verbose
-    
-    implicit none
-    REAL(dp), PARAMETER :: vtrunc = 100._dp
+    USE precision_kinds,    ONLY: dp, i2b
+    USE system,             ONLY: nfft1, nfft2, nfft3, nb_species
+    USE quadrature,         ONLY: angGrid, molRotGrid
+    USE constants,          ONLY: fourpi, zero
+    USE external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
+    USE quadrature,         ONLY: sym_order
+    USE input,              ONLY: verbose
+
+    IMPLICIT NONE
+    REAL(dp), PARAMETER :: vmax = 100._dp
     
    
     IF ( .NOT. ALLOCATED ( Vext_total ) ) THEN ! be sure Vext_total is allocated
         ALLOCATE ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ), SOURCE=zero )
     END IF
 
-    !    Vext_total = 0.0_dp
+    ! Vext_total = 0.0_dp
     ! vext is the sum over all external potentials
     ! note that purely repulsive and hard potentials are already included in vext
-    IF ( ALLOCATED ( Vext_q ) ) Vext_total = Vext_total + Vext_q
-    IF ( ALLOCATED ( Vext_lj ) ) Vext_total = Vext_total + Vext_lj
+    IF ( ALLOCATED ( Vext_q ) )         Vext_total = Vext_total + Vext_q
+    IF ( ALLOCATED ( Vext_lj ) )        Vext_total = Vext_total + Vext_lj
     IF ( ALLOCATED ( vext_hard_core ) ) vext_total (:,:,:,1,1,:) = vext_total (:,:,:,1,1,:) + vext_hard_core ! TODO generalize
 
-    IF ( ALL(vext_total==zero) ) THEN
-        STOP "The external potential is zero everywhere. Something's wrong in input files"
-    END IF
+    IF ( ALL(vext_total==zero) ) STOP "The external potential is zero everywhere. Something's wrong in input files"
 
-    IF (verbose) PRINT*, 'Vext is now truncated to 100 kJ/mol'
-    WHERE ( Vext_total > vtrunc ) Vext_total = vtrunc
-    IF ( ALLOCATED ( vext_lj        ) ) WHERE ( Vext_lj        > vtrunc ) Vext_lj        = vtrunc
-    IF ( ALLOCATED ( vext_hard_core ) ) WHERE ( vext_hard_core > vtrunc ) vext_hard_core = vtrunc
+    WHERE ( Vext_total > vmax ) Vext_total = vmax
+    IF ( ALLOCATED ( vext_lj        ) ) WHERE ( Vext_lj        > vmax ) Vext_lj        = vmax
+    IF ( ALLOCATED ( vext_hard_core ) ) WHERE ( vext_hard_core > vmax ) vext_hard_core = vmax
 
     IF (verbose) THEN
         BLOCK
