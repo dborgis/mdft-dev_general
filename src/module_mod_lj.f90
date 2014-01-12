@@ -7,10 +7,11 @@ MODULE mod_lj
     USE precision_kinds, only: dp, i2b
     use system, only: nfft1, nfft2, nfft3, deltax,deltay,deltaz,nb_solute_sites,eps_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz&
                    ,sig_solv,sig_mol , nb_species, id_mol, id_solv, chg_mol , chg_solv, eps_solv, &
-                   x_solv,y_solv,z_solv, nb_solvent_sites
+                   x_solv,y_solv,z_solv, nb_solvent_sites, spaceGrid
     use constants, only:fourpi
     use input,only : input_line, verbose
     use quadrature, only: angGrid, molRotGrid
+    
     IMPLICIT NONE
     integer(i2b), private :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
     contains
@@ -25,7 +26,9 @@ MODULE mod_lj
         
         SUBROUTINE calculate
         
-            integer(i2b) :: i,j,k
+            IMPLICIT NONE
+        
+            integer(i2b) :: i,j,k,s
             real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
             real(dp) :: V_node ! sum of all solute contributions to a given grid node
             integer(i2b) :: idm, ids ! id of the solute and solvent site that is being used
@@ -69,46 +72,45 @@ MODULE mod_lj
                 print*,'MDFT stops now.'
                 stop
             END IF
-            do species = 1, nb_species
-                do solvent_site = 1, nb_solvent_sites
-                    ids = id_solv(solvent_site)
-                    if( eps_solv(ids) == 0._dp ) cycle ! if solvent site wear no LJ
-                    do k=1,nfft3
-                        z_grid=real(k-1,dp)*deltaz
-                        do j=1,nfft2
-                            y_grid=real(j-1,dp)*deltay
-                            do i=1,nfft1
-                                x_grid=real(i-1,dp)*deltax
-                                V_node=0.0_dp
-                                do solute_site = 1, nb_solute_sites
-                                    idm=id_mol(solute_site)
-                                    if (eps_mol(idm)==0.0_dp) cycle
-                                    dx= x_grid-x_mol(solute_site)
-                                    if ( dx > 0.5_dp*Lx) dx = dx - Lx ! should be replaced by mod() or modulo(). cant' remember the difference between them in Fortran. Look for on internet.
-                                    if ( dx < -0.5_dp*Lx) dx= Lx + dx ! TODO : look at http://stackoverflow.com/questions/15069838/need-help-optimizing-code-minimum-image-convention
-                                    dy= y_grid-y_mol(solute_site)
-                                    if ( dy > 0.5_dp*Ly) dy= dy - Ly
-                                    if ( dy < -0.5_dp*Ly) dy= Ly + dy
-                                    dz= z_grid-z_mol(solute_site)
-                                    if ( dz > 0.5_dp*Lz) dz= dz - Lz
-                                    if ( dz < -0.5_dp*Lz) dz= Lz + dz
-                                    V_node = V_node + vlj( geometric_mean( eps_solv(ids), eps_mol(idm) ),&
-                                                           arithmetic_mean( sig_solv(ids), sig_mol(idm) ),&
-                                                           norm2([dx,dy,dz]) ) ! rules of Lorentz-Berthelot
-                                    if (V_node >= 100.0_dp) then ! limit maximum value of Vlj to 100
-                                        V_node = 100.0_dp ! TODO magic number
-                                        exit
-                                    END IF
-                                END DO ! solute
-    
-                                ! all omegas are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
-                                Vext_lj ( i , j , k , : , : , species ) = V_node
-    
-                            END DO ! i
-                        END DO ! j
-                    END DO ! k
-                END DO ! solvent sites
-            END DO ! species
+            
+            DO solvent_site = 1, nb_solvent_sites
+                ids = id_solv(solvent_site)
+                IF ( eps_solv(ids) == 0._dp ) CYCLE ! if solvent site wear no LJ
+                
+                DO CONCURRENT( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species )
+                    x_grid=REAL(i-1,dp)*spaceGrid%dl(1)
+                    y_grid=REAL(j-1,dp)*spaceGrid%dl(2)
+                    z_grid=REAL(k-1,dp)*spaceGrid%dl(3)
+                    V_node=0.0_dp
+                    DO solute_site = 1, nb_solute_sites
+                        idm=id_mol(solute_site)
+                        IF (eps_mol(idm)==0.0_dp) CYCLE
+
+                        dx =ABS(x_grid-x_mol(solute_site)); DO WHILE (dx>Lx/2._dp); dx=ABS(dx-Lx); END DO
+                        dy =ABS(y_grid-y_mol(solute_site)); DO WHILE (dy>Ly/2._dp); dy=ABS(dy-Ly); END DO
+                        dz =ABS(z_grid-z_mol(solute_site)); DO WHILE (dz>Lz/2._dp); dz=ABS(dz-Lz); END DO
+
+                        V_node = V_node + vlj( geometric_mean( eps_solv(ids), eps_mol(idm) ),&
+                                               arithmetic_mean( sig_solv(ids), sig_mol(idm) ),&
+                                               SQRT(dx**2+dy**2+dz**2) ) ! rules of Lorentz-Berthelot
+                                               
+                        IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
+                            V_node = 100.0_dp
+                            EXIT
+                        END IF
+                    END DO ! solute
+              
+                    Vext_lj (i,j,k,:,:,s) = V_node ! all omegas are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
+                END DO
+            END DO
+
+
+
+
+
+
+
+
             
             IF (verbose) THEN
                 BLOCK
