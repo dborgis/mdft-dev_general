@@ -13,57 +13,40 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     IMPLICIT NONE
     
-    REAL(dp), DIMENSION(nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species)::dF_pol_long , dF_pol_trans, dF_pol_tot
-    COMPLEX(dp), DIMENSION(nfft1/2+1, nfft2, nfft3, angGrid%n_angles,molRotGrid%n_angles,nb_species) :: rho_k, dF_pol_long_k,&
-     dF_pol_trans_k,dF_pol_tot_k
+    REAL(dp), DIMENSION(nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species)::dF_pol_tot!, dF_pol_long , dF_pol_trans
+    COMPLEX(dp), DIMENSION(nfft1/2+1, nfft2, nfft3, angGrid%n_angles,molRotGrid%n_angles,nb_species) :: dF_pol_long_k,&
+                                                                                            dF_pol_trans_k, dF_pol_tot_k
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: rho
-    REAL(dp), DIMENSION (nfft1, nfft2, nfft3, nb_species) ::Px,Py,Pz,P_long_x,P_long_y,P_long_z
-    INTEGER(i2b) :: icg  !dummy counter for cg_vect
     REAL(dp) ::  deltaVk, F_pol_long, F_pol_trans , F_pol ,F_pol_tot  !Longitudinal , transverse and total Polarization free energy
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: rho_c_k_myway  !transverse part of polarization in Fourier space .
-    INTEGER(i2b) :: i,j,k,o,p,n,m,l,s,species, k_index , m1, m2, m3!dummy
+    INTEGER(i2b) :: icg,i,j,k,o,p,n,m,l,s,species, k_index , m1, m2, m3!dummy
     REAL(dp) :: mu_SPCE, facsym,Pxt,Pyt,Pzt
-    COMPLEX(dp) :: k_tens_k_Px,k_tens_k_Py,k_tens_k_Pz     
-    REAL(dp):: time1 , time0 ,time2 , time3 ,rhot! timestamps
-    COMPLEX(dp) ::  F_pol_long_k , F_pol_trans_k , F_pol_tot_k, molec_polarx_k_local, molec_polary_k_local, molec_polarz_k_local
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx , weight_omy , weight_omz ! dummy
-    INTEGER(i2b) :: ios ! iostat of the read statement: 
-    INTEGER(i2b) :: kindex_in_C
+    INTEGER(i2b) :: ios,kindex_in_C
     REAL(dp) ::  rhon, fact,psi,Vint,Fint
-    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: rho_n  !one-particle number density
-    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n_k
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: Vpair
-    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: Vpair_k
-    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: &
-        P_trans_x_k, P_trans_y_k, P_trans_z_k, P_long_x_k, P_long_y_k, P_long_z_k, pola_tot_x_k, pola_tot_y_k, pola_tot_z_k
+    REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx , weight_omy , weight_omz ! dummy
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n, Vpair
     COMPLEX(dp), PARAMETER :: zeroC=(0._dp,0._dp)
+    COMPLEX(dp) :: F_pol_long_k, F_pol_trans_k, F_pol_tot_k, molec_polarx_k_local, molec_polary_k_local, molec_polarz_k_local
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n_k
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: Vpair_k
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:,:) :: P_tot_x_k, P_tot_y_k, P_tot_z_k, &
+                                                    P_long_x_k, P_long_y_k, P_long_z_k, &
+                                                    P_trans_x_k, P_trans_y_k, P_trans_z_k
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: rho_k
     
     IF (nb_species/=1) THEN
         PRINT*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
         STOP
     END IF
-    CALL CPU_TIME(time0)
 !===================================================================================================================================
 !                	Initialization
 !===================================================================================================================================
     deltaVk=twopi**3/PRODUCT(spaceGrid%length)
-    F_pol_long=0.0_dp
-    F_pol_trans=0.0_dp
-    F_pol_tot=0.0_dp
-    F_pol_long_k=zeroC
-    F_pol_trans_k=zeroC
-    F_pol_tot_k=zeroC
-    F_pol=0.0_dp
-    dF_pol_long=0.0_dp
-    dF_pol_trans=0.0_dp
+
     dF_pol_tot=0.0_dp
     dF_pol_long_k=0.0_dp
     dF_pol_trans_k=0.0_dp
     dF_pol_tot_k=0.0_dp
-    rho_k=zeroC
-    IF (.NOT. ALLOCATED (pola_tot_x_k) ) ALLOCATE (pola_tot_x_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
-    IF (.NOT. ALLOCATED (pola_tot_y_k) ) ALLOCATE (pola_tot_y_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
-    IF (.NOT. ALLOCATED (pola_tot_z_k) ) ALLOCATE (pola_tot_z_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
     mu_SPCE=0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
     
 
@@ -94,12 +77,12 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     CALL dfftw_execute (fftw3%plan_forward)
     ALLOCATE ( rho_n_k (nfft1/2+1, nfft2, nfft3), SOURCE=(fftw3%out_forward *deltaV) )
 
-    CALL cpu_time(time2)
     !======================================================================================================
     !            ====================================================
     !            !    		get Density 			!
     !            !			in Fourier Space		!
     !            ====================================================
+    ALLOCATE( rho_k(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zeroC)
     DO s=1, nb_species
         DO p=1, molRotGrid%n_angles
             DO o=1, angGrid%n_angles
@@ -111,8 +94,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     END DO
     DEALLOCATE (rho)
        
-    CALL cpu_time(time3)
-    
     !======================================================================================================
     !            ====================================================
     !            !    		Compute 	                       		!
@@ -166,13 +147,16 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     !            !		Total Polarization		                	!
     !            ====================================================
     !======================================================================================================
+    ALLOCATE (P_tot_x_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
+    ALLOCATE (P_tot_y_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
+    ALLOCATE (P_tot_z_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
     BLOCK
         COMPLEX(dp) :: rho_k_tmp
         DO CONCURRENT( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
             rho_k_tmp = rho_k(i,j,k,o,p,s)*angGrid%weight(o)*molRotGrid%weight(p)
-            pola_tot_x_k(i,j,k,s)=pola_tot_x_k(i,j,k,s)+molec_polarx_k(i,j,k,o,p,s)*rho_k_tmp
-            pola_tot_y_k(i,j,k,s)=pola_tot_y_k(i,j,k,s)+molec_polary_k(i,j,k,o,p,s)*rho_k_tmp
-            pola_tot_z_k(i,j,k,s)=pola_tot_z_k(i,j,k,s)+molec_polarz_k(i,j,k,o,p,s)*rho_k_tmp
+            P_tot_x_k(i,j,k,s)=P_tot_x_k(i,j,k,s)+molec_polarx_k(i,j,k,o,p,s)*rho_k_tmp
+            P_tot_y_k(i,j,k,s)=P_tot_y_k(i,j,k,s)+molec_polary_k(i,j,k,o,p,s)*rho_k_tmp
+            P_tot_z_k(i,j,k,s)=P_tot_z_k(i,j,k,s)+molec_polarz_k(i,j,k,o,p,s)*rho_k_tmp
         END DO
     END BLOCK
 
@@ -181,22 +165,18 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     !!            !    	Compute 		                      	   	 !
     !!            !	Transverse and longitudinal Polarization    	 !
     !!            ====================================================
-    ALLOCATE (P_trans_x_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC)
-    ALLOCATE (P_trans_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC)
-    ALLOCATE (P_trans_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC)
     ALLOCATE (P_long_x_k (nfft1/2+1, nfft2, nfft3, nb_species),  SOURCE=zeroC)
     ALLOCATE (P_long_y_k (nfft1/2+1, nfft2, nfft3, nb_species),  SOURCE=zeroC)
     ALLOCATE (P_long_z_k (nfft1/2+1, nfft2, nfft3, nb_species),  SOURCE=zeroC)
-
     BLOCK
         COMPLEX(dp) :: riri, fifi, kiki, toto
         DO s=1, nb_species
             DO k=1, nfft3
                 DO j=1, nfft2
                     DO i=1, nfft1/2+1
-                        riri = pola_tot_x_k(i,j,k,s)
-                        fifi = pola_tot_y_k(i,j,k,s)
-                        kiki = pola_tot_z_k(i,j,k,s)
+                        riri = P_tot_x_k(i,j,k,s)
+                        fifi = P_tot_y_k(i,j,k,s)
+                        kiki = P_tot_z_k(i,j,k,s)
                         IF ( k2(i,j,k) /= 0._dp ) THEN
                             toto = ( riri*kx(i) + fifi*ky(j) + kiki*kz(k) ) / k2(i,j,k)
                             P_long_x_k(i,j,k,s)= toto * kx(i)
@@ -207,53 +187,51 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                             P_long_y_k(i,j,k,s)=zeroC
                             P_long_z_k(i,j,k,s)=zeroC
                         END IF
-                        P_trans_x_k(i,j,k,s) = riri - P_long_x_k(i,j,k,s)
-                        P_trans_y_k(i,j,k,s) = fifi - P_long_y_k(i,j,k,s)
-                        P_trans_z_k(i,j,k,s) = kiki - P_long_z_k(i,j,k,s)
                     END DO
                 END DO
             END DO
         END DO
     END BLOCK
-    
-    DO s=1,nb_species
-        fftw3%in_backward= P_long_x_k(:,:,:,s)
-        CALL dfftw_execute(fftw3%plan_backward)
-        P_long_x(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
-        fftw3%in_backward= P_long_y_k(:,:,:,s)
-        CALL dfftw_execute(fftw3%plan_backward)
-        P_long_y(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
-        fftw3%in_backward= P_long_z_k(:,:,:,s)
-        CALL dfftw_execute(fftw3%plan_backward)
-        P_long_z(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
-    END DO
+    ALLOCATE (P_trans_x_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(P_tot_x_k-P_long_x_k))
+    ALLOCATE (P_trans_y_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(P_tot_y_k-P_long_y_k))
+    ALLOCATE (P_trans_z_k (nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(P_tot_z_k-P_long_z_k))
 
     IF (verbose) THEN
         BLOCK
-            REAL(dp), DIMENSION(nfft1, nfft2, nfft3, nb_species) :: pola_tot_x, pola_tot_y, pola_tot_z
+            REAL(dp), DIMENSION(nfft1, nfft2, nfft3, nb_species) :: P_tot_x, P_tot_y, P_tot_z, P_long_x, P_long_y, P_long_z
+
             DO s=1,nb_species
-                fftw3%in_backward= pola_tot_x_k(:,:,:,s)
+                fftw3%in_backward= P_long_x_k(:,:,:,s)
                 CALL dfftw_execute(fftw3%plan_backward)
-                pola_tot_x(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
+                P_long_x(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
+
+                fftw3%in_backward= P_long_y_k(:,:,:,s)
+                CALL dfftw_execute(fftw3%plan_backward)
+                P_long_y(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
+
+                fftw3%in_backward= P_long_z_k(:,:,:,s)
+                CALL dfftw_execute(fftw3%plan_backward)
+                P_long_z(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
+
+                fftw3%in_backward= P_tot_x_k(:,:,:,s)
+                CALL dfftw_execute(fftw3%plan_backward)
+                P_tot_x(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
                 
-                fftw3%in_backward= pola_tot_y_k(:,:,:,s)
+                fftw3%in_backward= P_tot_y_k(:,:,:,s)
                 CALL dfftw_execute(fftw3%plan_backward)
-                pola_tot_y(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
+                P_tot_y(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
                 
-                fftw3%in_backward= pola_tot_z_k(:,:,:,s)
+                fftw3%in_backward= P_tot_z_k(:,:,:,s)
                 CALL dfftw_execute(fftw3%plan_backward)
-                pola_tot_z(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
+                P_tot_z(:,:,:,s)=fftw3%out_backward*deltaVk/(twopi)**3
             END DO
-            OPEN (11, file='output/pola_tot_x')
-            OPEN (12, file='output/pola_tot_y')
-            OPEN (13, file='output/pola_tot_z')
+            OPEN (11, file='output/P_tot_x')
+            OPEN (12, file='output/P_tot_y')
+            OPEN (13, file='output/P_tot_z')
             DO i=1,nfft1
-                WRITE(11,*) i*deltax, pola_tot_x(i,nfft2/2+1,nfft3/2+1,1), Px(i,nfft2/2+1,nfft3/2+1,1), &
-                            P_long_x(i,nfft2/2+1,nfft3/2+1,1) 
-                WRITE(12,*) i*deltay, pola_tot_y(nfft1/2+1,i,nfft3/2+1,1), Py(nfft1/2+1,i,nfft3/2+1,1), &
-                            P_long_y(nfft1/2+1,i,nfft3/2+1,1) 
-                WRITE(13,*) i*deltaz, pola_tot_z(nfft1/2+1,nfft2/2+1,i,1), Pz(nfft1/2+1,nfft1/2+1,i,1), &
-                            P_long_z(nfft1/2+1,nfft1/2+1,i,1)
+                WRITE(11,*) i*deltax, P_tot_x(i,nfft2/2+1,nfft3/2+1,1), P_long_x(i,nfft2/2+1,nfft3/2+1,1) 
+                WRITE(12,*) i*deltay, P_tot_y(nfft1/2+1,i,nfft3/2+1,1), P_long_y(nfft1/2+1,i,nfft3/2+1,1) 
+                WRITE(13,*) i*deltaz, P_tot_z(nfft1/2+1,nfft2/2+1,i,1), P_long_z(nfft1/2+1,nfft1/2+1,i,1)
             END DO
             CLOSE(11)
             CLOSE(12)
@@ -265,7 +243,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                 !    	Compute rho_c_k	in k space		            !
                 !						                         	!
     !            ====================================================
-    IF (.NOT. ALLOCATED (rho_c_k_myway) ) ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC)    
+    IF (.NOT. ALLOCATED (rho_c_k_myway) ) ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC)
     DO s =1, nb_species
         DO p =1, molRotGrid%n_angles
             DO o =1, angGrid%n_angles
@@ -280,91 +258,93 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
             END DO
         END DO
     END DO
-
+    DEALLOCATE(rho_k)
 
 
     !            ====================================================
     !            !    	Compute Free energy due to		            !
     !            !	Transverse and longitudinal Polarization	    !
     !            ====================================================
+    BLOCK
+        COMPLEX(dp) :: k_tens_k_Px, k_tens_k_Py, k_tens_k_Pz
+        
+        F_pol_long_k = zeroC
+        F_pol_trans_k = zeroC
+        F_pol_tot_k = zeroC
+        
+        DO CONCURRENT (i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species)
+            IF (i>1 .and. i<nfft1/2+1) THEN; facsym=2.0_dp; ELSE; facsym=1.0_dp; END IF
+            k_index = MIN( INT( norm_k(i,j,k) / delta_k ) + 1, nb_k)
+            kindex_in_c= MIN( INT( norm_k(i,j,k) / delta_k_in_C ) + 1, nb_k_in_c)
+   
+            F_pol_long_k =F_pol_long_k +deltaVk*fourpi*(&
+                P_long_x_k(i,j,k,s)*CONJG(P_long_x_k(i,j,k,s))+&
+                P_long_y_k(i,j,k,s)*CONJG(P_long_y_k(i,j,k,s))+&
+                P_long_z_k(i,j,k,s)*CONJG(P_long_z_k(i,j,k,s)))&
+                /Ccc(kindex_in_c)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)+&
+                (deltaVk*(rho_c_k_myway(i,j,k,s)*CONJG(rho_n_k(i,j,k))+CONJG(rho_c_k_myway(i,j,k,s))&
+                *rho_n_k(i,j,k))*rho_0*0.5_dp*facsym*Cnc(kindex_in_c))/(twopi)**3
 
-    DO s=1, nb_species 
-        DO i=1, nfft1/2+1
-            IF (i>1 .and. i<nfft1/2+1) THEN
-                facsym=2.0_dp
-            ELSE
-                facsym=1.0_dp
-            END IF
-            DO j=1, nfft2
-                DO k=1, nfft3
-                     k_index = MIN( INT( norm_k(i,j,k) / delta_k ) + 1, nb_k)
-                     kindex_in_c= MIN( INT( norm_k(i,j,k) / delta_k_in_C ) + 1, nb_k_in_c)
-                     ! Here it happens that k_index gets higher than the highest c_k index.
-                     ! In this case one imposes k_index = k_index_max
-!~                      IF ( kindex_in_c > nb_k_in_c ) kindex_in_c = nb_k_in_c 
-!~                      IF ( k_index > nb_k ) k_index = nb_k
-                     F_pol_long_k=F_pol_long_k+deltaVk*fourpi*(P_long_x_k(i,j,k,s)*CONJG(p_long_x_k(i,j,k,s))+&
-                     p_long_y_k(i,j,k,s)*CONJG(p_long_y_k(i,j,k,s))+p_long_z_k(i,j,k,s)&
-                     *CONJG(p_long_z_k(i,j,k,s)))/Ccc(kindex_in_c)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)+&
-                     (deltaVk*(rho_c_k_myway(i,j,k,s)*CONJG(rho_n_k(i,j,k))+CONJG(rho_c_k_myway(i,j,k,s))&
-                     *rho_n_k(i,j,k))*rho_0*0.5_dp*facsym*Cnc(kindex_in_c))/(twopi)**3
+            F_pol_trans_k =F_pol_trans_k +deltaVk*(&
+                P_trans_x_k(i,j,k,s)*CONJG(P_trans_x_k(i,j,k,s))+&
+                P_trans_y_k(i,j,k,s)*CONJG(P_trans_y_k(i,j,k,s))+&
+                P_trans_z_k(i,j,k,s)*CONJG(P_trans_z_k(i,j,k,s)))&
+                /chi_t(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
+
+            F_pol_tot_k =F_pol_tot_k-(kBT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*rho_0**2*&
+                (P_tot_x_k(i,j,k,s)*CONJG(P_tot_x_k(i,j,k,s))&
+                +P_tot_y_k(i,j,k,s)*CONJG(P_tot_y_k(i,j,k,s))&
+                +P_tot_z_k(i,j,k,s)*CONJG(P_tot_z_k(i,j,k,s))))
+
+            DO CONCURRENT (o=1:angGrid%n_angles, p=1:molRotGrid%n_angles)
+        !!========================================================================================================================
+        !!Evaluate gradient
+        !!========================================================================================================================
+                molec_polarx_k_local = molec_polarx_k(i,j,k,o,p,s)
+                molec_polary_k_local = molec_polary_k(i,j,k,o,p,s)
+                molec_polarz_k_local = molec_polarz_k(i,j,k,o,p,s)
+        
+                IF (k2(i,j,k)==0.0_dp) THEN
+                    dF_pol_trans_k(i,j,k,o,p,s)=&
+                        rho_0*qfact/chi_t(k_index)*angGrid%weight(o)*molRotGrid%weight(p)*&
+                        (P_trans_x_k(i,j,k,s)*CONJG(molec_polarx_k_local)&
+                        +P_trans_y_k(i,j,k,s)*CONJG(molec_polary_k_local)&
+                        +P_trans_z_k(i,j,k,s)*CONJG(molec_polarz_k_local))
+                    
+                    dF_pol_long_k(i,j,k,o,p,s)=0.0_dp
+                ELSE
+                    k_tens_k_Px = CONJG(kx(i)*kx(i)*molec_polarx_k_local+&
+                                        kx(i)*ky(j)*molec_polary_k_local+&
+                                        kx(i)*kz(k)*molec_polarz_k_local)/k2(i,j,k)
+                    k_tens_k_Py = CONJG(ky(j)*kx(i)*molec_polarx_k_local+&
+                                        ky(j)*ky(j)*molec_polary_k_local+&
+                                        ky(j)*kz(k)*molec_polarz_k_local)/k2(i,j,k)
+                    k_tens_k_Pz = CONJG(kz(k)*kx(i)*molec_polarx_k_local+&
+                                        kz(k)*ky(j)*molec_polary_k_local+&
+                                        kz(k)*kz(k)*molec_polarz_k_local)/k2(i,j,k)
+                                        
+                    dF_pol_trans_k(i,j,k,o,p,s)=&
+                        rho_0*qfact/chi_t(k_index)*angGrid%weight(o)*molRotGrid%weight(p)*&
+                        (P_trans_x_k(i,j,k,s)*(CONJG(molec_polarx_k_local)-k_tens_k_Px)&
+                        +P_trans_y_k(i,j,k,s)*(CONJG(molec_polary_k_local)-k_tens_k_Py)&
+                        +P_trans_z_k(i,j,k,s)*(CONJG(molec_polarz_k_local)-k_tens_k_Pz))
+                    
+                    dF_pol_long_k(i,j,k,o,p,s)=rho_0*qfact/Ccc(kindex_in_c)*fourpi*angGrid%weight(o)&
+                        *molRotGrid%weight(p)*(&
+                        P_long_x_k(i,j,k,s)*k_tens_k_Px+&
+                        P_long_y_k(i,j,k,s)*k_tens_k_Py+&
+                        P_long_z_k(i,j,k,s)*k_tens_k_Pz)+&
+                        rho_0*Cnc(kindex_in_c)*angGrid%weight(o)*molRotGrid%weight(p)*&
+                        (rho_n_k(i,j,k)*CONJG(sigma_k(i,j,k,o,p,s))+rho_c_k_myway(i,j,k,s)/rho_0)
+                END IF
     
-                     F_pol_trans_k=F_pol_trans_k+deltaVk*(P_trans_x_k(i,j,k,s)*CONJG(p_trans_x_k(i,j,k,s))&
-                     +p_trans_y_k(i,j,k,s)*CONJG(p_trans_y_k(i,j,k,s))+p_trans_z_k(i,j,k,s)*&
-                     CONJG(p_trans_z_k(i,j,k,s)))/chi_t(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
-    
-                     F_pol_tot_k=F_pol_tot_k-(kBT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*rho_0**2*&
-                     (pola_tot_x_k(i,j,k,s)*CONJG(pola_tot_x_k(i,j,k,s))+pola_tot_y_k(i,j,k,s)*&
-                     CONJG(pola_tot_y_k(i,j,k,s))+pola_tot_z_k(i,j,k,s)*CONJG(pola_tot_z_k(i,j,k,s))))
-                     DO o=1,angGrid%n_angles
-                         DO p=1,molRotGrid%n_angles 
-    !!========================================================================================================================
-    !!Evaluate gradient
-    !!========================================================================================================================
-                                  molec_polarx_k_local = molec_polarx_k(i,j,k,o,p,s)
-                                  molec_polary_k_local = molec_polary_k(i,j,k,o,p,s)
-                                  molec_polarz_k_local = molec_polarz_k(i,j,k,o,p,s)
-                                  k_tens_k_Px=CONJG(kx(i)*kx(i)*molec_polarx_k_local+&
-                                  kx(i)*ky(j)*molec_polary_k_local+kx(i)*kz(k)*molec_polarz_k_local)
-                                  k_tens_k_Py=CONJG(kx(i)*ky(j)*molec_polarx_k_local+&
-                                  ky(j)*ky(j)*molec_polary_k_local+ky(j)*kz(k)*molec_polarz_k_local)
-                                  k_tens_k_Pz=CONJG(kz(k)*kx(i)*molec_polarx_k_local+&
-                                  kz(k)*ky(j)*molec_polary_k_local+kz(k)*kz(k)*molec_polarz_k_local)
-       
-                             IF (k2(i,j,k)==0.0_dp) THEN
-                                    dF_pol_trans_k(i,j,k,o,p,s)=&
-                                    rho_0*qfact/chi_t(k_index)*angGrid%weight(o)*molRotGrid%weight(p)*&
-                                    (P_trans_x_k(i,j,k,s)*CONJG(molec_polarx_k_local)&
-                                    +P_trans_y_k(i,j,k,s)*CONJG(molec_polary_k_local)&
-                                    +P_trans_z_k(i,j,k,s)*CONJG(molec_polarz_k_local))
-                                    dF_pol_long_k(i,j,k,o,p,s)=0.0_dp
-    !             ===============================================================================
-                             ELSE
-                                    dF_pol_trans_k(i,j,k,o,p,s)=&
-                                    rho_0*qfact/chi_t(k_index)*angGrid%weight(o)*molRotGrid%weight(p)*&
-                                    (P_trans_x_k(i,j,k,s)*(CONJG(molec_polarx_k_local)-k_tens_k_Px/k2(i,j,k))&
-                                    +P_trans_y_k(i,j,k,s)*(CONJG(molec_polary_k_local)-k_tens_k_Py/k2(i,j,k))&
-                                    +P_trans_z_k(i,j,k,s)*(CONJG(molec_polarz_k_local)-k_tens_k_Pz/k2(i,j,k)))
-                             END IF
-    !             ===============================================================================
-                                    dF_pol_tot_k(i,j,k,o,p,s)=-kBT*3.0_dp*rho_0/(mu_SPCE**2*n_0)*molRotGrid%weight(p)*&
-                                    (pola_tot_x_k(i,j,k,s)*CONJG(molec_polarx_k_local)&
-                                    +pola_tot_y_k(i,j,k,s)*CONJG(molec_polary_k_local)&
-                                    +pola_tot_z_k(i,j,k,s)*CONJG(molec_polarz_k_local))*angGrid%weight(o)
-            
-                             IF(k2(i,j,k)/=0.0_dp) THEN
-                                    dF_pol_long_k(i,j,k,o,p,s)=rho_0*qfact/Ccc(kindex_in_c)*fourpi*angGrid%weight(o)&
-                                    *molRotGrid%weight(p)*(P_long_x_k(i,j,k,s)*k_tens_k_Px+P_long_y_k(i,j,k,s)&
-                                    *k_tens_k_Py+P_long_z_k(i,j,k,s)*k_tens_k_Pz)/k2(i,j,k)+&
-                                    rho_0*Cnc(kindex_in_c)*angGrid%weight(o)*molRotGrid%weight(p)*&
-                                    (rho_n_k(i,j,k)*CONJG(sigma_k(i,j,k,o,p,s))+rho_c_k_myway(i,j,k,s)/rho_0)
-                             END IF
-                        END DO  !PSI
-                    END DO   !OMEGA
-                END DO    !K
-            END DO    !J
-        END DO    !I
-    END DO     !SPECIES
+                dF_pol_tot_k(i,j,k,o,p,s)=-kBT*3.0_dp*rho_0/(mu_SPCE**2*n_0)*molRotGrid%weight(p)*&
+                    (P_tot_x_k(i,j,k,s)*CONJG(molec_polarx_k_local)&
+                    +P_tot_y_k(i,j,k,s)*CONJG(molec_polary_k_local)&
+                    +P_tot_z_k(i,j,k,s)*CONJG(molec_polarz_k_local))*angGrid%weight(o)
+            END DO
+        END DO
+    END BLOCK
     DEALLOCATE ( rho_n_k, P_trans_x_k, P_trans_y_k, P_trans_z_k, rho_c_k_myway )
 
     !!========================================================================================================================
@@ -391,7 +371,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                     DO o=1,angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg=icg+1
-                            dF(icg)=dF(icg)+dF_pol_tot(i,j,k,o,p,s)*cg_vect(icg)*rho_0*2.0_dp*deltaV!* weight(o) * molRotGrid%weight(p) 
+                            dF(icg)=dF(icg)+dF_pol_tot(i,j,k,o,p,s)*cg_vect(icg)*rho_0*2.0_dp*deltaV
                         END DO
                     END DO
                 END DO
@@ -407,6 +387,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     !!!========================================================================================================================
     F_pol = F_pol_tot+F_pol_long+F_pol_trans+Fint
-    FF = FF+F_pol
+    FF = FF +F_pol
 
 END SUBROUTINE energy_polarization_multi_with_nccoupling
