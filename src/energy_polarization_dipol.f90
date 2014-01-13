@@ -2,10 +2,10 @@ SUBROUTINE energy_polarization_dipol (Fint)
 
     USE precision_kinds, ONLY : i2b, dp
     USE system,          ONLY : kBT, rho_0, spaceGrid
-    USE quadrature,      ONLY : Omx , Omy , Omz, angGrid, molRotGrid
+    USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid
     USE minimizer,       ONLY : cg_vect , FF , dF
     USE constants,       ONLY : twopi
-    USE fft,             ONLY : fftw3
+    USE fft,             ONLY : fftw3, k2, kproj, norm_k
     USE input,           ONLY : input_log, input_char, verbose
     USE dcf,             ONLY : c_delta , c_d, delta_k, nb_k
     
@@ -14,7 +14,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
     INTEGER(i2b):: icg, i, j, k, l, m, n, m1, m2, m3, o, p
     INTEGER(i2b):: nfft1, nfft2, nfft3, nf1 , nf2 , nf3
     INTEGER(i2b):: k_index
-    REAL(dp):: kx, ky, kz, kx2, ky2, kz2, k2, norm_k, Lx, Ly, Lz, dx, dy, dz
+    REAL(dp):: Lx, Ly, Lz, dx, dy, dz
     REAL(dp), INTENT(OUT) :: Fint ! Internal part of the free energy due to polarization
     REAL(dp):: Vint ! Dummy for calculation of Vint
     REAL(dp):: fact ! facteur d'integration
@@ -26,7 +26,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
     REAL(dp) :: c_deltat, c_dt ! dummy local values of c_delta and c_d in loops
     REAL(dp) :: time1, time0, time2, time3! timestamps
     REAL(dp) :: twopioLx, twopioLy, twopioLz ! dummy for 2pi/Lx, 2pi/Ly, 2pi/Lz
-    REAL(dp) :: pxt, pyt, pzt, r
+    REAL(dp) :: pxt, pyt, pzt, r, Ex_tmp, Ey_tmp, Ez_tmp
     REAL(dp) :: Nk
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx , weight_omy , weight_omz
     CHARACTER(50) :: filename
@@ -49,35 +49,33 @@ SUBROUTINE energy_polarization_dipol (Fint)
     ALLOCATE ( weight_omx ( angGrid%n_angles ), SOURCE=angGrid%weight*Omx )
     ALLOCATE ( weight_omy ( angGrid%n_angles ), SOURCE=angGrid%weight*Omy )
     ALLOCATE ( weight_omz ( angGrid%n_angles ), SOURCE=angGrid%weight*Omz )
-    
+
     icg = 0
     DO i = 1 , nfft1
-        m1=i-1
-        IF (i> nfft1/2) m1=i-1-nfft1
         DO j = 1 , nfft2
-            m2=j-1
-            IF (i>nfft2/2) m2=j-1-nfft2
             DO k = 1 , nfft3    
-                m3=k-1
-                IF (k>nfft3/2) m3=k-1-nfft3
-                ! init dummy variables tpx , tpy and tpz in order not to loop directly over big arrays
                 pxt = 0.0_dp
                 pyt = 0.0_dp
                 pzt = 0.0_dp
                 DO o = 1 , angGrid%n_angles
                     DO p=1, molRotGrid%n_angles
                         icg = icg + 1
-                        rho = cg_vect (icg) ** 2
+                        rho = cg_vect(icg) ** 2
                         pxt = pxt + weight_Omx(o) * molRotGrid%weight(p) * rho
                         pyt = pyt + weight_Omy(o) * molRotGrid%weight(p) * rho
                         pzt = pzt + weight_Omz(o) * molRotGrid%weight(p) * rho
-                        r = SQRT((m1*dx)**2+(m2*dy)**2+(m3*dz)**2)
                     END DO
                 END DO
                 Px (i,j,k) = pxt
                 Py (i,j,k) = pyt
                 Pz (i,j,k) = pzt
-                IF (verbose) polascal(i,j,k,1) = polascal(i,j,k,1) +pxt*m1*dx/r +pyt*m2*dy/r +pzt*m3*dz/r
+                IF (verbose) THEN
+                    IF (i>nfft1/2) THEN; m1=i-1-nfft1; ELSE; m1=i-1; END IF
+                    IF (j>nfft2/2) THEN; m2=j-1-nfft2; ELSE; m2=j-1; END IF
+                    IF (k>nfft3/2) THEN; m3=k-1-nfft3; ELSE; m3=k-1; END IF
+                    r = SQRT((m1*dx)**2+(m2*dy)**2+(m3*dz)**2)
+                    polascal(i,j,k,1) = polascal(i,j,k,1) +pxt*m1*dx/r +pyt*m2*dy/r +pzt*m3*dz/r
+                END IF
             END DO
         END DO
     END DO
@@ -105,24 +103,25 @@ SUBROUTINE energy_polarization_dipol (Fint)
     END IF
   
     ! fourier transform px , py and pz
-    ALLOCATE ( Pkx ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-    ALLOCATE ( Pky ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-    ALLOCATE ( Pkz ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
+    ALLOCATE ( Pkx (nfft1/2+1, nfft2, nfft3) )
+    ALLOCATE ( Pky (nfft1/2+1, nfft2, nfft3) )
+    ALLOCATE ( Pkz (nfft1/2+1, nfft2, nfft3) )
     
     fftw3%in_forward = Px
-    DEALLOCATE ( Px )
     CALL dfftw_execute ( fftw3%plan_forward )
     Pkx = fftw3%out_forward
     
     fftw3%in_forward = Py
-    DEALLOCATE ( Py )
     CALL dfftw_execute ( fftw3%plan_forward )
     Pky = fftw3%out_forward
     
     fftw3%in_forward = Pz
-    DEALLOCATE ( Pz )
     CALL dfftw_execute ( fftw3%plan_forward )
     Pkz = fftw3%out_forward 
+
+    DEALLOCATE ( Px )
+    DEALLOCATE ( Py )
+    DEALLOCATE ( Pz )
     
     ! compute polarisation in k-space
     ALLOCATE ( Ekx (nfft1/2+1, nfft2, nfft3) )
@@ -130,43 +129,23 @@ SUBROUTINE energy_polarization_dipol (Fint)
     ALLOCATE ( Ekz (nfft1/2+1, nfft2, nfft3) )
     
     ! get maximum number of k points as inputed in c_delta and c_d
-    DO n = 1, nfft3
-        m3 = n-1
-        IF ( n>nf3 ) m3 = n-1-nfft3
-        kz = twopioLz*REAL(m3,dp)
-        kz2 = kz**2
-        DO m = 1, nfft2
-            m2 = m-1
-            IF ( m > nf2 ) m2 = m - 1 - nfft2
-            ky = twopioLy*REAL ( m2 , dp )
-            ky2 = ky**2        
-            DO l = 1 , nf1 + 1
-                m1 = l-1
-                IF ( l > nf1 ) m1 = l - 1 - nfft1
-                kx = twopioLx*REAL ( m1 , dp )
-                kx2 = kx**2            
-                k2 = kx2+ky2+kz2
-                norm_k = SQRT( k2 )
-                k_index = INT( norm_k / delta_k ) + 1
-                IF ( k_index > nb_k ) k_index = nb_k ! Here it happens that k_index gets higher than the highest c_k index. In this case one imposes k_index = k_index_max
-                pxt_k = Pkx(l,m,n)
-                pyt_k = Pky(l,m,n)
-                pzt_k = Pkz(l,m,n)
-                ! pay attention to first moment value in order not to divise by zero
-                IF ( k2 /= 0.0_dp) THEN
-                    k_dot_P = ( kx*pxt_k + ky*pyt_k + kz*pzt_k )/ k2
-                ELSE
-                    k_dot_P = CMPLX( tiny(1.0_dp),tiny(1.0_dp) ,dp )
-                END IF
-                c_deltat = c_delta ( k_index )
-                c_dt = c_d ( k_index )
-                Ekx ( l,m,n ) = c_deltat * pxt_k + c_dt * ( 3.0_dp * k_dot_P * kx - pxt_k )
-                Eky ( l,m,n ) = c_deltat * pyt_k + c_dt * ( 3.0_dp * k_dot_P * ky - pyt_k )
-                Ekz ( l,m,n ) = c_deltat * pzt_k + c_dt * ( 3.0_dp * k_dot_P * kz - pzt_k )
-            END DO
-        END DO
+    DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
+        pxt_k = Pkx(l,m,n)
+        pyt_k = Pky(l,m,n)
+        pzt_k = Pkz(l,m,n)
+        IF ( k2(l,m,n) /= 0.0_dp) THEN
+            k_dot_P = ( kproj(1,l)*pxt_k + kproj(2,m)*pyt_k + kproj(3,n)*pzt_k )/ k2(l,m,n)
+        ELSE
+            k_dot_P = CMPLX( tiny(1.0_dp),tiny(1.0_dp) ,dp )
+        END IF
+        k_index = MIN( INT( norm_k(l,m,n)/delta_k ) +1, nb_k)
+        c_deltat = c_delta ( k_index )
+        c_dt = c_d ( k_index )
+        Ekx ( l,m,n ) = c_deltat * pxt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(1,l) - pxt_k )
+        Eky ( l,m,n ) = c_deltat * pyt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(2,m) - pyt_k )
+        Ekz ( l,m,n ) = c_deltat * pzt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(3,n) - pzt_k )
     END DO
-
+    
     DEALLOCATE ( Pkx )
     DEALLOCATE ( Pky )
     DEALLOCATE ( Pkz )
@@ -197,27 +176,29 @@ SUBROUTINE energy_polarization_dipol (Fint)
     
     Fint = 0.0_dp
     icg = 0
-    DO i = 1 , nfft1
-        DO j = 1 , nfft2
-            DO k = 1 , nfft3
-                DO o = 1 , angGrid%n_angles
-                    DO p=1 , molRotGrid%n_angles
-                        icg = icg + 1
-                        psi = cg_vect ( icg )
-                        rho = psi ** 2
-                        Vint = - kBT * rho_0 * ( Omx(o) * Ex(i,j,k) + Omy(o) * Ey(i,j,k) + Omz(o) * Ez(i,j,k) )
-                        Fint = Fint + (rho - 1.0_dp) * angGrid%weight(o) * molRotGrid%weight(p) * Vint
-                        dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * molRotGrid%weight(p) * fact * Vint
-                    END DO  
-                END DO
-            END DO
+    DO i = 1, nfft1
+    DO j = 1, nfft2
+    DO k = 1, nfft3
+        Ex_tmp = Ex(i,j,k)
+        Ey_tmp = Ey(i,j,k)
+        Ez_tmp = Ez(i,j,k)
+        DO o = 1 , angGrid%n_angles
+            Vint = -kBT*rho_0*( Omx(o)*Ex_tmp + Omy(o)*Ey_tmp + Omz(o)*Ez_tmp ) *angGrid%weight(o)
+            DO p=1 , molRotGrid%n_angles
+                icg = icg + 1
+                psi = cg_vect ( icg )
+                rho = psi ** 2
+                Fint = Fint + (rho - 1.0_dp) * molRotGrid%weight(p) * Vint
+                dF(icg) = dF(icg) + 2.0_dp * psi * molRotGrid%weight(p) * Vint * fact
+            END DO  
         END DO
     END DO
-
+    END DO
+    END DO
     Fint = Fint * 0.5_dp * spaceGrid%dv * rho_0
+
     FF = FF + Fint
 
     DEALLOCATE ( Ex, Ey, Ez )
-    CALL CPU_TIME ( time1 )
 
 END SUBROUTINE energy_polarization_dipol
