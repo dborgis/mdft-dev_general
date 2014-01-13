@@ -144,15 +144,15 @@ SUBROUTINE energy_polarization_multi (F_pol)
         
         F_pol_long = &
             F_pol_long+deltaVk*fourpi*REAL(   P_long_x_k(i,j,k,s)*CONJG(P_long_x_k(i,j,k,s))&
-                                        + P_long_y_k(i,j,k,s)*CONJG(P_long_y_k(i,j,k,s))&
-                                        + P_long_z_k(i,j,k,s)*CONJG(P_long_z_k(i,j,k,s)))&
+                                            + P_long_y_k(i,j,k,s)*CONJG(P_long_y_k(i,j,k,s))&
+                                            + P_long_z_k(i,j,k,s)*CONJG(P_long_z_k(i,j,k,s)))&
                                         /chi_l(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
         
         F_pol_trans = &
             F_pol_trans+deltaVk*REAL(  P_trans_x_k(i,j,k,s)*CONJG(P_trans_x_k(i,j,k,s))&
-                                  +P_trans_y_k(i,j,k,s)*CONJG(P_trans_y_k(i,j,k,s))&
-                                  +P_trans_z_k(i,j,k,s)*CONJG(P_trans_z_k(i,j,k,s)))&
-                                  /chi_t(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
+                                      +P_trans_y_k(i,j,k,s)*CONJG(P_trans_y_k(i,j,k,s))&
+                                      +P_trans_z_k(i,j,k,s)*CONJG(P_trans_z_k(i,j,k,s)))&
+                                        /chi_t(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
         
         F_pol_tot = &
             F_pol_tot-kBT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*rho_0**2*&
