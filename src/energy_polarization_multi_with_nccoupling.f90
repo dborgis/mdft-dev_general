@@ -190,26 +190,26 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     BLOCK
         COMPLEX(dp) :: riri, fifi, kiki, toto
-        DO n=1, nb_species
-            DO i=1, nfft1/2+1
+        DO s=1, nb_species
+            DO k=1, nfft3
                 DO j=1, nfft2
-                    DO k=1, nfft3
+                    DO i=1, nfft1/2+1
+                        riri = pola_tot_x_k(i,j,k,s)
+                        fifi = pola_tot_y_k(i,j,k,s)
+                        kiki = pola_tot_z_k(i,j,k,s)
                         IF ( k2(i,j,k) /= 0._dp ) THEN
-                            riri = pola_tot_x_k(i,j,k,n)
-                            fifi = pola_tot_y_k(i,j,k,n)
-                            kiki = pola_tot_z_k(i,j,k,n)
                             toto = ( riri*kx(i) + fifi*ky(j) + kiki*kz(k) ) / k2(i,j,k)
-                            P_long_x_k(i,j,k,n)= toto * kx(i)
-                            P_long_y_k(i,j,k,n)= toto * ky(j)
-                            P_long_z_k(i,j,k,n)= toto * kz(k)
+                            P_long_x_k(i,j,k,s)= toto * kx(i)
+                            P_long_y_k(i,j,k,s)= toto * ky(j)
+                            P_long_z_k(i,j,k,s)= toto * kz(k)
                         ELSE
-                            P_long_x_k(i,j,k,n)=(0.0_dp,0.0_dp)
-                            P_long_y_k(i,j,k,n)=(0.0_dp,0.0_dp)
-                            P_long_z_k(i,j,k,n)=(0.0_dp,0.0_dp)
+                            P_long_x_k(i,j,k,s)=zeroC
+                            P_long_y_k(i,j,k,s)=zeroC
+                            P_long_z_k(i,j,k,s)=zeroC
                         END IF
-                        P_trans_x_k(i,j,k,n) = pola_tot_x_k(i,j,k,n)- P_long_x_k(i,j,k,n)
-                        P_trans_y_k(i,j,k,n) = pola_tot_y_k(i,j,k,n)- P_long_y_k(i,j,k,n)
-                        P_trans_z_k(i,j,k,n) = pola_tot_z_k(i,j,k,n)- P_long_z_k(i,j,k,n)
+                        P_trans_x_k(i,j,k,s) = riri - P_long_x_k(i,j,k,s)
+                        P_trans_y_k(i,j,k,s) = fifi - P_long_y_k(i,j,k,s)
+                        P_trans_z_k(i,j,k,s) = kiki - P_long_z_k(i,j,k,s)
                     END DO
                 END DO
             END DO
