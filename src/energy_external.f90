@@ -13,11 +13,8 @@ SUBROUTINE energy_external (Fext)
     INTEGER(i2b) :: icg , i , j , k , o , p! dummy for loops
     REAL(dp) :: psi
     REAL(dp) :: wdfve
-    REAL(dp) :: time0, time1
     INTEGER(i2b) :: spec
     
-    CALL CPU_TIME ( time0 )
-
     Fext = 0.0_dp
 
     ! F_{ext}[\rho(\vec{r},\vec{\Omega})]=\int d \vec{r} d \vec{\Omega} V_{ext}(\vec{r},\vec{\Omega})\rho(\vec{r},\vec{\Omega})
@@ -43,5 +40,4 @@ SUBROUTINE energy_external (Fext)
 
     FF = FF + Fext
 
-    CALL CPU_TIME (time1)
 END SUBROUTINE energy_external
