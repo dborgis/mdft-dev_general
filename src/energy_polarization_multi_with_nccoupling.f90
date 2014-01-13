@@ -36,6 +36,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: Vpair_k
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: &
         P_trans_x_k, P_trans_y_k, P_trans_z_k, P_long_x_k, P_long_y_k, P_long_z_k, pola_tot_x_k, pola_tot_y_k, pola_tot_z_k
+    COMPLEX(dp), PARAMETER :: zeroC=(0._dp,0._dp)
     
     IF (nb_species/=1) THEN
         PRINT*, 'transv_and_longi_polarization_micro IS NOT WORKING FOR MULTISPECIES'
@@ -49,9 +50,9 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     F_pol_long=0.0_dp
     F_pol_trans=0.0_dp
     F_pol_tot=0.0_dp
-    F_pol_long_k=(0.0_dp,0.0_dp)
-    F_pol_trans_k=(0.0_dp,0.0_dp)
-    F_pol_tot_k=(0.0_dp,0.0_dp)
+    F_pol_long_k=zeroC
+    F_pol_trans_k=zeroC
+    F_pol_tot_k=zeroC
     F_pol=0.0_dp
     dF_pol_long=0.0_dp
     dF_pol_trans=0.0_dp
@@ -59,64 +60,19 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     dF_pol_long_k=0.0_dp
     dF_pol_trans_k=0.0_dp
     dF_pol_tot_k=0.0_dp
-    rho_k=(0.0_dp,0.0_dp)
-    IF (.NOT. ALLOCATED (pola_tot_x_k) ) ALLOCATE (pola_tot_x_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=(0.0_dp,0.0_dp) )
-    IF (.NOT. ALLOCATED (pola_tot_y_k) ) ALLOCATE (pola_tot_y_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=(0.0_dp,0.0_dp) )
-    IF (.NOT. ALLOCATED (pola_tot_z_k) ) ALLOCATE (pola_tot_z_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=(0.0_dp,0.0_dp) )
+    rho_k=zeroC
+    IF (.NOT. ALLOCATED (pola_tot_x_k) ) ALLOCATE (pola_tot_x_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
+    IF (.NOT. ALLOCATED (pola_tot_y_k) ) ALLOCATE (pola_tot_y_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
+    IF (.NOT. ALLOCATED (pola_tot_z_k) ) ALLOCATE (pola_tot_z_k ( nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
     mu_SPCE=0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
-    IF (.NOT. ALLOCATED (rho_c_k_myway) ) ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(0.0_dp, 0.0_dp))
+    IF (.NOT. ALLOCATED (rho_c_k_myway) ) ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC)
     
-
-    !======================================================================================================
-    !            ====================================================
-    !            !    	Read Cnn(k), Cnc(k) and Ccc(k) 		!
-    !            ====================================================
-    
-!    OPEN(10,file='input/direct_correlation_functions/water/Ccc.dat')
-!    
-!      nb_k_in_C=0
-!      DO WHILE(.true.)
-!        READ(10,*,iostat=ios)
-!        IF (ios>0) THEN
-!          WRITE(*,*)'Error in compute_ck_dipolar.f90'
-!          WRITE(*,*)'something went wrong during the computation of the total number of lines in cs.in. stop'
-!          STOP
-!        ELSE IF (ios<0) THEN
-!          ! end of file reached
-!          EXIT
-!        ELSE
-!          nb_k_in_C=nb_k_in_C+1
-!        END IF
-!      END DO
-!    
-!    CLOSE(10)
-!    
-!    ALLOCATE(norm_k_in_c(nb_k_in_c))
-!    ALLOCATE(Ccc(nb_k_in_c))
-!    ALLOCATE(Cnc(nb_k_in_c))
-!    ALLOCATE(Cnn(nb_k_in_c))
-!    
-!    OPEN(10,file='input/direct_correlation_functions/water/Ccc.dat')
-!    OPEN(11,file='input/direct_correlation_functions/water/Cnc.dat')
-!    OPEN(12,file='input/direct_correlation_functions/water/Cnn.dat')
-!    
-!    DO i=1, nb_k_in_c
-!      READ(10,*) norm_k_in_c(i), Ccc(i)
-!      READ(11,*) norm_k_in_c(i), Cnc(i)
-!      READ(12,*) norm_k_in_c(i), Cnn(i)
-!    END DO
-!    delta_k_in_c = norm_k_in_c(2) - norm_k_in_c(1)
-!    
-!    CLOSE(10)
-!    CLOSE(11)
-!    CLOSE(12)
     !======================================================================================================
     !            ====================================================
     !            !    	Compute density in real and 		!
                  !       		Fourier space			!
                  !							!
     !            ====================================================
-    !Compute rho_k
     ALLOCATE ( rho_n (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
     ALLOCATE ( rho (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=0.0_dp )
     icg = 0
