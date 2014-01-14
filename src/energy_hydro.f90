@@ -5,7 +5,7 @@ SUBROUTINE energy_hydro (Fint)
     USE dcf, ONLY: c_s, nb_k, delta_k
   use constants,only : fourpi , i_complex,twopi
   USE minimizer, ONLY: cg_vect , FF , dF
-  use quadrature, only: sym_order, angGrid, molRotGrid
+  use quadrature, only: molRotSymOrder, angGrid, molRotGrid
   use fft,only : fftw3 , norm_k,kx,ky,kz,k2,&
                 timesExpPrefactork2
   use input, only : input_log
@@ -88,7 +88,7 @@ SUBROUTINE energy_hydro (Fint)
             delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect(icg) ** 2 ! sum over all orientations
           END DO  
         END DO
-          delta_n(i,j,k)=delta_n_ijk*sym_order/(twopi*fourpi) - 1.0_dp ! normalize (n=1/fourpi int_o rho(r,o))
+          delta_n(i,j,k)=delta_n_ijk*molRotSymOrder/(twopi*fourpi) - 1.0_dp ! normalize (n=1/fourpi int_o rho(r,o))
       END DO
     END DO
   END DO
@@ -266,7 +266,7 @@ SUBROUTINE energy_hydro (Fint)
           do p=1,molRotGrid%n_angles
             icg = icg + 1
             psi = cg_vect ( icg )
-            dF (icg) = dF ( icg )+2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)/(fourpi*twopi/sym_order)*( Vint + dF_cg_ijk )
+            dF (icg) = dF ( icg )+2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)/(fourpi*twopi/molRotSymOrder)*(Vint+dF_cg_ijk)
           END DO
         END DO
       END DO

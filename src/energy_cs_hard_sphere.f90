@@ -3,7 +3,7 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
 
     USE precision_kinds, only: i2b,dp
     use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , c_s_hs , kBT , deltaV , rho_0_multispec , nb_species
-    use quadrature, only: sym_order, angGrid, molRotGrid
+    use quadrature, only: molRotSymOrder, angGrid, molRotGrid
     USE minimizer, ONLY: cg_vect , FF , dF
     use constants, only: fourpi , pi , twopi
     use fft, only: fftw3, norm_k
@@ -41,7 +41,7 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
         END DO
     END DO
     END DO
-    Delta_rho = Delta_rho-(twopi*fourpi)/real(sym_order,dp)
+    Delta_rho = Delta_rho-(twopi*fourpi)/real(molRotSymOrder,dp)
     !> Next FFT sequences can be done on multiple threads
     !> Compute rho in k-space
     fftw3%in_forward = Delta_rho

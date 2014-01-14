@@ -5,7 +5,7 @@ SUBROUTINE get_final_density ( neq )
     USE system, ONLY : nb_species, spaceGrid
     USE constants, ONLY : twopi
     USE minimizer, ONLY: CG_vect
-    USE quadrature, ONLY : sym_order, angGrid, molRotGrid
+    USE quadrature, ONLY : molRotSymOrder, angGrid, molRotGrid
     USE fft, ONLY: fftw3 , timesExpPrefactork2
     USE input, ONLY: verbose
     
@@ -31,7 +31,7 @@ SUBROUTINE get_final_density ( neq )
             do omega = 1 , angGrid%n_angles
                 do p=1, molRotGrid%n_angles
                     icg = icg + 1
-                    rho_over_fourpi = cg_vect ( icg ) ** 2 / (twopi**2*2.0_dp/sym_order)
+                    rho_over_fourpi = cg_vect ( icg ) ** 2 / (twopi**2*2.0_dp/molRotSymOrder)
                     local_density = local_density + angGrid%weight ( omega ) *molRotGrid%weight(p)* rho_over_fourpi ! integral of rho over all orientations ie 'n'
                 END DO
             END DO

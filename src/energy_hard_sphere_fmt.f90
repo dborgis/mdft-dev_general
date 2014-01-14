@@ -3,7 +3,7 @@ USE precision_kinds,only : dp , i2b
 use system,only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
                     weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
                     muexc_0_multispec , Fexc_0_multispec , mole_fraction , rho_0_multispec
-use quadrature,only : sym_order , angGrid, molRotGrid
+use quadrature,only : molRotSymOrder , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants,only : pi , FourPi , twopi
 use fft,only : fftw3
@@ -56,7 +56,7 @@ do species = 1 , nb_species
            END DO          
         END DO
         ! correct by 8*pi²/n as the integral over all orientations o and psi is 4pi and 2pi/n
-        local_density = local_density*real(sym_order, dp) / (fourpi*twopi)
+        local_density = local_density*real(molRotSymOrder, dp) / (fourpi*twopi)
         ! at the same time integrate rho in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
         rho ( i , j , k , species ) = local_density
       END DO

@@ -8,7 +8,7 @@ SUBROUTINE vext_total_sum
     USE quadrature,         ONLY: angGrid, molRotGrid
     USE constants,          ONLY: fourpi, zero
     USE external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
-    USE quadrature,         ONLY: sym_order
+    USE quadrature,         ONLY: molRotSymOrder
     USE input,              ONLY: verbose
 
     IMPLICIT NONE
@@ -42,7 +42,7 @@ SUBROUTINE vext_total_sum
             IF ( ALLOCATED (Vext_hard_core) ) PRINT*, MINVAL(Vext_hard_core), ' < Vext_hard_core < ', MAXVAL(Vext_hard_core)
             ! mean over orientations and print
             CALL mean_over_orientations ( Vext_total ( : , : , : , : , : , 1 ) , temparray )
-            temparray = temparray / (fourpi**2/(2.0_dp*sym_order))
+            temparray = temparray / (fourpi**2/(2.0_dp*molRotSymOrder))
             filename = 'output/Vext.cube' ! care when HS or multispec
             CALL write_to_cube_file ( temparray , filename )
             filename = 'output/Vext_along-z.dat' ! care when HS or multispec'

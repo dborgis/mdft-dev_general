@@ -5,7 +5,7 @@ SUBROUTINE allocate_from_input
     use input,only : input_line, input_int, input_dp, input_log, verbose
     USE system, ONLY: n_0, rho_0, temp, beta, kbT, Rc, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
     use constants,only : fourpi , boltz, navo , twopi
-    use quadrature,only : sym_order
+    use quadrature,only : molRotSymOrder
 
     IMPLICIT NONE
 
@@ -14,10 +14,10 @@ SUBROUTINE allocate_from_input
 
     verbose = input_log('verbose')
     
-    sym_order = input_int('sym_order') !Get the order of the main symmetry axis of the solvent
-    if( sym_order < 1 ) then
-        print*,'order of main symetric axe cannot be less than 1. sym_order is declared as ',sym_order
-        stop 'CRITICAL STOP. CHANGE sym_order IN INPUT'
+    molRotSymOrder = input_int('molRotSymOrder') !Get the order of the main symmetry axis of the solvent
+    if( molRotSymOrder < 1 ) then
+        print*,'order of main symetric axe cannot be less than 1. molRotSymOrder is declared as ',molRotSymOrder
+        stop 'CRITICAL STOP. CHANGE molRotSymOrder IN INPUT'
     END IF
     
     spaceGrid%n_nodes = [ input_int('nfft1'), input_int('nfft2'), input_int('nfft3') ] ! number of grid nodes in each direction
@@ -68,7 +68,7 @@ SUBROUTINE allocate_from_input
         STOP 'UNPHYSICAL INPUT CHECK ref_bulk_density'
     END IF
     allocate ( rho_0_multispec ( nb_species ) )
-    rho_0_multispec = sym_order*n_0_multispec / (2.0_dp*twopi**2) ! for single specie compatibility while not fully complete :
+    rho_0_multispec = molRotSymOrder*n_0_multispec / (2.0_dp*twopi**2) ! for single specie compatibility while not fully complete :
     n_0 = n_0_multispec(1) ! for single specie compatibility while not fully complete : 
     rho_0 = rho_0_multispec(1) ! rho is the density per angle
 

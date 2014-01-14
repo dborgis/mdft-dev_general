@@ -22,7 +22,7 @@ module quadrature
         real(dp), allocatable, dimension(:) :: weight, root
     end type
     type (integrationScheme), public :: intScheme
-    integer(i2b), public :: sym_order
+    integer(i2b), public :: molRotSymOrder
 
     contains
     
@@ -30,14 +30,14 @@ module quadrature
         SUBROUTINE init
             IMPLICIT NONE
 
-            sym_order = input_int('sym_order')
-            if ( sym_order <= 0 ) then
-                print*,"in module_quadrature, sym_order, readen from input/dft.in, is unphysical. critical stop"
+            molRotSymOrder = input_int('molRotSymOrder')
+            if ( molRotSymOrder <= 0 ) then
+                print*,"in module_quadrature, molRotSymOrder, readen from input/dft.in, is unphysical. critical stop"
                 stop
             END IF
 
             ! molecular rotation grid
-            call get_psi_integration_roots_and_weights (molRotGrid, sym_order)
+            call get_psi_integration_roots_and_weights (molRotGrid, molRotSymOrder)
             call check_weights_psi(molRotGrid%weight)
 
             ! integration scheme
@@ -200,9 +200,9 @@ module quadrature
         SUBROUTINE check_weights_psi(weight_over_molecular_rotations)
             IMPLICIT NONE
             real(dp), dimension(:), intent(in) :: weight_over_molecular_rotations
-            if ( abs ( sum ( weight_over_molecular_rotations( : ) ) - twopi/sym_order )  > 1.0e-10_dp ) then
+            if ( abs ( sum ( weight_over_molecular_rotations( : ) ) - twopi/molRotSymOrder )  > 1.0e-10_dp ) then
                 print*, 'problem detected in module_quadrature.f90 :'
-                print*, 'sum over omegas of molRotGrid%weight(omega) is not 2pi/sym_order, it is ',&
+                print*, 'sum over omegas of molRotGrid%weight(omega) is not 2pi/molRotSymOrder, it is ',&
                     sum ( weight_over_molecular_rotations )
                 stop 'CRITICAL'
             END IF
@@ -222,9 +222,9 @@ module quadrature
         
         
 
-        SUBROUTINE get_psi_integration_roots_and_weights (molRotGrid, sym_order)
+        SUBROUTINE get_psi_integration_roots_and_weights (molRotGrid, molRotSymOrder)
             type (angularGrid), intent(inout) :: molRotGrid
-            integer(i2b), intent(out) :: sym_order
+            integer(i2b), intent(out) :: molRotSymOrder
             integer(i2b) :: i
             molRotGrid%n_angles = input_int('nb_psi')
             if ( molRotGrid%n_angles < 1 ) then
@@ -232,10 +232,10 @@ module quadrature
                 stop
             END IF
             allocate( molRotGrid%weight(molRotGrid%n_angles), source=0._dp)
-            molRotGrid%weight = twopi/real(molRotGrid%n_angles*sym_order,dp) ! equidistant repartition between 0 and 2Pi => all weights are equal
+            molRotGrid%weight = twopi/real(molRotGrid%n_angles*molRotSymOrder,dp) ! equidistant repartition between 0 and 2Pi => all weights are equal
             allocate( molRotGrid%root(molRotGrid%n_angles), source=0._dp)
             do concurrent (i=1:molRotGrid%n_angles) ! equidistant repartition between 0 and 2Pi
-                molRotGrid%root(i) = real(i-1,dp)*twopi/real(molRotGrid%n_angles*sym_order,dp) ! roots
+                molRotGrid%root(i) = real(i-1,dp)*twopi/real(molRotGrid%n_angles*molRotSymOrder,dp) ! roots
             END DO
         END SUBROUTINE get_psi_integration_roots_and_weights
 

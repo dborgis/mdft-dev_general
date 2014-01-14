@@ -1,13 +1,13 @@
 ############################
 # SUPERCELL
 ############################
-Lx  = 41.44
-Ly  = 35.88
-Lz  = 42.30
-nfft1 = 64 
-nfft2 = 64 
-nfft3 = 64 
-quadrature = L # GL or L
+Lx  = 20.0
+Ly  = 20.0
+Lz  = 20.0
+nfft1 = 64
+nfft2 = 64
+nfft3 = 64
+quadrature = L
 order_of_quadrature = 6
 nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
@@ -21,14 +21,14 @@ mole_fractions
 
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = F
+polarization = T
 polarization_order = multi # multi or dipol
-include_nc_coupling = F
+include_nc_coupling = T
 
 ref_bulk_density
 0.0332891
-temperature = 300 # K
-sym_order = 2  # n in Cn, i.e., 2 for H2O
+temperature = 300
+molRotSymOrder = 2
 
 
 ############################
@@ -50,7 +50,7 @@ if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
 ############################
 # POTENTIALS
 ############################
-annihilate_solute_charges = T
+annihilate_solute_charges = F
 poisson_solver = T
 point_charge_electrostatic = F
 reuse_density = F
@@ -84,7 +84,7 @@ threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 Rc = 1.0  # CAREFULL
-verbose = T
+verbose = F
 
 
 

@@ -72,7 +72,7 @@ Empty and blank lines are not considered.
 *`include_nc_coupling` if you want to also compute the density-charge term in polarization set T to this keyword, this only works with multipolar polarization and if it is the case the code will not use the cs.in density-density correlation function even if you set T to 'readDensityDensityCorrelationFunction'
 * `ref_bulk_density` is the density of the reference fluid, in molecule/Angstrom^3, you should specify the value on the next line.
 * `temperature` Temperature in Kelvin, it is only involved in KbT terms
-* `sym_order` Order of symetry of the main axis of the solvent molecule
+* `molRotSymOrder` Order of symetry of the main axis of the solvent molecule
     - `2` for a water molecule that is of molecular point group C2v
     
 #####SOLVER

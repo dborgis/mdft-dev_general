@@ -6,7 +6,7 @@ SUBROUTINE energy_ideal (Fideal)
     USE precision_kinds, ONLY: i2b, dp
     USE minimizer, ONLY: cg_vect, FF, dF
     USE system, ONLY: kBT, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
-    USE quadrature, ONLY: sym_order, angGrid, molRotGrid
+    USE quadrature, ONLY: molRotSymOrder, angGrid, molRotGrid
     USE input, ONLY: input_log, input_char
     USE constants, ONLY: fourpi
 
@@ -38,7 +38,7 @@ SUBROUTINE energy_ideal (Fideal)
                     do o=1,angGrid%n_angles
                         do p=1,molRotGrid%n_angles
                             icg=icg+1
-                            rhon=rhon+cg_vect(icg)**2*angGrid%weight(o)*molRotGrid%weight(p)/(fourpi**2/(sym_order*2.0_dp))
+                            rhon=rhon+cg_vect(icg)**2*angGrid%weight(o)*molRotGrid%weight(p)/(fourpi**2/(molRotSymOrder*2.0_dp))
                         END DO
                     END DO
                     rho_n(i,j,k)=rhon

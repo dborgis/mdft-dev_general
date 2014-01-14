@@ -4,7 +4,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     USE system,          ONLY: spaceGrid, kBT, rho_0, rho_0_multispec, n_0, nb_species, &
                                molec_polarx_k, molec_polary_k, molec_polarz_k, sigma_k
     USE dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
-    USE quadrature,      ONLY: angGrid, molRotGrid, sym_order
+    USE quadrature,      ONLY: angGrid, molRotGrid, molRotSymOrder
     USE minimizer,       ONLY: cg_vect, FF, dF
     USE constants,       ONLY: twopi, fourpi, qfact
     USE fft,             ONLY: fftw3, kx, ky, kz, k2, norm_k
@@ -60,7 +60,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                           rho(i,j,k,o,p,s) = cg_vect ( icg ) ** 2
                         END DO
                     END DO
-                    rho_n(i,j,k)=rhon-REAL(2.0_dp*twopi**2/sym_order, dp)
+                    rho_n(i,j,k)=rhon-REAL(2.0_dp*twopi**2/molRotSymOrder, dp)
                 END DO
             END DO
         END DO
