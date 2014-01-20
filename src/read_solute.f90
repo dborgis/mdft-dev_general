@@ -2,18 +2,15 @@
 !! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
 SUBROUTINE read_solute
 
-USE precision_kinds,only : i2b,dp
-use system,only : nb_solute_sites , x_mol , y_mol , z_mol , chg_mol , sig_mol , eps_mol , atomic_nbr , id_mol , Lx , Ly , Lz&
-&, lambda1_mol , lambda2_mol, soluteSite, nb_species
-use input,only : input_line, input_log
-use periodic_table,only : init_periodic_table , ptable
+    USE precision_kinds, ONLY: i2b,dp
+    USE system,          ONLY: nb_solute_sites,x_mol,y_mol,z_mol,chg_mol,sig_mol,eps_mol,atomic_nbr,id_mol,Lx,Ly,Lz,&
+                               lambda1_mol,lambda2_mol,soluteSite,nb_species
+    USE input,           ONLY: input_line, input_log, input_dp
+    USE periodic_table,  ONLY: init_periodic_table, ptable
 
-IMPLICIT NONE
+    IMPLICIT NONE
 
-integer(i2b):: n, i
-integer(i2b):: stat ! status du fichier ouvert
-integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites with same epsilon and sigma, but only diff positions)
-! init module periodic_table so that all informations are available
+    INTEGER(i2b) :: n,i,stat,nb_id_mol
 
     CALL init_periodic_table
     ! print *, ptable ( 1 ) % name
@@ -39,14 +36,13 @@ integer(i2b):: nb_id_mol ! number of different kinds of site (ie two LJ sites wi
         ALLOCATE(lambda1_mol(nb_solute_sites))
         ALLOCATE(lambda2_mol(nb_solute_sites))
 
-        READ (5,*) ! comment line
-            DO n = 1, SIZE(soluteSite)
-                READ(5,*) id_mol(n), soluteSite(n)%q, soluteSite(n)%sig, soluteSite(n)%eps, &
-                        soluteSite(n)%lambda1, soluteSite(n)%lambda2, soluteSite(n)%r, soluteSite(n)%Z
-            END DO
-        CLOSE (5)
-
-    IF (input_log('annihilate_solute_charges')) soluteSite%q = 0._dp
+        READ (5,*)
+        DO n = 1, SIZE(soluteSite)
+            READ(5,*) id_mol(n), soluteSite(n)%q, soluteSite(n)%sig, soluteSite(n)%eps, &
+                    soluteSite(n)%lambda1, soluteSite(n)%lambda2, soluteSite(n)%r, soluteSite(n)%Z
+        END DO
+    CLOSE (5)
+    soluteSite%q = soluteSite%q * input_dp('solute_charges_scale_factor')
 
     CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
     CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell

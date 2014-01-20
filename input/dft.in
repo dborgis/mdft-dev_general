@@ -21,9 +21,9 @@ mole_fractions
 
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = T
+polarization = F
 polarization_order = multi # multi or dipol
-include_nc_coupling = T
+include_nc_coupling = F
 
 ref_bulk_density
 0.0332891
@@ -50,7 +50,7 @@ if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
 ############################
 # POTENTIALS
 ############################
-annihilate_solute_charges = F
+solute_charges_scale_factor = 1.0
 poisson_solver = T
 point_charge_electrostatic = F
 reuse_density = F
