@@ -19,10 +19,10 @@ nb_implicit_species = 1
 mole_fractions
 1.0
 
-ck_species = spce   # spc or spce or stock or perso
+ck_species = spc   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = F
-polarization_order = multi # multi or dipol
+polarization = T
+polarization_order = dipol # multi or dipol
 include_nc_coupling = F
 
 ref_bulk_density
@@ -84,7 +84,7 @@ threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 Rc = 1.0  # CAREFULL
-verbose = F
+verbose = T
 
 
 
