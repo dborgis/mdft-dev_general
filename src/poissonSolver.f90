@@ -17,32 +17,40 @@ SUBROUTINE poissonSolver (soluteChargeDensity)
 
     IMPLICIT NONE
     REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: soluteChargeDensity
-    COMPLEX(dp), DIMENSION (nfft1/2+1, nfft2, nfft3 ) :: soluteChargeDensity_k, V_c_k
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: soluteChargeDensity_k,V_c_k
     INTEGER (i2b) :: i,j,k
 
-    IF ( MAXVAL(ABS(soluteChargeDensity)) < TINY(1.0_dp)) THEN
-        ALLOCATE ( V_c ( nfft1 , nfft2 , nfft3 ), SOURCE=0._dp ) !~ v_c = 0.0_dp
+    ALLOCATE( V_c(nfft1,nfft2,nfft3), SOURCE=0._dp )
+
+    IF ( ALL(soluteChargeDensity==0._dp) ) THEN
+        PRINT*,'The solute wears no charge.'
+        V_c =0._dp
+        RETURN
+   
+    ELSE
+        ALLOCATE( soluteChargeDensity_k(nfft1/2+1,nfft2,nfft3), SOURCE=(0._dp,0._dp) )
+        ALLOCATE( V_c_k(nfft1/2+1,nfft2,nfft3), SOURCE=(0._dp,0._dp) )
+
+        ! FFT of soluteChargeDensity
+        fftw3%in_forward = soluteChargeDensity
+        CALL dfftw_execute ( fftw3%plan_forward )
+        soluteChargeDensity_k = fftw3%out_forward ! It is verified that at this point, FFT-1(soluteChargeDensity_k)/ (nfft1*nfft2*nfft3) = soluteChargeDensity
+        ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
+        ! V(k) = 4Pi rho(k) / k^2
+
+        DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
+            IF ( k2(i,j,k) /= 0._dp ) THEN
+                V_c_k(i,j,k) = soluteChargeDensity_k(i,j,k) * fourpi/k2(i,j,k) ! in electrostatic units : V=-4pi rho
+            ELSE
+                V_c_k(i,j,k) = 0._dp
+            END IF
+        END DO
+    
+        ! get real space potential V(r)
+        fftw3%in_backward = V_c_k
+        CALL dfftw_execute ( fftw3%plan_backward )
+        V_c = fftw3%out_backward / REAL(nfft1*nfft2*nfft3,dp)
+    
     END IF
-
-    ! FFT of soluteChargeDensity
-    fftw3%in_forward = soluteChargeDensity
-    CALL dfftw_execute ( fftw3%plan_forward )
-    soluteChargeDensity_k = fftw3%out_forward ! It is verified that at this point, FFT-1(soluteChargeDensity_k)/ (nfft1*nfft2*nfft3) = soluteChargeDensity
-    ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
-    ! V(k) = 4Pi rho(k) / k^2
-
-    DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
-        IF ( k2(i,j,k) /= 0._dp ) THEN
-            V_c_k(i,j,k) = soluteChargeDensity_k(i,j,k) * fourpi/k2(i,j,k) ! in electrostatic units : V=-4pi rho
-        ELSE
-            V_c_k(i,j,k) = 0._dp
-        END IF
-    END DO
-
-    ! get real space potential V(r)
-    IF ( .NOT. ALLOCATED ( V_c ) ) ALLOCATE ( V_c ( nfft1 , nfft2 , nfft3 ) )
-    fftw3%in_backward = V_c_k
-    CALL dfftw_execute ( fftw3%plan_backward )
-    V_c = fftw3%out_backward / REAL ( nfft1 * nfft2 * nfft3 , dp )
 
 END SUBROUTINE poissonSolver
