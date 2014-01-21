@@ -45,12 +45,4 @@ SUBROUTINE poissonSolver (soluteChargeDensity)
     CALL dfftw_execute ( fftw3%plan_backward )
     V_c = fftw3%out_backward / REAL ( nfft1 * nfft2 * nfft3 , dp )
 
-    IF (verbose) THEN
-        OPEN(11,FILE='output/V_cmax.dat')
-            DO i=1, nfft1
-                WRITE(11,*), i , V_c(i, nfft2/2, nfft3/2 )
-            END DO
-        CLOSE(11)
-    END IF
-
 END SUBROUTINE poissonSolver
