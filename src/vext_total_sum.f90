@@ -4,7 +4,7 @@
 SUBROUTINE vext_total_sum
 
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nfft1, nfft2, nfft3, nb_species
+    USE system,             ONLY: nb_species, spaceGrid
     USE quadrature,         ONLY: angGrid, molRotGrid
     USE constants,          ONLY: fourpi, zero
     USE external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
@@ -13,10 +13,17 @@ SUBROUTINE vext_total_sum
 
     IMPLICIT NONE
     REAL(dp), PARAMETER :: vmax = 100._dp
+    INTEGER(i2b) :: nfft1,nfft2,nfft3,nomg,npsi
+    
+    nfft1=spaceGrid%n_nodes(1)
+    nfft2=spaceGrid%n_nodes(2)
+    nfft3=spaceGrid%n_nodes(3)
+    nomg=angGrid%n_angles
+    npsi=molRotGrid%n_angles
     
    
     IF ( .NOT. ALLOCATED ( Vext_total ) ) THEN ! be sure Vext_total is allocated
-        ALLOCATE ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ), SOURCE=zero )
+        ALLOCATE ( Vext_total (nfft1,nfft2,nfft3,nomg,npsi,nb_species), SOURCE=zero )
     END IF
 
     ! Vext_total = 0.0_dp
@@ -29,7 +36,12 @@ SUBROUTINE vext_total_sum
     IF ( ALL(vext_total==zero) ) STOP "The external potential is zero everywhere. Something's wrong in input files"
 
     WHERE ( Vext_total > vmax ) Vext_total = vmax
-    IF ( ALLOCATED ( vext_lj        ) ) WHERE ( Vext_lj        > vmax ) Vext_lj        = vmax
+    IF ( ALLOCATED ( vext_lj        ) ) THEN
+        WHERE ( Vext_lj >= vmax ) 
+            Vext_lj = vmax
+            Vext_total = vmax
+        END WHERE
+    END IF
     IF ( ALLOCATED ( vext_hard_core ) ) WHERE ( vext_hard_core > vmax ) vext_hard_core = vmax
 
     IF (verbose) THEN
