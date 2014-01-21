@@ -20,20 +20,23 @@ SUBROUTINE process_output
 
     IF (verbose) THEN
         filename = 'output/density.cube'
-        call write_to_cube_file ( neq ( : , : , : , 1 ) , filename ) ! TODO for now only write for the first species
-        ! get the final polarization, if needed
-        ! look for tag polarization in input
-        do i = 1 , size ( input_line )
-            j = len ( 'polarization' )
-            if ( input_line (i) (1:j) == 'polarization' .and. input_line (i) (j+4:j+4) == 'T' ) then
-                call get_final_polarization ( Px , Py , Pz )
-                ! Write polarization in .cube file
-                filename = 'output/polarization.cube'
-                allocate ( temparray ( nfft1 , nfft2 , nfft3 , nb_species ) )
-                temparray = sqrt ( Px ** 2 + Py ** 2 + Pz ** 2 )
-                call write_to_cube_file ( temparray ( : , : , : , 1 ) , filename ) ! TODO for now only write for the first species
-                deallocate ( temparray )
-                exit
+        CALL write_to_cube_file (neq(:,:,:,1), filename) ! TODO for now only write for the first species
+        DO i =1,SIZE(input_line)
+            j =LEN('polarization')
+            IF ( input_line(i)(1:j)=='polarization' .AND. input_line(i)(j+4:j+4)=='T' ) THEN
+                CALL get_final_polarization (Px,Py,Pz)
+                filename ='output/normP.cube'
+                ALLOCATE (temparray (nfft1,nfft2,nfft3,nb_species) )
+                temparray =SQRT(Px**2+Py**2+Pz**2)
+                CALL write_to_cube_file ( temparray(:,:,:,1), filename ) ! TODO for now only write for the first species
+                filename='output/Px.cube' ; CALL write_to_cube_file(Px(:,:,:,1),filename)
+                filename='output/Py.cube' ; CALL write_to_cube_file(Py(:,:,:,1),filename)
+                filename='output/Pz.cube' ; CALL write_to_cube_file(Pz(:,:,:,1),filename)
+                filename='output/z_Px.dat'; CALL compute_z_density(Px(:,:,:,1),filename)
+                filename='output/z_Py.dat'; CALL compute_z_density(Py(:,:,:,1),filename)
+                filename='output/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1),filename)
+                DEALLOCATE(temparray)
+                EXIT
             END IF
         END DO
         
