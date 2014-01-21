@@ -3,17 +3,17 @@
 
 SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
     
-    USE precision_kinds, ONLY: i2b , dp
-    USE system, ONLY: spaceGrid, soluteSite, nb_species
-    USE input, ONLY: verbose
+    USE precision_kinds, ONLY: i2b,dp
+    USE system,          ONLY: spaceGrid,soluteSite,nb_species
+    USE input,           ONLY: verbose
     
     IMPLICIT NONE
 
     REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(OUT) :: soluteChargeDensity
     INTEGER(i2b):: s
-    REAL(dp) :: xq , yq, zq ! coordinates of the charge in indicial coordinates
-    INTEGER(i2b) :: im , jm , km , ip , jp , kp ! indices of corner in indicial coordinates
-    REAL(dp) :: wim , wjm , wkm , wip , wjp , wkp ! weight associated to each index
+    REAL(dp) :: xq,yq,zq ! coordinates of the charge in indicial coordinates
+    INTEGER(i2b) :: im,jm,km,ip,jp,kp ! indices of corner in indicial coordinates
+    REAL(dp) :: wim,wjm,wkm,wip,wjp,wkp ! weight associated to each index
     CHARACTER(50) :: filename
 
     soluteChargeDensity = 0._dp
@@ -59,6 +59,9 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
     END DO
     soluteChargeDensity = soluteChargeDensity / spaceGrid%dv ! charge density is in charge per unit volume
 
-    IF (verbose) CALL write_to_cube_file ( soluteChargeDensity , 'output/charge_density.cube' )
-    
+    IF (verbose) THEN
+        filename='output/soluteChargeDensity.cube'
+        CALL write_to_cube_file ( soluteChargeDensity, filename  )
+    END IF
+
 END SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates
