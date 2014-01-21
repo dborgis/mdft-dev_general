@@ -20,7 +20,6 @@ SUBROUTINE energy_polarization_dipol (Fint)
     REAL(dp):: fact ! facteur d'integration
     REAL(dp):: rho, psi
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: Px , Py , Pz , Ex , Ey , Ez
-    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:,:) :: polascal
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: Pkx , Pky , Pkz , Ekx , Eky , Ekz
     COMPLEX(dp) :: k_dot_P, pxt_k , pyt_k , pzt_k
     REAL(dp) :: c_deltat, c_dt ! dummy local values of c_delta and c_d in loops
@@ -37,13 +36,10 @@ SUBROUTINE energy_polarization_dipol (Fint)
     twopioLx = twopi/Lx; twopioLy = twopi/Ly; twopioLz = twopi/Lz
     dx = spaceGrid%dl(1); dy = spaceGrid%dl(2); dz = spaceGrid%dl(3)
     Nk = REAL ( nfft1*nfft2*nfft3 , dp ) ! total number of k grid points
-    ! allocate and init polarization vector
     ALLOCATE ( Px (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
     ALLOCATE ( Py (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
     ALLOCATE ( Pz (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
 
-    IF (verbose) ALLOCATE ( Polascal ( nfft1 , nfft2 , nfft3 , 1), SOURCE=0.0_dp )
-    
     ! put density of last minimization step in delta_rho and P
     ! but first prepare the product angGrid%weight(omega)*Omx in order not to repeat it
     ALLOCATE ( weight_omx ( angGrid%n_angles ), SOURCE=angGrid%weight*Omx )
@@ -51,9 +47,9 @@ SUBROUTINE energy_polarization_dipol (Fint)
     ALLOCATE ( weight_omz ( angGrid%n_angles ), SOURCE=angGrid%weight*Omz )
 
     icg = 0
-    DO i = 1 , nfft1
-        DO j = 1 , nfft2
-            DO k = 1 , nfft3    
+    DO i =1,nfft1
+        DO j =1,nfft2
+            DO k = 1,nfft3    
                 pxt = 0.0_dp
                 pyt = 0.0_dp
                 pzt = 0.0_dp
@@ -69,13 +65,6 @@ SUBROUTINE energy_polarization_dipol (Fint)
                 Px (i,j,k) = pxt
                 Py (i,j,k) = pyt
                 Pz (i,j,k) = pzt
-                IF (verbose) THEN
-                    IF (i>nfft1/2) THEN; m1=i-1-nfft1; ELSE; m1=i-1; END IF
-                    IF (j>nfft2/2) THEN; m2=j-1-nfft2; ELSE; m2=j-1; END IF
-                    IF (k>nfft3/2) THEN; m3=k-1-nfft3; ELSE; m3=k-1; END IF
-                    r = SQRT((m1*dx)**2+(m2*dy)**2+(m3*dz)**2)
-                    polascal(i,j,k,1) = polascal(i,j,k,1) +pxt*m1*dx/r +pyt*m2*dy/r +pzt*m3*dz/r
-                END IF
             END DO
         END DO
     END DO
@@ -97,8 +86,6 @@ SUBROUTINE energy_polarization_dipol (Fint)
             polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*rho_0
             CALL compute_rdf(polatot, filename)
             filename='output/radial_polarization_scalar'
-            CALL compute_rdf(polascal*rho_0*0.4894_dp, filename)
-            DEALLOCATE (polascal)
         END BLOCK
     END IF
   
