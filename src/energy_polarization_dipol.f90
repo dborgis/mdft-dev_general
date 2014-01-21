@@ -76,11 +76,11 @@ SUBROUTINE energy_polarization_dipol (Fint)
     IF (verbose) THEN
         BLOCK
             REAL(dp), DIMENSION (nfft1,nfft2,nfft3,1) ::  polatot
-            OPEN(11,FILE='output/polatotxmax')
-                DO i=1,nfft1
-                    WRITE(11,*) i*dx, 0.4894_dp*Px(i,nfft2/2+1,nfft3/2+1)
-                END DO
-            CLOSE(11)
+!~             OPEN(11,FILE='output/polatotxmax')
+!~                 DO i=1,nfft1
+!~                     WRITE(11,*) i*dx, 0.4894_dp*Px(i,nfft2/2+1,nfft3/2+1)
+!~                 END DO
+!~             CLOSE(11)
             !Compute Radial Polarization
             filename='output/radial_polarization_dipolar'
             polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*rho_0
