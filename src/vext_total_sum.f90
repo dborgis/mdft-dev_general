@@ -57,7 +57,7 @@ SUBROUTINE vext_total_sum
             temparray = temparray / (fourpi**2/(2.0_dp*molRotSymOrder))
             filename = 'output/Vext.cube' ! care when HS or multispec
             CALL write_to_cube_file ( temparray , filename )
-            filename = 'output/Vext_along-z.dat' ! care when HS or multispec'
+            filename = 'output/z_Vext.dat' ! care when HS or multispec'
             CALL compute_z_density ( temparray , filename )
         END BLOCK
     END IF

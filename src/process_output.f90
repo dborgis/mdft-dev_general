@@ -22,10 +22,10 @@ SUBROUTINE process_output
         filename = 'output/density.cube'
         CALL write_to_cube_file (neq(:,:,:,1), filename) ! TODO for now only write for the first species
         DO i =1,SIZE(input_line)
-            j =LEN('polarization')
-            IF ( input_line(i)(1:j)=='polarization' .AND. input_line(i)(j+4:j+4)=='T' ) THEN
+            j =LEN('polarization ')
+            IF ( input_line(i)(1:j)=='polarization ' .AND. input_line(i)(j+3:j+3)=='T' ) THEN
                 CALL get_final_polarization (Px,Py,Pz)
-                filename ='output/normP.cube'
+                filename ='output/P.cube'
                 ALLOCATE (temparray (nfft1,nfft2,nfft3,nb_species) )
                 temparray =SQRT(Px**2+Py**2+Pz**2)
                 CALL write_to_cube_file ( temparray(:,:,:,1), filename ) ! TODO for now only write for the first species
