@@ -3,161 +3,159 @@
 
 MODULE mod_lj
 
-    use external_potential, only: Vext_lj
-    USE precision_kinds, only: dp, i2b
-    use system, only: nfft1, nfft2, nfft3, deltax,deltay,deltaz,nb_solute_sites,eps_mol,x_mol,y_mol,z_mol,Lx,Ly,Lz&
-                   ,sig_solv,sig_mol , nb_species, id_mol, id_solv, chg_mol , chg_solv, eps_solv, &
-                   x_solv,y_solv,z_solv, nb_solvent_sites, spaceGrid
-    use constants, only:fourpi
-    use input,only : input_line, verbose
-    use quadrature, only: angGrid, molRotGrid
+    USE external_potential, ONLY: Vext_lj
+    USE precision_kinds,    ONLY: dp, i2b
+    USE system,             ONLY: eps_mol,x_mol,y_mol,z_mol,&
+                                  sig_solv,sig_mol,nb_species,id_mol,id_solv,chg_mol,chg_solv,eps_solv,&
+                                  x_solv,y_solv,z_solv,spaceGrid,soluteSite,solventSite
+    USE constants,          ONLY: fourpi
+    USE input,              ONLY: input_line, verbose
+    USE quadrature,         ONLY: angGrid, molRotGrid
     
     IMPLICIT NONE
-    integer(i2b), private :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
-    contains
+    INTEGER(i2b), PRIVATE :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
+    INTEGER(i2b), PRIVATE :: nfft1,nfft2,nfft3
+    REAL(dp),     PRIVATE :: Lx,Ly,Lz
+    
+    CONTAINS
     
         SUBROUTINE init
-            nb_id_mol  = size ( chg_mol  ) ! total number of solute types
-            nb_id_solv = size ( chg_solv ) ! total number of solvent types
-            if (.not. allocated( Vext_lj )) allocate( Vext_lj(nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species),&
-                source=0._dp ) ! Vext_lj is a *very* big array that should now be allocated
-            call calculate ! compute Vext_lj
+            IMPLICIT NONE
+            nb_id_mol  = SIZE( chg_mol  ) ! total number of solute types
+            nb_id_solv = SIZE( chg_solv ) ! total number of solvent types
+            nfft1=spaceGrid%n_nodes(1); nfft2=spaceGrid%n_nodes(2); nfft3=spaceGrid%n_nodes(3)
+            Lx=spaceGrid%length(1); Ly=spacegrid%length(2); Lz=spaceGrid%length(3)
+            IF (.NOT. ALLOCATED(Vext_lj)) ALLOCATE( Vext_lj(nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species),&
+                source=0._dp)
+            CALL calculate
         END SUBROUTINE
         
         SUBROUTINE calculate
-        
             IMPLICIT NONE
-        
-            integer(i2b) :: i,j,k,s
-            real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
-            real(dp) :: V_node ! sum of all solute contributions to a given grid node
-            integer(i2b) :: idm, ids ! id of the solute and solvent site that is being used
-            real(dp) :: time0, time1 ! timer start and end
-            integer(i2b) :: species ! dummy for loops over species
-            real(dp):: dx, dy, dz ! distance between two points in radial grid (in Angstroms) =abs(rcut-rmin)/nrgrid
-            integer(i2b) :: solute_site, solvent_site
+            INTEGER(i2b) :: i,j,k,s,v,u,a,b,c
+            REAL(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
+            REAL(dp) :: V_node,dx,dy,dz,sigij,epsij
+            LOGICAL :: fullpdb
+
             ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species ) 
             ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER ONLY TODO
             ! test if this simplification is true and stop if not
             ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
             ! only if they're all zero but for first site
-            if( sum( sig_solv(:) ) /= sig_solv(1) ) then
-                print*,'problem in module mod_lj'
-                print*,'ONLY VALID FOR SOLUTES WITH 1 LJ SITE'
-                print*,'stop'
-                stop
+            IF( SUM( sig_solv(:) ) /= sig_solv(1) ) then
+                PRINT*,'The solvent must have 1 Lennard Jones site only.'
+                STOP
             END IF
             
-            ! Also, for now, the solvent site that wear the LJ potential should be on a grid node, and more precisely have coordinates 0 0 0.
-            block
-                real(dp), dimension(3) :: coo
-                coo = [ x_solv(1), y_solv(1), z_solv(1) ]
-                if( any(coo/=0._dp) ) then
-                    print*,'For now, the solvent can only have one Lennard-Jones site.'
-                    print*,'This site should have coordinates 0. 0. 0. in order to be on a grid node.'
-                    print*,'These coordinates are now defined as',coo
-                    print*,'For this reason, MDFT stops now.'
-                    stop
-                END IF
-            end block
-            !> initiate
-            call cpu_time(time0)
-            !> Test if the supercell is big enough considering the LJ range (given by sigma).
+            CALL only_one_lj_site ([x_solv(1),y_solv(1),z_solv(1)]) ! verify the solvant wears only one lennard jones site
+
+            ! Test if the supercell is big enough considering the LJ range (given by sigma).
             ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
             ! It would have no sense to have a box dimension < 2.5 sigma
-            if( min(Lx,Ly,Lz)<= 2.5_dp*max(maxval(sig_mol),maxval(sig_solv))) then
-                print*,'max(maxval(sig_mol),maxval(sig_solv)) = ' , max(maxval(sig_mol),maxval(sig_solv))
-                print*,'problem detected in the module dedicated to computing the Lennard Jones contribution to external potential'
-                print*,'the supercell is too small to use the minimum image convention with such large sigma values'
-                print*,'MDFT stops now.'
-                stop
+            IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(sig_mol),MAXVAL(sig_solv))) THEN
+                PRINT*,'The supercell is small. We replicate it in all directions. Vext calculation will be long.'
+                fullpdb=.TRUE. ! much slower
+!~                 STOP
+            ELSE
+                fullpdb=.FALSE. ! much faster
             END IF
-            
-            DO solvent_site = 1, nb_solvent_sites
-                ids = id_solv(solvent_site)
-                IF ( eps_solv(ids) == 0._dp ) CYCLE ! if solvent site wear no LJ
+
+            DO v=1,SIZE(solventSite)
+                IF ( solventSite(v)%eps==0._dp ) CYCLE ! if solvent site wear no LJ
                 
                 DO CONCURRENT( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species )
                     x_grid=REAL(i-1,dp)*spaceGrid%dl(1)
                     y_grid=REAL(j-1,dp)*spaceGrid%dl(2)
                     z_grid=REAL(k-1,dp)*spaceGrid%dl(3)
+
                     V_node=0.0_dp
-                    DO solute_site = 1, nb_solute_sites
-                        idm=id_mol(solute_site)
-                        IF (eps_mol(idm)==0.0_dp) CYCLE
-
-                        dx =ABS(x_grid-x_mol(solute_site)); DO WHILE (dx>Lx/2._dp); dx=ABS(dx-Lx); END DO
-                        dy =ABS(y_grid-y_mol(solute_site)); DO WHILE (dy>Ly/2._dp); dy=ABS(dy-Ly); END DO
-                        dz =ABS(z_grid-z_mol(solute_site)); DO WHILE (dz>Lz/2._dp); dz=ABS(dz-Lz); END DO
-
-                        V_node = V_node + vlj( geometric_mean( eps_solv(ids), eps_mol(idm) ),&
-                                               arithmetic_mean( sig_solv(ids), sig_mol(idm) ),&
-                                               SQRT(dx**2+dy**2+dz**2) ) ! rules of Lorentz-Berthelot
-                                               
-                        IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
-                            V_node = 100.0_dp
-                            EXIT
+                    solute: DO u=1,SIZE(soluteSite)
+                        IF (soluteSite(u)%eps==0.0_dp) CYCLE
+                        sigij = arithmetic_mean( solventSite(v)%sig, soluteSite(v)%sig )
+                        epsij = geometric_mean( solventSite(v)%eps, soluteSite(v)%eps )
+                        IF (fullpdb) THEN
+                            DO a=-1,1; DO b=-1,1; DO c=-1,1
+                                dx =x_grid-soluteSite(u)%r(1)+a*Lx
+                                dy =y_grid-soluteSite(u)%r(2)+b*Ly
+                                dz =z_grid-soluteSite(u)%r(3)+c*Lz
+                                V_node =V_node + vlj( epsij, sigij, SQRT(dx**2+dy**2+dz**2))
+                                IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
+                                    V_node = 100.0_dp
+                                    EXIT solute
+                                END IF
+                            END DO; END DO; END DO
+                        ELSE
+                            dx =ABS(x_grid-soluteSite(u)%r(1)); DO WHILE (dx>Lx/2._dp); dx =ABS(dx-Lx); END DO
+                            dy =ABS(y_grid-soluteSite(u)%r(2)); DO WHILE (dy>Ly/2._dp); dy =ABS(dy-Ly); END DO
+                            dz =ABS(z_grid-soluteSite(u)%r(3)); DO WHILE (dz>Lz/2._dp); dz =ABS(dz-Lz); END DO
+                            V_node =V_node + vlj( epsij, sigij, SQRT(dx**2+dy**2+dz**2))
+                            IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
+                                V_node = 100.0_dp
+                                EXIT solute
+                            END IF
                         END IF
-                    END DO ! solute
+                    END DO solute
               
-                    Vext_lj (i,j,k,:,:,s) = V_node ! all omegas are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
+                    Vext_lj (i,j,k,:,:,s) = V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
                 END DO
             END DO
-
-
-
-
-
-
-
-
             
-            IF (verbose) THEN
-                BLOCK
-                    real(dp), dimension(:,:,:), allocatable :: temparray
-                    character(50):: filename
-                    !> Get the lennard jones potential over orientations and print it
-                    allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
-                    temparray=Vext_lj(:,:,:,1,1,1)
-                    filename='output/Vlj.cube'
-                    call write_to_cube_file(temparray,filename)
-                    filename='output/Vlj_along-z.dat'
-                    call compute_z_density(temparray,filename)
-                    open(11,file='output/Vlj_aumilieu.dat')
-                        do i=1,nfft3
-                            write(11,*) i*deltaz, Vext_lj(nfft1/2,nfft2/2,i,1,1,1)
-                        END DO
-                    close(11)
-                    deallocate(temparray)
-                    call cpu_time(time1)
-                    print *, 'Vext_lj : min = ' , minval(Vext_lj) , ' ; max = ' , maxval(Vext_lj) , ' ; in (sec) ' , time1-time0
-                END BLOCK
-            END IF
+!~             IF (verbose) THEN
+!~                 BLOCK
+!~                     real(dp), dimension(:,:,:), allocatable :: temparray
+!~                     character(50):: filename
+!~                     !> Get the lennard jones potential over orientations and print it
+!~                     allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
+!~                     temparray=Vext_lj(:,:,:,1,1,1)
+!~                     filename='output/Vlj.cube'
+!~                     call write_to_cube_file(temparray,filename)
+!~                     filename='output/Vlj_along-z.dat'
+!~                     call compute_z_density(temparray,filename)
+!~                     open(11,file='output/Vlj_aumilieu.dat')
+!~                         do i=1,nfft3
+!~                             write(11,*) i*spaceGrid%dl(3), Vext_lj(nfft1/2,nfft2/2,i,1,1,1)
+!~                         END DO
+!~                     close(11)
+!~                     deallocate(temparray)
+!~                     print *, 'Vext_lj : min = ' , minval(Vext_lj) , ' ; max = ' , maxval(Vext_lj) , ' ; in (sec) ' , time1-time0
+!~                 END BLOCK
+!~             END IF
             
 
         END SUBROUTINE calculate
 
 
         PURE FUNCTION vlj(eps,sig,d) ! v_lj(d) = 4ε[(σ/d)^12-(σ/d)^6]
-            real(dp) :: vlj
-            real(dp), intent(in) :: eps, sig, d ! ε,σ,distance
-            real(dp) :: div
+            REAL(dp) :: vlj
+            REAL(dp), INTENT(IN) :: eps, sig, d ! ε,σ,distance
+            REAL(dp) :: div
             div = (sig/d)**6
             vlj = 4._dp*eps*div*(div-1._dp)
         END FUNCTION vlj
         
         PURE FUNCTION arithmetic_mean( A, B)
             ! = sum_i^N a_i/N
-            real(dp) :: arithmetic_mean
-            real(dp), intent(in) :: A, B
+            REAL(dp) :: arithmetic_mean
+            REAL(dp), intent(in) :: A, B
             arithmetic_mean = (A+B)/2._dp
         END FUNCTION arithmetic_mean
         
         PURE FUNCTION geometric_mean( A, B)
             ! = (product_i^N a_i)^(1/N)
-            real(dp) :: geometric_mean
-            real(dp), intent(in) :: A, B
-            geometric_mean = sqrt(A*B)
+            REAL(dp) :: geometric_mean
+            REAL(dp), intent(in) :: A, B
+            geometric_mean = SQRT(A*B)
         END FUNCTION geometric_mean
+        
+        SUBROUTINE only_one_lj_site (coo)
+            IMPLICIT NONE
+            REAL(dp), DIMENSION(3), INTENT(IN) :: coo
+            IF(ANY(coo/=0._dp)) THEN
+                PRINT*,'For now, the solvent must have only one Lennard-Jones site.'
+                PRINT*,'This site should have coordinates 0. 0. 0., i.e., it must be on top of a grid node.'
+                PRINT*,'Sadly, its coordinates are now ',coo
+                STOP
+            END IF
+        END SUBROUTINE
    
 END MODULE mod_lj
