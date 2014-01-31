@@ -2792,8 +2792,8 @@ MODULE bfgs
              write (6,1004) 'X =',(x(i),i = 1,n)                          
           endif                                                           
           if (iprint .ge. 1) open(11, file='output/final_energy')  !write (6,*) ' F =',f                         
-          write(11,*) f       
-          close(11)
+         ! write(11,*) f       
+         ! close(11)
 endif                                                              
   999  continue                                                           
        if (iprint .ge. 0) then                                            
