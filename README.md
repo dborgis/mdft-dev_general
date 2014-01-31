@@ -155,3 +155,9 @@ Here is the description of the differents parameters you must give to describe a
 ### solvent.in
 
 The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above
+
+### MINIMIZER bfgs option
+constraint = no_constraint  # Do you want to work with a constrained density? Tags are: lower_bounded, upper_bounded, both_bounded, and the regular one by default : no_constraint
+lower_bound = 0.00000000 # Value of the minimum density (it is the density, i.e cg_vect**2), should be a float, this line is ignored if you set no_constraint 
+upper_bound = 125.00000000 # Value of maximimum density see supra
+number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4

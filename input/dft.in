@@ -4,9 +4,9 @@
 Lx  = 20.0
 Ly  = 20.0
 Lz  = 20.0
-nfft1 = 64
-nfft2 = 64
-nfft3 = 64
+nfft1 = 40
+nfft2 = 40
+nfft3 = 40
 quadrature = L
 order_of_quadrature = 6
 nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
@@ -22,8 +22,8 @@ mole_fractions
 ck_species = spc   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
 polarization = T
-polarization_order = dipol # multi or dipol
-include_nc_coupling = F
+polarization_order = multi # multi or dipol
+include_nc_coupling = T
 
 ref_bulk_density
 0.0332891
@@ -35,7 +35,7 @@ molRotSymOrder = 2
 # SOLVER
 ############################
 minimizer = bfgs
-maximum_iteration_nbr = 50
+maximum_iteration_nbr = 100
 epsg =  0.0001  # default 0.0001
 pgtol = 0.0001 # default 0.00001
 
@@ -61,7 +61,7 @@ reuse_density = F
 ############################
 translate_solute_to_center = T
 rdfmaxrange = 10.0
-nbinsrdf = 80
+nbinsrdf = 120
 
 
 ############################
@@ -111,4 +111,14 @@ vext_hard_square_well = F            # if the external potential is of kind hard
 hard_well_total_length = 2.0         # total length of the hard well (length or diameter). potential is zero from Lz/2-hard_well_total_length/2 to Lz/2+hard_well_total_length/2 and \infty elsewhere
 purely_repulsive_solute = F          # if there is a 1/r12 repulsive point in the box
 radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^12) solute as defined by Dzubiella
+
+
+##########################################################################################
+MINIMIZER BFGS OPTION, DO NOT TOUCH UNLESS YOU KNOW WHAT YOU ARE DOING!!!!!!
+##########################################################################################
+
+constraint = no_constraint  # Do you want to work with a constrained density? Tags are: lower_bounded, upper_bounded, both_bounded, and the regular one by default : no_constraint
+lower_bound = 0.00000000 # Value of the minimum density, should be a float, this line is ignored if you set no_constraint 
+upper_bound = 125.00000000 # Value of maximimum density see supra
+number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
 

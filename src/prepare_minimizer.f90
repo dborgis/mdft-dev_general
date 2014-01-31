@@ -22,13 +22,32 @@ SUBROUTINE prepare_minimizer
     FF = 0._dp
     
     IF ( minimizer_type(1:4) == 'bfgs') THEN ! if minimizer is bfgs then init what has to be init
-        mcg = 4
-        ALLOCATE ( ll(ncg), SOURCE=0._dp ) ! lower bound of cg_vect
-        ALLOCATE ( uu(ncg), SOURCE=0._dp ) ! uppder bound of cg_vect
-        ALLOCATE ( nbd(ncg), SOURCE=0)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
+        mcg = input_int('number_of_memorized_Steps')
+        IF (TRIM(ADJUSTL(input_char('constraint')))=='no_constraint') THEN
+                    ALLOCATE ( nbd(ncg), SOURCE=0)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
+        ELSE IF (TRIM(ADJUSTL(input_char('constraint')))=='lower_bounded' ) THEN
+                    WRITE(*,*) '***********************************************************************************'
+                    WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
+                    WRITE(*,*) '***********************************************************************************'
+                    ALLOCATE ( nbd(ncg), SOURCE=1)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
+        ELSE IF (TRIM(ADJUSTL(input_char('constraint')))=='upper_bounded') THEN
+                    WRITE(*,*) '***********************************************************************************'
+                    WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
+                    WRITE(*,*) '***********************************************************************************'
+                    ALLOCATE ( nbd(ncg), SOURCE=3)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
+        ELSE IF (TRIM(ADJUSTL(input_char('constraint')))=='both_boundeded') THEN
+                    WRITE(*,*) '***********************************************************************************'
+                    WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
+                    WRITE(*,*) '***********************************************************************************'
+                    ALLOCATE ( nbd(ncg), SOURCE=2)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
+        END IF
+        
+        ALLOCATE ( ll(ncg), SOURCE=SQRT(input_dp('lower_bound'))) ! lower bound of cg_vect
+        ALLOCATE ( uu(ncg), SOURCE=SQRT(input_dp('upper_bound') )) ! uppder bound of cg_vect
+
         epsmch = EPSILON(1.0_dp)  !  Precision de la machine
         factr = epsg / epsmch ! convergence criteria over energy
-        iprint = -1
+        iprint = 0
         ALLOCATE ( iwa ( 3 * ncg ) )
         ALLOCATE ( wa ( 2 * mcg * ncg + 4 * ncg + 11 * mcg **2 + 8 * mcg ) )
     END IF
