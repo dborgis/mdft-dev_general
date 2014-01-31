@@ -14,7 +14,7 @@ SUBROUTINE energy_and_gradient (iter)
     
     INTEGER(i2b), INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
-    
+    LOGICAL :: opn
     Fext = 0._dp
     Fid = 0._dp
     Ffmt = 0._dp
@@ -79,6 +79,24 @@ SUBROUTINE energy_and_gradient (iter)
     WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
         iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
 
+    INQUIRE(FILE='output/iterate.dat', OPENED = opn)
+    IF (.not. opn) THEN
+        OPEN(111, file='output/iterate.dat')
+        WRITE(111,*) "Tit   = total number of iterations"
+        WRITE(111,*) 'Tnf   = total number of function evaluations'
+        WRITE(111,*) 'Tnint = total number of segments explored during Cauchy searches'
+        WRITE(111,*) 'Skip  = number of BFGS updates skipped'
+        WRITE(111,*) 'Nact  = number of active bounds at final generalized Cauchy point'
+        WRITE(111,*) 'Projg = norm of the final projected gradient'
+        WRITE(111,*) 'F     = final function value'
+        WRITE(111,*) '#########################################################################'
+        WRITE(111, '(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
+        iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
+   ELSE
+        WRITE(111,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
+        iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs  
+   END IF  
+    
     CONTAINS
     
     PURE SUBROUTINE init_functional_and_gradient_to_zero (FF,dF)

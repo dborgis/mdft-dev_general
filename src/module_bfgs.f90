@@ -887,8 +887,12 @@ MODULE bfgs
        call prn3lb(n,x,f,task,iprint,info,itfile,                        &
                    iter,nfgv,nintol,nskip,nact,sbgnrm,                   &
                    time,nint,word,iback,stp,xstep,k,                     &
-                   cachyt,sbtime,lnscht)                                  
-  1000 continue                                                           
+                   cachyt,sbtime,lnscht)
+ WRITE(111,*)                                  
+ WRITE(111,*) task
+ WRITE(111,*)                                  
+ WRITE(111,*) 'Total User Time=' , time , 'seconds' 
+ 1000 continue                                                           
                                                                           
  !     Save local variables.                                              
                                                                           
