@@ -59,8 +59,7 @@ SUBROUTINE energy_ideal (Fideal)
     icg = 0
     IF (input_log('Linearize_entropy')  ) THEN
     
-    
-        IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '1') then
+        IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '1') then ! linearize ln(n)
             do s = 1 , nb_species
                 do i = 1 , spaceGrid%n_nodes(1)
                     do j = 1 , spaceGrid%n_nodes(2)
@@ -85,7 +84,7 @@ SUBROUTINE energy_ideal (Fideal)
                 END DO
             END DO
 
-        ELSE IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '2') then
+        ELSE IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '2') then ! linearize ln(rho)
             Fid_lin = 0.0_dp
             do s = 1 , nb_species
                 do i = 1 , spaceGrid%n_nodes(1)
@@ -117,7 +116,7 @@ SUBROUTINE energy_ideal (Fideal)
             STOP 'error in energy_ideal, you want to linearize the entropy but you did not choose HOW:1 for n 2 for rho'
         END IF
     
-    ELSE
+    ELSE ! not linearized
         do s = 1 , nb_species
             do i = 1 , spaceGrid%n_nodes(1)
                 do j = 1 , spaceGrid%n_nodes(2)
@@ -136,10 +135,10 @@ SUBROUTINE energy_ideal (Fideal)
             END DO
         END DO
     END IF
-    Fideal = Fideal * kBT * spaceGrid%dv ! integration factor
 
+    Fideal = Fideal * kBT * spaceGrid%dv ! integration factor
     FF = FF + Fideal + Fid_lin
-    
+
     Fideal = Fideal + Fid_lin
     
     CALL CPU_TIME (time1)
