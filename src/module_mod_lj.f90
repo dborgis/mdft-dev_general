@@ -47,19 +47,10 @@ MODULE mod_lj
             ! test if this simplification is true and stop if not
             ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
             ! only if they're all zero but for first site
-            i =LBOUND(sig_solv)
-            j =UBOUND(sig_solv)
-            SELECT CASE (j)
-            CASE (1) ! nothing
-            CASE DEFAULT
-                IF (
-                STOP "I found a solvent molecule with more than 1 LJ"
-            END SELECT
-!~             IF (ANY(sig_sov(1:j)/=0
-!~             IF( SUM( sig_solv(:) ) /= sig_solv(1) ) then
-!~                 PRINT*,'The solvent must have 1 Lennard Jones site only.'
-!~                 STOP
-!~             END IF
+            IF( SUM( sig_solv(:) ) /= sig_solv(1) ) then
+                PRINT*,'The solvent must have 1 Lennard Jones site only.'
+                STOP
+            END IF
             
             CALL only_one_lj_site ([x_solv(1),y_solv(1),z_solv(1)]) ! verify the solvant wears only one lennard jones site
 
