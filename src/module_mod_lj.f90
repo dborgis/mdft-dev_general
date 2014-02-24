@@ -14,7 +14,7 @@ MODULE mod_lj
     
     IMPLICIT NONE
     INTEGER(i2b), PRIVATE :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
-    INTEGER(i2b), PRIVATE :: nfft1,nfft2,nfft3
+    INTEGER(i2b), PRIVATE :: nfft1,nfft2,nfft3,nOm,nPsi
     REAL(dp),     PRIVATE :: Lx,Ly,Lz
     
     CONTAINS
@@ -23,10 +23,15 @@ MODULE mod_lj
             IMPLICIT NONE
             nb_id_mol  = SIZE( chg_mol  ) ! total number of solute types
             nb_id_solv = SIZE( chg_solv ) ! total number of solvent types
-            nfft1=spaceGrid%n_nodes(1); nfft2=spaceGrid%n_nodes(2); nfft3=spaceGrid%n_nodes(3)
-            Lx=spaceGrid%length(1); Ly=spacegrid%length(2); Lz=spaceGrid%length(3)
-            IF (.NOT. ALLOCATED(Vext_lj)) ALLOCATE( Vext_lj(nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species),&
-                source=0._dp)
+            nfft1 =spaceGrid%n_nodes(1)
+            nfft2 =spaceGrid%n_nodes(2)
+            nfft3 =spaceGrid%n_nodes(3)
+            Lx=spaceGrid%length(1)
+            Ly=spacegrid%length(2)
+            Lz=spaceGrid%length(3)
+            nOm   =angGrid%n_angles
+            nPsi  =molRotGrid%n_angles
+            IF (.NOT. ALLOCATED(Vext_lj)) ALLOCATE( Vext_lj(nfft1,nfft2,nfft3,nOm,nPsi,nb_species) ,SOURCE=0._dp)
             CALL calculate
         END SUBROUTINE
         
@@ -42,10 +47,19 @@ MODULE mod_lj
             ! test if this simplification is true and stop if not
             ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
             ! only if they're all zero but for first site
-            IF( SUM( sig_solv(:) ) /= sig_solv(1) ) then
-                PRINT*,'The solvent must have 1 Lennard Jones site only.'
-                STOP
-            END IF
+            i =LBOUND(sig_solv)
+            j =UBOUND(sig_solv)
+            SELECT CASE (j)
+            CASE (1) ! nothing
+            CASE DEFAULT
+                IF (
+                STOP "I found a solvent molecule with more than 1 LJ"
+            END SELECT
+!~             IF (ANY(sig_sov(1:j)/=0
+!~             IF( SUM( sig_solv(:) ) /= sig_solv(1) ) then
+!~                 PRINT*,'The solvent must have 1 Lennard Jones site only.'
+!~                 STOP
+!~             END IF
             
             CALL only_one_lj_site ([x_solv(1),y_solv(1),z_solv(1)]) ! verify the solvant wears only one lennard jones site
 
@@ -71,8 +85,8 @@ MODULE mod_lj
                     V_node=0.0_dp
                     solute: DO u=1,SIZE(soluteSite)
                         IF (soluteSite(u)%eps==0.0_dp) CYCLE
-                        sigij = arithmetic_mean( solventSite(v)%sig, soluteSite(v)%sig )
-                        epsij = geometric_mean( solventSite(v)%eps, soluteSite(v)%eps )
+                        sigij = arithmetic_mean( solventSite(v)%sig, soluteSite(u)%sig )
+                        epsij = geometric_mean(  solventSite(v)%eps, soluteSite(u)%eps )
                         IF (fullpdb) THEN
                             DO a=-1,1; DO b=-1,1; DO c=-1,1
                                 dx =x_grid-soluteSite(u)%r(1)+a*Lx
@@ -99,28 +113,6 @@ MODULE mod_lj
                     Vext_lj (i,j,k,:,:,s) = V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
                 END DO
             END DO
-            
-!~             IF (verbose) THEN
-!~                 BLOCK
-!~                     real(dp), dimension(:,:,:), allocatable :: temparray
-!~                     character(50):: filename
-!~                     !> Get the lennard jones potential over orientations and print it
-!~                     allocate ( temparray ( nfft1 , nfft2 , nfft3 ) )
-!~                     temparray=Vext_lj(:,:,:,1,1,1)
-!~                     filename='output/Vlj.cube'
-!~                     call write_to_cube_file(temparray,filename)
-!~                     filename='output/Vlj_along-z.dat'
-!~                     call compute_z_density(temparray,filename)
-!~                     open(11,file='output/Vlj_aumilieu.dat')
-!~                         do i=1,nfft3
-!~                             write(11,*) i*spaceGrid%dl(3), Vext_lj(nfft1/2,nfft2/2,i,1,1,1)
-!~                         END DO
-!~                     close(11)
-!~                     deallocate(temparray)
-!~                     print *, 'Vext_lj : min = ' , minval(Vext_lj) , ' ; max = ' , maxval(Vext_lj) , ' ; in (sec) ' , time1-time0
-!~                 END BLOCK
-!~             END IF
-            
 
         END SUBROUTINE calculate
 
