@@ -43,6 +43,7 @@ SUBROUTINE find_equilibrium_density
         END IF
 
         999 continue ! loops to find the minima is ended for one reason or the other
+        PRINT*,"TOTAL ENERGY = ",FF
         CALL finalizeMinimizer
     ELSE
         STOP "The minimizer you asked is not implemented yet."
