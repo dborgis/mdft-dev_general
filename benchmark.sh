@@ -19,4 +19,3 @@ for i in 1
     echo -e "Test $i ${red}failed${NC}"
     fi
 done
-
