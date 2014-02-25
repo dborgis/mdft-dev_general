@@ -11,7 +11,7 @@ MODULE input
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        REAL(DP) PURE FUNCTION INPUT_DP( That)
+        REAL(DP) PURE FUNCTION input_dp (That)
             IMPLICIT NONE
             CHARACTER(*), INTENT(IN) :: That
             INTEGER(i2b) :: i, j
@@ -19,11 +19,11 @@ MODULE input
             DO i =1,SIZE(input_line) 
                 IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ(input_line(i)(j+4:j+50),*) input_dp
             END DO
-        END FUNCTION INPUT_DP
+        END FUNCTION input_dp
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
     
-        INTEGER(I2B) PURE FUNCTION INPUT_INT( That)
+        INTEGER(I2B) PURE FUNCTION input_int (that)
             IMPLICIT NONE
             CHARACTER(*), INTENT(IN) :: That
             INTEGER(i2b) :: i, j
@@ -31,13 +31,13 @@ MODULE input
             DO i = 1, SIZE( input_line) 
                 IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ(input_line(i)(j+4:j+50),*)input_int
             END DO
-        END FUNCTION INPUT_INT
+        END FUNCTION input_int
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-        LOGICAL FUNCTION INPUT_LOG( That)
+        LOGICAL FUNCTION input_log (that)
             IMPLICIT NONE
-            CHARACTER(*), INTENT(IN) :: That
+            CHARACTER(*), INTENT(IN) :: that
             CHARACTER :: text
             INTEGER(i2b) :: i, j
             j=LEN(That)
@@ -55,11 +55,11 @@ MODULE input
             END IF
             IF( j == 1 ) input_log = .TRUE.
             IF( j == 2 ) input_log = .FALSE.
-        END FUNCTION INPUT_LOG
+        END FUNCTION input_log
             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        CHARACTER(50) FUNCTION input_char(that)
+        CHARACTER(50) FUNCTION input_char (that)
             IMPLICIT NONE
             CHARACTER(*), INTENT(IN) :: that
             INTEGER(i2b) :: i,j,imax
@@ -84,10 +84,7 @@ MODULE input
                 PRINT*,"Tag after ",That," is only whitespaces."
                 STOP
             END IF
-!~             DO i = 1,SIZE( input_line) 
-!~                 IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ ( input_line (i) (j+4:j+50),*)input_char
-!~             END DO
-        END FUNCTION INPUT_CHAR
+        END FUNCTION input_char
             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
