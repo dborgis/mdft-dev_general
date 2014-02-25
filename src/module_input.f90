@@ -25,7 +25,7 @@ MODULE input
     
         INTEGER(I2B) PURE FUNCTION INPUT_INT( That)
             IMPLICIT NONE
-            CHARATER(*), INTENT(IN) :: That
+            CHARACTER(*), INTENT(IN) :: That
             INTEGER(i2b) :: i, j
             j=LEN(That)
             DO i = 1, SIZE( input_line) 
