@@ -1,17 +1,19 @@
 ! Molecular (classical) density functional theory code.
 ! main program : skeleton of the structure.
-program mdft
+PROGRAM mdft
 
-    USE precision_kinds,only : dp ! definition of the precision kinds
+    USE precision_kinds ,ONLY: dp
+    
     IMPLICIT NONE
-    real(dp) :: time0, time1 ! time steps
+    DOUBLE PRECISION :: time0, time1
 
-    call cpu_time ( time0 ) ! init timer
-    call init_simu ! initialization of simulation. read, allocate etc.
-    call find_equilibrium_density ! DFT part! Minimize functional of the density(position, orientation)
-    call process_output ! process results
-!~     call close_simu
-    call cpu_time ( time1 ) ! close timer and tell user runtime
-    print*,'Total execution time =' , time1 - time0
+    CALL CPU_TIME (time0)
 
-end program mdft
+    CALL init_simu
+    CALL find_equilibrium_density
+    CALL process_output
+
+    CALL CPU_TIME (time1)
+    PRINT*,'Execution time =',time1-time0
+
+END PROGRAM mdft
