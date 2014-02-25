@@ -100,6 +100,9 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
 
  debug: $(OBJS)
 	 $(FC) $(FCFLAGS) $(DEBUG) -o $(EXE) $(OBJS) $(LDFLAGS)
+ 
+ regtest: $(EXE)
+	./benchmark.sh
 
  clean:
 	rm -vf gmon.out $(EXE) $(MODDIR)/* 
