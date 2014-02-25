@@ -34,7 +34,6 @@ OBJS = $(SRCDIR)/module_precision_kinds.f90 \
        $(SRCDIR)/trilinear_interpolation_v.f90 \
        $(SRCDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.f90 \
        $(SRCDIR)/find_equilibrium_density.f90 \
-       $(SRCDIR)/close_simu.f90 \
        $(SRCDIR)/print_supercell_xsf.f90 \
        $(SRCDIR)/process_output.f90 \
        $(SRCDIR)/get_final_density.f90 \
