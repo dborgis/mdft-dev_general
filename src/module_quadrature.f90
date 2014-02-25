@@ -41,7 +41,7 @@ module quadrature
             call check_weights_psi(molRotGrid%weight)
 
             ! integration scheme
-            intScheme%name = trim(adjustl(input_char('quadrature')))
+            intScheme%name = input_char('quadrature')
             if( intScheme%name /= 'L' .and. intScheme%name /= 'GL' ) then
                 print*,'You ask for a integration scheme called ',intScheme%name
                 print*,'it is not implemeted for now. Check readme for more information.'

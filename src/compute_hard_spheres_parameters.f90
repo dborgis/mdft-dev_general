@@ -66,7 +66,7 @@ contains
 !      j = len ( 'hs_functional' )
 !      if ( input_line (i) (1:j) == 'hs_functional' ) read ( input_line (i) (j+4:j+7) , * ) hs_functional
 !    END DO
-    hs_functional=trim(adjustl(input_char('hs_functional')))
+    hs_functional=input_char('hs_functional')
     ! Check legality of hs_functional
     call check_functional_legality ( hs_functional )
   END SUBROUTINE read_hs_functional

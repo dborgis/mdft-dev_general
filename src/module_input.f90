@@ -58,15 +58,35 @@ MODULE input
         END FUNCTION INPUT_LOG
             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-        CHARACTER(50) PURE FUNCTION INPUT_CHAR( That)
+
+        CHARACTER(50) FUNCTION input_char(that)
             IMPLICIT NONE
-            CHARACTER(*), INTENT(IN) :: That
-            INTEGER(i2b) :: i, j
+            CHARACTER(*), INTENT(IN) :: that
+            INTEGER(i2b) :: i,j,imax
             j=LEN(That)
-            DO i = 1,SIZE( input_line) 
-                IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ ( input_line (i) (j+4:j+50),*)input_char
+            i=0
+            imax=SIZE(input_line)
+            DO i=1,imax+1
+                IF (i==imax+1) THEN
+                    PRINT*,"Your keyword ",That," is not present in dft.in"
+                    STOP
+                END IF
+                IF (input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ') THEN
+                    READ(input_line(i)(j+4:j+50),*) input_char
+                    EXIT
+                END IF
             END DO
+            IF (input_char(1:1)==' ') THEN
+                PRINT*,"First character of ",that," is a whitespace"
+                STOP
+            END IF
+            IF (LEN(TRIM(ADJUSTL(input_char)))==0) THEN
+                PRINT*,"Tag after ",That," is only whitespaces."
+                STOP
+            END IF
+!~             DO i = 1,SIZE( input_line) 
+!~                 IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ ( input_line (i) (j+4:j+50),*)input_char
+!~             END DO
         END FUNCTION INPUT_CHAR
             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

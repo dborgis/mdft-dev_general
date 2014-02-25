@@ -15,7 +15,7 @@ SUBROUTINE prepare_minimizer
     itermax=input_int('maximum_iteration_nbr')
     epsg=input_dp('epsg')
     pgtol=input_dp('pgtol')
-    minimizer_type = TRIM(ADJUSTL(input_char('minimizer'))) ! get from input the type of minimization one wants to do
+    minimizer_type = input_char('minimizer') ! get from input the type of minimization one wants to do
     minimizer_iter = 0
     ALLOCATE ( cg_vect(ncg), SOURCE=0._dp )
     ALLOCATE ( dF(ncg), SOURCE=0._dp )
@@ -23,19 +23,19 @@ SUBROUTINE prepare_minimizer
     
     IF ( minimizer_type(1:4) == 'bfgs') THEN ! if minimizer is bfgs then init what has to be init
         mcg = input_int('number_of_memorized_Steps')
-        IF (TRIM(ADJUSTL(input_char('constraint')))=='no_constraint') THEN
+        IF (input_char('constraint')=='no_constraint') THEN
                     ALLOCATE ( nbd(ncg), SOURCE=0)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
-        ELSE IF (TRIM(ADJUSTL(input_char('constraint')))=='lower_bounded' ) THEN
+        ELSE IF (input_char('constraint')=='lower_bounded' ) THEN
                     WRITE(*,*) '***********************************************************************************'
                     WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
                     WRITE(*,*) '***********************************************************************************'
                     ALLOCATE ( nbd(ncg), SOURCE=1)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
-        ELSE IF (TRIM(ADJUSTL(input_char('constraint')))=='upper_bounded') THEN
+        ELSE IF (input_char('constraint')=='upper_bounded') THEN
                     WRITE(*,*) '***********************************************************************************'
                     WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
                     WRITE(*,*) '***********************************************************************************'
                     ALLOCATE ( nbd(ncg), SOURCE=3)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
-        ELSE IF (TRIM(ADJUSTL(input_char('constraint')))=='both_boundeded') THEN
+        ELSE IF (input_char('constraint')=='both_boundeded') THEN
                     WRITE(*,*) '***********************************************************************************'
                     WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
                     WRITE(*,*) '***********************************************************************************'

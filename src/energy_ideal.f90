@@ -29,7 +29,7 @@ SUBROUTINE energy_ideal (Fideal)
     icg=0
     Fid_lin=0.0_dp
     ALLOCATE ( rho_n (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), SOURCE=0._dp )
-    IF (input_log('Linearize_entropy').and. trim(adjustl(input_char('if_Linearize_entropy'))) == '1' ) then
+    IF (input_log('Linearize_entropy').and. input_char('if_Linearize_entropy') == '1' ) then
         IF (nb_species/=1 ) STOP 'the linearized ideal F is only implemented for 1 specie for the moment'
         do i=1,spaceGrid%n_nodes(1)
             do j=1,spaceGrid%n_nodes(2)
@@ -59,7 +59,7 @@ SUBROUTINE energy_ideal (Fideal)
     icg = 0
     IF (input_log('Linearize_entropy')  ) THEN
     
-        IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '1') then ! linearize ln(n)
+        IF (input_char('if_Linearize_entropy') == '1') then ! linearize ln(n)
             do s = 1 , nb_species
                 do i = 1 , spaceGrid%n_nodes(1)
                     do j = 1 , spaceGrid%n_nodes(2)
@@ -84,7 +84,7 @@ SUBROUTINE energy_ideal (Fideal)
                 END DO
             END DO
 
-        ELSE IF (trim(adjustl(input_char('if_Linearize_entropy'))) == '2') then ! linearize ln(rho)
+        ELSE IF (input_char('if_Linearize_entropy') == '2') then ! linearize ln(rho)
             Fid_lin = 0.0_dp
             do s = 1 , nb_species
                 do i = 1 , spaceGrid%n_nodes(1)

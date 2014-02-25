@@ -217,7 +217,7 @@ MODULE dcf
         REAL(dp) :: norm_k
         CHARACTER(80) :: filename, ck_species
     
-        ck_species = TRIM(ADJUSTL(input_char('ck_species')))
+        ck_species = input_char('ck_species')
         
         IF ( ck_species == 'spc  ' ) THEN
             filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
@@ -287,7 +287,7 @@ MODULE dcf
         INTEGER(i2b) :: ios, i
         REAL(dp) :: norm_k
         
-        ck_species = TRIM(ADJUSTL(input_char('ck_species')))
+        ck_species = input_char('ck_species')
         IF ( ck_species == 'spc  ' ) THEN
             filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
         ELSE IF ( ck_species == 'stock' ) THEN

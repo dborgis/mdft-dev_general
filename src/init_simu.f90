@@ -1,10 +1,10 @@
 ! Subroutine to initiate simulation parameters
 SUBROUTINE init_simu
 
-    USE quadrature, ONLY: prepare_quadrature => init
-    USE fft, ONLY: prepare_fft => init
-    USE dcf, ONLY: init_dcf => init
-    USE input, ONLY: input_log
+    USE quadrature  ,ONLY: prepare_quadrature => init
+    USE fft         ,ONLY: prepare_fft => init
+    USE dcf         ,ONLY: init_dcf => init
+    USE input       ,ONLY: input_log, input_char
     
     IMPLICIT NONE
 
@@ -22,4 +22,5 @@ SUBROUTINE init_simu
     CALL init_external_potential
     CALL init_solvent_polarization
     CALL init_density
+
 END SUBROUTINE init_simu
