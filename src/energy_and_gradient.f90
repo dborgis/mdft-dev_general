@@ -41,6 +41,10 @@ SUBROUTINE energy_and_gradient (iter)
             IF (input_char('treatment_of_hydro')=='C')  THEN
                 CALL energy_nn_cs_plus_nbar (Fexcnn)
             ELSE IF (input_char('treatment_of_hydro')=='VdW')  THEN
+                IF (input_log('bridge_hard_sphere') ) THEN
+                    PRINT*, 'You are using HSB and VdW so you are withdrawing twice the HS second order term'
+                    STOP
+                END IF
                 CALL energy_hydro (Fexcnn)
             END IF
         ELSE
