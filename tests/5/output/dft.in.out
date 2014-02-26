@@ -1,0 +1,62 @@
+ Lx  = 20.0                                                                                          
+ Ly  = 20.0                                                                                          
+ Lz  = 20.0                                                                                          
+ nfft1 = 60                                                                                          
+ nfft2 = 60                                                                                          
+ nfft3 = 60                                                                                          
+ quadrature = L                                                                                      
+ order_of_quadrature = 6                                                                             
+ nb_psi = 4                                                                                          
+ nb_implicit_species = 1                                                                             
+ mole_fractions                                                                                      
+ 1.0                                                                                                 
+ ck_species = spce                                                                                   
+ readDensityDensityCorrelationFunction = T                                                           
+ polarization = T                                                                                    
+ polarization_order =  multi                                                                         
+ include_nc_coupling = F                                                                             
+ ref_bulk_density                                                                                    
+ 0.0332891                                                                                           
+ temperature = 300                                                                                   
+ molRotSymOrder = 2                                                                                  
+ minimizer = bfgs                                                                                    
+ maximum_iteration_nbr = 200                                                                         
+ epsg =  0.0001                                                                                      
+ pgtol = 0.0001                                                                                      
+ Linearize_entropy = F                                                                               
+ if_Linearize_entropy = 1                                                                            
+ annihilate_solute_charges = F                                                                       
+ poisson_solver = T                                                                                  
+ point_charge_electrostatic = F                                                                      
+ reuse_density = F                                                                                   
+ translate_solute_to_center = T                                                                      
+ rdfmaxrange = 10.0                                                                                  
+ nbinsrdf = 80                                                                                       
+ hard_sphere_fluid = F                                                                               
+ bridge_hard_sphere = F                                                                              
+ hard_sphere_radius                                                                                  
+ 1.42                                                                                                
+ hs_functional = CS                                                                                  
+ lennard_jones_perturbation_to_hard_spheres = F                                                      
+ hydrophobicity = F                                                                                  
+ treatment_of_hydro = C                                                                              
+ threebody = F                                                                                       
+ lambda_solvent = 0.0                                                                                
+ Rc = 1.0                                                                                            
+ verbose = F                                                                                         
+ hard_sphere_solute = F                                                                              
+ radius_of_hard_sphere_solute = 15.0                                                                 
+ hard_wall_number = 0                                                                                
+ vdw_hard_core = F                                                                                   
+ hard_cylinder_solute = F                                                                            
+ radius_of_hard_cylinder = 0.5                                                                       
+ personnal_vext = F                                                                                  
+ vext_hard_square_well = F                                                                           
+ hard_well_total_length = 2.0                                                                        
+ purely_repulsive_solute = F                                                                         
+ radius_of_purely_repulsive_solute = 4.75                                                            
+ MINIMIZER BFGS OPTION, DO NOT TOUCH UNLESS YOU KNOW WHAT YOU ARE DOING!!!!!!                        
+ constraint = no_constraint                                                                          
+ lower_bound = 0.00000000                                                                            
+ upper_bound = 125.00000000                                                                          
+ number_of_memorized_Steps = 4                                                                       
