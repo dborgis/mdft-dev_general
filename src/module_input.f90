@@ -68,7 +68,7 @@ MODULE input
             imax=SIZE(input_line)
             DO i=1,imax+1
                 IF (i==imax+1) THEN
-                    PRINT*,"Your keyword ",That," is not present in dft.in"
+                    PRINT*,"I didnt find keyword '",That,"' in dft.in"
                     STOP
                 END IF
                 IF (input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ') THEN
