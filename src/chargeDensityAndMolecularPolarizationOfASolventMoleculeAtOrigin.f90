@@ -18,7 +18,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     REAL(dp), DIMENSION(angGrid%n_angles,molRotGrid%n_angles), INTENT(IN) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     REAL(dp) :: xmod, ymod, zmod, Rc, Lx, Ly, Lz, chg_, kr
     COMPLEX(dp), PARAMETER :: zeroC=(0.0_dp,0.0_dp)
-    COMPLEX(dp) :: fac
+    COMPLEX(dp) :: fac, molxk, molyk,molzk
 
     Lx = spaceGrid%length(1)
     Ly = spaceGrid%length(2)
@@ -67,6 +67,22 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
             molec_polary_k (i,j,k,o,p,s) = molec_polary_k(i,j,k,o,p,s) + chg_*ymod*fac
             molec_polarz_k (i,j,k,o,p,s) = molec_polarz_k(i,j,k,o,p,s) + chg_*zmod*fac
         END IF
+     !   print*, molec_polarx_k (i,j,k,o,p,s)
     END DO
+    
+Do i=1, nf1+1
+    Do j=1, nfft2
+        Do k=1, nfft3
+        molxk=Sum(molec_polarx_k (i,j,k,:,:,:) )
+        molyk=Sum(molec_polary_k (i,j,k,:,:,:) )        
+        molzk=Sum(molec_polarz_k (i,j,k,:,:,:) )
+       ! print*, i, j, k, molxk, molyk , molzk
+        molec_polarx_k (i,j,k,:,:,:)=molec_polarx_k (i,j,k,:,:,:)-molxk/(angGrid%n_angles*molRotGrid%n_angles)
+        molec_polary_k (i,j,k,:,:,:)=molec_polary_k (i,j,k,:,:,:)-molyk/(angGrid%n_angles*molRotGrid%n_angles)
+        molec_polarz_k (i,j,k,:,:,:)=molec_polarz_k (i,j,k,:,:,:)-molzk/(angGrid%n_angles*molRotGrid%n_angles)
 
+     
+        END DO
+    END DO        
+END DO
 END SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
