@@ -102,7 +102,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
         DO m = 1 , nfft2
             DO l = 1 , nfft1 / 2 + 1
                 kindex_in_c= MIN( INT( norm_k(l,m,n) / delta_k_in_C ) + 1, nb_k_in_c)
-                IF ( kindex_in_c > nb_k_in_c ) kindex_in_c = nb_k_in_c     
                 Vpair_k ( l , m , n ) = rho_n_k ( l , m , n ) * Cnn ( kindex_in_c )   !cnn is cs if there is no coupling
             END DO
         END DO
