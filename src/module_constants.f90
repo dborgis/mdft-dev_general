@@ -26,6 +26,7 @@ MODULE constants ! fondamental_constants
     COMPLEX(dp) ,PARAMETER :: i_complex     = ( 0.0_dp , 1.0_dp )
     REAL(dp)    ,PARAMETER :: infty         = huge ( 1.0_dp )
     REAL(dp)    ,PARAMETER :: zero = 0._dp, one = 1.0_dp, two = 2.0_dp, three = 3.0_dp, four = 4.0_dp, five = 5.0_dp
-    REAL(dp)    ,PARAMETER :: zeroN         = zero ! what is numerically considered as zero
+    REAL(dp)    ,PARAMETER :: epsN          = TINY(1.0_dp) ! what is numerically considered as zero
+    COMPLEX(dp), PARAMETER :: zeroC=(0.0_dp,0.0_dp)
 
 END MODULE constants
