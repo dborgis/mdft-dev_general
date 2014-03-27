@@ -1,28 +1,45 @@
 # MDFT
 
-## What for
-
-MDFT is classical, molecular density functional theory code. It is aimed at computing density profiles of solvent around a solute
-and the free energy of solvation.
+MDFT is a code for computing solvation free energies of a molecular solute in an arbitrary solvent in the molecular density functional theory framework.
 
 ## Authors
 
-MDFT is developped in the group of Daniel Borgis at the Ecole Normale Superieure, Paris, France, by
+MDFT is being developped in the group of Daniel Borgis at École Normale Supérieure, Paris, France, by
 	- Daniel Borgis
-	- Maximilien Levesque
-	- Guillaume Jeanmairet
-        - Volodymyr Sergiievskyi
+	- Maximilien Levesque (since Nov. 2010)
+	- Guillaume Jeanmairet (since Oct. 2011)
+        - Volodymyr Sergiievskyi (since Mar. 2013)
+        - Ljiljana Stojanovic (since Oct. 2013)
+        - Lu Ding (since Oct. 2013)
 
 ## Installation
 
 For now, a simple `make` will do all the necessary stuff.
 
-## Input File
+## Input files
 
-Three files are necessary.
--   `dft.in` contains simulation informations
+Three files are necessary: *input/dft.in*, *input/solute.in*, *input/solvent.in*
+-   `dft.in` contains all simulation information
 -   `solute.in` contains informations about the solute (force field, position, etc)
 -   `solvent.in` contains all information about the solvent (force field, position, etc)
+
+### solute.in
+
+*solute.in* contains all information regarding the solute. It has the following format:
+```
+Acetonitrile CH3-C-N
+3  3                                      
+# charge sigma epsilon lamda1_mol lambda2_mol   x      y      z        Zatomic   Atom name   Surname
+1  0.269 3.60   1.59    0.0        0.0          0.0    0.0  -1.3254      40         CH3          CH3
+2  0.129 3.40  0.416    0.0        0.0          0.0    0.0  0.1346       6          C            C
+3 -0.398 3.30  0.41600  30.0      30.0          0.0    0.0  1.3046       7          N            N
+```
+i.e.,
+* comment line
+* number of sites, number of sites
+* comment line
+* id, charge in electrons, sigma Lennard-Jones in angstroms, epsilon LJ in kJ/mol, lambda1 and lambda2 (see below), coordinates in angstroms, atomic number (usefull only for representation in cube file), name, other name
+
 
 ### dft.in
 
@@ -50,13 +67,13 @@ Empty and blank lines are not considered.
 * `nfft2` Number of grid points in y direction
 * `nfft3` Number of grid points in z direction
 * `quadrature` : quadrature to be used for angular integration, i.e., for the discretization of the angular grid.
-    - `L` for [Lebedev quadrature](http://en.wikipedia.org/wiki/Lebedev_quadrature) (recommanded)
+    - `L` for [Lebedev quadrature](http://en.wikipedia.org/wiki/Lebedev_quadrature) (recommanded).
     - `GL` for [Gauss-Legendre quadrature](http://en.wikipedia.org/wiki/Gaussian_quadrature)
 * `order_of_quadrature` Order of the angular integration. Indirectly define the number of discret angles of the angular grid.
     - `3` is recommanded for water
     - For Gauss-Legendre quadratures, the number of angles is 2*2^order.
-    - For Lebedev quadratures, it is 2/3 of the number of angles one would have for Gauss-Legendre quadratures. Works only for 6, 14, 26 and 38.
-* `nb_psi` Number of discrete angles for third Euler angle, i.e., for the rotation around the molecular axis.
+    - For Lebedev quadratures, the number of angles is the order. It is 2/3 of the number of angles one would have for Gauss-Legendre quadratures. Works only for 6, 14, 26 and 38.
+* `nb_psi` Number of discrete angles for third Euler angle, i.e., for the rotation around the molecular axis. MDFT 
     - `1` for stockmayer and other linear molecules
     - `4` or more are recommanded for water
     
