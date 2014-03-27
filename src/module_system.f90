@@ -25,7 +25,6 @@ MODULE system
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: x_solv, y_solv, z_solv  ! positions des sites du solvent dans le repere propre ede la molecule
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_solv, sig_solv, eps_solv  ! charge partielle et parametres LJ pour chaque site du solvant (kJ/mol)
     INTEGER(i2b), ALLOCATABLE, DIMENSION(:) :: id_solv, id_mol ! atom type of each solvent site and solute site for instance id_solv(1)=1, id_solv(2)=2 and id_solv(3)=2 for OH2
-    REAL(dp) :: Rc ! Taille de la charge (Ang)
     REAL(dp) :: temp  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
     REAL(dp) :: kBT , beta
     

@@ -3,7 +3,7 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds,only : i2b , dp
     use input,only : input_line, input_int, input_dp, input_log, verbose
-    USE system, ONLY: n_0, rho_0, temp, beta, kbT, Rc, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
+    USE system, ONLY: n_0, rho_0, temp, beta, kbT, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
     use constants,only : fourpi , boltz, navo , twopi
     use quadrature,only : molRotSymOrder
 
@@ -81,9 +81,7 @@ SUBROUTINE allocate_from_input
         call read_mole_fractions ( nb_species , mole_fraction )
     END IF
 
-    ! look for Rc
-    Rc=input_dp('Rc')
-    
+
     
     
     contains  

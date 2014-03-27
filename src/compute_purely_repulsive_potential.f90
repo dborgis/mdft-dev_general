@@ -28,7 +28,7 @@ SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , 
     real(dp):: time0 , time1 ! timer start and end
     real ( dp ), dimension (:,:,:) , allocatable :: temparray ! dummy
     character (50) :: filename
-    real(dp):: rc, rc2 ! radius of the hard wall in the purely repulsive potential of dzubiella
+    real(dp):: radius_of_purely_repulsive_solute, radius_of_purely_repulsive_solute2 ! radius of the hard wall in the purely repulsive potential of dzubiella
     real(dp):: tempVrep ! temporary Vrep(i,j,k,o)
     real(dp):: kbT ! kbT of the purely repulsive potential V such as V(R0+1)=kBT => kbT = kBT
     real(dp), dimension ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles) :: Vrep
@@ -39,11 +39,11 @@ SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , 
     ! get the radius of the purely repulsive solute
     ! the radius is defined such as in Dzubiella and Hansen, J Chem Phys 121 , 2011
     ! look for tag 'purely_repulsive_solute_radius' in dft.in for hard wall thickness
-    Rc=input_dp('radius_of_purely_repulsive_solute')
+    radius_of_purely_repulsive_solute=input_dp('radius_of_purely_repulsive_solute')
     
     ! init variables
     Vrep = 0.0_dp
-    Rc2 = Rc**2
+    radius_of_purely_repulsive_solute2 = radius_of_purely_repulsive_solute**2
     kbT = 1.0_dp/beta
 
     ! tabulate coordinates of solvent sites for each omega and psi angles
@@ -80,10 +80,10 @@ SUBROUTINE compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , 
                 z_nm = z_m - z_mol (n)
                 r_nm2 = x_nm**2+y_nm**2+z_nm**2
                 ! if we're in the hard repulsive zone v is huge, ELSE its purely repulsive
-                if ( r_nm2 <= Rc2 ) then
+                if ( r_nm2 <= radius_of_purely_repulsive_solute2 ) then
                     V_psi = huge(1.0_dp)
                 ELSE
-                    V_psi = V_psi + kbT * ( sqrt ( r_nm2 ) - Rc )**(-12)
+                    V_psi = V_psi + kbT * ( sqrt ( r_nm2 ) - radius_of_purely_repulsive_solute )**(-12)
                 END IF
                 END DO ! solute
             END DO ! solvent

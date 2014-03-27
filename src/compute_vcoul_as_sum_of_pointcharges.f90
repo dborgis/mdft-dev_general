@@ -6,7 +6,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
 
     USE precision_kinds, only: dp,i2b
     use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
-                        beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species, RC
+                        beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species
     use constants,only : fourpi , qfact
     use external_potential,only : Vext_q
     use quadrature, only: angGrid, molRotGrid
@@ -28,14 +28,11 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     character(50):: filename
     integer(i2b) :: px,py,pz
     real(dp) :: qfactcc ! qfact*chg_solv()*chg_mol()
-    real(dp) :: rc2 ! charge pseudo radius **2   == Rc**2
+    real(dp) :: Rc,Rc2 ! charge pseudo radius **2   == Rc**2
     real(dp) :: tempVcoul ! temporary Vcoul(i,j,k,o)
     integer(i2b):: species ! dummy for loops over species
 
-    print*,'!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!'
-    print*,'This routine use Rc which is defined in dft.in know what you are doing'
-    write(*,*)'Rc = ',Rc 
-    print*,'!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!!!WARNING!!!!!'
+    Rc=1.0_dp
 
     call cpu_time(time0)! initiate
     Vext_q = 0.0_dp

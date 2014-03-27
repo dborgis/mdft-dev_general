@@ -83,7 +83,6 @@ treatment_of_hydro = C    #C for Chandler, VdW(which cannot be used with a bridg
 threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
-Rc = 1.0  # CAREFULL
 verbose = T
 
 
