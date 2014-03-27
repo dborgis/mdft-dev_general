@@ -5,12 +5,12 @@ MDFT is a code for computing solvation free energies of a molecular solute in an
 ## Authors
 
 MDFT is being developped in the group of Daniel Borgis at École Normale Supérieure, Paris, France, by
-	- Daniel Borgis
-	- Maximilien Levesque (since Nov. 2010)
-	- Guillaume Jeanmairet (since Oct. 2011)
-        - Volodymyr Sergiievskyi (since Mar. 2013)
-        - Ljiljana Stojanovic (since Oct. 2013)
-        - Lu Ding (since Oct. 2013)
+	- Daniel Borgis  
+	- Maximilien Levesque (since Nov. 2010)  
+	- Guillaume Jeanmairet (since Oct. 2011)  
+        - Volodymyr Sergiievskyi (since Mar. 2013)  
+        - Ljiljana Stojanovic (since Oct. 2013)  
+        - Lu Ding (since Oct. 2013)  
 
 ## Installation
 
