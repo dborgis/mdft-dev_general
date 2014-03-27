@@ -28,18 +28,17 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     character(50):: filename
     integer(i2b) :: px,py,pz
     real(dp) :: qfactcc ! qfact*chg_solv()*chg_mol()
-    real(dp) :: Rc,Rc2 ! charge pseudo radius **2   == Rc**2
     real(dp) :: tempVcoul ! temporary Vcoul(i,j,k,o)
     integer(i2b):: species ! dummy for loops over species
+    REAL, PARAMETER :: Rc=1.0_dp, Rc2=Rc**2 ! charge pseudo radius **2   == Rc**2
 
-    Rc=1.0_dp
 
     call cpu_time(time0)! initiate
     Vext_q = 0.0_dp
     px=0
     py=0
     pz=0
-    Rc2=Rc**2
+
 
     ! test if all solutes have zero charge then don't waste your time : go to end of SUBROUTINE
     IF (MINVAL(chg_mol)==0.0_dp .and. MAXVAL(chg_mol)==0.0_dp) THEN   ! solute is not charged
