@@ -2,7 +2,7 @@
 module quadrature
 
     USE precision_kinds, only: dp, i2b
-    use constants,only : pi, twopi, fourpi
+    use constants,only : pi, twopi, fourpi, zero
     use input, only: input_log, input_char, input_int
 
     IMPLICIT NONE
@@ -54,15 +54,15 @@ module quadrature
                 STOP 'CRITICAL STOP. UNPHYSICAL QUADRATURE ORDER'
             END IF
             
-            allocate (intScheme%weight(intScheme%order), source=0._dp)
-            allocate (intScheme%root(intScheme%order), source=0._dp)
+            allocate (intScheme%weight(intScheme%order), source=zero)
+            allocate (intScheme%root(intScheme%order), source=zero)
 
             ! LEBEDEV
             if (intScheme%name=='L') then
                 angGrid%n_angles = intScheme%order
                 call allocate_Rotij (angGrid%n_angles,molRotGrid%n_angles,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
                 allocate( x_leb(intScheme%order), y_leb(intScheme%order), z_leb(intScheme%order) )
-                allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
+                allocate (angGrid%weight(angGrid%n_angles), source=zero)
                 call lebedev_integration_roots_and_weights (intScheme%order, x_leb ,y_leb , z_leb, intScheme%weight)
                 call lebedev (angGrid, intScheme, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
                 deallocate( x_leb, y_leb, z_leb)
@@ -154,9 +154,9 @@ module quadrature
             call check_weights(angGrid%weight)
 
             do concurrent (n=1:angGrid%n_angles)
-                if ( x_leb(n)==0.0_dp .and. y_leb(n)==0.0_dp ) then 
-                    phi = 0.0_dp
-                ELSE IF (y_leb(n)>=0.0_dp) then 
+                if ( x_leb(n)==zero .and. y_leb(n)==zero ) then 
+                    phi = zero
+                ELSE IF (y_leb(n)>=zero) then 
                     phi = acos(x_leb(n)/(sqrt ( x_leb(n)**2 + y_leb(n)**2 ) ) )
                 ELSE
                     phi = twopi - acos(x_leb(n)/(sqrt ( x_leb(n)**2 + y_leb(n)**2 ) ) )
