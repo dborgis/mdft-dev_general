@@ -1,14 +1,14 @@
 ############################
 # SUPERCELL
 ############################
-Lx  = 20.0
-Ly  = 20.0
-Lz  = 20.0
+Lx  = 25.0
+Ly  = 25.0
+Lz  = 25.0
 nfft1 = 64
 nfft2 = 64
 nfft3 = 64
 quadrature = L
-order_of_quadrature = 6
+order_of_quadrature = 14
 nb_psi = 3  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
@@ -19,7 +19,7 @@ nb_implicit_species = 1
 mole_fractions
 1.0
 
-ck_species = spc   # spc or spce or stock or perso
+ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
 polarization = T
 polarization_order = dipol # multi or dipol
@@ -83,7 +83,7 @@ treatment_of_hydro = C    #C for Chandler, VdW(which cannot be used with a bridg
 threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
-verbose = T
+verbose = F
 
 
 
