@@ -4,9 +4,9 @@ MDFT is a code for computing solvation free energies of a molecular solute in an
 
 ## Authors
 
-MDFT is being developped in the group of Daniel Borgis at École Normale Supérieure, Paris, France, by
-	- Daniel Borgis  
-	- Maximilien Levesque (since Nov. 2010)  
+MDFT is being developped in the group of Daniel Borgis at École Normale Supérieure, Paris, France, by  
+	- [Daniel Borgis](http://hartree.chimie.ens.fr/theorie/borgis/)  
+	- [Maximilien Levesque](http://www.chimie.ens.fr/?q=en/umr-8640/physico-chimie-th-orique/profil/maximilien.levesque) (since Nov. 2010)  
 	- Guillaume Jeanmairet (since Oct. 2011)  
         - Volodymyr Sergiievskyi (since Mar. 2013)  
         - Ljiljana Stojanovic (since Oct. 2013)  
@@ -14,7 +14,29 @@ MDFT is being developped in the group of Daniel Borgis at École Normale Supéri
 
 ## Installation
 
-For now, a simple `make` will do all the necessary stuff.
+MDFT has been tested on various flavours of Linux and MacOSX.
+As a requirement, you should have [git](http://git-scm.com/) and [the FFTW3 library](http://www.fftw.org/) installed on your computer. 
+
+First, get the code using git by typing in your terminal:
+```
+git clone https://github.com/dborgis/MDFT
+```
+
+Then, compile everything using [GNU Make](https://www.gnu.org/software/make/):
+```
+make optim
+```
+
+*mdft* executable file should then be generated in its most performant version.
+You may want to compile *mdft* without optimization with:
+```
+make
+```
+or with debugging informations and profiling capabilities with:
+```
+make debug
+```
+Note that this latter possibility is currently too verbose.
 
 ## Input files
 
@@ -23,29 +45,10 @@ Three files are necessary: *input/dft.in*, *input/solute.in*, *input/solvent.in*
 -   `solute.in` contains informations about the solute (force field, position, etc)
 -   `solvent.in` contains all information about the solvent (force field, position, etc)
 
-### solute.in
-
-*solute.in* contains all information regarding the solute. It has the following format:
-```
-Acetonitrile CH3-C-N
-3  3                                      
-# charge sigma epsilon lamda1_mol lambda2_mol   x      y      z        Zatomic   Atom name   Surname
-1  0.269 3.60   1.59    0.0        0.0          0.0    0.0  -1.3254      40         CH3          CH3
-2  0.129 3.40  0.416    0.0        0.0          0.0    0.0  0.1346       6          C            C
-3 -0.398 3.30  0.41600  30.0      30.0          0.0    0.0  1.3046       7          N            N
-```
-i.e.,
-* comment line
-* number of sites, number of sites
-* comment line
-* id, charge in electrons, sigma Lennard-Jones in angstroms, epsilon LJ in kJ/mol, lambda1 and lambda2 (see below), coordinates in angstroms, atomic number (usefull only for representation in cube file), name, other name
-
 
 ### dft.in
 
-#### Preliminary information
-
-`dft.in` is read by the program in any order. Lines may be thus be interchanged.
+*dft.in* is read by the program in any order. Lines may be thus be interchanged.
 Only usefull tags will be omitted, but no default choice is made for the user.
 
 `MDFT` is looking for tags. For instance, the whole `dft.in` is parsed in order to find `nfft1`. The value of which is then read
@@ -149,6 +152,18 @@ The parameters of the correction for the solute/solvent interactions are stored 
 
 
 
+### MINIMIZER bfgs option
+* `constraint` for constrained optimisation of the density
+	- no_constraint (default)  
+	- lower_bounded  
+	- upper_bounder  
+	- both_bounded  
+* `lower_bound` is the lower bound density, used if constraint is lower_bounded or both_bounded. Ignored in other cases.
+* `upper_bound` is the upper bound in density, used if constraint is higher_bounded or both_bounded. Ignored in other cases. 125 is a good starting point.
+* `number_of_memorized_Steps` number of steps L-BFGS uses to approximate the hessian, i.e., the steps kepts in memory. 4 or 5 is ok.
+
+
+
 ### solute.in
 The program will automatically take the first solute in solute.in to be the solute you use in your computation. The first line must be the name of the solute.
 1st line:name of the solute
@@ -169,12 +184,24 @@ Here is the description of the differents parameters you must give to describe a
 * `Atom Name` String it is the name of the atom of the site,This is not used in the computation, so you could set whatever you want for a site as long as it is a string
 * `Surname` Surname of the site, this can be usefull if you have different type of the same atom to remember what kind it is, (e.g for the description of the type of H in a protein described by Amber forcefield) This is not used in the computation, so you could set whatever you want for a site as long as it is a string.
 
+
+### solute.in
+
+*solute.in* contains all information regarding the solute. It has the following format:
+```
+Acetonitrile CH3-C-N
+3  3                                      
+# charge sigma epsilon lamda1_mol lambda2_mol   x      y      z        Zatomic   Atom name   Surname
+1  0.269 3.60   1.59    0.0        0.0          0.0    0.0  -1.3254      40         CH3          CH3
+2  0.129 3.40  0.416    0.0        0.0          0.0    0.0  0.1346       6          C            C
+3 -0.398 3.30  0.41600  30.0      30.0          0.0    0.0  1.3046       7          N            N
+```
+i.e.,
+* comment line
+* number of sites, number of sites
+* comment line
+* id, charge in electrons, sigma Lennard-Jones in angstroms, epsilon LJ in kJ/mol, lambda1 and lambda2 (see below), coordinates in angstroms, atomic number (usefull only for representation in cube file), name, other name
+
 ### solvent.in
 
 The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above
-
-### MINIMIZER bfgs option
-constraint = no_constraint  # Do you want to work with a constrained density? Tags are: lower_bounded, upper_bounded, both_bounded, and the regular one by default : no_constraint
-lower_bound = 0.00000000 # Value of the minimum density (it is the density, i.e cg_vect**2), should be a float, this line is ignored if you set no_constraint 
-upper_bound = 125.00000000 # Value of maximimum density see supra
-number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
