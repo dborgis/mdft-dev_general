@@ -1,34 +1,54 @@
 # MDFT
 
-## What for
-
-MDFT is classical, molecular density functional theory code. It is aimed at computing density profiles of solvent around a solute
-and the free energy of solvation.
+MDFT is a code for computing solvation free energies of a molecular solute in an arbitrary solvent in the molecular density functional theory framework.
 
 ## Authors
 
-MDFT is developped in the group of Daniel Borgis at the Ecole Normale Superieure, Paris, France, by
-	- Daniel Borgis
-	- Maximilien Levesque
-	- Guillaume Jeanmairet
-        - Volodymyr Sergiievskyi
+MDFT is being developped in the group of Daniel Borgis at École Normale Supérieure, Paris, France, by  
+	- [Daniel Borgis](http://hartree.chimie.ens.fr/theorie/borgis/)  
+	- [Maximilien Levesque](http://www.chimie.ens.fr/?q=en/umr-8640/physico-chimie-th-orique/profil/maximilien.levesque) (since Nov. 2010)  
+	- Guillaume Jeanmairet (since Oct. 2011)  
+        - Volodymyr Sergiievskyi (since Mar. 2013)  
+        - Ljiljana Stojanovic (since Oct. 2013)  
+        - Lu Ding (since Oct. 2013)  
 
 ## Installation
 
-For now, a simple `make` will do all the necessary stuff.
+MDFT has been tested on various flavours of Linux and MacOSX.
+As a requirement, you should have [git](http://git-scm.com/) and [the FFTW3 library](http://www.fftw.org/) installed on your computer. 
 
-## Input File
+First, get the code using git by typing in your terminal:
+```
+git clone https://github.com/dborgis/MDFT
+```
 
-Three files are necessary.
--   `dft.in` contains simulation informations
+Then, compile everything using [GNU Make](https://www.gnu.org/software/make/):
+```
+make optim
+```
+
+*mdft* executable file should then be generated in its most performant version.
+You may want to compile *mdft* without optimization with:
+```
+make
+```
+or with debugging informations and profiling capabilities with:
+```
+make debug
+```
+Note that this latter possibility is currently too verbose.
+
+## Input files
+
+Three files are necessary: *input/dft.in*, *input/solute.in*, *input/solvent.in*
+-   `dft.in` contains all simulation information
 -   `solute.in` contains informations about the solute (force field, position, etc)
 -   `solvent.in` contains all information about the solvent (force field, position, etc)
 
+
 ### dft.in
 
-#### Preliminary information
-
-`dft.in` is read by the program in any order. Lines may be thus be interchanged.
+*dft.in* is read by the program in any order. Lines may be thus be interchanged.
 Only usefull tags will be omitted, but no default choice is made for the user.
 
 `MDFT` is looking for tags. For instance, the whole `dft.in` is parsed in order to find `nfft1`. The value of which is then read
@@ -50,13 +70,13 @@ Empty and blank lines are not considered.
 * `nfft2` Number of grid points in y direction
 * `nfft3` Number of grid points in z direction
 * `quadrature` : quadrature to be used for angular integration, i.e., for the discretization of the angular grid.
-    - `L` for [Lebedev quadrature](http://en.wikipedia.org/wiki/Lebedev_quadrature) (recommanded)
+    - `L` for [Lebedev quadrature](http://en.wikipedia.org/wiki/Lebedev_quadrature) (recommanded).
     - `GL` for [Gauss-Legendre quadrature](http://en.wikipedia.org/wiki/Gaussian_quadrature)
 * `order_of_quadrature` Order of the angular integration. Indirectly define the number of discret angles of the angular grid.
     - `3` is recommanded for water
     - For Gauss-Legendre quadratures, the number of angles is 2*2^order.
-    - For Lebedev quadratures, it is 2/3 of the number of angles one would have for Gauss-Legendre quadratures. Works only for 6, 14, 26 and 38.
-* `nb_psi` Number of discrete angles for third Euler angle, i.e., for the rotation around the molecular axis.
+    - For Lebedev quadratures, the number of angles is the order. It is 2/3 of the number of angles one would have for Gauss-Legendre quadratures. Works only for 6, 14, 26 and 38.
+* `nb_psi` Number of discrete angles for third Euler angle, i.e., for the rotation around the molecular axis. MDFT 
     - `1` for stockmayer and other linear molecules
     - `4` or more are recommanded for water
     
@@ -132,6 +152,18 @@ The parameters of the correction for the solute/solvent interactions are stored 
 
 
 
+### MINIMIZER bfgs option
+* `constraint` for constrained optimisation of the density
+	- no_constraint (default)  
+	- lower_bounded  
+	- upper_bounder  
+	- both_bounded  
+* `lower_bound` is the lower bound density, used if constraint is lower_bounded or both_bounded. Ignored in other cases.
+* `upper_bound` is the upper bound in density, used if constraint is higher_bounded or both_bounded. Ignored in other cases. 125 is a good starting point.
+* `number_of_memorized_Steps` number of steps L-BFGS uses to approximate the hessian, i.e., the steps kepts in memory. 4 or 5 is ok.
+
+
+
 ### solute.in
 The program will automatically take the first solute in solute.in to be the solute you use in your computation. The first line must be the name of the solute.
 1st line:name of the solute
@@ -152,12 +184,24 @@ Here is the description of the differents parameters you must give to describe a
 * `Atom Name` String it is the name of the atom of the site,This is not used in the computation, so you could set whatever you want for a site as long as it is a string
 * `Surname` Surname of the site, this can be usefull if you have different type of the same atom to remember what kind it is, (e.g for the description of the type of H in a protein described by Amber forcefield) This is not used in the computation, so you could set whatever you want for a site as long as it is a string.
 
+
+### solute.in
+
+*solute.in* contains all information regarding the solute. It has the following format:
+```
+Acetonitrile CH3-C-N
+3  3                                      
+# charge sigma epsilon lamda1_mol lambda2_mol   x      y      z        Zatomic   Atom name   Surname
+1  0.269 3.60   1.59    0.0        0.0          0.0    0.0  -1.3254      40         CH3          CH3
+2  0.129 3.40  0.416    0.0        0.0          0.0    0.0  0.1346       6          C            C
+3 -0.398 3.30  0.41600  30.0      30.0          0.0    0.0  1.3046       7          N            N
+```
+i.e.,
+* comment line
+* number of sites, number of sites
+* comment line
+* id, charge in electrons, sigma Lennard-Jones in angstroms, epsilon LJ in kJ/mol, lambda1 and lambda2 (see below), coordinates in angstroms, atomic number (usefull only for representation in cube file), name, other name
+
 ### solvent.in
 
 The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above
-
-### MINIMIZER bfgs option
-constraint = no_constraint  # Do you want to work with a constrained density? Tags are: lower_bounded, upper_bounded, both_bounded, and the regular one by default : no_constraint
-lower_bound = 0.00000000 # Value of the minimum density (it is the density, i.e cg_vect**2), should be a float, this line is ignored if you set no_constraint 
-upper_bound = 125.00000000 # Value of maximimum density see supra
-number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
