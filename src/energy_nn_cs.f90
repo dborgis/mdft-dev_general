@@ -2,7 +2,7 @@
 SUBROUTINE energy_nn_cs (Fint)
 
     USE precision_kinds ,ONLY: i2b,dp
-    USE system          ,ONLY: kBT, rho_0_multispec, nb_species, spaceGrid
+    USE system          ,ONLY: kBT, rho_0_multispec, spaceGrid
     USE dcf             ,ONLY: c_s, nb_k, delta_k
     USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer       ,ONLY: cg_vect, FF, dF
@@ -11,8 +11,8 @@ SUBROUTINE energy_nn_cs (Fint)
 
     IMPLICIT NONE
 
+    REAL(dp), INTENT(OUT)    :: Fint
     INTEGER(i2b)             :: i,j,k,l,m,n,o,p,icg,species,nfft1,nfft2,nfft3,k_index,s
-    REAL(dp), INTENT(OUT)    :: Fint ! Internal part of the free energy
     REAL(dp)                 :: Vint, fact, psi, time1, time0
     REAL(dp)   , ALLOCATABLE :: delta_rho(:,:,:), Vpair(:,:,:)
     COMPLEX(dp), ALLOCATABLE :: delta_rho_k(:,:,:), Vpair_k(:,:,:)
@@ -67,6 +67,7 @@ SUBROUTINE energy_nn_cs (Fint)
     ! compute excess energy and its gradient
     Fint = 0.0_dp ! excess energy
     icg = 0 ! index of cg_vect
+    nb_species = SIZE( rho_0_multispec )
     DO s =1,nb_species
         fact = -kBT * rho_0_multispec(s)**2 * spaceGrid%dV
         DO i =1,nfft1
