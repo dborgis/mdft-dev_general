@@ -1,4 +1,6 @@
-! Compute total energy and gradients using direct correlation functions c_s
+! This subroutine computes the excess free energy in the HNC approximation of the homogeneous reference fluid approximation of MDFT.
+! It uses the rotational invariant c_s(r), which is an input of the code.
+
 SUBROUTINE energy_nn_cs (Fint)
 
     USE precision_kinds ,ONLY: i2b,dp
@@ -51,6 +53,7 @@ SUBROUTINE energy_nn_cs (Fint)
     
     ! Polarisation in k-space
     ALLOCATE ( Vpair_k (nfft1/2+1,nfft2,nfft3) ,SOURCE=zeroC)
+    IF (.NOT. ALLOCATED(c_s) .OR. ALL(c_s==0._dp)) STOP "I find c_s(k) to be unconsistent in energy_nn_cs.f90"
     DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
         k_index =MIN(  INT(norm_k(l,m,n)/delta_k)+1  ,  nb_k  )
         Vpair_k(l,m,n) = delta_rho_k(l,m,n) * c_s(k_index)     ! V(k)=cs(k)*rho(k)
