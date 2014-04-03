@@ -1,106 +1,125 @@
-!> Compute total energy and gradients using direct correlation functions c_s
+! This subroutine computes the excess free energy in the HNC approximation of the homogeneous reference fluid approximation of MDFT.
+! It uses the rotational invariant c_s(r), which is an input of the code.
+
 SUBROUTINE energy_nn_cs (Fint)
 
-USE precision_kinds, only: i2b,dp
-use system, only: nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , kBT  , deltaV , rho_0_multispec ,&
-                  nb_species
-use dcf, ONLY: c_s, nb_k , delta_k
-use quadrature, only: molRotSymOrder, angGrid, molRotGrid
-USE minimizer, ONLY: cg_vect , FF , dF
-use constants, only: fourpi , pi , twopi
-use fft, only: fftw3, norm_k
+    USE precision_kinds ,ONLY: i2b, dp
+    USE system          ,ONLY: kBT, rho_0_multispec, spaceGrid
+    USE dcf             ,ONLY: c_s, nb_k, delta_k
+    USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
+    USE minimizer       ,ONLY: cg_vect, FF, dF
+    USE constants       ,ONLY: twopi, zeroC
+    USE fft             ,ONLY: fftw3, norm_k
 
-IMPLICIT NONE
+    IMPLICIT NONE
 
-integer(i2b) :: i, j, k, l, m, n, o, p , icg, species !> Dummy
-integer(i2b) :: k_index
-real(dp) :: Nk !> Total number of k points = nfft1*nfft2*nfft3
-real(dp), INTENT(OUT) :: Fint !> Internal part of the free energy
-real(dp) :: Vint !> Dummy for calculation of Vint
-real(dp) :: fact !> facteur d'integration
-real(dp) :: psi ! Dummy
-real(dp), allocatable, dimension(:,:,:) :: Delta_rho
-real(dp) :: delta_rho_ijk ! dummy delta_rho(i,j,k) @ given ijk
-complex(dp), allocatable, dimension(:,:,:) :: rho_k , Vpair_k
-real(dp) :: time1, time0
-real(dp) , allocatable , dimension ( : , : , : ) :: Vpair
-!> Initiate
-call cpu_time ( time0 )
-Nk = real(nfft1*nfft2*nfft3,dp) ! nombre de points k
-allocate ( Delta_rho ( nfft1 , nfft2 , nfft3 ) )
-Delta_rho = 0.0_dp ! density
-!> Put density of last minimization step in delta_rho
-icg=0
-do i=1,nfft1
-  do j=1,nfft2
-    do k=1,nfft3
-      delta_rho_ijk = 0.0_dp
-      do o = 1, angGrid%n_angles
-        do p=1 , molRotGrid%n_angles
-          icg=icg+1
-          delta_rho_ijk = delta_rho_ijk + angGrid%weight(o) * cg_vect(icg)**2*molRotGrid%weight(p)
+    REAL(dp), INTENT(OUT)    :: Fint
+    INTEGER(i2b)             :: i,j,k,l,m,n,o,p,icg,species,nfft1,nfft2,nfft3,k_index,s,nspec
+    REAL(dp)                 :: Vint, fact, psi, time1, time0
+    REAL(dp)   , ALLOCATABLE :: delta_rho(:,:,:), gamma(:,:,:)
+    COMPLEX(dp), ALLOCATABLE :: delta_rho_k(:,:,:), gamma_k(:,:,:)
+    LOGICAL    , SAVE        :: c_s_isOK =.FALSE.
+
+    nfft1 =spaceGrid%n_nodes(1)
+    nfft2 =spaceGrid%n_nodes(2)
+    nfft3 =spaceGrid%n_nodes(3)
+
+    CALL CPU_TIME ( time0 )
+
+    ALLOCATE ( delta_rho(nfft1,nfft2,nfft3) ,SOURCE=0._dp )
+
+    CALL fill_delta_rho_from_cgvect
+    
+    fftw3%in_forward = delta_rho
+    DEALLOCATE (delta_rho)
+    CALL dfftw_execute ( fftw3%plan_forward )
+    ALLOCATE ( delta_rho_k (nfft1/2+1,nfft2,nfft3) ,SOURCE=fftw3%out_forward ) ! deltarho in k-space
+    
+    CALL is_c_s_OK
+    
+    ! Polarisation in k-space
+    ALLOCATE ( gamma_k (nfft1/2+1,nfft2,nfft3) ,SOURCE=zeroC)
+    CALL fill_gamma_in_kspace_ie_deltarho_times_c_s
+    DEALLOCATE ( delta_rho_k )
+
+    fftw3%in_backward = gamma_k
+    DEALLOCATE ( gamma_k )
+    CALL dfftw_execute (fftw3%plan_backward)
+    ALLOCATE ( gamma (nfft1,nfft2,nfft3) ,SOURCE=fftw3%out_backward/REAL(nfft1*nfft2*nfft3, dp))
+
+    ! excess free energy and its gradient
+    Fint = 0.0_dp ! excess free energy
+    icg = 0 ! index of cg_vect
+    nspec = SIZE( rho_0_multispec ) ! number of implicit solvant species
+    DO s =1,nspec
+        fact = -kBT * rho_0_multispec(s)**2 * spaceGrid%dV
+        DO i =1,nfft1
+            DO j =1,nfft2
+                DO k =1,nfft3
+                    Vint = gamma(i,j,k) * fact
+                    DO o =1,angGrid%n_angles
+                        DO p =1,molRotGrid%n_angles
+                            icg = icg + 1
+                            psi = CG_vect(icg)
+                            Fint = Fint + 0.5_dp * ( psi**2 - 1.0_dp) * angGrid%weight(o) * molRotGrid%weight(p) * Vint
+                            dF(icg) = dF(icg) + 2.0_dp * psi          * angGrid%weight(o) * molRotGrid%weight(p) * Vint
+                        END DO
+                    END DO
+                END DO
+            END DO
         END DO
-      END DO
-      delta_rho ( i , j , k ) = delta_rho_ijk
     END DO
-  END DO
-END DO
-Delta_rho = Delta_rho-real(2.0_dp*twopi**2/molRotSymOrder, dp)
-!> Next FFT sequences can be done on multiple threads
-!> Compute rho in k-space
-fftw3%in_forward = Delta_rho
-call dfftw_execute ( fftw3%plan_forward )
-allocate ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-rho_k = fftw3%out_forward
+    DEALLOCATE (gamma)
 
-! Compute polarisation in k-space
-allocate ( Vpair_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-! V(k)=cs(k)*rho(k)
-do n = 1 , nfft3
-  do m = 1 , nfft2
-    do l = 1 , nfft1 / 2 + 1
-      k_index = int ( norm_k ( l , m , n ) / delta_k ) + 1
-      ! Here it happens that k_index gets higher than the highest c_k index.
-      ! In this case one imposes k_index = k_index_max
-      if ( k_index > nb_k ) k_index = nb_k
-      ! V(k)=cs(k)*rho(k)
-      Vpair_k ( l , m , n ) = rho_k ( l , m , n ) * c_s ( k_index )
-    END DO
-  END DO
-END DO
-! since rho(k) is now useless, deallocate associated array
-deallocate ( rho_k )
-! FFT-1
-fftw3%in_backward = Vpair_k
-deallocate (Vpair_k)
-call dfftw_execute (fftw3%plan_backward)
-allocate ( Vpair ( nfft1 , nfft2 , nfft3 ) )
-Vpair = fftw3%out_backward / Nk
-! compute excess energy and its gradient
-Fint = 0.0_dp ! excess energy
-icg = 0 ! index of cg_vect
-do species = 1 , nb_species
-  fact = DeltaV * rho_0_multispec ( species ) !> facteur d'integration
-  do i = 1 , nfft1
-    do j = 1 , nfft2
-      do k = 1 , nfft3
-        Vint   = -kBT * rho_0_multispec ( species ) * Vpair(i,j,k)
-        do o = 1 , angGrid%n_angles
-          do p=1, molRotGrid%n_angles
-          icg = icg + 1
-          psi = CG_vect ( icg )
-          Fint   = Fint   + angGrid%weight(o) * fact * 0.5_dp * ( psi ** 2 - 1.0_dp) * Vint*molRotGrid%weight(p)
-          dF (icg) = dF ( icg ) + 2.0_dp * psi * angGrid%weight(o) * fact * Vint*molRotGrid%weight(p)
-         END DO
-   
-        END DO
-      END DO
-    END DO
-  END DO
-END DO ! species
-deallocate(Vpair)
-! conclude
-FF = FF + Fint
-call cpu_time(time1)
+    FF = FF + Fint
+    CALL CPU_TIME (time1)
+
+ 
+    CONTAINS
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        SUBROUTINE is_c_s_OK
+            IF (.NOT. c_s_isOK) THEN
+                IF (.NOT. ALLOCATED(c_s) .OR. ALL(c_s==0._dp)) STOP "I find c_s(k) to be unconsistent in energy_nn_cs.f90"
+                c_s_isOK = .TRUE.
+            END IF
+        END SUBROUTINE is_c_s_OK
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+        SUBROUTINE fill_delta_rho_from_cgvect
+            IMPLICIT NONE
+            REAL(dp)        :: psi
+            INTEGER(i2b)    :: icg,i,j,k,o,p
+            icg=0
+            DO i=1,nfft1
+                DO j=1,nfft2
+                    DO k=1,nfft3
+                        psi = 0.0_dp
+                        DO o=1,angGrid%n_angles
+                            DO p=1,molRotGrid%n_angles
+                                icg = icg+1
+                                psi = psi + angGrid%weight(o) * cg_vect(icg)**2*molRotGrid%weight(p)
+                            END DO
+                        END DO
+                        delta_rho(i,j,k) = psi
+                    END DO
+                END DO
+            END DO
+            delta_rho = delta_rho -REAL(2.0_dp*twopi**2/molRotSymOrder, dp)
+        END SUBROUTINE fill_delta_rho_from_cgvect
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+        SUBROUTINE fill_gamma_in_kspace_ie_deltarho_times_c_s
+            INTEGER(i2b) :: l,m,n
+            DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
+                k_index =MIN(  INT(norm_k(l,m,n)/delta_k)+1  ,  nb_k  )
+                gamma_k(l,m,n) = delta_rho_k(l,m,n) * c_s(k_index)     ! V(k)=cs(k)*rho(k)
+            END DO
+        END SUBROUTINE fill_gamma_in_kspace_ie_deltarho_times_c_s
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  
 END SUBROUTINE energy_nn_cs
