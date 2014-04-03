@@ -12,7 +12,7 @@ SUBROUTINE energy_nn_cs (Fint)
     IMPLICIT NONE
 
     REAL(dp), INTENT(OUT)    :: Fint
-    INTEGER(i2b)             :: i,j,k,l,m,n,o,p,icg,species,nfft1,nfft2,nfft3,k_index,s
+    INTEGER(i2b)             :: i,j,k,l,m,n,o,p,icg,species,nfft1,nfft2,nfft3,k_index,s,nspec
     REAL(dp)                 :: Vint, fact, psi, time1, time0
     REAL(dp)   , ALLOCATABLE :: delta_rho(:,:,:), Vpair(:,:,:)
     COMPLEX(dp), ALLOCATABLE :: delta_rho_k(:,:,:), Vpair_k(:,:,:)
@@ -43,19 +43,17 @@ SUBROUTINE energy_nn_cs (Fint)
     END DO
     delta_rho = delta_rho -REAL(2.0_dp*twopi**2/molRotSymOrder, dp)
     
-    ! Next FFT sequences can be done on multiple threads
-    ! Compute rho in k-space
+    ! deltarho in k-space
     fftw3%in_forward = delta_rho
     DEALLOCATE (delta_rho)
     CALL dfftw_execute ( fftw3%plan_forward )
     ALLOCATE ( delta_rho_k (nfft1/2+1,nfft2,nfft3) ,SOURCE=fftw3%out_forward )
     
-    ! Compute polarisation in k-space
+    ! Polarisation in k-space
     ALLOCATE ( Vpair_k (nfft1/2+1,nfft2,nfft3) ,SOURCE=zeroC)
-    ! V(k)=cs(k)*rho(k)
     DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
         k_index =MIN(  INT(norm_k(l,m,n)/delta_k)+1  ,  nb_k  )
-        Vpair_k(l,m,n) = delta_rho_k(l,m,n) * c_s(k_index)
+        Vpair_k(l,m,n) = delta_rho_k(l,m,n) * c_s(k_index)     ! V(k)=cs(k)*rho(k)
     END DO
     DEALLOCATE ( delta_rho_k )
 
@@ -64,11 +62,11 @@ SUBROUTINE energy_nn_cs (Fint)
     CALL dfftw_execute (fftw3%plan_backward)
     ALLOCATE ( Vpair (nfft1,nfft2,nfft3) ,SOURCE=fftw3%out_backward/REAL(nfft1*nfft2*nfft3, dp))
 
-    ! compute excess energy and its gradient
-    Fint = 0.0_dp ! excess energy
+    ! excess free energy and its gradient
+    Fint = 0.0_dp ! excess free energy
     icg = 0 ! index of cg_vect
-    nb_species = SIZE( rho_0_multispec )
-    DO s =1,nb_species
+    nspec = SIZE( rho_0_multispec ) ! number of implicit solvant species
+    DO s =1,nspec
         fact = -kBT * rho_0_multispec(s)**2 * spaceGrid%dV
         DO i =1,nfft1
             DO j =1,nfft2
