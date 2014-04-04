@@ -213,16 +213,6 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     
 !!!!!!!!!
 
-    ALLOCATE ( Hxx (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hyy (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hzz (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hxy (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hxz (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hyz (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hx  (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hy  (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hz  (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( H0  (nb_solute_sites) ,SOURCE=0._dp)
     ALLOCATE ( DHxx (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
     ALLOCATE ( DHyy (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
     ALLOCATE ( DHzz (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
@@ -251,47 +241,47 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
                 DO k=iz-nmax1z,iz+nmax1z
                     zk2 = -(z_mol(n)-(k-1)*deltaz)
                     rk2 = SQRT( xk2**2 + yk2**2 + zk2**2 )
-                    fk1=f_ww(rk2,rmin1,rsw1,rmax1)
+                    fk1= deltaV*f_ww(rk2,rmin1,rsw1,rmax1)
                     IF (rk2 /= 0.0_dp .AND. fk1/=0._dp) THEN
-                    
                         rho_temp=rho(i,j,k)
-                    
-                        DHxx_ijk=deltaV*fk1*xk2**2/(rk2**2)
-                        DHyy_ijk=deltaV*fk1*yk2**2/(rk2**2)
-                        DHzz_ijk=deltaV*fk1*zk2**2/(rk2**2)
-                        DHxy_ijk=deltaV*fk1*xk2*yk2/(rk2**2)
-                        DHxz_ijk=deltaV*fk1*xk2*zk2/(rk2**2)
-                        DHyz_ijk=deltaV*fk1*yk2*zk2/(rk2**2)
-                        DHx_ijk=deltaV*fk1*xk2/rk2
-                        DHy_ijk=deltaV*fk1*yk2/rk2
-                        DHz_ijk=deltaV*fk1*zk2/rk2
-                        DH0_ijk=fk1*deltaV 
-                    
-                        Hxx(n)=Hxx(n)+DHxx_ijk*rho_temp
-                        Hyy(n)=Hyy(n)+DHyy_ijk*rho_temp
-                        Hzz(n)=Hzz(n)+DHzz_ijk*rho_temp
-                        Hxy(n)=Hxy(n)+DHxy_ijk*rho_temp
-                        Hxz(n)=Hxz(n)+DHxz_ijk*rho_temp
-                        Hyz(n)=Hyz(n)+DHyz_ijk*rho_temp
-                        Hx(n)=Hx(n)+DHx_ijk*rho_temp
-                        Hy(n)=Hy(n)+DHy_ijk*rho_temp
-                        Hz(n)=Hz(n)+DHz_ijk*rho_temp
-                        H0(n)=H0(n)+DH0_ijk*rho_temp
+                        DHxx(i,j,k,n)= fk1*xk2**2/(rk2**2)
+                        DHyy(i,j,k,n)= fk1*yk2**2/(rk2**2)
+                        DHzz(i,j,k,n)= fk1*zk2**2/(rk2**2)
+                        DHxy(i,j,k,n)= fk1*xk2*yk2/(rk2**2)
+                        DHxz(i,j,k,n)= fk1*xk2*zk2/(rk2**2)
+                        DHx(i,j,k,n) = fk1*yk2*zk2/(rk2**2)
+                        DHy(i,j,k,n) = fk1*xk2/rk2
+                        DHz(i,j,k,n) = fk1*yk2/rk2
+                        DHyz(i,j,k,n)= fk1*zk2/rk2
+                        DH0(i,j,k,n) = fk1
 
-                        DHxx(i,j,k,n)=DHxx_ijk
-                        DHyy(i,j,k,n)=DHyy_ijk
-                        DHzz(i,j,k,n)=DHzz_ijk
-                        DHxy(i,j,k,n)=DHxy_ijk
-                        DHxz(i,j,k,n)=DHxz_ijk
-                        DHx(i,j,k,n)= DHx_ijk 
-                        DHy(i,j,k,n)= DHy_ijk 
-                        DHz(i,j,k,n)= DHz_ijk
-                        DHyz(i,j,k,n)=DHyz_ijk
-                        DH0(i,j,k,n)= DH0_ijk         
                     END IF
                 END DO
             END DO
         END DO
+    END DO
+
+    ALLOCATE ( Hxx (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hyy (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hzz (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hxy (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hxz (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hyz (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hx  (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hy  (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hz  (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( H0  (nb_solute_sites) ,SOURCE=0._dp) ! USE ARRAY CONSTRUCTOR INSTEAD
+    DO CONCURRENT (n=1:nb_solute_sites)
+        Hxx(n)= SUM(  DHxx(:,:,:,n)*rho )
+        Hyy(n)= SUM(  DHyy(:,:,:,n)*rho )
+        Hzz(n)= SUM(  DHzz(:,:,:,n)*rho )
+        Hxy(n)= SUM(  DHxy(:,:,:,n)*rho )
+        Hxz(n)= SUM(  DHxz(:,:,:,n)*rho )
+        Hyz(n)= SUM(  DHyz(:,:,:,n)*rho )
+        Hx(n) = SUM(  DHx(:,:,:,n)*rho )
+        Hy(n) = SUM(  DHy(:,:,:,n)*rho )
+        Hz(n) = SUM(  DHz(:,:,:,n)*rho )
+        H0(n) = SUM(  DH0(:,:,:,n)*rho )
     END DO
 
 
@@ -313,25 +303,25 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         ix = int(x_mol(n)/deltax) + 1
         iy = int(y_mol(n)/deltay) + 1
         iz = int(z_mol(n)/deltaz) + 1
-        DO i=ix-nmax2x, ix+nmax2x+1
-            xk2 = -(x_mol(n)-(i-1)*deltax)
+        DO k=iz-nmax2z,iz+nmax2z+1
+            zk2 = -(z_mol(n)-(k-1)*deltaz)
             DO j=iy-nmax2y, iy+nmax2y+1
                 yk2 = -(y_mol(n)-(j-1)*deltay)
-                DO k=iz-nmax2z,iz+nmax2z+1
-                    zk2 = -(z_mol(n)-(k-1)*deltaz)
-                    rk2 = SQRT(xk2**2+yk2**2+zk2**2)
-                    fk2 = f_ww(rk2,rmin1,rsw1,rmax1)
-                    G0(i,j,k)=G0(i,j,k)+lambda2_mol(n)*fk2
+                DO i=ix-nmax2x, ix+nmax2x+1
+                    xk2 = -(x_mol(n)-(i-1)*deltax)
+                    rk2 = SQRT( xk2**2 + yk2**2 + zk2**2 )
+                    fk2 = lambda2_mol(n) * f_ww(rk2,rmin1,rsw1,rmax1)
+                    G0(i,j,k) = G0(i,j,k) + fk2                    
                     IF (rk2/=0.0_dp .AND. fk2/=0._dp) THEN
-                        Gxx(i,j,k)= Gxx(i,j,k)+lambda2_mol(n)*fk2*xk2**2 /(rk2**2)
-                        Gyy(i,j,k)= Gyy(i,j,k)+lambda2_mol(n)*fk2*yk2**2 /(rk2**2)
-                        Gzz(i,j,k)= Gzz(i,j,k)+lambda2_mol(n)*fk2*zk2**2 /(rk2**2)
-                        Gxy(i,j,k)= Gxy(i,j,k)+lambda2_mol(n)*fk2*xk2*yk2/(rk2**2)
-                        Gxz(i,j,k)= Gxz(i,j,k)+lambda2_mol(n)*fk2*xk2*zk2/(rk2**2)
-                        Gyz(i,j,k)= Gyz(i,j,k)+lambda2_mol(n)*fk2*yk2*zk2/(rk2**2)
-                        Gx (i,j,k)= Gx (i,j,k)+lambda2_mol(n)*fk2*xk2/rk2
-                        Gy (i,j,k)= Gy (i,j,k)+lambda2_mol(n)*fk2*yk2/rk2
-                        Gz (i,j,k)= Gz (i,j,k)+lambda2_mol(n)*fk2*zk2/rk2
+                        Gxx(i,j,k)= Gxx(i,j,k)+ fk2*xk2**2 /(rk2**2)
+                        Gyy(i,j,k)= Gyy(i,j,k)+ fk2*yk2**2 /(rk2**2)
+                        Gzz(i,j,k)= Gzz(i,j,k)+ fk2*zk2**2 /(rk2**2)
+                        Gxy(i,j,k)= Gxy(i,j,k)+ fk2*xk2*yk2/(rk2**2)
+                        Gxz(i,j,k)= Gxz(i,j,k)+ fk2*xk2*zk2/(rk2**2)
+                        Gyz(i,j,k)= Gyz(i,j,k)+ fk2*yk2*zk2/(rk2**2)
+                        Gx (i,j,k)= Gx (i,j,k)+ fk2*xk2/rk2
+                        Gy (i,j,k)= Gy (i,j,k)+ fk2*yk2/rk2
+                        Gz (i,j,k)= Gz (i,j,k)+ fk2*zk2/rk2
                     END IF
                 END DO
             END DO
