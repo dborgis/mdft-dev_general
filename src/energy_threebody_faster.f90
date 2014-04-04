@@ -4,7 +4,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     USE input           ,ONLY: input_line, input_log, verbose, input_dp
     USE constants       ,ONLY: twopi,zeroC
     USE quadrature      ,ONLY: angGrid, molRotGrid
-    USE system          ,ONLY: rho_0 , sig_mol , sig_solv , Lx , Ly , Lz ,&
+    USE system          ,ONLY: rho_0,sig_mol,sig_solv,Lx,Ly,Lz,&
     &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
     & , lambda1_mol , lambda2_mol, n_0,spaceGrid
     USE minimizer       ,ONLY:cg_vect,dF,FF
@@ -33,7 +33,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
     
     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
-    deltaVk=(twopi)**3/(Lx*Ly*Lz)
+    deltaVk=(twopi)**3/PRODUCT(spaceGrid%length)
     lambda_w=input_dp ('lambda_solvent')!5.0_dp
     ! check if user wants to use this part of the functional
 
