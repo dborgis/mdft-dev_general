@@ -1,21 +1,18 @@
 SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     
     USE precision_kinds ,ONLY: i2b, dp
-    USE input           ,ONLY: input_line, input_log, verbose, input_dp
+    USE input           ,ONLY: verbose, input_dp
     USE constants       ,ONLY: twopi,zeroC
     USE quadrature      ,ONLY: angGrid, molRotGrid
-    USE system          ,ONLY: rho_0,sig_mol,sig_solv,Lx,Ly,Lz,&
-    &    id_mol, x_mol , y_mol , z_mol , kbT , nb_species, nb_solute_sites, deltax, deltay, deltaz&
-    & , lambda1_mol , lambda2_mol, n_0,spaceGrid
-    USE minimizer       ,ONLY:cg_vect,dF,FF
+    USE system          ,ONLY: rho_0,sig_mol,sig_solv,id_mol,kbT,n_0,spaceGrid,soluteSite
+    USE minimizer       ,ONLY: cg_vect,dF,FF
     USE fft             ,ONLY: fftw3,kproj
     
     IMPLICIT NONE
     REAL(dp), INTENT(OUT)                       :: F3B1, F3B2
     REAL(dp), PARAMETER                         :: rmin1=1.5_dp, rsw1=2.0_dp, rmin2=2.25_dp, rsw2=2.5_dp, rmax2=5.0_dp, d_w=1.9_dp
-    INTEGER(i2b)                                :: icg,i,j,k,o,p,n,i1,j1,k1,nfft1,nfft2,nfft3
-    REAL(dp) :: rk2,xk2,yk2,zk2,r,x,y,z,deltaVk,rb,fw,deltaV,time0,time1
-    REAL(dp)                        :: DHxx_ijk,DHyy_ijk,DHzz_ijk,DHxy_ijk,DHxz_ijk,DHyz_ijk,DH0_ijk,DHx_ijk,DHy_ijk,DHz_ijk
+    INTEGER(i2b)                                :: icg,i,j,k,o,p,n,i1,j1,k1,nfft1,nfft2,nfft3,nb_solute_sites
+    REAL(dp)                                    :: rk2,xk2,yk2,zk2,r,x,y,z,deltaVk,rb,fw,deltaV,time0,time1,deltax,deltay,deltaz
     REAL(dp)                                    :: fk1,rmax1,fk2,rho_temp,psi
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Gxx,Gyy,Gzz,Gxy,Gxz,Gyz,Gx,Gy,Gz,G0    
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Fxx,Fyy,Fzz,Fxy,Fxz,Fyz,Fx,Fy,Fz,F0 
@@ -33,13 +30,18 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
     
     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
+    nb_solute_sites = SIZE(soluteSite)
     deltaVk=(twopi)**3/PRODUCT(spaceGrid%length)
     lambda_w=input_dp ('lambda_solvent')!5.0_dp
     ! check if user wants to use this part of the functional
 
     CALL CPU_TIME(time0)
-    
+    ! TODO : add test that no lambda2(n) zero if lambda1(n)==0
+
     deltaV =spaceGrid%dV
+    deltax =spaceGrid%dl(1)
+    deltay =spaceGrid%dl(2)
+    deltaz =spaceGrid%dl(3)
     nfft1 =spaceGrid%n_nodes(1)
     nfft2 =spaceGrid%n_nodes(2)
     nfft3 =spaceGrid%n_nodes(3)
@@ -229,22 +231,22 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE ( DHz  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
     ALLOCATE ( DH0  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
 
-    DO CONCURRENT (n=1:nb_solute_sites, lambda1_mol(n)/=0._dp)
+    DO CONCURRENT (n=1:nb_solute_sites, soluteSite(n)%lambda1/=0._dp)
     
         rmax1=0.5_dp*(sig_mol(id_mol(n))+sig_solv(1)) + d_w 
         nmax1x = int(rmax1/deltax)
         nmax1y = int(rmax1/deltay)
         nmax1z = int(rmax1/deltaz)
-        ix = int(x_mol(n)/deltax) + 1
-        iy = int(y_mol(n)/deltay) + 1
-        iz = int(z_mol(n)/deltaz) + 1
+        ix = int(soluteSite(n)%r(1)/deltax) + 1
+        iy = int(soluteSite(n)%r(2)/deltay) + 1
+        iz = int(soluteSite(n)%r(3)/deltaz) + 1
 
         DO k=iz-nmax1z,iz+nmax1z
-            zk2 = -(z_mol(n)-(k-1)*deltaz)
+            zk2 = -(soluteSite(n)%r(3)-(k-1)*deltaz)
             DO j=iy-nmax1y, iy+nmax1y
-                yk2 = -(y_mol(n)-(j-1)*deltay)
+                yk2 = -(soluteSite(n)%r(2)-(j-1)*deltay)
                 DO i=ix-nmax1x, ix+nmax1x
-                    xk2 = -(x_mol(n)-(i-1)*deltax)
+                    xk2 = -(soluteSite(n)%r(1)-(i-1)*deltax)
                     rk2 = SQRT( xk2**2 + yk2**2 + zk2**2 )
                     fk1= deltaV*f_ww(rk2,rmin1,rsw1,rmax1)
                     IF (rk2 /= 0.0_dp .AND. fk1/=0._dp) THEN
@@ -301,21 +303,21 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE( G0(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
 
     
-    DO CONCURRENT ( n=1:nb_solute_sites , lambda2_mol(n)/=0._dp )
+    DO CONCURRENT ( n=1:nb_solute_sites , soluteSite(n)%lambda2/=0._dp )
         nmax2x = int(rmax1/deltax)
         nmax2y = int(rmax1/deltay)
         nmax2z = int(rmax1/deltaz)
-        ix = int(x_mol(n)/deltax) + 1
-        iy = int(y_mol(n)/deltay) + 1
-        iz = int(z_mol(n)/deltaz) + 1
+        ix = int(soluteSite(n)%r(1)/deltax) + 1
+        iy = int(soluteSite(n)%r(2)/deltay) + 1
+        iz = int(soluteSite(n)%r(3)/deltaz) + 1
         DO k=iz-nmax2z,iz+nmax2z+1
-            zk2 = -(z_mol(n)-(k-1)*deltaz)
+            zk2 = -(soluteSite(n)%r(3)-(k-1)*deltaz)
             DO j=iy-nmax2y, iy+nmax2y+1
-                yk2 = -(y_mol(n)-(j-1)*deltay)
+                yk2 = -(soluteSite(n)%r(2)-(j-1)*deltay)
                 DO i=ix-nmax2x, ix+nmax2x+1
-                    xk2 = -(x_mol(n)-(i-1)*deltax)
+                    xk2 = -(soluteSite(n)%r(1)-(i-1)*deltax)
                     rk2 = SQRT( xk2**2 + yk2**2 + zk2**2 )
-                    fk2 = lambda2_mol(n) * f_ww(rk2,rmin1,rsw1,rmax1)
+                    fk2 = soluteSite(n)%lambda2 * f_ww(rk2,rmin1,rsw1,rmax1)
                     G0(i,j,k) = G0(i,j,k) + fk2                    
                     IF (rk2/=0.0_dp .AND. fk2/=0._dp) THEN
                         Gxx(i,j,k)= Gxx(i,j,k)+ fk2*xk2**2 /(rk2**2)
@@ -385,7 +387,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     CALL dothestuff( FG0  ,  A0_k , G0_k  )
 
 
-    F3B1 = kBT/2._dp* SUM (lambda1_mol*( Hxx**2+Hyy**2+Hzz**2 +2.0_dp*Hxy**2+2.0_dp*Hxz**2+2.0_dp*Hyz**2&
+    F3B1 = kBT/2._dp* SUM (soluteSite%lambda1*( Hxx**2+Hyy**2+Hzz**2 +2.0_dp*Hxy**2+2.0_dp*Hxz**2+2.0_dp*Hyz**2&
                                           -2.0_dp*costheta0*(Hx**2+Hy**2+Hz**2)+costheta0**2*H0**2   ))
     
 
@@ -393,52 +395,59 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
                                        -2._dp*costheta0*(Fx*Gx+Fy*Gy+Fz*Gz)      &
                                        +costheta0**2*F0*G0   ))
 
-    IF (lambda_w/=0._dp) THEN
-        F3B_ww= SUM(0.5_dp*kbT*deltaV*lambda_w*rho*(FAxx**2+FAyy**2+FAzz**2+2._dp*(FAxy**2+FAxz**2+FAyz**2)&
-            -2._dp*costheta0*(FAx**2+FAy**2+FAz**2) +costheta0**2*FA0**2))
-    ELSE
-        F3B_ww=0._dp
-    END IF
 
+    CALL compute_water_water_3body_term (F3B_ww)
+
+BLOCK
+    REAL(dp) :: opweight
     icg=0
     DO i=1,nfft1
         DO j=1, nfft2
             DO k=1, nfft3
                 DO o=1,angGrid%n_angles
                     DO p=1,molRotGrid%n_angles
+                        
+                        opweight = angGrid%weight(o)*molRotGrid%weight(p)
+                        
                         icg=icg+1    
                         psi=cg_vect(icg)
-                        dF(icg)=dF(icg)+kBT*psi*deltaV*angGrid%weight(o)*molRotGrid%weight(p)*rho_0*(&
+                        
+                        dF(icg)=dF(icg)+kBT*psi*deltaV*opweight*rho_0*(&
                       (Fxx(i,j,k)*Gxx(i,j,k)+Fyy(i,j,k)*Gyy(i,j,k)+Fzz(i,j,k)*Gzz(i,j,k)&
                       +2.0_dp*Fxy(i,j,k)*Gxy(i,j,k)+ 2.0_dp*Fxz(i,j,k)*Gxz(i,j,k)+ 2.0_dp*Fyz(i,j,k)*Gyz(i,j,k))&
                       -2.0_dp*costheta0*(Fx(i,j,k)*Gx(i,j,k)+Fy(i,j,k)*Gy(i,j,k)+Fz(i,j,k)*Gz(i,j,k))&
                       +costheta0**2*F0(i,j,k)*G0(i,j,k))+&
-                      kBT*psi*angGrid%weight(o)*molRotGrid%weight(p)*&
+                      kBT*psi*opweight*&
                       rho_0*deltaV*(FGxx(i,j,k)+FGyy(i,j,k)+FGzz(i,j,k)+2.0_dp*FGxy(i,j,k)&
                      +2.0_dp*FGxz(i,j,k)+2.0_dp*FGyz(i,j,k)+2.0_dp*costheta0*(FGx(i,j,k)+FGy(i,j,k)+FGz(i,j,k))+&
                      costheta0**2*FG0(i,j,k))
              
-              dF(icg)=dF(icg)+kbT*deltaV*angGrid%weight(o)*molRotGrid%weight(p)*rho_0*lambda_w*psi*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
+              dF(icg)=dF(icg)+kbT*deltaV*opweight*rho_0*lambda_w*psi*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
               FAzz(i,j,k)**2+2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2&
               +FAz(i,j,k)**2)+costheta0**2*FA0(i,j,k)**2)&
                       +2.0_dp*(FAxx(i,j,k)*Axx(i,j,k)+FAyy(i,j,k)*Ayy(i,j,k)+FAzz(i,j,k)*Azz(i,j,k)+2.0_dp*FAxy(i,j,k)*Axy(i,j,k)+&
                       2.0_dp*FAyz(i,j,k)*Ayz(i,j,k)+2.0_dp*FAxz(i,j,k)*Axz(i,j,k)&
               -2.0_dp*costheta0*(FAx(i,j,k)*Ax(i,j,k)+FAy(i,j,k)*Ay(i,j,k)+FAz(i,j,k)*Az(i,j,k))+costheta0**2*FA0(i,j,k)*A0(i,j,k)))
                       
-                        DO n=1,nb_solute_sites
-                            dF(icg)=dF(icg)+lambda1_mol(n)*kBT*psi*angGrid%weight(o)*&
-                                molRotGrid%weight(p)*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
-                                Hzz(n)*DHzz(i,j,k,n)&
-                                +2.0_dp*Hxy(n)*DHxy(i,j,k,n)+2.0_dp*Hxz(n)*DHxz(i,j,k,n)+2.0_dp*Hyz(n)*DHyz(i,j,k,n))&
-          -2.0_dp*costheta0*(Hx(n)*DHx(i,j,k,n)+Hy(n)*DHy(i,j,k,n)+Hz(n)*DHz(i,j,k,n))+costheta0**2*H0(n)*DH0(i,j,k,n))*rho_0*2.0_dp
-                        END DO
+                    dF(icg)=dF(icg) +SUM(soluteSite%lambda1*kBT*psi*opweight*rho_0*2.0_dp*(&
+                        (Hxx(:)*DHxx(i,j,k,:)+Hyy(:)*DHyy(i,j,k,:)+Hzz(:)*DHzz(i,j,k,:)&
+                        +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
+                        -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
+                        +costheta0**2*H0(:)*DH0(i,j,k,:)))
+!~                         DO n=1,nb_solute_sites
+!~                             dF(icg)=dF(icg)+soluteSite(n)%lambda1*kBT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
+!~                                 Hzz(n)*DHzz(i,j,k,n)&
+!~                                 +2.0_dp*Hxy(n)*DHxy(i,j,k,n)+2.0_dp*Hxz(n)*DHxz(i,j,k,n)+2.0_dp*Hyz(n)*DHyz(i,j,k,n))&
+!~           -2.0_dp*costheta0*(Hx(n)*DHx(i,j,k,n)+Hy(n)*DHy(i,j,k,n)+Hz(n)*DHz(i,j,k,n))+costheta0**2*H0(n)*DH0(i,j,k,n))*rho_0*2.0_dp
+!~                         END DO
              
                     END DO
                 END DO
             END DO
         END DO
     END DO
-    
+END BLOCK
+
     FF = FF + F3B2 + F3B1 + F3B_ww
 
     CALL CPU_TIME (time1)
@@ -524,6 +533,17 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     END FUNCTION f_ww
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! water water 3 body term
+    PURE SUBROUTINE compute_water_water_3body_term (F3B_ww)
+        REAL(dp), INTENT(OUT) :: F3B_ww
+        IF (lambda_w/=0._dp) THEN
+            F3B_ww= 0.5_dp*kbT*deltaV*lambda_w*SUM(rho*(FAxx**2+FAyy**2+FAzz**2+2._dp*(FAxy**2+FAxz**2+FAyz**2)&
+                -2._dp*costheta0*(FAx**2+FAy**2+FAz**2) +costheta0**2*FA0**2))
+        ELSE
+            F3B_ww=0._dp
+        END IF
+    END SUBROUTINE compute_water_water_3body_term
 
 END SUBROUTINE energy_threebody_faster
 
