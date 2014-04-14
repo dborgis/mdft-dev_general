@@ -4,17 +4,17 @@ SUBROUTINE energy_polarization_dipol (Fint)
     USE system,          ONLY : kBT, rho_0, spaceGrid
     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid
     USE minimizer,       ONLY : cg_vect , FF , dF
-    USE constants,       ONLY : twopi
+    USE constants,       ONLY : twopi, zeroC
     USE fft,             ONLY : fftw3, k2, kproj, norm_k
     USE input,           ONLY : input_log, input_char, verbose
     USE dcf,             ONLY : c_delta , c_d, delta_k, nb_k
     
     IMPLICIT NONE
     
-    INTEGER(i2b):: icg, i, j, k, l, m, n, m1, m2, m3, o, p
-    INTEGER(i2b):: nfft1, nfft2, nfft3, nf1 , nf2 , nf3
+    INTEGER(i2b):: icg, i, j, k, l, m, n, o, p
+    INTEGER(i2b):: nfft1, nfft2, nfft3
     INTEGER(i2b):: k_index
-    REAL(dp):: Lx, Ly, Lz, dx, dy, dz
+    REAL(dp):: Lx, Ly, Lz
     REAL(dp), INTENT(OUT) :: Fint ! Internal part of the free energy due to polarization
     REAL(dp):: Vint ! Dummy for calculation of Vint
     REAL(dp):: fact ! facteur d'integration
@@ -24,18 +24,15 @@ SUBROUTINE energy_polarization_dipol (Fint)
     COMPLEX(dp) :: k_dot_P, pxt_k , pyt_k , pzt_k
     REAL(dp) :: c_deltat, c_dt ! dummy local values of c_delta and c_d in loops
     REAL(dp) :: time1, time0, time2, time3! timestamps
-    REAL(dp) :: twopioLx, twopioLy, twopioLz ! dummy for 2pi/Lx, 2pi/Ly, 2pi/Lz
     REAL(dp) :: pxt, pyt, pzt, r, Ex_tmp, Ey_tmp, Ez_tmp
     REAL(dp) :: Nk
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx , weight_omy , weight_omz
     CHARACTER(50) :: filename
     
     nfft1 = spaceGrid%n_nodes(1); nfft2 = spaceGrid%n_nodes(2); nfft3 = spaceGrid%n_nodes(3)
-    nf1 = nfft1/2; nf2 = nfft2/2; nf3 = nfft3/2
     Lx = spaceGrid%length(1); Ly = spaceGrid%length(2); Lz = spaceGrid%length(3)
-    twopioLx = twopi/Lx; twopioLy = twopi/Ly; twopioLz = twopi/Lz
-    dx = spaceGrid%dl(1); dy = spaceGrid%dl(2); dz = spaceGrid%dl(3)
     Nk = REAL ( nfft1*nfft2*nfft3 , dp ) ! total number of k grid points
+    
     ALLOCATE ( Px (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
     ALLOCATE ( Py (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
     ALLOCATE ( Pz (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
@@ -69,9 +66,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
         END DO
     END DO
 
-    DEALLOCATE ( weight_omx )
-    DEALLOCATE ( weight_omy )
-    DEALLOCATE ( weight_omz )
+    DEALLOCATE ( weight_omx, weight_omy, weight_omz )
 
     IF (verbose) THEN
         BLOCK
@@ -90,30 +85,26 @@ SUBROUTINE energy_polarization_dipol (Fint)
     END IF
   
     ! fourier transform px , py and pz
-    ALLOCATE ( Pkx (nfft1/2+1, nfft2, nfft3) )
-    ALLOCATE ( Pky (nfft1/2+1, nfft2, nfft3) )
-    ALLOCATE ( Pkz (nfft1/2+1, nfft2, nfft3) )
-    
     fftw3%in_forward = Px
+    DEALLOCATE ( Px )
     CALL dfftw_execute ( fftw3%plan_forward )
-    Pkx = fftw3%out_forward
+    ALLOCATE ( Pkx (nfft1/2+1, nfft2, nfft3) ,SOURCE=fftw3%out_forward)
     
     fftw3%in_forward = Py
+    DEALLOCATE ( Py )
     CALL dfftw_execute ( fftw3%plan_forward )
-    Pky = fftw3%out_forward
+    ALLOCATE ( Pky (nfft1/2+1, nfft2, nfft3) ,SOURCE=fftw3%out_forward)
     
     fftw3%in_forward = Pz
-    CALL dfftw_execute ( fftw3%plan_forward )
-    Pkz = fftw3%out_forward 
-
-    DEALLOCATE ( Px )
-    DEALLOCATE ( Py )
     DEALLOCATE ( Pz )
+    CALL dfftw_execute ( fftw3%plan_forward )
+    ALLOCATE ( Pkz (nfft1/2+1, nfft2, nfft3) ,SOURCE=fftw3%out_forward)
+    
     
     ! compute polarisation in k-space
-    ALLOCATE ( Ekx (nfft1/2+1, nfft2, nfft3) )
-    ALLOCATE ( Eky (nfft1/2+1, nfft2, nfft3) )
-    ALLOCATE ( Ekz (nfft1/2+1, nfft2, nfft3) )
+    ALLOCATE ( Ekx (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
+    ALLOCATE ( Eky (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
+    ALLOCATE ( Ekz (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
     
     ! get maximum number of k points as inputed in c_delta and c_d
     DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
@@ -133,31 +124,24 @@ SUBROUTINE energy_polarization_dipol (Fint)
         Ekz ( l,m,n ) = c_deltat * pzt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(3,n) - pzt_k )
     END DO
     
-    DEALLOCATE ( Pkx )
-    DEALLOCATE ( Pky )
-    DEALLOCATE ( Pkz )
+    DEALLOCATE ( Pkx, Pky, Pkz )
     
     ! inverse fourier transform the polarization field
     ! next inverse fourier transform sequence could be done in parallel
-    ALLOCATE ( Ex ( nfft1 , nfft2 , nfft3 ) )
-    ALLOCATE ( Ey ( nfft1 , nfft2 , nfft3 ) )
-    ALLOCATE ( Ez ( nfft1 , nfft2 , nfft3 ) )
-    
     fftw3%in_backward = Ekx
+    DEALLOCATE (Ekx)
     CALL dfftw_execute ( fftw3%plan_backward )
-    Ex = fftw3%out_backward / Nk
+    ALLOCATE ( Ex ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
     
     fftw3%in_backward = Eky
+    DEALLOCATE (Eky)
     CALL dfftw_execute ( fftw3%plan_backward )
-    Ey = fftw3%out_backward / Nk 
+    ALLOCATE ( Ey ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
     
     fftw3%in_backward = Ekz
-    CALL dfftw_execute ( fftw3%plan_backward )
-    Ez = fftw3%out_backward / Nk 
-    
-    DEALLOCATE (Ekx)
-    DEALLOCATE (Eky)
     DEALLOCATE (Ekz)
+    CALL dfftw_execute ( fftw3%plan_backward )
+    ALLOCATE ( Ez ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
     
     fact = spaceGrid%dv * rho_0! integration factor
     
