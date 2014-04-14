@@ -6,28 +6,16 @@ SUBROUTINE energy_polarization_dipol (Fint)
     USE minimizer,       ONLY : cg_vect , FF , dF
     USE constants,       ONLY : twopi, zeroC
     USE fft,             ONLY : fftw3, k2, kproj, norm_k
-    USE input,           ONLY : input_log, input_char, verbose
-    USE dcf,             ONLY : c_delta , c_d, delta_k, nb_k
-    
+    USE input,           ONLY : verbose
+
     IMPLICIT NONE
     
-    INTEGER(i2b):: icg, i, j, k, l, m, n, o, p
-    INTEGER(i2b):: nfft1, nfft2, nfft3
-    INTEGER(i2b):: k_index
-    REAL(dp):: Lx, Ly, Lz
     REAL(dp), INTENT(OUT) :: Fint ! Internal part of the free energy due to polarization
-    REAL(dp):: Vint ! Dummy for calculation of Vint
-    REAL(dp):: fact ! facteur d'integration
-    REAL(dp):: rho, psi
-    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: Px , Py , Pz , Ex , Ey , Ez
-    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: Pkx , Pky , Pkz , Ekx , Eky , Ekz
-    COMPLEX(dp) :: k_dot_P, pxt_k , pyt_k , pzt_k
-    REAL(dp) :: c_deltat, c_dt ! dummy local values of c_delta and c_d in loops
-    REAL(dp) :: time1, time0, time2, time3! timestamps
+    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:)    :: Px , Py , Pz , Ex , Ey , Ez
+    COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: Pkx, Pky, Pkz, Ekx, Eky, Ekz
+    REAL(dp) :: rho, psi, fact, Vint, Lx, Ly, Lz, Nk
     REAL(dp) :: pxt, pyt, pzt, r, Ex_tmp, Ey_tmp, Ez_tmp
-    REAL(dp) :: Nk
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx , weight_omy , weight_omz
-    CHARACTER(50) :: filename
+    INTEGER(i2b):: icg, i, j, k, l, m, n, o, p, nfft1, nfft2, nfft3
     
     nfft1 = spaceGrid%n_nodes(1); nfft2 = spaceGrid%n_nodes(2); nfft3 = spaceGrid%n_nodes(3)
     Lx = spaceGrid%length(1); Ly = spaceGrid%length(2); Lz = spaceGrid%length(3)
@@ -71,8 +59,12 @@ SUBROUTINE energy_polarization_dipol (Fint)
 
 
     CONTAINS
-    
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         SUBROUTINE build_polarization_vector_field_Px_Py_Pz
+            REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx , weight_omy , weight_omz
+            CHARACTER(50) :: filename
             ALLOCATE ( Px (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
             ALLOCATE ( Py (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
             ALLOCATE ( Pz (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
@@ -116,11 +108,13 @@ SUBROUTINE energy_polarization_dipol (Fint)
                     filename='output/radial_polarization_dipolar'
                     polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*rho_0
                     CALL compute_rdf(polatot, filename)
-                    filename='output/radial_polarization_scalar'
+!~                     filename='output/radial_polarization_scalar'
                 END BLOCK
             END IF
         END SUBROUTINE build_polarization_vector_field_Px_Py_Pz
-        
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         SUBROUTINE build_Fourier_transformed_polarization_vector_field_Pkx_Pky_Pkz
             ! fourier transform px , py and pz
             fftw3%in_forward = Px
@@ -138,13 +132,17 @@ SUBROUTINE energy_polarization_dipol (Fint)
             CALL dfftw_execute ( fftw3%plan_forward )
             ALLOCATE ( Pkz (nfft1/2+1, nfft2, nfft3) ,SOURCE=fftw3%out_forward)
         END SUBROUTINE build_Fourier_transformed_polarization_vector_field_Pkx_Pky_Pkz
-        
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         SUBROUTINE build_excess_electric_field_in_Fourier_space
-            ! compute electric field in Fourier space
+            USE dcf, ONLY : c_delta , c_d, delta_k, nb_k
+            COMPLEX(dp) :: k_dot_P, pxt_k , pyt_k , pzt_k
+            REAL(dp) :: c_deltat, c_dt ! dummy local values of c_delta and c_d in loops
+            INTEGER(i2b):: k_index
             ALLOCATE ( Ekx (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
             ALLOCATE ( Eky (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
             ALLOCATE ( Ekz (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
-            
             ! get maximum number of k points as inputed in c_delta and c_d
             DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
                 pxt_k = Pkx(l,m,n)
@@ -162,24 +160,27 @@ SUBROUTINE energy_polarization_dipol (Fint)
                 Eky ( l,m,n ) = c_deltat * pyt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(2,m) - pyt_k )
                 Ekz ( l,m,n ) = c_deltat * pzt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(3,n) - pzt_k )
             END DO
-            
             DEALLOCATE ( Pkx, Pky, Pkz )
         END SUBROUTINE build_excess_electric_field_in_Fourier_space
-        
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         SUBROUTINE build_excess_electric_field_from_inverse_Fourier_transform
-    ! inverse fourier transform the electric field
-    fftw3%in_backward = Ekx
-    DEALLOCATE (Ekx)
-    CALL dfftw_execute ( fftw3%plan_backward )
-    ALLOCATE ( Ex ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
-    fftw3%in_backward = Eky
-    DEALLOCATE (Eky)
-    CALL dfftw_execute ( fftw3%plan_backward )
-    ALLOCATE ( Ey ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
-    fftw3%in_backward = Ekz
-    DEALLOCATE (Ekz)
-    CALL dfftw_execute ( fftw3%plan_backward )
-    ALLOCATE ( Ez ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
-END SUBROUTINE build_excess_electric_field_from_inverse_Fourier_transform
+            ! inverse fourier transform the electric field
+            fftw3%in_backward = Ekx
+            DEALLOCATE (Ekx)
+            CALL dfftw_execute ( fftw3%plan_backward )
+            ALLOCATE ( Ex ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
+            fftw3%in_backward = Eky
+            DEALLOCATE (Eky)
+            CALL dfftw_execute ( fftw3%plan_backward )
+            ALLOCATE ( Ey ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
+            fftw3%in_backward = Ekz
+            DEALLOCATE (Ekz)
+            CALL dfftw_execute ( fftw3%plan_backward )
+            ALLOCATE ( Ez ( nfft1 , nfft2 , nfft3 ) ,SOURCE=fftw3%out_backward / Nk)
+        END SUBROUTINE build_excess_electric_field_from_inverse_Fourier_transform
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 END SUBROUTINE energy_polarization_dipol
