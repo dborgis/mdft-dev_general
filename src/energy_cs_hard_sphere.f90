@@ -10,9 +10,9 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
     USE input           ,ONLY: verbose
     
     IMPLICIT NONE
-    INTEGER(i2b) :: i, j, k, l, m, n, o, icg, species, p, nfft1, nfft2, nfft3, s
+    INTEGER(i2b) :: i, j, k, l, m, n, o, p, s, icg, species, nfft1, nfft2, nfft3
     REAL(dp), INTENT(OUT) :: Fint ! Internal part of the free energy
-    REAL(dp) :: Vint, fact, psi, lx, ly, lz, deltaV, time1, time0
+    REAL(dp) :: Vint, fact, psi, lx, ly, lz, time1, time0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: delta_rho, gamma
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: delta_rho_k
     
@@ -25,7 +25,6 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
     lx =spaceGrid%length(1)
     ly =spaceGrid%length(2)
     lz =spaceGrid%length(3)
-    deltaV =PRODUCT(spaceGrid%dl)
 
     CALL build_delta_rho_from_last_minimizer_step
     CALL build_delta_rho_in_Fourier_space
@@ -36,7 +35,7 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
     Fint = 0.0_dp
     icg = 0
     DO s = 1 , nb_species
-        fact = DeltaV * rho_0_multispec(s)
+        fact = PRODUCT(spaceGrid%dl) * rho_0_multispec(s)
         DO i = 1 , nfft1
             DO j = 1 , nfft2
                 DO k = 1 , nfft3
