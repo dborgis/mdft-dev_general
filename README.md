@@ -8,7 +8,7 @@ MDFT is being developped in the group of Daniel Borgis at École Normale Supéri
 	- [Daniel Borgis](http://hartree.chimie.ens.fr/theorie/borgis/)  
 	- [Maximilien Levesque](http://www.chimie.ens.fr/?q=en/umr-8640/physico-chimie-th-orique/profil/maximilien.levesque) (since Nov. 2010)  
 	- Guillaume Jeanmairet (since Oct. 2011)  
-        - Volodymyr Sergiievskyi (since Mar. 2013)  
+        - Volodymyr Sergiievskyi (from Mar. 2013 to Mar. 2014)  
         - Ljiljana Stojanovic (since Oct. 2013)  
         - Lu Ding (since Oct. 2013)  
 
