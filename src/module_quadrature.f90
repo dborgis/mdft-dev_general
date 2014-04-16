@@ -92,9 +92,9 @@ module quadrature
             integer(i2b) :: omega, n_psi, theta, n_phi
             real(dp) :: phi, cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
 
-            allocate(OMx(angGrid%n_angles))
-            allocate(OMy(angGrid%n_angles))
-            allocate(OMz(angGrid%n_angles))
+            allocate(OMx(angGrid%n_angles) , SOURCE=0._dp)
+            allocate(OMy(angGrid%n_angles) , SOURCE=0._dp)
+            allocate(OMz(angGrid%n_angles) , SOURCE=0._dp)
 
             select case (intScheme%order)
             case (1)
@@ -102,6 +102,7 @@ module quadrature
                 Rotxx = 1.0_dp ; Rotxy = 0.0_dp ; Rotxz = 0.0_dp
                 Rotyx = 0.0_dp ; Rotyy = 1.0_dp ; Rotyz = 0.0_dp
                 Rotzx = 0.0_dp ; Rotzy = 0.0_dp ; Rotzz = 1.0_dp
+                OMx = 0._dp ; OMy = 0._dp ; OMz = 1._dp ! ATTENTION completely arbitrary. We decide to put it along z.
             case default
                 do  theta = 1, intScheme%order
                     cos_theta = intScheme%root(theta)
