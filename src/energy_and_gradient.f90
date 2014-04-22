@@ -38,6 +38,7 @@ SUBROUTINE energy_and_gradient (iter)
 
     IF (input_log('readDensityDensityCorrelationFunction')) THEN
         IF (input_log('hydrophobicity')) THEN
+
             IF (input_char('treatment_of_hydro')=='C')  THEN
                 CALL energy_nn_cs_plus_nbar (Fexcnn)
             ELSE IF (input_char('treatment_of_hydro')=='VdW')  THEN
@@ -46,11 +47,16 @@ SUBROUTINE energy_and_gradient (iter)
                     STOP
                 END IF
                 CALL energy_hydro (Fexcnn)
+            ELSE
+                STOP "Hydrophobicity TRUE can only be associated to treatment_of_hydro == C or VdW"
             END IF
+
         ELSE
+
             IF   (.NOT. input_log('include_nc_coupling')) THEN
                  CALL energy_nn_cs (Fexcnn)
             END IF
+
         END IF
     END IF
 
