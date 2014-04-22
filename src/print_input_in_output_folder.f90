@@ -9,11 +9,20 @@ SUBROUTINE print_input_to_output_folder
     IMPLICIT NONE
     
     INTEGER(i2b):: i ! dummy for loop
-    
-    OPEN (10, file='output/dft.in.out' )
-        do i = 1 , size( input_line ) ! print each line of input_line()
-            write (10,*) input_line (i)
+
+    CALL test_if_output_folder_exists_and_create_one_if_necessary
+
+    OPEN (10, FILE='output/dft.in.out' )
+        DO i = 1 , SIZE( input_line ) ! print each line of input_line()
+            WRITE (10,*) input_line (i)
         END DO
     CLOSE (10)
+
+
+    CONTAINS
+    
+    SUBROUTINE  test_if_output_folder_exists_and_create_one_if_necessary
+        CALL system('mkdir output') ! just create folder. If it already exists, nothing happens.
+    END SUBROUTINE test_if_output_folder_exists_and_create_one_if_necessary
 
 END SUBROUTINE print_input_to_output_folder
