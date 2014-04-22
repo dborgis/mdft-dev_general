@@ -48,27 +48,27 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
     dx=spaceGrid%dl(1)
     dy=spaceGrid%dl(2)
     dz=spaceGrid%dl(3)    
-    ALLOCATE ( Vrep (nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles) ,SOURCE=0._dp)
-    DO CONCURRENT (s=1:nb_species)
-        DO CONCURRENT (k=1:nfft3)
+    ALLOCATE ( Vrep (nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles) ,SOURCE=Vmax)
+    DO s=1,nb_species
+        DO k=1,nfft3
             z_grid = REAL(k-1,dp) * dz
-            DO CONCURRENT (j=1:nfft2)
+            DO j=1,nfft2
                 y_grid = REAL(j-1,dp) * dy
-                DO CONCURRENT (i=1:nfft1)
+                DO i=1,nfft1
                     x_grid = REAL(i-1,dp) * dx
-                    DO CONCURRENT (o=1:angGrid%n_angles)
-                        DO CONCURRENT (p=1:molRotGrid%n_angles)
+                    DO o=1,angGrid%n_angles
+                        DO p=1,molRotGrid%n_angles
                             V_psi = 0.0_dp
-                   psiloop: DO m=1,nb_solvent_sites
+                   psiloop: DO m=1, 1 ! nb_solvent_sites  FOR DZUBIELLA HANSEN ONLY Oxygen atom is taken into account
                                 x_m = x_grid + xmod (m,p,o)
                                 y_m = y_grid + ymod (m,p,o)
                                 z_m = z_grid + zmod (m,p,o)
-                                DO n=1,nb_solute_sites
+                                DO n=1, nb_solute_sites
                                     x_nm = x_m - x_mol(n)
                                     y_nm = y_m - y_mol(n)
                                     z_nm = z_m - z_mol(n)
-                                    r_nm2 = x_nm**2+y_nm**2+z_nm**2
-                                    IF ( r_nm2 == radius_of_purely_repulsive_solute2 ) THEN
+                                    r_nm2 = x_nm**2+y_nm**2+z_nm**2 ! distance between the grid node and the solute sites
+                                    IF ( r_nm2 <= radius_of_purely_repulsive_solute2 ) THEN
                                         V_psi = Vmax
                                     ELSE
                                         V_psi = V_psi + kbT*1._dp/(SQRT(r_nm2)-radius_of_purely_repulsive_solute)**12
@@ -97,7 +97,6 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
             ! warn user about vrep extrema for debugging
             WRITE(*,*) 'minval(Vrep) = ' , MINVAL( Vrep )
             WRITE(*,*) 'maxval(Vrep) = ' , MAXVAL( Vrep )
-            WRITE(*,*) 'time for compute_purely_repulsive_potential ' , time1 - time0
             ALLOCATE ( temparray ( nfft1 , nfft2 , nfft3 ) ,SOURCE=0._dp) 
             CALL mean_over_orientations ( Vrep , temparray )! mean over orientations and print
             temparray = temparray / fourpi
@@ -109,5 +108,6 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
     
     DEALLOCATE (Vrep)
     CALL CPU_TIME (time1)
-    PRINT*,"time to compute purely repulsive : ",time1-time0;STOP
+    PRINT*,"time to compute purely repulsive : ",time1-time0
+    
 END SUBROUTINE compute_purely_repulsive_potential
