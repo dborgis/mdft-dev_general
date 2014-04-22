@@ -22,7 +22,7 @@ SUBROUTINE print_input_to_output_folder
     CONTAINS
     
     SUBROUTINE  test_if_output_folder_exists_and_create_one_if_necessary
-        CALL system('mkdir output') ! just create folder. If it already exists, nothing happens.
+        CALL system('mkdir -p output') ! just create folder. If it already exists, nothing happens.
     END SUBROUTINE test_if_output_folder_exists_and_create_one_if_necessary
 
 END SUBROUTINE print_input_to_output_folder
