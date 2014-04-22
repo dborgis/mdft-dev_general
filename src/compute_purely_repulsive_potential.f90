@@ -5,10 +5,11 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
 
     USE precision_kinds     ,ONLY: dp, i2b
     USE input               ,ONLY: input_dp, verbose
-    USE system              ,ONLY: x_solv, y_solv, z_solv, x_mol, y_mol, z_mol, beta, nb_solute_sites, nb_solvent_sites, spaceGrid,&
-                                   nb_species
+    USE system              ,ONLY: beta, nb_solute_sites, nb_solvent_sites, spaceGrid,&
+                                   nb_species, soluteSite, solventSite
     USE external_potential  ,ONLY: Vext_total
     USE quadrature          ,ONLY: angGrid, molRotGrid
+    USE constants           ,ONLY: zerodp=>zero
 
     IMPLICIT NONE
 
@@ -35,13 +36,14 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
     radius_of_purely_repulsive_solute2 = radius_of_purely_repulsive_solute**2
 
     ! tabulate coordinates of solvent sites for each omega and psi angles
-    ALLOCATE ( xmod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=0._dp)
-    ALLOCATE ( ymod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=0._dp)
-    ALLOCATE ( zmod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=0._dp)
+    CALL test_allocated_Rotxx_etc
+    ALLOCATE ( xmod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=zerodp)
+    ALLOCATE ( ymod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=zerodp)
+    ALLOCATE ( zmod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=zerodp)
     DO CONCURRENT (m=1:nb_solvent_sites, p=1:molRotGrid%n_angles, o=1:angGrid%n_angles)
-        xmod (m,p,o) = Rotxx (o,p) * x_solv (m) + Rotxy (o,p) * y_solv (m) + Rotxz (o,p) * z_solv (m)
-        ymod (m,p,o) = Rotyx (o,p) * x_solv (m) + Rotyy (o,p) * y_solv (m) + Rotyz (o,p) * z_solv (m)
-        zmod (m,p,o) = Rotzx (o,p) * x_solv (m) + Rotzy (o,p) * y_solv (m) + Rotzz (o,p) * z_solv (m)
+        xmod (m,p,o) = Rotxx(o,p) * solventSite(m)%r(1) + Rotxy (o,p) * solventSite(m)%r(2) + Rotxz (o,p) * solventSite(m)%r(3)
+        ymod (m,p,o) = Rotyx(o,p) * solventSite(m)%r(1) + Rotyy (o,p) * solventSite(m)%r(2) + Rotyz (o,p) * solventSite(m)%r(3)
+        zmod (m,p,o) = Rotzx(o,p) * solventSite(m)%r(1) + Rotzy (o,p) * solventSite(m)%r(2) + Rotzz (o,p) * solventSite(m)%r(3)
     END DO
 
     kbT = 1.0_dp/beta
@@ -59,19 +61,19 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
                     DO o=1,angGrid%n_angles
                         DO p=1,molRotGrid%n_angles
                             V_psi = 0.0_dp
-                   psiloop: DO m=1, 1 ! nb_solvent_sites  FOR DZUBIELLA HANSEN ONLY Oxygen atom is taken into account
+                   psiloop: DO m=1, 1 ! nb_solvent_sites => FOR DZUBIELLA HANSEN ONLY Oxygen atom is taken into account
                                 x_m = x_grid + xmod (m,p,o)
                                 y_m = y_grid + ymod (m,p,o)
                                 z_m = z_grid + zmod (m,p,o)
                                 DO n=1, nb_solute_sites
-                                    x_nm = x_m - x_mol(n)
-                                    y_nm = y_m - y_mol(n)
-                                    z_nm = z_m - z_mol(n)
-                                    r_nm2 = x_nm**2+y_nm**2+z_nm**2 ! distance between the grid node and the solute sites
-                                    IF ( r_nm2 <= radius_of_purely_repulsive_solute2 ) THEN
+                                    x_nm = x_m - soluteSite(n)%r(1)
+                                    y_nm = y_m - soluteSite(n)%r(2)
+                                    z_nm = z_m - soluteSite(n)%r(3)
+                                    r_nm2 = x_nm**2+y_nm**2+z_nm**2
+                                    IF ( r_nm2 == 0._dp ) THEN!  <= radius_of_purely_repulsive_solute2 ) THEN
                                         V_psi = Vmax
                                     ELSE
-                                        V_psi = V_psi + kbT*1._dp/(SQRT(r_nm2)-radius_of_purely_repulsive_solute)**12
+                                        V_psi = V_psi + kbT/(r_nm2**6)!)-radius_of_purely_repulsive_solute)**12
                                     END IF
                                     IF (V_psi >= Vmax) THEN
                                         V_psi = Vmax
@@ -89,6 +91,9 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
     END DO
     DEALLOCATE (xmod,ymod,zmod)
 
+    CALL CPU_TIME (time1)
+
+
     IF (verbose) THEN
         BLOCK
             USE constants, ONLY : fourpi
@@ -103,11 +108,32 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
             filename = 'output/Vrep.cube'
             CALL write_to_cube_file ( temparray , filename )
             DEALLOCATE ( temparray )
+            PRINT*,"time to compute purely repulsive : ",time1-time0
         END BLOCK
     END IF
     
     DEALLOCATE (Vrep)
-    CALL CPU_TIME (time1)
-    PRINT*,"time to compute purely repulsive : ",time1-time0
+
+
+
+
+    CONTAINS
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    SUBROUTINE test_allocated_Rotxx_etc
+        IF (ALL(Rotxx==zerodp)) STOP "Rotxx should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotxy==zerodp)) STOP "Rotxy should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotxz==zerodp)) STOP "Rotxz should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotyx==zerodp)) STOP "Rotyx should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotyy==zerodp)) STOP "Rotyy should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotyz==zerodp)) STOP "Rotyz should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotzx==zerodp)) STOP "Rotzx should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotzy==zerodp)) STOP "Rotzy should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotzz==zerodp)) STOP "Rotzz should be allocated in compute_purely_repulsive_potential.f90"
+    END SUBROUTINE test_allocated_Rotxx_etc
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     
 END SUBROUTINE compute_purely_repulsive_potential
