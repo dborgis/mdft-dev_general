@@ -122,15 +122,15 @@ SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rot
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     SUBROUTINE test_allocated_Rotxx_etc
-        IF (ALL(Rotxx==zerodp)) STOP "Rotxx should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotxy==zerodp)) STOP "Rotxy should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotxz==zerodp)) STOP "Rotxz should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotyx==zerodp)) STOP "Rotyx should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotyy==zerodp)) STOP "Rotyy should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotyz==zerodp)) STOP "Rotyz should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotzx==zerodp)) STOP "Rotzx should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotzy==zerodp)) STOP "Rotzy should be allocated in compute_purely_repulsive_potential.f90"
-        IF (ALL(Rotzz==zerodp)) STOP "Rotzz should be allocated in compute_purely_repulsive_potential.f90"
+        IF (ALL(Rotxx==zerodp) .AND. &
+            ALL(Rotxy==zerodp) .AND. &
+            ALL(Rotxz==zerodp) .AND. &
+            ALL(Rotyx==zerodp) .AND. &
+            ALL(Rotyy==zerodp) .AND. &
+            ALL(Rotyz==zerodp) .AND. &
+            ALL(Rotzx==zerodp) .AND. &
+            ALL(Rotzy==zerodp) .AND. &
+            ALL(Rotzz==zerodp)) STOP "The rotation matrix in compute_purely_repulsive_potential should not be zero everywhere"
     END SUBROUTINE test_allocated_Rotxx_etc
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
