@@ -1,4 +1,5 @@
-! This SUBROUTINEn calculates every output asked by user.
+! This subroutine computes every output asked by user.
+
 SUBROUTINE process_output
 
     ! defines precision of reals and intergers
@@ -43,21 +44,21 @@ SUBROUTINE process_output
         ! If calculation is for hard sphere fluid in presence of a hard wall compute profile perp wall
         ! TODO: DONT HAVE TIME TO WRITE THE TEST TODAY
         filename = 'output/z_density.dat'
-        call compute_z_density ( neq ( : , : , : , 1 ) , filename ) ! TODO for now only write for the first species
+        CALL compute_z_density ( neq (:,:,:,1) , filename ) ! TODO for now only write for the first species
     
-        if( soluteIsLinear() ) then
+        IF (soluteIsLinear() ) THEN
             ! nothing for now
         END IF
         
-        if( soluteIsPlanar() ) then
+        IF( soluteIsPlanar() ) THEN
             filename = 'output/planardensity.out'
-            call compute_planar_density ( neq ( : , : , : , 1 ) , filename ) ! TODO for now only write for the first species
+            CALL compute_planar_density ( neq (:,:,:,1) , filename ) ! TODO for now only write for the first species
         END IF
     END IF
 
 
     filename = 'output/rdf.out'
-    call compute_rdf ( neq , filename ) ! Get radial distribution functions
+    CALL compute_rdf ( neq , filename ) ! Get radial distribution functions
 
 
     CONTAINS
