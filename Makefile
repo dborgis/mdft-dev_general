@@ -17,7 +17,7 @@ FC = gfortran
 FCFLAGS = -J $(MODDIR) -I $(MODDIR)
 LDFLAGS = -lfftw3
 
-DEBUG = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -Wimplicit-interface -frecursive
+DEBUG = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -frecursive
 # -g turns on debugging
 # -p turns on profiling
 
@@ -101,7 +101,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 # ——————————————— Pattern rules ———————————————
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC) $(FCFLAGS) $(FFLAGS) $(OPTIM) -c $< -o $@
+	$(FC) $(FCFLAGS) $(FFLAGS) $(OPTIM) $(DEBUG) -c $< -o $@
 
 # For GNU make, *.f90 cannot be compiled automatically.
 
