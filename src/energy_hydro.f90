@@ -1,5 +1,4 @@
 !This routine evaluate the excess free energy plus an hydrophobic part
-
 SUBROUTINE energy_hydro (Fint)
 
     USE precision_kinds     ,ONLY: dp, i2b
@@ -75,7 +74,7 @@ SUBROUTINE energy_hydro (Fint)
 
     ! macroscopic water parameters, from Chandler
     mu_0 = 7.16d-4*kBT ! phenomenological potential
-    R_cg = 3.0_dp ! ARBITRARY gaussian radius for coarse graining
+    R_cg = 2.2_dp ! ARBITRARY gaussian radius for coarse graining
 
     ! total number of kpoints and volume per kpoint
     Nk = REAL(nfft1*nfft2*nfft3,dp)
