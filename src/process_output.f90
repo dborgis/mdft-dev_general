@@ -4,42 +4,42 @@ SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nfft1, nfft2, nfft3, nb_species
-    USE input,              ONLY: input_line, verbose
+    USE system,             ONLY: nb_species, spaceGrid
+    USE input,              ONLY: verbose, input_log
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
+    USE constants,          ONLY: zerodp
     
     IMPLICIT NONE
     
-    real(dp), dimension( nfft1 , nfft2 , nfft3 , nb_species ) :: neq ! equilibrium density(position)
-    real(dp), dimension( nfft1 , nfft2 , nfft3 , nb_species ) :: Px , Py , Pz ! equilibrium polarization(position)
-    character(50):: filename
-    real(dp), allocatable , dimension ( : , : , : , : ) :: temparray
-    integer(i2b):: i , j ! dummy
+    CHARACTER(50):: filename
+    REAL(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: neq, Px, Py, Pz ! equilibrium density, ie rho(r), and Pi polarization(r)
+    INTEGER(i2b) ,POINTER :: nfft1=>spaceGrid%n_nodes(1), nfft2=>spaceGrid%n_nodes(2), nfft3=>spaceGrid%n_nodes(3)
 
-    call print_cg_vect ! print output/density.bin which has the content of cg_vect 
-    call get_final_density ( neq ) ! Get the final density (position) from the last minimizer step.
+    CALL print_cg_vect ! print output/density.bin that contains cg_vect 
+
+    ALLOCATE ( neq (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
+    CALL get_final_density ( neq ) ! Get the final density(r) from the last minimizer step.
 
     IF (verbose) THEN
         filename = 'output/density.cube'
         CALL write_to_cube_file (neq(:,:,:,1), filename) ! TODO for now only write for the first species
-        DO i =1,SIZE(input_line)
-            j =LEN('polarization ')
-            IF ( input_line(i)(1:j)=='polarization ' .AND. input_line(i)(j+3:j+3)=='T' ) THEN
-                CALL get_final_polarization (Px,Py,Pz)
-                filename ='output/P.cube'
-                ALLOCATE (temparray (nfft1,nfft2,nfft3,nb_species) )
-                temparray =SQRT(Px**2+Py**2+Pz**2)
-                CALL write_to_cube_file ( temparray(:,:,:,1), filename ) ! TODO for now only write for the first species
-                filename='output/Px.cube' ; CALL write_to_cube_file(Px(:,:,:,1),filename)
-                filename='output/Py.cube' ; CALL write_to_cube_file(Py(:,:,:,1),filename)
-                filename='output/Pz.cube' ; CALL write_to_cube_file(Pz(:,:,:,1),filename)
-                filename='output/z_Px.dat'; CALL compute_z_density(Px(:,:,:,1),filename)
-                filename='output/z_Py.dat'; CALL compute_z_density(Py(:,:,:,1),filename)
-                filename='output/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1),filename)
-                DEALLOCATE(temparray)
-                EXIT
-            END IF
-        END DO
+        IF (input_log('polarization').EQV. .TRUE.) THEN
+            ALLOCATE ( Px (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
+            ALLOCATE ( Py (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
+            ALLOCATE ( Pz (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
+            CALL get_final_polarization (Px,Py,Pz)
+            filename='output/normP.cube' ; CALL write_to_cube_file ( (SQRT(Px(:,:,:,1)**2+Py(:,:,:,1)**2+Pz(:,:,:,1)**2)), filename) ! TODO for now only write for the first species
+            filename='output/Px.cube' ; CALL write_to_cube_file(Px(:,:,:,1), filename)
+            filename='output/z_Px.dat'; CALL compute_z_density(Px(:,:,:,1) , filename)
+            DEALLOCATE (Px)
+            filename='output/Py.cube' ; CALL write_to_cube_file(Py(:,:,:,1), filename)
+            filename='output/z_Py.dat'; CALL compute_z_density(Py(:,:,:,1) , filename)
+            DEALLOCATE (Py)
+            filename='output/Pz.cube' ; CALL write_to_cube_file(Pz(:,:,:,1), filename)
+            filename='output/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1) , filename)
+            DEALLOCATE (Pz)
+        END IF
+
         
         ! If calculation is for hard sphere fluid in presence of a hard wall compute profile perp wall
         ! TODO: DONT HAVE TIME TO WRITE THE TEST TODAY
