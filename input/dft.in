@@ -4,12 +4,12 @@
 Lx  = 25.0
 Ly  = 25.0
 Lz  = 25.0
-nfft1 = 64
-nfft2 = 64
-nfft3 = 64
-quadrature = L
-order_of_quadrature = 14
-nb_psi = 3  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+nfft1 = 128
+nfft2 = 128
+nfft3 = 128
+quadrature = GL
+order_of_quadrature = 1
+nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
 ############################
@@ -21,7 +21,7 @@ mole_fractions
 
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = T
+polarization = F
 polarization_order = dipol # multi or dipol
 include_nc_coupling = F
 
@@ -51,7 +51,7 @@ if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
 # POTENTIALS
 ############################
 solute_charges_scale_factor = 1.0
-poisson_solver = T
+poisson_solver = F
 point_charge_electrostatic = F
 reuse_density = F
 
@@ -67,10 +67,10 @@ nbinsrdf = 120
 ############################
 # HARD SPHERES
 ############################
-hard_sphere_fluid = F
+hard_sphere_fluid = T
 bridge_hard_sphere = F
 hard_sphere_radius
-1.4
+1.27
 hs_functional = CS # PY or CS
 lennard_jones_perturbation_to_hard_spheres = F # WCA type
 
@@ -78,8 +78,9 @@ lennard_jones_perturbation_to_hard_spheres = F # WCA type
 ############################
 # OTHER STUFF
 ############################
-hydrophobicity = F
-treatment_of_hydro = C    #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
+hydrophobicity = T
+treatment_of_hydro = VdW  #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
+hydro_coarsegrainingradius = 2.2
 threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
@@ -113,7 +114,7 @@ radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^1
 
 
 ##########################################################################################
-MINIMIZER BFGS OPTION, DO NOT TOUCH UNLESS YOU KNOW WHAT YOU ARE DOING!!!!!!
+# MINIMIZER BFGS OPTION, DO NOT TOUCH UNLESS YOU KNOW WHAT YOU ARE DOING!!!!!!
 ##########################################################################################
 
 constraint = no_constraint  # Do you want to work with a constrained density? Tags are: lower_bounded, upper_bounded, both_bounded, and the regular one by default : no_constraint
