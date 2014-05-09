@@ -10,7 +10,7 @@ OBJDIR = obj
 
 # ——————————————— Fortran compiler ———————————————
 
-FC = gfortran
+FC = gfortran-4.8
 
 # ——————————————— Compiling options ———————————————
 
@@ -101,7 +101,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 # ——————————————— Pattern rules ———————————————
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC) $(FCFLAGS) $(FFLAGS) $(OPTIM) $(DEBUG) -c $< -o $@
+	$(FC) $(FCFLAGS) $(FFLAGS) $(OPTIM) -c $< -o $@
 
 # For GNU make, *.f90 cannot be compiled automatically.
 
