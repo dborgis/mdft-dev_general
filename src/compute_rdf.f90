@@ -25,7 +25,7 @@ SUBROUTINE compute_rdf (array,filename)
 
     OPEN(10,FILE=filename,FORM='formatted')
     
-    100 FORMAT(2(xF10.5))
+    100 FORMAT(2(F10.5))
     WRITE(10,*)'# r  rdf'
 
     ALLOCATE( recurrence_bin ( SIZE(soluteSite), 1:nbins) ,SOURCE=0)

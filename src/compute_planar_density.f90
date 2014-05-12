@@ -44,7 +44,7 @@ SUBROUTINE compute_planar_density(array,filename)
     
     ! Print density in this plan
     OPEN(10,FILE=filename,FORM='formatted')
-        100 FORMAT (3(xF10.5))
+        100 FORMAT (3(F10.5))
         WRITE(10,*)'# xn yn density'
         SELECT CASE (plandir)
         CASE (1)
