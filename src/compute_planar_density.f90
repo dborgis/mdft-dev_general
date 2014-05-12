@@ -1,5 +1,7 @@
-!> Compute planar density or planar polarization
-!! For now only works with plans in x, y or z direction
+! Given a 3 dimensional scalar field, this subroutine prints the value of this field in a given plane.
+! For now, only planes perpendicular to the x, y and z directions are allowed.
+! TODO: should be extended to any orientation of the plane.
+
 SUBROUTINE compute_planar_density(array,filename)
 USE precision_kinds, only: dp
 use system, only: nfft1,nfft2,nfft3,nb_solute_sites,x_mol,y_mol,z_mol,Lx,Ly,Lz
