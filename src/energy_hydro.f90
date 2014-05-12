@@ -8,7 +8,7 @@ SUBROUTINE energy_hydro (Fint)
     USE minimizer           ,ONLY: cg_vect , FF , dF
     USE quadrature          ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE fft                 ,ONLY: fftw3,norm_k,kx,ky,kz,k2,timesExpPrefactork2
-    USE input               ,ONLY: input_log, verbose
+    USE input               ,ONLY: input_log, verbose, input_dp
     
     IMPLICIT NONE
     REAL(dp) :: mu_0 ! phenomenological potential
@@ -74,7 +74,7 @@ SUBROUTINE energy_hydro (Fint)
 
     ! macroscopic water parameters, from Chandler
     mu_0 = 7.16d-4*kBT ! phenomenological potential
-    R_cg = 2.2_dp ! ARBITRARY gaussian radius for coarse graining
+    R_cg = input_dp("hydro_coarsegrainingradius") ! Gaussian radius for coarse graining
 
     ! total number of kpoints and volume per kpoint
     Nk = REAL(nfft1*nfft2*nfft3,dp)
