@@ -4,19 +4,18 @@
 
 SUBROUTINE compute_planar_density(array,filename)
 
-    USE precision_kinds ,only: dp
-    USE system          ,only: nfft1,nfft2,nfft3,nb_solute_sites,x_mol,y_mol,z_mol,Lx,Ly,Lz
+    USE precision_kinds ,ONLY: dp,i2b
+    USE system          ,ONLY: nfft1,nfft2,nfft3,nb_solute_sites,x_mol,y_mol,z_mol,Lx,Ly,Lz,spaceGrid
 
     IMPLICIT NONE
     
-    CHARACTER(50), INTENT(IN):: filename
-    REAL(dp), INTENT(IN) :: array(nfft1,nfft2,nfft3)
-    INTEGER :: plandir ! 1=yz 2=xz 3=xy
-    INTEGER :: id,i,j,k
-    REAL(dp) :: x_com(nfft1), y_com(nfft2), z_com(nfft3)
+    CHARACTER(50), INTENT(IN)   :: filename
+    REAL(dp), INTENT(IN)        :: array(nfft1,nfft2,nfft3)
+    INTEGER(i2b)                :: plandir,id,i,j,k
+    REAL(dp)                    :: x_com(nfft1), y_com(nfft2), z_com(nfft3)
     
     ! For now that only planes perpendicular to x, y and z are  Identify the plan coordinate which is 0 (see restrictions to using this program for now)
-    if      (x_mol(1)==x_mol(2) .and. x_mol(1)==x_mol(3)) THEN
+    IF      (x_mol(1)==x_mol(2) .and. x_mol(1)==x_mol(3)) THEN
         plandir=1
     ELSE IF (y_mol(1)==y_mol(2) .and. y_mol(1)==y_mol(3)) THEN
         plandir=2
@@ -45,7 +44,6 @@ SUBROUTINE compute_planar_density(array,filename)
     ! Print density in this plan
     OPEN(10,FILE=filename,FORM='formatted')
         100 FORMAT (3(F10.5))
-        WRITE(10,*)'# xn yn density'
         SELECT CASE (plandir)
         CASE (1)
             DO j=1,nfft2
