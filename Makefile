@@ -10,7 +10,7 @@ OBJDIR = obj
 
 # ——————————————— Fortran compiler ———————————————
 
-FC = gfortran-4.8
+FC = gfortran
 
 # ——————————————— Compiling options ———————————————
 
