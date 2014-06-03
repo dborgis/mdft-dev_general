@@ -24,10 +24,12 @@ real( dp ) , allocatable , dimension ( : , : , : ) ::  q_charge
 integer (i2b) , allocatable , dimension (: , : , : ) :: x_charge, y_charge, z_charge
 integer (i2b) :: nb_of_interpolation
 real (dp) :: Fcoul
-! here is contained the SUBROUTINE that deallocates everything properly
+
 
 
 contains 
+
+    ! Deallocates everything properly
     SUBROUTINE deallocate_everything_external_potential
         IMPLICIT NONE
         if ( allocated ( Vext_total ) ) deallocate ( Vext_total )
@@ -38,5 +40,13 @@ contains
         if ( allocated ( z_charge ) ) deallocate ( z_charge )
         if ( allocated ( q_charge ) ) deallocate ( q_charge )
     END SUBROUTINE deallocate_everything_external_potential
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! see 
+    PURE SUBROUTINE vextdef0
+        IMPLICIT NONE
+    END SUBROUTINE vextdef0
+    
 
 end module external_potential

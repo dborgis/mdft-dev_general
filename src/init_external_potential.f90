@@ -7,7 +7,7 @@ SUBROUTINE init_external_potential
     USE precision_kinds, ONLY: dp , i2b
     USE input, ONLY: input_log, input_char
     USE system , ONLY: chg_solv, soluteSite, spaceGrid, nb_species
-    USE external_potential, ONLY: Vext_total, Vext_q
+    USE external_potential, ONLY: Vext_total, Vext_q, vextdef0
     USE mod_lj, ONLY: initLJ => init
     USE quadrature, ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
     USE constants, ONLY: zero
@@ -90,6 +90,8 @@ SUBROUTINE init_external_potential
     if (input_log('personnal_vext')) then
         call compute_vext_perso
     END IF
+    
+    IF( input_char('other_predefined_vext')=='vextdef0') STOP "hello world"! call vextdef0
     
     ! compute total Vext(i,j,k,omega), the one used in the free energy functional
     call vext_total_sum
