@@ -18,7 +18,7 @@ real(dp), allocatable , dimension ( : , : , : , : , : , : ) :: Vext_lj
 real(dp), allocatable , dimension ( : , : , : , : , : , : ) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_species )
 real(dp), allocatable , dimension ( : , : , : ) :: V_c ! electrostatic potential calculated from poisson equation
 real(dp), allocatable , dimension ( : , : , : , : , : ) :: Vext_hard ! hard potential
-real(dp), allocatable , dimension ( : , : , : , : ) :: Vext_hard_core ! hard core potential based on van der walls radius
+real(dp), allocatable , dimension (:,:,:,:) :: Vext_hard_core ! hard core potential
 !Calculation of charge density
 real( dp ) , allocatable , dimension ( : , : , : ) ::  q_charge
 integer (i2b) , allocatable , dimension (: , : , : ) :: x_charge, y_charge, z_charge
@@ -41,11 +41,68 @@ contains
         if ( allocated ( q_charge ) ) deallocate ( q_charge )
     END SUBROUTINE deallocate_everything_external_potential
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! see 
-    PURE SUBROUTINE vextdef0
+    ! see manual/external_potentials.pdf
+    SUBROUTINE vextdef0
+        USE precision_kinds ,ONLY: dp
+        USE system          ,ONLY: grd=>spaceGrid, nb_species
+        USE quadrature      ,ONLY: angrd=>angGrid,&
+                                   mrgrd=>molRotGrid
         IMPLICIT NONE
+        REAL(dp), PARAMETER :: radius=1.0_dp 
+        CHARACTER(LEN=LEN("output/vext_hard_core.cube")), PARAMETER :: filename = "output/vext_hard_core.cube"
+        
+        CALL allocate_vext_hard_core_if_necessary
+        CALL disk
+        CALL wall
+        
+        CONTAINS
+            
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            SUBROUTINE allocate_vext_hard_core_if_necessary
+                USE constants, ONLY: zero
+                IF (.NOT. ALLOCATED(vext_hard_core)) THEN
+                    ALLOCATE(   vext_hard_core( grd%n_nodes(1),grd%n_nodes(2),grd%n_nodes(3),nb_species)  ,SOURCE=zero )
+                END IF
+            END SUBROUTINE allocate_vext_hard_core_if_necessary
+            
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            SUBROUTINE wall
+                REAL(dp) :: d2(2), distNode2Center, coo(2), l(2)
+                INTEGER(i2b) :: i,j,n(2)
+                l(:) = grd%length(1:2)
+                n(:) = grd%n_nodes(1:2)
+                coo = l/real(n,dp) + [radius,l(2)/2.]
+                vext_hard_core(1,:,:,:) = HUGE(1.0_dp) ! line of wall at farther left
+                ! find all nodes that are inside a disk of radius RADIUS. The disk is at the center of the plane (Lx,Ly)
+                DO CONCURRENT (i=1:n(1),j=1:n(2))
+                    d2(1)=(real(i-1,dp)*l(1)/n(1)-coo(1))**2
+                    d2(2)=(real(j-1,dp)*l(2)/n(2)-coo(2))**2
+                    distNode2Center= sqrt(sum(d2))
+                    IF (distNode2Center>radius .AND. real(i,dp)*l(1)/n(1)<radius) vext_hard_core(i,j,:,:)=HUGE(1._dp)
+                END DO
+            END SUBROUTINE wall
+            
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            SUBROUTINE disk
+                REAL(dp) :: d2(2), distNode2Center, coo(2), l(2)
+                INTEGER(i2b) :: i,j,n(2)
+                l(:) = grd%length(1:2)
+                n(:) = grd%n_nodes(1:2)
+                coo = l/2._dp
+                ! find all nodes that are inside a disk of radius RADIUS. The disk is at the center of the plane (Lx,Ly)
+                DO i=1,n(1); DO j=1,n(2)!DO CONCURRENT (i=1:n(1),j=1:n(2))
+                    d2(1)=(real(i-1,dp)*l(1)/n(1)-coo(1))**2
+                    d2(2)=(real(j-1,dp)*l(2)/n(2)-coo(2))**2
+                    distNode2Center= sqrt(sum(d2))
+!~                     PRINT*,i,j,sqrt(d2(1)),sqrt(d2(2)),distNode2Center
+                    IF (distNode2Center<=radius) vext_hard_core(i,j,:,:)=HUGE(1._dp)
+                END DO; END DO
+            END SUBROUTINE disk
     END SUBROUTINE vextdef0
     
 

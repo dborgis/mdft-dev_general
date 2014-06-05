@@ -91,7 +91,7 @@ SUBROUTINE init_external_potential
         call compute_vext_perso
     END IF
     
-    IF( input_char('other_predefined_vext')=='vextdef0') STOP "hello world"! call vextdef0
+    IF( input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
     
     ! compute total Vext(i,j,k,omega), the one used in the free energy functional
     call vext_total_sum
