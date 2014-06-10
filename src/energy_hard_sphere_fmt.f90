@@ -25,6 +25,8 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:) :: one_min_wd_3 ! dummy for 1 - weighted density 3
     REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:) :: dFHS_0 , dFHS_1 , dFHS_2 , dFHS_3
     COMPLEX(dp), ALLOCATABLE , DIMENSION(:,:,:) :: dFHS_0_k , dFHS_1_k , dFHS_2_k , dFHS_3_k
+    REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: dFHS
+    COMPLEX(dp), ALLOCATABLE , DIMENSION(:,:,:,:) :: dFHS_k
     COMPLEX(dp), ALLOCATABLE , DIMENSION(:,:,:,:) :: dFex_k ! gradient in k space
     REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: dFex ! gradient in real space
     CHARACTER(2) :: hs_functional ! hard sphere functional = PY for Percus-Yevick or CS for Carnahan-Starling
@@ -200,11 +202,11 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! compute final gradient in k-space
     ALLOCATE ( dFex_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) ) ! FFT of dFex (in fact dFex_k is known from which FFT-1 gives dFex)
     DO s = 1 , nb_species
-    dFex_k ( :,:,:, s ) = &
-            dFHS_0_k * weightfun_k ( :,:,:, s,0 ) &
-        + dFHS_1_k * weightfun_k ( :,:,:, s,1 ) &
-        + dFHS_2_k * weightfun_k ( :,:,:, s,2 ) &
-        + dFHS_3_k * weightfun_k ( :,:,:, s,3 )
+        dFex_k ( :,:,:, s ) = &
+                            dFHS_0_k * weightfun_k ( :,:,:, s,0 ) &
+                          + dFHS_1_k * weightfun_k ( :,:,:, s,1 ) &
+                          + dFHS_2_k * weightfun_k ( :,:,:, s,2 ) &
+                          + dFHS_3_k * weightfun_k ( :,:,:, s,3 )
     END DO
     
     ! Deallocate useless
@@ -216,33 +218,32 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! inverse fourier transform gradient
     ALLOCATE ( dFex ( nfft1 , nfft2 , nfft3 , nb_species ) )
     DO s = 1, nb_species
-    fftw3%in_backward = dFex_k(:,:,:,s )
-    CALL dfftw_execute ( fftw3%plan_backward )
-    dFex(:,:,:,s ) = fftw3%out_backward / Nk
+        fftw3%in_backward = dFex_k(:,:,:,s)
+        CALL dfftw_execute ( fftw3%plan_backward )
+        dFex(:,:,:,s) = fftw3%out_backward / Nk
     END DO
     DEALLOCATE ( dFex_k )
     
     ! transfer in rank 1 vector dF
     icg = 0
     DO s = 1 , nb_species
-    DO i = 1, nfft1
-        DO j = 1, nfft2
-        DO k = 1, nfft3
-            DO o = 1, angGrid%n_angles
-            DO p=1, molRotGrid%n_angles
-            icg = icg + 1
-            psi = cg_vect ( icg )
+        DO i = 1, nfft1
+            DO j = 1, nfft2
+                DO k = 1, nfft3
+                    DO o = 1, angGrid%n_angles
+                        DO p=1, molRotGrid%n_angles
+                            icg = icg + 1
+                            psi = cg_vect ( icg )
     ! AHAAAAAAAAAAAAATTENTION ICI LE 12 SEPTEMBRE 2011 JE ME RENDS COMPTE QU iL Y A PEUT ETRE UN FACTEUR WEIGHT(o) QUI MANQUE, CA DEPEND DE LA DEF DE N0 par RAPPORT à rho_0
-            dF ( icg ) = dF ( icg ) &
-    + 2.0_dp * psi * rho_0_multispec ( s ) * deltav * ( kBT * dFex ( i , j , k , s ) - hs(s)%excchempot )*&
-    angGrid%weight(o)*molRotGrid%weight(p)
+                            dF ( icg ) = dF ( icg ) &
+                            + 2.0_dp * psi * rho_0_multispec ( s ) * deltav * ( kBT * dFex ( i , j , k , s ) - hs(s)%excchempot )&
+                            *angGrid%weight(o)*molRotGrid%weight(p)
     ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
-            END DO  !p
-    
-            END DO  !o
-        END DO  !i
-        END DO  !j
-    END DO   !k
+                        END DO  !p
+                    END DO  !o
+                END DO  !i
+            END DO  !j
+        END DO   !k
     END DO   !species
     DEALLOCATE (dFex) ! deallocate useless gradient
     
@@ -265,10 +266,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
         REAL(dp), INTENT(IN) :: w0,w1,w2,w3
         PRINT*,'i , j , k = ',i,j,k
         PRINT*,'log (1-w3<=0) in energy_hard_sphere_fmt.f90. Critical stop'
-        PRINT*,'w0 = ' , w0
-        PRINT*,'w1 = ' , w1
-        PRINT*,'w2 = ' , w2
-        PRINT*,'w3 = ' , w3
+        PRINT*,'w0, w1, w2, w3 = ' ,w0,w1,w2,w3
         STOP
     END SUBROUTINE error_message_energy_hard_sphere_fmt
 
