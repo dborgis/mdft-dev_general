@@ -88,10 +88,12 @@ SUBROUTINE compute_hard_spheres_parameters
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential &
                 ( nb_species , n_0_multispec , radius , muexc_0_multispec , Fexc_0_multispec , hs_functional )
-        USE precision_kinds,only : dp , i2b
-        use constants,only : fourpi , pi
-        use system,only : kbT, spaceGrid
-        USE input, ONLY: verbose
+        
+        USE precision_kinds ,ONLY: dp, i2b
+        USE constants       ,ONLY: fourpi, pi
+        USE system          ,ONLY: kbT, spaceGrid
+        USE input           ,ONLY: verbose
+        
         IMPLICIT NONE
     
         integer(i2b), intent(in) :: nb_species
