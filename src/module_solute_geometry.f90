@@ -33,7 +33,7 @@ module solute_geometry
         end function
         
         
-        ! Check solute planarity
+        ! Check if solute has planar symetry
         logical pure function isPlanar()
             real(dp), dimension(2:nb_solute_sites):: xvec,yvec,zvec !> vector between solute sites 1 and N (2<N<nb_solute_sites)
             integer :: n !> dummy
