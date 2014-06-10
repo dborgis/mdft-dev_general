@@ -17,7 +17,7 @@ SUBROUTINE compute_hard_spheres_parameters
     CHARACTER(4) :: hs_functional
     
     CALL read_hard_sphere_radius_and_allocate_if_necessary ! read hard sphere radius and allocate if necessary
-    CALL compute_hard_sphere_weight_functions_k ! Compute hard sphere weight functions in Fourier space
+    CALL populate_weight_functions_in_Fourier_space
     CALL compute_packing_fractions_and_check_legality ! compute packing fraction of each constituant and the total packing fraction in order to check if the calculation is physical
     CALL check_functional_legality ( hs_functional ) ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
 
@@ -169,12 +169,11 @@ SUBROUTINE compute_hard_spheres_parameters
         ! They are scalar numbers in opposition to scalar and vector weight functions by Rosenfeld in its seminal Phys. Rev. Lett.
         ! introducing the fundamental measure theory (FMT)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        SUBROUTINE compute_hard_sphere_weight_functions_k
+        SUBROUTINE populate_weight_functions_in_Fourier_space
     
             USE precision_kinds,only : dp , i2b
             USE constants,only : FourPi, zeroC
-            USE system,only : nb_species, radius, spaceGrid,&
-                        weight_function_3_k , weight_function_2_k , weight_function_1_k , weight_function_0_k
+            USE system,only : nb_species, radius, spaceGrid
             USE fft,only : norm_k
             USE hardspheres ,ONLY: weightfun_k
             IMPLICIT NONE
@@ -184,10 +183,6 @@ SUBROUTINE compute_hard_spheres_parameters
             
             nfft = spaceGrid%n_nodes
             
-            ALLOCATE ( weight_function_3_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
-            ALLOCATE ( weight_function_2_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
-            ALLOCATE ( weight_function_1_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
-            ALLOCATE ( weight_function_0_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
             ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
             ! density weights for hard spheres are known analyticaly
             ! they only depends on fundamental measures of hard spheres
@@ -204,21 +199,13 @@ SUBROUTINE compute_hard_spheres_parameters
                     weightfun_k(l,m,n,s,2) = FourPiR * sinkR / norm_k_local
                     weightfun_k(l,m,n,s,1) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
                     weightfun_k(l,m,n,s,0) = coskR + 0.5_dp * kR * sinkR
-                    weight_function_3_k (l,m,n,s) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
-                    weight_function_2_k (l,m,n,s) = FourPiR * sinkR / norm_k_local
-                    weight_function_1_k (l,m,n,s) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
-                    weight_function_0_k (l,m,n,s) = coskR + 0.5_dp * kR * sinkR
                 ELSE
                     weightfun_k(l,m,n,s,3) = FourPi / 3.0_dp * radius(s)** 3 ! volume
                     weightfun_k(l,m,n,s,2) = FourPi * radius(s)** 2 ! surface area
                     weightfun_k(l,m,n,s,1) = radius(s) ! radius
                     weightfun_k(l,m,n,s,0) = 1.0_dp ! unity
-                    weight_function_3_k (l,m,n,s) = FourPi / 3.0_dp * radius(s)** 3 ! volume
-                    weight_function_2_k (l,m,n,s) = FourPi * radius(s)** 2 ! surface area
-                    weight_function_1_k (l,m,n,s) = radius(s) ! radius
-                    weight_function_0_k (l,m,n,s) = 1.0_dp ! unity
                 END IF
             END DO
-        END SUBROUTINE compute_hard_sphere_weight_functions_k
+        END SUBROUTINE populate_weight_functions_in_Fourier_space
 
 END SUBROUTINE compute_hard_spheres_parameters

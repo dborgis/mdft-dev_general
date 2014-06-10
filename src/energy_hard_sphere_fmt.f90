@@ -1,13 +1,13 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 USE precision_kinds,only : dp , i2b
-use system,only : nfft1 , nfft2 , nfft3 , weight_function_0_k , weight_function_1_k , weight_function_2_k , &
-                    weight_function_3_k , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
+use system,only : nfft1 , nfft2 , nfft3 , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
                     muexc_0_multispec , Fexc_0_multispec , mole_fraction , rho_0_multispec
 use quadrature,only : molRotSymOrder , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants,only : pi , FourPi , twopi
 use fft,only : fftw3
 use input, only : input_line, verbose
+USE hardspheres, ONLY: weightfun_k
 IMPLICIT NONE
 integer(i2b):: icg , i , j , k , o , p ! dummy
 integer(i2b):: species ! dummy between 1 and nb_species
@@ -95,16 +95,16 @@ weighted_density_2 = 0.0_dp
 allocate ( weighted_density_3  ( nfft1 , nfft2 , nfft3 ) )
 weighted_density_3 = 0.0_dp
 do species = 1 , nb_species
-    fftw3%in_backward = weight_function_0_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density in kspace _0
+    fftw3%in_backward = weightfun_k ( : , : , : , species,0 ) * rho_k ( : , : , : , species ) ! = weighted density in kspace _0
     call dfftw_execute ( fftw3%plan_backward )
     weighted_density_0 = weighted_density_0 + fftw3%out_backward / Nk
-    fftw3%in_backward = weight_function_1_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _1
+    fftw3%in_backward = weightfun_k ( : , : , : , species,1 ) * rho_k ( : , : , : , species ) ! = weighted density kspace _1
     call dfftw_execute ( fftw3%plan_backward )
     weighted_density_1 = weighted_density_1 + fftw3%out_backward / Nk
-    fftw3%in_backward = weight_function_2_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _2
+    fftw3%in_backward = weightfun_k ( : , : , : , species,2 ) * rho_k ( : , : , : , species ) ! = weighted density kspace _2
     call dfftw_execute ( fftw3%plan_backward )
     weighted_density_2 = weighted_density_2 + fftw3%out_backward / Nk
-    fftw3%in_backward = weight_function_3_k ( : , : , : , species ) * rho_k ( : , : , : , species ) ! = weighted density kspace _3
+    fftw3%in_backward = weightfun_k ( : , : , : , species,3 ) * rho_k ( : , : , : , species ) ! = weighted density kspace _3
     call dfftw_execute ( fftw3%plan_backward )
     weighted_density_3 = weighted_density_3 + fftw3%out_backward / Nk
 END DO
@@ -206,10 +206,10 @@ deallocate ( dFHS_3 )
 allocate ( dFex_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) ) ! FFT of dFex (in fact dFex_k is known from which FFT-1 gives dFex)
 do species = 1 , nb_species
   dFex_k ( :,:,:, species ) = &
-         dFHS_0_k * weight_function_0_k ( :,:,:, species ) &
-       + dFHS_1_k * weight_function_1_k ( :,:,:, species ) &
-       + dFHS_2_k * weight_function_2_k ( :,:,:, species ) &
-       + dFHS_3_k * weight_function_3_k ( :,:,:, species )
+         dFHS_0_k * weightfun_k ( :,:,:, species,0 ) &
+       + dFHS_1_k * weightfun_k ( :,:,:, species,1 ) &
+       + dFHS_2_k * weightfun_k ( :,:,:, species,2 ) &
+       + dFHS_3_k * weightfun_k ( :,:,:, species,3 )
 END DO
 !> Deallocate useless
 deallocate ( dFHS_0_k )

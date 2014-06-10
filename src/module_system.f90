@@ -92,10 +92,6 @@ MODULE system
     !> Hard spheres
     ! TODO this should be put in another module
     logical(4) :: HS
-    COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: weight_function_1_k
-    COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: weight_function_2_k
-    COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: weight_function_3_k
-    COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: weight_function_0_k
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: radius
     REAL(dp) :: eta, muexc_0, Fexc_0
     !REAL(dp), ALLOCATABLE , DIMENSION (:) :: eta_multispec ! packing fraction = 4/3 * pi * n_0 * radius **3 = pi/6 * n_0 * diameter**3
