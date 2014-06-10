@@ -42,16 +42,13 @@ SUBROUTINE compute_hard_spheres_parameters
         USE input           ,ONLY: verbose
         USE hardspheres     ,ONLY: packfrac
         IMPLICIT NONE
-        REAL(dp) :: eta(nb_species)
         INTEGER(i2b) :: s
-        ! packing fraction : eta = 4/3 * pi * R^3 * solvent density of the constituant ( /= total solvent density)
         DO s = 1, nb_species
-            eta(s) = packfrac(n(s),radius(s))
-            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',eta(s)
+            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',packfrac(n(s),radius(s))
             ! compute homogeneous fluid reference with Perkus Yevick
             ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.
             ! although the Percus-Yevick equation shows no singularities for eta < 1 , the region beyond eta = pi / (3 sqrt(2) ) = 0.74 is unphysical, since the fluid then has a packing density greater than that of a closed packed solid.
-            IF ( eta(s) >= 0.74_dp ) then
+            IF ( packfrac(n(s),radius(s)) >= 0.74_dp ) then
                 PRINT*,'packing fraction of species ',s, '>= 0.74 , ie closed packed solid. unphysical region explored. stop'
                 STOP
             END IF
@@ -67,13 +64,8 @@ SUBROUTINE compute_hard_spheres_parameters
         IMPLICIT NONE
         integer(i2b):: i , j ! dummy
         character ( 4 ) , intent(out) :: hs_functional
-    !    do i = 1 , size ( input_line )
-    !      j = len ( 'hs_functional' )
-    !      if ( input_line (i) (1:j) == 'hs_functional' ) read ( input_line (i) (j+4:j+7) , * ) hs_functional
-    !    END DO
         hs_functional=input_char('hs_functional')
-        ! Check legality of hs_functional
-        call check_functional_legality ( hs_functional )
+        call check_functional_legality ( hs_functional ) ! Check legality of hs_functional
     END SUBROUTINE read_hs_functional
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
