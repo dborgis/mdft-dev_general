@@ -1,7 +1,7 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 USE precision_kinds,only : dp , i2b
-use system,only : nfft1 , nfft2 , nfft3 , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
-                    Fexc_0_multispec , mole_fraction , rho_0_multispec
+use system,only : nfft1 , nfft2 , nfft3 , deltav , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
+                    mole_fraction , rho_0_multispec
 use quadrature,only : molRotSymOrder , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants,only : pi , FourPi , twopi
@@ -143,7 +143,7 @@ do k = 1 , nfft3 ! please pay attention to inner / outer loop.
     END DO
   END DO
 END DO
-Fint = Fint * kBT * DeltaV - sum ( hs%excchempot * nb_molecules ) - sum ( Fexc_0_multispec * mole_fraction )
+Fint = Fint * kBT * DeltaV - sum ( hs%excchempot * nb_molecules ) - sum ( hs%Fexc0 * mole_fraction )
 FF = FF + Fint ! FF is used in BFGS algorithm with CGvect(icg) and dF(icg)
 ! gradients
 ! dFHS_i and weighted_density_j are arrays of dimension (nfft1,nfft2,nfft3)

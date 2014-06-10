@@ -8,6 +8,7 @@ MODULE hardspheres
     TYPE type_hs
         REAL(dp) :: R
         REAL(dp) :: excchempot
+        REAL(dp) :: Fexc0
     END TYPE type_hs
     TYPE (type_hs), ALLOCATABLE :: hs(:) ! one per constituant
     
