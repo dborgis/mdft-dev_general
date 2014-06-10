@@ -1,13 +1,13 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
 ! Read, allocate, compute the hard sphere parameters
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
 ! read hard sphere radius
 ! read the mole fraction of each hard sphere
 ! compute their weight functions (using their fundamental measures)
 ! compute their packing fraction
 ! read the excess functional
 ! compute accordingly the chemical potential and the reference bulk density
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
 SUBROUTINE compute_hard_spheres_parameters
     
     USE precision_kinds ,ONLY: dp
@@ -30,12 +30,12 @@ SUBROUTINE compute_hard_spheres_parameters
 
     CONTAINS
     
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     ! Subroutine that deduct the packing fraction of all reference bulk fluids of the consitutuants of the mixture.
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     ! We want the reference bulk fluids to have physical meaning, that's why we pay attention to them not to be greater than 0.74, where
     ! they would be unphysical. 0.74 is the maximum packing of a solid crystal.
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     SUBROUTINE compute_packing_fractions_and_check_legality
         USE precision_kinds ,ONLY: dp , i2b
         USE constants       ,ONLY: fourpi
@@ -56,9 +56,9 @@ SUBROUTINE compute_hard_spheres_parameters
         END DO
     END SUBROUTINE compute_packing_fractions_and_check_legality
     
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     ! this SUBROUTINE checks if the functional asked in input file is legal. Else, stop execution.
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     SUBROUTINE check_functional_legality ( hs_functional )
         USE precision_kinds  ,ONLY: i2b
         USE system           ,ONLY: nb_species
@@ -79,13 +79,13 @@ SUBROUTINE compute_hard_spheres_parameters
         END IF
     END SUBROUTINE check_functional_legality
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     ! excess_chemical_potential_and_reference_bulk_grand_potential calculates the excess chemical potential and reference bulk grand-pot
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     ! Here we calculate the excess chemical potential which is defined so that the difference in the bulk homogeneous systeme grand-pot.
     ! and the reference bulk homogeneous grand-potential is zero.
     ! We also calculate the reference bulk grand potential
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !===============================================================================================================================
     SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential &
                 ( nb_species , n_0_multispec , muexc_0_multispec , Fexc_0_multispec , hs_functional )
         
