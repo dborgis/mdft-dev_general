@@ -19,7 +19,7 @@ SUBROUTINE compute_hard_spheres_parameters
     CALL read_hard_sphere_radius_and_allocate_if_necessary ! read hard sphere radius and allocate if necessary
     CALL compute_hard_sphere_weight_functions_k ! Compute hard sphere weight functions in Fourier space
     CALL compute_packing_fractions_and_check_legality ! compute packing fraction of each constituant and the total packing fraction in order to check if the calculation is physical
-    CALL read_hs_functional ( hs_functional ) ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
+    CALL check_functional_legality ( hs_functional ) ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
 
     ! compute excess chemical potential and grand potential at reference bulk density
     ALLOCATE ( muexc_0_multispec(nb_species) ,SOURCE=0._dp )
@@ -56,38 +56,28 @@ SUBROUTINE compute_hard_spheres_parameters
     END SUBROUTINE compute_packing_fractions_and_check_legality
     
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! Reads hard sphere excess functional
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    SUBROUTINE read_hs_functional (hs_functional)
-        USE input ,ONLY: input_char
-        IMPLICIT NONE
-        CHARACTER(4), INTENT(OUT) :: hs_functional
-        hs_functional = input_char('hs_functional')
-        CALL check_functional_legality ( hs_functional ) ! Check legality of selected hs_functional
-    END SUBROUTINE read_hs_functional
-        
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! this SUBROUTINE checks if the functional asked in input file is legal. Else, stop execution.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE check_functional_legality ( hs_functional )
-        USE precision_kinds,only : i2b
-        use system,only : nb_species
+        USE precision_kinds  ,ONLY: i2b
+        USE system           ,ONLY: nb_species
         IMPLICIT NONE
-        integer(i2b):: i ! dummy
-        character ( 4 ) , intent ( inout ) :: hs_functional
+        CHARACTER(4), INTENT(INOUT) :: hs_functional
+        INTEGER(i2b):: i
         i = 0
-        if ( hs_functional(1:2) == 'CS' ) i = i+1
-        if ( hs_functional(1:2) == 'PY' ) i = i+1
-        if ( hs_functional(1:4) == 'MCSL' ) i = i+1
+        IF ( hs_functional(1:2) == 'CS' ) i = i+1
+        IF ( hs_functional(1:2) == 'PY' ) i = i+1
+        IF ( hs_functional(1:4) == 'MCSL' ) i = i+1
         ! if the hs functional is unknown, i is still 0
-        if ( i == 0 ) then
-        write (*,*) 'Asked functional is ' , hs_functional(1:4)
-        write (*,*) 'This functional is not implemeted'
-        write (*,*) 'Default value will be used: Carnahan-starling for pure fluids and Mansoori-Carnahan-Starling-Leland for multi.'
-        if ( nb_species == 1 ) hs_functional(1:2) = 'CS'
-        if ( nb_species > 1 ) hs_functional(1:4) = 'MCSL'
+        IF ( i == 0 ) THEN
+            PRINT*,'Asked functional is ' , hs_functional(1:4)
+            PRINT*,'This functional is not implemeted'
+            PRINT*,'Default value will be used: Carnahan-starling for pure fluids and Mansoori-Carnahan-Starling-Leland for multi.'
+            IF ( nb_species == 1 ) hs_functional(1:2) = 'CS'
+            IF ( nb_species  > 1 ) hs_functional(1:4) = 'MCSL'
         END IF
     END SUBROUTINE check_functional_legality
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! excess_chemical_potential_and_reference_bulk_grand_potential calculates the excess chemical potential and reference bulk grand-pot
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
