@@ -5,7 +5,7 @@ PROGRAM mdft
     USE precision_kinds ,ONLY: dp
     
     IMPLICIT NONE
-    DOUBLE PRECISION :: time0, time1
+    REAL(dp) :: time0, time1
 
     CALL CPU_TIME (time0)
 
