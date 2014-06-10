@@ -92,7 +92,6 @@ MODULE system
     !> Hard spheres
     ! TODO this should be put in another module
     logical(4) :: HS
-    REAL(dp) :: eta, muexc_0, Fexc_0
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing
