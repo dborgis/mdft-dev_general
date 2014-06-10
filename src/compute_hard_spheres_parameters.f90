@@ -183,10 +183,10 @@ SUBROUTINE compute_hard_spheres_parameters
             INTEGER(i2b) :: l,m,n,s ! dummy for loops
             INTEGER(i2b) :: nfft(3)
             nfft = spaceGrid%n_nodes
-            ALLOCATE ( weight_function_3_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
-            ALLOCATE ( weight_function_2_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
-            ALLOCATE ( weight_function_1_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
-            ALLOCATE ( weight_function_0_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
+            ALLOCATE ( weight_function_3_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
+            ALLOCATE ( weight_function_2_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
+            ALLOCATE ( weight_function_1_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
+            ALLOCATE ( weight_function_0_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) ,SOURCE=zeroC)
             ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
             ! density weights for hard spheres are known analyticaly
             ! they only depends on fundamental measures of hard spheres
