@@ -15,7 +15,7 @@
     
     IMPLICIT NONE
     
-    integer(i2b):: i , j , species ! dummy
+    integer(i2b):: i,j,s
     real(dp):: d_wca !>@var optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
     real(dp):: distance_between_grid_nodes ! minimum distance between two nodes of the nfft grid = min ( Lx/nfft1 , Ly/nfft2 , Lz/nfft3 )
     ! if allocation of radius has not been not earlier (no reason for now but perhaps later someone will want to implement it), allocate it
@@ -25,10 +25,11 @@
         hs%R = 0._dp
     END IF
     
-    if ( .not. allocated ( radius ) ) then
+    IF ( .not. allocated ( radius ) ) then
       allocate ( radius ( nb_species ) )
       radius = 0.0_dp
     END IF
+    
     ! read it in dft.in
     ! Get hard sphere radius
     ! two possibilities : 1/ pure hard spheres : read radius in input/dft.in    2/ perturbated HS by a lennard jones
@@ -39,12 +40,12 @@
     do i = 1 , size ( input_line )
       j = len ( 'hard_sphere_radius' )
       if ( input_line (i) (1:j) == 'hard_sphere_radius' ) then
-        do species = 1 , nb_species
-          read ( input_line ( i + species ) , * ) radius ( species )
+        do s = 1 , nb_species
+          read ( input_line ( i + s ) , * ) radius ( s )
           ! check if one radius is negative, ie if one has to compute wca diameter
-          if ( radius ( species ) <= 0.0_dp ) then
-            call compute_wca_diameter ( n_0_multispec ( species ) , temp, sig_solv ( species ) , eps_solv ( species ) , d_wca )
-            radius ( species ) = d_wca / 2.0_dp
+          if ( radius ( s ) <= 0.0_dp ) then
+            call compute_wca_diameter ( n_0_multispec ( s ) , temp, sig_solv ( s ) , eps_solv ( s ) , d_wca )
+            radius ( s ) = d_wca / 2.0_dp
           END IF
         END DO
         exit
@@ -52,9 +53,9 @@
     END DO
     ! chheck if hard sphere radius is coherent with the grid as it should never be small than the distance between two grid nodes
     distance_between_grid_nodes = min ( Lx / real ( nfft1 , dp ) , Ly / real ( nfft2 , dp ) , Lz / real ( nfft3 / dp ) )
-    do species = 1 , nb_species
-      if ( radius ( species ) <= distance_between_grid_nodes ) then
-        write (*,*) 'Radius of hard sphere ' , species , ' is ' , radius ( species ) ,&
+    do s = 1 , nb_species
+      if ( radius ( s ) <= distance_between_grid_nodes ) then
+        write (*,*) 'Radius of hard sphere ' , s , ' is ' , radius ( s ) ,&
  ' and is smaller than the distance between two nfft grid nodes ' , distance_between_grid_nodes
         stop
       END IF
