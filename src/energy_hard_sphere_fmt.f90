@@ -1,6 +1,6 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 USE precision_kinds,only : dp , i2b
-use system,only : nfft1 , nfft2 , nfft3 , deltav , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
+use system,only : nfft1 , nfft2 , nfft3 , deltav , kBT , n_0 , nb_species , n_0_multispec , &
                     mole_fraction , rho_0_multispec
 use quadrature,only : molRotSymOrder , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
