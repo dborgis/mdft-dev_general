@@ -6,9 +6,10 @@ MODULE hardspheres
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:,:) :: weightfun_k
     
     TYPE type_hs
-        REAL(dp) :: R
-        REAL(dp) :: excchempot
+        REAL(dp) :: R          ! radius
+        REAL(dp) :: excchempot ! excess chemical potential
         REAL(dp) :: Fexc0
+        REAL(dp) :: pf         ! packing fraction
     END TYPE type_hs
     TYPE (type_hs), ALLOCATABLE :: hs(:) ! one per constituant
     
