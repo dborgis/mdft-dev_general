@@ -6,7 +6,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     USE minimizer        ,ONLY: cg_vect , FF , dF
     USE constants        ,ONLY: pi , FourPi , twopi, zeroC
     USE fft              ,ONLY: fftw3
-    USE input            ,ONLY: input_line, verbose, input_char
+    USE input            ,ONLY: verbose, input_char, input_dp
     USE hardspheres      ,ONLY: weightfun_k, hs
     
     IMPLICIT NONE
@@ -35,6 +35,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     REAL(dp), PARAMETER :: inv18pi = 1.0_dp/( 18.0_dp * pi)
     REAL(dp), PARAMETER :: inv24pi = 1.0_dp/( 24.0_dp * pi)
     REAL(dp), PARAMETER :: inv36pi = 1.0_dp/( 36.0_dp * pi)
+    REAL(dp) :: GCdmu
     
     CALL CPU_TIME ( time0 ) ! init timer
 
@@ -43,6 +44,8 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     nfft3 = spaceGrid%n_nodes(3)
     Nk = REAL(PRODUCT(spaceGrid%n_nodes),dp) ! total number of k points needed for inverse fft normalization
     deltav = spaceGrid%dv
+
+    GCdmu = input_dp('impose_some_deltamu')
 
     ALLOCATE ( rho (nfft1,nfft2,nfft3,nb_species) ,SOURCE=0._dp)
     icg = 0
@@ -134,7 +137,8 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
         END DO
     END DO
 
-    Fint = Fint * kBT * DeltaV -SUM(hs%excchempot * nb_molecules) -SUM( hs%Fexc0 * mole_fraction )
+    IF( SIZE(nb_molecules)/=1 ) STOP "HERE GCdmu is for one component only"
+    Fint = Fint * kBT * DeltaV -SUM(hs%excchempot * nb_molecules) -SUM( hs%Fexc0 * mole_fraction ) -GCdmu*nb_molecules(1)
     FF = FF + Fint
 
     ! gradients
