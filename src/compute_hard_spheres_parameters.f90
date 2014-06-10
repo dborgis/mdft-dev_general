@@ -172,33 +172,33 @@ SUBROUTINE compute_hard_spheres_parameters
         SUBROUTINE compute_hard_sphere_weight_functions_k
     
             USE precision_kinds,only : dp , i2b
-            USE constants,only : FourPi
+            USE constants,only : FourPi, zeroC
             USE system,only : nb_species, radius, spaceGrid,&
                         weight_function_3_k , weight_function_2_k , weight_function_1_k , weight_function_0_k
             USE fft,only : norm_k
     
             IMPLICIT NONE
     
-            REAL(dp) :: kR , FourPiR , sinkR , coskR, norm_k_local ! dummy for speeding up
-            INTEGER(i2b):: l , m , n, s ! dummy for loops
-            INTEGER(i2b), DIMENSION(3) :: nfft
+            REAL(dp) :: kR , FourPiR , sinkR , coskR, norm_k_local
+            INTEGER(i2b) :: l,m,n,s ! dummy for loops
+            INTEGER(i2b) :: nfft(3)
             nfft = spaceGrid%n_nodes
             ALLOCATE ( weight_function_3_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
             ALLOCATE ( weight_function_2_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
             ALLOCATE ( weight_function_1_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
             ALLOCATE ( weight_function_0_k ( nfft(1)/2+1, nfft(2), nfft(3), nb_species ) )
-    
+            ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
             ! density weights for hard spheres are known analyticaly
             ! they only depends on fundamental measures of hard spheres
             ! here is the Kierlik and Rosinberg FMT : 4 scalar weight function by species
             ! Compute hard sphere weight functions as defined by Kierlik and Rosinberg, PRA1990
             DO CONCURRENT ( s=1:nb_species, l=1:nfft(1)/2+1, m=1:nfft(2), n=1:nfft(3) )
-                FourPiR = FourPi * radius (s)
+                FourPiR = FourPi * radius(s)
                 norm_k_local = norm_k (l,m,n)
                 IF ( norm_k_local /= 0.0_dp ) THEN
-                    kR = norm_k_local * radius (s)
-                    sinkR = sin ( kR )
-                    coskR = cos ( kR )
+                    kR = norm_k_local * radius(s)
+                    sinkR = SIN(kR)
+                    coskR = COS(kR)
                     weight_function_3_k (l,m,n,s) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
                     weight_function_2_k (l,m,n,s) = FourPiR * sinkR / norm_k_local
                     weight_function_1_k (l,m,n,s) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )

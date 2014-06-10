@@ -3,6 +3,8 @@ MODULE hardspheres
     USE precision_kinds  ,ONLY: dp
     IMPLICIT NONE
     
+    COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:,:) :: weightfun_k
+    
     CONTAINS
     
     
