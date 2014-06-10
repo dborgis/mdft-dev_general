@@ -109,10 +109,10 @@ SUBROUTINE compute_hard_spheres_parameters
         do s = 1 , nb_species
         
         ! weighted densities in the case of constant density = ref bulk density
-        n0 = 1.0_dp * n_0_multispec ( s )
-        n1 = radius ( s ) * n_0_multispec ( s )
-        n2 = 4.0_dp * pi * radius ( s ) ** 2 * n_0_multispec ( s )
-        n3 = 4.0_dp / 3.0_dp * pi * radius ( s ) ** 3 * n_0_multispec ( s )
+        n0 = 1.0_dp * n_0_multispec(s)
+        n1 = radius(s) * n_0_multispec(s)
+        n2 = 4.0_dp * pi * radius(s) ** 2 * n_0_multispec(s)
+        n3 = 4.0_dp / 3.0_dp * pi * radius(s) ** 3 * n_0_multispec(s)
         ! partial derivative of phi w.r.t. weighted densities
         if ( hs_functional ( 1 : 2 ) == 'PY' ) then
             partial_phi_over_partial_n0 = - log ( 1.0_dp - n3 )
@@ -131,29 +131,29 @@ SUBROUTINE compute_hard_spheres_parameters
         END IF
         ! partial derivative of weighted densities w.r.t. density of constituant i. It may be shown it is weight function (k=0)
         partial_n0_over_partial_rho = 1.0_dp
-        partial_n1_over_partial_rho = radius ( s )
-        partial_n2_over_partial_rho = fourpi * radius ( s ) ** 2
-        partial_n3_over_partial_rho = fourpi / 3.0_dp * radius ( s ) ** 3
+        partial_n1_over_partial_rho = radius(s)
+        partial_n2_over_partial_rho = fourpi * radius(s) ** 2
+        partial_n3_over_partial_rho = fourpi / 3.0_dp * radius(s) ** 3
         ! excess chemical potential
-        muexc_0_multispec ( s ) = kBT * ( partial_phi_over_partial_n0 * partial_n0_over_partial_rho &
+        muexc_0_multispec(s) = kBT * ( partial_phi_over_partial_n0 * partial_n0_over_partial_rho &
                                                 + partial_phi_over_partial_n1 * partial_n1_over_partial_rho &
                                                 + partial_phi_over_partial_n2 * partial_n2_over_partial_rho &
                                                 + partial_phi_over_partial_n3 * partial_n3_over_partial_rho )
-        IF (verbose) write ( * , * ) 'chemical potential mu_exc0 ( ' , s , ' ) = ' , muexc_0_multispec ( s )
+        IF (verbose) write ( * , * ) 'chemical potential mu_exc0 ( ' , s , ' ) = ' , muexc_0_multispec(s)
         ! compute reference bulk grand-potential Omega(rho = rho_0) !! Do not forget the solver minimizes Omega[rho]-Omega[rho_0] = Fsolvatation
         if ( hs_functional ( 1 : 2 ) == 'PY' ) then
-            Fexc_0_multispec ( s ) = kBT * ( - n0 * log ( 1.0_dp - n3 )                            &
+            Fexc_0_multispec(s) = kBT * ( - n0 * log ( 1.0_dp - n3 )                            &
                                                 + n1 * n2 / ( 1.0_dp - n3 )                           &
                                                 + n2 ** 3 / ( 24.0_dp * pi * ( 1.0_dp - n3 ) ** 2 ) )
         ELSE IF ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) then
-            Fexc_0_multispec ( s ) = kBT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
+            Fexc_0_multispec(s) = kBT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
                                                 + n1 * n2 / ( 1.0_dp - n3 )                                                        &
                                                 + ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / ( ( 1.0_dp - n3 ) ** 2 * n3 )          )
         END IF
         ! integration factors
-        Fexc_0_multispec ( s ) = Fexc_0_multispec ( s ) * Lx * Ly * Lz &
-                                    - muexc_0_multispec ( s) * Lx * Ly * Lz * n_0_multispec ( s )  ! integration factor
-        IF (verbose) write ( * , * ) 'Fexc0 ( ' , s , ' ) = ' , Fexc_0_multispec ( s )
+        Fexc_0_multispec(s) = Fexc_0_multispec(s) * Lx * Ly * Lz &
+                                    - muexc_0_multispec ( s) * Lx * Ly * Lz * n_0_multispec(s)  ! integration factor
+        IF (verbose) write ( * , * ) 'Fexc0 ( ' , s , ' ) = ' , Fexc_0_multispec(s)
         END DO
         END SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
     
