@@ -43,11 +43,12 @@ SUBROUTINE compute_hard_spheres_parameters
         IMPLICIT NONE
         INTEGER(i2b) :: s
         DO s = 1, nb_species
-            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',packfrac(n(s),hs(s)%R)
+            hs(s)%pf = packfrac(n(s),hs(s)%R)
+            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',hs(s)%pf
             ! compute homogeneous fluid reference with Perkus Yevick
             ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.
             ! although the Percus-Yevick equation shows no singularities for eta < 1 , the region beyond eta = pi / (3 sqrt(2) ) = 0.74 is unphysical, since the fluid then has a packing density greater than that of a closed packed solid.
-            IF ( packfrac(n(s),hs(s)%R) >= 0.74_dp ) then
+            IF ( hs(s)%pf >= 0.74_dp ) then
                 PRINT*,'packing fraction of species ',s, '>= 0.74 , ie closed packed solid. unphysical region explored. stop'
                 STOP
             END IF
