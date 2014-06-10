@@ -45,17 +45,15 @@ SUBROUTINE compute_hard_spheres_parameters
         REAL(dp) :: eta(nb_species)
         INTEGER(i2b) :: s
         ! packing fraction : eta = 4/3 * pi * R^3 * solvent density of the constituant ( /= total solvent density)
-        DO s = 1 , nb_species
+        DO s = 1, nb_species
             eta(s) = packfrac(n(s),radius(s))
-            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',eta(s)
-            eta ( s ) = fourpi/3.0_dp * n(s) * radius(s)**3
             IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',eta(s)
             ! compute homogeneous fluid reference with Perkus Yevick
             ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.
             ! although the Percus-Yevick equation shows no singularities for eta < 1 , the region beyond eta = pi / (3 sqrt(2) ) = 0.74 is unphysical, since the fluid then has a packing density greater than that of a closed packed solid.
-            IF ( eta ( s ) >= 0.74_dp ) then
-                write (*,*) 'packing fraction of species ' ,s, ' >= 0.74 , ie closed packed solid. unphysical region explored. stop'
-                stop
+            IF ( eta(s) >= 0.74_dp ) then
+                PRINT*,'packing fraction of species ',s, '>= 0.74 , ie closed packed solid. unphysical region explored. stop'
+                STOP
             END IF
         END DO
     END SUBROUTINE compute_packing_fractions_and_check_legality
