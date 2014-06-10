@@ -13,10 +13,13 @@ SUBROUTINE compute_hard_spheres_parameters
     USE precision_kinds ,ONLY: dp
     USE system          ,ONLY: nb_species, n_0_multispec
     USE hardspheres     ,ONLY: populate_weight_functions_in_Fourier_space, hs
+    USE input           ,ONLY: input_char
+
     IMPLICIT NONE
     
     CHARACTER(4) :: hs_functional
     
+    hs_functional = input_char('hs_functional')
     CALL read_hard_sphere_radius_and_allocate_if_necessary ! read hard sphere radius and allocate if necessary
     CALL populate_weight_functions_in_Fourier_space
     CALL compute_packing_fractions_and_check_legality ! compute packing fraction of each constituant and the total packing fraction in order to check if the calculation is physical
@@ -64,6 +67,7 @@ SUBROUTINE compute_hard_spheres_parameters
         IMPLICIT NONE
         CHARACTER(4), INTENT(INOUT) :: hs_functional
         INTEGER(i2b):: i
+
         i = 0
         IF ( hs_functional(1:2) == 'CS' ) i = i+1
         IF ( hs_functional(1:2) == 'PY' ) i = i+1
