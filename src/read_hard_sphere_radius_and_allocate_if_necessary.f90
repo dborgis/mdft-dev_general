@@ -7,14 +7,24 @@
 ! It then reads line after line the hard sphere radius of each constituant
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE read_hard_sphere_radius_and_allocate_if_necessary
+    
     USE precision_kinds,only : dp , i2b
     use input,only : input_line
     use system,only : radius , n_0_multispec , temp , sig_solv , eps_solv , Lx , Ly , Lz , nfft1 , nfft2 , nfft3 , nb_species
+    USE hardspheres ,ONLY: hs
+    
     IMPLICIT NONE
+    
     integer(i2b):: i , j , species ! dummy
     real(dp):: d_wca !>@var optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
     real(dp):: distance_between_grid_nodes ! minimum distance between two nodes of the nfft grid = min ( Lx/nfft1 , Ly/nfft2 , Lz/nfft3 )
     ! if allocation of radius has not been not earlier (no reason for now but perhaps later someone will want to implement it), allocate it
+    
+    IF (.NOT. ALLOCATED(hs) ) THEN ! init all radius to zero
+        ALLOCATE( hs(nb_species) )
+        hs%R = 0._dp
+    END IF
+    
     if ( .not. allocated ( radius ) ) then
       allocate ( radius ( nb_species ) )
       radius = 0.0_dp
