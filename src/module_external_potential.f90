@@ -51,7 +51,6 @@ contains
                                    mrgrd=>molRotGrid
         IMPLICIT NONE
         REAL(dp), PARAMETER :: radius=1.0_dp 
-        CHARACTER(LEN=LEN("output/vext_hard_core.cube")), PARAMETER :: filename = "output/vext_hard_core.cube"
         
         CALL allocate_vext_hard_core_if_necessary
         CALL disk
@@ -71,38 +70,34 @@ contains
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
             SUBROUTINE wall
-                REAL(dp) :: d2(2), distNode2Center, coo(2), l(2)
+                REAL(dp) :: d, distNode2Center, coo(2), l(2)
                 INTEGER(i2b) :: i,j,n(2)
                 l(:) = grd%length(1:2)
                 n(:) = grd%n_nodes(1:2)
-                coo = l/real(n,dp) + [radius,l(2)/2.]
+                coo = l/REAL(n,dp) + [radius,l(2)/2.]
                 vext_hard_core(1,:,:,:) = HUGE(1.0_dp) ! line of wall at farther left
                 ! find all nodes that are inside a disk of radius RADIUS. The disk is at the center of the plane (Lx,Ly)
                 DO CONCURRENT (i=1:n(1),j=1:n(2))
-                    d2(1)=(real(i-1,dp)*l(1)/n(1)-coo(1))**2
-                    d2(2)=(real(j-1,dp)*l(2)/n(2)-coo(2))**2
-                    distNode2Center= sqrt(sum(d2))
-                    IF (distNode2Center>radius .AND. real(i,dp)*l(1)/n(1)<radius) vext_hard_core(i,j,:,:)=HUGE(1._dp)
+                    d=ABS(REAL(j-1,dp)*l(2)/n(2)-coo(2))
+                    IF (d>radius+l(1)/n(1) .AND. REAL(i,dp)*l(1)/n(1)<radius) vext_hard_core(i,j,:,:)=HUGE(1._dp)
                 END DO
             END SUBROUTINE wall
             
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
             SUBROUTINE disk
-                REAL(dp) :: d2(2), distNode2Center, coo(2), l(2)
+                REAL(dp) :: distNode2Center, coo(2), l(2)
                 INTEGER(i2b) :: i,j,n(2)
                 l(:) = grd%length(1:2)
                 n(:) = grd%n_nodes(1:2)
-                coo = l/2._dp
+                coo = l/2._dp! - [0,0]*l(1)/n(1) (if you want to translate it toward wall) ! The cylinder is at the center of the supercell plane {x,y}
                 ! find all nodes that are inside a disk of radius RADIUS. The disk is at the center of the plane (Lx,Ly)
                 DO i=1,n(1); DO j=1,n(2)!DO CONCURRENT (i=1:n(1),j=1:n(2))
-                    d2(1)=(real(i-1,dp)*l(1)/n(1)-coo(1))**2
-                    d2(2)=(real(j-1,dp)*l(2)/n(2)-coo(2))**2
-                    distNode2Center= sqrt(sum(d2))
-!~                     PRINT*,i,j,sqrt(d2(1)),sqrt(d2(2)),distNode2Center
+                    distNode2Center = SQRT(SUM(    (    REAL([i,j]-1,dp)*l/n - coo    )**2    ))
                     IF (distNode2Center<=radius) vext_hard_core(i,j,:,:)=HUGE(1._dp)
                 END DO; END DO
             END SUBROUTINE disk
+
     END SUBROUTINE vextdef0
     
 
