@@ -32,9 +32,9 @@ MODULE hardspheres
 
 
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !===========================================================================================================================
         ! This SUBROUTINE computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !===========================================================================================================================
         ! The four weight functions are here defined in k-space. They are known analyticaly and only depend on the so called fundamental
         ! measures of the hard spheres.
         ! w_3i(k=0) = V_i the volume of constituant i
@@ -43,7 +43,7 @@ MODULE hardspheres
         ! w_0i(k=0) = 1
         ! They are scalar numbers in opposition to scalar and vector weight functions by Rosenfeld in its seminal Phys. Rev. Lett.
         ! introducing the fundamental measure theory (FMT)
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !===========================================================================================================================
         SUBROUTINE populate_weight_functions_in_Fourier_space
     
             USE precision_kinds ,ONLY: dp , i2b
@@ -56,11 +56,10 @@ MODULE hardspheres
             INTEGER(i2b) :: l,m,n,s,nfft(3)
             nfft = spaceGrid%n_nodes
             
+            ! Weight functions of a fluid of hard spheres are known analyticaly. They are easily defined in Fourier space.
+            ! They depend on fundamental measures of the fluid.
+            ! Here is the Kierlik and Rosinberg'FMT : 4 scalar weight functions by species. Ref: Kierlik and Rosinberg, PRA 1990
             ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
-            ! density weights for hard spheres are known analyticaly
-            ! they only depends on fundamental measures of hard spheres
-            ! here is the Kierlik and Rosinberg FMT : 4 scalar weight function by species
-            ! Compute hard sphere weight functions as defined by Kierlik and Rosinberg, PRA1990
             DO CONCURRENT ( s=1:nb_species, l=1:nfft(1)/2+1, m=1:nfft(2), n=1:nfft(3) )
                 FourPiR = FourPi * hs(s)%R
                 norm_k_local = norm_k (l,m,n)
