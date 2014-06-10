@@ -157,18 +157,18 @@ SUBROUTINE compute_hard_spheres_parameters
         END DO
         END SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
     
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! This SUBROUTINE computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! The four weight functions are here defined in k-space. They are known analyticaly and only depend on the so called fundamental
-    ! measures of the hard spheres.
-    ! w_3i(k=0) = V_i the volume of constituant i
-    ! w_2i(k=0) = S_i the surface area of constituant i
-    ! w_1i(k=0) = R_i the radius of constituant i
-    ! w_0i(k=0) = 1
-    ! They are scalar numbers in opposition to scalar and vector weight functions by Rosenfeld in its seminal Phys. Rev. Lett.
-    ! introducing the fundamental measure theory (FMT)
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! This SUBROUTINE computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! The four weight functions are here defined in k-space. They are known analyticaly and only depend on the so called fundamental
+        ! measures of the hard spheres.
+        ! w_3i(k=0) = V_i the volume of constituant i
+        ! w_2i(k=0) = S_i the surface area of constituant i
+        ! w_1i(k=0) = R_i the radius of constituant i
+        ! w_0i(k=0) = 1
+        ! They are scalar numbers in opposition to scalar and vector weight functions by Rosenfeld in its seminal Phys. Rev. Lett.
+        ! introducing the fundamental measure theory (FMT)
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         SUBROUTINE compute_hard_sphere_weight_functions_k
     
             USE precision_kinds,only : dp , i2b
