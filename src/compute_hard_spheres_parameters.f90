@@ -97,15 +97,15 @@ SUBROUTINE compute_hard_spheres_parameters
         
         IMPLICIT NONE
     
-        INTEGER(i2b), INTENT(in) :: nb_species
-        CHARACTER(4), intent(in) :: hs_functional
-        REAL(dp), dimension (nb_species) , intent(in) :: n_0_multispec ! ref bulk densities
-        REAL(dp), dimension (nb_species) , intent(out) :: muexc_0_multispec ! excess chemical potential defined so that grand potential is zero at ref bulk density
-        REAL(dp), dimension (nb_species) , intent(out) :: Fexc_0_multispec ! excess helmotz free energy of reference bulk system
-        REAL(dp):: n0 , n1 , n2 , n3 ! weighted densities in the case of constant density = ref bulk density
+        INTEGER(i2b), INTENT(IN) :: nb_species
+        CHARACTER(4), INTENT(IN) :: hs_functional
+        REAL(dp), INTENT(IN)  :: n_0_multispec(nb_species) ! ref bulk densities
+        REAL(dp), INTENT(OUT) :: muexc_0_multispec(nb_species) ! excess chemical potential defined so that grand potential is zero at ref bulk density
+        REAL(dp), INTENT(OUT) :: Fexc_0_multispec(nb_species) ! excess helmotz free energy of reference bulk system
+        REAL(dp) :: n0, n1, n2, n3 ! weighted densities in the case of constant density = ref bulk density
         REAL(dp) :: dphidn(0:3) ! partial derivative of phi w.r.t. weighted densities
         REAL(dp) :: dndrho(0:3) ! partial derivative of weighted densities w.r.t. density of constituant i
-        INTEGER(i2b):: s ! dummy
+        INTEGER(i2b) :: s ! dummy
 
         DO s=1,nb_species ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
 
@@ -122,7 +122,7 @@ SUBROUTINE compute_hard_spheres_parameters
                 dphidn(2) = n1 / ( 1.0_dp - n3 ) + n2 ** 2 / ( 8.0_dp * pi * ( 1.0_dp - n3 ) ** 2 )
                 dphidn(3) = n0 / ( 1.0_dp - n3 ) + n1 * n2 / ( 1.0_dp - n3 ) ** 2 &
                                             - n2 ** 3 / ( 12.0_dp * pi * ( n3 - 1.0_dp ) ** 3 )
-            ELSE IF ( hs_functional(1:2)=='CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) THEN
+            ELSE IF ( hs_functional(1:2)=='CS' .OR. hs_functional(1:4)=='MCSL' ) THEN
                 dphidn(0) = - log ( 1.0_dp - n3 )
                 dphidn(1) = n2 / ( 1.0_dp - n3 )
                 dphidn(2) = ( n3 * ( n2 ** 2 - 12.0_dp * n1 * ( -1.0_dp + n3 ) * n3 * Pi ) &
