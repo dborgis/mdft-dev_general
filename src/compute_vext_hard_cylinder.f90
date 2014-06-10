@@ -3,9 +3,10 @@
 SUBROUTINE compute_Vext_hard_cylinder
 USE precision_kinds,only : i2b , dp
 use input,only : input_line, input_dp
-use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , nb_solute_sites , Lx , Ly , radius , nb_species
+use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , nb_solute_sites , Lx , Ly , nb_species
 use external_potential,only : Vext_total
 use quadrature, only: angGrid, molRotGrid
+USE hardspheres ,ONLY: hs
 IMPLICIT NONE
 integer(i2b):: i , j , n ! dummy
 real(dp):: x_nm2 , y_nm2 , r_nm2 ! distance**2 between solute and grid point
@@ -32,7 +33,7 @@ write ( * , * ) 'there are ' , nb_solute_sites , ' cylinders in the system. They
 ! hard cylinder is along axe x=Lx/2, y=Ly/2
 do n = 1 , nb_solute_sites
   do species = 1 , nb_species
-    sum_rad2 = ( hard_cylinder_radius + radius ( species ) ) ** 2
+    sum_rad2 = ( hard_cylinder_radius + hs(species)%R ) ** 2
     do j = 1 , nfft2
       y_nm2 = ( real(j-1,dp) * deltay - y_mol (n) )**2
       do i = 1 , nfft1

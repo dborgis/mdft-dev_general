@@ -5,11 +5,10 @@ MODULE hardspheres
     
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:,:) :: weightfun_k
     
-    TYPE hs
+    TYPE type_hs
         REAL(dp) :: R
-        COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:,:) :: weightfun_k
-    END TYPE hs
-    TYPE (hs), ALLOCATABLE :: hs(:) ! one per constituant
+    END TYPE type_hs
+    TYPE (type_hs), ALLOCATABLE :: hs(:) ! one per constituant
     
     
     
@@ -49,13 +48,12 @@ MODULE hardspheres
     
             USE precision_kinds ,ONLY: dp , i2b
             USE constants       ,ONLY: FourPi, zeroC
-            USE system          ,ONLY: nb_species, radius, spaceGrid
+            USE system          ,ONLY: nb_species, spaceGrid
             USE fft             ,ONLY: norm_k
             IMPLICIT NONE
     
             REAL(dp) :: kR , FourPiR , sinkR , coskR, norm_k_local
             INTEGER(i2b) :: l,m,n,s,nfft(3)
-            
             nfft = spaceGrid%n_nodes
             
             ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
@@ -64,10 +62,10 @@ MODULE hardspheres
             ! here is the Kierlik and Rosinberg FMT : 4 scalar weight function by species
             ! Compute hard sphere weight functions as defined by Kierlik and Rosinberg, PRA1990
             DO CONCURRENT ( s=1:nb_species, l=1:nfft(1)/2+1, m=1:nfft(2), n=1:nfft(3) )
-                FourPiR = FourPi * radius(s)
+                FourPiR = FourPi * hs(s)%R
                 norm_k_local = norm_k (l,m,n)
                 IF ( norm_k_local /= 0.0_dp ) THEN
-                    kR = norm_k_local * radius(s)
+                    kR = norm_k_local * hs(s)%R
                     sinkR = SIN(kR)
                     coskR = COS(kR)
                     weightfun_k(l,m,n,s,3) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
@@ -75,9 +73,9 @@ MODULE hardspheres
                     weightfun_k(l,m,n,s,1) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
                     weightfun_k(l,m,n,s,0) = coskR + 0.5_dp * kR * sinkR
                 ELSE
-                    weightfun_k(l,m,n,s,3) = FourPi / 3.0_dp * radius(s)** 3 ! volume
-                    weightfun_k(l,m,n,s,2) = FourPi * radius(s)** 2 ! surface area
-                    weightfun_k(l,m,n,s,1) = radius(s) ! radius
+                    weightfun_k(l,m,n,s,3) = FourPi / 3.0_dp * hs(s)%R** 3 ! volume
+                    weightfun_k(l,m,n,s,2) = FourPi * hs(s)%R** 2 ! surface area
+                    weightfun_k(l,m,n,s,1) = hs(s)%R ! radius
                     weightfun_k(l,m,n,s,0) = 1.0_dp ! unity
                 END IF
             END DO

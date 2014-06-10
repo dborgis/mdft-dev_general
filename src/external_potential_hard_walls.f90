@@ -13,11 +13,12 @@ USE precision_kinds,only : i2b , dp
 ! contains input/dft.in put in input_line
 use input,only : input_line
 ! input_line (:) contains all lines in dft.in
-use system,only : nfft1 , nfft2 , nfft3 , Lz , radius , nb_species , deltax , deltay , deltaz
+use system,only : nfft1 , nfft2 , nfft3 , Lz , nb_species , deltax , deltay , deltaz
 ! nfft1 = number of grid nodes in X direction
 ! Lz = Length (Angstroms) of the supercell in X direction
 use external_potential,only : Vext_total
 use quadrature, only: angGrid, molRotGrid
+USE hardspheres ,ONLY: hs
 ! Vext_total = external potential as used in the total free energy calculation
 IMPLICIT NONE
 integer(i2b):: i , j , k , wall ! dummy
@@ -59,10 +60,9 @@ if ( .not. allocated ( Vext_total ) ) then
   Vext_total = 0.0_dp
 END IF
 ! be sure radius(:) (solvent radius) is already computed
-if ( .not. allocated ( radius ) ) then
-  write (*,*) 'radius is not allocated. critial stop in external_potential_hard_walls.f90'
-  allocate ( radius ( nb_species ) ) 
-  radius ( : ) = 0.0_dp
+if ( .not. allocated ( hs ) ) then
+    write (*,*) 'radius is not allocated. critial stop in external_potential_hard_walls.f90'
+    STOP
 END IF
 ! potential
 do k = 1 , nfft3
@@ -75,7 +75,7 @@ do i = 1 , nfft1
   do wall = 1 , number_of_hard_walls ! for each wall
     dplan = abs ( dot_product ( normal_vec ( : , wall ) , OM ) + dot_product_normal_vec_OA ( wall ) ) / norm2_normal_vec ( wall ) ! compute distance between grid point and plan
     do species = 1 , nb_species
-      if ( dplan <= 0.5_dp * thickness ( wall ) + radius ( species ) ) Vext_total ( i , j , k , : , : , species ) = infty
+      if ( dplan <= 0.5_dp * thickness ( wall ) + hs(species)%R ) Vext_total ( i , j , k , : , : , species ) = infty
     END DO ! species
   END DO ! walls
 END DO
@@ -83,7 +83,7 @@ END DO
 END DO
 contains
 !===================================================================================================================================
-  ! this SUBROUTINE tests if the number of hard walls is physical. For now, only 1 or 2 is implemented.
+! this SUBROUTINE tests if the number of hard walls is physical. For now, only 1 or 2 is implemented.
 !===================================================================================================================================
   SUBROUTINE test_number_of_hard_walls ( number_of_hard_walls )
     IMPLICIT NONE

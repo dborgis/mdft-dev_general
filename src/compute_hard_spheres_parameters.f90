@@ -11,8 +11,8 @@
 SUBROUTINE compute_hard_spheres_parameters
     
     USE precision_kinds ,ONLY: dp
-    USE system          ,ONLY: radius, nb_species, muexc_0_multispec, Fexc_0_multispec, n_0_multispec
-    USE hardspheres     ,ONLY: populate_weight_functions_in_Fourier_space
+    USE system          ,ONLY: nb_species, muexc_0_multispec, Fexc_0_multispec, n_0_multispec
+    USE hardspheres     ,ONLY: populate_weight_functions_in_Fourier_space, hs
     IMPLICIT NONE
     
     CHARACTER(4) :: hs_functional
@@ -26,7 +26,7 @@ SUBROUTINE compute_hard_spheres_parameters
     ALLOCATE ( muexc_0_multispec(nb_species) ,SOURCE=0._dp )
     ALLOCATE ( Fexc_0_multispec (nb_species) ,SOURCE=0._dp )
     CALL excess_chemical_potential_and_reference_bulk_grand_potential &
-                ( nb_species , n_0_multispec , radius , muexc_0_multispec , Fexc_0_multispec , hs_functional )
+                ( nb_species , n_0_multispec , muexc_0_multispec , Fexc_0_multispec , hs_functional )
 
     CONTAINS
     
@@ -39,17 +39,17 @@ SUBROUTINE compute_hard_spheres_parameters
     SUBROUTINE compute_packing_fractions_and_check_legality
         USE precision_kinds ,ONLY: dp , i2b
         USE constants       ,ONLY: fourpi
-        USE system          ,ONLY: nb_species , n=>n_0_multispec , radius
+        USE system          ,ONLY: nb_species , n=>n_0_multispec
         USE input           ,ONLY: verbose
-        USE hardspheres     ,ONLY: packfrac
+        USE hardspheres     ,ONLY: packfrac, hs
         IMPLICIT NONE
         INTEGER(i2b) :: s
         DO s = 1, nb_species
-            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',packfrac(n(s),radius(s))
+            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',packfrac(n(s),hs(s)%R)
             ! compute homogeneous fluid reference with Perkus Yevick
             ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.
             ! although the Percus-Yevick equation shows no singularities for eta < 1 , the region beyond eta = pi / (3 sqrt(2) ) = 0.74 is unphysical, since the fluid then has a packing density greater than that of a closed packed solid.
-            IF ( packfrac(n(s),radius(s)) >= 0.74_dp ) then
+            IF ( packfrac(n(s),hs(s)%R) >= 0.74_dp ) then
                 PRINT*,'packing fraction of species ',s, '>= 0.74 , ie closed packed solid. unphysical region explored. stop'
                 STOP
             END IF
@@ -87,80 +87,80 @@ SUBROUTINE compute_hard_spheres_parameters
     ! We also calculate the reference bulk grand potential
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential &
-                ( nb_species , n_0_multispec , radius , muexc_0_multispec , Fexc_0_multispec , hs_functional )
+                ( nb_species , n_0_multispec , muexc_0_multispec , Fexc_0_multispec , hs_functional )
         
         USE precision_kinds ,ONLY: dp, i2b
         USE constants       ,ONLY: fourpi, pi
         USE system          ,ONLY: kbT, spaceGrid
         USE input           ,ONLY: verbose
+        USE hardspheres     ,ONLY: hs
         
         IMPLICIT NONE
     
-        integer(i2b), intent(in) :: nb_species
-        real(dp), dimension ( nb_species ) , intent(in) :: n_0_multispec ! ref bulk densities
-        real(dp), dimension ( nb_species ) , intent(in) :: radius ! hard sphere radius
-        character ( 4 ) , intent(in) :: hs_functional
-        real(dp), dimension ( nb_species ) , intent(out) :: muexc_0_multispec ! excess chemical potential defined so that grand potential is zero at ref bulk density
-        real(dp), dimension ( nb_species ) , intent(out) :: Fexc_0_multispec ! excess helmotz free energy of reference bulk system
-        integer(i2b):: s ! dummy
-        real(dp):: n0 , n1 , n2 , n3 ! weighted densities in the case of constant density = ref bulk density
-        real(dp):: partial_phi_over_partial_n0 , partial_phi_over_partial_n1 ! partial derivative of phi w.r.t. weighted densities
-        real(dp):: partial_phi_over_partial_n2 , partial_phi_over_partial_n3
-        real(dp):: partial_n0_over_partial_rho , partial_n1_over_partial_rho ! partial derivative of weighted densities w.r.t. density of constituant i
-        real(dp):: partial_n2_over_partial_rho , partial_n3_over_partial_rho
+        INTEGER(i2b), INTENT(in) :: nb_species
+        REAL(dp), dimension (nb_species) , intent(in) :: n_0_multispec ! ref bulk densities
+        CHARACTER(4), intent(in) :: hs_functional
+        REAL(dp), dimension (nb_species) , intent(out) :: muexc_0_multispec ! excess chemical potential defined so that grand potential is zero at ref bulk density
+        REAL(dp), dimension (nb_species) , intent(out) :: Fexc_0_multispec ! excess helmotz free energy of reference bulk system
+        INTEGER(i2b):: s ! dummy
+        REAL(dp):: n0 , n1 , n2 , n3 ! weighted densities in the case of constant density = ref bulk density
+        REAL(dp):: partial_phi_over_partial_n0 , partial_phi_over_partial_n1 ! partial derivative of phi w.r.t. weighted densities
+        REAL(dp):: partial_phi_over_partial_n2 , partial_phi_over_partial_n3
+        REAL(dp):: partial_n0_over_partial_rho , partial_n1_over_partial_rho ! partial derivative of weighted densities w.r.t. density of constituant i
+        REAL(dp):: partial_n2_over_partial_rho , partial_n3_over_partial_rho
         REAL(dp) :: lx,ly,lz
         lx = spaceGrid%length(1)
         ly = spaceGrid%length(2)
         lz = spaceGrid%length(3)
-        ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
-        do s = 1 , nb_species
-        
-        ! weighted densities in the case of constant density = ref bulk density
-        n0 = 1.0_dp * n_0_multispec(s)
-        n1 = radius(s) * n_0_multispec(s)
-        n2 = 4.0_dp * pi * radius(s) ** 2 * n_0_multispec(s)
-        n3 = 4.0_dp / 3.0_dp * pi * radius(s) ** 3 * n_0_multispec(s)
-        ! partial derivative of phi w.r.t. weighted densities
-        if ( hs_functional ( 1 : 2 ) == 'PY' ) then
-            partial_phi_over_partial_n0 = - log ( 1.0_dp - n3 )
-            partial_phi_over_partial_n1 = n2 / ( 1.0_dp - n3 )
-            partial_phi_over_partial_n2 = n1 / ( 1.0_dp - n3 ) + n2 ** 2 / ( 8.0_dp * pi * ( 1.0_dp - n3 ) ** 2 )
-            partial_phi_over_partial_n3 = n0 / ( 1.0_dp - n3 ) + n1 * n2 / ( 1.0_dp - n3 ) ** 2 &
-                                        - n2 ** 3 / ( 12.0_dp * pi * ( n3 - 1.0_dp ) ** 3 )
-        ELSE IF ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) then
-            partial_phi_over_partial_n0 = - log ( 1.0_dp - n3 )
-            partial_phi_over_partial_n1 = n2 / ( 1.0_dp - n3 )
-            partial_phi_over_partial_n2 = ( n3 * ( n2 ** 2 - 12.0_dp * n1 * ( -1.0_dp + n3 ) * n3 * Pi ) &
-                    + n2 ** 2 * ( -1.0_dp + n3 ) ** 2 * log ( 1.0_dp - n3 ) ) / ( 12.0_dp * ( -1.0_dp + n3 ) ** 2 * n3 ** 2 * pi )
-            partial_phi_over_partial_n3 = ( n3 * ( n2 ** 3 * ( 2.0_dp - 5.0_dp * n3 + n3 ** 2 ) + 36.0_dp * n1 * n2 * (-1.0_dp+n3)&
-                    * n3 ** 2 * Pi - 36.0_dp * n0 * (-1.0_dp + n3) ** 2 * n3**2 * Pi) - 2.0_dp * n2 ** 3 *&
-                    (-1.0_dp + n3)**3 * log ( 1.0_dp - n3 ) ) / ( 36.0_dp *(-1.0_dp + n3)**3 * n3**3 *Pi)
-        END IF
-        ! partial derivative of weighted densities w.r.t. density of constituant i. It may be shown it is weight function (k=0)
-        partial_n0_over_partial_rho = 1.0_dp
-        partial_n1_over_partial_rho = radius(s)
-        partial_n2_over_partial_rho = fourpi * radius(s) ** 2
-        partial_n3_over_partial_rho = fourpi / 3.0_dp * radius(s) ** 3
-        ! excess chemical potential
-        muexc_0_multispec(s) = kBT * ( partial_phi_over_partial_n0 * partial_n0_over_partial_rho &
-                                                + partial_phi_over_partial_n1 * partial_n1_over_partial_rho &
-                                                + partial_phi_over_partial_n2 * partial_n2_over_partial_rho &
-                                                + partial_phi_over_partial_n3 * partial_n3_over_partial_rho )
-        IF (verbose) write ( * , * ) 'chemical potential mu_exc0 ( ' , s , ' ) = ' , muexc_0_multispec(s)
-        ! compute reference bulk grand-potential Omega(rho = rho_0) !! Do not forget the solver minimizes Omega[rho]-Omega[rho_0] = Fsolvatation
-        if ( hs_functional ( 1 : 2 ) == 'PY' ) then
-            Fexc_0_multispec(s) = kBT * ( - n0 * log ( 1.0_dp - n3 )                            &
-                                                + n1 * n2 / ( 1.0_dp - n3 )                           &
-                                                + n2 ** 3 / ( 24.0_dp * pi * ( 1.0_dp - n3 ) ** 2 ) )
-        ELSE IF ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) then
-            Fexc_0_multispec(s) = kBT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
-                                                + n1 * n2 / ( 1.0_dp - n3 )                                                        &
-                                                + ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / ( ( 1.0_dp - n3 ) ** 2 * n3 )          )
-        END IF
-        ! integration factors
-        Fexc_0_multispec(s) = Fexc_0_multispec(s) * Lx * Ly * Lz &
-                                    - muexc_0_multispec ( s) * Lx * Ly * Lz * n_0_multispec(s)  ! integration factor
-        IF (verbose) write ( * , * ) 'Fexc0 ( ' , s , ' ) = ' , Fexc_0_multispec(s)
+
+        DO s=1,nb_species ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
+
+            ! weighted densities in the case of constant density = ref bulk density
+            n0 = 1.0_dp * n_0_multispec(s)
+            n1 = hs(s)%R * n_0_multispec(s)
+            n2 = 4.0_dp * pi * hs(s)%R ** 2 * n_0_multispec(s)
+            n3 = 4.0_dp / 3.0_dp * pi * hs(s)%R ** 3 * n_0_multispec(s)
+            ! partial derivative of phi w.r.t. weighted densities
+            IF ( hs_functional ( 1 : 2 ) == 'PY' ) THEN
+                partial_phi_over_partial_n0 = -log ( 1.0_dp - n3 )
+                partial_phi_over_partial_n1 = n2 / ( 1.0_dp - n3 )
+                partial_phi_over_partial_n2 = n1 / ( 1.0_dp - n3 ) + n2 ** 2 / ( 8.0_dp * pi * ( 1.0_dp - n3 ) ** 2 )
+                partial_phi_over_partial_n3 = n0 / ( 1.0_dp - n3 ) + n1 * n2 / ( 1.0_dp - n3 ) ** 2 &
+                                            - n2 ** 3 / ( 12.0_dp * pi * ( n3 - 1.0_dp ) ** 3 )
+            ELSE IF ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) THEN
+                partial_phi_over_partial_n0 = - log ( 1.0_dp - n3 )
+                partial_phi_over_partial_n1 = n2 / ( 1.0_dp - n3 )
+                partial_phi_over_partial_n2 = ( n3 * ( n2 ** 2 - 12.0_dp * n1 * ( -1.0_dp + n3 ) * n3 * Pi ) &
+                        + n2 ** 2 * ( -1.0_dp + n3 ) ** 2 * log ( 1.0_dp - n3 ) )/( 12.0_dp * ( -1.0_dp + n3 ) ** 2 * n3 ** 2 * pi )
+                partial_phi_over_partial_n3 = ( n3 * ( n2 ** 3 * ( 2.0_dp-5.0_dp*n3 + n3 ** 2 ) + 36.0_dp * n1 * n2 * (-1.0_dp+n3)&
+                        * n3 ** 2 * Pi - 36.0_dp * n0 * (-1.0_dp + n3) ** 2 * n3**2 * Pi) - 2.0_dp * n2 ** 3 *&
+                        (-1.0_dp + n3)**3 * log ( 1.0_dp - n3 ) ) / ( 36.0_dp *(-1.0_dp + n3)**3 * n3**3 *Pi)
+            END IF
+            ! partial derivative of weighted densities w.r.t. density of constituant i. It may be shown it is weight function (k=0)
+            partial_n0_over_partial_rho = 1.0_dp
+            partial_n1_over_partial_rho = hs(s)%R
+            partial_n2_over_partial_rho = fourpi * hs(s)%R ** 2
+            partial_n3_over_partial_rho = fourpi / 3.0_dp * hs(s)%R ** 3
+            ! excess chemical potential
+            muexc_0_multispec(s) = kBT * ( partial_phi_over_partial_n0 * partial_n0_over_partial_rho &
+                                                    + partial_phi_over_partial_n1 * partial_n1_over_partial_rho &
+                                                    + partial_phi_over_partial_n2 * partial_n2_over_partial_rho &
+                                                    + partial_phi_over_partial_n3 * partial_n3_over_partial_rho )
+            IF (verbose) PRINT*,'chemical potential mu_exc0 ( ' , s , ' ) = ' , muexc_0_multispec(s)
+            ! compute reference bulk grand-potential Omega(rho = rho_0) !! Do not forget the solver minimizes Omega[rho]-Omega[rho_0] = Fsolvatation
+            IF ( hs_functional ( 1 : 2 ) == 'PY' ) THEN
+                Fexc_0_multispec(s) = kBT * ( - n0 * log ( 1.0_dp - n3 )                            &
+                                                    + n1 * n2 / ( 1.0_dp - n3 )                           &
+                                                    + n2 ** 3 / ( 24.0_dp * pi * ( 1.0_dp - n3 ) ** 2 ) )
+            ELSE IF ( hs_functional ( 1 : 2 ) == 'CS' .or. hs_functional ( 1 : 4 ) == 'MCSL' ) THEN
+                Fexc_0_multispec(s) = kBT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
+                                                    + n1 * n2 / ( 1.0_dp - n3 )                                                &
+                                                    + ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / ( ( 1.0_dp - n3 ) ** 2 * n3 )   )
+            END IF
+            ! integration factors
+            Fexc_0_multispec(s) = Fexc_0_multispec(s) * Lx * Ly * Lz &
+                                        - muexc_0_multispec ( s) * Lx * Ly * Lz * n_0_multispec(s)  ! integration factor
+            IF (verbose) PRINT*,'Fexc0 ( ' , s , ' ) = ' , Fexc_0_multispec(s)
         END DO
         END SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
     

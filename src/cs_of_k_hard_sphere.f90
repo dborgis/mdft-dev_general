@@ -3,10 +3,11 @@
 SUBROUTINE cs_of_k_hard_sphere
 
 USE precision_kinds, ONLY: i2b, dp
-USE system, ONLY: radius, n_0_multispec, c_s_hs, nb_species !@GUILLAUME c_s_hs should go into MODULE DCF
+USE system, ONLY: n_0_multispec, c_s_hs, nb_species !@GUILLAUME c_s_hs should go into MODULE DCF
 USE input, ONLY: input_line, n_linesInFile, verbose
 USE constants, ONLY: fourpi, pi
 USE dcf, ONLY: c_s, delta_k, nb_k, chi_l
+USE hardspheres ,ONLY: hs
 
 IMPLICIT NONE
 
@@ -25,7 +26,7 @@ real (dp) :: value1, value2 ! dummy
 real (dp) :: k ! k-space vector norm
 logical :: PY , CS ! the one which is true is the right equation of state
 
-if ( .not. allocated ( radius ) ) call read_hard_sphere_radius_and_allocate_if_necessary
+if ( .not. allocated ( hs ) ) call read_hard_sphere_radius_and_allocate_if_necessary
 call is_it_only_one_species! Works only for one implicit species
 call do_we_use_cs_or_py_eos ( PY , CS )! Check if you want to use Perkus-Yevick or Carnahan Starling equation of state
 
@@ -42,7 +43,7 @@ ALLOCATE ( c_s_hs ( nb_k ), SOURCE=0._dp )
 do i = 0, nb_k-1
     k = REAL(i,dp)*delta_k
   ! weight functions
-  R = radius ( 1 )
+  R = hs(1)%R
   kR = k*R
   sinkR = sin(kR)
   coskR = cos(kR)

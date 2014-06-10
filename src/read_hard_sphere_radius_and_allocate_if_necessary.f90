@@ -10,7 +10,7 @@
     
     USE precision_kinds,only : dp , i2b
     use input,only : input_line
-    use system,only : radius , n_0_multispec , temp , sig_solv , eps_solv , Lx , Ly , Lz , nfft1 , nfft2 , nfft3 , nb_species
+    use system,only : n_0_multispec , temp , sig_solv , eps_solv , Lx , Ly , Lz , nfft1 , nfft2 , nfft3 , nb_species
     USE hardspheres ,ONLY: hs
     
     IMPLICIT NONE
@@ -25,11 +25,6 @@
         hs%R = 0._dp
     END IF
     
-    IF ( .not. allocated ( radius ) ) then
-      allocate ( radius ( nb_species ) )
-      radius = 0.0_dp
-    END IF
-    
     ! read it in dft.in
     ! Get hard sphere radius
     ! two possibilities : 1/ pure hard spheres : read radius in input/dft.in    2/ perturbated HS by a lennard jones
@@ -41,11 +36,11 @@
       j = len ( 'hard_sphere_radius' )
       if ( input_line (i) (1:j) == 'hard_sphere_radius' ) then
         do s = 1 , nb_species
-          read ( input_line ( i + s ) , * ) radius ( s )
+          read ( input_line(i+s) ,*) hs(s)%R
           ! check if one radius is negative, ie if one has to compute wca diameter
-          if ( radius ( s ) <= 0.0_dp ) then
-            call compute_wca_diameter ( n_0_multispec ( s ) , temp, sig_solv ( s ) , eps_solv ( s ) , d_wca )
-            radius ( s ) = d_wca / 2.0_dp
+          if ( hs(s)%R <= 0.0_dp ) then
+            call compute_wca_diameter ( n_0_multispec(s) , temp, sig_solv(s) , eps_solv(s) , d_wca )
+            hs(s)%R = d_wca / 2.0_dp
           END IF
         END DO
         exit
@@ -54,8 +49,8 @@
     ! chheck if hard sphere radius is coherent with the grid as it should never be small than the distance between two grid nodes
     distance_between_grid_nodes = min ( Lx / real ( nfft1 , dp ) , Ly / real ( nfft2 , dp ) , Lz / real ( nfft3 / dp ) )
     do s = 1 , nb_species
-      if ( radius ( s ) <= distance_between_grid_nodes ) then
-        write (*,*) 'Radius of hard sphere ' , s , ' is ' , radius ( s ) ,&
+      if ( hs(s)%R <= distance_between_grid_nodes ) then
+        write (*,*) 'Radius of hard sphere ' , s , ' is ' , hs(s)%R ,&
  ' and is smaller than the distance between two nfft grid nodes ' , distance_between_grid_nodes
         stop
       END IF

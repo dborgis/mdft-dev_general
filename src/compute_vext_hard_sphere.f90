@@ -3,10 +3,12 @@
 SUBROUTINE compute_Vext_hard_sphere
 USE precision_kinds,only : i2b , dp
 use input,only : input_line,input_dp
-use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species &
+use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , nb_species &
                     , deltax , deltay , deltaz
 use external_potential,only : Vext_total , Vext_hard
 use quadrature, only: angGrid, molRotGrid
+USE hardspheres ,ONLY: hs
+
 IMPLICIT NONE
 integer(i2b):: i , j , k !> @var dummy
 integer(i2b):: species ! dummy between 1 and nb_species
@@ -30,19 +32,18 @@ write (*,*) 'the radius of these solute hard spheres is defined as a constant fo
  
 !check if radius is allocated. if not it may be because you wand an hard sphere solute but no hardsphere solvent, in that case
 !radius=0, if you want an hard sphere solvent there is a bug
-if ( .not. allocated ( radius ) ) then
-allocate(radius(1))
-print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
-print*,'WARNING solvent radius is not defined in comput_vext_hard_sphere it is now equal to 0, which is ok ONLY if you want '
-print*,'an HS solute but no HS Solvent'
-print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
-radius(1)=0.00_dp
+if ( .not. allocated ( hs ) ) then
+    print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
+    print*,'WARNING solvent radius is not defined in comput_vext_hard_sphere it is now equal to 0, which is ok ONLY if you want '
+    print*,'an HS solute but no HS Solvent'
+    print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
+    STOP
 END IF
-write(*,*) 'radius' , radius
+write(*,*) 'radius' , hs%R
 ! compute the sum of solute and solvent radius
 do solute_site = 1 , nb_solute_sites
   do species = 1 , nb_species
-    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + radius ( species ) ) ** 2
+    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + hs(species)%R ) ** 2
     do k = 1 , nfft3
       z_grid = real( k - 1 , dp ) * deltaz
       z_nm2 = ( z_grid - z_mol ( solute_site ) ) ** 2

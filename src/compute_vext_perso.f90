@@ -3,8 +3,9 @@ SUBROUTINE compute_vext_perso
 
 USE precision_kinds,only : i2b , dp
 use input,only : input_line,input_dp
-use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , radius , nb_species
+use system,only : nfft1 , nfft2 , nfft3 , x_mol , y_mol , z_mol , nb_solute_sites , Lx , Ly , Lz , nb_species
 use external_potential,only : Vext_total
+USE hardspheres ,ONLY: hs
 
 IMPLICIT NONE
 
@@ -27,13 +28,13 @@ deltax = Lx / real ( nfft1 , dp )
 deltay = Ly / real ( nfft2 , dp )
 deltaz = Lz / real ( nfft3 , dp )
 ! check if radius is allocated. if not there is a bug.
-if ( .not. allocated ( radius ) ) then
-  write (*,*) 'radius is not allocated. should be. critial stop in compute_vext_perso.f90'
+if ( .not. allocated ( hs ) ) then
+  write (*,*) 'hs is not allocated. should be. critial stop in compute_vext_perso.f90'
   stop
 END IF
 ! compute the sum of solute and solvent radius
 do species = 1 , nb_species
-radius_sum_sq = ( solute_radius + radius ( species ) ) ** 2
+radius_sum_sq = ( solute_radius + hs(species)%R ) ** 2
 do n = 1 , nb_solute_sites
   do i = 1 , nfft1
     x_grid = real ( i - 1 , dp) * deltax
