@@ -5,7 +5,7 @@ SUBROUTINE process_output
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: nb_species, spaceGrid
-    USE input,              ONLY: verbose, input_log
+    USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
     
@@ -43,16 +43,33 @@ SUBROUTINE process_output
         
         ! If calculation is for hard sphere fluid in presence of a hard wall compute profile perp wall
         ! TODO: DONT HAVE TIME TO WRITE THE TEST TODAY
-        filename = 'output/z_density.dat'
+        filename = 'output/z_density.out'
         CALL compute_z_density ( neq (:,:,:,1) , filename ) ! TODO for now only write for the first species
     
-        IF (soluteIsLinear() ) THEN
+        IF (soluteIsLinear()) THEN
             ! nothing for now
         END IF
         
         IF( soluteIsPlanar() ) THEN
+            PRINT*,'This solute has planar symetry'
             filename = 'output/planardensity.out'
             CALL compute_planar_density ( neq (:,:,:,1) , filename ) ! TODO for now only write for the first species
+        END IF
+        
+        IF ( input_char('other_predefined_vext')=='vextdef0' ) THEN
+            filename = 'output/molecular_density_in_xy_plane.out'
+            PRINT*,"I am writing file ",filename
+            OPEN(378,FILE=filename)
+                BLOCK
+                    INTEGER(i2b) :: i,j
+                    DO i=1,SIZE(neq,1)
+                        DO j=1,SIZE(neq,2)
+                            WRITE(378,*)[i,j]*spaceGrid%length(1:2)/spaceGrid%n_nodes(1:2),neq(i,j,1,1)
+                        END DO
+                        WRITE(378,*)
+                    END DO
+                END BLOCK
+            CLOSE(378)
         END IF
     END IF
 
