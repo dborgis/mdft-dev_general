@@ -10,7 +10,6 @@
 !===================================================================================================================================
 SUBROUTINE compute_hard_spheres_parameters
     
-    USE precision_kinds ,ONLY: dp
     USE system          ,ONLY: nb_species, n_0_multispec
     USE hardspheres     ,ONLY: populate_weight_functions_in_Fourier_space, hs
     USE input           ,ONLY: input_char
