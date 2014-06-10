@@ -38,14 +38,17 @@ SUBROUTINE compute_hard_spheres_parameters
     SUBROUTINE compute_packing_fractions_and_check_legality
         USE precision_kinds ,ONLY: dp , i2b
         USE constants       ,ONLY: fourpi
-        USE system          ,ONLY: nb_species , n_0_multispec , radius
+        USE system          ,ONLY: nb_species , n=>n_0_multispec , radius
         USE input           ,ONLY: verbose
+        USE hardspheres     ,ONLY: packfrac
         IMPLICIT NONE
         REAL(dp) :: eta(nb_species)
         INTEGER(i2b) :: s
         ! packing fraction : eta = 4/3 * pi * R^3 * solvent density of the constituant ( /= total solvent density)
         DO s = 1 , nb_species
-            eta ( s ) = fourpi/3.0_dp * n_0_multispec(s) * radius(s)**3
+            eta(s) = packfrac(n(s),radius(s))
+            IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',eta(s)
+            eta ( s ) = fourpi/3.0_dp * n(s) * radius(s)**3
             IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',eta(s)
             ! compute homogeneous fluid reference with Perkus Yevick
             ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.

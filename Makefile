@@ -81,6 +81,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_solute_geometry.o\
 	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_hardspheres.o\
 	$(OBJDIR)/poissonSolver.o\
 	$(OBJDIR)/prepare_minimizer.o\
 	$(OBJDIR)/print_header.o\
@@ -143,7 +144,8 @@ $(OBJDIR)/compute_hard_spheres_parameters.o :\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/module_system.o
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_hardspheres.o
 
 $(OBJDIR)/compute_planar_density.o :\
 	$(SRCDIR)/compute_planar_density.f90\
