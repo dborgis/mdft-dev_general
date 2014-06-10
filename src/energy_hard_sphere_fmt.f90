@@ -144,27 +144,29 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ALLOCATE ( one_min_wd_3 ( nfft1 , nfft2 , nfft3 ) ,SOURCE=1.0_dp-wd(:,:,:,3))
     
     ! excess free energy per atom derived wrt weighted density 0 (eq. A5 in Sears2003)
-    ALLOCATE ( dFHS_0 ( nfft1 , nfft2 , nfft3 ) )
-    ALLOCATE ( dFHS_1 ( nfft1 , nfft2 , nfft3 ) )
-    ALLOCATE ( dFHS_2 ( nfft1 , nfft2 , nfft3 ) )
-    ALLOCATE ( dFHS_3 ( nfft1 , nfft2 , nfft3 ) )
+    ALLOCATE ( dFHS(nfft1,nfft2,nfft3,0:3) ,SOURCE=0._dp)
+    
     ! Perkus Yevick
     IF ( hs_functional == 'PY' .or. hs_functional == 'py' ) THEN
-        dFHS_0 = - log ( one_min_wd_3 )
-        dFHS_1 = wd(:,:,:,2) / one_min_wd_3
-        dFHS_2 = wd(:,:,:,1) / one_min_wd_3 + inv8pi * dFHS_1 ** 2
-        dFHS_3 = ( wd(:,:,:,0) + wd(:,:,:,1) * dFHS_1 ) / one_min_wd_3&
-                    + inv12pi * dFHS_1 ** 3
+        dFHS(:,:,:,0) = - log ( one_min_wd_3 )
+        dFHS(:,:,:,1) = wd(:,:,:,2) / one_min_wd_3
+        dFHS(:,:,:,2) = wd(:,:,:,1) / one_min_wd_3 + inv8pi * dFHS(:,:,:,1) ** 2
+        dFHS(:,:,:,3) = ( wd(:,:,:,0) + wd(:,:,:,1) * dFHS(:,:,:,1) )/one_min_wd_3  + inv12pi*dFHS(:,:,:,1)**3
+    
     ! Carnahan Starling
     ELSE IF ( hs_functional == 'CS' .or. hs_functional == 'cs' ) THEN
-        dFHS_0 = - log ( one_min_wd_3 )
-        dFHS_1 = wd(:,:,:,2) / one_min_wd_3
-        dFHS_2 = - inv12pi * ( wd(:,:,:,2) / wd(:,:,:,3) ) ** 2 * dFHS_0 &
-                + wd(:,:,:,1) / one_min_wd_3 + inv12pi * dFHS_1 ** 2 / wd(:,:,:,3)
-        dFHS_3 = inv18pi * dFHS_0 * ( wd(:,:,:,2) / wd(:,:,:,3) ) ** 3 &
+    
+        dFHS(:,:,:,0) = - log ( one_min_wd_3 )
+    
+        dFHS(:,:,:,1) = wd(:,:,:,2) / one_min_wd_3
+    
+        dFHS(:,:,:,2) = - inv12pi * ( wd(:,:,:,2) / wd(:,:,:,3) ) ** 2 * dFHS(:,:,:,0) &
+                + wd(:,:,:,1) / one_min_wd_3 + inv12pi * dFHS(:,:,:,1) ** 2 / wd(:,:,:,3)
+    
+        dFHS(:,:,:,3) = inv18pi * dFHS(:,:,:,0) * ( wd(:,:,:,2) / wd(:,:,:,3) ) ** 3 &
                 - ( inv36pi * wd(:,:,:,2) ** 3 / wd(:,:,:,3) ** 2 - wd(:,:,:,0) ) /&
                                     one_min_wd_3 &
-                + wd(:,:,:,1) * dFHS_1 / one_min_wd_3 + inv36pi * &
+                + wd(:,:,:,1) * dFHS(:,:,:,1) / one_min_wd_3 + inv36pi * &
                 wd(:,:,:,2) ** 3 / wd(:,:,:,3) ** 2 * &
                 ( 3.0_dp * wd(:,:,:,3) - 1.0_dp ) / one_min_wd_3 ** 3
     END IF
@@ -174,49 +176,27 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     DEALLOCATE ( one_min_wd_3 )
     
     ! compute gradients in k space
-    ALLOCATE ( dFHS_0_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-    ALLOCATE ( dFHS_1_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-    ALLOCATE ( dFHS_2_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
-    ALLOCATE ( dFHS_3_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
+    ALLOCATE ( dFHS_k(nfft1/2+1,nfft2,nfft3,0:3) ,SOURCE=zeroC)
     
     ! FFT dFHS for computing convolution
-    fftw3%in_forward = dFHS_0
-    CALL dfftw_execute ( fftw3%plan_forward )
-    dFHS_0_k = fftw3%out_forward
-    fftw3%in_forward = dFHS_1
-    CALL dfftw_execute ( fftw3%plan_forward )
-    dFHS_1_k = fftw3%out_forward
-    fftw3%in_forward = dFHS_2
-    CALL dfftw_execute ( fftw3%plan_forward )
-    dFHS_2_k = fftw3%out_forward
-    fftw3%in_forward = dFHS_3
-    CALL dfftw_execute ( fftw3%plan_forward )
-    dFHS_3_k = fftw3%out_forward
-    
-    ! deallocate useless
-    DEALLOCATE ( dFHS_0 )
-    DEALLOCATE ( dFHS_1 )
-    DEALLOCATE ( dFHS_2 )
-    DEALLOCATE ( dFHS_3 )
-    
-    ! compute final gradient in k-space
-    ALLOCATE ( dFex_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) ) ! FFT of dFex (in fact dFex_k is known from which FFT-1 gives dFex)
-    DO s = 1 , nb_species
-        dFex_k ( :,:,:, s ) = &
-                            dFHS_0_k * weightfun_k ( :,:,:, s,0 ) &
-                          + dFHS_1_k * weightfun_k ( :,:,:, s,1 ) &
-                          + dFHS_2_k * weightfun_k ( :,:,:, s,2 ) &
-                          + dFHS_3_k * weightfun_k ( :,:,:, s,3 )
+    DO i= LBOUND(dFHS,4) , UBOUND(dFHS,4)
+        fftw3%in_forward = dFHS(:,:,:,i)
+        CALL dfftw_execute ( fftw3%plan_forward )
+        dFHS_k(:,:,:,i) = fftw3%out_forward
     END DO
     
-    ! Deallocate useless
-    DEALLOCATE ( dFHS_0_k )
-    DEALLOCATE ( dFHS_1_k )
-    DEALLOCATE ( dFHS_2_k )
-    DEALLOCATE ( dFHS_3_k )
+    ! deallocate useless
+    DEALLOCATE ( dFHS )
+    
+    ! compute final gradient in k-space
+    ALLOCATE ( dFex_k (nfft1/2+1,nfft2,nfft3,nb_species) ,SOURCE=zeroC) ! FFT of dFex (in fact dFex_k is known from which FFT-1 gives dFex)
+    DO CONCURRENT (s=1:nb_species)
+        dFex_k(:,:,:,s) = SUM( dFHS_k*weightfun_k(:,:,:,s,:) ,4)
+    END DO
+    DEALLOCATE ( dFHS_k )
     
     ! inverse fourier transform gradient
-    ALLOCATE ( dFex ( nfft1 , nfft2 , nfft3 , nb_species ) )
+    ALLOCATE ( dFex (nfft1,nfft2,nfft3,nb_species) ,SOURCE=0._dp)
     DO s = 1, nb_species
         fftw3%in_backward = dFex_k(:,:,:,s)
         CALL dfftw_execute ( fftw3%plan_backward )
@@ -239,12 +219,12 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
                             + 2.0_dp * psi * rho_0_multispec ( s ) * deltav * ( kBT * dFex ( i , j , k , s ) - hs(s)%excchempot )&
                             *angGrid%weight(o)*molRotGrid%weight(p)
     ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
-                        END DO  !p
-                    END DO  !o
-                END DO  !i
-            END DO  !j
-        END DO   !k
-    END DO   !species
+                        END DO !p
+                    END DO !o
+                END DO !i
+            END DO !j
+        END DO !k
+    END DO !species
     DEALLOCATE (dFex) ! deallocate useless gradient
     
     CALL CPU_TIME ( time1 ) !stop timer
