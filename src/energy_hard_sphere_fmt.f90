@@ -6,7 +6,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     USE minimizer        ,ONLY: cg_vect , FF , dF
     USE constants        ,ONLY: pi , FourPi , twopi, zeroC
     USE fft              ,ONLY: fftw3
-    USE input            ,ONLY: input_line, verbose
+    USE input            ,ONLY: input_line, verbose, input_char
     USE hardspheres      ,ONLY: weightfun_k, hs
     
     IMPLICIT NONE
@@ -67,10 +67,9 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! total number of molecules of each species
     ALLOCATE ( nb_molecules ( nb_species ) ,SOURCE=0._dp)
     DO CONCURRENT ( s=1:nb_species )
-        nb_molecules ( s ) = sum ( rho(:,:,:,s ) ) * n_0_multispec ( s ) * mole_fraction ( s ) * deltav
+        nb_molecules(s) = SUM( rho(:,:,:,s ) ) * n_0_multispec(s) * mole_fraction(s) * deltav
     END DO
-    ! tell user about the number of molecule of each species in the supercell
-    IF (verbose) THEN
+    IF (verbose) THEN     ! tell user about the number of molecule of each species in the supercell
         DO s = 1 , nb_species
             PRINT*,'nb_molecule (' , s , ') = ' , nb_molecules ( s )
         END DO
@@ -78,7 +77,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     END IF
 
     ! fourier transform the density rho => rho_k
-    ALLOCATE ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) ,SOURCE=zeroC)
+    ALLOCATE ( rho_k (nfft1/2+1,nfft2,nfft3,nb_species) ,SOURCE=zeroC)
     DO s = 1 , nb_species
         fftw3%in_forward = rho(:,:,:,s)
         CALL dfftw_execute ( fftw3%plan_forward )
@@ -89,7 +88,6 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! inverse fourier transform the weighted densities
     ! allocate the arrays for receiving the FFT-1
     ALLOCATE ( wd (nfft1,nfft2,nfft3,0:3) ,SOURCE=0._dp) ! 0:3 for Kierliek Rosinberg
-
     DO s= 1, nb_species
         DO i= LBOUND(wd,4) , UBOUND(wd,4)
             fftw3%in_backward = weightfun_k(:,:,:,s,i) * rho_k(:,:,:,s)
@@ -100,11 +98,8 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     
     ! check if the hard sphere functional is Percus-Yevick or Carnahan-Starling
     ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
-    DO i = 1, SIZE( input_line )
-        j = LEN( 'hs_functional' )
-        IF ( input_line(i)(1:j) == 'hs_functional' ) READ( input_line(i)(j+4:j+5) , * ) hs_functional
-    END DO
-
+    hs_functional = input_char('hs_functional')
+    
     ! compute free intrinsic energy
     Fint = 0.0_dp
     DO k = 1 , nfft3 ! please pay attention to inner / outer loop.
