@@ -1,7 +1,7 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 
     USE precision_kinds  ,ONLY: dp , i2b
-    USE system           ,ONLY: nfft1 , nfft2 , nfft3 , deltav , kBT , nb_species , n_0_multispec , mole_fraction , rho_0_multispec
+    USE system           ,ONLY: kBT , nb_species , n_0_multispec , mole_fraction , rho_0_multispec, spaceGrid
     USE quadrature       ,ONLY: molRotSymOrder , angGrid, molRotGrid
     USE minimizer        ,ONLY: cg_vect , FF , dF
     USE constants        ,ONLY: pi , FourPi , twopi, zeroC
@@ -12,17 +12,17 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     IMPLICIT NONE
     
     REAL(dp), INTENT(OUT) :: Fint ! Internal part of free energy
-    INTEGER(i2b) :: icg , i , j , k , o , p,s
+    INTEGER(i2b) :: icg , i , j , k , o , p,s,nfft1,nfft2,nfft3
     REAL(dp) :: Nk ! Total number of k points = nfft1*nfft2*nfft3
-    REAL(dp) :: local_density, psi
+    REAL(dp) :: local_density, psi, deltav
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: nb_molecules ! temp before full implementation of multispecies
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
     COMPLEX(dp), ALLOCATABLE , DIMENSION(:,:,:,:) :: rho_k !> @var Density in k space
     REAL(dp) :: time0 , time1 ! time stamps
     REAL(dp) :: w0,w1,w2,w3,omw3
     REAL(dp) :: F_HS ! Perkus Yevick (or Carnahan Starling) expression for excess energy
-    REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:) :: weighted_density_0, weighted_density_1, weighted_density_2, weighted_density_3 ! weighted densities
-    REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:) :: one_min_weighted_density_3 ! dummy for 1 - weighted density 3
+    REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: wd ! weighted density at node i,j,k, for index 0:3
+    REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:) :: one_min_wd_3 ! dummy for 1 - weighted density 3
     REAL(dp)   , ALLOCATABLE , DIMENSION(:,:,:) :: dFHS_0 , dFHS_1 , dFHS_2 , dFHS_3
     COMPLEX(dp), ALLOCATABLE , DIMENSION(:,:,:) :: dFHS_0_k , dFHS_1_k , dFHS_2_k , dFHS_3_k
     COMPLEX(dp), ALLOCATABLE , DIMENSION(:,:,:,:) :: dFex_k ! gradient in k space
@@ -36,10 +36,13 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     
     CALL CPU_TIME ( time0 ) ! init timer
 
-    Nk = REAL ( nfft1 * nfft2 * nfft3 , dp ) ! total number of k points needed for inverse fft normalization
+    nfft1 = spaceGrid%n_nodes(1)
+    nfft2 = spaceGrid%n_nodes(2)
+    nfft3 = spaceGrid%n_nodes(3)
+    Nk = REAL(PRODUCT(spaceGrid%n_nodes),dp) ! total number of k points needed for inverse fft normalization
+    deltav = spaceGrid%dv
 
-    ALLOCATE ( rho ( nfft1 , nfft2 , nfft3 , nb_species ) ,SOURCE=0._dp)
-    ! get rho ( \vec{r} )
+    ALLOCATE ( rho (nfft1,nfft2,nfft3,nb_species) ,SOURCE=0._dp)
     icg = 0
     DO s = 1 , nb_species
         DO i = 1 , nfft1
@@ -74,42 +77,32 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
         PRINT*,'total number of molecules = ' , sum ( nb_molecules )
     END IF
 
-! fourier transform the density rho => rho_k
-ALLOCATE ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) ,SOURCE=zeroC)
-DO s = 1 , nb_species
-  fftw3%in_forward = rho(:,:,:,s )
-  CALL dfftw_execute ( fftw3%plan_forward )
-  rho_k(:,:,:,s ) = fftw3%out_forward * n_0_multispec ( s ) * mole_fraction ( s )
-END DO
-DEALLOCATE ( rho )
+    ! fourier transform the density rho => rho_k
+    ALLOCATE ( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 , nb_species ) ,SOURCE=zeroC)
+    DO s = 1 , nb_species
+        fftw3%in_forward = rho(:,:,:,s)
+        CALL dfftw_execute ( fftw3%plan_forward )
+        rho_k(:,:,:,s) = fftw3%out_forward * n_0_multispec(s) * mole_fraction(s)
+    END DO
+    DEALLOCATE ( rho )
 
     ! inverse fourier transform the weighted densities
     ! allocate the arrays for receiving the FFT-1
-    ALLOCATE ( weighted_density_0 (nfft1,nfft2,nfft3) ,SOURCE=0._dp)
-    ALLOCATE ( weighted_density_1 (nfft1,nfft2,nfft3) ,SOURCE=0._dp)
-    ALLOCATE ( weighted_density_2 (nfft1,nfft2,nfft3) ,SOURCE=0._dp)
-    ALLOCATE ( weighted_density_3 (nfft1,nfft2,nfft3) ,SOURCE=0._dp)
+    ALLOCATE ( wd (nfft1,nfft2,nfft3,0:3) ,SOURCE=0._dp) ! 0:3 for Kierliek Rosinberg
 
-    DO s = 1 , nb_species
-        fftw3%in_backward = weightfun_k(:,:,:,s,0 ) * rho_k(:,:,:,s ) ! = weighted density in kspace _0
-        CALL dfftw_execute ( fftw3%plan_backward )
-        weighted_density_0 = weighted_density_0 + fftw3%out_backward / Nk
-        fftw3%in_backward = weightfun_k(:,:,:,s,1 ) * rho_k(:,:,:,s ) ! = weighted density kspace _1
-        CALL dfftw_execute ( fftw3%plan_backward )
-        weighted_density_1 = weighted_density_1 + fftw3%out_backward / Nk
-        fftw3%in_backward = weightfun_k(:,:,:,s,2 ) * rho_k(:,:,:,s ) ! = weighted density kspace _2
-        CALL dfftw_execute ( fftw3%plan_backward )
-        weighted_density_2 = weighted_density_2 + fftw3%out_backward / Nk
-        fftw3%in_backward = weightfun_k(:,:,:,s,3 ) * rho_k(:,:,:,s ) ! = weighted density kspace _3
-        CALL dfftw_execute ( fftw3%plan_backward )
-        weighted_density_3 = weighted_density_3 + fftw3%out_backward / Nk
+    DO s= 1, nb_species
+        DO i= LBOUND(wd,4) , UBOUND(wd,4)
+            fftw3%in_backward = weightfun_k(:,:,:,s,i) * rho_k(:,:,:,s)
+            CALL dfftw_execute ( fftw3%plan_backward )
+            wd(:,:,:,i) = wd(:,:,:,i) + fftw3%out_backward / Nk
+        END DO
     END DO
     
     ! check if the hard sphere functional is Percus-Yevick or Carnahan-Starling
     ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
-    DO i = 1 , size ( input_line )
-        j = len ( 'hs_functional' )
-        if ( input_line (i) (1:j) == 'hs_functional' ) read ( input_line (i) (j+4:j+5) , * ) hs_functional
+    DO i = 1, SIZE( input_line )
+        j = LEN( 'hs_functional' )
+        IF ( input_line(i)(1:j) == 'hs_functional' ) READ( input_line(i)(j+4:j+5) , * ) hs_functional
     END DO
 
     ! compute free intrinsic energy
@@ -118,10 +111,10 @@ DEALLOCATE ( rho )
         DO j = 1 , nfft2
             DO i = 1 , nfft1
 
-                w0 = weighted_density_0 (i,j,k)
-                w1 = weighted_density_1 (i,j,k)
-                w2 = weighted_density_2 (i,j,k)
-                w3 = weighted_density_3 (i,j,k)
+                w0 = wd(i,j,k,0)
+                w1 = wd(i,j,k,1)
+                w2 = wd(i,j,k,2)
+                w3 = wd(i,j,k,3)
 
                 omw3 = 1.0_dp - w3 ! nowhere should w3 be lower or equal than 1
                 IF ( omw3 <= 0.0_dp ) THEN
@@ -151,7 +144,7 @@ DEALLOCATE ( rho )
     ! gradients
     ! dFHS_i and weighted_density_j are arrays of dimension (nfft1,nfft2,nfft3)
     ! one_min_weighted_density_3 is dummy for speeding up and simplifying while using unnecessary memory.
-    ALLOCATE ( one_min_weighted_density_3 ( nfft1 , nfft2 , nfft3 ) ,SOURCE=1.0_dp-weighted_density_3)
+    ALLOCATE ( one_min_wd_3 ( nfft1 , nfft2 , nfft3 ) ,SOURCE=1.0_dp-wd(:,:,:,3))
     
     ! excess free energy per atom derived wrt weighted density 0 (eq. A5 in Sears2003)
     ALLOCATE ( dFHS_0 ( nfft1 , nfft2 , nfft3 ) )
@@ -159,30 +152,29 @@ DEALLOCATE ( rho )
     ALLOCATE ( dFHS_2 ( nfft1 , nfft2 , nfft3 ) )
     ALLOCATE ( dFHS_3 ( nfft1 , nfft2 , nfft3 ) )
     ! Perkus Yevick
-    if ( hs_functional == 'PY' .or. hs_functional == 'py' ) then
-    dFHS_0 = - log ( one_min_weighted_density_3 )
-    dFHS_1 = weighted_density_2 / one_min_weighted_density_3
-    dFHS_2 = weighted_density_1 / one_min_weighted_density_3 + inv8pi * dFHS_1 ** 2
-    dFHS_3 = ( weighted_density_0 + weighted_density_1 * dFHS_1 ) / one_min_weighted_density_3 + inv12pi * dFHS_1 ** 3
+    IF ( hs_functional == 'PY' .or. hs_functional == 'py' ) THEN
+        dFHS_0 = - log ( one_min_wd_3 )
+        dFHS_1 = wd(:,:,:,2) / one_min_wd_3
+        dFHS_2 = wd(:,:,:,1) / one_min_wd_3 + inv8pi * dFHS_1 ** 2
+        dFHS_3 = ( wd(:,:,:,0) + wd(:,:,:,1) * dFHS_1 ) / one_min_wd_3&
+                    + inv12pi * dFHS_1 ** 3
     ! Carnahan Starling
-    ELSE IF ( hs_functional == 'CS' .or. hs_functional == 'cs' ) then
-    dFHS_0 = - log ( one_min_weighted_density_3 )
-    dFHS_1 = weighted_density_2 / one_min_weighted_density_3
-    dFHS_2 = - inv12pi * ( weighted_density_2 / weighted_density_3 ) ** 2 * dFHS_0 &
-            + weighted_density_1 / one_min_weighted_density_3 + inv12pi * dFHS_1 ** 2 / weighted_density_3
-    dFHS_3 = inv18pi * dFHS_0 * ( weighted_density_2 / weighted_density_3 ) ** 3 &
-            - ( inv36pi * weighted_density_2 ** 3 / weighted_density_3 ** 2 - weighted_density_0 ) / one_min_weighted_density_3 &
-            + weighted_density_1 * dFHS_1 / one_min_weighted_density_3 + inv36pi * &
-            weighted_density_2 ** 3 / weighted_density_3 ** 2 * &
-            ( 3.0_dp * weighted_density_3 - 1.0_dp ) / one_min_weighted_density_3 ** 3
+    ELSE IF ( hs_functional == 'CS' .or. hs_functional == 'cs' ) THEN
+        dFHS_0 = - log ( one_min_wd_3 )
+        dFHS_1 = wd(:,:,:,2) / one_min_wd_3
+        dFHS_2 = - inv12pi * ( wd(:,:,:,2) / wd(:,:,:,3) ) ** 2 * dFHS_0 &
+                + wd(:,:,:,1) / one_min_wd_3 + inv12pi * dFHS_1 ** 2 / wd(:,:,:,3)
+        dFHS_3 = inv18pi * dFHS_0 * ( wd(:,:,:,2) / wd(:,:,:,3) ) ** 3 &
+                - ( inv36pi * wd(:,:,:,2) ** 3 / wd(:,:,:,3) ** 2 - wd(:,:,:,0) ) /&
+                                    one_min_wd_3 &
+                + wd(:,:,:,1) * dFHS_1 / one_min_wd_3 + inv36pi * &
+                wd(:,:,:,2) ** 3 / wd(:,:,:,3) ** 2 * &
+                ( 3.0_dp * wd(:,:,:,3) - 1.0_dp ) / one_min_wd_3 ** 3
     END IF
     
     ! deallocate weighted_densities
-    DEALLOCATE ( weighted_density_0 )
-    DEALLOCATE ( weighted_density_1 )
-    DEALLOCATE ( weighted_density_2 )
-    DEALLOCATE ( weighted_density_3 )
-    DEALLOCATE ( one_min_weighted_density_3 )
+    DEALLOCATE ( wd )
+    DEALLOCATE ( one_min_wd_3 )
     
     ! compute gradients in k space
     ALLOCATE ( dFHS_0_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) )
