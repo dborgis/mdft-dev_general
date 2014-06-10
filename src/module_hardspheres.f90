@@ -15,4 +15,65 @@ MODULE hardspheres
             packfrac = 4._dp/3._dp * ACOS(-1._dp) * R**3 * n
         END FUNCTION packfrac
 
+
+
+
+
+
+
+
+
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! This SUBROUTINE computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! The four weight functions are here defined in k-space. They are known analyticaly and only depend on the so called fundamental
+        ! measures of the hard spheres.
+        ! w_3i(k=0) = V_i the volume of constituant i
+        ! w_2i(k=0) = S_i the surface area of constituant i
+        ! w_1i(k=0) = R_i the radius of constituant i
+        ! w_0i(k=0) = 1
+        ! They are scalar numbers in opposition to scalar and vector weight functions by Rosenfeld in its seminal Phys. Rev. Lett.
+        ! introducing the fundamental measure theory (FMT)
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        SUBROUTINE populate_weight_functions_in_Fourier_space
+    
+            USE precision_kinds ,ONLY: dp , i2b
+            USE constants       ,ONLY: FourPi, zeroC
+            USE system          ,ONLY: nb_species, radius, spaceGrid
+            USE fft             ,ONLY: norm_k
+            IMPLICIT NONE
+    
+            REAL(dp) :: kR , FourPiR , sinkR , coskR, norm_k_local
+            INTEGER(i2b) :: l,m,n,s,nfft(3)
+            
+            nfft = spaceGrid%n_nodes
+            
+            ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
+            ! density weights for hard spheres are known analyticaly
+            ! they only depends on fundamental measures of hard spheres
+            ! here is the Kierlik and Rosinberg FMT : 4 scalar weight function by species
+            ! Compute hard sphere weight functions as defined by Kierlik and Rosinberg, PRA1990
+            DO CONCURRENT ( s=1:nb_species, l=1:nfft(1)/2+1, m=1:nfft(2), n=1:nfft(3) )
+                FourPiR = FourPi * radius(s)
+                norm_k_local = norm_k (l,m,n)
+                IF ( norm_k_local /= 0.0_dp ) THEN
+                    kR = norm_k_local * radius(s)
+                    sinkR = SIN(kR)
+                    coskR = COS(kR)
+                    weightfun_k(l,m,n,s,3) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
+                    weightfun_k(l,m,n,s,2) = FourPiR * sinkR / norm_k_local
+                    weightfun_k(l,m,n,s,1) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
+                    weightfun_k(l,m,n,s,0) = coskR + 0.5_dp * kR * sinkR
+                ELSE
+                    weightfun_k(l,m,n,s,3) = FourPi / 3.0_dp * radius(s)** 3 ! volume
+                    weightfun_k(l,m,n,s,2) = FourPi * radius(s)** 2 ! surface area
+                    weightfun_k(l,m,n,s,1) = radius(s) ! radius
+                    weightfun_k(l,m,n,s,0) = 1.0_dp ! unity
+                END IF
+            END DO
+        END SUBROUTINE populate_weight_functions_in_Fourier_space
+
+
+
 END MODULE hardspheres
