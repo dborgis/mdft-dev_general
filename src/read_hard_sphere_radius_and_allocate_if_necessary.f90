@@ -1,25 +1,24 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
 ! Read hard sphere radius
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
 ! Read hard sphere radius of every constituant of the fluid. If necessary.
 ! It begins by checking if it has already been allocated. If not it allocates it.
 ! Then, it reads every line of input_line which contains the inputs for the tag 'hard_sphere_radius"
 ! It then reads line after line the hard sphere radius of each constituant
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
   SUBROUTINE read_hard_sphere_radius_and_allocate_if_necessary
     
-    USE precision_kinds,only : dp , i2b
-    use input,only : input_line
-    use system,only : n_0_multispec , temp , sig_solv , eps_solv , Lx , Ly , Lz , nfft1 , nfft2 , nfft3 , nb_species
-    USE hardspheres ,ONLY: hs
+    USE precision_kinds  ,ONLY: dp, i2b
+    USE input            ,ONLY: input_line
+    USE system           ,ONLY: n_0_multispec, temp, sig_solv, eps_solv, nb_species, spaceGrid
+    USE hardspheres      ,ONLY: hs
     
     IMPLICIT NONE
     
-    integer(i2b):: i,j,s
-    real(dp):: d_wca !>@var optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
-    real(dp):: distance_between_grid_nodes ! minimum distance between two nodes of the nfft grid = min ( Lx/nfft1 , Ly/nfft2 , Lz/nfft3 )
+    INTEGER(i2b) :: i,j,s
+    REAL(dp)     :: d_wca ! optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
+
     ! if allocation of radius has not been not earlier (no reason for now but perhaps later someone will want to implement it), allocate it
-    
     IF (.NOT. ALLOCATED(hs) ) THEN ! init all radius to zero
         ALLOCATE( hs(nb_species) )
         hs%R = 0._dp
@@ -32,27 +31,31 @@
     ! Algo : one looks for line containing 'hard_sphere_radius'. Next nb_species lines contain the radius of each hard sphere species.
     ! If the radius is negative, the user means that the radius has to be calculated using the week chandler anderson model 
     ! by reading the lennard jones sigma and epsilon values accordingly to integer species between 1 and nb_species
-    do i = 1 , size ( input_line )
-      j = len ( 'hard_sphere_radius' )
-      if ( input_line (i) (1:j) == 'hard_sphere_radius' ) then
-        do s = 1 , nb_species
-          read ( input_line(i+s) ,*) hs(s)%R
-          ! check if one radius is negative, ie if one has to compute wca diameter
-          if ( hs(s)%R <= 0.0_dp ) then
-            call compute_wca_diameter ( n_0_multispec(s) , temp, sig_solv(s) , eps_solv(s) , d_wca )
-            hs(s)%R = d_wca / 2.0_dp
-          END IF
+    DO i= 1, SIZE(input_line)
+        j = LEN( 'hard_sphere_radius' )
+        IF ( input_line (i) (1:j) == 'hard_sphere_radius' ) THEN
+            DO s = 1 , nb_species
+                READ( input_line(i+s) ,*) hs(s)%R
+                IF ( hs(s)%R <= 0.0_dp ) THEN ! check if one radius is negative, ie if one has to compute wca diameter
+                    CALL compute_wca_diameter ( n_0_multispec(s) , temp, sig_solv(s) , eps_solv(s) , d_wca )
+                    hs(s)%R = d_wca / 2.0_dp
+                END IF
+            END DO
+            EXIT
+        END IF
+    END DO
+    
+    ! check if hard sphere radius is coherent with the grid
+    BLOCK
+        REAL(dp) :: dmin
+        dmin = MINVAL ( spaceGrid%length/REAL(spaceGrid%n_nodes,dp) )
+        DO s = 1, nb_species
+            IF ( hs(s)%R <= dmin ) THEN
+                PRINT*,'Radius of hard sphere ' , s , ' is ' , hs(s)%R ,&
+                    ' and is smaller than the distance between two nfft grid nodes ' , dmin
+                STOP
+            END IF
         END DO
-        exit
-      END IF
-    END DO
-    ! chheck if hard sphere radius is coherent with the grid as it should never be small than the distance between two grid nodes
-    distance_between_grid_nodes = min ( Lx / real ( nfft1 , dp ) , Ly / real ( nfft2 , dp ) , Lz / real ( nfft3 / dp ) )
-    do s = 1 , nb_species
-      if ( hs(s)%R <= distance_between_grid_nodes ) then
-        write (*,*) 'Radius of hard sphere ' , s , ' is ' , hs(s)%R ,&
- ' and is smaller than the distance between two nfft grid nodes ' , distance_between_grid_nodes
-        stop
-      END IF
-    END DO
-  END SUBROUTINE read_hard_sphere_radius_and_allocate_if_necessary
+    END BLOCK
+    
+END SUBROUTINE read_hard_sphere_radius_and_allocate_if_necessary
