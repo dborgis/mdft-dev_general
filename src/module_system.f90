@@ -95,7 +95,6 @@ MODULE system
     REAL(dp) :: eta, muexc_0, Fexc_0
     !REAL(dp), ALLOCATABLE , DIMENSION (:) :: eta_multispec ! packing fraction = 4/3 * pi * n_0 * radius **3 = pi/6 * n_0 * diameter**3
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: Fexc_0_multispec ! 
-    REAL(dp), ALLOCATABLE , DIMENSION (:) :: muexc_0_multispec ! temp var during implementation of multispecies
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing

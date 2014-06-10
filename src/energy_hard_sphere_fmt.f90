@@ -1,13 +1,13 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 USE precision_kinds,only : dp , i2b
 use system,only : nfft1 , nfft2 , nfft3 , deltav , Fexc_0 , kBT , muexc_0 , n_0 , nb_species , n_0_multispec , &
-                    muexc_0_multispec , Fexc_0_multispec , mole_fraction , rho_0_multispec
+                    Fexc_0_multispec , mole_fraction , rho_0_multispec
 use quadrature,only : molRotSymOrder , angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect , FF , dF
 use constants,only : pi , FourPi , twopi
 use fft,only : fftw3
 use input, only : input_line, verbose
-USE hardspheres, ONLY: weightfun_k
+USE hardspheres, ONLY: weightfun_k, hs
 IMPLICIT NONE
 integer(i2b):: icg , i , j , k , o , p ! dummy
 integer(i2b):: species ! dummy between 1 and nb_species
@@ -143,7 +143,7 @@ do k = 1 , nfft3 ! please pay attention to inner / outer loop.
     END DO
   END DO
 END DO
-Fint = Fint * kBT * DeltaV - sum ( muexc_0_multispec * nb_molecules ) - sum ( Fexc_0_multispec * mole_fraction )
+Fint = Fint * kBT * DeltaV - sum ( hs%excchempot * nb_molecules ) - sum ( Fexc_0_multispec * mole_fraction )
 FF = FF + Fint ! FF is used in BFGS algorithm with CGvect(icg) and dF(icg)
 ! gradients
 ! dFHS_i and weighted_density_j are arrays of dimension (nfft1,nfft2,nfft3)
@@ -236,7 +236,7 @@ do species = 1 , nb_species
           psi = cg_vect ( icg )
 ! AHAAAAAAAAAAAAATTENTION ICI LE 12 SEPTEMBRE 2011 JE ME RENDS COMPTE QU iL Y A PEUT ETRE UN FACTEUR WEIGHT(o) QUI MANQUE, CA DEPEND DE LA DEF DE N0 par RAPPORT à rho_0
           dF ( icg ) = dF ( icg ) &
-+ 2.0_dp * psi * rho_0_multispec ( species ) * deltav * ( kBT * dFex ( i , j , k , species ) - muexc_0_multispec ( species ) )*&
++ 2.0_dp * psi * rho_0_multispec ( species ) * deltav * ( kBT * dFex ( i , j , k , species ) - hs(species)%excchempot )*&
 angGrid%weight(o)*molRotGrid%weight(p)
  ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
          END DO  !p
@@ -255,8 +255,10 @@ IF (verbose) write (*,*) 'Fexc fmt    = ' , Fint , 'computed in (sec)' , time1 -
 
 CONTAINS
 
+    !===============================================================================================================================
     ! this SUBROUTINE prints error message related to SUBROUTINE excess_cs_hard_sphere
     ! it may stop program execution depending on the error.
+    !===============================================================================================================================
     SUBROUTINE error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
         USE precision_kinds,only : i2b , dp
         IMPLICIT NONE

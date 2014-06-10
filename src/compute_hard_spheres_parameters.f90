@@ -11,7 +11,7 @@
 SUBROUTINE compute_hard_spheres_parameters
     
     USE precision_kinds ,ONLY: dp
-    USE system          ,ONLY: nb_species, muexc_0_multispec, Fexc_0_multispec, n_0_multispec
+    USE system          ,ONLY: nb_species, Fexc_0_multispec, n_0_multispec
     USE hardspheres     ,ONLY: populate_weight_functions_in_Fourier_space, hs
     IMPLICIT NONE
     
@@ -23,10 +23,9 @@ SUBROUTINE compute_hard_spheres_parameters
     CALL check_functional_legality ( hs_functional ) ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
 
     ! compute excess chemical potential and grand potential at reference bulk density
-    ALLOCATE ( muexc_0_multispec(nb_species) ,SOURCE=0._dp )
     ALLOCATE ( Fexc_0_multispec (nb_species) ,SOURCE=0._dp )
     CALL excess_chemical_potential_and_reference_bulk_grand_potential &
-                ( nb_species , n_0_multispec , muexc_0_multispec , Fexc_0_multispec , hs_functional )
+                ( nb_species , n_0_multispec , Fexc_0_multispec , hs_functional )
 
     CONTAINS
     
@@ -87,7 +86,7 @@ SUBROUTINE compute_hard_spheres_parameters
     ! We also calculate the reference bulk grand potential
     !===============================================================================================================================
     SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential &
-                ( nb_species , n_0_multispec , muexc_0_multispec , Fexc_0_multispec , hs_functional )
+                ( nb_species , n_0_multispec , Fexc_0_multispec , hs_functional )
         
         USE precision_kinds ,ONLY: dp, i2b
         USE constants       ,ONLY: fourpi, pi
@@ -100,7 +99,6 @@ SUBROUTINE compute_hard_spheres_parameters
         INTEGER(i2b), INTENT(IN) :: nb_species
         CHARACTER(4), INTENT(IN) :: hs_functional
         REAL(dp), INTENT(IN)  :: n_0_multispec(nb_species) ! ref bulk densities
-        REAL(dp), INTENT(OUT) :: muexc_0_multispec(nb_species) ! excess chemical potential defined so that grand potential is zero at ref bulk density
         REAL(dp), INTENT(OUT) :: Fexc_0_multispec(nb_species) ! excess helmotz free energy of reference bulk system
         REAL(dp) :: n0, n1, n2, n3 ! weighted densities in the case of constant density = ref bulk density
         REAL(dp) :: dphidn(0:3) ! partial derivative of phi w.r.t. weighted densities
@@ -139,8 +137,8 @@ SUBROUTINE compute_hard_spheres_parameters
             dndrho(3) = fourpi / 3.0_dp * hs(s)%R ** 3
 
             ! excess chemical potential
-            muexc_0_multispec(s) = kBT * SUM(dphidn*dndrho)
-            IF (verbose) PRINT*,'chemical potential mu_exc0 ( ' , s , ' ) = ' , muexc_0_multispec(s)
+            hs(s)%excchempot = kBT * SUM(dphidn*dndrho)
+            IF (verbose) PRINT*,'chemical potential mu_exc0 ( ' , s , ' ) = ' , hs(s)%excchempot
 
             ! compute reference bulk grand-potential Omega(rho = rho_0) !! Do not forget the solver minimizes Omega[rho]-Omega[rho_0] = Fsolvatation
             IF ( hs_functional(1:2)=='PY' ) THEN
@@ -153,7 +151,7 @@ SUBROUTINE compute_hard_spheres_parameters
                                                     + ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / ( ( 1.0_dp - n3 ) ** 2 * n3 )   )
             END IF
             ! integration factors
-            Fexc_0_multispec(s) = (Fexc_0_multispec(s)-muexc_0_multispec(s)*n_0_multispec(s)) * PRODUCT(spaceGrid%length)
+            Fexc_0_multispec(s) = (Fexc_0_multispec(s) - hs(s)%excchempot * n_0_multispec(s)) * PRODUCT(spaceGrid%length)
             IF (verbose) PRINT*,'Fexc0 ( ' , s , ' ) = ' , Fexc_0_multispec(s)
         END DO
         END SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
