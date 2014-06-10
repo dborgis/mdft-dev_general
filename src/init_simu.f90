@@ -9,7 +9,7 @@ SUBROUTINE init_simu
     IMPLICIT NONE
 
     CALL print_header ! package name, day & time
-    CALL put_input_in_character_array! more powerfull way of reading dft.in : put each line in an array
+    CALL put_input_in_character_array ! more powerfull way of reading dft.in : put each line in an array
     CALL allocate_from_input ! TODO this should be removed and done only when needed ! read dft.in, solute.in and solvent.in
     CALL prepare_fft
     CALL print_input_to_output_folder! Print input parameters found in input files to output folder
