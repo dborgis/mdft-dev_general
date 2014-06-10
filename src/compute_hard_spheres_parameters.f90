@@ -58,14 +58,12 @@ SUBROUTINE compute_hard_spheres_parameters
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Reads hard sphere excess functional
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    SUBROUTINE read_hs_functional ( hs_functional )
-        USE precision_kinds,only : i2b
-        use input,only : input_line, input_char
+    SUBROUTINE read_hs_functional (hs_functional)
+        USE input ,ONLY: input_char
         IMPLICIT NONE
-        integer(i2b):: i , j ! dummy
-        character ( 4 ) , intent(out) :: hs_functional
-        hs_functional=input_char('hs_functional')
-        call check_functional_legality ( hs_functional ) ! Check legality of hs_functional
+        CHARACTER(4), INTENT(OUT) :: hs_functional
+        hs_functional = input_char('hs_functional')
+        CALL check_functional_legality ( hs_functional ) ! Check legality of selected hs_functional
     END SUBROUTINE read_hs_functional
         
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
