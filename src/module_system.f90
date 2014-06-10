@@ -93,8 +93,6 @@ MODULE system
     ! TODO this should be put in another module
     logical(4) :: HS
     REAL(dp) :: eta, muexc_0, Fexc_0
-    !REAL(dp), ALLOCATABLE , DIMENSION (:) :: eta_multispec ! packing fraction = 4/3 * pi * n_0 * radius **3 = pi/6 * n_0 * diameter**3
-    REAL(dp), ALLOCATABLE , DIMENSION (:) :: Fexc_0_multispec ! 
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing
