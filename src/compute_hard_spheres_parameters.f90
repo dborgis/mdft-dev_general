@@ -11,7 +11,7 @@
 SUBROUTINE compute_hard_spheres_parameters
     
     USE precision_kinds ,ONLY: dp
-    USE system ,ONLY : radius, nb_species, muexc_0_multispec, Fexc_0_multispec, n_0_multispec
+    USE system          ,ONLY: radius, nb_species, muexc_0_multispec, Fexc_0_multispec, n_0_multispec
     USE hardspheres     ,ONLY: populate_weight_functions_in_Fourier_space
     IMPLICIT NONE
     
@@ -90,7 +90,7 @@ SUBROUTINE compute_hard_spheres_parameters
                 ( nb_species , n_0_multispec , radius , muexc_0_multispec , Fexc_0_multispec , hs_functional )
         USE precision_kinds,only : dp , i2b
         use constants,only : fourpi , pi
-        use system,only : kbT , Lx , Ly , Lz
+        use system,only : kbT, spaceGrid
         USE input, ONLY: verbose
         IMPLICIT NONE
     
@@ -106,6 +106,10 @@ SUBROUTINE compute_hard_spheres_parameters
         real(dp):: partial_phi_over_partial_n2 , partial_phi_over_partial_n3
         real(dp):: partial_n0_over_partial_rho , partial_n1_over_partial_rho ! partial derivative of weighted densities w.r.t. density of constituant i
         real(dp):: partial_n2_over_partial_rho , partial_n3_over_partial_rho
+        REAL(dp) :: lx,ly,lz
+        lx = spaceGrid%length(1)
+        ly = spaceGrid%length(2)
+        lz = spaceGrid%length(3)
         ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
         do s = 1 , nb_species
         
