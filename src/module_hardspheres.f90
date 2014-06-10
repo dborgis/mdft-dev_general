@@ -5,6 +5,15 @@ MODULE hardspheres
     
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:,:) :: weightfun_k
     
+    TYPE hs
+        REAL(dp) :: R
+        COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:,:) :: weightfun_k
+    END TYPE hs
+    TYPE (hs), ALLOCATABLE :: hs(:) ! one per constituant
+    
+    
+    
+    
     CONTAINS
     
     
