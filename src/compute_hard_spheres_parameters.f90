@@ -22,7 +22,7 @@ SUBROUTINE compute_hard_spheres_parameters
     hs_functional = input_char('hs_functional')
     CALL read_hard_sphere_radius_and_allocate_if_necessary ! read hard sphere radius and allocate if necessary
     CALL populate_weight_functions_in_Fourier_space
-    CALL compute_packing_fractions_and_check_legality ! compute packing fraction of each constituant and the total packing fraction in order to check if the calculation is physical
+    CALL compute_packing_fractions_and_check_legality
     CALL check_functional_legality ( hs_functional ) ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
 
     ! compute excess chemical potential and grand potential at reference bulk density
