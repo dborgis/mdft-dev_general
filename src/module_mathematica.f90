@@ -3,8 +3,6 @@ MODULE mathematica
 !===================================================================================================================================
 ! This module implements several usefull functions of Mathematica
 
-    USE precision_kinds ,ONLY: dp
-
     IMPLICIT NONE
     PRIVATE
     PUBLIC :: chop
@@ -17,8 +15,10 @@ MODULE mathematica
     ! see http://reference.wolfram.com/mathematica/ref/Chop.html
     ! It replaces numbers smaller in absolute magnitude than delta by 0.
     ! chop uses a default tolerance of 10._dp**(-10)
+        USE precision_kinds ,ONLY: dp
+        IMPLICIT NONE
         REAL(dp) :: chop
-        REAL(dp), INTENT(in) :: x
+        REAL(dp), INTENT(IN) :: x
         REAL(dp), OPTIONAL, INTENT(IN) :: delta
         REAL(dp), PARAMETER :: defaultdelta=10._dp**(-10)
         REAL(dp) :: d
