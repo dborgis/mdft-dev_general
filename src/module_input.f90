@@ -62,7 +62,7 @@ MODULE input
         CHARACTER(50) FUNCTION input_char (that)
             IMPLICIT NONE
             CHARACTER(*), INTENT(IN) :: that
-            INTEGER(i2b) :: i,j,imax
+            INTEGER(i2b) :: i,j,imax,iostatint
             j=LEN(That)
             i=0
             imax=SIZE(input_line)
@@ -72,7 +72,13 @@ MODULE input
                     STOP
                 END IF
                 IF (input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ') THEN
-                    READ(input_line(i)(j+4:j+50),*) input_char
+                    READ(input_line(i)(j+4:j+50),*,IOSTAT=iostatint) input_char
+                        IF (iostatint/=0) THEN
+                            PRINT*,"I have a problem in reading input line:"
+                            PRINT*,TRIM(ADJUSTL(input_line(i)))
+                            IF (TRIM(ADJUSTL(input_line(i)(j+4:j+50)))=='') PRINT*,"I found nothing after sign ="
+                            STOP
+                        END IF
                     EXIT
                 END IF
             END DO
