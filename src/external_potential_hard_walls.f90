@@ -25,7 +25,7 @@ SUBROUTINE external_potential_hard_walls
     REAL(dp), ALLOCATABLE, DIMENSION(:)   :: thickness ! thickness of each wall (thickness = 2radius. Don't mix them up)
     REAL(dp), ALLOCATABLE, DIMENSION(:,:) :: normal_vec ! normal vector of each plan defining wall
     REAL(dp), ALLOCATABLE, DIMENSION(:)   :: norm2_normal_vec ! norm of normal_vec
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:) :: OA ! A is a point of coordinates OA(1,2,3) which is in the plan normal to normal_vec
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:) :: OA ! A is a point of coordinates OA(x,y,z) which is in the plan normal to normal_vec
     REAL(dp), ALLOCATABLE, DIMENSION(:)   :: dot_product_normal_vec_OA ! dummy
     REAL(dp) :: OM(3) ! coordinates of grid points
 
@@ -48,6 +48,7 @@ SUBROUTINE external_potential_hard_walls
                 READ ( input_line(i+w),*,IOSTAT=iostatint) thickness(w) , normal_vec(1:3,w) , OA (1:3,w) ! for each wall, read thickness, normal vector coordinates and point in plan
                 IF(iostatint/=0) STOP "I could not read line containing thickness of the hard wall, its normal vector and position"
                 norm2_normal_vec ( w ) = NORM2(normal_vec(:,w)) ! pretabulate norm of normal vec
+                IF (norm2_normal_vec(w)==0._dp) STOP "Your hard wall is defined by a strange normal vector"
                 dot_product_normal_vec_OA ( w ) = DOT_PRODUCT(-normal_vec(:,w) , OA(:,w))
             END DO
             EXIT
@@ -56,28 +57,12 @@ SUBROUTINE external_potential_hard_walls
 
 ! be sure Vext_total is allocated
     IF (.NOT. ALLOCATED(Vext_total)) THEN
-        ALLOCATE( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles , nb_species ) ,SOURCE=0._dp)
+        ALLOCATE( Vext_total (nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ,SOURCE=0._dp)
     END IF
 ! be sure radius(:) (solvent radius) is already computed
     IF(.NOT. ALLOCATED(hs)) STOP 'radius is not allocated. critial stop in external_potential_hard_walls.f90'
     
     ! compute the potential potential
-!~     DO k=1,nfft3
-!~         OMz = REAL(k-1,dp)*spaceGrid%dl(3)
-!~         DO j=1,nfft2
-!~             OMy = REAL(j-1,dp)*spaceGrid%dl(2)
-!~             DO i = 1 , nfft1
-!~                 OMx = REAL(i-1,dp)*spaceGrid%dl(1)
-!~                 OM = (/ OMx , OMy , OMz /)
-!~                 DO w = 1 , nwall ! for each wall
-!~                     dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
-!~                     DO s = 1 , nb_species
-!~                         if ( dplan <= 0.5_dp*thickness(w) + hs(s)%R ) Vext_total(i,j,k,:,:,s)=infty
-!~                     END DO
-!~                 END DO
-!~             END DO
-!~         END DO
-!~     END DO
     DO CONCURRENT ( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species, w=1:nwall)
         OM = [ REAL(i-1,dp)*spaceGrid%dl(1) , REAL(j-1,dp)*spaceGrid%dl(2) , REAL(k-1,dp)*spaceGrid%dl(3) ]
         dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
