@@ -30,8 +30,7 @@ SUBROUTINE init_external_potential
 
 
     ! Hard walls
-    PRINT*,"aaaaaaaaaa"
-    call external_potential_hard_walls
+    CALL external_potential_hard_walls
 
     ! electrostatics
     IF (input_log('point_charge_electrostatic') .AND. input_log('poisson_solver')) THEN
