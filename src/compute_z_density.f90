@@ -1,7 +1,7 @@
-! Compute mean density perpendicular to plan xy
-
+!===================================================================================================================================
 SUBROUTINE compute_z_density (array,filename)
-    
+!===================================================================================================================================
+! Compute mean density perpendicular to plan xy
     USE precision_kinds ,ONLY: dp, i2b
     USE system          ,ONLY: spaceGrid
     USE mathematica     ,ONLY: chop
@@ -22,3 +22,4 @@ SUBROUTINE compute_z_density (array,filename)
     CLOSE (10)
 
 END SUBROUTINE compute_z_density
+!===================================================================================================================================
