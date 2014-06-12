@@ -2,9 +2,9 @@
 
 SUBROUTINE compute_z_density (array,filename)
     
-    USE precision_kinds, ONLY: dp, i2b
-    USE system, ONLY: nfft1, nfft2, nfft3, deltaz, spaceGrid
-    USE mathematica    , ONLY: chop
+    USE precision_kinds ,ONLY: dp, i2b
+    USE system          ,ONLY: nfft1, nfft2, nfft3, spaceGrid
+    USE mathematica     ,ONLY: chop
     
     IMPLICIT NONE
     
@@ -18,7 +18,7 @@ SUBROUTINE compute_z_density (array,filename)
         ! Compute mean density over x and y
         mean_density=0.0_dp
         DO k=1,nfft3
-            z = REAL(k-1,dp) * deltaz
+            z = REAL(k-1,dp) * spaceGrid%dl(3)
             mean_density = chop(SUM(array(:,:,k)) / REAL(nfft1*nfft2,dp))
             WRITE (10,*)z,mean_density
         END DO
