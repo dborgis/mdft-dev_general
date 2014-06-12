@@ -14,8 +14,7 @@ SUBROUTINE init_external_potential
     
     IMPLICIT NONE
     
-    integer(i2b):: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
-    INTEGER(i2b), DIMENSION(3) :: nfft
+    INTEGER(i2b) :: nb_id_mol , nb_id_solv, nfft(3) ! nb of types of sites of solute and solvent
 
     nfft = spaceGrid%n_nodes
 
