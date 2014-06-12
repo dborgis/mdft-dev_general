@@ -19,17 +19,18 @@ SUBROUTINE init_external_potential
     nfft = spaceGrid%n_nodes
 
     IF( .NOT. ALLOCATED( Vext_total )) THEN
-        allocate( Vext_total(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),angGrid%n_angles,&
+        ALLOCATE( Vext_total(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),angGrid%n_angles,&
                             molRotGrid%n_angles,nb_species), source=0._dp )
     ELSE
         STOP "see init_external_potential.f90 vext_total is already allocated."
     END IF
 
-    nb_id_mol  = size ( soluteSite  ) ! total number of solute types
-    nb_id_solv = size ( chg_solv ) ! total number of solvent types
+    nb_id_mol  = SIZE( soluteSite  ) ! total number of solute types
+    nb_id_solv = SIZE( chg_solv ) ! total number of solvent types
 
 
     ! Hard walls
+    PRINT*,"aaaaaaaaaa"
     call external_potential_hard_walls
 
     ! electrostatics
@@ -92,7 +93,7 @@ SUBROUTINE init_external_potential
     
     IF( input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
     IF( input_char('other_predefined_vext')=='vextdef1') CALL vextdef1
-    
+
     ! compute total Vext(i,j,k,omega), the one used in the free energy functional
     call vext_total_sum
     
