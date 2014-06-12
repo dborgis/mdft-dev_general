@@ -4,6 +4,7 @@ SUBROUTINE compute_z_density (array,filename)
     
     USE precision_kinds, ONLY: dp, i2b
     USE system, ONLY: nfft1, nfft2, nfft3, deltaz, spaceGrid
+    USE mathematica    , ONLY: chop
     
     IMPLICIT NONE
     
@@ -18,7 +19,7 @@ SUBROUTINE compute_z_density (array,filename)
         mean_density=0.0_dp
         DO k=1,nfft3
             z = REAL(k-1,dp) * deltaz
-            mean_density = SUM(array(:,:,k)) / REAL(nfft1*nfft2,dp)
+            mean_density = chop(SUM(array(:,:,k)) / REAL(nfft1*nfft2,dp))
             WRITE (10,*)z,mean_density
         END DO
     CLOSE (10)
