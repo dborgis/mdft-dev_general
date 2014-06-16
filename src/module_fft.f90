@@ -1,7 +1,9 @@
-!> Variables needed by FFTW3.
+!===================================================================================================================================
 MODULE fft
-    
-    USE precision_kinds , ONLY : i4b, i2b, dp
+!===================================================================================================================================
+! This module deals with everything related to the fast fourier transforms and all Fourier space related functions
+
+    USE precision_kinds ,ONLY : i4b, i2b, dp
 
     IMPLICIT NONE
 
