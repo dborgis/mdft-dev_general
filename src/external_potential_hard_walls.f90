@@ -60,7 +60,8 @@ SUBROUTINE external_potential_hard_walls
         ALLOCATE( Vext_total (nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ,SOURCE=0._dp)
     END IF
 ! be sure radius(:) (solvent radius) is already computed
-    IF(.NOT. ALLOCATED(hs)) STOP 'radius is not allocated. critial stop in external_potential_hard_walls.f90'
+    IF(.NOT. ALLOCATED(hs)) STOP 'Molecular radius of solvent not allocated. critial stop in external_potential_hard_walls.f90'
+
     
     ! compute the potential potential
     DO CONCURRENT ( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species, w=1:nwall)
