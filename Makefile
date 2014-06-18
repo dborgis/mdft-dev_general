@@ -14,7 +14,7 @@ FC = gfortran
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J $(MODDIR) -I $(MODDIR)
+FCFLAGS = -J $(MODDIR) -I $(MODDIR) -fdiagnostics-color=auto
 LDFLAGS = -lfftw3
 
 DEBUG = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -frecursive
