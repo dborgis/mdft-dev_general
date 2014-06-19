@@ -111,6 +111,7 @@ vext_hard_square_well = F            # if the external potential is of kind hard
 hard_well_total_length = 2.0         # total length of the hard well (length or diameter). potential is zero from Lz/2-hard_well_total_length/2 to Lz/2+hard_well_total_length/2 and \infty elsewhere
 purely_repulsive_solute = F          # if there is a 1/r12 repulsive point in the box
 radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^12) solute as defined by Dzubiella
+other_predefined_vext = none
 
 
 ##########################################################################################
