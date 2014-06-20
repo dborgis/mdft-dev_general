@@ -65,20 +65,20 @@ MODULE hardspheres
             ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
             DO CONCURRENT ( s=1:nb_species, l=1:nfft(1)/2+1, m=1:nfft(2), n=1:nfft(3) )
                 FourPiR = FourPi * hs(s)%R
-                norm_k_local = norm_k (l,m,n)
-                IF ( norm_k_local /= 0.0_dp ) THEN
+                IF ( l+m+n/=3 ) THEN !  => norm_k_local /= 0.0_dp
+                    norm_k_local = norm_k (l,m,n)
                     kR = norm_k_local * hs(s)%R
                     sinkR = SIN(kR)
                     coskR = COS(kR)
-                    weightfun_k(l,m,n,s,3) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
-                    weightfun_k(l,m,n,s,2) = FourPiR * sinkR / norm_k_local
-                    weightfun_k(l,m,n,s,1) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
-                    weightfun_k(l,m,n,s,0) = coskR + 0.5_dp * kR * sinkR
+                    weightfun_k(l,m,n,s,3) = CMPLX(FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 ) ,0._dp)
+                    weightfun_k(l,m,n,s,2) = CMPLX(FourPiR * sinkR / norm_k_local ,0._dp)
+                    weightfun_k(l,m,n,s,1) = CMPLX(( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local ) ,0._dp)
+                    weightfun_k(l,m,n,s,0) = CMPLX(coskR + 0.5_dp * kR * sinkR ,0._dp)
                 ELSE
-                    weightfun_k(l,m,n,s,3) = FourPi / 3.0_dp * hs(s)%R** 3 ! volume
-                    weightfun_k(l,m,n,s,2) = FourPi * hs(s)%R** 2 ! surface area
-                    weightfun_k(l,m,n,s,1) = hs(s)%R ! radius
-                    weightfun_k(l,m,n,s,0) = 1.0_dp ! unity
+                    weightfun_k(l,m,n,s,3) = CMPLX(FourPi / 3.0_dp * hs(s)%R** 3  ,0._dp)! volume
+                    weightfun_k(l,m,n,s,2) = CMPLX(FourPi * hs(s)%R** 2  ,0._dp)! surface area
+                    weightfun_k(l,m,n,s,1) = CMPLX(hs(s)%R  ,0._dp)! radius
+                    weightfun_k(l,m,n,s,0) = CMPLX(1.0_dp  ,0._dp)! unity
                 END IF
             END DO
         END SUBROUTINE populate_weight_functions_in_Fourier_space
