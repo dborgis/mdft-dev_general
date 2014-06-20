@@ -7,7 +7,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     USE constants        ,ONLY: pi , FourPi , twopi, zeroC
     USE fft              ,ONLY: fftw3
     USE input            ,ONLY: input_line, verbose, input_char
-    USE hardspheres      ,ONLY: weightfun_k, hs
+    USE hardspheres      ,ONLY: hs
     
     IMPLICIT NONE
     
@@ -35,6 +35,8 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     REAL(dp), PARAMETER :: inv18pi = 1.0_dp/( 18.0_dp * pi)
     REAL(dp), PARAMETER :: inv24pi = 1.0_dp/( 24.0_dp * pi)
     REAL(dp), PARAMETER :: inv36pi = 1.0_dp/( 36.0_dp * pi)
+    
+    IF (nb_species/=1) STOP "I stop because FMT calculations are only possible with one solvent species."
     
     CALL CPU_TIME ( time0 ) ! init timer
 
@@ -71,11 +73,11 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     DO CONCURRENT ( s=1:nb_species )
         nb_molecules(s) = SUM( rho(:,:,:,s ) ) * n_0_multispec(s) * mole_fraction(s) * deltav
     END DO
-!~     IF (verbose) THEN     ! tell user about the number of molecule of each species in the supercell
-!~         DO s = 1 , nb_species
-!~             PRINT*,'There are ',nb_molecules(s),' molecules of type',s
-!~         END DO
-!~     END IF
+    IF (verbose) THEN     ! tell user about the number of molecule of each species in the supercell
+        DO s = 1 , nb_species
+            PRINT*,'There are ',nb_molecules(s),' molecules of type',s
+        END DO
+    END IF
 
     ! fourier transform the density rho => rho_k
     ALLOCATE ( rho_k (nfft1/2+1,nfft2,nfft3,nb_species) ,SOURCE=zeroC)
@@ -90,8 +92,8 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! allocate the arrays for receiving the FFT-1
     ALLOCATE ( wd (nfft1,nfft2,nfft3,0:3) ,SOURCE=0._dp) ! 0:3 for Kierliek Rosinberg
     DO s= 1, nb_species
-        DO i= LBOUND(wd,4) , UBOUND(wd,4)
-            fftw3%in_backward = weightfun_k(:,:,:,s,i) * rho_k(:,:,:,s)
+        DO i= LBOUND(wd,4) , UBOUND(wd,4) ! wd(i,j,k,0:3)
+            fftw3%in_backward = hs(s)%w_k(:,:,:,i) * rho_k(:,:,:,s)
             CALL dfftw_execute ( fftw3%plan_backward )
             wd(:,:,:,i) = wd(:,:,:,i) + fftw3%out_backward / Nk
         END DO
@@ -112,17 +114,26 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
                 w2 = wd(i,j,k,2)
                 w3 = wd(i,j,k,3)
 
-                omw3 = 1.0_dp - w3 ! nowhere should w3 be lower or equal than 1
-                IF ( omw3 <= 0.0_dp ) THEN
-                    CALL error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
-                    CALL process_output ! process output so that we know where we are !
+                omw3 = 1.0_dp - w3
+                IF ( omw3 <= EPSILON(1.0_dp) ) THEN
+                    PRINT*,"I stop before trying LOG(",omw3,")"
+                    CALL error_message_energy_hard_sphere_fmt (i,j,k,w0,w1,w2,w3)
+                    CALL process_output
                 END IF
 
                 IF ( hs_functional == 'PY' .OR. hs_functional == 'py' ) THEN
                     F_HS = -w0*LOG(omw3) &
                            +w1*w2/omw3 &
                            +inv24pi*w2**3/omw3**2
+                
                 ELSE IF ( hs_functional == 'CS' .OR. hs_functional == 'cs' ) THEN
+                    
+                    IF (ABS(w3)<=TINY(1.0_dp)) THEN
+                        PRINT*,"I stop before dividing by",w3
+                        CALL error_message_energy_hard_sphere_fmt (i,j,k,w0,w1,w2,w3)
+                        CALL process_output
+                    END IF
+                    
                     F_HS = ( inv36pi * w2 ** 3 / w3 ** 2 - w0 ) * LOG(omw3) &
                            + w1 * w2 / omw3 &
                            + inv36pi * w2 ** 3 / ( omw3 ** 2 * w3 )
@@ -147,6 +158,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     
     ! Perkus Yevick
     IF ( hs_functional == 'PY' .or. hs_functional == 'py' ) THEN
+        IF( ANY(one_min_wd_3<=EPSILON(1.0_dp))) STOP "I found some value in one_min_wd_3 that cannot go in log"
         dFHS(:,:,:,0) = - log ( one_min_wd_3 )
         dFHS(:,:,:,1) = wd(:,:,:,2) / one_min_wd_3
         dFHS(:,:,:,2) = wd(:,:,:,1) / one_min_wd_3 + inv8pi * dFHS(:,:,:,1) ** 2
@@ -154,7 +166,10 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     
     ! Carnahan Starling
     ELSE IF ( hs_functional == 'CS' .or. hs_functional == 'cs' ) THEN
-    
+        
+        IF( ANY(one_min_wd_3<=EPSILON(1.0_dp))) STOP "I found some value in one_min_wd_3 that cannot go in log"
+        IF( ANY(ABS(wd(:,:,:,3))<=EPSILON(1.0_dp))) STOP "I found some value in w3 that would lead to divide by 0"
+        
         dFHS(:,:,:,0) = - log ( one_min_wd_3 )
     
         dFHS(:,:,:,1) = wd(:,:,:,2) / one_min_wd_3
@@ -190,7 +205,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! compute final gradient in k-space
     ALLOCATE ( dFex_k (nfft1/2+1,nfft2,nfft3,nb_species) ,SOURCE=zeroC) ! FFT of dFex (in fact dFex_k is known from which FFT-1 gives dFex)
     DO CONCURRENT (s=1:nb_species)
-        dFex_k(:,:,:,s) = SUM( dFHS_k*weightfun_k(:,:,:,s,:) ,4)
+        dFex_k(:,:,:,s) = SUM( dFHS_k * hs(s)%w_k(:,:,:,:) ,4)
     END DO
     DEALLOCATE ( dFHS_k )
     
