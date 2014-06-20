@@ -2,7 +2,7 @@
 ! 201109121332 creation by Maximilien Levesque
 ! 201109151545 added the calculation of the perturbation potential
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
-use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , radius , sig_solv , eps_solv , v_perturbation_k
+use system,only : nfft1 , nfft2 , nfft3 , Lx , Ly , Lz , n_0 , sig_solv , eps_solv , v_perturbation_k
 use quadrature,only : angGrid
 USE minimizer, ONLY: cg_vect , dF , FF
 USE precision_kinds,only : dp , i2b
