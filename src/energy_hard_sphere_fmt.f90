@@ -45,7 +45,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     Nk = REAL(PRODUCT(spaceGrid%n_nodes),dp) ! total number of k points needed for inverse fft normalization
     deltav = spaceGrid%dv
 
-    GCdmu = input_dp('impose_some_deltamu')
+    GCdmu = input_dp('imposed_chempot')
 
     ALLOCATE ( rho (nfft1,nfft2,nfft3,nb_species) ,SOURCE=0._dp)
     icg = 0
