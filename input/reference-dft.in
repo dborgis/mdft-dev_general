@@ -45,7 +45,7 @@ pgtol = 0.000001 # default 0.00001
 ###########################
 impose_some_deltamu = 0.0
 Linearize_entropy = F
-if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
+if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):1 or rho(r,Omega):2
 
 
 ############################
@@ -73,7 +73,7 @@ bridge_hard_sphere = F
 hard_sphere_radius
 1.27
 hs_functional = CS # PY or CS
-lennard_jones_perturbation_to_hard_spheres = F # WCA type
+lennard_jones_perturbation_to_hard_spheres = F # add a Weeks-Chandler-Enderson perturbation to hard-sphere fonctional
 
 
 ############################
