@@ -97,7 +97,8 @@ hard_sphere_solute = F              # if there is a hard sphere in the center of
 radius_of_hard_sphere_solute = 15.0     # hard sphere solute radius for calculation of hard sphere external potential (Ang)
 
 # HARD WALL
-hard_wall_number = 0                 # total number of hard walls in the supercell. They will all have same thickness for now
+hard_wall_number = 0                 #
+# do w=1,hard_wall_numner ; thickness(w) , normal_vec(1:3,w) , CooOfPointInWall (1:3,w); end do
 
 # HARD CORE with vdw radius
 vdw_hard_core = F                    # a hard core with vdw radius is like a hard sphere with vdw radius for the solute sites.
