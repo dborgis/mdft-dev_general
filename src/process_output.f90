@@ -4,7 +4,7 @@ SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spaceGrid
+    USE system,             ONLY: nb_species, spaceGrid, rho_0_multispec
     USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
@@ -14,11 +14,17 @@ SUBROUTINE process_output
     CHARACTER(50):: filename
     REAL(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: neq, Px, Py, Pz ! equilibrium density, ie rho(r), and Pi polarization(r)
     INTEGER(i2b) ,POINTER :: nfft1=>spaceGrid%n_nodes(1), nfft2=>spaceGrid%n_nodes(2), nfft3=>spaceGrid%n_nodes(3)
+    INTEGER(i2b) :: s
 
     CALL print_cg_vect ! print output/density.bin that contains cg_vect 
 
     ALLOCATE ( neq (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
     CALL get_final_density ( neq ) ! Get the final density(r) from the last minimizer step.
+    
+    DO s=1,nb_species
+        PRINT*,"NUMBER OF PARTICLES OF SPECIES",s,"IN SUPERCELL =",SUM(neq)*spaceGrid%dv *rho_0_multispec(s)
+    END DO
+    
 
     IF (verbose) THEN
         filename = 'output/density.cube'
