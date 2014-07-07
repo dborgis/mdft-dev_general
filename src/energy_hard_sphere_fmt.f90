@@ -70,7 +70,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ALLOCATE ( nb_molecules ( nb_species ) ,SOURCE=0._dp)
     DO CONCURRENT ( s=1:nb_species )
         nb_molecules(s) = SUM( rho(:,:,:,s ) ) * n_0_multispec(s) * mole_fraction(s) * deltav
-        IF (verbose) PRINT*,'There are',nb_molecules(s),'molecules of type',s
+!~         IF (verbose) PRINT*,'There are',nb_molecules(s),'molecules of type',s
     END DO
 
     ! fourier transform the density rho => rho_k
