@@ -4,7 +4,7 @@ SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spaceGrid, rho_0_multispec
+    USE system,             ONLY: nb_species, spaceGrid, rho_0_multispec, n_0_multispec
     USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
@@ -22,7 +22,7 @@ SUBROUTINE process_output
     CALL get_final_density ( neq ) ! Get the final density(r) from the last minimizer step.
     
     DO s=1,nb_species
-        PRINT*,"NUMBER OF PARTICLES OF SPECIES",s,"IN SUPERCELL =",SUM(neq)*spaceGrid%dv *rho_0_multispec(s)
+        PRINT*,"NUMBER OF PARTICLES OF SPECIES",s,"IN SUPERCELL =",SUM(neq)*spaceGrid%dv *n_0_multispec(s)
     END DO
     
 
