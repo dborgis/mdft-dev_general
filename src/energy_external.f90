@@ -6,21 +6,25 @@ SUBROUTINE energy_external (Fext)
     USE quadrature, ONLY: angGrid, molRotGrid
     USE minimizer, ONLY: CG_vect , FF , dF
     USE external_potential, ONLY: Vext_total
+    USE input, ONLY: input_dp
     
     IMPLICIT NONE
 
     REAL(dp), INTENT(OUT) :: Fext
-    INTEGER(i2b) :: icg , i , j , k , o , p! dummy for loops
-    REAL(dp) :: psi
-    REAL(dp) :: wdfve
-    INTEGER(i2b) :: spec
+    INTEGER(i2b) :: icg , i , j , k , o , p,s
+    REAL(dp) :: psi, wdfve, imposedChemPot
     
     Fext = 0.0_dp
+    
+    ! Impose a chemical potential
+    imposedChemPot = 0.0_dp ! 0 means that you don't impose any chemical potential (delta_chempot is built this way)
+    imposedChemPot = input_dp('imposed_chempot')
+    IF( nb_species/=1 .AND. imposedChemPot/=0._dp) STOP "Imposing a chemical potential is valid only for single-species solvent"
 
     ! F_{ext}[\rho(\vec{r},\vec{\Omega})]=\int d \vec{r} d \vec{\Omega} V_{ext}(\vec{r},\vec{\Omega})\rho(\vec{r},\vec{\Omega})
 
     icg = 0
-    DO spec = 1 , nb_species
+    DO s = 1 , nb_species
         DO i = 1 , spaceGrid%n_nodes(1)
         DO j = 1 , spaceGrid%n_nodes(2)
         DO k = 1 , spaceGrid%n_nodes(3)
@@ -28,8 +32,8 @@ SUBROUTINE energy_external (Fext)
                 DO p=1 , molRotGrid%n_angles            
                     icg = icg + 1
                     psi = cg_vect(icg)
-                    wdfve = angGrid%weight(o) * molRotGrid%weight(p) * spaceGrid%dv * rhoBulk(spec) * Vext_total(i,j,k,o,p,spec)
-                    Fext = Fext + psi**2 * wdfve
+                    wdfve = angGrid%weight(o) * molRotGrid%weight(p) * spaceGrid%dv * rhoBulk(s)
+                    Fext = Fext + psi**2 * wdfve *    ( Vext_total(i,j,k,o,p,s) - imposedChemPot  )
                     dF(icg) = dF(icg) + 2.0_dp*psi*wdfve
                 END DO
             END DO

@@ -35,7 +35,6 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     REAL(dp), PARAMETER :: inv18pi = 1.0_dp/( 18.0_dp * pi)
     REAL(dp), PARAMETER :: inv24pi = 1.0_dp/( 24.0_dp * pi)
     REAL(dp), PARAMETER :: inv36pi = 1.0_dp/( 36.0_dp * pi)
-    REAL(dp) :: imposedChemPot
     
     CALL CPU_TIME ( time0 ) ! init timer
 
@@ -44,8 +43,6 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     nfft3 = spaceGrid%n_nodes(3)
     Nk = REAL(PRODUCT(spaceGrid%n_nodes),dp) ! total number of k points needed for inverse fft normalization
     deltav = spaceGrid%dv
-
-    imposedChemPot = input_dp('imposed_chempot')
 
     ALLOCATE ( rho (nfft1,nfft2,nfft3,nb_species) ,SOURCE=0._dp)
     icg = 0
@@ -73,12 +70,8 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ALLOCATE ( nb_molecules ( nb_species ) ,SOURCE=0._dp)
     DO CONCURRENT ( s=1:nb_species )
         nb_molecules(s) = SUM( rho(:,:,:,s ) ) * n_0_multispec(s) * mole_fraction(s) * deltav
+        IF (verbose) PRINT*,'There are',nb_molecules(s),'molecules of type',s
     END DO
-!~     IF (verbose) THEN     ! tell user about the number of molecule of each species in the supercell
-!~         DO s = 1 , nb_species
-!~             PRINT*,'There are ',nb_molecules(s),' molecules of type',s
-!~         END DO
-!~     END IF
 
     ! fourier transform the density rho => rho_k
     ALLOCATE ( rho_k (nfft1/2+1,nfft2,nfft3,nb_species) ,SOURCE=zeroC)
@@ -137,8 +130,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
         END DO
     END DO
 
-    IF( SIZE(nb_molecules)/=1 ) STOP "HERE imposedChemPot is for one component only"
-    Fint = Fint * kBT * DeltaV -SUM(hs%excchempot * nb_molecules) -SUM( hs%Fexc0 * mole_fraction ) -imposedChemPot*nb_molecules(1)
+    Fint = Fint * kBT * DeltaV -SUM(hs%excchempot * nb_molecules) -SUM( hs%Fexc0 * mole_fraction )
     FF = FF + Fint
 
     ! gradients

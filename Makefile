@@ -252,7 +252,8 @@ $(OBJDIR)/energy_external.o :\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_input.o
 
 $(OBJDIR)/energy_hard_sphere_fmt.o :\
 	$(SRCDIR)/energy_hard_sphere_fmt.f90\
