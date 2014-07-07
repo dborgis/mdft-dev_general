@@ -29,11 +29,12 @@ SUBROUTINE energy_external (Fext)
         DO j = 1 , spaceGrid%n_nodes(2)
         DO k = 1 , spaceGrid%n_nodes(3)
             DO o = 1 , angGrid%n_angles
-                DO p=1 , molRotGrid%n_angles            
+                DO p=1 , molRotGrid%n_angles
                     icg = icg + 1
                     psi = cg_vect(icg)
-                    wdfve = angGrid%weight(o) * molRotGrid%weight(p) * spaceGrid%dv * rhoBulk(s)
-                    Fext = Fext + psi**2 * wdfve *    ( Vext_total(i,j,k,o,p,s) - imposedChemPot  )
+                    wdfve = angGrid%weight(o) * molRotGrid%weight(p) * spaceGrid%dv * rhoBulk(s) &
+                            * (Vext_total(i,j,k,o,p,s) - imposedChemPot)
+                    Fext = Fext + psi**2 * wdfve
                     dF(icg) = dF(icg) + 2.0_dp*psi*wdfve
                 END DO
             END DO
