@@ -40,12 +40,12 @@ MODULE external_potential
     !===============================================================================================================================
         IMPLICIT NONE
         if ( allocated ( Vext_total ) ) deallocate ( Vext_total )
-        if ( allocated ( Vext_lj ) ) deallocate ( Vext_lj )
-        if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
-        if ( allocated ( x_charge ) ) deallocate ( x_charge )
-        if ( allocated ( y_charge ) ) deallocate ( y_charge )
-        if ( allocated ( z_charge ) ) deallocate ( z_charge )
-        if ( allocated ( q_charge ) ) deallocate ( q_charge )
+        if ( allocated ( Vext_lj ) )    deallocate ( Vext_lj )
+        if ( allocated ( Vext_q ) )     deallocate ( Vext_q )
+        if ( allocated ( x_charge ) )   deallocate ( x_charge )
+        if ( allocated ( y_charge ) )   deallocate ( y_charge )
+        if ( allocated ( z_charge ) )   deallocate ( z_charge )
+        if ( allocated ( q_charge ) )   deallocate ( q_charge )
     END SUBROUTINE deallocate_everything_external_potential
     !===============================================================================================================================
 
