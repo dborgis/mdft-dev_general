@@ -129,12 +129,12 @@ MODULE input
                 DO i= 1, 2
                     READ(10,*,IOSTAT=ios) previousAbscissa, ordonates
                         IF (ios/=0) then
-                            PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                            PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                             STOP
                         END IF
                     READ(10,*, IOSTAT=ios) abscissa, ordonates
                         IF (ios/=0) then
-                            PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                            PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                             STOP
                         END IF
                 END DO
@@ -148,14 +148,14 @@ MODULE input
             
                 READ(10,*,IOSTAT=ios) abscissa, ordonates
                     IF (ios/=0) then
-                        PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                        PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                         STOP
                     END IF
                 DO i=1, n_lines-1
                     previousAbscissa = abscissa
                     READ(10,*,IOSTAT=ios) abscissa, ordonates
                     IF (ios>0) then
-                        PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                        PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                         STOP
                     ELSE IF (ios<0) THEN
                         EXIT
