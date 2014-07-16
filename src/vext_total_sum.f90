@@ -12,7 +12,7 @@ SUBROUTINE vext_total_sum
     USE input,              ONLY: verbose
 
     IMPLICIT NONE
-    REAL(dp), PARAMETER :: vmax = 100._dp
+    REAL(dp), PARAMETER :: vmax = HUGE(1.0_dp)
     INTEGER(i2b) :: nfft1,nfft2,nfft3,nomg,npsi
     
     nfft1=spaceGrid%n_nodes(1)
