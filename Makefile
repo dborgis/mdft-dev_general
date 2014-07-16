@@ -392,6 +392,7 @@ $(OBJDIR)/get_lebedev_integration_roots_and_weights.o :\
 
 $(OBJDIR)/init_density.o :\
 	$(SRCDIR)/init_density.f90\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_minimizer.o\
