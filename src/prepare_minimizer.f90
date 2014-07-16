@@ -50,8 +50,8 @@ SUBROUTINE prepare_minimizer
         epsmch = EPSILON(1.0_dp)  !  Precision de la machine
         factr = epsg / epsmch ! convergence criteria over energy
         iprint = -1
-        ALLOCATE ( iwa ( 3 * ncg ) )
-        ALLOCATE ( wa ( 2 * mcg * ncg + 4 * ncg + 11 * mcg **2 + 8 * mcg ) )
+        ALLOCATE ( iwa ( 3 * ncg ) ,SOURCE=0)
+        ALLOCATE ( wa ( 2 * mcg * ncg + 4 * ncg + 11 * mcg **2 + 8 * mcg ) ,SOURCE=0._dp)
     END IF
 
 END SUBROUTINE prepare_minimizer
