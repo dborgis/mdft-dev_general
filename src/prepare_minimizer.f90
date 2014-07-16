@@ -27,21 +27,23 @@ SUBROUTINE prepare_minimizer
                     ALLOCATE ( nbd(ncg), SOURCE=0)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
         ELSE IF (input_char('constraint')=='lower_bounded' ) THEN
                     WRITE(*,*) '***********************************************************************************'
-                    WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
+                    WRITE(*,*) 'WARNING YOU ARE USING A LOWER_BOUND CONSTRAINED MINIMIZATION '
                     WRITE(*,*) '***********************************************************************************'
                     ALLOCATE ( nbd(ncg), SOURCE=1)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
         ELSE IF (input_char('constraint')=='upper_bounded') THEN
                     WRITE(*,*) '***********************************************************************************'
-                    WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
+                    WRITE(*,*) 'WARNING YOU ARE USING A UPPER_BOUND CONSTRAINED MINIMIZATION '
                     WRITE(*,*) '***********************************************************************************'
                     ALLOCATE ( nbd(ncg), SOURCE=3)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
         ELSE IF (input_char('constraint')=='both_boundeded') THEN
                     WRITE(*,*) '***********************************************************************************'
-                    WRITE(*,*) 'WARNING YOU ARE USING A CONSTRAINT MINIMIZATION '
+                    WRITE(*,*) 'WARNING YOU ARE USING A LOWER AND UPPER-BOUND CONSTRAINED MINIMIZATION '
                     WRITE(*,*) '***********************************************************************************'
                     ALLOCATE ( nbd(ncg), SOURCE=2)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
         END IF
         
+        IF( input_dp('lower_bound') < 0._dp .OR. input_dp('upper_bound') < 0._dp ) STOP "In prepare_minimizer.f90, I suppose that \&
+            lower_bound and upper_bound are positive or zero. You found a bug. Thank you!"
         ALLOCATE ( ll(ncg), SOURCE=SQRT(input_dp('lower_bound'))) ! lower bound of cg_vect
         ALLOCATE ( uu(ncg), SOURCE=SQRT(input_dp('upper_bound') )) ! uppder bound of cg_vect
 
