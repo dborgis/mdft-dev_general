@@ -42,10 +42,13 @@ SUBROUTINE prepare_minimizer
                     ALLOCATE ( nbd(ncg), SOURCE=2)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
         END IF
         
-        IF( input_dp('lower_bound') < 0._dp .OR. input_dp('upper_bound') < 0._dp ) STOP "In prepare_minimizer.f90, I suppose that \&
-            lower_bound and upper_bound are positive or zero. You found a bug. Thank you!"
-        ALLOCATE ( ll(ncg), SOURCE=SQRT(input_dp('lower_bound'))) ! lower bound of cg_vect
-        ALLOCATE ( uu(ncg), SOURCE=SQRT(input_dp('upper_bound') )) ! uppder bound of cg_vect
+        IF( input_dp('lower_bound') < 0._dp .OR. input_dp('upper_bound') < 0._dp ) THEN
+            STOP "In prepare_minimizer.f90, I suppose that lower_bound and upper_bound are positive or zero. \&
+                You found a bug. Thank you!"
+        ELSE
+            ALLOCATE ( ll(ncg), SOURCE=SQRT(input_dp('lower_bound'))) ! lower bound of cg_vect
+            ALLOCATE ( uu(ncg), SOURCE=SQRT(input_dp('upper_bound') )) ! uppder bound of cg_vect
+        END IF
 
         epsmch = EPSILON(1.0_dp)  !  Precision de la machine
         factr = epsg / epsmch ! convergence criteria over energy
