@@ -124,4 +124,4 @@ constraint = no_constraint  # Do you want to work with a constrained density? Ta
 lower_bound = 0.00000000 # Value of the minimum density, should be a float, this line is ignored if you set no_constraint 
 upper_bound = 125.00000000 # Value of maximimum density see supra
 number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
-
+constrain_density_to_zero_where_it_is_initiated_to_zero = F # if True, the minimizer constrains the density to be zero where it is initiated to zero
