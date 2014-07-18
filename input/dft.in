@@ -1,12 +1,12 @@
 ############################
 # SUPERCELL
 ############################
-Lx  = 10.0
-Ly  = 10.0
-Lz  = 10.0
-nfft1 = 64
-nfft2 = 64
-nfft3 = 64
+Lx  = 1.0  #59.397
+Ly  = 1.0 #59.397
+Lz  = 59.397
+nfft1 = 2 
+nfft2 = 2 
+nfft3 = 512
 quadrature = GL
 order_of_quadrature = 1
 nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
@@ -19,14 +19,14 @@ nb_implicit_species = 1
 mole_fractions
 1.0
 
-ck_species = spce   # spc or spce or stock or perso
-readDensityDensityCorrelationFunction = F
+ck_species = perso  # spc or spce or stock or perso
+readDensityDensityCorrelationFunction = T
 polarization = F
 polarization_order = dipol # multi or dipol
 include_nc_coupling = F
 
 ref_bulk_density
-0.03
+0.001
 temperature = 300
 molRotSymOrder = 1
 
@@ -36,8 +36,8 @@ molRotSymOrder = 1
 ############################
 minimizer = bfgs
 maximum_iteration_nbr = 100
-epsg =  0.00001  # default 0.0001
-pgtol = 0.000001 # default 0.00001
+epsg =  0.000001  # default 0.0001
+pgtol = 0.0000001 # default 0.00001
 
 
 ###########################
@@ -71,7 +71,7 @@ nbinsrdf = 120
 hard_sphere_fluid = T
 bridge_hard_sphere = F
 hard_sphere_radius
-0.5
+1.75
 hs_functional = CS # PY or CS
 lennard_jones_perturbation_to_hard_spheres = F # add a WCA perturbation. UNTESTED
 
@@ -97,7 +97,7 @@ hard_sphere_solute = F              # if there is a hard sphere in the center of
 radius_of_hard_sphere_solute = 15.0     # hard sphere solute radius for calculation of hard sphere external potential (Ang)
 
 # HARD WALL
-hard_wall_number = 1
+hard_wall_number = 0
 1. 0. 0. 1. 0. 0. 0.
 
 # HARD CORE with vdw radius
@@ -124,4 +124,4 @@ constraint = no_constraint  # Do you want to work with a constrained density? Ta
 lower_bound = 0.00000000 # Value of the minimum density, should be a float, this line is ignored if you set no_constraint 
 upper_bound = 125.00000000 # Value of maximimum density see supra
 number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
-
+constrain_density_to_zero_where_it_is_initiated_to_zero = F
