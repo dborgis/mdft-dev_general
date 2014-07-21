@@ -6,9 +6,11 @@ SUBROUTINE init_density
 USE precision_kinds,only : dp , i2b
 use system,only : nfft1 , nfft2 , nfft3 , beta , nb_species
 use quadrature, only: angGrid, molRotGrid
-USE minimizer, ONLY: cg_vect
+USE minimizer, ONLY: cg_vect, nbd, ll, uu
 use external_potential,only : Vext_total , Vext_q
 use input,only : input_log
+USE mathematica ,ONLY: chop
+
 IMPLICIT NONE
 real(dp):: local_density0 !> @var local_density0 is the density at a space and angular grid point
 integer(i2b):: i , j , k , o , p , icg ! dummy
@@ -57,12 +59,12 @@ do species = 1 , nb_species
             Vext_total_local_min_Vext_q = Vext_total_local
           END IF
           if ( Vext_total_local >= 100.0_dp .or. Vext_total_local_min_Vext_q >= 100.0_dp ) then
-            local_density0 = tiny ( 0.0_dp ) ! Don't put 0 as it induces problems in the calculations of log(density) in ideal part of F.
+            local_density0 = 0.0_dp!tiny ( 0.0_dp ) ! Don't put 0 as it induces problems in the calculations of log(density) in ideal part of F.
           ELSE
-            local_density0 = exp ( - beta * Vext_total_local_min_Vext_q )
+            local_density0 = chop( EXP(- beta * Vext_total_local_min_Vext_q ) )
           END IF
           ! put result in cg_vect. note that we do prefer to minimize sqrt(density) than the density in order to avoid sign problems
-          cg_vect ( icg ) = sqrt ( local_density0 )
+          cg_vect ( icg ) = chop( SQRT( local_density0 ) )
           END DO !psi
         END DO ! omega
       END DO ! nfft3
@@ -71,4 +73,16 @@ do species = 1 , nb_species
 END DO ! species
 ! only Vext_total is used in the functional. We may deallocate it now.
 !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
+
+IF (input_log('constrain_density_to_zero_where_it_is_initiated_to_zero')) THEN
+    IF (ALLOCATED(nbd) .AND. ALLOCATED(ll) .AND. ALLOCATED(uu)) THEN
+        WHERE( cg_vect==0._dp )
+            nbd = 2 ! both lower and upper bound in constrained minimization by lbfgs
+            ll = 0._dp ! both bounds = 0
+            uu = 0._dp
+        END WHERE
+    ELSE
+        STOP "I am willing to modify nbd. It should have been defined before. Something is wrong."
+    END IF
+END IF
 END SUBROUTINE init_density

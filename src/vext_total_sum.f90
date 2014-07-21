@@ -12,7 +12,7 @@ SUBROUTINE vext_total_sum
     USE input,              ONLY: verbose
 
     IMPLICIT NONE
-    REAL(dp), PARAMETER :: vmax = 100._dp
+    REAL(dp), PARAMETER :: vmax = HUGE(1.0_dp)
     INTEGER(i2b) :: nfft1,nfft2,nfft3,nomg,npsi
     
     nfft1=spaceGrid%n_nodes(1)
@@ -34,6 +34,10 @@ SUBROUTINE vext_total_sum
     IF ( ALLOCATED ( vext_hard_core ) ) vext_total (:,:,:,1,1,:) = vext_total (:,:,:,1,1,:) + vext_hard_core ! TODO generalize
 
     IF ( ALL(vext_total==zero) ) STOP "The external potential is zero everywhere. Something's wrong in input files"
+    
+    IF ( ANY(vext_total/=vext_total) ) STOP "There is a NaN somewhere in vext_total."
+    
+    IF ( ANY(ABS(vext_total)>HUGE(1.0_dp)) ) STOP "There is an Infinity somewhere in vext_total."
 
     WHERE ( Vext_total > vmax ) Vext_total = vmax
     IF ( ALLOCATED ( vext_lj        ) ) THEN

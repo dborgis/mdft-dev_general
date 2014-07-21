@@ -40,7 +40,7 @@ MODULE mod_lj
             INTEGER(i2b) :: i,j,k,s,v,u,a,b,c
             REAL(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes
             REAL(dp) :: V_node,dx,dy,dz,sigij,epsij
-            LOGICAL :: fullpdb
+            LOGICAL :: fullpbc
 
             ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species ) 
             ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER ONLY TODO
@@ -59,10 +59,10 @@ MODULE mod_lj
             ! It would have no sense to have a box dimension < 2.5 sigma
             IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(sig_mol),MAXVAL(sig_solv))) THEN
                 PRINT*,'The supercell is small. We replicate it in all directions. Vext calculation will be long.'
-                fullpdb=.TRUE. ! much slower
+                fullpbc=.TRUE. ! much slower
 !~                 STOP
             ELSE
-                fullpdb=.FALSE. ! much faster
+                fullpbc=.FALSE. ! much faster
             END IF
 
             DO v=1,SIZE(solventSite)
@@ -78,7 +78,7 @@ MODULE mod_lj
                         IF (soluteSite(u)%eps==0.0_dp) CYCLE
                         sigij = arithmetic_mean( solventSite(v)%sig, soluteSite(u)%sig )
                         epsij = geometric_mean(  solventSite(v)%eps, soluteSite(u)%eps )
-                        IF (fullpdb) THEN
+                        IF (fullpbc) THEN
                             DO a=-1,1; DO b=-1,1; DO c=-1,1
                                 dx =x_grid-soluteSite(u)%r(1)+a*Lx
                                 dy =y_grid-soluteSite(u)%r(2)+b*Ly

@@ -74,6 +74,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_input.o\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_mod_lj.o\
 	$(OBJDIR)/module_periodic_table.o\
@@ -206,6 +207,7 @@ $(OBJDIR)/compute_wca_diameter.o :\
 
 $(OBJDIR)/compute_z_density.o :\
 	$(SRCDIR)/compute_z_density.f90\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -250,7 +252,8 @@ $(OBJDIR)/energy_external.o :\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_input.o
 
 $(OBJDIR)/energy_hard_sphere_fmt.o :\
 	$(SRCDIR)/energy_hard_sphere_fmt.f90\
@@ -389,6 +392,7 @@ $(OBJDIR)/get_lebedev_integration_roots_and_weights.o :\
 
 $(OBJDIR)/init_density.o :\
 	$(SRCDIR)/init_density.f90\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_minimizer.o\

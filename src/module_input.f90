@@ -62,7 +62,7 @@ MODULE input
         CHARACTER(50) FUNCTION input_char (that)
             IMPLICIT NONE
             CHARACTER(*), INTENT(IN) :: that
-            INTEGER(i2b) :: i,j,imax
+            INTEGER(i2b) :: i,j,imax,iostatint
             j=LEN(That)
             i=0
             imax=SIZE(input_line)
@@ -72,7 +72,13 @@ MODULE input
                     STOP
                 END IF
                 IF (input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ') THEN
-                    READ(input_line(i)(j+4:j+50),*) input_char
+                    READ(input_line(i)(j+4:j+50),*,IOSTAT=iostatint) input_char
+                        IF (iostatint/=0) THEN
+                            PRINT*,"I have a problem in reading input line:"
+                            PRINT*,TRIM(ADJUSTL(input_line(i)))
+                            IF (TRIM(ADJUSTL(input_line(i)(j+4:j+50)))=='') PRINT*,"I found nothing after sign ="
+                            STOP
+                        END IF
                     EXIT
                 END IF
             END DO
@@ -123,12 +129,12 @@ MODULE input
                 DO i= 1, 2
                     READ(10,*,IOSTAT=ios) previousAbscissa, ordonates
                         IF (ios/=0) then
-                            PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                            PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                             STOP
                         END IF
                     READ(10,*, IOSTAT=ios) abscissa, ordonates
                         IF (ios/=0) then
-                            PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                            PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                             STOP
                         END IF
                 END DO
@@ -142,14 +148,14 @@ MODULE input
             
                 READ(10,*,IOSTAT=ios) abscissa, ordonates
                     IF (ios/=0) then
-                        PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                        PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                         STOP
                     END IF
                 DO i=1, n_lines-1
                     previousAbscissa = abscissa
                     READ(10,*,IOSTAT=ios) abscissa, ordonates
                     IF (ios>0) then
-                        PRINT*, 'Something went wrong in reading', filename, 'in function deltaAbscissa'
+                        PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
                         STOP
                     ELSE IF (ios<0) THEN
                         EXIT

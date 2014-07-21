@@ -7,31 +7,30 @@ SUBROUTINE init_external_potential
     USE precision_kinds, ONLY: dp , i2b
     USE input, ONLY: input_log, input_char
     USE system , ONLY: chg_solv, soluteSite, spaceGrid, nb_species
-    USE external_potential, ONLY: Vext_total, Vext_q, vextdef0
+    USE external_potential, ONLY: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj, ONLY: initLJ => init
     USE quadrature, ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
     USE constants, ONLY: zero
     
     IMPLICIT NONE
     
-    integer(i2b):: nb_id_mol , nb_id_solv ! nb of types of sites of solute and solvent
-    INTEGER(i2b), DIMENSION(3) :: nfft
+    INTEGER(i2b) :: nb_id_mol , nb_id_solv, nfft(3) ! nb of types of sites of solute and solvent
 
     nfft = spaceGrid%n_nodes
 
     IF( .NOT. ALLOCATED( Vext_total )) THEN
-        allocate( Vext_total(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),angGrid%n_angles,&
+        ALLOCATE( Vext_total(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),angGrid%n_angles,&
                             molRotGrid%n_angles,nb_species), source=0._dp )
     ELSE
         STOP "see init_external_potential.f90 vext_total is already allocated."
     END IF
 
-    nb_id_mol  = size ( soluteSite  ) ! total number of solute types
-    nb_id_solv = size ( chg_solv ) ! total number of solvent types
+    nb_id_mol  = SIZE( soluteSite  ) ! total number of solute types
+    nb_id_solv = SIZE( chg_solv ) ! total number of solvent types
 
 
     ! Hard walls
-    call external_potential_hard_walls
+    CALL external_potential_hard_walls
 
     ! electrostatics
     IF (input_log('point_charge_electrostatic') .AND. input_log('poisson_solver')) THEN
@@ -92,7 +91,8 @@ SUBROUTINE init_external_potential
     END IF
     
     IF( input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
-    
+    IF( input_char('other_predefined_vext')=='vextdef1') CALL vextdef1
+
     ! compute total Vext(i,j,k,omega), the one used in the free energy functional
     call vext_total_sum
     
