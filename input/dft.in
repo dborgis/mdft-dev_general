@@ -1,15 +1,16 @@
+# JOBID = 001
 ############################
 # SUPERCELL
 ############################
-Lx  = 1.0  #59.397
-Ly  = 1.0 #59.397
-Lz  = 59.397
-nfft1 = 2 
-nfft2 = 2 
-nfft3 = 512
-quadrature = GL
-order_of_quadrature = 1
-nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+Lx  = 32.0
+Ly  = 32.0
+Lz  = 32.0
+nfft1 = 96
+nfft2 = 96
+nfft3 = 96
+quadrature = L
+order_of_quadrature = 14
+nb_psi = 3  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
 ############################
@@ -21,7 +22,7 @@ mole_fractions
 
 ck_species = perso  # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = F
+polarization = T
 polarization_order = dipol # multi or dipol
 include_nc_coupling = F
 
@@ -32,12 +33,22 @@ molRotSymOrder = 1
 
 
 ############################
+# BRANCH CK_ANGULAR
+############################
+ck_angular = F
+ck_angular_interpolation = F
+ck_debug = F
+ck_debug_extended = F
+ck_en_harm_sph = F
+
+
+############################
 # SOLVER
 ############################
 minimizer = bfgs
 maximum_iteration_nbr = 100
-epsg =  0.000001  # default 0.0001
-pgtol = 0.0000001 # default 0.00001
+epsg =  0.0000001  # default 0.0001
+pgtol = 0.00000001 # default 0.00001
 
 
 ###########################
@@ -52,7 +63,7 @@ if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
 # POTENTIALS
 ############################
 solute_charges_scale_factor = 1.0
-poisson_solver = F
+poisson_solver = T
 point_charge_electrostatic = F
 reuse_density = F
 
@@ -68,7 +79,7 @@ nbinsrdf = 120
 ############################
 # HARD SPHERES
 ############################
-hard_sphere_fluid = T
+hard_sphere_fluid = F
 bridge_hard_sphere = F
 hard_sphere_radius
 1.75

@@ -13,8 +13,10 @@ SUBROUTINE energy_and_gradient (iter)
     IMPLICIT NONE
     
     INTEGER(i2b), INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
+    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
     LOGICAL :: opn
+    INTEGER(i2b) :: karim
+
     Fext = 0._dp
     Fid = 0._dp
     Ffmt = 0._dp
@@ -23,12 +25,29 @@ SUBROUTINE energy_and_gradient (iter)
     FexcPol = 0._dp
     F3B1 = 0._dp
     F3B2 = 0._dp
-    
+    Fexc_ck_angular = 0._dp
 
     CALL init_functional_and_gradient_to_zero( FF, dF )
 
+    IF (iter==1) PRINT*,
+
     CALL energy_external (Fext)
     CALL energy_ideal (Fid)
+
+    ! compute Fexc_ck_angular
+    karim = 0
+    IF ( input_log("ck_angular") ) karim = karim + 1
+    IF ( input_log("ck_debug") ) karim = karim + 1
+    IF ( input_log("ck_debug_extended") ) karim = karim + 1
+    IF (karim == 1) THEN
+        IF ( input_log("ck_en_harm_sph") ) STOP 'The ck_angular methods and ck_en_harm_sph are exclusive.'
+        CALL energy_ck_angular (Fexc_ck_angular)
+    ELSE IF (karim /= 0) THEN
+        STOP 'The ck methods - ck_angular, ck_debug, ck_debug_extended are exclusive.'
+    END IF
+
+    ! compute Fexc_ck_angular en harmoniques spheres
+    IF (input_log("ck_en_harm_sph") ) CALL energy_ck_en_harm_sph (Fexc_ck_angular)
 
     ! compute radial part of the excess free energy
     IF (input_log('hard_sphere_fluid') ) CALL energy_hard_sphere_fmt (Ffmt) ! => pure hard sphere contribution
@@ -86,18 +105,33 @@ SUBROUTINE energy_and_gradient (iter)
         END IF
     END IF
 
-    WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
-        iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
+!   WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
+!   iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
+
+    PRINT*,"iteration : ",iter
+    PRINT*,"======================================"
+    PRINT*,"FF              =",FF
+    PRINT*,"norm2(dF)       =",norm2(dF)
+    PRINT*,"Fext            =",Fext
+    PRINT*,"Fid             =",Fid
+    PRINT*,"Fexcnn          =",Fexcnn
+    PRINT*,"FexcPol         =",FexcPol
+    PRINT*,"F3B1            =",F3B1
+    PRINT*,"F3B2            =",F3B2
+    PRINT*,"Ffmt            =",Ffmt
+    PRINT*,"Ffmtcs          =",Ffmtcs
+    PRINT*,"Fexc_ck_angular =",Fexc_ck_angular
+    PRINT*,
 
     INQUIRE(FILE='output/iterate.dat', OPENED = opn)
     IF (.not. opn) THEN
         OPEN(111, file='output/iterate.dat')
         WRITE(111,*) "# ",'FF  ','|dF   |','  Fext','   Fid','    Fexc/rad','    Fexc/pol','    F3B1','      F3B2','    Ffmt',&
-        '    Ffmtcs'
+        '    Ffmtcs', '  Fexc_ck_angular'
         WRITE(111,*) '#########################################################################'
-        WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
+        WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
    ELSE
-        WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs  
+        WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
    END IF  
     
    
