@@ -3,16 +3,18 @@ MODULE hardspheres
     USE precision_kinds  ,ONLY: dp
     IMPLICIT NONE
     
-    COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:,:,:) :: weightfun_k
+    PRIVATE
     
     TYPE type_hs
         REAL(dp) :: R          ! radius
         REAL(dp) :: excchempot ! excess chemical potential
         REAL(dp) :: Fexc0
         REAL(dp) :: pf         ! packing fraction
+        COMPLEX(dp), ALLOCATABLE :: w_k(:,:,:,:)
     END TYPE type_hs
-    TYPE (type_hs), ALLOCATABLE :: hs(:) ! one per constituant
+    TYPE(type_hs), PUBLIC, ALLOCATABLE :: hs(:) ! one per constituant
     
+    PUBLIC :: packfrac, populate_weight_functions_in_Fourier_space
     
     
     
@@ -49,7 +51,7 @@ MODULE hardspheres
         !===========================================================================================================================
         SUBROUTINE populate_weight_functions_in_Fourier_space
     
-            USE precision_kinds ,ONLY: dp , i2b
+            USE precision_kinds ,ONLY: dp, i2b
             USE constants       ,ONLY: FourPi, zeroC
             USE system          ,ONLY: nb_species, spaceGrid
             USE fft             ,ONLY: norm_k
@@ -57,28 +59,33 @@ MODULE hardspheres
     
             REAL(dp) :: kR , FourPiR , sinkR , coskR, norm_k_local
             INTEGER(i2b) :: l,m,n,s,nfft(3)
+            
             nfft = spaceGrid%n_nodes
+            
+            DO CONCURRENT (s=1:nb_species)
+                ALLOCATE( hs(s)%w_k(nfft(1)/2+1, nfft(2), nfft(3), 0:3 ) ,SOURCE=zeroC)
+            END DO
             
             ! Weight functions of a fluid of hard spheres are known analyticaly. They are easily defined in Fourier space.
             ! They depend on fundamental measures of the fluid.
             ! Here is the Kierlik and Rosinberg'FMT : 4 scalar weight functions by species. Ref: Kierlik and Rosinberg, PRA 1990
-            ALLOCATE ( weightfun_k (nfft(1)/2+1, nfft(2), nfft(3), nb_species, 0:3 ) ,SOURCE=zeroC) !0:3 for Kierlik-Rosinberg
+
             DO CONCURRENT ( s=1:nb_species, l=1:nfft(1)/2+1, m=1:nfft(2), n=1:nfft(3) )
                 FourPiR = FourPi * hs(s)%R
-                norm_k_local = norm_k (l,m,n)
-                IF ( norm_k_local /= 0.0_dp ) THEN
+                IF ( l+m+n/=3 ) THEN !  => norm_k_local /= 0.0_dp
+                    norm_k_local = norm_k (l,m,n)
                     kR = norm_k_local * hs(s)%R
                     sinkR = SIN(kR)
                     coskR = COS(kR)
-                    weightfun_k(l,m,n,s,3) = FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 )
-                    weightfun_k(l,m,n,s,2) = FourPiR * sinkR / norm_k_local
-                    weightfun_k(l,m,n,s,1) = ( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local )
-                    weightfun_k(l,m,n,s,0) = coskR + 0.5_dp * kR * sinkR
+                    hs(s)%w_k(l,m,n,3) = CMPLX(FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 ) ,0._dp)
+                    hs(s)%w_k(l,m,n,2) = CMPLX(FourPiR * sinkR / norm_k_local ,0._dp)
+                    hs(s)%w_k(l,m,n,1) = CMPLX(( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local ) ,0._dp)
+                    hs(s)%w_k(l,m,n,0) = CMPLX(coskR + 0.5_dp * kR * sinkR ,0._dp)
                 ELSE
-                    weightfun_k(l,m,n,s,3) = FourPi / 3.0_dp * hs(s)%R** 3 ! volume
-                    weightfun_k(l,m,n,s,2) = FourPi * hs(s)%R** 2 ! surface area
-                    weightfun_k(l,m,n,s,1) = hs(s)%R ! radius
-                    weightfun_k(l,m,n,s,0) = 1.0_dp ! unity
+                    hs(s)%w_k(l,m,n,3) = CMPLX(FourPi / 3.0_dp * hs(s)%R** 3  ,0._dp)! volume
+                    hs(s)%w_k(l,m,n,2) = CMPLX(FourPi * hs(s)%R** 2  ,0._dp)! surface area
+                    hs(s)%w_k(l,m,n,1) = CMPLX(hs(s)%R  ,0._dp)! radius
+                    hs(s)%w_k(l,m,n,0) = CMPLX(1.0_dp  ,0._dp)! unity
                 END IF
             END DO
         END SUBROUTINE populate_weight_functions_in_Fourier_space
