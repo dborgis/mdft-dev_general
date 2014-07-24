@@ -9,14 +9,19 @@ MODDIR = mod
 SRCDIR = src
 OBJDIR = obj
 
+# _______________ Libraries and other folders __________
+
+FFTW_INCLUDES  = -I/usr/local/include -I/usr/include
+FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib
+
 # ——————————————— Fortran compiler ———————————————
 
 FC = gfortran
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J $(MODDIR) -I $(MODDIR) -Wfatal-errors
-LDFLAGS = -lfftw3
+FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) -Wfatal-errors
+LDFLAGS = $(FFTW_LIBRARIES) -lfftw3
 
 # For POINCARE:
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
