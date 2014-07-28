@@ -26,7 +26,6 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     real(dp) :: time0,time1 ! timer start and end
     real(dp), dimension(:,:,:), allocatable :: temparray
     character(50):: filename
-    integer(i2b) :: px,py,pz
     real(dp) :: qfactcc ! qfact*chg_solv()*chg_mol()
     real(dp) :: tempVcoul ! temporary Vcoul(i,j,k,o)
     integer(i2b):: species ! dummy for loops over species
@@ -35,10 +34,6 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
 
     call cpu_time(time0)! initiate
     Vext_q = 0.0_dp
-    px=0
-    py=0
-    pz=0
-
 
     ! test if all solutes have zero charge then don't waste your time : go to end of SUBROUTINE
     IF (MINVAL(chg_mol)==0.0_dp .and. MAXVAL(chg_mol)==0.0_dp) THEN   ! solute is not charged
@@ -63,10 +58,6 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     do species = 1 , nb_species
         do k=1,nfft3
             z_grid=real(k-1,dp)*deltaz
-            !  if(z_grid>12.0_dp .and. z_grid<30.0_dp) then
-            !    Vcoul(:,:,k,:)=100.0_dp
-            !    cycle
-            !  END IF
             do j=1,nfft2
                 y_grid=real(j-1,dp)*deltay
                 do i=1,nfft1
@@ -85,24 +76,16 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
                                     idm=id_mol(n)
                                     if (chg_mol(idm)==0.0_dp) cycle
                                     qfactcc=qfact*chg_solv(ids)*chg_mol(idm)
-                                    !   write(*,*) qfactcc, qfact
-                                    !       consider every period in every direction => 3*3*3=27 solutes
-                                    do px=-1,1
-                                        x_nm= x_m-(x_mol(n)+px*Lx)
-                                        do py=-1,1
-                                            y_nm= y_m-(y_mol(n)+py*Ly)
-                                            do pz=-1,1
-                                                z_nm= z_m-(z_mol(n)+pz*Lz)
-                                                r_nm2 = x_nm**2+y_nm**2+z_nm**2
-                                                if(r_nm2<Rc2) then
-                                                    V_psi = huge(1.0_dp)
-                                                    cycle ploop ! sous-entendu tempVcoul=tempVcoul+exp(-beta*huge)=tempVcoul+0
-                                                ELSE
-                                                    V_psi = V_psi + qfactcc/sqrt(r_nm2)
-                                                END IF
-                                            END DO
-                                        END DO
-                                    END DO
+                                    x_nm = x_m - x_mol(n)
+                                    y_nm = y_m - y_mol(n)
+                                    z_nm = z_m - z_mol(n)
+                                    r_nm2 = x_nm**2+y_nm**2+z_nm**2
+                                    if(r_nm2<Rc2) then
+                                        V_psi = huge(1.0_dp)
+                                        cycle ploop ! sous-entendu tempVcoul=tempVcoul+exp(-beta*huge)=tempVcoul+0
+                                    ELSE
+                                        V_psi = V_psi + qfactcc/sqrt(r_nm2)
+                                    END IF
                                 END DO ! solute
                             END DO ! solvent
                         !tempVcoul=tempVcoul+exp(-beta*V_psi)
@@ -126,7 +109,6 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
             END DO ! j
         END DO ! k
     END DO ! species
-!$OMP END PARALLEL DO
     
     999 continue
     
