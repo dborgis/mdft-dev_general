@@ -40,6 +40,9 @@ MODULE input
             CHARACTER(*), INTENT(IN) :: that
             CHARACTER :: text
             INTEGER(i2b) :: i, j
+            IF (that=='point_charge_electrostatic') THEN
+                STOP 'The tag point_charge_electrostatic in dft.in must be renamed direct_sum since July 27th, 2014'
+            END IF
             j=LEN(That)
             DO i =1,SIZE( input_line) 
                 IF( input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ' ) READ( input_line (i) (j+4:j+50) , * ) text
@@ -50,7 +53,7 @@ MODULE input
             IF( text(1:1) == 'F' ) j = 2
             IF( text(1:1) == 'f' ) j = 2
             IF( j == 999 ) THEN
-                PRINT*, 'problem in reading logical ', that
+                PRINT*, 'I did not find the tag ', that,' in dft.in'
                 STOP
             END IF
             IF( j == 1 ) input_log = .TRUE.
