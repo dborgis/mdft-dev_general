@@ -63,10 +63,6 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rot
     do species = 1 , nb_species
         do k=1,nfft3
             z_grid=real(k-1,dp)*deltaz
-            !  if(z_grid>12.0_dp .and. z_grid<30.0_dp) then
-            !    Vcoul(:,:,k,:)=100.0_dp
-            !    cycle
-            !  END IF
             do j=1,nfft2
                 y_grid=real(j-1,dp)*deltay
                 do i=1,nfft1
