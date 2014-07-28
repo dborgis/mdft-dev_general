@@ -1,5 +1,5 @@
 ############################
-# SUPERCELL
+# SUPERCELL DISCRETIZATION
 ############################
 Lx  = 25.0
 Ly  = 25.0
@@ -32,6 +32,16 @@ molRotSymOrder = 2
 
 
 ############################
+# BRANCH CK_ANGULAR
+############################
+ck_angular = F
+ck_angular_interpolation = F
+ck_debug = F
+ck_debug_extended = F
+ck_en_harm_sph = F
+
+
+############################
 # SOLVER
 ############################
 minimizer = bfgs
@@ -49,11 +59,13 @@ if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):
 
 
 ############################
-# POTENTIALS
+# ELECTROSTATIC POTENTIAL
 ############################
 solute_charges_scale_factor = 1.0
 poisson_solver = F
-point_charge_electrostatic = F
+direct_sum = T
+
+
 reuse_density = F
 
 
