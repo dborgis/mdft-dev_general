@@ -33,13 +33,13 @@ SUBROUTINE init_external_potential
     CALL external_potential_hard_walls
 
     ! electrostatics
-    IF (input_log('point_charge_electrostatic') .AND. input_log('poisson_solver')) THEN
+    IF ((input_log('point_charge_electrostatic') .OR. input_log('direct_sum')).AND. input_log('poisson_solver')) THEN
         PRINT*, 'WARNING YOU USE TWO DIFFERENTS WAYS TO COMPUTE THE ELECTROSTATIC POTENTIAL'
         PRINT*, 'IT WILL BE COMPUTED TWICE!!!!! TAGS FOR poisson_solver and point_charge_electrostatic CANNOT BE BOTH TRUE'
         STOP
     END IF
     
-    IF (input_log('point_charge_electrostatic')) THEN ! Charges : treatment as point charges
+    IF (input_log('point_charge_electrostatic') .OR. input_log('direct_sum')) THEN ! Charges : treatment as point charges
         IF (.NOT. ALLOCATED(Vext_q)) THEN
             BLOCK
                 INTEGER(i2b), DIMENSION(6) :: al
