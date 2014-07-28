@@ -34,9 +34,7 @@ SUBROUTINE init_external_potential
 
     ! electrostatics
     IF ( input_log('direct_sum') .AND. input_log('poisson_solver')) THEN
-        PRINT*, 'WARNING YOU USE TWO DIFFERENTS WAYS TO COMPUTE THE ELECTROSTATIC POTENTIAL'
-        PRINT*, 'IT WILL BE COMPUTED TWICE!!!!! TAGS FOR poisson_solver and point_charge_electrostatic CANNOT BE BOTH TRUE'
-        STOP
+        STOP 'You ask for two different methods for computing the electrostatic potential: direct_sum and poisson'
     END IF
     
     IF ( input_log('direct_sum') ) THEN ! Charges : treatment as point charges
