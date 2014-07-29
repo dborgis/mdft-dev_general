@@ -2,19 +2,18 @@
 ! See issue in Github for a proposition to improve this.
 ! Note that NO TABULATION IS USED. This name is here for historical reasons and should be modified at some point.
 
-SUBROUTINE compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
+SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
     USE precision_kinds, only: dp,i2b
     use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,id_solv,id_mol,x_solv,y_solv,z_solv,x_mol,y_mol,z_mol,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species
     use constants,only : fourpi , qfact
     use external_potential,only : Vext_q
-    use quadrature, only: angGrid, molRotGrid
+    use quadrature, only: angGrid, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
     USE input, ONLY: verbose
 
     IMPLICIT NONE
 
-    real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     integer(i2b) :: i,j,k,o,p,m,n ! dummy
     real(dp),dimension(nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) :: xmod,ymod,zmod
     real(dp) :: x_grid,y_grid,z_grid ! coordinates of grid nodes

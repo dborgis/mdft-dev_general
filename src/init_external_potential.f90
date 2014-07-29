@@ -27,17 +27,12 @@ SUBROUTINE init_external_potential
 
     CALL init_lennardjones ! LENNARD-JONES POTENTIAL
 
-    ! r^-12 only
-    IF (input_log('purely_repulsive_solute')) THEN
-        CALL compute_purely_repulsive_potential
-    END IF
-
-    
+    IF (input_log('purely_repulsive_solute')) CALL compute_purely_repulsive_potential ! r^-12 only
     IF (input_log('hard_sphere_solute')) CALL compute_vext_hard_sphere     ! hard sphere
     IF (input_log('hard_cylinder_solute')) CALL compute_vext_hard_cylinder ! hard cylinder
     IF (input_log('personnal_vext')) CALL compute_vext_perso               ! personnal vext as implemented in personnal_vext.f90
-    IF( input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
-    IF( input_char('other_predefined_vext')=='vextdef1') CALL vextdef1
+    IF (input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
+    IF (input_char('other_predefined_vext')=='vextdef1') CALL vextdef1
 
     CALL vext_total_sum ! compute total Vext(i,j,k,omega), the one used in the free energy functional
     
@@ -51,7 +46,8 @@ STOP "OH MY GOD"
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         SUBROUTINE init_electrostatic_potential
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            
+            IMPLICIT NONE
+            INTEGER(i2b) :: i
             IF ( input_log('direct_sum') .AND. input_log('poisson_solver')) THEN
                 STOP 'You ask for two different methods for computing the electrostatic potential: direct_sum and poisson'
             END IF
@@ -69,7 +65,7 @@ STOP "OH MY GOD"
                         ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zerodp )
                     END BLOCK
                 END IF
-                CALL compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
+                CALL compute_vcoul_as_sum_of_pointcharges
             END IF
 
             ! Charges : Poisson solver
