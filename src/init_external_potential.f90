@@ -14,7 +14,7 @@ SUBROUTINE init_external_potential
     
     IMPLICIT NONE
     
-    INTEGER(i2b) :: nb_id_mol , nb_id_solv, nfft(3) ! nb of types of sites of solute and solvent
+    INTEGER(i2b) :: nfft(3) ! nb of types of sites of solute and solvent
 
     nfft = spaceGrid%n_nodes
 
@@ -24,10 +24,6 @@ SUBROUTINE init_external_potential
     ELSE
         STOP "see init_external_potential.f90 vext_total is already allocated."
     END IF
-
-    nb_id_mol  = SIZE( soluteSite  ) ! total number of solute types
-    nb_id_solv = SIZE( chg_solv ) ! total number of solvent types
-
 
     ! Hard walls
     CALL external_potential_hard_walls
