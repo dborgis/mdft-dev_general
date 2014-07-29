@@ -104,13 +104,14 @@ SUBROUTINE init_external_potential
             IMPLICIT NONE
             INTEGER(i2b) :: i,j
             REAL(dp) :: d(3)
-            REAL(dp), ALLOCATABLE, DIMENSION(:) :: dnn,epsnn,signn,qnn,rblock
+            REAL(dp), ALLOCATABLE :: dnn(:),epsnn(:),signn(:),qnn(:),rblock(:,:)
             LOGICAL :: iFoundTheNN
             
             i=SIZE(solutesite)
+            j=SIZE(solventsite)
             ALLOCATE (dnn(i)) ; dnn=HUGE(1._dp)
-            ALLOCATE (epsnn(i),signn(i),qnn(i),rblock(i) ,source=0._dp)
-            
+            ALLOCATE (epsnn(i),signn(i),qnn(i),rblock(i,j) ,source=0._dp)
+
             ! liste tous les sites de soluté qui ont une charge mais pas de potentiel répulsif dessus:
             PRINT*,"---------- prevent numerical catastrophe"
             DO i=1, SIZE(soluteSite)
@@ -121,7 +122,6 @@ SUBROUTINE init_external_potential
                     ! trouve le site répulsif de soluté le plus proche, sa distance (dnn), eps et sig lj (epsnn et signn)
                     DO j=1, SIZE(solutesite)
                         IF (j==i) CYCLE
-                        IF (solutesite(j)%q*solutesite(i)%q<=0._dp) CYCLE ! doivent avoir des charges opposées
                         d= MODULO(    ABS(solutesite(i)%r(:) -solutesite(j)%r(:))    ,spacegrid%length(:)/2._dp)
                         IF (NORM2(d)<dnn(i)) THEN
                             dnn(i)= NORM2(d)
@@ -139,29 +139,34 @@ SUBROUTINE init_external_potential
                         STOP "I did not find any repulsive site!"
                     END IF
 
-                    PRINT*,"-- for test purpose, solutesite(i) va attirer solventsite(1) de l'eau."
-                    PRINT*,"-- solventsite(1) q eps and sig = ",solventsite(1)%q,solventsite(1)%eps,solventsite(1)%sig
+
+                    DO CONCURRENT (j=1:SIZE(solventsite), solutesite(i)%q*solventsite(j)%q<0._dp)
                     
-                    BLOCK
-                        INTEGER(i2b) :: ir
-                        REAL(dp) :: r,vr,e,s,q
-                        DO ir=1,50000
-                            r=REAL(ir,dp)/10000._dp
-                            q=solutesite(i)%q *solventsite(1)%q
-                            e=SQRT(epsnn(i)   *solventsite(1)%eps)
-                            s=0.5_dp*(signn(i)+solventsite(1)%sig)
-                            vr=qfact*q/r + 4._dp*e*((s/(r+dnn(i)))**12-(s/(r+dnn(i)))**6)
-                            IF (vr>0._dp) THEN
-                                rblock(i)=r
-                                EXIT
-                            END IF
-                        END DO
-                        PRINT*,rblock(i)
-                    END BLOCK
+                        PRINT*,"----- solutesite",i," va attirer solventsite n°",j
+                        PRINT*,"----- q eps and sig of j are ",solventsite(j)%q,solventsite(j)%eps,solventsite(j)%sig
+                    
+                        BLOCK
+                            INTEGER(i2b) :: ir
+                            REAL(dp) :: r,vr,e,s,q
+                            DO ir=1,50000
+                                r=REAL(ir,dp)/10000._dp
+                                q=solutesite(i)%q *solventsite(j)%q
+                                e=SQRT(epsnn(i)   *solventsite(j)%eps)
+                                s=0.5_dp*(signn(i)+solventsite(j)%sig)
+                                vr=qfact*q/r + 4._dp*e*((s/(r+dnn(i)))**12-(s/(r+dnn(i)))**6)
+                                IF (vr>0._dp) THEN
+                                    rblock(i,j)=r
+                                    EXIT
+                                END IF
+                            END DO
+                            PRINT*,"-----rblock(i,j) =",rblock(i,j)
+                        END BLOCK
+                    
+                    END DO
                     
                 END IF
             END DO
-
+STOP "OH MY GOD"
         END SUBROUTINE prevent_numerical_catastrophes
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
