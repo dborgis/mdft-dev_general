@@ -98,76 +98,71 @@ SUBROUTINE init_external_potential
     
     contains
     
-        subroutine prevent_numerical_catastrophes
-            use system, only: spacegrid, solventsite
-            use constants, only: qfact
-            implicit none
-            integer(i2b) :: i,j
-            real(dp) :: d(3)
-            real(dp), allocatable :: dnn(:),epsnn(:),signn(:),qnn(:),rblock(:)
-            logical :: iFoundTheNN
+        SUBROUTINE prevent_numerical_catastrophes
+            USE system    ,ONLY: spacegrid, solventsite
+            USE constants ,ONLY: qfact
+            IMPLICIT NONE
+            INTEGER(i2b) :: i,j
+            REAL(dp) :: d(3)
+            REAL(dp), ALLOCATABLE, DIMENSION(:) :: dnn,epsnn,signn,qnn,rblock
+            LOGICAL :: iFoundTheNN
             
-            i=size(solutesite)
-            ALLOCATE (dnn(i)) ; dnn=huge(1._dp)
+            i=SIZE(solutesite)
+            ALLOCATE (dnn(i)) ; dnn=HUGE(1._dp)
             ALLOCATE (epsnn(i),signn(i),qnn(i),rblock(i) ,source=0._dp)
             
             ! liste tous les sites de soluté qui ont une charge mais pas de potentiel répulsif dessus:
-            print*,"---------- prevent numerical catastrophe"
-            do i=1,size(soluteSite)
-                if( solutesite(i)%q/=0. .and. (solutesite(i)%eps==0. .or. solutesite(i)%sig==0.) ) then
+            PRINT*,"---------- prevent numerical catastrophe"
+            DO i=1, SIZE(soluteSite)
+                IF( solutesite(i)%q/=0. .and. (solutesite(i)%eps==0. .or. solutesite(i)%sig==0.) ) THEN
                     iFoundTheNN=.false.
-                    print*,"-- found one charged site that is purely attractive"
-                    print*,"-- its q, eps and sig are ",solutesite(i)%q, solutesite(i)%eps, solutesite(i)%sig                    
+                    PRINT*,"-- found one charged site that is purely attractive"
+                    PRINT*,"-- its q, eps and sig are ",solutesite(i)%q, solutesite(i)%eps, solutesite(i)%sig                    
                     ! trouve le site répulsif de soluté le plus proche, sa distance (dnn), eps et sig lj (epsnn et signn)
-                    do j=1,size(solutesite)
-                        if (j==i) cycle
-                        if (solutesite(j)%q*solutesite(i)%q<=0._dp) cycle ! doivent avoir des charges opposées
+                    DO j=1, SIZE(solutesite)
+                        IF (j==i) CYCLE
+                        IF (solutesite(j)%q*solutesite(i)%q<=0._dp) CYCLE ! doivent avoir des charges opposées
                         d= modulo(    abs(solutesite(i)%r(:) -solutesite(j)%r(:))    ,spacegrid%length(:)/2._dp)
-                        if (norm2(d)<dnn(i)) then
+                        IF (norm2(d)<dnn(i)) THEN
                             dnn(i)= norm2(d)
                             epsnn(i) = solutesite(j)%eps
                             signn(i) = solutesite(j)%sig
                             qnn(i) = solutesite(j)%q
                             iFoundTheNN=.true.
-                        end if
-                    end do
+                        END IF
+                    END DO
                     
-                    if (iFoundTheNN) then
-                        print*,"-- nearest repulsive site is at (Ang)",dnn(i)
-                        print*,"-- its q, eps and sig are:",qnn(i),epsnn(i),signn(i)
-                    else
-                        stop "I did not find any repulsive site!"
-                    end if
+                    IF (iFoundTheNN) THEN
+                        PRINT*,"-- nearest repulsive site is at (Ang)",dnn(i)
+                        PRINT*,"-- its q, eps and sig are:",qnn(i),epsnn(i),signn(i)
+                    ELSE
+                        STOP "I did not find any repulsive site!"
+                    END IF
 
-                    ! maintenant print le potentiel (r) vu par un site de solvant attiré par notre site de soluté puremnent attractif
-                    print*,"for test purpose, solutesite(i) va attirer solventsite(1) de l'eau."
-                    print*,"solventsite(1) q eps and sig = ",solventsite(1)%q,solventsite(1)%eps,solventsite(1)%sig
-                    block
-                        integer :: ir
-                        real(dp) :: r,vr,e,s,q
-                        do ir=1,100000
-                            r=real(ir,dp)/10000._dp
+                    PRINT*,"-- for test purpose, solutesite(i) va attirer solventsite(1) de l'eau."
+                    PRINT*,"-- solventsite(1) q eps and sig = ",solventsite(1)%q,solventsite(1)%eps,solventsite(1)%sig
+                    
+                    BLOCK
+                        INTEGER(i2b) :: ir
+                        REAL(dp) :: r,vr,e,s,q
+                        DO ir=1,50000
+                            r=REAL(ir,dp)/10000._dp
                             q=solutesite(i)%q *solventsite(1)%q
-                            e=sqrt(epsnn(i)   *solventsite(1)%eps)
+                            e=SQRT(epsnn(i)   *solventsite(1)%eps)
                             s=0.5_dp*(signn(i)+solventsite(1)%sig)
-!~                             write(73,*)r,  qfact*q/r
-!~                             write(74,*)r,  4._dp*e*((s/(r+dnn(i)))**12-(s/(r+dnn(i)))**6)
                             vr=qfact*q/r + 4._dp*e*((s/(r+dnn(i)))**12-(s/(r+dnn(i)))**6)
-                            if (vr>0._dp) then
+                            IF (vr>0._dp) THEN
                                 rblock(i)=r
-                                exit
-                            end if
-                        end do
-                        print*,rblock(i)
-                        print*,"see fort.73"
-                        print*,"see fort.74"
-                        print*,"see fort.75"
-                    end block
+                                EXIT
+                            END IF
+                        END DO
+                        PRINT*,rblock(i)
+                    END BLOCK
                     
-                end if
-            end do
+                END IF
+            END DO
 
-        end subroutine prevent_numerical_catastrophes
+        END SUBROUTINE prevent_numerical_catastrophes
         
     
 END SUBROUTINE init_external_potential
