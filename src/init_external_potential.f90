@@ -92,9 +92,13 @@ SUBROUTINE init_external_potential
     
     call prevent_numerical_catastrophes
     
-    contains
     
+    CONTAINS
+    
+    
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         SUBROUTINE prevent_numerical_catastrophes
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             USE system    ,ONLY: spacegrid, solventsite
             USE constants ,ONLY: qfact
             IMPLICIT NONE
@@ -159,6 +163,7 @@ SUBROUTINE init_external_potential
             END DO
 
         END SUBROUTINE prevent_numerical_catastrophes
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
     
 END SUBROUTINE init_external_potential
