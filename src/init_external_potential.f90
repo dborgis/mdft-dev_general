@@ -53,23 +53,21 @@ STOP "OH MY GOD"
             IF ( input_log('direct_sum') .AND. input_log('poisson_solver')) THEN
                 STOP 'You ask for two different methods for computing the electrostatic potential: direct_sum and poisson'
             END IF
-            
-            IF ( input_log('direct_sum') ) THEN ! Charges : treatment as point charges
-                al(1:3) = nfft(1:3)
-                al(4) = angGrid%n_angles
-                al(5) = molRotGrid%n_angles
-                al(6) = nb_species
-                ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zerodp ,STAT=i, ERRMSG=j)
-                    IF (i/=0) THEN; PRINT j; STOP "I cant allocate vext_q in subroutine init_electrostatic_potential."; END IF
+
+            ! ALLOCATE THE ELECTROSTATIC POTENTIAL
+            al(1:3) = nfft(1:3); al(4) = angGrid%n_angles; al(5) = molRotGrid%n_angles; al(6) = nb_species
+            ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zerodp ,STAT=i, ERRMSG=j)
+                IF (i/=0) THEN; PRINT j; STOP "I cant allocate vext_q in subroutine init_electrostatic_potential."; END IF
+
+            ! DIRECT SUMMATION, pot = sum of qq'/r
+            IF ( input_log('direct_sum') ) THEN
                 CALL compute_vcoul_as_sum_of_pointcharges
             END IF
 
-            ! Charges : Poisson solver
+            ! SOLVE POISSON EQUATION, -laplacian(pot) = solute charge density
             IF (input_log('poisson_solver')) THEN
                 BLOCK
                     REAL(dp), DIMENSION (nfft(1),nfft(2),nfft(3)) :: soluteChargeDensity
-                    IF (.NOT. ALLOCATED(Vext_q) ) &
-                        ALLOCATE ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zerodp)
                     CALL soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
                     CALL poissonSolver (soluteChargeDensity)
                     CALL vext_q_from_v_c
