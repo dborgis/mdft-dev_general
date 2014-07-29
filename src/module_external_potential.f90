@@ -20,7 +20,6 @@ MODULE external_potential
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: Vext_total ! external potential as the sum of all external potentials (LJ + charge + ... )
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: Vext_lj
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_species )
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)       :: V_c ! electrostatic potential calculated from poisson equation
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:)   :: Vext_hard ! hard potential
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:)     :: Vext_hard_core ! hard core potential
 

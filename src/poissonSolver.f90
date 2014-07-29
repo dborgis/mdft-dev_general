@@ -5,22 +5,21 @@
 ! => V(k)=soluteChargeDensity(k)/(esp0*k^2)
 ! FFT(V(k)) = V(r)
 
-SUBROUTINE poissonSolver (soluteChargeDensity)
+SUBROUTINE poissonSolver (soluteChargeDensity, V_c)
 
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: nfft1 , nfft2 , nfft3, spaceGrid
     USE fft,                ONLY: fftw3 , norm_k , k2
     USE constants,          ONLY: fourpi , twopi
-    USE external_potential, ONLY: V_c
     USE input,              ONLY: verbose
     ! V_c = electrostatic potential from charge density and poisson equation
 
     IMPLICIT NONE
     REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: soluteChargeDensity
+    REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(OUT) :: V_c
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: soluteChargeDensity_k,V_c_k
     INTEGER (i2b) :: i,j,k
 
-    ALLOCATE( V_c(nfft1,nfft2,nfft3), SOURCE=0._dp )
 
     IF ( ALL(soluteChargeDensity==0._dp) ) THEN
         PRINT*,'The solute wears no charge.'

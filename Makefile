@@ -557,7 +557,6 @@ $(OBJDIR)/module_system.o:\
 $(OBJDIR)/poissonSolver.o:\
 	$(SRCDIR)/poissonSolver.f90\
 	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_system.o\
