@@ -1,10 +1,10 @@
-SUBROUTINE vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+SUBROUTINE vext_q_from_v_c
 
     USE precision_kinds, ONLY: dp, i2b
     USE system, ONLY: chg_mol , chg_solv , x_solv , y_solv , z_solv , nb_solvent_sites , nb_species , Lx , Ly , &
                         Lz , deltax , deltay , deltaz , beta , id_solv , beta , nfft1 , nfft2 , nfft3, spaceGrid, soluteSite, &
                         solventSite
-    USE quadrature, ONLY: angGrid, molRotGrid
+    USE quadrature, ONLY: angGrid, molRotGrid,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     USE external_potential, ONLY: v_c , vext_q , vext_lj
     ! v_c = electrostatic potential from charge density and poisson equation
     ! vext_q = electrostatic potential energy in general and as used in the calculation of the total external potential
@@ -14,8 +14,6 @@ SUBROUTINE vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotz
 
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION ( angGrid%n_angles , molRotGrid%n_angles ), INTENT(IN) :: Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , &
-                                                                    Rotzx , Rotzy , Rotzz
     INTEGER(i2b) :: i, j, k, o, p, m, z,s
     REAL(dp), DIMENSION ( nb_solvent_sites , molRotGrid%n_angles , angGrid%n_angles ) :: xmod , ymod , zmod
     REAL(dp):: xq,yq,zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)

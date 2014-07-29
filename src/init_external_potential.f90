@@ -72,7 +72,7 @@ STOP "OH MY GOD"
                         ALLOCATE ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zerodp)
                     CALL soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
                     CALL poissonSolver (soluteChargeDensity)
-                    CALL vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+                    CALL vext_q_from_v_c
                 END BLOCK
             END IF
         END SUBROUTINE
