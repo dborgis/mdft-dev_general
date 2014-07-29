@@ -122,9 +122,9 @@ SUBROUTINE init_external_potential
                     DO j=1, SIZE(solutesite)
                         IF (j==i) CYCLE
                         IF (solutesite(j)%q*solutesite(i)%q<=0._dp) CYCLE ! doivent avoir des charges opposées
-                        d= modulo(    abs(solutesite(i)%r(:) -solutesite(j)%r(:))    ,spacegrid%length(:)/2._dp)
-                        IF (norm2(d)<dnn(i)) THEN
-                            dnn(i)= norm2(d)
+                        d= MODULO(    ABS(solutesite(i)%r(:) -solutesite(j)%r(:))    ,spacegrid%length(:)/2._dp)
+                        IF (NORM2(d)<dnn(i)) THEN
+                            dnn(i)= NORM2(d)
                             epsnn(i) = solutesite(j)%eps
                             signn(i) = solutesite(j)%sig
                             qnn(i) = solutesite(j)%q
