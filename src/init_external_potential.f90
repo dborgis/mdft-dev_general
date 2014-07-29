@@ -47,24 +47,20 @@ STOP "OH MY GOD"
         SUBROUTINE init_electrostatic_potential
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             IMPLICIT NONE
-            INTEGER(i2b) :: i
+            INTEGER(i2b) :: i,al(6)
+            CHARACTER(180) :: j
+
             IF ( input_log('direct_sum') .AND. input_log('poisson_solver')) THEN
                 STOP 'You ask for two different methods for computing the electrostatic potential: direct_sum and poisson'
             END IF
             
             IF ( input_log('direct_sum') ) THEN ! Charges : treatment as point charges
-                IF (.NOT. ALLOCATED(Vext_q)) THEN
-                    BLOCK
-                        INTEGER(i2b), DIMENSION(6) :: al
-                        al(1) = nfft(1)
-                        al(2) = nfft(2)
-                        al(3) = nfft(3)
-                        al(4) = angGrid%n_angles
-                        al(5) = molRotGrid%n_angles
-                        al(6) = nb_species
-                        ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zerodp )
-                    END BLOCK
-                END IF
+                al(1:3) = nfft(1:3)
+                al(4) = angGrid%n_angles
+                al(5) = molRotGrid%n_angles
+                al(6) = nb_species
+                ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zerodp ,STAT=i, ERRMSG=j)
+                    IF (i/=0) THEN; PRINT j; STOP "I cant allocate vext_q in subroutine init_electrostatic_potential."; END IF
                 CALL compute_vcoul_as_sum_of_pointcharges
             END IF
 
