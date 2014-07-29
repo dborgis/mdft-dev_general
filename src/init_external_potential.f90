@@ -21,7 +21,7 @@ SUBROUTINE init_external_potential
     ALLOCATE( Vext_total(nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zerodp ,STAT=i,ERRMSG=j)
         IF (i/=0) THEN; PRINT*,j; STOP "I can't allocate Vext_total in subroutine init_external_potential"; END IF
     
-    CALL external_potential_hard_walls ! Hard walls
+    CALL external_potential_hard_walls ! HARD WALLS
 
     CALL init_electrostatic_potential ! ELECTROSTATIC POTENTIAL
 
@@ -34,7 +34,7 @@ SUBROUTINE init_external_potential
     IF (input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
     IF (input_char('other_predefined_vext')=='vextdef1') CALL vextdef1
 
-    CALL vext_total_sum ! compute total Vext(i,j,k,omega), the one used in the free energy functional
+    CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
     
     CALL prevent_numerical_catastrophes
 
@@ -123,10 +123,8 @@ STOP "OH MY GOD"
 
 
                     DO CONCURRENT (j=1:SIZE(solventsite), solutesite(i)%q*solventsite(j)%q<0._dp)
-                    
                         PRINT*,"----- solutesite",i," va attirer solventsite n°",j
                         PRINT*,"----- q eps and sig of j are ",solventsite(j)%q,solventsite(j)%eps,solventsite(j)%sig
-                    
                         BLOCK
                             INTEGER(i2b) :: ir
                             REAL(dp) :: r,vr,e,s,q
@@ -143,9 +141,7 @@ STOP "OH MY GOD"
                             END DO
                             PRINT*,"-----rblock(i,j) =",rblock(i,j)
                         END BLOCK
-                    
                     END DO
-                    
                 END IF
             END DO
         END SUBROUTINE prevent_numerical_catastrophes
