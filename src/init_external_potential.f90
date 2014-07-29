@@ -16,8 +16,8 @@ SUBROUTINE init_external_potential
     
     INTEGER(i2b) :: nfft(3),i
     CHARACTER(180) :: j
-
     nfft = spaceGrid%n_nodes
+
     ALLOCATE( Vext_total(nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zerodp ,STAT=i,ERRMSG=j)
         IF (i/=0) THEN; PRINT*,j; STOP "I can't allocate Vext_total in subroutine init_external_potential"; END IF
     
@@ -33,7 +33,7 @@ SUBROUTINE init_external_potential
     END IF
 
     
-    if (input_log('hard_sphere_solute')) call compute_vext_hard_sphere     ! hard sphere
+    IF (input_log('hard_sphere_solute')) CALL compute_vext_hard_sphere     ! hard sphere
     IF (input_log('hard_cylinder_solute')) CALL compute_vext_hard_cylinder ! hard cylinder
     IF (input_log('personnal_vext')) CALL compute_vext_perso               ! personnal vext as implemented in personnal_vext.f90
     IF( input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
@@ -51,6 +51,7 @@ STOP "OH MY GOD"
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         SUBROUTINE init_electrostatic_potential
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
             IF ( input_log('direct_sum') .AND. input_log('poisson_solver')) THEN
                 STOP 'You ask for two different methods for computing the electrostatic potential: direct_sum and poisson'
             END IF
