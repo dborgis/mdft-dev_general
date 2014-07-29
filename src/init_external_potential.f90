@@ -10,7 +10,7 @@ SUBROUTINE init_external_potential
     USE external_potential  ,ONLY: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,ONLY: init_lennardjones => init
     USE quadrature          ,ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
-    USE constants           ,ONLY: zero
+    USE constants           ,ONLY: zerodp=>zero
     
     IMPLICIT NONE
     
@@ -18,7 +18,7 @@ SUBROUTINE init_external_potential
     CHARACTER(180) :: j
 
     nfft = spaceGrid%n_nodes
-    ALLOCATE( Vext_total(nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zero ,STAT=i,ERRMSG=j)
+    ALLOCATE( Vext_total(nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zerodp ,STAT=i,ERRMSG=j)
         IF (i/=0) THEN; PRINT*,j; STOP "I can't allocate Vext_total in subroutine init_external_potential"; END IF
     
     CALL external_potential_hard_walls ! Hard walls
@@ -29,7 +29,7 @@ SUBROUTINE init_external_potential
 
     ! r^-12 only
     IF (input_log('purely_repulsive_solute')) THEN
-        CALL compute_purely_repulsive_potential ( Rotxx , Rotxy , Rotxz , Rotyx , Rotyy , Rotyz , Rotzx , Rotzy , Rotzz )
+        CALL compute_purely_repulsive_potential
     END IF
 
     
@@ -65,7 +65,7 @@ STOP "OH MY GOD"
                         al(4) = angGrid%n_angles
                         al(5) = molRotGrid%n_angles
                         al(6) = nb_species
-                        ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zero )
+                        ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zerodp )
                     END BLOCK
                 END IF
                 CALL compute_vcoul_as_sum_of_pointcharges( Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz )
@@ -76,7 +76,7 @@ STOP "OH MY GOD"
                 BLOCK
                     REAL(dp), DIMENSION (nfft(1),nfft(2),nfft(3)) :: soluteChargeDensity
                     IF (.NOT. ALLOCATED(Vext_q) ) &
-                        ALLOCATE ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zero)
+                        ALLOCATE ( Vext_q ( nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zerodp)
                     CALL soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
                     CALL poissonSolver (soluteChargeDensity)
                     CALL vext_q_from_v_c (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
