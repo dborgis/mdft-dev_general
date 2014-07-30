@@ -31,15 +31,15 @@ SUBROUTINE vext_q_from_v_c (V_c)
     IF ( ALL(soluteSite%q == zero) .OR. ALL(solventSite%q == zero) ) RETURN
 
     ! Tabulate rotation matrix * solvent coordinates
-    do o = 1 , angGrid%n_angles
-        do p = 1 , molRotGrid%n_angles
-            do m = 1 , SIZE(solventSite)
+    DO o = 1 , angGrid%n_angles
+        DO p = 1 , molRotGrid%n_angles
+            DO m = 1 , SIZE(solventSite)
                 xmod(m,p,o) = Rotxx(o,p) * solventSite(m)%r(1) + Rotxy(o,p) * solventSite(m)%r(2) + Rotxz(o,p) * solventSite(m)%r(3)
                 ymod(m,p,o) = Rotyx(o,p) * solventSite(m)%r(1) + Rotyy(o,p) * solventSite(m)%r(2) + Rotyz(o,p) * solventSite(m)%r(3)
                 zmod(m,p,o) = Rotzx(o,p) * solventSite(m)%r(1) + Rotzy(o,p) * solventSite(m)%r(2) + Rotzz(o,p) * solventSite(m)%r(3)
-            end do
-        end do
-    end do
+            END DO
+        END DO
+    END DO
     
     ! Compute external potential due to charge density
     DO CONCURRENT( s=1:nb_species, i=1:nfft1, j=1:nfft2, k=1:nfft3, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
@@ -62,12 +62,12 @@ SUBROUTINE vext_q_from_v_c (V_c)
             IF ( ip == nfft1 + 1 ) ip = 1
             IF ( jp == nfft2 + 1 ) jp = 1
             IF ( kp == nfft3 + 1 ) kp = 1
-            wim = (    1.0_dp - (   xq - real( int( xq ,i2b),dp)   )    )
-            wjm = (    1.0_dp - (   yq - real( int( yq ,i2b),dp)   )    )
-            wkm = (    1.0_dp - (   zq - real( int( zq ,i2b),dp)   )    )
-            wip = (             (   xq - real( int( xq ,i2b),dp)   )    )
-            wjp = (             (   yq - real( int( yq ,i2b),dp)   )    )
-            wkp = (             (   zq - real( int( zq ,i2b),dp)   )    )
+            wim = (    1.0_dp - (   xq - REAL(INT( xq ,i2b),dp)   )    )
+            wjm = (    1.0_dp - (   yq - REAL(INT( yq ,i2b),dp)   )    )
+            wkm = (    1.0_dp - (   zq - REAL(INT( zq ,i2b),dp)   )    )
+            wip = (             (   xq - REAL(INT( xq ,i2b),dp)   )    )
+            wjp = (             (   yq - REAL(INT( yq ,i2b),dp)   )    )
+            wkp = (             (   zq - REAL(INT( zq ,i2b),dp)   )    )
             vpsi = vpsi + (chg_solv ( id_solv (m) ) * qfact * ( V_c (im,jm,km) * wim * wjm * wkm &
                                                               + V_c (ip,jm,km) * wip * wjm * wkm &
                                                               + V_c (im,jp,km) * wim * wjp * wkm &
