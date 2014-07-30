@@ -10,7 +10,7 @@ SUBROUTINE poissonSolver (soluteChargeDensity, V_c)
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: nfft1 , nfft2 , nfft3, spaceGrid
     USE fft,                ONLY: fftw3 , norm_k , k2
-    USE constants,          ONLY: fourpi , twopi
+    USE constants,          ONLY: fourpi , twopi, zeroC
     USE input,              ONLY: verbose
     ! V_c = electrostatic potential from charge density and poisson equation
 
@@ -27,8 +27,8 @@ SUBROUTINE poissonSolver (soluteChargeDensity, V_c)
         RETURN
    
     ELSE
-        ALLOCATE( soluteChargeDensity_k(nfft1/2+1,nfft2,nfft3), SOURCE=(0._dp,0._dp) )
-        ALLOCATE( V_c_k(nfft1/2+1,nfft2,nfft3), SOURCE=(0._dp,0._dp) )
+        ALLOCATE( soluteChargeDensity_k(nfft1/2+1,nfft2,nfft3), SOURCE=zeroC )
+        ALLOCATE( V_c_k(nfft1/2+1,nfft2,nfft3), SOURCE=zeroC )
 
         ! FFT of soluteChargeDensity
         fftw3%in_forward = soluteChargeDensity
