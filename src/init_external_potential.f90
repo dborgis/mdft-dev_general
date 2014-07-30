@@ -11,6 +11,7 @@ SUBROUTINE init_external_potential
     USE mod_lj              ,ONLY: init_lennardjones => init
     USE quadrature          ,ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
     USE constants           ,ONLY: zerodp=>zero
+    USE fastPoissonSolver   ,ONLY: start_fastPoissonSolver=>init
     
     IMPLICIT NONE
     
@@ -66,12 +67,7 @@ SUBROUTINE init_external_potential
 
             ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
             IF (input_log('poisson_solver')) THEN
-                BLOCK
-                    REAL(dp), DIMENSION(nfft(1),nfft(2),nfft(3)) :: soluteChargeDensity, Vpoisson !TODO DO THIS ON FINER GRID
-                    CALL soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
-                    CALL poissonSolver (soluteChargeDensity, Vpoisson)
-                    CALL vext_q_from_v_c (Vpoisson)
-                END BLOCK
+                CALL start_fastPoissonSolver
             END IF
         END SUBROUTINE
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
