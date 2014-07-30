@@ -64,7 +64,7 @@ SUBROUTINE init_external_potential
                 CALL compute_vcoul_as_sum_of_pointcharges
             END IF
 
-            ! SOLVE POISSON EQUATION, -laplacian(pot) = solute charge density
+            ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
             IF (input_log('poisson_solver')) THEN
                 BLOCK
                     REAL(dp), DIMENSION(nfft(1),nfft(2),nfft(3)) :: soluteChargeDensity, Vpoisson !TODO DO THIS ON FINER GRID
