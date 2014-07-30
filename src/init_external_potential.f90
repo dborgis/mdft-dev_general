@@ -38,7 +38,7 @@ SUBROUTINE init_external_potential
     
     CALL prevent_numerical_catastrophes
 
-STOP "OH MY GOD"
+!~ STOP "OH MY GOD"
     
     
     CONTAINS
@@ -67,10 +67,10 @@ STOP "OH MY GOD"
             ! SOLVE POISSON EQUATION, -laplacian(pot) = solute charge density
             IF (input_log('poisson_solver')) THEN
                 BLOCK
-                    REAL(dp), DIMENSION(nfft(1),nfft(2),nfft(3)) :: soluteChargeDensity, V_c !TODO DO THIS ON FINER GRID
+                    REAL(dp), DIMENSION(nfft(1),nfft(2),nfft(3)) :: soluteChargeDensity, Vpoisson !TODO DO THIS ON FINER GRID
                     CALL soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
-                    CALL poissonSolver (soluteChargeDensity, V_c)
-                    CALL vext_q_from_v_c (V_c)
+                    CALL poissonSolver (soluteChargeDensity, Vpoisson)
+                    CALL vext_q_from_v_c (Vpoisson)
                 END BLOCK
             END IF
         END SUBROUTINE

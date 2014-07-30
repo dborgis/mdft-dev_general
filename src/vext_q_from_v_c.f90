@@ -1,4 +1,4 @@
-SUBROUTINE vext_q_from_v_c (V_c)
+SUBROUTINE vext_q_from_v_c (Vpoisson)
 
     USE precision_kinds     ,ONLY: dp, i2b
     USE system              ,ONLY: chg_mol , chg_solv , nb_solvent_sites , nb_species , &
@@ -11,7 +11,7 @@ SUBROUTINE vext_q_from_v_c (V_c)
 
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: V_c
+    REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: Vpoisson
     INTEGER(i2b) :: i, j, k, o, p, m, z,s,nfft1 , nfft2 , nfft3
     REAL(dp), DIMENSION ( nb_solvent_sites , molRotGrid%n_angles , angGrid%n_angles ) :: xmod , ymod , zmod
     REAL(dp):: xq,yq,zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)
@@ -68,14 +68,14 @@ SUBROUTINE vext_q_from_v_c (V_c)
             wip = (             (   xq - REAL(INT( xq ,i2b),dp)   )    )
             wjp = (             (   yq - REAL(INT( yq ,i2b),dp)   )    )
             wkp = (             (   zq - REAL(INT( zq ,i2b),dp)   )    )
-            vpsi = vpsi + (chg_solv ( id_solv (m) ) * qfact * ( V_c (im,jm,km) * wim * wjm * wkm &
-                                                              + V_c (ip,jm,km) * wip * wjm * wkm &
-                                                              + V_c (im,jp,km) * wim * wjp * wkm &
-                                                              + V_c (im,jm,kp) * wim * wjm * wkp &
-                                                              + V_c (ip,jp,km) * wip * wjp * wkm &
-                                                              + V_c (ip,jm,kp) * wip * wjm * wkp &
-                                                              + V_c (im,jp,kp) * wim * wjp * wkp &
-                                                              + V_c (ip,jp,kp) * wip * wjp * wkp ))
+            vpsi = vpsi + (chg_solv ( id_solv (m) ) * qfact * ( Vpoisson (im,jm,km) * wim * wjm * wkm &
+                                                              + Vpoisson (ip,jm,km) * wip * wjm * wkm &
+                                                              + Vpoisson (im,jp,km) * wim * wjp * wkm &
+                                                              + Vpoisson (im,jm,kp) * wim * wjm * wkp &
+                                                              + Vpoisson (ip,jp,km) * wip * wjp * wkm &
+                                                              + Vpoisson (ip,jm,kp) * wip * wjm * wkp &
+                                                              + Vpoisson (im,jp,kp) * wim * wjp * wkp &
+                                                              + Vpoisson (ip,jp,kp) * wip * wjp * wkp ))
         END DO
         IF (vpsi>100._dp) THEN
             Vext_q(i,j,k,o,p,s)=100._dp
