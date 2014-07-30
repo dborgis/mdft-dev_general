@@ -9,7 +9,7 @@ SUBROUTINE init_external_potential
     USE system              ,ONLY: chg_solv, soluteSite, spaceGrid, nb_species
     USE external_potential  ,ONLY: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,ONLY: init_lennardjones => init
-    USE quadrature          ,ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
+    USE quadrature          ,ONLY: angGrid, molRotGrid
     USE constants           ,ONLY: zerodp=>zero
     USE fastPoissonSolver   ,ONLY: start_fastPoissonSolver=>init
     
