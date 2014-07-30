@@ -84,6 +84,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_fft.o\
+	$(OBJDIR)/module_fastPoissonSolver.o\
 	$(OBJDIR)/module_hardspheres.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_mathematica.o\
@@ -441,7 +442,8 @@ $(OBJDIR)/init_external_potential.o:\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_fastPoissonSolver.o
 
 $(OBJDIR)/init_fftw3_plans.o:\
 	$(SRCDIR)/init_fftw3_plans.f90\
@@ -557,7 +559,6 @@ $(OBJDIR)/module_system.o:\
 $(OBJDIR)/poissonSolver.o:\
 	$(SRCDIR)/poissonSolver.f90\
 	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_system.o\
@@ -654,4 +655,12 @@ $(OBJDIR)/vext_total_sum.o:\
 $(OBJDIR)/write_to_cube_file.o:\
 	$(SRCDIR)/write_to_cube_file.f90\
 	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_system.o
+
+$(OBJDIR)/module_fastPoissonSolver.o:\
+	$(SRCDIR)/module_fastPoissonSolver.f90\
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
+	$(OBJDIR)/poissonSolver.o\
+	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/module_system.o

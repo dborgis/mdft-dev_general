@@ -5,31 +5,30 @@
 ! => V(k)=soluteChargeDensity(k)/(esp0*k^2)
 ! FFT(V(k)) = V(r)
 
-SUBROUTINE poissonSolver (soluteChargeDensity)
+SUBROUTINE poissonSolver (soluteChargeDensity, Vpoisson)
 
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: nfft1 , nfft2 , nfft3, spaceGrid
     USE fft,                ONLY: fftw3 , norm_k , k2
-    USE constants,          ONLY: fourpi , twopi
-    USE external_potential, ONLY: V_c
+    USE constants,          ONLY: fourpi , twopi, zeroC
     USE input,              ONLY: verbose
-    ! V_c = electrostatic potential from charge density and poisson equation
+    ! Vpoisson = electrostatic potential from charge density and poisson equation
 
     IMPLICIT NONE
     REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: soluteChargeDensity
-    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: soluteChargeDensity_k,V_c_k
+    REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(OUT) :: Vpoisson
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: soluteChargeDensity_k,Vpoisson_k
     INTEGER (i2b) :: i,j,k
 
-    ALLOCATE( V_c(nfft1,nfft2,nfft3), SOURCE=0._dp )
 
     IF ( ALL(soluteChargeDensity==0._dp) ) THEN
         PRINT*,'The solute wears no charge.'
-        V_c =0._dp
+        Vpoisson =0._dp
         RETURN
    
     ELSE
-        ALLOCATE( soluteChargeDensity_k(nfft1/2+1,nfft2,nfft3), SOURCE=(0._dp,0._dp) )
-        ALLOCATE( V_c_k(nfft1/2+1,nfft2,nfft3), SOURCE=(0._dp,0._dp) )
+        ALLOCATE( soluteChargeDensity_k(nfft1/2+1,nfft2,nfft3), SOURCE=zeroC )
+        ALLOCATE( Vpoisson_k(nfft1/2+1,nfft2,nfft3), SOURCE=zeroC )
 
         ! FFT of soluteChargeDensity
         fftw3%in_forward = soluteChargeDensity
@@ -40,16 +39,16 @@ SUBROUTINE poissonSolver (soluteChargeDensity)
 
         DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3 )
             IF ( k2(i,j,k) /= 0._dp ) THEN
-                V_c_k(i,j,k) = soluteChargeDensity_k(i,j,k) * fourpi/k2(i,j,k) ! in electrostatic units : V=-4pi rho
+                Vpoisson_k(i,j,k) = soluteChargeDensity_k(i,j,k) * fourpi/k2(i,j,k) ! in electrostatic units : V=-4pi rho
             ELSE
-                V_c_k(i,j,k) = 0._dp
+                Vpoisson_k(i,j,k) = 0._dp
             END IF
         END DO
     
         ! get real space potential V(r)
-        fftw3%in_backward = V_c_k
+        fftw3%in_backward = Vpoisson_k
         CALL dfftw_execute ( fftw3%plan_backward )
-        V_c = fftw3%out_backward / REAL(nfft1*nfft2*nfft3,dp)
+        Vpoisson = fftw3%out_backward / REAL(nfft1*nfft2*nfft3,dp)
     
     END IF
 

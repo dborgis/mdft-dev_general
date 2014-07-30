@@ -1,19 +1,18 @@
 ! This subroutine computes the external potential induced by purely repulsive r^-12 spheres at each solute sites. You may be interesed by Dzubiella and Hansen, J. Chem. Phys. 121 (2004)
 ! The potential has the form V(r)=kbT*(r-R0)^-(12)
 
-SUBROUTINE compute_purely_repulsive_potential (Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz)
+SUBROUTINE compute_purely_repulsive_potential
 
     USE precision_kinds     ,ONLY: dp, i2b
     USE input               ,ONLY: input_dp, verbose
     USE system              ,ONLY: beta, nb_solute_sites, nb_solvent_sites, spaceGrid,&
                                    nb_species, soluteSite, solventSite
     USE external_potential  ,ONLY: Vext_total
-    USE quadrature          ,ONLY: angGrid, molRotGrid
+    USE quadrature          ,ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
     USE constants           ,ONLY: zerodp=>zero
 
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION(angGrid%n_angles,molRotGrid%n_angles), INTENT(IN) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz ! rotation matrix for sites
     INTEGER(i2b):: i,j,k,o,p,m,n,s
     INTEGER(i2b), POINTER :: nfft1=>spaceGrid%n_nodes(1), nfft2=>spaceGrid%n_nodes(2), nfft3=>spaceGrid%n_nodes(3)
     REAL(dp):: x_grid,y_grid,z_grid ! coordinates of grid nodes
