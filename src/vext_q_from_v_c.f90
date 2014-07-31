@@ -61,12 +61,12 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
             IF ( ip == nfft1 + 1 ) ip = 1
             IF ( jp == nfft2 + 1 ) jp = 1
             IF ( kp == nfft3 + 1 ) kp = 1
-            wim = (    1.0_dp - (   xq - REAL(INT( xq ,i2b),dp)   )    )
-            wjm = (    1.0_dp - (   yq - REAL(INT( yq ,i2b),dp)   )    )
-            wkm = (    1.0_dp - (   zq - REAL(INT( zq ,i2b),dp)   )    )
-            wip = (             (   xq - REAL(INT( xq ,i2b),dp)   )    )
-            wjp = (             (   yq - REAL(INT( yq ,i2b),dp)   )    )
-            wkp = (             (   zq - REAL(INT( zq ,i2b),dp)   )    )
+            wip = xq - REAL(INT( xq ,i2b),dp)
+            wjp = yq - REAL(INT( yq ,i2b),dp)
+            wkp = zq - REAL(INT( zq ,i2b),dp)
+            wim = 1.0_dp - wip
+            wjm = 1.0_dp - wjp
+            wkm = 1.0_dp - wkp
             vpsi = vpsi + solventSite(m)%q * (  Vpoisson (im,jm,km) * wim * wjm * wkm &
                                               + Vpoisson (ip,jm,km) * wip * wjm * wkm &
                                               + Vpoisson (im,jp,km) * wim * wjp * wkm &
