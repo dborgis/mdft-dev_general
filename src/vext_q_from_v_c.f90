@@ -31,7 +31,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
 
     IF ( ALL(soluteSite%q == zero) .OR. ALL(solventSite%q == zero) ) RETURN
 
-    ! Tabulate rotation matrix * solvent coordinates
+    ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
     DO o = 1 , angGrid%n_angles
         DO p = 1 , molRotGrid%n_angles
             DO m = 1 , SIZE(solventSite)
