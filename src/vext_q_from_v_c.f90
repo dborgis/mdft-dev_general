@@ -45,9 +45,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     ! Compute external potential due to charge density
     DO CONCURRENT( s=1:nb_species, i=1:nfft1, j=1:nfft2, k=1:nfft3, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vpsi = 0.0_dp
-        DO m = 1 , nb_solvent_sites
-            charge = chg_solv(id_solv(m))
-            IF ( charge==0.0_dp ) CYCLE
+        DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
             xq = MODULO( REAL(i-1,dp) * spaceGrid%dl(1) + xmod(m,p,o) ,spaceGrid%length(1)) /spaceGrid%dl(1)
             yq = MODULO( REAL(j-1,dp) * spaceGrid%dl(2) + ymod(m,p,o) ,spaceGrid%length(2)) /spaceGrid%dl(2)
             zq = MODULO( REAL(k-1,dp) * spaceGrid%dl(3) + zmod(m,p,o) ,spaceGrid%length(3)) /spaceGrid%dl(3)
@@ -69,15 +67,16 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
             wip = (             (   xq - REAL(INT( xq ,i2b),dp)   )    )
             wjp = (             (   yq - REAL(INT( yq ,i2b),dp)   )    )
             wkp = (             (   zq - REAL(INT( zq ,i2b),dp)   )    )
-            vpsi = vpsi + (chg_solv ( id_solv (m) ) * qfact * ( Vpoisson (im,jm,km) * wim * wjm * wkm &
-                                                              + Vpoisson (ip,jm,km) * wip * wjm * wkm &
-                                                              + Vpoisson (im,jp,km) * wim * wjp * wkm &
-                                                              + Vpoisson (im,jm,kp) * wim * wjm * wkp &
-                                                              + Vpoisson (ip,jp,km) * wip * wjp * wkm &
-                                                              + Vpoisson (ip,jm,kp) * wip * wjm * wkp &
-                                                              + Vpoisson (im,jp,kp) * wim * wjp * wkp &
-                                                              + Vpoisson (ip,jp,kp) * wip * wjp * wkp ))
+            vpsi = vpsi + solventSite(m)%q * (  Vpoisson (im,jm,km) * wim * wjm * wkm &
+                                              + Vpoisson (ip,jm,km) * wip * wjm * wkm &
+                                              + Vpoisson (im,jp,km) * wim * wjp * wkm &
+                                              + Vpoisson (im,jm,kp) * wim * wjm * wkp &
+                                              + Vpoisson (ip,jp,km) * wip * wjp * wkm &
+                                              + Vpoisson (ip,jm,kp) * wip * wjm * wkp &
+                                              + Vpoisson (im,jp,kp) * wim * wjp * wkp &
+                                              + Vpoisson (ip,jp,kp) * wip * wjp * wkp )
         END DO
+        vpsi = qfact * vpsi
         IF (vpsi>100._dp) THEN
             Vext_q(i,j,k,o,p,s)=100._dp
         ELSE IF (vpsi<-100_dp) THEN
