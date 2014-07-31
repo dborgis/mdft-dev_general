@@ -1,4 +1,4 @@
-SUBROUTINE vext_q_from_v_c (Vpoisson)
+SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
 
     USE precision_kinds     ,ONLY: dp, i2b
     USE system              ,ONLY: chg_mol , chg_solv , nb_solvent_sites , nb_species , &
@@ -11,7 +11,8 @@ SUBROUTINE vext_q_from_v_c (Vpoisson)
 
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: Vpoisson
+    INTEGER(i2b), INTENT(IN) :: gridnode(3)
+    REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
     INTEGER(i2b) :: i, j, k, o, p, m, z,s,nfft1 , nfft2 , nfft3
     REAL(dp), DIMENSION ( nb_solvent_sites , molRotGrid%n_angles , angGrid%n_angles ) :: xmod , ymod , zmod
     REAL(dp):: xq,yq,zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)

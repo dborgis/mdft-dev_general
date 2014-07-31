@@ -1,7 +1,7 @@
 ! This subroutine uses the positions of the charges of the solute to extrapolate them on the grid nodes in order to 
 ! get the solute charge density soluteChargeDensity (i,j,k).
 
-SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
+SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, soluteChargeDensity)
     
     USE precision_kinds, ONLY: i2b,dp
     USE system,          ONLY: spaceGrid,soluteSite,nb_species
@@ -9,7 +9,8 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (soluteChargeDensity)
     
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(OUT) :: soluteChargeDensity
+    INTEGER(i2b), INTENT(IN) :: gridnode(3)
+    REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(OUT) :: soluteChargeDensity
     INTEGER(i2b):: s
     REAL(dp) :: xq,yq,zq ! coordinates of the charge in indicial coordinates
     INTEGER(i2b) :: im,jm,km,ip,jp,kp ! indices of corner in indicial coordinates
