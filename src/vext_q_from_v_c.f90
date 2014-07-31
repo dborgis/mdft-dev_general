@@ -13,7 +13,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
 
     INTEGER(i2b), INTENT(IN) :: gridnode(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
-    INTEGER(i2b) :: i, j, k, o, p, m, z,s,nfft1 , nfft2 , nfft3
+    INTEGER(i2b) :: i, j, k, o, p, m, s, nfft1, nfft2, nfft3
     REAL(dp), DIMENSION ( nb_solvent_sites , molRotGrid%n_angles , angGrid%n_angles ) :: xmod , ymod , zmod
     REAL(dp):: xq,yq,zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)
     INTEGER(i2b):: im , jm , km , ip , jp , kp ! 6 indices from which all corners of cube surrounding point charge are defined
@@ -25,7 +25,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     nfft1=spaceGrid%n_nodes(1)
     nfft2=spaceGrid%n_nodes(2)
     nfft3=spaceGrid%n_nodes(3)
-    z=0
+
     IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
     IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"
 
