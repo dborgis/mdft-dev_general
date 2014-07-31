@@ -77,13 +77,25 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
                                               + Vpoisson (ip,jp,kp) * wip * wjp * wkp )
         END DO
         vpsi = qfact * vpsi
-        IF (vpsi>100._dp) THEN
-            Vext_q(i,j,k,o,p,s)=100._dp
-        ELSE IF (vpsi<-100_dp) THEN
-            Vext_q(i,j,k,o,p,s)=-100._dp
-        ELSE
-            Vext_q(i,j,k,o,p,s)=vpsi
-        END IF
+        CALL limit_potential(vpsi)
+        Vext_q(i,j,k,o,p,s) = vpsi
     END DO
 
+    CONTAINS
+
+        !===========================================================================================================================
+        PURE SUBROUTINE limit_potential(v)
+        !===========================================================================================================================
+        ! Limit the potential to -100kJ/mol<v<100kJ/mol
+            IMPLICIT NONE
+            REAL(dp), INTENT(INOUT) :: v
+            REAL(dp), PARAMETER :: vu=100._dp, vl=-100._dp ! kJ/mol
+            IF (v>vu) THEN
+                v=vu
+            ELSE IF (v<vl) THEN
+                v=vl
+            END IF
+        END SUBROUTINE limit_potential
+        !===========================================================================================================================
+        
 END SUBROUTINE vext_q_from_v_c
