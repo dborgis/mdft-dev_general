@@ -5,7 +5,7 @@ MODULE mathematica
 
     IMPLICIT NONE
     PRIVATE
-    PUBLIC :: chop
+    PUBLIC :: chop, TriLinearInterpolation
     
     CONTAINS
     
@@ -33,6 +33,27 @@ MODULE mathematica
             chop=x
         END IF
     END FUNCTION chop
+    !===============================================================================================================================
+    
+    
+    !===============================================================================================================================
+    PURE FUNCTION TriLinearInterpolation (cube,r)
+    !===============================================================================================================================
+    ! Returns the value at position r(1:3) within the cube. The value is known at each corner of the cube.
+    ! It is thus an interpolation of value at the corners the cube to a point inside the cube.
+        USE precision_kinds ,ONLY: dp
+        IMPLICIT NONE
+        REAL(dp), INTENT(IN) :: cube(0:1,0:1,0:1), r(1:3)
+        REAL(dp) :: TriLinearInterpolation
+        TriLinearInterpolation = cube(0,0,0) * (1._dp-r(1)) * (1._dp-r(2)) * (1._dp-r(3)) &
+                                +cube(1,0,0) * r(1) * (1._dp-r(2)) * (1._dp-r(3)) &
+                                +cube(0,1,0) * (1._dp-r(1)) * r(2) * (1._dp-r(3)) &
+                                +cube(0,0,1) * (1._dp-r(1)) * (1._dp-r(2)) * r(3) &
+                                +cube(1,0,1) * r(1) * (1._dp-r(2)) * r(3) &
+                                +cube(0,1,1) * (1._dp-r(1)) * r(2) * r(3) &
+                                +cube(1,1,0) * r(1) * r(2) * (1._dp-r(3)) &
+                                +cube(1,1,1) * r(1) * r(2) * r(3)
+    END FUNCTION TriLinearInterpolation
     !===============================================================================================================================
 
 END MODULE
