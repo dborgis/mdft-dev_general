@@ -50,7 +50,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
             l = floor(r) ! index of node just below
             u = l+1
             r = r-real(l,dp)  ! cartesian coordinates between 0 and 1
-            l = modulo(l,nfft)+1
+            l = modulo(l,nfft)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
             u = modulo(u,nfft)+1
 !~             if( any(r<0._dp) .or. any(r>1._dp) ) stop "problem with r"
 !~             if( any(l<1) .or. any(l>nfft) ) stop "problem with l"
