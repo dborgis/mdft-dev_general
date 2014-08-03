@@ -23,31 +23,27 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, soluteCharg
     DO s = 1 , SIZE(soluteSite)
 
         IF ( soluteSite(s)%q == 0.0_dp ) CYCLE ! if the solute does not have charge, go to next solute
-        
+       
         ! transform cartesian coordinates 0 <= x < Lx in 'indicial coordinates' 0 <= xq < nfft1
-        xq = modulo ( soluteSite(s)%r(1) , spaceGrid%length(1) ) / spaceGrid%dl(1)
-        yq = modulo ( soluteSite(s)%r(2) , spaceGrid%length(2) ) / spaceGrid%dl(2)
-        zq = modulo ( soluteSite(s)%r(3) , spaceGrid%length(3) ) / spaceGrid%dl(3)
+        xq = MODULO( soluteSite(s)%r(1) , spaceGrid%length(1) ) / spaceGrid%dl(1)
+        yq = MODULO( soluteSite(s)%r(2) , spaceGrid%length(2) ) / spaceGrid%dl(2)
+        zq = MODULO( soluteSite(s)%r(3) , spaceGrid%length(3) ) / spaceGrid%dl(3)
         ! get coordinates of grid node juste below (corner of the cube with smallest indices)
         ! +1 is because indexation does not begin to 0 but to 1. Thus, when coordinate xq=0, it corresponds to index 1.
         im = FLOOR ( xq ) + 1
         jm = FLOOR ( yq ) + 1
         km = FLOOR ( zq ) + 1
         ! grid node juste above (corner of the cube with highest indices)
-        ip = im + 1
-        jp = jm + 1
-        kp = km + 1
-        ! this corner should never have coordinates higher than nfft
-        IF ( ip == spaceGrid%n_nodes(1) + 1 ) ip = 1
-        IF ( jp == spaceGrid%n_nodes(2) + 1 ) jp = 1
-        IF ( kp == spaceGrid%n_nodes(3) + 1 ) kp = 1
+        ip = MODULO(im,spaceGrid%n_nodes(1)) +1
+        jp = MODULO(jm,spaceGrid%n_nodes(2)) +1
+        kp = MODULO(km,spaceGrid%n_nodes(3)) +1
         ! define weights associated with each corner
-        wim = (    1.0_dp - (   xq - real(int(xq,i2b),dp)   )    )
-        wjm = (    1.0_dp - (   yq - real(int(yq,i2b),dp)   )    )
-        wkm = (    1.0_dp - (   zq - real(int(zq,i2b),dp)   )    )
-        wip = (             (   xq - real(int(xq,i2b),dp)   )    )
-        wjp = (             (   yq - real(int(yq,i2b),dp)   )    )
-        wkp = (             (   zq - real(int(zq,i2b),dp)   )    )
+        wim = (1.0_dp - (xq - REAL(INT(xq,i2b),dp))    )
+        wjm = (1.0_dp - (yq - REAL(INT(yq,i2b),dp))    )
+        wkm = (1.0_dp - (zq - REAL(INT(zq,i2b),dp))    )
+        wip = (         (xq - REAL(INT(xq,i2b),dp))    )
+        wjp = (         (yq - REAL(INT(yq,i2b),dp))    )
+        wkp = (         (zq - REAL(INT(zq,i2b),dp))    )
         ! increase density accordingly
         soluteChargeDensity ( im , jm , km ) = soluteChargeDensity ( im , jm , km ) + soluteSite(s)%q * wim * wjm * wkm
         soluteChargeDensity ( ip , jm , km ) = soluteChargeDensity ( ip , jm , km ) + soluteSite(s)%q * wip * wjm * wkm
