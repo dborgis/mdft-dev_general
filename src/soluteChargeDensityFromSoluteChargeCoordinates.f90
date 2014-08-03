@@ -30,9 +30,9 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, soluteCharg
         zq = modulo ( soluteSite(s)%r(3) , spaceGrid%length(3) ) / spaceGrid%dl(3)
         ! get coordinates of grid node juste below (corner of the cube with smallest indices)
         ! +1 is because indexation does not begin to 0 but to 1. Thus, when coordinate xq=0, it corresponds to index 1.
-        im = int ( xq ) + 1
-        jm = int ( yq ) + 1
-        km = int ( zq ) + 1
+        im = FLOOR ( xq ) + 1
+        jm = FLOOR ( yq ) + 1
+        km = FLOOR ( zq ) + 1
         ! grid node juste above (corner of the cube with highest indices)
         ip = im + 1
         jp = jm + 1
