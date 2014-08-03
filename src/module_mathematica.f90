@@ -5,7 +5,7 @@ MODULE mathematica
 
     IMPLICIT NONE
     PRIVATE
-    PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation
+    PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode
     
     CONTAINS
     
@@ -100,6 +100,43 @@ MODULE mathematica
         alreadydone = .TRUE.
     END SUBROUTINE UTest_TrilinearInterpolation
     !===============================================================================================================================
+
+
+    !===========================================================================================================================
+    PURE FUNCTION floorNode(gridnode,gridlen,x,pbc)
+    !===========================================================================================================================
+        USE precision_kinds, ONLY: i2b, dp
+        IMPLICIT NONE
+        INTEGER(i2b) :: floorNode(3)
+        INTEGER(i2b), INTENT(IN) :: gridnode(3)
+        REAL(dp), INTENT(IN) :: gridlen(3), x(3)
+        LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
+        REAL(dp) :: dx(3)
+        dx = gridlen/REAL(gridnode)
+        floorNode = FLOOR(MODULO(x,gridlen)/dx) +1
+    END FUNCTION floorNode
+    !===========================================================================================================================
+    
+    
+    !===========================================================================================================================
+    SUBROUTINE UTest_floorNode
+    !===========================================================================================================================
+        USE precision_kinds, ONLY: i2b, dp
+        IMPLICIT NONE
+        LOGICAL, SAVE :: alreadydone=.FALSE.
+        REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
+        INTEGER(i2b) :: gridnode(3)
+        REAL(dp) :: gridlen(3), x(3)
+        IF (alreadydone) RETURN
+        CALL RANDOM_NUMBER(gridlen)
+        IF( ANY( floorNode([1,1,1],gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem in UTest_floorNode"
+        IF( ANY( floorNode(INT(gridlen*1000)*10,gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem in UTest_floorNode"
+        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[51._dp,z,z],.TRUE.) /=[3,1,1]) ) STOP "problem in UTest_floorNode"
+        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[49.999_dp,z,z],.TRUE.) /=[100,1,1]) ) STOP "problem in UTest_floorNode"
+        alreadydone=.TRUE.
+    END SUBROUTINE UTest_floorNode
+    !===========================================================================================================================
+        
 
 END MODULE
 !===================================================================================================================================
