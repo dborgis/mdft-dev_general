@@ -8,7 +8,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     USE external_potential  ,ONLY: vext_q
     USE constants, ONLY: fourpi, qfact, qunit, zero
     USE input, ONLY: verbose
-    USE mathematica ,ONLY: TriLinearInterpolation
+    USE mathematica ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation
 
     IMPLICIT NONE
 
@@ -39,7 +39,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
         zmod(m,p,o) = Rotzx(o,p) * solventSite(m)%r(1) + Rotzy(o,p) * solventSite(m)%r(2) + Rotzz(o,p) * solventSite(m)%r(3)
     END DO
 
-
+    CALL UTest_TrilinearInterpolation
     ! Compute external potential for each combination of solvent side and grid node and orientation
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vpsi = 0.0_dp
