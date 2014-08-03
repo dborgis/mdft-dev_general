@@ -68,7 +68,6 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
         vpsi = qfact * vpsi
         CALL limit_potential(vpsi)
         Vext_q(i,j,k,o,p,s) = vpsi
-
     END DO
 
     CONTAINS
