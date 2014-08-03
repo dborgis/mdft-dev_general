@@ -47,8 +47,8 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
             l = FLOOR(r) ! index of node just below
             u = l+1
             r = r-REAL(l,dp)  ! cartesian coordinates between 0 and 1
-            l = MODULO(l,nfft)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
-            u = MODULO(u,nfft)+1
+            l = MODULO(l,gridnode)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
+            u = MODULO(u,gridnode)+1
             IF( ANY(r<0._dp) .or. ANY(r>1._dp) ) &
                 THEN; err%pb=.true.; err%msg="Problem with r in vext_q_from_v_c.f90"; END IF
             IF( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) )&
