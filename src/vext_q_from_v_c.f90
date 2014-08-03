@@ -23,6 +23,11 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     REAL(dp):: average_over_psi ! boltzmann average of vpsi over psi for a given i,j,k,omega
     REAL(dp):: charge
     real(dp) :: r(3), cube(0:1,0:1,0:1), dl(3)
+    TYPE :: testtype
+        LOGICAL :: pb
+        CHARACTER(180) :: msg
+    END TYPE
+    TYPE(testtype) :: err
 
     nfft=spaceGrid%n_nodes
     dl = spaceGrid%dl
@@ -41,6 +46,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
 
     CALL UTest_TrilinearInterpolation
     ! Compute external potential for each combination of solvent side and grid node and orientation
+    err%pb=.FALSE.
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vpsi = 0.0_dp
         DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
@@ -52,9 +58,12 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
             r = r-real(l,dp)  ! cartesian coordinates between 0 and 1
             l = modulo(l,nfft)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
             u = modulo(u,nfft)+1
-!~             if( any(r<0._dp) .or. any(r>1._dp) ) stop "problem with r"
-!~             if( any(l<1) .or. any(l>nfft) ) stop "problem with l"
-!~             if( any(u<1) .or. any(u>nfft) ) stop "problem with u"
+            if( ANY(r<0._dp) .or. ANY(r>1._dp) ) &
+                THEN; err%pb=.true.; err%msg="Problem with r in vext_q_from_v_c.f90"; END IF
+            if( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) )&
+                THEN; err%pb=.true.; err%msg="Problem with l in vext_q_from_v_c.f90"; END IF
+            if( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) )&
+                THEN; err%pb=.true.; err%msg="Problem with u in vext_q_from_v_c.f90"; END IF
             cube(0,0,0) = Vpoisson (l(1),l(2),l(3))
             cube(1,0,0) = Vpoisson (u(1),l(2),l(3))
             cube(0,1,0) = Vpoisson (l(1),u(2),l(3))
@@ -69,6 +78,10 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
         CALL limit_potential(vpsi)
         Vext_q(i,j,k,o,p,s) = vpsi
     END DO
+    IF (err%pb) THEN
+        PRINT*,err%msg
+        STOP
+    END IF
 
     CONTAINS
 
