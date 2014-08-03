@@ -19,8 +19,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     REAL(dp):: xq,yq,zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)
     INTEGER(i2b):: im , jm , km , ip , jp , kp ! 6 indices from which all corners of cube surrounding point charge are defined
     REAL(dp):: wim , wjm , wkm , wip , wjp , wkp ! weights associated to each 'corner' index
-    REAL(dp):: vpsi ! external potential for a given i,j,k,omega & psi.
-    REAL(dp):: average_over_psi ! boltzmann average of vpsi over psi for a given i,j,k,omega
+    REAL(dp):: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
     REAL(dp):: charge
     REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3)
     TYPE :: testtype
@@ -48,7 +47,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     ! Compute external potential for each combination of solvent side and grid node and orientation
     err%pb=.FALSE.
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
-        vpsi = 0.0_dp
+        vext_q_of_r_and_omega = 0.0_dp
         DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
             r = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
             r = r/dl ! cartesian coordinates in index scale
@@ -71,11 +70,11 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
             cube(1,0,1) = Vpoisson (u(1),l(2),u(3))
             cube(0,1,1) = Vpoisson (l(1),u(2),u(3))
             cube(1,1,1) = Vpoisson (u(1),u(2),u(3))
-            vpsi = vpsi + solventSite(m)%q * TriLinearInterpolation(cube,r)
+            vext_q_of_r_and_omega = vext_q_of_r_and_omega + solventSite(m)%q * TriLinearInterpolation(cube,r)
         END DO
-        vpsi = qfact * vpsi
-        CALL limit_potential(vpsi)
-        Vext_q(i,j,k,o,p,s) = vpsi
+        vext_q_of_r_and_omega = qfact * vext_q_of_r_and_omega
+        CALL limit_potential(vext_q_of_r_and_omega)
+        Vext_q(i,j,k,o,p,s) = vext_q_of_r_and_omega
     END DO
     IF (err%pb) THEN
         PRINT*,err%msg
