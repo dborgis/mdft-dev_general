@@ -68,14 +68,14 @@ MODULE mathematica
     ! - if the point is one of the corners
     ! - if it is on the center of the cube
     ! Then it tests that no answer is higher or lower than the maximum or minimum value of any corner.
-        USE precision_kinds     ,ONLY:dp,i2b
+        USE precision_kinds     ,ONLY:dp
         IMPLICIT NONE
         REAL(dp) :: A(0:1,0:1,0:1), x(1:3)
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
         LOGICAL, SAVE :: alreadydone=.FALSE.
-        REAL(dp) :: cube(0:1,0:1,0:1)
-        INTEGER(i2b) :: i
+        REAL(dp) :: cube(0:1,0:1,0:1), t0, t1
         IF (alreadydone) RETURN
+        CALL CPU_TIME(t0)
         CALL RANDOM_NUMBER(cube)
         cube = cube * 1000._dp
         IF( TriLinearInterpolation(cube,[z,z,z]) /= cube(0,0,0) .OR.&
@@ -89,10 +89,13 @@ MODULE mathematica
             ABS(TriLinearInterpolation(cube,[o,o,o]/2._dp) - SUM(cube)/8._dp )>EPSILON(1.0_dp) ) THEN
                 STOP "Problem detected in UTest_TriLinearInterpolation"
         END IF
-        DO i=1,10000 ! 10000 has been chosen so that the whole execution time of UTest_TrilinearInterpolation is 1ms on my laptop.
+        CALL CPU_TIME(t1)
+        DO WHILE(t1-t0<0.005_dp) ! Test for 5 ms
             CALL RANDOM_NUMBER(x)
+            CALL RANDOM_NUMBER(cube)
             IF ( TriLinearInterpolation(cube,x) < MINVAL(cube) &
                 .OR. TriLinearInterpolation(cube,x) > MAXVAL(cube) ) STOP "Problem detected in UTest_TriLinearInterpolation"
+            CALL CPU_TIME(t1)
         END DO
         alreadydone = .TRUE.
     END SUBROUTINE UTest_TrilinearInterpolation
