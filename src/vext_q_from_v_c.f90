@@ -22,7 +22,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     REAL(dp):: vpsi ! external potential for a given i,j,k,omega & psi.
     REAL(dp):: average_over_psi ! boltzmann average of vpsi over psi for a given i,j,k,omega
     REAL(dp):: charge
-    real(dp) :: r(3), cube(0:1,0:1,0:1), dl(3)
+    REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3)
     TYPE :: testtype
         LOGICAL :: pb
         CHARACTER(180) :: msg
@@ -50,14 +50,14 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vpsi = 0.0_dp
         DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
-            r = real([i,j,k],dp)
+            r = REAL([i,j,k],dp)
             r = (r-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
             r = r/dl ! cartesian coordinates in index scale
-            l = floor(r) ! index of node just below
+            l = FLOOR(r) ! index of node just below
             u = l+1
-            r = r-real(l,dp)  ! cartesian coordinates between 0 and 1
-            l = modulo(l,nfft)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
-            u = modulo(u,nfft)+1
+            r = r-REAL(l,dp)  ! cartesian coordinates between 0 and 1
+            l = MODULO(l,nfft)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
+            u = MODULO(u,nfft)+1
             if( ANY(r<0._dp) .or. ANY(r>1._dp) ) &
                 THEN; err%pb=.true.; err%msg="Problem with r in vext_q_from_v_c.f90"; END IF
             if( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) )&
