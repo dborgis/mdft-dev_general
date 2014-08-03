@@ -5,7 +5,7 @@
 ! => V(k)=soluteChargeDensity(k)/(esp0*k^2)
 ! FFT(V(k)) = V(r)
 
-SUBROUTINE poissonSolver (gridnode, soluteChargeDensity, Vpoisson)
+SUBROUTINE poissonSolver (gridnode, gridlen, soluteChargeDensity, Vpoisson)
 
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: nfft1 , nfft2 , nfft3, spaceGrid
@@ -18,6 +18,7 @@ SUBROUTINE poissonSolver (gridnode, soluteChargeDensity, Vpoisson)
     
     INTEGER(i2b), INTENT(IN) :: gridnode(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: soluteChargeDensity
+    REAL(dp), INTENT(IN) :: gridlen(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(OUT) :: Vpoisson
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: soluteChargeDensity_k,Vpoisson_k
     INTEGER (i2b) :: i,j,k

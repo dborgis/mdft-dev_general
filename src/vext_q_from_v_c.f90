@@ -1,16 +1,17 @@
-SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
+SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     USE precision_kinds     ,ONLY: dp, i2b
     USE system              ,ONLY: nb_solvent_sites, nb_species, spaceGrid, soluteSite, solventSite
     USE quadrature          ,ONLY: angGrid, molRotGrid, Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     USE external_potential  ,ONLY: vext_q
     USE constants           ,ONLY: qfact, zero
-    USE mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation
+    USE mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode
 
     IMPLICIT NONE
 
     INTEGER(i2b), INTENT(IN) :: gridnode(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
+    REAL(dp), INTENT(IN) :: gridlen(3)
     INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3)
     REAL(dp), DIMENSION(nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) :: xmod, ymod, zmod
     REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
@@ -36,6 +37,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
         zmod(m,p,o) = Rotzx(o,p) * solventSite(m)%r(1) + Rotzy(o,p) * solventSite(m)%r(2) + Rotzz(o,p) * solventSite(m)%r(3)
     END DO
 
+    CALL UTest_floorNode
     CALL UTest_TrilinearInterpolation
     ! Compute external potential for each combination of solvent side and grid node and orientation
     err%pb=.FALSE.
