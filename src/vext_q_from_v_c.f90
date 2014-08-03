@@ -50,8 +50,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vpsi = 0.0_dp
         DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
-            r = REAL([i,j,k],dp)
-            r = (r-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
+            r = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
             r = r/dl ! cartesian coordinates in index scale
             l = FLOOR(r) ! index of node just below
             u = l+1
