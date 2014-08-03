@@ -1,26 +1,19 @@
 SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: chg_mol , chg_solv , nb_solvent_sites , nb_species , &
-                                    beta , id_solv , beta , spaceGrid, soluteSite,& 
-                                    solventSite
-    USE quadrature          ,ONLY: angGrid, molRotGrid,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
+    USE system              ,ONLY: nb_solvent_sites, nb_species, spaceGrid, soluteSite, solventSite
+    USE quadrature          ,ONLY: angGrid, molRotGrid, Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     USE external_potential  ,ONLY: vext_q
-    USE constants, ONLY: fourpi, qfact, qunit, zero
-    USE input, ONLY: verbose
-    USE mathematica ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation
+    USE constants           ,ONLY: qfact, zero
+    USE mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation
 
     IMPLICIT NONE
 
     INTEGER(i2b), INTENT(IN) :: gridnode(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
     INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3)
-    REAL(dp), DIMENSION ( nb_solvent_sites , molRotGrid%n_angles , angGrid%n_angles ) :: xmod , ymod , zmod
-    REAL(dp):: xq,yq,zq ! solvent coordinates in indices referential (ie real between 0 and nfft1+1)
-    INTEGER(i2b):: im , jm , km , ip , jp , kp ! 6 indices from which all corners of cube surrounding point charge are defined
-    REAL(dp):: wim , wjm , wkm , wip , wjp , wkp ! weights associated to each 'corner' index
-    REAL(dp):: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
-    REAL(dp):: charge
+    REAL(dp), DIMENSION(nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) :: xmod, ymod, zmod
+    REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
     REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3)
     TYPE :: testtype
         LOGICAL :: pb
@@ -56,11 +49,11 @@ SUBROUTINE vext_q_from_v_c (gridnode, Vpoisson)
             r = r-REAL(l,dp)  ! cartesian coordinates between 0 and 1
             l = MODULO(l,nfft)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
             u = MODULO(u,nfft)+1
-            if( ANY(r<0._dp) .or. ANY(r>1._dp) ) &
+            IF( ANY(r<0._dp) .or. ANY(r>1._dp) ) &
                 THEN; err%pb=.true.; err%msg="Problem with r in vext_q_from_v_c.f90"; END IF
-            if( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) )&
+            IF( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) )&
                 THEN; err%pb=.true.; err%msg="Problem with l in vext_q_from_v_c.f90"; END IF
-            if( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) )&
+            IF( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) )&
                 THEN; err%pb=.true.; err%msg="Problem with u in vext_q_from_v_c.f90"; END IF
             cube(0,0,0) = Vpoisson (l(1),l(2),l(3))
             cube(1,0,0) = Vpoisson (u(1),l(2),l(3))
