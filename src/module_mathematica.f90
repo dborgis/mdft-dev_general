@@ -64,6 +64,10 @@ MODULE mathematica
     !===============================================================================================================================
     SUBROUTINE UTest_TrilinearInterpolation
     !===============================================================================================================================
+    ! Tests the pure function TriLinearInterpolation where result is known:
+    ! - if the point is one of the corners
+    ! - if it is on the center of the cube
+    ! Then it tests that no answer is higher or lower than the maximum or minimum value of any corner.
         USE precision_kinds     ,ONLY:dp,i2b
         IMPLICIT NONE
         REAL(dp) :: A(0:1,0:1,0:1), x(1:3)
