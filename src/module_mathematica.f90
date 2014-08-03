@@ -45,14 +45,18 @@ MODULE mathematica
         IMPLICIT NONE
         REAL(dp), INTENT(IN) :: cube(0:1,0:1,0:1), x(1:3)
         REAL(dp) :: TriLinearInterpolation
-        TriLinearInterpolation = cube(0,0,0) * (1._dp-x(1)) * (1._dp-x(2)) * (1._dp-x(3)) &
-                                +cube(1,0,0) * x(1) * (1._dp-x(2)) * (1._dp-x(3)) &
-                                +cube(0,1,0) * (1._dp-x(1)) * x(2) * (1._dp-x(3)) &
-                                +cube(0,0,1) * (1._dp-x(1)) * (1._dp-x(2)) * x(3) &
-                                +cube(1,0,1) * x(1) * (1._dp-x(2)) * x(3) &
-                                +cube(0,1,1) * (1._dp-x(1)) * x(2) * x(3) &
-                                +cube(1,1,0) * x(1) * x(2) * (1._dp-x(3)) &
-                                +cube(1,1,1) * x(1) * x(2) * x(3)
+        IF( ALL(cube==cube(0,0,0)) ) THEN ! homogeneous case
+            TrilinearInterpolation = cube(0,0,0)
+        ELSE
+            TriLinearInterpolation = cube(0,0,0) * (1._dp-x(1)) * (1._dp-x(2)) * (1._dp-x(3)) &
+                                    +cube(1,0,0) * x(1) * (1._dp-x(2)) * (1._dp-x(3)) &
+                                    +cube(0,1,0) * (1._dp-x(1)) * x(2) * (1._dp-x(3)) &
+                                    +cube(0,0,1) * (1._dp-x(1)) * (1._dp-x(2)) * x(3) &
+                                    +cube(1,0,1) * x(1) * (1._dp-x(2)) * x(3) &
+                                    +cube(0,1,1) * (1._dp-x(1)) * x(2) * x(3) &
+                                    +cube(1,1,0) * x(1) * x(2) * (1._dp-x(3)) &
+                                    +cube(1,1,1) * x(1) * x(2) * x(3)
+        END IF
     END FUNCTION TriLinearInterpolation
     !===============================================================================================================================
 
