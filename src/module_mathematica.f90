@@ -2,11 +2,11 @@
 MODULE mathematica
 !===================================================================================================================================
 ! This module implements several usefull functions of Mathematica
-
+    USE precision_kinds     ,ONLY:dp,i2b
     IMPLICIT NONE
     PRIVATE
     PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, &
-        UTest_ceilingNode, distToFloorNode
+        UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode
     
     CONTAINS
     
@@ -16,7 +16,6 @@ MODULE mathematica
     ! see http://reference.wolfram.com/mathematica/ref/Chop.html
     ! It replaces numbers smaller in absolute magnitude than delta by 0.
     ! chop uses a default tolerance of 10._dp**(-10)
-        USE precision_kinds ,ONLY: dp
         IMPLICIT NONE
         REAL(dp) :: chop
         REAL(dp), INTENT(IN) :: x
@@ -42,7 +41,6 @@ MODULE mathematica
     !===============================================================================================================================
     ! Returns the value at position x(1:3) within the cube. The value is known at each corner of the cube.
     ! It is thus an interpolation of value at the corners the cube to a point inside the cube.
-        USE precision_kinds ,ONLY: dp
         IMPLICIT NONE
         REAL(dp), INTENT(IN) :: cube(0:1,0:1,0:1), x(1:3)
         REAL(dp) :: TriLinearInterpolation
@@ -69,7 +67,6 @@ MODULE mathematica
     ! - if the point is one of the corners
     ! - if it is on the center of the cube
     ! Then it tests that no answer is higher or lower than the maximum or minimum value of any corner.
-        USE precision_kinds     ,ONLY:dp
         IMPLICIT NONE
         REAL(dp) :: A(0:1,0:1,0:1), x(1:3)
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
@@ -106,7 +103,6 @@ MODULE mathematica
     !===============================================================================================================================
     PURE FUNCTION floorNode(gridnode,gridlen,x,pbc)
     !===============================================================================================================================
-        USE precision_kinds, ONLY: i2b, dp
         IMPLICIT NONE
         INTEGER(i2b) :: floorNode(3)
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
@@ -120,7 +116,6 @@ MODULE mathematica
     !===============================================================================================================================
     SUBROUTINE UTest_floorNode
     !===============================================================================================================================
-        USE precision_kinds, ONLY: i2b, dp
         IMPLICIT NONE
         LOGICAL, SAVE :: alreadydone=.FALSE.
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
@@ -141,7 +136,6 @@ MODULE mathematica
     !===============================================================================================================================
     PURE FUNCTION ceilingNode(gridnode,gridlen,x,pbc)
     !===============================================================================================================================
-        USE precision_kinds, ONLY: i2b, dp
         IMPLICIT NONE
         INTEGER(i2b) :: ceilingNode(3)
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
@@ -155,7 +149,6 @@ MODULE mathematica
     !===============================================================================================================================
     SUBROUTINE UTest_ceilingNode
     !===============================================================================================================================
-        USE precision_kinds, ONLY: i2b, dp
         IMPLICIT NONE
         LOGICAL, SAVE :: alreadydone=.FALSE.
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
@@ -198,18 +191,106 @@ MODULE mathematica
     !===============================================================================================================================
     PURE FUNCTION distToFloorNode(gridnode,gridlen,x,pbc)
     !===============================================================================================================================
-        USE precision_kinds     ,ONLY:dp,i2b
         IMPLICIT NONE
         REAL(dp) :: distToFloorNode(3), xfloor(3)
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
         REAL(dp), INTENT(IN) :: gridlen(3), x(3)
         LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
-        xfloor = REAL(floorNode(gridnode,gridlen,x,pbc)-1,dp) *gridlen/REAL(gridnode)
+        xfloor = ABS(  x/(gridlen/REAL(gridnode)) - FLOOR(x/(gridlen/REAL(gridnode)))  )
         distToFloorNode = MIN(&
-                                ABS(x-xfloor),&
-                                ABS(x-xfloor-gridlen)&
+                                xfloor,&
+                                ABS(1._dp-xfloor)&
                             )
     END FUNCTION distToFloorNode
+    !===============================================================================================================================
+    
+    
+    !===============================================================================================================================
+    SUBROUTINE UTest_distToFloorNode
+    !===============================================================================================================================
+        REAL(dp)     :: xfloor(3)
+        INTEGER(i2b) :: gridnode(3)
+        REAL(dp)     :: gridlen(3), x(3)
+        LOGICAL      :: pbc ! periodic boundary counditions
+        REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[z,z,z],pbc=.TRUE.) /= [z,z,z] )) THEN
+            STOP "UTest_distToFloorNode: Test 1 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[1._dp,1._dp,1._dp],pbc=.TRUE.) /= [z,z,z] )) THEN
+            STOP "UTest_distToFloorNode: Test 2 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[2._dp,2._dp,2._dp],pbc=.TRUE.) /= [z,z,z]     )) THEN
+            STOP "UTest_distToFloorNode: Test 3 Failed."        
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[10._dp,10._dp,10._dp],pbc=.TRUE.) /= [z,z,z]  )) THEN
+            STOP "UTest_distToFloorNode: Test 4 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[11._dp,11._dp,11._dp],pbc=.TRUE.) /= [z,z,z]  )) THEN
+            STOP "UTest_distToFloorNode: Test 5 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[2._dp,3._dp,4._dp],pbc=.TRUE.) /= [z,z,z]     )) THEN
+            STOP "UTest_distToFloorNode: Test 6 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[10._dp,10._dp,10._dp],.TRUE.) /= [z,z,z]  )) THEN
+            STOP "UTest_distToFloorNode: Test 7 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[0.5_dp,0.5_dp,0.5_dp],.TRUE.) /= [o,o,o]/2.0_dp  )) THEN
+            STOP "UTest_distToFloorNode: Test 8 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[50._dp,50._dp,50._dp],.TRUE.) /= [z,z,z]   )) THEN
+            STOP "UTest_distToFloorNode: Test 9 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[55._dp,55._dp,55._dp],.TRUE.) /= [0.5_dp,0.5_dp,0.5_dp] ))&
+         THEN
+            STOP "UTest_distToFloorNode: Test 10 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[15._dp,15._dp,15._dp],.TRUE.) /= [0.5_dp,0.5_dp,0.5_dp] ))&
+         THEN
+            STOP "UTest_distToFloorNode: Test 11 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[51._dp,51._dp,51._dp],.TRUE.) - [0.1_dp,0.1_dp,0.1_dp] &
+            > EPSILON(1.0_dp)*[100._dp,100._dp,100._dp])) THEN
+            STOP "UTest_distToFloorNode: Test 12 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[13._dp,13._dp,13._dp],.TRUE.) - [z,z,z] &
+            > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
+            STOP "UTest_distToFloorNode: Test 13 Failed."
+        END IF
+    
+        IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[13._dp,13._dp,13._dp],.TRUE.) - [0.3_dp,0.3_dp,0.3_dp] &
+            > EPSILON(1.0_dp)*[100._dp,100._dp,100._dp] )) THEN
+            STOP "UTest_distToFloorNode: Test 14 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[13._dp,13._dp,13._dp],.TRUE.) - [z,z,z] &
+            > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
+            STOP "UTest_distToFloorNode: Test 15 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[13.1_dp,13.1_dp,13.1_dp],.TRUE.) - [z,z,z] &
+            > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
+            STOP "UTest_distToFloorNode: Test 16 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[13.31_dp,13.31_dp,13.31_dp],.TRUE.) - [o,o,o]/10._dp &
+            > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
+            STOP "UTest_distToFloorNode: Test 17 Failed."
+        END IF
+
+    END SUBROUTINE UTest_distToFloorNode
     !===============================================================================================================================
 
 END MODULE
