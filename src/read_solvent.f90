@@ -3,7 +3,7 @@
 SUBROUTINE read_solvent
 
     USE precision_kinds, ONLY: i2b , dp
-    USE system, ONLY: nb_solvent_sites, x_solv , y_solv , z_solv , chg_solv , sig_solv , eps_solv , id_solv, solventSite
+    USE system, ONLY: nb_solvent_sites, chg_solv , sig_solv , eps_solv , id_solv, solventSite
     IMPLICIT NONE
 
     INTEGER(i2b) :: i, n, ios
@@ -25,9 +25,6 @@ SUBROUTINE read_solvent
         ! close input/solvent.in
     CLOSE(5)
 
-    ALLOCATE ( x_solv ( nb_solvent_sites ) )
-    ALLOCATE ( y_solv ( nb_solvent_sites ) )
-    ALLOCATE ( z_solv ( nb_solvent_sites ) )
     ALLOCATE ( chg_solv ( nb_id_solv ) )
     ALLOCATE ( sig_solv ( nb_id_solv ) )
     ALLOCATE ( eps_solv ( nb_id_solv ) )
@@ -36,9 +33,6 @@ SUBROUTINE read_solvent
         chg_solv(i) = solventSite(n)%q
         sig_solv(i) = solventSite(n)%sig
         eps_solv(i) = solventSite(n)%eps
-        x_solv(n) = solventSite(n)%r(1)
-        y_solv(n) = solventSite(n)%r(2)
-        z_solv(n) = solventSite(n)%r(3)
     END DO
 
     IF( SUM(solventSite%q) /= 0._dp ) PRINT*,"YOUR SOLVENT WEAR A TOTAL CHARGE OF ",SUM(solventSite%q),". YOU ARE NOW AWARE..."

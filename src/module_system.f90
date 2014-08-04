@@ -22,7 +22,6 @@ MODULE system
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_mol, sig_mol, eps_mol  ! charge partielle et parametres LJ pour chaque site du solute (kJ/mol)
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: lambda1_mol, lambda2_mol     !Three body terms
     INTEGER(i2b), ALLOCATABLE, DIMENSION (:) :: atomic_nbr
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: x_solv, y_solv, z_solv  ! positions des sites du solvent dans le repere propre ede la molecule
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_solv, sig_solv, eps_solv  ! charge partielle et parametres LJ pour chaque site du solvant (kJ/mol)
     INTEGER(i2b), ALLOCATABLE, DIMENSION(:) :: id_solv, id_mol ! atom type of each solvent site and solute site for instance id_solv(1)=1, id_solv(2)=2 and id_solv(3)=2 for OH2
     REAL(dp) :: temp  ! temperature du systeme lue dans dft.in 'temperature : XXXX'

@@ -7,7 +7,7 @@ MODULE mod_lj
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: eps_mol,x_mol,y_mol,z_mol,&
                                   sig_solv,sig_mol,nb_species,id_mol,id_solv,chg_mol,chg_solv,eps_solv,&
-                                  x_solv,y_solv,z_solv,spaceGrid,soluteSite,solventSite
+                                  spaceGrid,soluteSite,solventSite
     USE constants,          ONLY: fourpi
     USE input,              ONLY: input_line, verbose
     USE quadrature,         ONLY: angGrid, molRotGrid
@@ -52,7 +52,7 @@ MODULE mod_lj
                 STOP
             END IF
             
-            CALL only_one_lj_site ([x_solv(1),y_solv(1),z_solv(1)]) ! verify the solvant wears only one lennard jones site
+            CALL only_one_lj_site (solventSite(1)%r) ! verify the solvant wears only one lennard jones site
 
             ! Test if the supercell is big enough considering the LJ range (given by sigma).
             ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
