@@ -107,7 +107,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/read_solvent.o\
 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
 	$(OBJDIR)/steepest_descent_main.o\
-	$(OBJDIR)/trilinear_interpolation_v.o\
 	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o
@@ -625,11 +624,6 @@ $(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o:\
 $(OBJDIR)/steepest_descent_main.o:\
 	$(SRCDIR)/steepest_descent_main.f90\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/trilinear_interpolation_v.o:\
-	$(SRCDIR)/trilinear_interpolation_v.f90\
-	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/vext_q_from_v_c.o:\
