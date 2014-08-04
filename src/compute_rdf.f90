@@ -17,8 +17,7 @@ SUBROUTINE compute_rdf (array,filename)
     LOGICAL :: foundErr
 
     nbins=input_int('nbinsrdf') ! The rdf is a histogram of this number of bins
-    RdfMaxRange=input_dp('rdfmaxrange') ! max range of the rdf (10 Ang is a minimum)
-    !vRdfMaxRange=min(Lx,Ly,Lz)*sqrt(3.0_dp) !> Maximum distance to which calculate radial distribution function
+    RdfMaxRange= SQRT(3._dp)*MINVAL(spaceGrid%length)/2._dp
     dr = RdfMaxRange/REAL(nbins,dp) ! Width of each bin of the histogram
 
     OPEN(10,FILE=filename,FORM='formatted')
