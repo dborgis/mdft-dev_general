@@ -10,7 +10,7 @@
     
     USE precision_kinds  ,ONLY: dp, i2b
     USE input            ,ONLY: input_line
-    USE system           ,ONLY: n_0_multispec, temp, sig_solv, eps_solv, nb_species, spaceGrid
+    USE system           ,ONLY: n_0_multispec, temp, nb_species, spaceGrid, solventSite
     USE hardspheres      ,ONLY: hs
     
     IMPLICIT NONE
@@ -37,7 +37,7 @@
             DO s = 1 , nb_species
                 READ( input_line(i+s) ,*) hs(s)%R
                 IF ( hs(s)%R <= 0.0_dp ) THEN ! check if one radius is negative, ie if one has to compute wca diameter
-                    CALL compute_wca_diameter ( n_0_multispec(s) , temp, sig_solv(s) , eps_solv(s) , d_wca )
+                    CALL compute_wca_diameter ( n_0_multispec(s) , temp, solventSite(s)%sig , solventSite(s)%eps , d_wca )
                     hs(s)%R = d_wca / 2.0_dp
                 END IF
             END DO

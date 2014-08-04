@@ -5,15 +5,12 @@ MODULE mod_lj
 
     USE external_potential, ONLY: Vext_lj
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: eps_mol,&
-                                  sig_solv,sig_mol,nb_species,id_mol,id_solv,chg_mol,chg_solv,eps_solv,&
-                                  spaceGrid,soluteSite,solventSite
+    USE system,             ONLY: nb_species, spaceGrid, soluteSite, solventSite
     USE constants,          ONLY: fourpi
     USE input,              ONLY: input_line, verbose
     USE quadrature,         ONLY: angGrid, molRotGrid
     
     IMPLICIT NONE
-    INTEGER(i2b), PRIVATE :: nb_id_mol, nb_id_solv ! number of different kinds of solvent sites or solute sites
     INTEGER(i2b), PRIVATE :: nfft1,nfft2,nfft3,nOm,nPsi
     REAL(dp),     PRIVATE :: Lx,Ly,Lz
     
@@ -21,8 +18,6 @@ MODULE mod_lj
     
         SUBROUTINE init
             IMPLICIT NONE
-            nb_id_mol  = SIZE( chg_mol  ) ! total number of solute types
-            nb_id_solv = SIZE( chg_solv ) ! total number of solvent types
             nfft1 =spaceGrid%n_nodes(1)
             nfft2 =spaceGrid%n_nodes(2)
             nfft3 =spaceGrid%n_nodes(3)
@@ -47,9 +42,8 @@ MODULE mod_lj
             ! test if this simplification is true and stop if not
             ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
             ! only if they're all zero but for first site
-            IF( SUM( sig_solv(:) ) /= sig_solv(1) ) then
-                PRINT*,'The solvent must have 1 Lennard Jones site only.'
-                STOP
+            IF ( SIZE(solventSite)>1 )THEN
+                IF ( ANY( solventSite(2:)%sig/=0._dp )) STOP "The solvent must have only 1 LJ site for now."
             END IF
             
             CALL only_one_lj_site (solventSite(1)%r) ! verify the solvant wears only one lennard jones site
@@ -57,7 +51,7 @@ MODULE mod_lj
             ! Test if the supercell is big enough considering the LJ range (given by sigma).
             ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
             ! It would have no sense to have a box dimension < 2.5 sigma
-            IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(sig_mol),MAXVAL(sig_solv))) THEN
+            IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(soluteSite%sig),MAXVAL(solventSite%sig))) THEN
                 PRINT*,'The supercell is small. We replicate it in all directions. Vext calculation will be long.'
                 fullpbc=.TRUE. ! much slower
 !~                 STOP

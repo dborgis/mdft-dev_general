@@ -1,23 +1,21 @@
 ! I compute the radial distribution function (rdf) around each solute site
 SUBROUTINE compute_rdf (array,filename)
 
-    USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: id_mol,id_solv,nb_species,spaceGrid,soluteSite
-    USE input           ,ONLY: input_dp,input_int
+    USE precision_kinds ,ONLY: dp, i2b
+    USE system          ,ONLY: nb_species, spaceGrid, soluteSite, solventSite
+    USE input           ,ONLY: input_dp, input_int
     
     IMPLICIT NONE
 
     REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),nb_species), INTENT(IN) :: array
     CHARACTER( 50 ) , intent(in) :: filename
-    INTEGER(i2b):: nb_id_solv,nb_id_mol,nbins
+    INTEGER(i2b):: nbins
     REAL(dp):: RdfMaxRange,dr,r,xnm2,ynm2,znm2,dx,dy,dz
     REAL(dp), ALLOCATABLE, DIMENSION (:,:) :: rdf
     INTEGER(i2b), ALLOCATABLE, DIMENSION (:,:) :: recurrence_bin
     INTEGER(i2b):: i,j,k,n,bin,s,nfft1,nfft2,nfft3
     LOGICAL :: foundErr
 
-    nb_id_solv = MAXVAL(id_solv)
-    nb_id_mol  = MAXVAL(id_mol)
     nbins=input_int('nbinsrdf') ! The rdf is a histogram of this number of bins
     RdfMaxRange=input_dp('rdfmaxrange') ! max range of the rdf (10 Ang is a minimum)
     !vRdfMaxRange=min(Lx,Ly,Lz)*sqrt(3.0_dp) !> Maximum distance to which calculate radial distribution function

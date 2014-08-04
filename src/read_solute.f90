@@ -3,14 +3,13 @@
 SUBROUTINE read_solute
 
     USE precision_kinds, ONLY: i2b,dp
-    USE system,          ONLY: nb_solute_sites,chg_mol,sig_mol,eps_mol,atomic_nbr,id_mol,Lx,Ly,Lz,&
-                               lambda1_mol,lambda2_mol,soluteSite,nb_species
+    USE system,          ONLY: nb_solute_sites,Lx,Ly,Lz, soluteSite, nb_species
     USE input,           ONLY: input_line, input_log, input_dp
     USE periodic_table,  ONLY: init_periodic_table, ptable
 
     IMPLICIT NONE
 
-    INTEGER(i2b) :: n,i,stat,nb_id_mol
+    INTEGER(i2b) :: n,i,stat
 
     CALL init_periodic_table
     ! print *, ptable ( 1 ) % name
@@ -23,19 +22,12 @@ SUBROUTINE read_solute
         END IF
 
         READ (5,*) ! comment line
-        READ (5,*) nb_solute_sites, nb_id_mol ! total number of atom sites of the solute AND the total number of different types of atoms
+        READ (5,*) nb_solute_sites ! total number of atom sites of the solute AND the total number of different types of atoms
         ALLOCATE(soluteSite(nb_solute_sites))
-        ALLOCATE(id_mol(nb_solute_sites)) ! from solute_site to id for instance id_mol(1)=1, id_mol(2)=2 and id_mol(3)=2 for OH2
-        ALLOCATE(atomic_nbr(nb_solute_sites))
-        ALLOCATE(chg_mol(nb_id_mol))
-        ALLOCATE(sig_mol(nb_id_mol))
-        ALLOCATE(eps_mol(nb_id_mol))
-        ALLOCATE(lambda1_mol(nb_solute_sites))
-        ALLOCATE(lambda2_mol(nb_solute_sites))
 
         READ (5,*)
         DO n = 1, SIZE(soluteSite)
-            READ(5,*) id_mol(n), soluteSite(n)%q, soluteSite(n)%sig, soluteSite(n)%eps, &
+            READ(5,*) i, soluteSite(n)%q, soluteSite(n)%sig, soluteSite(n)%eps, &
                     soluteSite(n)%lambda1, soluteSite(n)%lambda2, soluteSite(n)%r, soluteSite(n)%Z
         END DO
     CLOSE (5)
@@ -44,17 +36,6 @@ SUBROUTINE read_solute
     CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
     CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell
     CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
-
-    ! As a first step toward removing all x_mol etc, I make them as pointers to our new derived type
-    atomic_nbr = soluteSite%Z
-    lambda1_mol = soluteSite%lambda1
-    lambda2_mol = soluteSite%lambda2
-    DO n = 1, nb_solute_sites
-        i = id_mol(n)
-        chg_mol(i) = soluteSite(n)%q
-        sig_mol(i) = soluteSite(n)%sig
-        eps_mol(i) = soluteSite(n)%eps
-    END DO
 
 
     CONTAINS
