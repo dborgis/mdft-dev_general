@@ -13,11 +13,10 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, so
     INTEGER(i2b), INTENT(IN) :: gridnode(3)
     REAL(dp), INTENT(IN) :: gridlen(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(OUT) :: soluteChargeDensity
-    INTEGER(i2b):: s, m(3), p(3)
-    REAL(dp) :: volumElem ! elementary volume in Poisson Grid space
-    REAL(dp) :: r(3) ! coordinates of the charge in indicial coordinates
-    REAL(dp) :: wm(3), wp(3) ! weight associated to each index
-    CHARACTER(50) :: filename
+    INTEGER(i2b)  :: s, m(3), p(3)
+    REAL(dp)      :: volumElem ! elementary volume in Poisson Grid space
+    REAL(dp)      :: r(3) ! coordinates of the charge in indicial coordinates
+    REAL(dp)      :: wm(3), wp(3) ! weight associated to each index
 
     soluteChargeDensity = 0._dp
 
@@ -49,8 +48,11 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, so
 
 
     IF (verbose) THEN
-        filename='output/soluteChargeDensity.cube'
-        CALL write_to_cube_file ( soluteChargeDensity, filename  )
+        BLOCK
+            CHARACTER(50) :: filename
+            filename='output/soluteChargeDensity.cube'
+            CALL write_to_cube_file ( soluteChargeDensity, filename  )
+        END BLOCK
     END IF
 
 END SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates
