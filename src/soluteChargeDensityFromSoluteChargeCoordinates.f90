@@ -6,16 +6,16 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, so
     USE precision_kinds, ONLY: i2b,dp
     USE system,          ONLY: spaceGrid,soluteSite,nb_species
     USE input,           ONLY: verbose
+    USE mathematica     ,ONLY: distToFloorNode, floorNode, ceilingNode
     
     IMPLICIT NONE
 
     INTEGER(i2b), INTENT(IN) :: gridnode(3)
     REAL(dp), INTENT(IN) :: gridlen(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(OUT) :: soluteChargeDensity
-    INTEGER(i2b):: s
-    REAL(dp) :: xq,yq,zq ! coordinates of the charge in indicial coordinates
-    INTEGER(i2b) :: im,jm,km,ip,jp,kp ! indices of corner in indicial coordinates
-    REAL(dp) :: wim,wjm,wkm,wip,wjp,wkp ! weight associated to each index
+    INTEGER(i2b):: s, m(3), p(3)
+    REAL(dp) :: r(3) ! coordinates of the charge in indicial coordinates
+    REAL(dp) :: wm(3), wp(3) ! weight associated to each index
     CHARACTER(50) :: filename
 
     soluteChargeDensity = 0._dp
@@ -24,36 +24,23 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, so
     DO s = 1 , SIZE(soluteSite)
 
         IF ( soluteSite(s)%q == 0.0_dp ) CYCLE ! if the solute does not have charge, go to next solute
-       
-        ! transform cartesian coordinates 0 <= x < Lx in 'indicial coordinates' 0 <= xq < nfft1
-        xq = MODULO( soluteSite(s)%r(1) , spaceGrid%length(1) ) / spaceGrid%dl(1)
-        yq = MODULO( soluteSite(s)%r(2) , spaceGrid%length(2) ) / spaceGrid%dl(2)
-        zq = MODULO( soluteSite(s)%r(3) , spaceGrid%length(3) ) / spaceGrid%dl(3)
-        ! get coordinates of grid node juste below (corner of the cube with smallest indices)
-        ! +1 is because indexation does not begin to 0 but to 1. Thus, when coordinate xq=0, it corresponds to index 1.
-        im = FLOOR ( xq ) + 1
-        jm = FLOOR ( yq ) + 1
-        km = FLOOR ( zq ) + 1
-        ! grid node juste above (corner of the cube with highest indices)
-        ip = MODULO(im,spaceGrid%n_nodes(1)) +1
-        jp = MODULO(jm,spaceGrid%n_nodes(2)) +1
-        kp = MODULO(km,spaceGrid%n_nodes(3)) +1
-        ! define weights associated with each corner
-        wim = (1.0_dp - (xq - REAL(INT(xq,i2b),dp))    )
-        wjm = (1.0_dp - (yq - REAL(INT(yq,i2b),dp))    )
-        wkm = (1.0_dp - (zq - REAL(INT(zq,i2b),dp))    )
-        wip = (         (xq - REAL(INT(xq,i2b),dp))    )
-        wjp = (         (yq - REAL(INT(yq,i2b),dp))    )
-        wkp = (         (zq - REAL(INT(zq,i2b),dp))    )
+
+        r = distToFloorNode (spaceGrid%n_nodes,spaceGrid%length,soluteSite(s)%r,.TRUE.)
+        m = floorNode       (spaceGrid%n_nodes,spaceGrid%length,soluteSite(s)%r,.TRUE.)
+        p = ceilingNode     (spaceGrid%n_nodes,spaceGrid%length,soluteSite(s)%r,.TRUE.)
+
+        wp = r ! weights
+        wm = 1._dp - r
+
         ! increase density accordingly
-        soluteChargeDensity ( im , jm , km ) = soluteChargeDensity ( im , jm , km ) + soluteSite(s)%q * wim * wjm * wkm
-        soluteChargeDensity ( ip , jm , km ) = soluteChargeDensity ( ip , jm , km ) + soluteSite(s)%q * wip * wjm * wkm
-        soluteChargeDensity ( im , jp , km ) = soluteChargeDensity ( im , jp , km ) + soluteSite(s)%q * wim * wjp * wkm
-        soluteChargeDensity ( im , jm , kp ) = soluteChargeDensity ( im , jm , kp ) + soluteSite(s)%q * wim * wjm * wkp
-        soluteChargeDensity ( ip , jp , km ) = soluteChargeDensity ( ip , jp , km ) + soluteSite(s)%q * wip * wjp * wkm
-        soluteChargeDensity ( ip , jm , kp ) = soluteChargeDensity ( ip , jm , kp ) + soluteSite(s)%q * wip * wjm * wkp
-        soluteChargeDensity ( im , jp , kp ) = soluteChargeDensity ( im , jp , kp ) + soluteSite(s)%q * wim * wjp * wkp
-        soluteChargeDensity ( ip , jp , kp ) = soluteChargeDensity ( ip , jp , kp ) + soluteSite(s)%q * wip * wjp * wkp
+        soluteChargeDensity (m(1),m(2),m(3)) = soluteChargeDensity (m(1),m(2),m(3)) + soluteSite(s)%q * wm(1) * wm(2) * wm(3)
+        soluteChargeDensity (p(1),m(2),m(3)) = soluteChargeDensity (p(1),m(2),m(3)) + soluteSite(s)%q * wp(1) * wm(2) * wm(3)
+        soluteChargeDensity (m(1),p(2),m(3)) = soluteChargeDensity (m(1),p(2),m(3)) + soluteSite(s)%q * wm(1) * wp(2) * wm(3)
+        soluteChargeDensity (m(1),m(2),p(3)) = soluteChargeDensity (m(1),m(2),p(3)) + soluteSite(s)%q * wm(1) * wm(2) * wp(3)
+        soluteChargeDensity (p(1),p(2),m(3)) = soluteChargeDensity (p(1),p(2),m(3)) + soluteSite(s)%q * wp(1) * wp(2) * wm(3)
+        soluteChargeDensity (p(1),m(2),p(3)) = soluteChargeDensity (p(1),m(2),p(3)) + soluteSite(s)%q * wp(1) * wm(2) * wp(3)
+        soluteChargeDensity (m(1),p(2),p(3)) = soluteChargeDensity (m(1),p(2),p(3)) + soluteSite(s)%q * wm(1) * wp(2) * wp(3)
+        soluteChargeDensity (p(1),p(2),p(3)) = soluteChargeDensity (p(1),p(2),p(3)) + soluteSite(s)%q * wp(1) * wp(2) * wp(3)
     END DO
     soluteChargeDensity = soluteChargeDensity / spaceGrid%dv ! charge density is in charge per unit volume
 
