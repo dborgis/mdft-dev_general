@@ -7,7 +7,7 @@
 
 SUBROUTINE poissonSolver (gridnode, gridlen, soluteChargeDensity, Vpoisson)
 
-    USE precision_kinds,    ONLY: dp, i2b
+    USE precision_kinds,    ONLY: dp, i2b, i4b
     USE system,             ONLY: spaceGrid
     USE fft,                ONLY: fftw3
     USE constants,          ONLY: fourpi , zeroC, twopi
@@ -23,6 +23,10 @@ SUBROUTINE poissonSolver (gridnode, gridlen, soluteChargeDensity, Vpoisson)
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: soluteChargeDensity_k,Vpoisson_k
     INTEGER (i2b) :: i,j,k,m1,m2,m3
     REAL(dp) :: k2
+    REAL(dp), ALLOCATABLE :: fftw3InForward(:,:,:), fftw3OutBackward(:,:,:)
+    COMPLEX(dp), ALLOCATABLE :: fftw3OutForward(:,:,:), fftw3InBackward(:,:,:)
+    INTEGER(i4b) :: fpspf, fpspb ! fast Poisson Solver Plan Forward or Backward
+    INCLUDE "fftw3.f"
 
 
     IF ( ALL(soluteChargeDensity==0._dp) ) THEN
@@ -34,10 +38,12 @@ SUBROUTINE poissonSolver (gridnode, gridlen, soluteChargeDensity, Vpoisson)
         ALLOCATE( soluteChargeDensity_k (gridnode(1)/2+1,gridnode(2),gridnode(3)) ,SOURCE=zeroC)
         ALLOCATE( Vpoisson_k (gridnode(1)/2+1,gridnode(2),gridnode(3)) ,SOURCE=zeroC)
 
+        CALL prepare_fftw3_for_PoissonGrid
+
         ! Fourier transform of the solute charge density
-        fftw3%in_forward = soluteChargeDensity 
-        CALL dfftw_execute ( fftw3%plan_forward )
-        soluteChargeDensity_k = fftw3%out_forward ! It is verified that at this point, FFT-1(soluteChargeDensity_k)/ (nfft1*nfft2*nfft3) = soluteChargeDensity
+        fftw3InForward = soluteChargeDensity 
+        CALL dfftw_execute (fpspf)
+        soluteChargeDensity_k = fftw3OutForward ! It is verified that at this point, FFT-1(soluteChargeDensity_k)/ (nfft1*nfft2*nfft3) = soluteChargeDensity
         ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
         ! V(k) = 4Pi rho(k) / k^2
 
@@ -68,18 +74,42 @@ SUBROUTINE poissonSolver (gridnode, gridlen, soluteChargeDensity, Vpoisson)
                     IF ( k2 /= 0._dp ) THEN
                         Vpoisson_k(i,j,k) = soluteChargeDensity_k(i,j,k) * fourpi/k2 ! in electrostatic units : V=-4pi rho
                     ELSE
-                        Vpoisson_k(i,j,k) = 0._dp
+                        Vpoisson_k(i,j,k) = CMPLX(0._dp,0._dp)
                     END IF
                 
                 END DO
             END DO
         END DO
-    
+
         ! get real space potential V(r)
-        fftw3%in_backward = Vpoisson_k
-        CALL dfftw_execute ( fftw3%plan_backward )
-        Vpoisson = fftw3%out_backward / REAL(PRODUCT(gridnode),dp)
+        fftw3InBackward = Vpoisson_k
+        CALL dfftw_execute (fpspb)
+        Vpoisson = fftw3OutBackward / REAL(PRODUCT(gridnode),dp)
     
     END IF
+
+    DEALLOCATE (soluteChargeDensity_k, Vpoisson_k, fftw3InForward, fftw3OutForward, fftw3OutBackward, fftw3InBackward)
+
+    CONTAINS
+
+        !===========================================================================================================================
+        SUBROUTINE prepare_fftw3_for_poissongrid
+        !===========================================================================================================================
+            ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
+            ! or needed as input for inverse FFT (in_backward) etc.
+            ALLOCATE ( fftw3InForward   ( gridnode(1)      , gridnode(2) , gridnode(3) ) )
+            ALLOCATE ( fftw3OutForward  ( gridnode(1)/2 +1 , gridnode(2) , gridnode(3) ) )
+            ALLOCATE ( fftw3OutBackward ( gridnode(1)      , gridnode(2) , gridnode(3) ) )
+            ALLOCATE ( fftw3InBackward  ( gridnode(1)/2 +1 , gridnode(2) , gridnode(3) ) )
+            ! prepare plans needed by fftw3
+            CALL dfftw_plan_dft_r2c_3d &
+                                ( fpspf, gridnode(1), gridnode(2), gridnode(3), fftw3InForward, fftw3OutForward, FFTW_ESTIMATE )
+            CALL dfftw_plan_dft_c2r_3d &
+                                ( fpspb, gridnode(1), gridnode(2), gridnode(3), fftw3InBackward, fftw3OutBackward, FFTW_ESTIMATE )
+            ! Note that since the fast Poisson solver implies only 1 FFT in each direct, it is useless to use FFTW_MEASURE or even 
+            ! more rigorous planning-flags. See http://www.fftw.org/doc/Planner-Flags.html
+        END SUBROUTINE prepare_fftw3_for_poissongrid
+        !===========================================================================================================================
+
 
 END SUBROUTINE poissonSolver
