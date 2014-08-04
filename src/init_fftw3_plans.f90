@@ -28,5 +28,5 @@ SUBROUTINE init_fftw3_plans
     ! to find the optimal plan. This, of course, costs a substantial planning time. We do not use more rigorous planner because
     ! it then becomes the most time-consuming step of MDFT !
     ! See http://www.fftw.org/doc/Planner-Flags.html
-    
+
 END SUBROUTINE init_fftw3_plans

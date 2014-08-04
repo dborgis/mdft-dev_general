@@ -11,25 +11,33 @@ MODULE fastPoissonSolver
     INTEGER(i2b), PRIVATE :: i
     CHARACTER(180), PRIVATE :: j
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:), PRIVATE :: soluteChargeDensity, Vpoisson ! TODO THIS ON FINE GRID
-    INTEGER(i2b), PRIVATE :: gridnode(3)
-
+    TYPE :: PoissonGrid
+        INTEGER(i2b) :: nnod(3)
+        REAL(dp) :: len(3)
+    END TYPE
+    TYPE(PoissonGrid), PRIVATE :: pgrid
+    PRIVATE
+    PUBLIC :: init
 
     CONTAINS
     
         !===========================================================================================================================
         SUBROUTINE init
         !===========================================================================================================================
-            gridnode = spaceGrid%n_nodes
-            ALLOCATE ( soluteChargeDensity (gridnode(1),gridnode(2),gridnode(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
+            IMPLICIT NONE
+            pgrid%nnod = spaceGrid%n_nodes
+            pgrid%len = spaceGrid%length
+            ALLOCATE ( soluteChargeDensity (pgrid%nnod(1),pgrid%nnod(2),pgrid%nnod(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
                 IF (i/=0) THEN; PRINT*,j; STOP "This problem arises in module fastPoissonSolver"; END IF
-            ALLOCATE ( Vpoisson            (gridnode(1),gridnode(2),gridnode(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
+            ALLOCATE ( Vpoisson            (pgrid%nnod(1),pgrid%nnod(2),pgrid%nnod(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
                 IF (i/=0) THEN; PRINT*,j; STOP "This problem arises in module fastPoissonSolver"; END IF
 
-            CALL soluteChargeDensityFromSoluteChargeCoordinates (gridnode, soluteChargeDensity)
-            CALL poissonSolver (gridnode, soluteChargeDensity, Vpoisson)
-            CALL vext_q_from_v_c (gridnode, Vpoisson)
+            CALL soluteChargeDensityFromSoluteChargeCoordinates (pgrid%nnod, pgrid%len, soluteChargeDensity)
+            CALL poissonSolver (pgrid%nnod, pgrid%len, soluteChargeDensity, Vpoisson)
+            CALL vext_q_from_v_c (pgrid%nnod, pgrid%len, Vpoisson)
         END SUBROUTINE init
         !===========================================================================================================================
 
+        
 END MODULE fastPoissonSolver
 !===================================================================================================================================

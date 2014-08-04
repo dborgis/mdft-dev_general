@@ -560,8 +560,6 @@ $(OBJDIR)/poissonSolver.o:\
 	$(SRCDIR)/poissonSolver.f90\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/prepare_minimizer.o:\
@@ -641,7 +639,8 @@ $(OBJDIR)/vext_q_from_v_c.o:\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_mathematica.o
 
 $(OBJDIR)/vext_total_sum.o:\
 	$(SRCDIR)/vext_total_sum.f90\
