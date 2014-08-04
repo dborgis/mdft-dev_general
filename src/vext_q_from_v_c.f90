@@ -5,7 +5,8 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     USE quadrature          ,ONLY: angGrid, molRotGrid, Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     USE external_potential  ,ONLY: vext_q
     USE constants           ,ONLY: qfact, zero
-    USE mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode
+    USE mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode, floorNode, ceilingNode,&
+                                   UTest_ceilingNode, UTest_distToFloorNode, distToFloorNode
 
     IMPLICIT NONE
 
@@ -38,25 +39,39 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     END DO
 
     CALL UTest_floorNode
+    CALL UTest_ceilingNode
     CALL UTest_TrilinearInterpolation
+    CALL UTest_distToFloorNode
     ! Compute external potential for each combination of solvent side and grid node and orientation
     err%pb=.FALSE.
+    
+    
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vext_q_of_r_and_omega = 0.0_dp
+        
         DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
+        
             r = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
-            r = r/dl ! cartesian coordinates in index scale
-            l = FLOOR(r) ! index of node just below
-            u = l+1
-            r = r-REAL(l,dp)  ! cartesian coordinates between 0 and 1
-            l = MODULO(l,gridnode)+1 ! Note for later: here we implicitely consider periodic boundary conditions.
-            u = MODULO(u,gridnode)+1
-            IF( ANY(r<0._dp) .or. ANY(r>1._dp) ) &
-                THEN; err%pb=.true.; err%msg="Problem with r in vext_q_from_v_c.f90"; END IF
-            IF( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) )&
-                THEN; err%pb=.true.; err%msg="Problem with l in vext_q_from_v_c.f90"; END IF
-            IF( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) )&
-                THEN; err%pb=.true.; err%msg="Problem with u in vext_q_from_v_c.f90"; END IF
+        
+            l = floorNode(gridnode,gridlen,r,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
+            u = ceilingNode(gridnode,gridlen,r,.TRUE.)
+            r = distToFloorNode(nfft,spaceGrid%length,r,.TRUE.) ! 0 <= distToFloorNode < 1
+            
+            IF( ANY(r<0._dp) .or. ANY(r>1._dp) ) THEN
+                err%pb=.TRUE.
+                err%msg="Problem with r in vext_q_from_v_c.f90"
+            END IF
+            
+            IF( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) ) THEN
+                err%pb=.TRUE.
+                err%msg="Problem with l in vext_q_from_v_c.f90"
+            END IF
+            
+            IF( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) ) THEN
+                err%pb=.TRUE.
+                err%msg="Problem with u in vext_q_from_v_c.f90"
+            END IF
+            
             cube(0,0,0) = Vpoisson (l(1),l(2),l(3))
             cube(1,0,0) = Vpoisson (u(1),l(2),l(3))
             cube(0,1,0) = Vpoisson (l(1),u(2),l(3))
@@ -65,12 +80,16 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
             cube(1,0,1) = Vpoisson (u(1),l(2),u(3))
             cube(0,1,1) = Vpoisson (l(1),u(2),u(3))
             cube(1,1,1) = Vpoisson (u(1),u(2),u(3))
+            
             vext_q_of_r_and_omega = vext_q_of_r_and_omega + solventSite(m)%q * TriLinearInterpolation(cube,r)
         END DO
+        
         vext_q_of_r_and_omega = qfact * vext_q_of_r_and_omega
         CALL limit_potential(vext_q_of_r_and_omega)
         Vext_q(i,j,k,o,p,s) = vext_q_of_r_and_omega
+        
     END DO
+    
     IF (err%pb) THEN
         PRINT*,err%msg
         STOP
