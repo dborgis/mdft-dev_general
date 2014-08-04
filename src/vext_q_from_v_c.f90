@@ -16,7 +16,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3)
     REAL(dp), DIMENSION(nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) :: xmod, ymod, zmod
     REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
-    REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3)
+    REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
     TYPE :: testtype
         LOGICAL :: pb
         CHARACTER(180) :: msg
@@ -51,11 +51,11 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
         
         DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
         
-            r = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
+            x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
         
-            l = floorNode(gridnode,gridlen,r,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
-            u = ceilingNode(gridnode,gridlen,r,.TRUE.)
-            r = distToFloorNode(nfft,spaceGrid%length,r,.TRUE.) ! 0 <= distToFloorNode < 1
+            l = floorNode(gridnode,gridlen,x,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
+            u = ceilingNode(gridnode,gridlen,x,.TRUE.)
+            r = distToFloorNode(nfft,spaceGrid%length,x,.TRUE.) ! 0 <= distToFloorNode < 1
             
             IF( ANY(r<0._dp) .or. ANY(r>1._dp) ) THEN
                 err%pb=.TRUE.
