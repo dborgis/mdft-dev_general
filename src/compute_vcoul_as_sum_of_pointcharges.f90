@@ -5,7 +5,7 @@
 SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
     USE precision_kinds, only: dp,i2b
-    use system, only: nfft1,nfft2,nfft3,id_solv,id_mol,x_mol,y_mol,z_mol,spaceGrid,&
+    use system, only: nfft1,nfft2,nfft3,id_solv,id_mol,spaceGrid,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species, solventSite, soluteSite
     use constants,only : fourpi , qfact
     use external_potential,only : Vext_q
@@ -72,9 +72,9 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
                                 do n=1,SIZE(soluteSite)
                                     if (soluteSite(n)%q==0.0_dp) cycle
                                     qfactcc=qfact*solventSite(m)%q*soluteSite(n)%q
-                                    x_nm = x_m - x_mol(n)
-                                    y_nm = y_m - y_mol(n)
-                                    z_nm = z_m - z_mol(n)
+                                    x_nm = x_m - soluteSite(n)%r(1)
+                                    y_nm = y_m - soluteSite(n)%r(2)
+                                    z_nm = z_m - soluteSite(n)%r(3)
                                     r_nm2 = x_nm**2+y_nm**2+z_nm**2
                                     if(r_nm2<Rc2) then
                                         V_psi = huge(1.0_dp)
