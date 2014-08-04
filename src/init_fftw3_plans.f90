@@ -17,9 +17,15 @@ SUBROUTINE init_fftw3_plans
     ALLOCATE ( fftw3%out_forward  ( nfft(1)/2 +1 , nfft(2) , nfft(3) ) )
     ALLOCATE ( fftw3%out_backward ( nfft(1)      , nfft(2) , nfft(3) ) )
     ALLOCATE ( fftw3%in_backward  ( nfft(1)/2 +1 , nfft(2) , nfft(3) ) )
-    ! prepare plans needed by fftw3
-    CALL dfftw_plan_dft_r2c_3d ( fftw3%plan_forward, nfft(1), nfft(2), nfft(3), fftw3%in_forward, fftw3%out_forward, FFTW_MEASURE )
-    CALL dfftw_plan_dft_c2r_3d ( fftw3%plan_backward, nfft(1), nfft(2), nfft(3), fftw3%in_backward, fftw3%out_backward,&
-                                                                                                                FFTW_MEASURE )
     
+    ! prepare plans needed by fftw3
+    CALL dfftw_plan_dft_r2c_3d &
+        ( fftw3%plan_forward, nfft(1), nfft(2), nfft(3), fftw3%in_forward, fftw3%out_forward, FFTW_EXHAUSTIVE )
+    CALL dfftw_plan_dft_c2r_3d &
+        ( fftw3%plan_backward, nfft(1), nfft(2), nfft(3), fftw3%in_backward, fftw3%out_backward, FFTW_EXHAUSTIVE )
+    ! Note about fftw planning-flags:
+    ! Since lots of FFT will be done in each direction with these two plans, we use the most rigorous planner flag (FFTW_EXHAUSTIVE)
+    ! to find the optimal plan. This, of course, costs a substantial planning time.
+    ! See http://www.fftw.org/doc/Planner-Flags.html
+
 END SUBROUTINE init_fftw3_plans
