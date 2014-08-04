@@ -4,7 +4,7 @@
 SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, soluteChargeDensity)
     
     USE precision_kinds, ONLY: i2b,dp
-    USE system,          ONLY: spaceGrid,soluteSite,nb_species
+    USE system,          ONLY: spaceGrid,soluteSite
     USE input,           ONLY: verbose
     USE mathematica     ,ONLY: distToFloorNode, floorNode, ceilingNode
     
