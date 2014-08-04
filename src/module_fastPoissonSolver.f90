@@ -27,6 +27,7 @@ MODULE fastPoissonSolver
             IMPLICIT NONE
             pgrid%nnod = spaceGrid%n_nodes
             pgrid%len = spaceGrid%length
+            IF ( ANY( pgrid%nnod /= spaceGrid%n_nodes )) STOP "Remember that FFTW3 plans are for now only for MDFT's grid"
             ALLOCATE ( soluteChargeDensity (pgrid%nnod(1),pgrid%nnod(2),pgrid%nnod(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
                 IF (i/=0) THEN; PRINT*,j; STOP "This problem arises in module fastPoissonSolver"; END IF
             ALLOCATE ( Vpoisson            (pgrid%nnod(1),pgrid%nnod(2),pgrid%nnod(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
