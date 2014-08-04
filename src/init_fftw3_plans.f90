@@ -17,6 +17,7 @@ SUBROUTINE init_fftw3_plans
     ALLOCATE ( fftw3%out_forward  ( nfft(1)/2 +1 , nfft(2) , nfft(3) ) )
     ALLOCATE ( fftw3%out_backward ( nfft(1)      , nfft(2) , nfft(3) ) )
     ALLOCATE ( fftw3%in_backward  ( nfft(1)/2 +1 , nfft(2) , nfft(3) ) )
+    
     ! prepare plans needed by fftw3
     CALL dfftw_plan_dft_r2c_3d &
         ( fftw3%plan_forward, nfft(1), nfft(2), nfft(3), fftw3%in_forward, fftw3%out_forward, FFTW_MEASURE )
@@ -27,4 +28,5 @@ SUBROUTINE init_fftw3_plans
     ! to find the optimal plan. This, of course, costs a substantial planning time. We do not use more rigorous planner because
     ! it then becomes the most time-consuming step of MDFT !
     ! See http://www.fftw.org/doc/Planner-Flags.html
+
 END SUBROUTINE init_fftw3_plans
