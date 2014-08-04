@@ -25,9 +25,9 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, so
 
         IF ( soluteSite(s)%q == 0.0_dp ) CYCLE ! if the solute does not have charge, go to next solute
 
-        r = distToFloorNode (spaceGrid%n_nodes,spaceGrid%length,soluteSite(s)%r,.TRUE.)
-        m = floorNode       (spaceGrid%n_nodes,spaceGrid%length,soluteSite(s)%r,.TRUE.)
-        p = ceilingNode     (spaceGrid%n_nodes,spaceGrid%length,soluteSite(s)%r,.TRUE.)
+        r = distToFloorNode (gridnode,gridlen,soluteSite(s)%r,.TRUE.)
+        m = floorNode       (gridnode,gridlen,soluteSite(s)%r,.TRUE.)
+        p = ceilingNode     (gridnode,gridlen,soluteSite(s)%r,.TRUE.)
 
         wp = r ! weights
         wm = 1._dp - r
