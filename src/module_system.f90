@@ -68,7 +68,6 @@ MODULE system
     !lambda_fs  :  0.0
     !a3  :  0.0
     !b3  :  3.0
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) ::  V_int
     !REAL(dp), ALLOCATABLE , DIMENSION (:,:,:, : ) :: rho_n ! density per angle (=n/4pi) of each species at each node (nfft1,nfft2,nfft3,nb_species)
     ! for maximum efficiency, rho_species(nfft1,nfft2,nfft3,nb_species) should be used in loops where species is the outer loop (varies slowliest)
     !do species = 1 , nb_species
