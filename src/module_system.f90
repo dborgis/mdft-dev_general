@@ -13,8 +13,8 @@ MODULE system
         INTEGER(i2b) :: Z ! atomic number
     END TYPE sites
     
-    TYPE (sites), ALLOCATABLE, DIMENSION(:), TARGET :: soluteSite
-    TYPE (sites), ALLOCATABLE, DIMENSION(:), TARGET :: solventSite
+    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: soluteSite
+    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: solventSite
 
     INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
@@ -82,7 +82,6 @@ MODULE system
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing
-    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: V_coulomb ! nfft1 nfft2 nfft3 angGrid%n_angles
 
 
 END MODULE system
