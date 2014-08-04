@@ -191,16 +191,20 @@ MODULE mathematica
     !===============================================================================================================================
     PURE FUNCTION distToFloorNode(gridnode,gridlen,x,pbc)
     !===============================================================================================================================
+    ! Given a grid (number of nodes per direction and length in Angstroms per direction),
+    ! returns the distance to floor node in  grid units, i.e., in dx.
+    ! 0._dp <= distToFloorNode < 1._dp
         IMPLICIT NONE
         REAL(dp) :: distToFloorNode(3), xfloor(3)
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
         REAL(dp), INTENT(IN) :: gridlen(3), x(3)
         LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
         xfloor = ABS(  x/(gridlen/REAL(gridnode)) - FLOOR(x/(gridlen/REAL(gridnode)))  )
-        distToFloorNode = MIN(&
-                                xfloor,&
-                                ABS(1._dp-xfloor)&
-                            )
+        distToFloorNode = xfloor
+!~         distToFloorNode = MIN(&
+!~                                 xfloor,&
+!~                                 ABS(1._dp-xfloor)&
+!~                             )
     END FUNCTION distToFloorNode
     !===============================================================================================================================
     
@@ -288,6 +292,11 @@ MODULE mathematica
         IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[13.31_dp,13.31_dp,13.31_dp],.TRUE.) - [o,o,o]/10._dp &
             > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
             STOP "UTest_distToFloorNode: Test 17 Failed."
+        END IF
+        
+        IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[19.99_dp,19.99_dp,19.99_dp],.TRUE.) - [o,o,o]*0.9_dp &
+            > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
+            STOP "UTest_distToFloorNode: Test 18 Failed."
         END IF
 
     END SUBROUTINE UTest_distToFloorNode
