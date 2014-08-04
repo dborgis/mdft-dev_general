@@ -26,6 +26,7 @@ MODULE fastPoissonSolver
         !===========================================================================================================================
             IMPLICIT NONE
             pgrid%nnod = spaceGrid%n_nodes
+            pgrid%len = spaceGrid%length
             ALLOCATE ( soluteChargeDensity (pgrid%nnod(1),pgrid%nnod(2),pgrid%nnod(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
                 IF (i/=0) THEN; PRINT*,j; STOP "This problem arises in module fastPoissonSolver"; END IF
             ALLOCATE ( Vpoisson            (pgrid%nnod(1),pgrid%nnod(2),pgrid%nnod(3)) ,SOURCE=0._dp, STAT=i, ERRMSG=j)
