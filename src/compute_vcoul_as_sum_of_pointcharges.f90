@@ -5,7 +5,7 @@
 SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
     USE precision_kinds, only: dp,i2b
-    use system, only: nfft1,nfft2,nfft3,deltax,deltay,deltaz,id_solv,id_mol,x_mol,y_mol,z_mol,&
+    use system, only: nfft1,nfft2,nfft3,id_solv,id_mol,x_mol,y_mol,z_mol,spaceGrid,&
                         beta,nb_solute_sites,nb_solvent_sites,chg_mol,chg_solv,Lx,Ly,Lz , nb_species, solventSite, soluteSite
     use constants,only : fourpi , qfact
     use external_potential,only : Vext_q
@@ -55,11 +55,11 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
     do s = 1 , nb_species
         do k=1,nfft3
-            z_grid=real(k-1,dp)*deltaz
+            z_grid=real(k-1,dp)*spaceGrid%dl(3)
             do j=1,nfft2
-                y_grid=real(j-1,dp)*deltay
+                y_grid=real(j-1,dp)**spaceGrid%dl(2)
                 do i=1,nfft1
-                    x_grid=real(i-1,dp)*deltax
+                    x_grid=real(i-1,dp)**spaceGrid%dl(1)
                     do o=1,angGrid%n_angles
                         tempVcoul=0.0_dp
                         ploop:  do p=1,molRotGrid%n_angles
