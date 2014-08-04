@@ -5,7 +5,7 @@ MODULE mathematica
 
     IMPLICIT NONE
     PRIVATE
-    PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode
+    PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, UTest_ceilingNode
     
     CONTAINS
     
@@ -111,9 +111,7 @@ MODULE mathematica
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
         REAL(dp), INTENT(IN) :: gridlen(3), x(3)
         LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
-        REAL(dp) :: dx(3)
-        dx = gridlen/REAL(gridnode)
-        floorNode = FLOOR(MODULO(x,gridlen)/dx) +1
+        floorNode = FLOOR(MODULO(x,gridlen)/(gridlen/REAL(gridnode))) +1
     END FUNCTION floorNode
     !===========================================================================================================================
     
@@ -129,13 +127,69 @@ MODULE mathematica
         REAL(dp) :: gridlen(3), x(3)
         IF (alreadydone) RETURN
         CALL RANDOM_NUMBER(gridlen)
-        IF( ANY( floorNode([1,1,1],gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem in UTest_floorNode"
-        IF( ANY( floorNode(INT(gridlen*1000)*10,gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem in UTest_floorNode"
-        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[51._dp,z,z],.TRUE.) /=[3,1,1]) ) STOP "problem in UTest_floorNode"
-        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[49.999_dp,z,z],.TRUE.) /=[100,1,1]) ) STOP "problem in UTest_floorNode"
-        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[50._dp,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem in UTest_floorNode"
+        IF( ANY( floorNode([1,1,1],gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem 1 in UTest_floorNode"
+        IF( ANY( floorNode(INT(gridlen*1000)*10,gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem 2 in UTest_floorNode"
+        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[51._dp,z,z],.TRUE.) /=[3,1,1]) ) STOP "problem 3 in UTest_floorNode"
+        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[49.999_dp,z,z],.TRUE.) /=[100,1,1]) ) STOP "problem 4 in UTest_floorNode"
+        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[50._dp,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem 5 in UTest_floorNode"
         alreadydone=.TRUE.
     END SUBROUTINE UTest_floorNode
+    !===========================================================================================================================
+
+    !===========================================================================================================================
+    PURE FUNCTION ceilingNode(gridnode,gridlen,x,pbc)
+    !===========================================================================================================================
+        USE precision_kinds, ONLY: i2b, dp
+        IMPLICIT NONE
+        INTEGER(i2b) :: ceilingNode(3)
+        INTEGER(i2b), INTENT(IN) :: gridnode(3)
+        REAL(dp), INTENT(IN) :: gridlen(3), x(3)
+        LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
+        ceilingNode = MODULO( floorNode(gridnode,gridlen,x,pbc)  ,gridnode) +1
+    END FUNCTION ceilingNode
+    !===========================================================================================================================
+    
+    
+    !===========================================================================================================================
+    SUBROUTINE UTest_ceilingNode
+    !===========================================================================================================================
+        USE precision_kinds, ONLY: i2b, dp
+        IMPLICIT NONE
+        LOGICAL, SAVE :: alreadydone=.FALSE.
+        REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
+        INTEGER(i2b) :: gridnode(3)
+        REAL(dp) :: gridlen(3), x(3)
+        IF (alreadydone) RETURN
+
+        ! Test 1, for x at origin, i.e., obviously in first bin, i.e., in [1,1,1]. Ceiling Node should be [2,2,2].
+        gridlen=[100._dp,100._dp,100._dp]
+        gridnode = [100,100,100]
+        x = [z,z,z]
+        IF ( ANY( ceilingNode(gridnode,gridlen,x,pbc=.TRUE.) /= [2,2,2] ) ) THEN
+            STOP "Test 1 of UTest_ceilingNode failed"
+        END IF
+        
+        ! Test 2, for x at end of supercell, i.e., at gridlen, x is gridlen==[0,0,0], so ceilingNode should be the same as Test 1
+        x = gridlen
+        IF ( ANY( ceilingNode(gridnode,gridlen,x,pbc=.TRUE.) /= [2,2,2] ) ) THEN
+            STOP "Test 2 of UTest_ceilingNode failed"
+        END IF
+        
+        ! Test 3, for x just after the origin, it is obviously in first bin again, so ceiling should be [2,2,2] again
+        x = EPSILON(1.0_dp)
+        IF ( ANY( ceilingNode(gridnode,gridlen,x,pbc=.TRUE.) /= [2,2,2] ) ) THEN
+            STOP "Test 3 of UTest_ceilingNode failed"
+        END IF
+
+        ! Test 4: For x just below gridlen, ceiling should be gridnode
+        x = gridlen - gridlen*EPSILON(1.0_dp)
+        IF ( ANY( ceilingNode(gridnode,gridlen,x,pbc=.TRUE.) /= [1,1,1] ) ) THEN
+            PRINT*,ceilingNode(gridnode,gridlen,x,pbc=.TRUE.)
+            STOP "Test 4 of UTest_ceilingNode failed"
+        END IF
+
+        alreadydone=.TRUE.
+    END SUBROUTINE UTest_ceilingNode
     !===========================================================================================================================
         
 
