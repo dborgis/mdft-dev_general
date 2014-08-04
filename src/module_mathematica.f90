@@ -133,6 +133,7 @@ MODULE mathematica
         IF( ANY( floorNode(INT(gridlen*1000)*10,gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem in UTest_floorNode"
         IF( ANY( floorNode([100,1,1],[50._dp,o,o],[51._dp,z,z],.TRUE.) /=[3,1,1]) ) STOP "problem in UTest_floorNode"
         IF( ANY( floorNode([100,1,1],[50._dp,o,o],[49.999_dp,z,z],.TRUE.) /=[100,1,1]) ) STOP "problem in UTest_floorNode"
+        IF( ANY( floorNode([100,1,1],[50._dp,o,o],[50._dp,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem in UTest_floorNode"
         alreadydone=.TRUE.
     END SUBROUTINE UTest_floorNode
     !===========================================================================================================================
