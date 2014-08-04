@@ -4,7 +4,7 @@
 ! or http://paulbourke.net/dataformats/cube/
 ! It is a very easy format to deal with because it's very natural to write and read.
 ! Inputs needed : array to write, filename, number of points in each direction, length of each supercell vector, atomic number of the
-! atoms and their coordinates. The total number of atoms is determined as the number of different coordinates ie as size(x_mol)
+! atoms and their coordinates. The total number of atoms is determined as the number of different coordinates ie as size(soluteSite)
 ! output : a file called 'filename' containing 3dimensional data in .cube format
 ! written by Maximilien Levesque, while in post doc at Ecole Normale Superieure, Paris in Daniel Borgis's theoretical chemistry group
 ! 20110919  Maximilien Levesque, clean version for Virginie M.

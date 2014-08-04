@@ -5,7 +5,7 @@ MODULE mod_lj
 
     USE external_potential, ONLY: Vext_lj
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: eps_mol,x_mol,y_mol,z_mol,&
+    USE system,             ONLY: eps_mol,&
                                   sig_solv,sig_mol,nb_species,id_mol,id_solv,chg_mol,chg_solv,eps_solv,&
                                   spaceGrid,soluteSite,solventSite
     USE constants,          ONLY: fourpi

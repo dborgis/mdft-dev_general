@@ -3,7 +3,7 @@
 SUBROUTINE read_solute
 
     USE precision_kinds, ONLY: i2b,dp
-    USE system,          ONLY: nb_solute_sites,x_mol,y_mol,z_mol,chg_mol,sig_mol,eps_mol,atomic_nbr,id_mol,Lx,Ly,Lz,&
+    USE system,          ONLY: nb_solute_sites,chg_mol,sig_mol,eps_mol,atomic_nbr,id_mol,Lx,Ly,Lz,&
                                lambda1_mol,lambda2_mol,soluteSite,nb_species
     USE input,           ONLY: input_line, input_log, input_dp
     USE periodic_table,  ONLY: init_periodic_table, ptable
@@ -25,9 +25,6 @@ SUBROUTINE read_solute
         READ (5,*) ! comment line
         READ (5,*) nb_solute_sites, nb_id_mol ! total number of atom sites of the solute AND the total number of different types of atoms
         ALLOCATE(soluteSite(nb_solute_sites))
-        ALLOCATE(x_mol(nb_solute_sites))
-        ALLOCATE(y_mol(nb_solute_sites))
-        ALLOCATE(z_mol(nb_solute_sites))
         ALLOCATE(id_mol(nb_solute_sites)) ! from solute_site to id for instance id_mol(1)=1, id_mol(2)=2 and id_mol(3)=2 for OH2
         ALLOCATE(atomic_nbr(nb_solute_sites))
         ALLOCATE(chg_mol(nb_id_mol))
@@ -49,9 +46,6 @@ SUBROUTINE read_solute
     CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
 
     ! As a first step toward removing all x_mol etc, I make them as pointers to our new derived type
-    x_mol = soluteSite%r(1)
-    y_mol = soluteSite%r(2)
-    z_mol = soluteSite%r(3)
     atomic_nbr = soluteSite%Z
     lambda1_mol = soluteSite%lambda1
     lambda2_mol = soluteSite%lambda2

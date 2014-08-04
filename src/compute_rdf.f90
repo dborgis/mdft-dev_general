@@ -2,7 +2,7 @@
 SUBROUTINE compute_rdf (array,filename)
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: x_mol,y_mol,z_mol,id_mol,id_solv,nb_species,spaceGrid,soluteSite
+    USE system          ,ONLY: id_mol,id_solv,nb_species,spaceGrid,soluteSite
     USE input           ,ONLY: input_dp,input_int
     
     IMPLICIT NONE
@@ -48,9 +48,9 @@ SUBROUTINE compute_rdf (array,filename)
         ! Transform array(position) in rdf(radialdistance)
         ! counts the total number of appearence of a value in each bin
         DO CONCURRENT (n=1:SIZE(soluteSite), i=1:nfft1, j=1:nfft2, k=1:nfft3)
-            xnm2 =((i-1)*dx-x_mol(n))**2
-            ynm2 =((j-1)*dy-y_mol(n))**2
-            znm2 =((k-1)*dz-z_mol(n))**2
+            xnm2 =((i-1)*dx-soluteSite(n)%r(1))**2
+            ynm2 =((j-1)*dy-soluteSite(n)%r(2))**2
+            znm2 =((k-1)*dz-soluteSite(n)%r(3))**2
             r    =SQRT(xnm2+ynm2+znm2)
             bin  =INT(r/dr)+1
             IF (bin>nbins) THEN

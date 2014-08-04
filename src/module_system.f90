@@ -18,7 +18,6 @@ MODULE system
 
     INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: x_mol, y_mol, z_mol ! positions des sites du solute dans la boite (repere absolu)
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_mol, sig_mol, eps_mol  ! charge partielle et parametres LJ pour chaque site du solute (kJ/mol)
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: lambda1_mol, lambda2_mol     !Three body terms
     INTEGER(i2b), ALLOCATABLE, DIMENSION (:) :: atomic_nbr
