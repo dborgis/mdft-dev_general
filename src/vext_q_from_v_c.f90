@@ -43,7 +43,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     CALL UTest_TrilinearInterpolation
     CALL UTest_distToFloorNode
     ! Compute external potential for each combination of solvent side and grid node and orientation
-    err%pb=.FALSE.
+    err%pb=.FALSE. ! becomes TRUE if a problem is detected during execution.
     
     
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
