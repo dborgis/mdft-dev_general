@@ -55,7 +55,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
         
             l = floorNode(gridnode,gridlen,x,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
             u = ceilingNode(gridnode,gridlen,x,.TRUE.)
-            r = distToFloorNode(nfft,spaceGrid%length,x,.TRUE.) ! 0 <= distToFloorNode < 1
+            r = distToFloorNode(gridnode,gridlen,x,.TRUE.) ! 0 <= distToFloorNode < 1
             
             IF( ANY(r<0._dp) .or. ANY(r>1._dp) ) THEN
                 err%pb=.TRUE.
