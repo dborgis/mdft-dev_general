@@ -57,9 +57,9 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
         do k=1,nfft3
             z_grid=real(k-1,dp)*spaceGrid%dl(3)
             do j=1,nfft2
-                y_grid=real(j-1,dp)**spaceGrid%dl(2)
+                y_grid=real(j-1,dp)*spaceGrid%dl(2)
                 do i=1,nfft1
-                    x_grid=real(i-1,dp)**spaceGrid%dl(1)
+                    x_grid=real(i-1,dp)*spaceGrid%dl(1)
                     do o=1,angGrid%n_angles
                         tempVcoul=0.0_dp
                         ploop:  do p=1,molRotGrid%n_angles
@@ -71,7 +71,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
                                 z_m = z_grid + zmod(m,p,o)
                                 do n=1,SIZE(soluteSite)
                                     if (soluteSite(n)%q==0.0_dp) cycle
-                                    qfactcc=qfact*solventSite(m)%q*soluteSite(n)%q
+                                    qfactcc = qfact*solventSite(m)%q*soluteSite(n)%q
                                     x_nm = x_m - soluteSite(n)%r(1)
                                     y_nm = y_m - soluteSite(n)%r(2)
                                     z_nm = z_m - soluteSite(n)%r(3)
