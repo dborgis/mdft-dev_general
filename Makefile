@@ -180,7 +180,6 @@ $(OBJDIR)/compute_purely_repulsive_potential.o:\
 
 $(OBJDIR)/compute_rdf.o:\
 	$(SRCDIR)/compute_rdf.f90\
-	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
