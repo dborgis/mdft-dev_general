@@ -13,18 +13,11 @@ MODULE system
         INTEGER(i2b) :: Z ! atomic number
     END TYPE sites
     
-    TYPE (sites), ALLOCATABLE, DIMENSION(:), TARGET :: soluteSite
-    TYPE (sites), ALLOCATABLE, DIMENSION(:), TARGET :: solventSite
+    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: soluteSite
+    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: solventSite
 
     INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: x_mol, y_mol, z_mol ! positions des sites du solute dans la boite (repere absolu)
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_mol, sig_mol, eps_mol  ! charge partielle et parametres LJ pour chaque site du solute (kJ/mol)
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: lambda1_mol, lambda2_mol     !Three body terms
-    INTEGER(i2b), ALLOCATABLE, DIMENSION (:) :: atomic_nbr
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: x_solv, y_solv, z_solv  ! positions des sites du solvent dans le repere propre ede la molecule
-    REAL(dp), ALLOCATABLE, DIMENSION(:) :: chg_solv, sig_solv, eps_solv  ! charge partielle et parametres LJ pour chaque site du solvant (kJ/mol)
-    INTEGER(i2b), ALLOCATABLE, DIMENSION(:) :: id_solv, id_mol ! atom type of each solvent site and solute site for instance id_solv(1)=1, id_solv(2)=2 and id_solv(3)=2 for OH2
     REAL(dp) :: temp  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
     REAL(dp) :: kBT , beta
     
@@ -44,12 +37,6 @@ MODULE system
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s_hs ! c(2)(k) of a hard sphere
     COMPLEX(dp),ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
-
-
-
-!~     REAL(dp) :: delta_k ! distance between two k points in cs.in, cdelta.in, cd.in
-!~     INTEGER(i2b) :: nb_k ! nb of k points in cs.in, cdelta.in, cd.in
-
 
 
     ! Electrostatics
@@ -81,7 +68,6 @@ MODULE system
     !lambda_fs  :  0.0
     !a3  :  0.0
     !b3  :  3.0
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) ::  V_int
     !REAL(dp), ALLOCATABLE , DIMENSION (:,:,:, : ) :: rho_n ! density per angle (=n/4pi) of each species at each node (nfft1,nfft2,nfft3,nb_species)
     ! for maximum efficiency, rho_species(nfft1,nfft2,nfft3,nb_species) should be used in loops where species is the outer loop (varies slowliest)
     !do species = 1 , nb_species
@@ -95,7 +81,6 @@ MODULE system
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing
-    REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: V_coulomb ! nfft1 nfft2 nfft3 angGrid%n_angles
 
 
 END MODULE system

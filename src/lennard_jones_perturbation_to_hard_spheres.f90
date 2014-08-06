@@ -4,7 +4,7 @@
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nfft1,nfft2,nfft3,Lx,Ly,Lz,n_0,sig_solv,eps_solv,v_perturbation_k,spaceGrid,nb_species
+    USE system          ,ONLY: nfft1,nfft2,nfft3,Lx,Ly,Lz,n_0, v_perturbation_k,spaceGrid,nb_species, soluteSite, solventSite
     USE quadrature      ,ONLY: angGrid
     USE minimizer       ,ONLY: cg_vect,dF,FF
     USE constants       ,ONLY: fourpi,twopi,zeroC
@@ -70,7 +70,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
         DO n=1,nfft3
             DO m=1,nfft2
                 DO l=1,nfft1/2+1
-                    v_perturbation_k(l,m,n) = vlj_wca_k ( norm_k(l,m,n), sig_solv(1), eps_solv(1) )
+                    v_perturbation_k(l,m,n) = vlj_wca_k ( norm_k(l,m,n), solventSite(1)%sig, solventSite(1)%eps )
                 END DO
             END DO
         END DO

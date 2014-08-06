@@ -6,7 +6,7 @@ SUBROUTINE init_external_potential
 
     USE precision_kinds     ,ONLY: dp , i2b
     USE input               ,ONLY: input_log, input_char
-    USE system              ,ONLY: chg_solv, soluteSite, spaceGrid, nb_species
+    USE system              ,ONLY: soluteSite, spaceGrid, nb_species
     USE external_potential  ,ONLY: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,ONLY: init_lennardjones => init
     USE quadrature          ,ONLY: angGrid, molRotGrid
