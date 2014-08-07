@@ -30,58 +30,57 @@ SUBROUTINE compute_rdf (array,filename)
     dr = RdfMaxRange/REAL(nbins,dp) ! Width of each bin of the histogram
 
     OPEN(10,FILE=filename,FORM='formatted')
-        WRITE(10,*)'# r  rdf'
+    WRITE(10,*)'# r  rdf'
 
     ALLOCATE( recurrence_bin ( SIZE(soluteSite), nbins) ,SOURCE=0)
     ALLOCATE( rdf            ( SIZE(soluteSite), nbins) ,SOURCE=0._dp)
 
     error%found = .FALSE.
     
-    DO s=1,nb_species
-        IF (nb_species/=1) STOP "compute_rdf.f90 is written for 1 solvent species only."
-        recurrence_bin = 0
-        rdf = 0.0_dp
-        WRITE(10,*)'# You want',s,'molecular solvents'
+    IF (nb_species/=1) STOP "compute_rdf.f90 is written for 1 solvent species only."
 
-        ! Transform array(position) in rdf(radialdistance)
-        ! counts the total number of appearence of a value in each bin
-        DO CONCURRENT (n=1:SIZE(soluteSite), i=1:spaceGrid%n_nodes(1), j=1:spaceGrid%n_nodes(2), k=1:spaceGrid%n_nodes(3))
-            r = NORM2(REAL([i,j,k]-1,dp)*spaceGrid%dl - soluteSite(n)%r)
-            bin = INT(r/dr)+1
-            IF (bin>nbins) THEN
-                CYCLE
-            ELSE IF (bin<=0) THEN
-                error%found = .TRUE.
-                error%msg = "I found a null or negative bin index in compute_rdf.f90.\\ STOP"
-            END IF
-            recurrence_bin(n,bin) =recurrence_bin(n,bin) +1
-            rdf           (n,bin) =rdf(n,bin) +array(i,j,k,s)
-        END DO
+    recurrence_bin = 0
+    rdf = 0.0_dp
+    WRITE(10,*)'# You want',s,'molecular solvents'
 
-        IF (error%found) THEN
-            PRINT*,error%msg
-            STOP
+    ! Transform array(position) in rdf(radialdistance)
+    ! counts the total number of appearence of a value in each bin
+    DO CONCURRENT (n=1:SIZE(soluteSite), i=1:spaceGrid%n_nodes(1), j=1:spaceGrid%n_nodes(2), k=1:spaceGrid%n_nodes(3))
+        r = NORM2(REAL([i,j,k]-1,dp)*spaceGrid%dl - soluteSite(n)%r)
+        bin = INT(r/dr)+1
+        IF (bin>nbins) THEN
+            CYCLE
+        ELSE IF (bin<=0) THEN
+            error%found = .TRUE.
+            error%msg = "I found a null or negative bin index in compute_rdf.f90.\\ STOP"
         END IF
-
-        !normalize the rdf
-        WHERE (recurrence_bin/=0)
-            rdf = rdf/REAL(recurrence_bin,dp)
-        ELSEWHERE
-            rdf = 0.0_dp
-        END WHERE
-    
-        ! Write rdf
-        DO n=1,SIZE(soluteSite)
-            WRITE(10,*)'#site ' , n
-            WRITE(10,*)0._dp,0._dp
-            DO bin =1,nbins
-                WRITE(10,*) (REAL(bin,dp)-0.5_dp)*dr, rdf(n,bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
-            END DO
-            WRITE(10,*)
-        END DO
-        WRITE(10,*)! white line between solvent molecules
+        recurrence_bin(n,bin) =recurrence_bin(n,bin) +1
+        rdf           (n,bin) =rdf(n,bin) +array(i,j,k,s)
     END DO
-    
+
+    IF (error%found) THEN
+        PRINT*,error%msg
+        STOP
+    END IF
+
+    !normalize the rdf
+    WHERE (recurrence_bin/=0)
+        rdf = rdf/REAL(recurrence_bin,dp)
+    ELSEWHERE
+        rdf = 0.0_dp
+    END WHERE
+
+    ! Write rdf
+    DO n=1,SIZE(soluteSite)
+        WRITE(10,*)'#site ' , n
+        WRITE(10,*)0._dp,0._dp
+        DO bin =1,nbins
+            WRITE(10,*) (REAL(bin,dp)-0.5_dp)*dr, rdf(n,bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
+        END DO
+        WRITE(10,*)
+    END DO
+    WRITE(10,*)! white line between solvent molecules
+
     DEALLOCATE (recurrence_bin, rdf)
     CLOSE(10)
 
