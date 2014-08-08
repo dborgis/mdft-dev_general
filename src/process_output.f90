@@ -81,7 +81,7 @@ SUBROUTINE process_output
 
 
     filename = 'output/rdf.out'
-    CALL compute_rdf ( neq , filename ) ! Get radial distribution functions
+    CALL compute_rdf ( neq(:,:,:,1) , filename ) ! Get radial distribution functions
 
 
     CONTAINS

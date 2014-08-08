@@ -107,7 +107,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
                     !Compute Radial Polarization
                     filename='output/radial_polarization_dipolar'
                     polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*rho_0
-                    CALL compute_rdf(polatot, filename)
+                    CALL compute_rdf(polatot(:,:,:,1), filename)
 !~                     filename='output/radial_polarization_scalar'
                 END BLOCK
             END IF

@@ -13,7 +13,7 @@ SUBROUTINE compute_rdf (array,filename)
     
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),nb_species), INTENT(IN) :: array
+    REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: array
     CHARACTER(50), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr, r
     REAL(dp), ALLOCATABLE :: rdf(:)
@@ -35,9 +35,8 @@ SUBROUTINE compute_rdf (array,filename)
     ALLOCATE (rdf (nbins) ,SOURCE=0._dp)
     
     CALL UTest_histogram_3D
-    STOP "AFTER it works"
     DO n = 1, SIZE(soluteSite) ! loop over all sites of the solute
-        CALL histogram_3d (array(:,:,:,1), rdf)
+        CALL histogram_3d (array(:,:,:), rdf)
         IF (error%found) THEN; PRINT*,error%msg; STOP; END IF
         ! Write to output/rdf.out
         WRITE(10,*)'# solute site', n
