@@ -2,7 +2,7 @@
 SUBROUTINE energy_hydro (Fint)
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: c_s_hs ,  kBT , nb_species,n_0,spaceGrid
+    USE system              ,ONLY: c_s_hs, thermocond, nb_species, n_0, spaceGrid
     USE dcf                 ,ONLY: c_s, nb_k, delta_k
     USE constants           ,ONLY: fourpi,i_complex,twopi,zerodp,zeroC
     USE minimizer           ,ONLY: cg_vect , FF , dF
@@ -73,7 +73,7 @@ SUBROUTINE energy_hydro (Fint)
     END IF
 
     ! macroscopic water parameters, from Chandler
-    mu_0 = 7.16d-4*kBT ! phenomenological potential
+    mu_0 = 7.16d-4*thermocond%kbT ! phenomenological potential
     R_cg = input_dp("hydro_coarsegrainingradius") ! Gaussian radius for coarse graining
 
     ! total number of kpoints and volume per kpoint
@@ -127,7 +127,7 @@ SUBROUTINE energy_hydro (Fint)
             END IF
             dS_cgk(l,m,p) = dS_cgk(l,m,p) * facsym * k2 (l,m,p)
         END DO
-    dS_cgk = dS_cgk * n_0**2 * kBT * mm * DeltaVk
+    dS_cgk = dS_cgk * n_0**2 * thermocond%kbT * mm * DeltaVk
     END BLOCK
 
     ! gradient of delta_nbar in kspace
@@ -149,16 +149,16 @@ SUBROUTINE energy_hydro (Fint)
     sum_grad_delta_nbar_sq = sum_grad_delta_nbar_sq + (fftw3%out_backward/Nk)**2
 
     ! large gradient part
-    S_cg = 0.5_dp*mm*spaceGrid%dv*SUM(sum_grad_delta_nbar_sq)*n_0**2*kBT
+    S_cg = 0.5_dp*mm*spaceGrid%dv*SUM(sum_grad_delta_nbar_sq)*n_0**2*thermocond%kBT
     DEALLOCATE (sum_grad_delta_nbar_sq)
 
     fftw3%in_backward = delta_nbark
     CALL dfftw_execute(fftw3%plan_backward)
     ALLOCATE ( delta_nbar(nfft1,nfft2,nfft3) ,SOURCE=fftw3%out_backward/Nk)
 
-    F_cg = -0.5_dp*a*spaceGrid%dv*SUM(delta_nbar**2)*n_0**2*kBT&
-                 +b1*spaceGrid%dv*SUM(delta_nbar**3)*n_0**3*kBT&
-                 +b2*spaceGrid%dv*SUM(delta_nbar**4)*n_0**4*kBT
+    F_cg = -0.5_dp*a*spaceGrid%dv*SUM(delta_nbar**2)*n_0**2*thermocond%kBT&
+                 +b1*spaceGrid%dv*SUM(delta_nbar**3)*n_0**3*thermocond%kBT&
+                 +b2*spaceGrid%dv*SUM(delta_nbar**4)*n_0**4*thermocond%kBT
     IF (verbose) THEN
         print *, 'F_CG =  ',F_cg
         print *, 'S_CG =  ',S_cg
@@ -189,7 +189,7 @@ SUBROUTINE energy_hydro (Fint)
     V_n = V_n - (fftw3%out_backward/Nk) !V_n = V_n - V_nbar
 
     ! finaly, the total energy
-    Fint = 0.5_dp*SUM( (delta_n-delta_nbar)*V_n )*(-kBT*n_0*fact_n)
+    Fint = 0.5_dp*SUM( (delta_n-delta_nbar)*V_n )*(-thermocond%kbT*n_0*fact_n)
     DEALLOCATE(delta_n)
 
     !!!!!!!!!!!!!!!!!!!!!!!!
@@ -200,7 +200,7 @@ SUBROUTINE energy_hydro (Fint)
     ALLOCATE ( dF_cg (nfft1,nfft2,nfft3) ,SOURCE=zerodp)
     dF_cg = (  delta_nbar    *(-a*n_0**2) &
              + delta_nbar**2 *(3._dp*b1*n_0**3) &
-             + delta_nbar**3 *(4._dp*b2*n_0**4) ) *kBT*spaceGrid%dv
+             + delta_nbar**3 *(4._dp*b2*n_0**4) ) *thermocond%kbT*spaceGrid%dv
     DEALLOCATE (delta_nbar)
     
     ! FFT (dF_cg) in order to work in kspace
@@ -226,7 +226,7 @@ SUBROUTINE energy_hydro (Fint)
         DO i = 1, nfft1
             DO j = 1, nfft2
                 DO k = 1, nfft3
-                    Vint = -kBT * n_0 * fact_n * V_n(i,j,k) 
+                    Vint = -thermocond%kBT * n_0 * fact_n * V_n(i,j,k) 
                     dF_cg_ijk = dF_cg(i,j,k)
                     aa = 1._dp/(fourpi*twopi/molRotSymOrder)*(Vint+dF_cg_ijk)
                     DO o = 1, angGrid%n_angles

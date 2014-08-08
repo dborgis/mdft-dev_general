@@ -1,7 +1,7 @@
 SUBROUTINE energy_polarization_dipol (Fint)
 
     USE precision_kinds, ONLY : i2b, dp
-    USE system,          ONLY : kBT, rho_0, spaceGrid
+    USE system,          ONLY : thermocond, rho_0, spaceGrid
     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid
     USE minimizer,       ONLY : cg_vect , FF , dF
     USE constants,       ONLY : twopi, zeroC
@@ -38,7 +38,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
         Ey_tmp = Ey(i,j,k)
         Ez_tmp = Ez(i,j,k)
         DO o = 1 , angGrid%n_angles
-            Vint = -kBT*rho_0*( Omx(o)*Ex_tmp + Omy(o)*Ey_tmp + Omz(o)*Ez_tmp ) *angGrid%weight(o)
+            Vint = -thermocond%kbT*rho_0*( Omx(o)*Ex_tmp + Omy(o)*Ey_tmp + Omz(o)*Ez_tmp ) *angGrid%weight(o)
             DO p=1 , molRotGrid%n_angles
                 icg = icg + 1
                 psi = cg_vect ( icg )

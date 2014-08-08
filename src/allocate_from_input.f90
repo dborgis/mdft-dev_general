@@ -3,8 +3,7 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose
-    USE system              ,ONLY: temperature, beta, kbT, spaceGrid, &
-                                    n_0, rho_0, n_0_multispec, rho_0_multispec, nb_species, mole_fraction
+    USE system              ,ONLY: thermoCond, n_0, rho_0, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
     USE constants           ,ONLY: fourpi, boltz, navo, twopi
     USE quadrature          ,ONLY: molRotSymOrder
 
@@ -34,13 +33,13 @@ SUBROUTINE allocate_from_input
     spaceGrid%dl = spaceGrid%length/REAL(spaceGrid%n_nodes,dp)
     spaceGrid%dv = product(spaceGrid%dl)
 
-    temperature = input_dp('temperature') ! look for temperature in input
-    IF (temperature <= 0 ) THEN
-        PRINT*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',temperature
+    thermoCond%T = input_dp('temperature') ! look for temperature in input
+    IF (thermoCond%T <= 0 ) THEN
+        PRINT*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',thermoCond%T
         STOP
     END IF
-    kBT = Boltz * Navo * temperature * 1.0e-3_dp
-    beta = 1.0_dp / kBT
+    thermoCond%kbT = Boltz * Navo * thermoCond%T * 1.0e-3_dp
+    thermoCond%beta = 1.0_dp / thermocond%kbT
     
     nb_species = input_int('nb_implicit_species') ! get the number of implicit solvant species
     IF (nb_species < 1 ) THEN

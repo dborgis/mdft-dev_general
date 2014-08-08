@@ -1,7 +1,7 @@
 SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
-    USE system,          ONLY: spaceGrid, kBT, rho_0, rho_0_multispec, n_0, nb_species, &
+    USE system,          ONLY: spaceGrid, thermocond, rho_0, rho_0_multispec, n_0, nb_species, &
                                molec_polarx_k, molec_polary_k, molec_polarz_k, sigma_k
     USE dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
     USE quadrature,      ONLY: angGrid, molRotGrid, molRotSymOrder
@@ -119,7 +119,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
         DO i = 1 , nfft1
             DO j = 1 , nfft2
                 DO k = 1 , nfft3
-                Vint   = -kBT * rho_0_multispec ( s ) * Vpair(i,j,k)
+                Vint   = -thermocond%kbT * rho_0_multispec ( s ) * Vpair(i,j,k)
                     DO o = 1 , angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg=icg + 1
@@ -285,7 +285,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                 P_trans_z_k(i,j,k,s)*CONJG(P_trans_z_k(i,j,k,s)))&
                 /chi_t(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
 
-            F_pol_tot_k =F_pol_tot_k-(kBT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*rho_0**2*&
+            F_pol_tot_k =F_pol_tot_k-(thermocond%kbT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*rho_0**2*&
                 (P_tot_x_k(i,j,k,s)*CONJG(P_tot_x_k(i,j,k,s))&
                 +P_tot_y_k(i,j,k,s)*CONJG(P_tot_y_k(i,j,k,s))&
                 +P_tot_z_k(i,j,k,s)*CONJG(P_tot_z_k(i,j,k,s))))
@@ -331,7 +331,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                         (rho_n_k(i,j,k)*CONJG(sigma_k(i,j,k,o,p,s))+rho_c_k_myway(i,j,k,s)/rho_0)
                 END IF
     
-                dF_pol_tot_k_tmp =-kBT*3.0_dp*rho_0/(mu_SPCE**2*n_0)*molRotGrid%weight(p)*&
+                dF_pol_tot_k_tmp =-thermocond%kbT*3.0_dp*rho_0/(mu_SPCE**2*n_0)*molRotGrid%weight(p)*&
                     (P_tot_x_k(i,j,k,s)*CONJG(molec_polarx_k_local)&
                     +P_tot_y_k(i,j,k,s)*CONJG(molec_polary_k_local)&
                     +P_tot_z_k(i,j,k,s)*CONJG(molec_polarz_k_local))*angGrid%weight(o)

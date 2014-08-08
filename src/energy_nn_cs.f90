@@ -4,7 +4,7 @@
 SUBROUTINE energy_nn_cs (Fint)
 
     USE precision_kinds ,ONLY: i2b, dp
-    USE system          ,ONLY: kBT, rho_0_multispec, spaceGrid
+    USE system          ,ONLY: thermocond, rho_0_multispec, spaceGrid
     USE dcf             ,ONLY: c_s, nb_k, delta_k
     USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer       ,ONLY: cg_vect, FF, dF
@@ -52,7 +52,7 @@ SUBROUTINE energy_nn_cs (Fint)
     icg = 0 ! index of cg_vect
     nspec = SIZE( rho_0_multispec ) ! number of implicit solvant species
     DO s =1,nspec
-        fact = -kBT * rho_0_multispec(s)**2 * spaceGrid%dV
+        fact = -thermocond%kbT * rho_0_multispec(s)**2 * spaceGrid%dV
         DO i =1,nfft1
             DO j =1,nfft2
                 DO k =1,nfft3

@@ -4,7 +4,7 @@
 ! we thus init the density not using vext, but Vext_total - Vext_q
 SUBROUTINE init_density
 USE precision_kinds,only : dp , i2b
-use system,only : nfft1 , nfft2 , nfft3 , beta , nb_species
+use system,only : nfft1 , nfft2 , nfft3 , thermocond , nb_species
 use quadrature, only: angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect, nbd, ll, uu
 use external_potential,only : Vext_total , Vext_q
@@ -61,7 +61,7 @@ do species = 1 , nb_species
           if ( Vext_total_local >= 100.0_dp .or. Vext_total_local_min_Vext_q >= 100.0_dp ) then
             local_density0 = 0.0_dp!tiny ( 0.0_dp ) ! Don't put 0 as it induces problems in the calculations of log(density) in ideal part of F.
           ELSE
-            local_density0 = chop( EXP(- beta * Vext_total_local_min_Vext_q ) )
+            local_density0 = chop( EXP(- thermocond%beta * Vext_total_local_min_Vext_q ) )
           END IF
           ! put result in cg_vect. note that we do prefer to minimize sqrt(density) than the density in order to avoid sign problems
           cg_vect ( icg ) = chop( SQRT( local_density0 ) )

@@ -93,7 +93,7 @@ SUBROUTINE compute_hard_spheres_parameters
         
         USE precision_kinds ,ONLY: dp, i2b
         USE constants       ,ONLY: fourpi, pi
-        USE system          ,ONLY: kbT, spaceGrid
+        USE system          ,ONLY: thermoCond, spaceGrid
         USE input           ,ONLY: verbose
         USE hardspheres     ,ONLY: hs
         
@@ -139,16 +139,16 @@ SUBROUTINE compute_hard_spheres_parameters
             dndrho(3) = fourpi / 3.0_dp * hs(s)%R ** 3
 
             ! excess chemical potential
-            hs(s)%excchempot = kBT * SUM(dphidn*dndrho)
+            hs(s)%excchempot = thermoCond%kbT * SUM(dphidn*dndrho)
             IF (verbose) PRINT*,'chemical potential mu_exc0 ( ' , s , ' ) = ' , hs(s)%excchempot
 
             ! compute reference bulk grand-potential Omega(rho = rho_0) !! Do not forget the solver minimizes Omega[rho]-Omega[rho_0] = Fsolvatation
             IF ( hs_functional(1:2)=='PY' ) THEN
-                hs(s)%Fexc0 = kBT * ( - n0 * log ( 1.0_dp - n3 )                            &
+                hs(s)%Fexc0 = thermoCond%kbT * ( - n0 * log ( 1.0_dp - n3 )                            &
                                                     + n1 * n2 / ( 1.0_dp - n3 )                           &
                                                     + n2 ** 3 / ( 24.0_dp * pi * ( 1.0_dp - n3 ) ** 2 ) )
             ELSE IF ( hs_functional(1:2)=='CS' .or. hs_functional(1:4)=='MCSL' ) THEN
-                hs(s)%Fexc0 = kBT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
+                hs(s)%Fexc0 = thermoCond%kbT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
                                                     + n1 * n2 / ( 1.0_dp - n3 )                                                &
                                                     + ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / ( ( 1.0_dp - n3 ) ** 2 * n3 )   )
             END IF

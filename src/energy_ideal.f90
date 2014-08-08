@@ -5,7 +5,7 @@ SUBROUTINE energy_ideal (Fideal)
 
     USE precision_kinds, ONLY: i2b, dp
     USE minimizer, ONLY: cg_vect, FF, dF
-    USE system, ONLY: kBT, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
+    USE system, ONLY: thermocond, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
     USE quadrature, ONLY: molRotSymOrder, angGrid, molRotGrid
     USE input, ONLY: input_log, input_char
     USE constants, ONLY: fourpi
@@ -52,7 +52,7 @@ SUBROUTINE energy_ideal (Fideal)
             END DO
         END DO
     END IF
-    Fid_lin = Fid_lin*kBT*n_0_multispec(1)*spaceGrid%dv ! convert to kJ/mol
+    Fid_lin = Fid_lin*thermocond%kbT*n_0_multispec(1)*spaceGrid%dv ! convert to kJ/mol
 
 
 
@@ -72,7 +72,7 @@ SUBROUTINE energy_ideal (Fideal)
                                     if (rhon<=1.0_dp) then
                                         dFid_lin_temp=0.0_dp
                                     ELSE
-                                        dFid_lin_temp = -KbT*(Log(rhon)-rhon+1.0_dp)
+                                        dFid_lin_temp = -thermocond%kbT*(Log(rhon)-rhon+1.0_dp)
                                     END IF
                                     rho = psi ** 2
                                     Fideal = Fideal + Fideal_local(o,p,s,rho)
@@ -97,8 +97,8 @@ SUBROUTINE energy_ideal (Fideal)
                                     rho=psi**2
                                     logrho = log ( rho )
                                     IF ( rho > 0._dp ) THEN
-                                        dFid_lin_temp=-KbT*(Logrho-rho+1.0_dp)
-                                        Fid_lin_temp=-KbT*(rho*Logrho-rho+1.0_dp-0.5_dp*(rho-1.0_dp)**2)
+                                        dFid_lin_temp=-thermocond%kbT*(Logrho-rho+1.0_dp)
+                                        Fid_lin_temp=-thermocond%kbT*(rho*Logrho-rho+1.0_dp-0.5_dp*(rho-1.0_dp)**2)
                                     END IF
                                     Fideal = Fideal + Fideal_local (o,p,s,rho)
                                     IF ( psi /= 0.0_dp ) THEN
@@ -136,7 +136,7 @@ SUBROUTINE energy_ideal (Fideal)
         END DO
     END IF
 
-    Fideal = Fideal * kBT * spaceGrid%dv ! integration factor
+    Fideal = Fideal * thermocond%kbT * spaceGrid%dv ! integration factor
     FF = FF + Fideal + Fid_lin
 
     Fideal = Fideal + Fid_lin
@@ -152,7 +152,7 @@ SUBROUTINE energy_ideal (Fideal)
         REAL(dp), INTENT(IN) :: psi, toadd
         REAL(dp) :: dFideal_local
         IF (psi /= 0._dp) THEN
-            dFideal_local = 2.0_dp * psi * prefactor(o,p,s) * spaceGrid%dv * ( kBT*LOG(psi**2) + toadd )
+            dFideal_local = 2.0_dp * psi * prefactor(o,p,s) * spaceGrid%dv * ( thermocond%kbT*LOG(psi**2) + toadd )
         ELSE
             dFideal_local = 0._dp
         END IF

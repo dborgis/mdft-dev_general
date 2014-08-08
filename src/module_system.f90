@@ -18,7 +18,13 @@ MODULE system
 
     INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
-    REAL(dp) :: temperature, kBT, beta ! beta=1/(kBT)
+    
+    TYPE :: thermoCondType
+        REAL(dp) :: T ! temperature
+        REAL(dp) :: kbT ! temperature energy unit
+        REAL(dp) :: beta ! 1/kbT
+    END TYPE
+    TYPE (thermoCondType) :: thermoCond ! everything related to the thermodynamic conditions
     
     TYPE :: spaceGridType
         INTEGER(i2b), DIMENSION(3) :: n_nodes ! number of grid nodes in direction x, y and z
