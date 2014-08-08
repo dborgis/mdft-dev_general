@@ -67,14 +67,7 @@ direct_sum = T
 
 
 reuse_density = F
-
-
-############################
-# POST-PROCESSING
-############################
 translate_solute_to_center = T
-rdfmaxrange = 10.0
-nbinsrdf = 120
 
 
 ############################
