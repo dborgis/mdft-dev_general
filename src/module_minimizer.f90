@@ -1,6 +1,7 @@
-!> Defines the parameters of minimizer.
-!! Could be CG+ or L-BFGS parameters, depending on input file.
+!===================================================================================================================================
 module minimizer
+!===================================================================================================================================
+! Defines minimizer parameters
 
     USE precision_kinds,only: i2b , dp
     
@@ -30,7 +31,9 @@ module minimizer
     
     contains
     
+        !===========================================================================================================================
         SUBROUTINE finalizeMinimizer
+        !===========================================================================================================================
             IF (ALLOCATED ( dF ) ) deallocate ( dF )
             IF (ALLOCATED ( nbd ) ) deallocate ( nbd )
             IF (ALLOCATED ( iwa ) ) deallocate ( iwa )
@@ -39,5 +42,6 @@ module minimizer
             IF (ALLOCATED ( wa ) ) deallocate ( wa )
             IF (ALLOCATED ( indicg ) ) deallocate ( indicg )
         END SUBROUTINE finalizeMinimizer
+        !===========================================================================================================================
 
 end module minimizer
