@@ -5,6 +5,9 @@ MODULE system
 
     IMPLICIT NONE
 
+    INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
+    INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
+
     TYPE :: sites
         CHARACTER(100) :: name
         INTEGER(i2b) :: type, n_sites
@@ -15,9 +18,17 @@ MODULE system
     
     TYPE (sites), ALLOCATABLE, DIMENSION(:) :: soluteSite
     TYPE (sites), ALLOCATABLE, DIMENSION(:) :: solventSite
+    
+    TYPE :: solventType
+        TYPE (sites), ALLOCATABLE :: site(:)
+        REAL(dp) :: n ! density
+        REAL(dp) :: Dn ! density - reference density
+        REAL(dp) :: rho ! density per unit angle
+        REAL(dp) :: Drho ! rho - reference rho
+        REAL(dp) :: density, polarizability, epolarizability
+    END TYPE
 
-    INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
-    INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
+    TYPE (solventType), ALLOCATABLE :: solvent(:)
     
     TYPE :: thermoCondType
         REAL(dp) :: T ! temperature
