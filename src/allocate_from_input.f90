@@ -50,27 +50,24 @@ SUBROUTINE allocate_from_input
     if (i /= 0) stop "Problem during allocation of type solvent in allocate from input."
     
     ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer  
-    ALLOCATE ( n_0_multispec ( nb_species ) )
-    do i = 1 , size ( input_line )
-        if ( input_line ( i ) ( 1 : len ( 'ref_bulk_density' ) ) == 'ref_bulk_density' ) THEN
-            do s = 1 , nb_species
-                read ( input_line ( i + s ) , * ) n_0_multispec ( s )
-            END DO
+    do i = 1, size(input_line)
+        if (input_line(i)(1:len('ref_bulk_density')) == 'ref_bulk_density') then
+            do s = 1, nb_species
+                read (input_line(i+s),*) solvent(s)%n0
+            end do
             exit
-        END IF
-    END DO
-    IF (ANY( n_0_multispec <= 0._dp) ) THEN
-        PRINT*,'you ask for several species as solvent, but some have negative bulk density'
-        do i=1, size(n_0_multispec)
-            PRINT*,'species',i,'bulk density',n_0_multispec(i)
-        END DO
-        STOP 'UNPHYSICAL INPUT CHECK ref_bulk_density'
-    END IF
-    do s =1, nb_species
-        solvent(s)%n0 = n_0_multispec(s)
-        solvent(s)%rho0 = solvent(s)%n0 / (eightpiSQ/molrotsymorder)
+        end if
     end do
-    
+    if (any (solvent%n0 <= 0._dp) ) then
+        print *,"You ask for negative densities!"
+        do s =1, nb_species
+            print *,"For species",s,"you want density (molecule/Ang^3):",solvent(s)%n0
+        end do
+        stop
+    end if
+    solvent(s)%rho0 = solvent(s)%n0 / (eightpiSQ/molrotsymorder);
+    if (nb_species > 1) stop "molRotSymOrder must be solvent specific. See github issu #60"
+
     n_0 = n_0_multispec(1) ! for single specie compatibility while not fully complete : 
 
     if (ALLOCATEd(mole_fraction)) THEN
