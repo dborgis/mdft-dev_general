@@ -33,7 +33,7 @@ SUBROUTINE vext_total_sum
     IF ( ALLOCATED ( Vext_lj ) )        Vext_total = Vext_total + Vext_lj
     IF ( ALLOCATED ( vext_hard_core ) ) vext_total (:,:,:,1,1,:) = vext_total (:,:,:,1,1,:) + vext_hard_core ! TODO generalize
 
-    IF ( ALL(vext_total==zero) ) STOP "The external potential is zero everywhere. Something's wrong in input files"
+    IF ( ALL(vext_total==zero) ) PRINT*, "WARNING: The external potential is zero everywhere. Is it what you want"
     
     IF ( ANY(vext_total/=vext_total) ) STOP "There is a NaN somewhere in vext_total."
     
