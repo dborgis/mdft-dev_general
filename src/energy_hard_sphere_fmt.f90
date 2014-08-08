@@ -1,7 +1,7 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 
     USE precision_kinds  ,ONLY: dp , i2b
-    USE system           ,ONLY: thermocond, nb_species, n_0_multispec, mole_fraction, spaceGrid, solvent
+    USE system           ,ONLY: thermocond, nb_species, mole_fraction, spaceGrid, solvent
     USE quadrature       ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer        ,ONLY: cg_vect , FF , dF
     USE constants        ,ONLY: pi , FourPi , twopi, zeroC
@@ -71,7 +71,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! total number of molecules of each species
     ALLOCATE ( nb_molecules ( nb_species ) ,SOURCE=0._dp)
     DO CONCURRENT ( s=1:nb_species )
-        nb_molecules(s) = SUM( rho(:,:,:,s ) ) * n_0_multispec(s) * mole_fraction(s) * deltav
+        nb_molecules(s) = SUM( rho(:,:,:,s ) ) * solvent(s)%n0 * mole_fraction(s) * deltav
 !~         IF (verbose) PRINT*,'There are',nb_molecules(s),'molecules of type',s
     END DO
 
@@ -86,7 +86,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     DO s = 1 , nb_species
         fftw3%in_forward = rho(:,:,:,s)
         CALL dfftw_execute ( fftw3%plan_forward )
-        rho_k(:,:,:,s) = fftw3%out_forward * n_0_multispec(s) * mole_fraction(s)
+        rho_k(:,:,:,s) = fftw3%out_forward * solvent(s)%n0 * mole_fraction(s)
     END DO
     DEALLOCATE ( rho )
 

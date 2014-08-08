@@ -3,7 +3,7 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose
-    USE system              ,ONLY: thermoCond, n_0, n_0_multispec, nb_species, mole_fraction, spaceGrid, solvent
+    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, spaceGrid, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     USE quadrature          ,ONLY: molRotSymOrder
 
@@ -67,8 +67,6 @@ SUBROUTINE allocate_from_input
     end if
     solvent(s)%rho0 = solvent(s)%n0 / (eightpiSQ/molrotsymorder);
     if (nb_species > 1) stop "molRotSymOrder must be solvent specific. See github issu #60"
-
-    n_0 = n_0_multispec(1) ! for single specie compatibility while not fully complete : 
 
     if (ALLOCATEd(mole_fraction)) THEN
         write(*,*)'something is not under control with respect to mole fraction reading and definition in ALLOCATE_from_input.f90'

@@ -5,7 +5,7 @@ SUBROUTINE energy_ideal (Fideal)
 
     USE precision_kinds, ONLY: i2b, dp
     USE minimizer, ONLY: cg_vect, FF, dF
-    USE system, ONLY: thermocond, nb_species, mole_fraction, n_0_multispec, spaceGrid, solvent
+    USE system, ONLY: thermocond, nb_species, mole_fraction, spaceGrid, solvent
     USE quadrature, ONLY: molRotSymOrder, angGrid, molRotGrid
     USE input, ONLY: input_log, input_char
     USE constants, ONLY: fourpi
@@ -52,7 +52,7 @@ SUBROUTINE energy_ideal (Fideal)
             END DO
         END DO
     END IF
-    Fid_lin = Fid_lin*thermocond%kbT*n_0_multispec(1)*spaceGrid%dv ! convert to kJ/mol
+    Fid_lin = Fid_lin*thermocond%kbT*solvent(1)%n0*spaceGrid%dv ! convert to kJ/mol
 
 
 

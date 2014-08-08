@@ -3,7 +3,7 @@
 SUBROUTINE cs_of_k_hard_sphere
 
 USE precision_kinds, ONLY: i2b, dp
-USE system, ONLY: n_0_multispec, c_s_hs, nb_species !@GUILLAUME c_s_hs should go into MODULE DCF
+USE system, ONLY: c_s_hs, nb_species, solvent !@GUILLAUME c_s_hs should go into MODULE DCF
 USE input, ONLY: input_line, n_linesInFile, verbose
 USE constants, ONLY: fourpi, pi
 USE dcf, ONLY: c_s, delta_k, nb_k, chi_l
@@ -55,10 +55,10 @@ do i = 0, nb_k-1
     w2 = FourPi *R**2
     w3 = FourPi/3.d0 *R**3
     ! weighted densities
-    n0 = n_0_multispec ( 1 ) * w0
-    n1 = n_0_multispec ( 1 ) * w1
-    n2 = n_0_multispec ( 1 ) * w2
-    n3 = n_0_multispec ( 1 ) * w3
+    n0 = solvent(1)%n0 * w0
+    n1 = solvent(1)%n0 * w1
+    n2 = solvent(1)%n0 * w2
+    n3 = solvent(1)%n0 * w3
   ELSE ! k/=0
     w0 = coskR + .5d0*kR*sinkR
     w1 = (sinkR + kR*coskR) / (2.d0*k)
