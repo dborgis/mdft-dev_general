@@ -22,7 +22,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
     Nk = REAL ( nfft1*nfft2*nfft3 , dp ) ! total number of k grid points
     
     
-    CALL build_polarization_vector_field_Px_Py_Pz ! Px(r) = \int_\Omega \Omega(r) * \rho(r,\Omega) d\Omega  see Borgis et al., DOI:10.1103/PhysRevE.66.031206
+    CALL build_polarization_vector_field_Px_Py_Pz ! Px(r) = \int_\Omega \Omega * \rho(r,\Omega) d\Omega  see Borgis et al., DOI:10.1103/PhysRevE.66.031206
     CALL build_Fourier_transformed_polarization_vector_field_Pkx_Pky_Pkz
     CALL build_excess_electric_field_in_Fourier_space
     CALL build_excess_electric_field_from_inverse_Fourier_transform
