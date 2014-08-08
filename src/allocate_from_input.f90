@@ -3,8 +3,8 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose
-    USE system              ,ONLY: thermoCond, n_0, rho_0, n_0_multispec, rho_0_multispec, nb_species, mole_fraction, spaceGrid
-    USE constants           ,ONLY: fourpi, boltz, navo, twopi
+    USE system              ,ONLY: thermoCond, n_0, rho_0, n_0_multispec, nb_species, mole_fraction, spaceGrid, solvent
+    USE constants           ,ONLY: eightpiSQ, boltz, navo
     USE quadrature          ,ONLY: molRotSymOrder
 
     IMPLICIT NONE
@@ -42,10 +42,12 @@ SUBROUTINE allocate_from_input
     thermoCond%beta = 1.0_dp / thermocond%kbT
     
     nb_species = input_int('nb_implicit_species') ! get the number of implicit solvant species
-    IF (nb_species < 1 ) THEN
-        PRINT*,'Solvent is without species. This is not what you want. Check nb_implicit_species in dft.in :', nb_species
-        STOP
-    END IF
+    if (nb_species < 1) then
+        print*,"STOP. nb_species =",nb_species,". The number of solvent species must be >0."
+        stop
+    end if
+    allocate (solvent(nb_species), stat=i)
+    if (i /= 0) stop "Problem during allocation of type solvent in allocate from input."
     
     ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer  
     ALLOCATE ( n_0_multispec ( nb_species ) )
@@ -64,10 +66,13 @@ SUBROUTINE allocate_from_input
         END DO
         STOP 'UNPHYSICAL INPUT CHECK ref_bulk_density'
     END IF
-    ALLOCATE ( rho_0_multispec ( nb_species ) )
-    rho_0_multispec = molRotSymOrder*n_0_multispec / (2.0_dp*twopi**2) ! for single specie compatibility while not fully complete :
+    do s =1, nb_species
+        solvent(s)%n0 = n_0_multispec(s)
+        solvent(s)%rho0 = solvent(s)%n0 / (eightpiSQ/molrotsymorder)
+    end do
+    
     n_0 = n_0_multispec(1) ! for single specie compatibility while not fully complete : 
-    rho_0 = rho_0_multispec(1) ! rho is the density per angle
+    rho_0 = solvent(1)%rho0 ! rho is the density per angle
 
     if (ALLOCATEd(mole_fraction)) THEN
         write(*,*)'something is not under control with respect to mole fraction reading and definition in ALLOCATE_from_input.f90'

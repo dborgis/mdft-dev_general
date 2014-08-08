@@ -5,7 +5,7 @@ SUBROUTINE energy_ideal (Fideal)
 
     USE precision_kinds, ONLY: i2b, dp
     USE minimizer, ONLY: cg_vect, FF, dF
-    USE system, ONLY: thermocond, nb_species, rho_0_multispec, mole_fraction, n_0_multispec, spaceGrid
+    USE system, ONLY: thermocond, nb_species, mole_fraction, n_0_multispec, spaceGrid, solvent
     USE quadrature, ONLY: molRotSymOrder, angGrid, molRotGrid
     USE input, ONLY: input_log, input_char
     USE constants, ONLY: fourpi
@@ -175,7 +175,7 @@ SUBROUTINE energy_ideal (Fideal)
     PURE FUNCTION prefactor (o,p,s)
         INTEGER(i2b), INTENT(IN) :: o,p,s
         REAL(dp) :: prefactor
-        prefactor = angGrid%weight(o) * molRotGrid%weight(p) * rho_0_multispec(s)
+        prefactor = angGrid%weight(o) * molRotGrid%weight(p) * solvent(s)%rho0
     END FUNCTION
 
 

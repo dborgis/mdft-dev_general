@@ -4,7 +4,7 @@ SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spaceGrid, rho_0_multispec, n_0_multispec
+    USE system,             ONLY: nb_species, spaceGrid, n_0_multispec, solvent
     USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp

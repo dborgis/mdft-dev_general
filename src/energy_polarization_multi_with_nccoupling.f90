@@ -1,8 +1,8 @@
 SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
-    USE system,          ONLY: spaceGrid, thermocond, rho_0, rho_0_multispec, n_0, nb_species, &
-                               molec_polarx_k, molec_polary_k, molec_polarz_k, sigma_k
+    USE system,          ONLY: spaceGrid, thermocond, rho_0, n_0, nb_species, &
+                               molec_polarx_k, molec_polary_k, molec_polarz_k, sigma_k, solvent
     USE dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
     USE quadrature,      ONLY: angGrid, molRotGrid, molRotSymOrder
     USE minimizer,       ONLY: cg_vect, FF, dF
@@ -115,11 +115,11 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     Fint = 0.0_dp ! excess energy
     icg = 0 ! index of cg_vect
     DO s = 1 , nb_species
-        fact = spaceGrid%dv * rho_0_multispec ( s ) !> facteur d'integration
+        fact = spaceGrid%dv * solvent(s)%rho0 ! facteur d'integration
         DO i = 1 , nfft1
             DO j = 1 , nfft2
                 DO k = 1 , nfft3
-                Vint   = -thermocond%kbT * rho_0_multispec ( s ) * Vpair(i,j,k)
+                Vint   = -thermocond%kbT * solvent(s)%rho0 * Vpair(i,j,k)
                     DO o = 1 , angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg=icg + 1

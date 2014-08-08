@@ -21,13 +21,11 @@ MODULE system
     
     TYPE :: solventType
         TYPE (sites), ALLOCATABLE :: site(:)
-        REAL(dp) :: n ! density
-        REAL(dp) :: Dn ! density - reference density
-        REAL(dp) :: rho ! density per unit angle
-        REAL(dp) :: Drho ! rho - reference rho
-        REAL(dp) :: density, polarizability, epolarizability
+        real(dp), allocatable :: n(:,:,:)  ! number density
+        real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
+        real(dp)              :: rho0      ! number density per orientation = n0/(8pi²/molrotsymorder)
+        real(dp), allocatable :: Dn(:,:,:) ! Dn = n - nref
     END TYPE
-
     TYPE (solventType), ALLOCATABLE :: solvent(:)
     
     TYPE :: thermoCondType
@@ -50,7 +48,7 @@ MODULE system
     INTEGER(i2b), POINTER :: nfft1 => spaceGrid%n_nodes(1), nfft2 => spaceGrid%n_nodes(2), nfft3 => spaceGrid%n_nodes(3) ! deprecated. Should be removed at some point
 
     REAL(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
-    REAL(dp), ALLOCATABLE, DIMENSION (:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
+    REAL(dp), ALLOCATABLE, DIMENSION (:) :: n_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s_hs ! c(2)(k) of a hard sphere
     COMPLEX(dp),ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
 

@@ -4,7 +4,7 @@
 SUBROUTINE energy_nn_cs (Fint)
 
     USE precision_kinds ,ONLY: i2b, dp
-    USE system          ,ONLY: thermocond, spaceGrid, solvent, nb_species
+    USE system          ,ONLY: thermocond, spaceGrid, solvent
     USE dcf             ,ONLY: c_s, nb_k, delta_k
     USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer       ,ONLY: cg_vect, FF, dF
@@ -20,13 +20,12 @@ SUBROUTINE energy_nn_cs (Fint)
     COMPLEX(dp), ALLOCATABLE :: delta_rho_k(:,:,:), gamma_k(:,:,:)
     LOGICAL    , SAVE        :: c_s_isOK =.FALSE.
 
-    nfft1 =spaceGrid%n_nodes(1)
-    nfft2 =spaceGrid%n_nodes(2)
-    nfft3 =spaceGrid%n_nodes(3)
-
     CALL CPU_TIME ( time0 )
 
     ALLOCATE ( delta_rho(nfft1,nfft2,nfft3) ,SOURCE=0._dp )
+
+    allocate (solvent(1)%Dn(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3)), source=0._dp, stat=i)
+    if (i /= 0) stop "Problem during allocation of solvent%n in NEW_energy_nn_cs.f90."
 
     CALL fill_delta_rho_from_cgvect
     
@@ -88,6 +87,7 @@ SUBROUTINE energy_nn_cs (Fint)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
         SUBROUTINE fill_delta_rho_from_cgvect
+        ! In cg_vect, we store rho(r)/rho0
             IMPLICIT NONE
             REAL(dp)        :: psi
             INTEGER(i2b)    :: icg,i,j,k,o,p
@@ -102,11 +102,11 @@ SUBROUTINE energy_nn_cs (Fint)
                                 psi = psi + angGrid%weight(o) * cg_vect(icg)**2*molRotGrid%weight(p)
                             END DO
                         END DO
-                        delta_rho(i,j,k) = psi
+                        delta_rho(i,j,k) = psi ! = n(r)/rho0
                     END DO
                 END DO
             END DO
-            delta_rho = delta_rho -REAL(2.0_dp*twopi**2/molRotSymOrder, dp)
+            delta_rho = delta_rho - eightpiSQ/real(molrotsymorder,dp) ! = n(r)/rho0 - n0/rho0
         END SUBROUTINE fill_delta_rho_from_cgvect
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

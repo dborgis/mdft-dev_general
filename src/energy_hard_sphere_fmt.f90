@@ -1,7 +1,7 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 
     USE precision_kinds  ,ONLY: dp , i2b
-    USE system           ,ONLY: thermocond, nb_species, n_0_multispec, mole_fraction, rho_0_multispec, spaceGrid
+    USE system           ,ONLY: thermocond, nb_species, n_0_multispec, mole_fraction, spaceGrid, solvent
     USE quadrature       ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer        ,ONLY: cg_vect , FF , dF
     USE constants        ,ONLY: pi , FourPi , twopi, zeroC
@@ -232,7 +232,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
                             psi = cg_vect ( icg )
     ! AHAAAAAAAAAAAAATTENTION ICI LE 12 SEPTEMBRE 2011 JE ME RENDS COMPTE QU iL Y A PEUT ETRE UN FACTEUR WEIGHT(o) QUI MANQUE, CA DEPEND DE LA DEF DE N0 par RAPPORT à rho_0
                             dF ( icg ) = dF ( icg ) &
-                            + 2.0_dp * psi * rho_0_multispec ( s ) * deltav * ( thermocond%kbT * dFex(i,j,k,s) - hs(s)%excchempot )&
+                            + 2.0_dp * psi * solvent(s)%rho0 * deltav * ( thermocond%kbT * dFex(i,j,k,s) - hs(s)%excchempot )&
                             *angGrid%weight(o)*molRotGrid%weight(p)
     ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
                         END DO !p
