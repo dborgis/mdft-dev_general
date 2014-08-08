@@ -65,7 +65,8 @@ SUBROUTINE allocate_from_input
         end do
         stop
     end if
-    solvent(s)%rho0 = solvent(s)%n0 / (eightpiSQ/molrotsymorder);
+    solvent%rho0 = solvent%n0 / (eightpiSQ/molrotsymorder)
+
     if (nb_species > 1) stop "molRotSymOrder must be solvent specific. See github issu #60"
 
     if (ALLOCATEd(mole_fraction)) THEN

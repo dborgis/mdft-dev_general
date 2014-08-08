@@ -4,7 +4,7 @@
 SUBROUTINE energy_nn_cs (Fint)
 
     USE precision_kinds ,ONLY: i2b, dp
-    USE system          ,ONLY: thermocond, spaceGrid, solvent, nb_species
+    USE system          ,ONLY: spaceGrid, nb_species, solvent, thermocond
     USE dcf             ,ONLY: c_s, nb_k, delta_k
     USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer       ,ONLY: cg_vect, FF, dF
@@ -50,7 +50,7 @@ SUBROUTINE energy_nn_cs (Fint)
     ! excess free energy and its gradient
     Fint = 0.0_dp ! excess free energy
     icg = 0 ! index of cg_vect
-    DO s =1,nb_species
+    DO s =1, nb_species
         fact = -thermocond%kbT * solvent(s)%rho0**2 * spaceGrid%dV
         DO i =1,nfft1
             DO j =1,nfft2

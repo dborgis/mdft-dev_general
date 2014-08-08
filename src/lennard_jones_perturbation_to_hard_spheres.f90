@@ -4,7 +4,7 @@
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nfft1,nfft2,nfft3,Lx,Ly,Lz,n_0, v_perturbation_k,spaceGrid,nb_species, soluteSite, solventSite, &
+    USE system          ,ONLY: nfft1,nfft2,nfft3,Lx,Ly,Lz, v_perturbation_k,spaceGrid,nb_species, soluteSite, solventSite, &
                                 solvent
     USE quadrature      ,ONLY: angGrid
     USE minimizer       ,ONLY: cg_vect,dF,FF
@@ -51,7 +51,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
                 local_density = local_density / fourpi ! correct by fourpi as the integral over all orientations o is 4pi
                 ! at the same time integrate rho_n in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
                 rho_n ( i , j , k ) = local_density
-                nb_molecule = nb_molecule + local_density * n_0 * spaceGrid%dv
+                nb_molecule = nb_molecule + local_density * solvent(1)%n0 * spaceGrid%dv
             END DO
         END DO
     END DO
@@ -80,7 +80,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     ! put the backup in what we use (perhaps redondant)
     ALLOCATE( Vk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) ,SOURCE=v_perturbation_k) ! Vk is the one we use in this routine. It may be saved in v_perturbation_k in order not to compute it each time.
     ! once equation written, dFp / drho at rho = rho_0 is shown to be equal to rho_0 * Vk(k=0)
-    potential = n_0 * REAL ( Vk ( 1 , 1 , 1 ) )
+    potential = solvent(1)%n0 * REAL ( Vk ( 1 , 1 , 1 ) )
 
     ! FFT-1 of perturbation
     fftw3%in_backward = Vk * rho_k

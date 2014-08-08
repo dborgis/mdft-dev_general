@@ -2,7 +2,7 @@
 ! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
 SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   USE precision_kinds,only : dp , i2b
-  use system,only : nfft1 , nfft2 , nfft3 , deltaV, thermocond ,  nb_species,n_0, Lx,Ly,Lz
+  use system,only : nfft1 , nfft2 , nfft3 , deltaV, thermocond ,  nb_species, Lx,Ly,Lz, solvent
   USE dcf, ONLY: c_s, nb_k ,delta_k
   use constants,only : fourpi , i_complex,twopi
   USE minimizer, ONLY: cg_vect , FF , dF
@@ -74,7 +74,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   DeltaVk = DeltaV / Nk!twopi**3/(Lx*ly*Lz*Nk)!
   
   
-  fact_n = DeltaV * n_0 ! integration factor
+  fact_n = DeltaV * solvent(1)%n0 ! integration factor
   prefactor = - R_cg ** 2 / 2.0_dp ! dummy for later in the gaussian in k space g(k)=exp(prefactor*k2)
   
   ! get density from last minimization step
@@ -223,12 +223,12 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
         if (nbar==0.0) stop 'problem in cs_plus_hydro.f90 : nbar should not be =0.0. STOP'
         lognbar = log(nbar)
   
-        F_cg = F_cg + DeltaV*(6.0*gamma_0/d_0)*(nbar-1.0_dp)**2*nbar**2 - mu_0*n_0*(nbar-1.0_dp)*deltaV
+        F_cg = F_cg + DeltaV*(6.0*gamma_0/d_0)*(nbar-1.0_dp)**2*nbar**2 - mu_0*solvent(1)%n0*(nbar-1.0_dp)*deltaV
   
         ! + ideal part associated to nbar
         F_cg = F_cg - thermocond%kbT*fact_n*(nbar*lognbar- nbar + 1.0_dp)
   
-        dF_cg(i,j,k) = (DeltaV*(6.0*gamma_0/d_0)*2.0_dp*(nbar-1.0_dp)*nbar*(2.0_dp*nbar-1.0_dp) - mu_0*n_0*deltaV)&
+        dF_cg(i,j,k) = (DeltaV*(6.0*gamma_0/d_0)*2.0_dp*(nbar-1.0_dp)*nbar*(2.0_dp*nbar-1.0_dp) - mu_0*solvent(1)%n0*deltaV)&
                         - thermocond%kbT*fact_n*lognbar
       END DO
     END DO
@@ -276,7 +276,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   do i = 1, nfft1
     do j = 1, nfft2
       do k = 1, nfft3
-        Vint = -thermocond%kbT * n_0 * fact_n * ( V_n(i,j,k) - V_nbar(i,j,k) ) 
+        Vint = -thermocond%kbT * solvent(1)%n0 * fact_n * ( V_n(i,j,k) - V_nbar(i,j,k) ) 
         Fint = Fint + 0.5_dp* ( Delta_n (i,j,k) - Delta_nbar (i,j,k) ) * Vint ! TODO doesnt work in case of angGrid%n_angles /= 1)
         dF_cg_ijk = dF_cg(i,j,k)
         do o = 1, angGrid%n_angles

@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
     USE system, ONLY: nfft1, nfft2, nfft3, &
-        thermocond, molec_polarx_k, molec_polary_k, molec_polarz_k, nb_species, n_0, spaceGrid, solvent
+        thermocond, molec_polarx_k, molec_polary_k, molec_polarz_k, nb_species, spaceGrid, solvent
     USE dcf, ONLY: chi_l, chi_t, c_s, nb_k, delta_k
     USE quadrature,ONLY : angGrid, molRotGrid
     USE minimizer, ONLY: cg_vect, FF, dF
@@ -156,7 +156,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
                                         /chi_t(k_index)*0.5_dp*qfact*solvent(s)%rho0**2*facsym/(twopi**3)
         
         F_pol_tot = &
-            F_pol_tot-thermocond%kbT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*solvent(s)%rho0**2*&
+            F_pol_tot-thermocond%kbT*3/(2*mu_SPCE**2*solvent(1)%n0)*deltaVk*facsym/(twopi**3)*solvent(s)%rho0**2*&
             REAL(pola_tot_x_k(i,j,k,s)*CONJG(pola_tot_x_k(i,j,k,s))&
                 +pola_tot_y_k(i,j,k,s)*CONJG(pola_tot_y_k(i,j,k,s))&
                 +pola_tot_z_k(i,j,k,s)*CONJG(pola_tot_z_k(i,j,k,s)))
@@ -194,7 +194,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
                     *Lweight*2.0_dp
             END IF
             
-            dF_pol_tot_k(i,j,k,o,p,s)=-thermocond%kbT*3._dp*solvent(s)%rho0/(2._dp*mu_SPCE**2*n_0)*(&
+            dF_pol_tot_k(i,j,k,o,p,s)=-thermocond%kbT*3._dp*solvent(s)%rho0/(2._dp*mu_SPCE**2*solvent(1)%n0)*(&
                  pola_tot_x_k(i,j,k,s)*CONJG(molec_polarx_k(i,j,k,o,p,s))&
                 +pola_tot_y_k(i,j,k,s)*CONJG(molec_polary_k(i,j,k,o,p,s))&
                 +pola_tot_z_k(i,j,k,s)*CONJG(molec_polarz_k(i,j,k,o,p,s)))&

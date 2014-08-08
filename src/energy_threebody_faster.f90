@@ -4,7 +4,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     USE input           ,ONLY: verbose, input_dp
     USE constants       ,ONLY: twopi,zeroC
     USE quadrature      ,ONLY: angGrid, molRotGrid
-    USE system          ,ONLY: thermocond, n_0, spaceGrid, soluteSite, solventSite, solvent
+    USE system          ,ONLY: thermocond, spaceGrid, soluteSite, solventSite, solvent
     USE minimizer       ,ONLY: cg_vect,dF,FF
     USE fft             ,ONLY: fftw3,kproj
     
@@ -68,7 +68,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     CALL dfftw_execute(fftw3%plan_forward)
     ALLOCATE (rho_k(nfft1/2+1,nfft2,nfft3)  ,SOURCE=fftw3%out_forward*deltaV)
 
-    fftw3%in_forward=n_0
+    fftw3%in_forward=solvent(1)%n0
     CALL dfftw_execute(fftw3%plan_forward)
     function_rho_0k=fftw3%out_forward
 
