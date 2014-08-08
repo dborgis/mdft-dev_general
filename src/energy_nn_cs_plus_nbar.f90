@@ -2,7 +2,7 @@
 ! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
 SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   USE precision_kinds,only : dp , i2b
-  use system,only : nfft1 , nfft2 , nfft3 , deltaV, rho_0 ,  thermocond ,  nb_species,n_0, Lx,Ly,Lz
+  use system,only : nfft1 , nfft2 , nfft3 , deltaV, thermocond ,  nb_species,n_0, Lx,Ly,Lz
   USE dcf, ONLY: c_s, nb_k ,delta_k
   use constants,only : fourpi , i_complex,twopi
   USE minimizer, ONLY: cg_vect , FF , dF

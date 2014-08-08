@@ -4,7 +4,8 @@
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nfft1,nfft2,nfft3,Lx,Ly,Lz,n_0, v_perturbation_k,spaceGrid,nb_species, soluteSite, solventSite
+    USE system          ,ONLY: nfft1,nfft2,nfft3,Lx,Ly,Lz,n_0, v_perturbation_k,spaceGrid,nb_species, soluteSite, solventSite, &
+                                solvent
     USE quadrature      ,ONLY: angGrid
     USE minimizer       ,ONLY: cg_vect,dF,FF
     USE constants       ,ONLY: fourpi,twopi,zeroC

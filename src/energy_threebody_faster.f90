@@ -4,7 +4,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     USE input           ,ONLY: verbose, input_dp
     USE constants       ,ONLY: twopi,zeroC
     USE quadrature      ,ONLY: angGrid, molRotGrid
-    USE system          ,ONLY: rho_0, thermocond, n_0, spaceGrid, soluteSite, solventSite
+    USE system          ,ONLY: thermocond, n_0, spaceGrid, soluteSite, solventSite, solvent
     USE minimizer       ,ONLY: cg_vect,dF,FF
     USE fft             ,ONLY: fftw3,kproj
     
@@ -54,7 +54,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
           DO o=1,angGrid%n_angles
             DO p=1, molRotGrid%n_angles
                 icg=icg+1
-                rho(i,j,k) = rho(i,j,k) + rho_0 * angGrid%weight(o) * molRotGrid%weight(p) * cg_vect(icg)**2
+                rho(i,j,k) = rho(i,j,k) + solvent(1)%rho0 * angGrid%weight(o) * molRotGrid%weight(p) * cg_vect(icg)**2
             END DO
           END DO
         END DO
@@ -412,24 +412,24 @@ BLOCK
                         icg=icg+1    
                         psi=cg_vect(icg)
                         
-                        dF(icg)=dF(icg)+thermocond%kbT*psi*deltaV*opweight*rho_0*(&
+                        dF(icg)=dF(icg)+thermocond%kbT*psi*deltaV*opweight*solvent(1)%rho0*(&
                       (Fxx(i,j,k)*Gxx(i,j,k)+Fyy(i,j,k)*Gyy(i,j,k)+Fzz(i,j,k)*Gzz(i,j,k)&
                       +2.0_dp*Fxy(i,j,k)*Gxy(i,j,k)+ 2.0_dp*Fxz(i,j,k)*Gxz(i,j,k)+ 2.0_dp*Fyz(i,j,k)*Gyz(i,j,k))&
                       -2.0_dp*costheta0*(Fx(i,j,k)*Gx(i,j,k)+Fy(i,j,k)*Gy(i,j,k)+Fz(i,j,k)*Gz(i,j,k))&
                       +costheta0**2*F0(i,j,k)*G0(i,j,k))+&
                       thermocond%kbT*psi*opweight*&
-                      rho_0*deltaV*(FGxx(i,j,k)+FGyy(i,j,k)+FGzz(i,j,k)+2.0_dp*FGxy(i,j,k)&
+                      solvent(1)%rho0*deltaV*(FGxx(i,j,k)+FGyy(i,j,k)+FGzz(i,j,k)+2.0_dp*FGxy(i,j,k)&
                      +2.0_dp*FGxz(i,j,k)+2.0_dp*FGyz(i,j,k)+2.0_dp*costheta0*(FGx(i,j,k)+FGy(i,j,k)+FGz(i,j,k))+&
                      costheta0**2*FG0(i,j,k))
              
-              dF(icg)=dF(icg)+thermocond%kbT*deltaV*opweight*rho_0*lambda_w*psi*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
+              dF(icg)=dF(icg)+thermocond%kbT*deltaV*opweight*solvent(1)%rho0*lambda_w*psi*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
               FAzz(i,j,k)**2+2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2&
               +FAz(i,j,k)**2)+costheta0**2*FA0(i,j,k)**2)&
                       +2.0_dp*(FAxx(i,j,k)*Axx(i,j,k)+FAyy(i,j,k)*Ayy(i,j,k)+FAzz(i,j,k)*Azz(i,j,k)+2.0_dp*FAxy(i,j,k)*Axy(i,j,k)+&
                       2.0_dp*FAyz(i,j,k)*Ayz(i,j,k)+2.0_dp*FAxz(i,j,k)*Axz(i,j,k)&
               -2.0_dp*costheta0*(FAx(i,j,k)*Ax(i,j,k)+FAy(i,j,k)*Ay(i,j,k)+FAz(i,j,k)*Az(i,j,k))+costheta0**2*FA0(i,j,k)*A0(i,j,k)))
                       
-                    dF(icg)=dF(icg) +SUM(soluteSite%lambda1*thermocond%kbT*psi*opweight*rho_0*2.0_dp*(&
+                    dF(icg)=dF(icg) +SUM(soluteSite%lambda1*thermocond%kbT*psi*opweight*solvent(1)%rho0*2.0_dp*(&
                         (Hxx(:)*DHxx(i,j,k,:)+Hyy(:)*DHyy(i,j,k,:)+Hzz(:)*DHzz(i,j,k,:)&
                         +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
                         -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
@@ -438,7 +438,7 @@ BLOCK
 !~                             dF(icg)=dF(icg)+soluteSite(n)%lambda1*thermocond%kbT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
 !~                                 Hzz(n)*DHzz(i,j,k,n)&
 !~                                 +2.0_dp*Hxy(n)*DHxy(i,j,k,n)+2.0_dp*Hxz(n)*DHxz(i,j,k,n)+2.0_dp*Hyz(n)*DHyz(i,j,k,n))&
-!~           -2.0_dp*costheta0*(Hx(n)*DHx(i,j,k,n)+Hy(n)*DHy(i,j,k,n)+Hz(n)*DHz(i,j,k,n))+costheta0**2*H0(n)*DH0(i,j,k,n))*rho_0*2.0_dp
+!~           -2.0_dp*costheta0*(Hx(n)*DHx(i,j,k,n)+Hy(n)*DHy(i,j,k,n)+Hz(n)*DHz(i,j,k,n))+costheta0**2*H0(n)*DH0(i,j,k,n))*solvent(1)%rho0*2.0_dp
 !~                         END DO
              
                     END DO

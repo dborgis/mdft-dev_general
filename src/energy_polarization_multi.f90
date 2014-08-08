@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
     USE system, ONLY: nfft1, nfft2, nfft3, &
-        thermocond, rho_0, molec_polarx_k, molec_polary_k, molec_polarz_k, nb_species, n_0, spaceGrid
+        thermocond, molec_polarx_k, molec_polary_k, molec_polarz_k, nb_species, n_0, spaceGrid, solvent
     USE dcf, ONLY: chi_l, chi_t, c_s, nb_k, delta_k
     USE quadrature,ONLY : angGrid, molRotGrid
     USE minimizer, ONLY: cg_vect, FF, dF
@@ -147,16 +147,16 @@ SUBROUTINE energy_polarization_multi (F_pol)
             F_pol_long+deltaVk*fourpi*REAL(   P_long_x_k(i,j,k,s)*CONJG(P_long_x_k(i,j,k,s))&
                                             + P_long_y_k(i,j,k,s)*CONJG(P_long_y_k(i,j,k,s))&
                                             + P_long_z_k(i,j,k,s)*CONJG(P_long_z_k(i,j,k,s)))&
-                                        /chi_l(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
+                                        /chi_l(k_index)*0.5_dp*qfact*solvent(s)%rho0**2*facsym/(twopi**3)
         
         F_pol_trans = &
             F_pol_trans+deltaVk*REAL(  P_trans_x_k(i,j,k,s)*CONJG(P_trans_x_k(i,j,k,s))&
                                       +P_trans_y_k(i,j,k,s)*CONJG(P_trans_y_k(i,j,k,s))&
                                       +P_trans_z_k(i,j,k,s)*CONJG(P_trans_z_k(i,j,k,s)))&
-                                        /chi_t(k_index)*0.5_dp*qfact*rho_0**2*facsym/(twopi**3)
+                                        /chi_t(k_index)*0.5_dp*qfact*solvent(s)%rho0**2*facsym/(twopi**3)
         
         F_pol_tot = &
-            F_pol_tot-thermocond%kbT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*rho_0**2*&
+            F_pol_tot-thermocond%kbT*3/(2*mu_SPCE**2*n_0)*deltaVk*facsym/(twopi**3)*solvent(s)%rho0**2*&
             REAL(pola_tot_x_k(i,j,k,s)*CONJG(pola_tot_x_k(i,j,k,s))&
                 +pola_tot_y_k(i,j,k,s)*CONJG(pola_tot_y_k(i,j,k,s))&
                 +pola_tot_z_k(i,j,k,s)*CONJG(pola_tot_z_k(i,j,k,s)))
@@ -168,7 +168,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !========================================================================================================================
             IF ( k2(i,j,k)<=tiny(1.0_dp) ) THEN
                 dF_pol_long_k(i,j,k,o,p,s)=0.0_dp
-                dF_pol_trans_k(i,j,k,o,p,s)=rho_0*0.5_dp*qfact/chi_t(k_index)*&
+                dF_pol_trans_k(i,j,k,o,p,s)=solvent(s)%rho0*0.5_dp*qfact/chi_t(k_index)*&
                     (P_trans_x_k(i,j,k,s)*CONJG(molec_polarx_k(i,j,k,o,p,s))&
                     +P_trans_y_k(i,j,k,s)*CONJG(molec_polary_k(i,j,k,o,p,s))&
                     +P_trans_z_k(i,j,k,s)*CONJG(molec_polarz_k(i,j,k,o,p,s)))&
@@ -181,20 +181,20 @@ SUBROUTINE energy_polarization_multi (F_pol)
                 k_tens_k_Py = ky(j) * toto
                 k_tens_k_Pz = kz(k) * toto
 
-                dF_pol_long_k(i,j,k,o,p,s) = rho_0*0.5_dp*&
+                dF_pol_long_k(i,j,k,o,p,s) = solvent(s)%rho0*0.5_dp*&
                     qfact/chi_l(k_index)*fourpi*Lweight*&
                     (P_long_x_k(i,j,k,s)*k_tens_k_Px&
                     +P_long_y_k(i,j,k,s)*k_tens_k_Py&
                     +P_long_z_k(i,j,k,s)*k_tens_k_Pz)/k2(i,j,k)*2.0_dp
 
-                dF_pol_trans_k(i,j,k,o,p,s) = rho_0*0.5_dp*qfact/chi_t(k_index)*&
+                dF_pol_trans_k(i,j,k,o,p,s) = solvent(s)%rho0*0.5_dp*qfact/chi_t(k_index)*&
                     (P_trans_x_k(i,j,k,s)*(CONJG(molec_polarx_k(i,j,k,o,p,s))-k_tens_k_Px/k2(i,j,k))&
                     +P_trans_y_k(i,j,k,s)*(CONJG(molec_polary_k(i,j,k,o,p,s))-k_tens_k_Py/k2(i,j,k))&
                     +P_trans_z_k(i,j,k,s)*(CONJG(molec_polarz_k(i,j,k,o,p,s))-k_tens_k_Pz/k2(i,j,k)) )&
                     *Lweight*2.0_dp
             END IF
             
-            dF_pol_tot_k(i,j,k,o,p,s)=-thermocond%kbT*3._dp*rho_0/(2._dp*mu_SPCE**2*n_0)*(&
+            dF_pol_tot_k(i,j,k,o,p,s)=-thermocond%kbT*3._dp*solvent(s)%rho0/(2._dp*mu_SPCE**2*n_0)*(&
                  pola_tot_x_k(i,j,k,s)*CONJG(molec_polarx_k(i,j,k,o,p,s))&
                 +pola_tot_y_k(i,j,k,s)*CONJG(molec_polary_k(i,j,k,o,p,s))&
                 +pola_tot_z_k(i,j,k,s)*CONJG(molec_polarz_k(i,j,k,o,p,s)))&
@@ -225,7 +225,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
                     DO o=1,angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg + 1
-                            dF(icg) = dF(icg) + dF_pol_tot (i,j,k,o,p,s) * cg_vect(icg) * rho_0 * 2.0_dp * spaceGrid%dv
+                            dF(icg) = dF(icg) + dF_pol_tot (i,j,k,o,p,s) * cg_vect(icg) * solvent(s)%rho0 * 2.0_dp * spaceGrid%dv
                         END DO
                     END DO
                 END DO
