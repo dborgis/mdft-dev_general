@@ -1,28 +1,29 @@
-! This subroutine computes the excess free energy in the HNC approximation of the homogeneous reference fluid approximation of MDFT.
-! It uses the rotational invariant c_s(r), which is an input of the code.
-
+!===================================================================================================================================
 SUBROUTINE energy_nn_cs (Fint)
+!===================================================================================================================================
+! This subroutine computes the excess free energy in the HNC approximation of the homogeneous reference fluid approximation of MDFT.
+! It uses the spherical projection c_s(k) that must be known at this point of the program.
 
-    USE precision_kinds ,ONLY: i2b, dp
-    USE system          ,ONLY: spaceGrid, nb_species, solvent, thermocond
-    USE dcf             ,ONLY: c_s, nb_k, delta_k
-    USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
-    USE minimizer       ,ONLY: cg_vect, FF, dF, from_cgvect_get_rho, from_rho_get_n, deallocate_solvent_rho
-    USE fft             ,ONLY: fftw3, norm_k
+    use precision_kinds ,only: i2b, dp
+    use system          ,only: spaceGrid, nb_species, solvent, thermocond
+    use dcf             ,only: c_s, delta_k
+    use quadrature      ,only: molRotSymOrder, angGrid, molRotGrid
+    use minimizer       ,only: cg_vect, FF, dF, from_cgvect_get_rho, from_rho_get_n, deallocate_solvent_rho
+    use fft             ,only: fftw3, norm_k
 
     IMPLICIT NONE
 
-    REAL(dp), INTENT(OUT)    :: Fint
-    INTEGER(i2b)             :: i, j, k, l, m, n, o, p, icg, s
-    INTEGER(i2b), POINTER    :: nfft1, nfft2, nfft3
-    REAL(dp)                 :: Vint, fact, psi, time1, time0
-    LOGICAL    , SAVE        :: c_s_isOK =.FALSE.
+    real(dp), intent(out)    :: Fint
+    integer(i2b)             :: i, j, k, l, m, n, o, p, icg, s
+    integer(i2b), pointer    :: nfft1, nfft2, nfft3
+    real(dp)                 :: Vint, fact, psi, time1, time0
+    logical, save            :: c_s_isOK =.FALSE.
 
     nfft1 => spacegrid%n_nodes(1)
     nfft2 => spacegrid%n_nodes(2)
     nfft3 => spacegrid%n_nodes(3)
 
-    call cpu_time ( time0 )
+    call cpu_time (time0)
 
     call from_cgvect_get_rho                        ! get solvent%rho from previous MDFT's minimization step
     call from_rho_get_n                             ! transform solvent%rho into solvent%n
@@ -81,7 +82,7 @@ SUBROUTINE energy_nn_cs (Fint)
         !===========================================================================================================================
             integer(i2b) :: k_index
             integer(i2b), intent(in) :: i, j, k
-            k_index = MIN(  INT(norm_k(i,j,k)/delta_k)+1  ,  nb_k  )
+            k_index = MIN(  INT(norm_k(i,j,k)/delta_k)+1  ,  size(c_s)  ) ! Min prevents looking for undefined bin
         end function k_index
         !===========================================================================================================================
  
