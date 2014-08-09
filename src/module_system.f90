@@ -20,11 +20,13 @@ MODULE system
     TYPE (sites), ALLOCATABLE, DIMENSION(:) :: solventSite
     
     TYPE :: solventType
-        TYPE (sites), ALLOCATABLE :: site(:)
+        type (sites), allocatable :: site(:)
         real(dp), allocatable :: n(:,:,:)  ! number density
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
-        real(dp)              :: rho0      ! number density per orientation = n0/(8pi²/molrotsymorder)
-        real(dp), allocatable :: Dn(:,:,:) ! Dn = n - nref
+        real(dp), allocatable :: Dn(:,:,:) ! Dn = n - n0
+        real(dp), allocatable :: rho(:,:,:,:,:)! number density per orientation = n0/(8pi²/molrotsymorder)
+        real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
+        real(dp), allocatable :: Drho(:,:,:,:,:) ! Drho = rho - rho0
     END TYPE
     TYPE (solventType), ALLOCATABLE :: solvent(:)
     
