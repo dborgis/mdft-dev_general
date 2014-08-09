@@ -37,10 +37,8 @@ SUBROUTINE energy_nn_cs (Fint)
     fftw3%out_backward = fftw3%out_backward / real(product(spacegrid%n_nodes),dp) ! Normalize the iFFT with FFTW3 conventions.
 
     ! excess free energy and its gradient
-   
-    Fint = -0.5_dp*thermocond%kbT * sum ((solvent(1)%n-solvent(1)%n0) * fftw3%out_backward) * spacegrid%dv
+    Fint = -0.5_dp*thermocond%kbT * sum((solvent(1)%n-solvent(1)%n0) * fftw3%out_backward) * spacegrid%dv ! Gloria OOP !
     
-!~     Fint = 0.0_dp    
     icg = 0
     DO s =1, nb_species
         fact = -thermocond%kbT * spaceGrid%dV * solvent(s)%rho0
@@ -52,8 +50,7 @@ SUBROUTINE energy_nn_cs (Fint)
                         DO p =1,molRotGrid%n_angles
                             icg = icg + 1
                             psi = CG_vect(icg)
-!~                             Fint = Fint + 0.5_dp * ( psi**2 - 1.0_dp) * angGrid%weight(o) * molRotGrid%weight(p) * Vint
-                            dF(icg) = dF(icg) + 2.0_dp * psi          * angGrid%weight(o) * molRotGrid%weight(p) * Vint
+                            dF(icg) = dF(icg) + 2.0_dp * psi * angGrid%weight(o) * molRotGrid%weight(p) * Vint
                         END DO
                     END DO
                 END DO
