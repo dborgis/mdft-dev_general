@@ -24,17 +24,17 @@ SUBROUTINE energy_nn_cs (Fint)
 
     call cpu_time ( time0 )
 
-    call from_cgvect_get_rho        ! get solvent%rho from previous MDFT's minimization step
-    call from_rho_get_n             ! transform solvent%rho into solvent%n
-    call deallocate_solvent_rho     ! solvent%rho becomes useless
+    call from_cgvect_get_rho                        ! get solvent%rho from previous MDFT's minimization step
+    call from_rho_get_n                             ! transform solvent%rho into solvent%n
+    call deallocate_solvent_rho                     ! solvent%rho becomes useless
     fftw3%in_forward = solvent(1)%n - solvent(1)%n0 ! solvent%Dn
-    call dfftw_execute (fftw3%plan_forward)
+    call dfftw_execute (fftw3%plan_forward)         ! build solvent%Dn(k) in fftw3%outward
     call check_c_s
     do concurrent (i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3)
-        fftw3%in_backward(i,j,k) = fftw3%out_forward(i,j,k) * c_s(k_index(i,j,k))     ! gamma(k)=cs(k)*Dn(k)
+        fftw3%in_backward(i,j,k) = fftw3%out_forward(i,j,k) * c_s(k_index(i,j,k))     ! gamma(k) = cs(k) * Dn(k)
     end do
-    call dfftw_execute (fftw3%plan_backward)
-    fftw3%out_backward = fftw3%out_backward / real(product(spacegrid%n_nodes),dp)
+    call dfftw_execute (fftw3%plan_backward)        ! Inverse Fourier transform gamma(k) => gamma(r)
+    fftw3%out_backward = fftw3%out_backward / real(product(spacegrid%n_nodes),dp) ! Normalize the iFFT with FFTW3 conventions.
 
     ! excess free energy and its gradient
     Fint = 0.0_dp
