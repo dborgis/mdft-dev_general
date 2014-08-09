@@ -1,10 +1,12 @@
+!===================================================================================================================================
+SUBROUTINE energy_and_gradient (iter)
+!===================================================================================================================================
 ! In this SUBROUTINE one calls the different parts of the total energy
 ! first is computed the radial_part, then ... blabla.
 ! this SUBROUTINE is the one called by the minimization stuff
 ! for computing the total energy and associated gradient
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF is the gradient of FF with respect to all coordinates. Remember it is of the kind dF ( number of variables over density (ie angles etc))
-SUBROUTINE energy_and_gradient (iter)
 
     USE precision_kinds, ONLY: i2b , dp
     USE input, ONLY: input_log, input_char, input_dp
@@ -137,10 +139,14 @@ SUBROUTINE energy_and_gradient (iter)
    
     CONTAINS
     
+    !===============================================================================================================================
     PURE SUBROUTINE init_functional_and_gradient_to_zero (FF,dF)
+    !===============================================================================================================================
         REAL(dp), INTENT(OUT) :: FF, dF(:)
         REAL(dp), PARAMETER :: zero=0._dp
         FF = zero ; dF = zero ! functional and gradient
     END SUBROUTINE init_functional_and_gradient_to_zero
+    !===============================================================================================================================
     
 END SUBROUTINE energy_and_gradient
+!===================================================================================================================================
