@@ -1,6 +1,8 @@
-!> read solvent atomic positions, charge, and lennard jones values in solvent.in
-!! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
+!===================================================================================================================================
 SUBROUTINE read_solvent
+!===================================================================================================================================
+! Read solvent atomic positions, charge, and lennard jones values in solvent.in
+! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
 
     USE precision_kinds, ONLY: i2b , dp
     USE system, ONLY: nb_solvent_sites, solventSite
@@ -26,3 +28,4 @@ SUBROUTINE read_solvent
     IF( SUM(solventSite%q) /= 0._dp ) PRINT*,"YOUR SOLVENT WEAR A TOTAL CHARGE OF ",SUM(solventSite%q),". YOU ARE NOW AWARE..."
 
 END SUBROUTINE read_solvent
+!===================================================================================================================================
