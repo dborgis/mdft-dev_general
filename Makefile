@@ -319,7 +319,6 @@ $(OBJDIR)/energy_ideal.o:\
 $(OBJDIR)/energy_nn_cs.o:\
 	$(SRCDIR)/energy_nn_cs.f90\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_dcf.o\

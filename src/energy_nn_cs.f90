@@ -8,7 +8,6 @@ SUBROUTINE energy_nn_cs (Fint)
     USE dcf             ,ONLY: c_s, nb_k, delta_k
     USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer       ,ONLY: cg_vect, FF, dF, from_cgvect_get_rho, from_rho_get_n, deallocate_solvent_rho
-    USE constants       ,ONLY: twopi, zeroC
     USE fft             ,ONLY: fftw3, norm_k
 
     IMPLICIT NONE
