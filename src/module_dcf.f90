@@ -232,7 +232,9 @@ MODULE dcf
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 
+    ! Compute the angle between (0,x) and (x,y).
     PURE FUNCTION angle(x,y)
+    
 
         USE precision_kinds,    ONLY: dp
         USE constants,          ONLY: twopi
@@ -242,15 +244,14 @@ MODULE dcf
         REAL(dp)                :: angle
         REAL(dp)                :: xx,r
 
-        r = (x**2 + y**2)**0.5_dp
-        IF (r==0._dp) THEN
+        IF (x==0._dp .AND. y==0._dp) THEN
             angle = 0._dp
         ELSE
-            xx = x / r
+            xx = ACOS( x/SQRT(x**2 + y**2) )
             IF (y>=0._dp) THEN
-                angle = ACOS(xx)
+                angle = xx
             ELSE
-                angle = twopi - ACOS(xx)
+                angle = twopi - xx
             END IF
         END IF
 
