@@ -116,7 +116,8 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
                     END DO; END DO; END DO; END DO; END DO
 
                 ELSE ! zero order interpolation
-                    iphi = MODULO(angleInd(l,m,n,o1,p1)%phi - angleInd(l,m,n,o2,p2)%phi - 1,num_phi) + 1 ! Luc Phi1 - Phi2, Daniel Phi2 - Phi1
+                    phi12_value = MODULO(angleInd(l,m,n,o1,p1)%phi - angleInd(l,m,n,o2,p2)%phi,twopi) ! Luc Phi1 - Phi2, Daniel Phi2 - Phi1
+                    iphi = MOD(INT(phi12_value*num_phi/twopi), num_phi) + 1
                     ipsi1 = angleInd(l,m,n,o1,p1)%psi
                     ipsi2 = angleInd(l,m,n,o2,p2)%psi
                     icos1 = angleInd(l,m,n,o1,p1)%costheta
