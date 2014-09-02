@@ -8,7 +8,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
     USE fft,             ONLY : fftw3, kx, ky, kz
     USE input,           ONLY : input_log
     USE dcf,             ONLY : ck_angular, angleInd, angleVal, delta_k, delta_k_ck_angular, num_phi, num_cos, num_psi, &
-                                c_s, c_d, c_delta, c_q
+                                c_s, c_d, c_delta, c_q, nb_k
 
     IMPLICIT NONE
 
@@ -70,9 +70,14 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
         fftw3%in_backward = (0._dp,0._dp) ! fftw3%in_backward is gamma_k(:,:,:,o1,p1)
 
         DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3, o2=1:angGrid%n_angles, p2=1:molRotGrid%n_angles)
-            ik = INT((kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp / delta_k_ck_angular + 0.5_dp) + 1
+            ik = INT((kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp / delta_k_ck_angular + 0.5_dp) + 1 ! index k
+            IF(ik > nb_k) karim = 0
 
             SELECT CASE(karim)
+            CASE(0) ! ik exceeds the maximum
+                PRINT*, 'WARNING: Index of k ',ik,' exceeds its maximum ',nb_k,', ck_angular is put to zero.'
+                ck = (0._dp,0._dp)
+
             CASE(1,4) ! ck_angular, ck_angular_interpolation
                 IF (karim==4) THEN ! linear interpolation
                     phi12_value = MODULO(angleVal(l,m,n,o1,p1)%phi - angleVal(l,m,n,o2,p2)%phi,twopi) ! = phi1 - phi2
