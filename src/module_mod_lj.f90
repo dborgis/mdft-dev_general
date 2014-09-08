@@ -5,7 +5,7 @@ MODULE mod_lj
 
     USE external_potential, ONLY: Vext_lj
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spaceGrid, soluteSite, solventSite
+    USE system,             ONLY: nb_species, spaceGrid, soluteSite, solvent
     USE constants,          ONLY: fourpi
     USE input,              ONLY: input_line, verbose
     USE quadrature,         ONLY: angGrid, molRotGrid
@@ -42,16 +42,16 @@ MODULE mod_lj
             ! test if this simplification is true and stop if not
             ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
             ! only if they're all zero but for first site
-            IF ( SIZE(solventSite)>1 )THEN
-                IF ( ANY( solventSite(2:)%sig/=0._dp )) STOP "The solvent must have only 1 LJ site for now."
+            IF ( SIZE(solvent(1)%site)>1 )THEN
+                IF ( ANY( solvent(1)%site(2:)%sig/=0._dp )) STOP "The solvent must have only 1 LJ site for now."
             END IF
             
-            CALL only_one_lj_site (solventSite(1)%r) ! verify the solvant wears only one lennard jones site
+            CALL only_one_lj_site (solvent(1)%site(1)%r) ! verify the solvant wears only one lennard jones site
 
             ! Test if the supercell is big enough considering the LJ range (given by sigma).
             ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
             ! It would have no sense to have a box dimension < 2.5 sigma
-            IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(soluteSite%sig),MAXVAL(solventSite%sig))) THEN
+            IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(soluteSite%sig),MAXVAL(solvent(1)%site%sig))) THEN
                 PRINT*,'The supercell is small. We replicate it in all directions. Vext calculation will be long.'
                 fullpbc=.TRUE. ! much slower
 !~                 STOP
@@ -59,8 +59,8 @@ MODULE mod_lj
                 fullpbc=.FALSE. ! much faster
             END IF
 
-            DO v=1,SIZE(solventSite)
-                IF ( solventSite(v)%eps==0._dp ) CYCLE ! if solvent site wear no LJ
+            DO v=1,SIZE(solvent(1)%site)
+                IF ( solvent(1)%site(v)%eps==0._dp ) CYCLE ! if solvent site wear no LJ
                 
                 DO CONCURRENT( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species )
                     x_grid=REAL(i-1,dp)*spaceGrid%dl(1)
@@ -70,8 +70,8 @@ MODULE mod_lj
                     V_node=0.0_dp
                     solute: DO u=1,SIZE(soluteSite)
                         IF (soluteSite(u)%eps==0.0_dp) CYCLE
-                        sigij = arithmetic_mean( solventSite(v)%sig, soluteSite(u)%sig )
-                        epsij = geometric_mean(  solventSite(v)%eps, soluteSite(u)%eps )
+                        sigij = arithmetic_mean( solvent(1)%site(v)%sig, soluteSite(u)%sig )
+                        epsij = geometric_mean(  solvent(1)%site(v)%eps, soluteSite(u)%eps )
                         IF (fullpbc) THEN
                             DO a=-1,1; DO b=-1,1; DO c=-1,1
                                 dx =x_grid-soluteSite(u)%r(1)+a*Lx

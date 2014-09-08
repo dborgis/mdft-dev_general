@@ -4,7 +4,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     USE input           ,ONLY: verbose, input_dp
     USE constants       ,ONLY: twopi,zeroC
     USE quadrature      ,ONLY: angGrid, molRotGrid
-    USE system          ,ONLY: thermocond, spaceGrid, soluteSite, solventSite, solvent
+    USE system          ,ONLY: thermocond, spaceGrid, soluteSite, solvent
     USE minimizer       ,ONLY: cg_vect,dF,FF
     USE fft             ,ONLY: fftw3,kproj
     
@@ -233,7 +233,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
 
     DO CONCURRENT (n=1:nb_solute_sites, soluteSite(n)%lambda1/=0._dp)
     
-        rmax1=0.5_dp*(soluteSite(n)%sig + solventSite(1)%sig) + d_w 
+        rmax1=0.5_dp*(soluteSite(n)%sig + solvent(1)%site(1)%sig) + d_w 
         nmax1x = int(rmax1/deltax)
         nmax1y = int(rmax1/deltay)
         nmax1z = int(rmax1/deltaz)

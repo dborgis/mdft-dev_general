@@ -6,7 +6,7 @@ SUBROUTINE compute_purely_repulsive_potential
     USE precision_kinds     ,ONLY: dp, i2b
     USE input               ,ONLY: input_dp, verbose
     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, spaceGrid,&
-                                   nb_species, soluteSite, solventSite
+                                   nb_species, soluteSite, solvent
     USE external_potential  ,ONLY: Vext_total
     USE quadrature          ,ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
     USE constants           ,ONLY: zerodp=>zero
@@ -40,9 +40,9 @@ SUBROUTINE compute_purely_repulsive_potential
     ALLOCATE ( ymod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=zerodp)
     ALLOCATE ( zmod (nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) ,SOURCE=zerodp)
     DO CONCURRENT (m=1:nb_solvent_sites, p=1:molRotGrid%n_angles, o=1:angGrid%n_angles)
-        xmod (m,p,o) = Rotxx(o,p) * solventSite(m)%r(1) + Rotxy (o,p) * solventSite(m)%r(2) + Rotxz (o,p) * solventSite(m)%r(3)
-        ymod (m,p,o) = Rotyx(o,p) * solventSite(m)%r(1) + Rotyy (o,p) * solventSite(m)%r(2) + Rotyz (o,p) * solventSite(m)%r(3)
-        zmod (m,p,o) = Rotzx(o,p) * solventSite(m)%r(1) + Rotzy (o,p) * solventSite(m)%r(2) + Rotzz (o,p) * solventSite(m)%r(3)
+        xmod (m,p,o) = DOT_PRODUCT( [Rotxx(o,p), Rotxy(o,p), Rotxz(o,p)] , solvent(1)%site(m)%r )
+        ymod (m,p,o) = DOT_PRODUCT( [Rotyx(o,p), Rotyy(o,p), Rotyz(o,p)] , solvent(1)%site(m)%r )
+        zmod (m,p,o) = DOT_PRODUCT( [Rotzx(o,p), Rotzy(o,p), Rotzz(o,p)] , solvent(1)%site(m)%r )
     END DO
 
     dx=spaceGrid%dl(1)

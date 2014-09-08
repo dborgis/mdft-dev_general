@@ -9,7 +9,7 @@ SUBROUTINE compute_rdf (array,filename)
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
     USE precision_kinds ,ONLY: dp, i2b, sp
-    USE system          ,ONLY: nb_species, spaceGrid, soluteSite, solventSite
+    USE system          ,ONLY: nb_species, spaceGrid, soluteSite
     
     IMPLICIT NONE
 
@@ -34,7 +34,7 @@ SUBROUTINE compute_rdf (array,filename)
 
     ALLOCATE (rdf (nbins) ,SOURCE=0._dp)
     
-    CALL UTest_histogram_3D
+!    CALL UTest_histogram_3D
     DO n = 1, SIZE(soluteSite) ! loop over all sites of the solute
         CALL histogram_3d (array(:,:,:), rdf)
         IF (error%found) THEN; PRINT*,error%msg; STOP; END IF

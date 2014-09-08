@@ -17,7 +17,6 @@ MODULE system
     END TYPE sites
     
     TYPE (sites), ALLOCATABLE, DIMENSION(:) :: soluteSite
-    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: solventSite
     
     TYPE :: solventType
         type (sites), allocatable :: site(:)

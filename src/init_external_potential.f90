@@ -77,7 +77,7 @@ SUBROUTINE init_external_potential
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         SUBROUTINE prevent_numerical_catastrophes
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            USE system    ,ONLY: spacegrid, solventsite
+            USE system    ,ONLY: spacegrid, solvent
             USE constants ,ONLY: qfact
             IMPLICIT NONE
             INTEGER(i2b) :: i,j
@@ -86,7 +86,7 @@ SUBROUTINE init_external_potential
             LOGICAL :: iFoundTheNN
             
             i=SIZE(solutesite)
-            j=SIZE(solventsite)
+            j=SIZE(solvent(1)%site)
             ALLOCATE (dnn(i)) ; dnn=HUGE(1._dp)
             ALLOCATE (epsnn(i),signn(i),qnn(i),rblock(i,j) ,source=0._dp)
 
@@ -118,17 +118,17 @@ SUBROUTINE init_external_potential
                     END IF
 
 
-                    DO CONCURRENT (j=1:SIZE(solventsite), solutesite(i)%q*solventsite(j)%q<0._dp)
-                        PRINT*,"----- solutesite",i," va attirer solventsite n°",j
-                        PRINT*,"----- q eps and sig of j are ",solventsite(j)%q,solventsite(j)%eps,solventsite(j)%sig
+                    DO CONCURRENT (j=1:SIZE(solvent(1)%site), solutesite(i)%q*solvent(1)%site(j)%q<0._dp)
+                        PRINT*,"----- solutesite",i," va attirer solvent(1)%site n°",j
+                        PRINT*,"----- q eps and sig of j are ",solvent(1)%site(j)%q,solvent(1)%site(j)%eps,solvent(1)%site(j)%sig
                         BLOCK
                             INTEGER(i2b) :: ir
                             REAL(dp) :: r,vr,e,s,q
                             DO ir=1,50000
                                 r=REAL(ir,dp)/10000._dp
-                                q=solutesite(i)%q *solventsite(j)%q
-                                e=SQRT(epsnn(i)   *solventsite(j)%eps)
-                                s=0.5_dp*(signn(i)+solventsite(j)%sig)
+                                q=solutesite(i)%q *solvent(1)%site(j)%q
+                                e=SQRT(epsnn(i)   *solvent(1)%site(j)%eps)
+                                s=0.5_dp*(signn(i)+solvent(1)%site(j)%sig)
                                 vr=qfact*q/r + 4._dp*e*((s/(r+dnn(i)))**12-(s/(r+dnn(i)))**6)
                                 IF (vr>0._dp) THEN
                                     rblock(i,j)=r
