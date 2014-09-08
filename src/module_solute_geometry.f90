@@ -1,6 +1,6 @@
 module solute_geometry
     USE precision_kinds
-    use system, only: nb_solute_sites, soluteSite ! TODO should be generalized. nb_solute_sites is useless as it is the dimension of x_mol. isLinear and isPlanar could be usefull for any coordinates, not only the ones of the solute. the coordinates should thus be intent(in) of the functions.
+    use system, only: nb_solute_sites, solute ! TODO should be generalized. nb_solute_sites is useless as it is the dimension of x_mol. isLinear and isPlanar could be usefull for any coordinates, not only the ones of the solute. the coordinates should thus be intent(in) of the functions.
     IMPLICIT NONE
     private
     public :: isLinear, isPlanar
@@ -20,9 +20,9 @@ module solute_geometry
                 sim2=0
                 sim3=0
                 do n=1,nb_solute_sites
-                    if (soluteSite(n)%r(1)==soluteSite(n)%r(2)) sim1=sim1+1
-                    if (soluteSite(n)%r(1)==soluteSite(n)%r(3)) sim2=sim2+1
-                    if (soluteSite(n)%r(2)==soluteSite(n)%r(3)) sim3=sim3+1
+                    if (solute%site(n)%r(1)==solute%site(n)%r(2)) sim1=sim1+1
+                    if (solute%site(n)%r(1)==solute%site(n)%r(3)) sim2=sim2+1
+                    if (solute%site(n)%r(2)==solute%site(n)%r(3)) sim3=sim3+1
                 END DO
                 if (sim1==nb_solute_sites .or. sim2==nb_solute_sites .or. sim3==nb_solute_sites) then
                     islinear = .true.
@@ -43,9 +43,9 @@ module solute_geometry
             ELSE
                 !> Compute all vector coordinates between first site and every others
                 forall (n=2:nb_solute_sites)
-                    xvec(n) = soluteSite(1)%r(1)-soluteSite(n)%r(1)
-                    yvec(n) = soluteSite(1)%r(2)-soluteSite(n)%r(2)
-                    zvec(n) = soluteSite(1)%r(3)-soluteSite(n)%r(3)
+                    xvec(n) = solute%site(1)%r(1)-solute%site(n)%r(1)
+                    yvec(n) = solute%site(1)%r(2)-solute%site(n)%r(2)
+                    zvec(n) = solute%site(1)%r(3)-solute%site(n)%r(3)
                 end forall
                 !> Check if one coordinate is always the same (which is the case if we're in a plan)
                 if ( minval(xvec)==maxval(xvec) .or. minval(yvec)==maxval(yvec) .or. minval(zvec)==maxval(zvec)) then

@@ -6,7 +6,7 @@ SUBROUTINE compute_purely_repulsive_potential
     USE precision_kinds     ,ONLY: dp, i2b
     USE input               ,ONLY: input_dp, verbose
     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, spaceGrid,&
-                                   nb_species, soluteSite, solvent
+                                   nb_species, solute, solvent
     USE external_potential  ,ONLY: Vext_total
     USE quadrature          ,ONLY: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz, angGrid, molRotGrid
     USE constants           ,ONLY: zerodp=>zero
@@ -64,9 +64,9 @@ SUBROUTINE compute_purely_repulsive_potential
                                 y_m = y_grid + ymod (m,p,o)
                                 z_m = z_grid + zmod (m,p,o)
                                 DO n=1, nb_solute_sites
-                                    x_nm = x_m - soluteSite(n)%r(1)
-                                    y_nm = y_m - soluteSite(n)%r(2)
-                                    z_nm = z_m - soluteSite(n)%r(3)
+                                    x_nm = x_m - solute%site(n)%r(1)
+                                    y_nm = y_m - solute%site(n)%r(2)
+                                    z_nm = z_m - solute%site(n)%r(3)
                                     r_nm2 = x_nm**2+y_nm**2+z_nm**2
                                     IF ( r_nm2 == 0._dp ) THEN!  <= radius_of_purely_repulsive_solute2 ) THEN
                                         V_psi = Vmax

@@ -3,7 +3,7 @@
 SUBROUTINE compute_Vext_hard_sphere
 USE precision_kinds,only : i2b , dp
 use input,only : input_line,input_dp
-use system,only : nfft1 , nfft2 , nfft3 , soluteSite , nb_solute_sites , Lx , Ly , Lz , nb_species &
+use system,only : nfft1 , nfft2 , nfft3 , solute , nb_solute_sites , Lx , Ly , Lz , nb_species &
                     , deltax , deltay , deltaz
 use external_potential,only : Vext_total , Vext_hard
 use quadrature, only: angGrid, molRotGrid
@@ -46,13 +46,13 @@ do solute_site = 1 , nb_solute_sites
     sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + hs(species)%R ) ** 2
     do k = 1 , nfft3
       z_grid = real( k - 1 , dp ) * deltaz
-      z_nm2 = ( z_grid - soluteSite(solute_site)%r(3) ) ** 2
+      z_nm2 = ( z_grid - solute%site(solute_site)%r(3) ) ** 2
       do j = 1 , nfft2
         y_grid = real ( j - 1 , dp ) * deltay
-        y_nm2 = ( y_grid - soluteSite(solute_site)%r(2) ) ** 2
+        y_nm2 = ( y_grid - solute%site(solute_site)%r(2) ) ** 2
         do i = 1 , nfft1
           x_grid = real ( i - 1 , dp ) * deltax
-          x_nm2 = ( x_grid - soluteSite(solute_site)%r(1) ) ** 2
+          x_nm2 = ( x_grid - solute%site(solute_site)%r(1) ) ** 2
           r_nm2 = x_nm2 + y_nm2 + z_nm2
           ! test if distance is smaller than sum of radius of solvent and solute
           if ( r_nm2 <= sum_of_solute_and_solvent_radius ) then

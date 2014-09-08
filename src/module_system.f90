@@ -16,8 +16,6 @@ MODULE system
         INTEGER(i2b) :: Z ! atomic number
     END TYPE sites
     
-    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: soluteSite
-    
     TYPE :: solventType
         type (sites), allocatable :: site(:)
         real(dp), allocatable :: n(:,:,:)  ! number density
@@ -28,6 +26,7 @@ MODULE system
         real(dp), allocatable :: Drho(:,:,:,:,:) ! Drho = rho - rho0
     END TYPE
     TYPE (solventType), ALLOCATABLE :: solvent(:)
+    TYPE (solventType) :: solute
     
     TYPE :: thermoCondType
         REAL(dp) :: T ! temperature

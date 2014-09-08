@@ -6,7 +6,7 @@ SUBROUTINE init_external_potential
 
     USE precision_kinds     ,ONLY: dp , i2b
     USE input               ,ONLY: input_log, input_char
-    USE system              ,ONLY: soluteSite, spaceGrid, nb_species
+    USE system              ,ONLY: solute, spaceGrid, nb_species
     USE external_potential  ,ONLY: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,ONLY: init_lennardjones => init
     USE quadrature          ,ONLY: angGrid, molRotGrid
@@ -85,27 +85,27 @@ SUBROUTINE init_external_potential
             REAL(dp), ALLOCATABLE :: dnn(:),epsnn(:),signn(:),qnn(:),rblock(:,:)
             LOGICAL :: iFoundTheNN
             
-            i=SIZE(solutesite)
+            i=SIZE(solute%site)
             j=SIZE(solvent(1)%site)
             ALLOCATE (dnn(i)) ; dnn=HUGE(1._dp)
             ALLOCATE (epsnn(i),signn(i),qnn(i),rblock(i,j) ,source=0._dp)
 
             ! liste tous les sites de soluté qui ont une charge mais pas de potentiel répulsif dessus:
             PRINT*,"---------- prevent numerical catastrophe"
-            DO i=1, SIZE(soluteSite)
-                IF( solutesite(i)%q/=0. .and. (solutesite(i)%eps==0. .or. solutesite(i)%sig==0.) ) THEN
+            DO i=1, SIZE(solute%site)
+                IF( solute%site(i)%q/=0. .and. (solute%site(i)%eps==0. .or. solute%site(i)%sig==0.) ) THEN
                     iFoundTheNN=.false.
                     PRINT*,"-- found one charged site that is purely attractive"
-                    PRINT*,"-- its q, eps and sig are ",solutesite(i)%q, solutesite(i)%eps, solutesite(i)%sig                    
+                    PRINT*,"-- its q, eps and sig are ",solute%site(i)%q, solute%site(i)%eps, solute%site(i)%sig                    
                     ! trouve le site répulsif de soluté le plus proche, sa distance (dnn), eps et sig lj (epsnn et signn)
-                    DO j=1, SIZE(solutesite)
+                    DO j=1, SIZE(solute%site)
                         IF (j==i) CYCLE
-                        d= MODULO(    ABS(solutesite(i)%r(:) -solutesite(j)%r(:))    ,spacegrid%length(:)/2._dp)
+                        d= MODULO(    ABS(solute%site(i)%r(:) -solute%site(j)%r(:))    ,spacegrid%length(:)/2._dp)
                         IF (NORM2(d)<dnn(i)) THEN
                             dnn(i)= NORM2(d)
-                            epsnn(i) = solutesite(j)%eps
-                            signn(i) = solutesite(j)%sig
-                            qnn(i) = solutesite(j)%q
+                            epsnn(i) = solute%site(j)%eps
+                            signn(i) = solute%site(j)%sig
+                            qnn(i) = solute%site(j)%q
                             iFoundTheNN=.true.
                         END IF
                     END DO
@@ -118,15 +118,15 @@ SUBROUTINE init_external_potential
                     END IF
 
 
-                    DO CONCURRENT (j=1:SIZE(solvent(1)%site), solutesite(i)%q*solvent(1)%site(j)%q<0._dp)
-                        PRINT*,"----- solutesite",i," va attirer solvent(1)%site n°",j
+                    DO CONCURRENT (j=1:SIZE(solvent(1)%site), solute%site(i)%q*solvent(1)%site(j)%q<0._dp)
+                        PRINT*,"----- solute%site",i," va attirer solvent(1)%site n°",j
                         PRINT*,"----- q eps and sig of j are ",solvent(1)%site(j)%q,solvent(1)%site(j)%eps,solvent(1)%site(j)%sig
                         BLOCK
                             INTEGER(i2b) :: ir
                             REAL(dp) :: r,vr,e,s,q
                             DO ir=1,50000
                                 r=REAL(ir,dp)/10000._dp
-                                q=solutesite(i)%q *solvent(1)%site(j)%q
+                                q=solute%site(i)%q *solvent(1)%site(j)%q
                                 e=SQRT(epsnn(i)   *solvent(1)%site(j)%eps)
                                 s=0.5_dp*(signn(i)+solvent(1)%site(j)%sig)
                                 vr=qfact*q/r + 4._dp*e*((s/(r+dnn(i)))**12-(s/(r+dnn(i)))**6)

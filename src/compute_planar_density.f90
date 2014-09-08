@@ -5,7 +5,7 @@
 SUBROUTINE compute_planar_density(array,filename)
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nfft1,nfft2,nfft3,nb_solute_sites,Lx,Ly,Lz,spaceGrid, soluteSite
+    USE system          ,ONLY: nfft1,nfft2,nfft3,nb_solute_sites,Lx,Ly,Lz,spaceGrid, solute
 
     IMPLICIT NONE
     
@@ -15,11 +15,11 @@ SUBROUTINE compute_planar_density(array,filename)
     REAL(dp)                    :: x_com(nfft1), y_com(nfft2), z_com(nfft3)
     
     ! For now that only planes perpendicular to x, y and z are  Identify the plan coordinate which is 0 (see restrictions to using this program for now)
-    IF      (soluteSite(1)%r(1)==soluteSite(2)%r(1) .and. soluteSite(1)%r(1)==soluteSite(3)%r(1)) THEN
+    IF      (solute%site(1)%r(1)==solute%site(2)%r(1) .and. solute%site(1)%r(1)==solute%site(3)%r(1)) THEN
         plandir=1
-    ELSE IF (soluteSite(1)%r(2)==soluteSite(2)%r(2) .and. soluteSite(1)%r(2)==soluteSite(3)%r(2)) THEN
+    ELSE IF (solute%site(1)%r(2)==solute%site(2)%r(2) .and. solute%site(1)%r(2)==solute%site(3)%r(2)) THEN
         plandir=2
-    ELSE IF (soluteSite(1)%r(3)==soluteSite(2)%r(3) .and. soluteSite(1)%r(3)==soluteSite(3)%r(3)) THEN
+    ELSE IF (solute%site(1)%r(3)==solute%site(2)%r(3) .and. solute%site(1)%r(3)==solute%site(3)%r(3)) THEN
         plandir=3
     ELSE
         RETURN
@@ -27,11 +27,11 @@ SUBROUTINE compute_planar_density(array,filename)
 
     ! Get its grid index called id
     IF (plandir==1) THEN
-        id= NINT(soluteSite(1)%r(1)*REAL(nfft1,dp)/Lx) +1
+        id= NINT(solute%site(1)%r(1)*REAL(nfft1,dp)/Lx) +1
     ELSE IF (plandir==2) then
-        id= NINT(soluteSite(1)%r(2)*REAL(nfft2,dp)/Ly) +1
+        id= NINT(solute%site(1)%r(2)*REAL(nfft2,dp)/Ly) +1
     ELSE IF (plandir==3) then
-        id= NINT(soluteSite(1)%r(3)*REAL(nfft3,dp)/Lz) +1
+        id= NINT(solute%site(1)%r(3)*REAL(nfft3,dp)/Lz) +1
     ELSE
         WRITE(*,*) 'I did not find the direction of the plane in compute_planar_density.f90'
     END IF

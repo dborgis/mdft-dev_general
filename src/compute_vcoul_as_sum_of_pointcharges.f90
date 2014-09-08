@@ -4,7 +4,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 ! Returns the direct sum of all qi*qj/rij 
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: spaceGrid, nb_species, solvent, soluteSite
+    USE system              ,ONLY: spaceGrid, nb_species, solvent, solute
     USE constants           ,ONLY: fourpi, qfact
     USE external_potential  ,ONLY: Vext_q
     USE quadrature          ,ONLY: angGrid, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
@@ -21,7 +21,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
     IF ( ANY(Vext_q/=0.0_dp) ) STOP "Vext_q should be zero at the beginning of SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
 
     ! test if all solutes have zero charge then don't waste your time : go to end of SUBROUTINE
-    IF ( ALL(soluteSite%q == 0._dp) .OR. ALL(solvent(1)%site%q == 0._dp) ) THEN
+    IF ( ALL(solute%site%q == 0._dp) .OR. ALL(solvent(1)%site%q == 0._dp) ) THEN
         IF (verbose) PRINT*,"The electrostatic potential energy is zero."
         RETURN
     END IF
@@ -40,15 +40,15 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
         xgrid = REAL([i,j,k]-1,dp)*spaceGrid%dl
         V_psi = 0._dp
 
-        DO CONCURRENT (m=1:SIZE(solvent(1)%site), n=1:SIZE(soluteSite), (solvent(1)%site(m)%q/=0._dp .AND. soluteSite(n)%q/=0._dp))
+        DO CONCURRENT (m=1:SIZE(solvent(1)%site), n=1:SIZE(solute%site),(solvent(1)%site(m)%q/=0._dp .AND. solute%site(n)%q/=0._dp))
             xv = xgrid + [xmod(m,p,o), ymod(m,p,o), zmod(m,p,o)]
-            xuv = xv - soluteSite(n)%r
+            xuv = xv - solute%site(n)%r
             xuv2 = SUM(xuv**2)
             IF (xuv2 < hardShellRadiusSQ) THEN
                 V_psi = HUGE(1.0_dp)
                 CYCLE
             ELSE
-                V_psi = V_psi + qfact*soluteSite(n)%q*solvent(1)%site(m)%q/SQRT(xuv2)
+                V_psi = V_psi + qfact*solute%site(n)%q*solvent(1)%site(m)%q/SQRT(xuv2)
             END IF
         END DO
 

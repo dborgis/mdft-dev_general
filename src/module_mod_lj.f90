@@ -5,7 +5,7 @@ MODULE mod_lj
 
     USE external_potential, ONLY: Vext_lj
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spaceGrid, soluteSite, solvent
+    USE system,             ONLY: nb_species, spaceGrid, solute, solvent
     USE constants,          ONLY: fourpi
     USE input,              ONLY: input_line, verbose
     USE quadrature,         ONLY: angGrid, molRotGrid
@@ -51,7 +51,7 @@ MODULE mod_lj
             ! Test if the supercell is big enough considering the LJ range (given by sigma).
             ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
             ! It would have no sense to have a box dimension < 2.5 sigma
-            IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(soluteSite%sig),MAXVAL(solvent(1)%site%sig))) THEN
+            IF( MIN(Lx,Ly,Lz)<= 2.5_dp*MAX(MAXVAL(solute%site%sig),MAXVAL(solvent(1)%site%sig))) THEN
                 PRINT*,'The supercell is small. We replicate it in all directions. Vext calculation will be long.'
                 fullpbc=.TRUE. ! much slower
 !~                 STOP
@@ -68,32 +68,32 @@ MODULE mod_lj
                     z_grid=REAL(k-1,dp)*spaceGrid%dl(3)
 
                     V_node=0.0_dp
-                    solute: DO u=1,SIZE(soluteSite)
-                        IF (soluteSite(u)%eps==0.0_dp) CYCLE
-                        sigij = arithmetic_mean( solvent(1)%site(v)%sig, soluteSite(u)%sig )
-                        epsij = geometric_mean(  solvent(1)%site(v)%eps, soluteSite(u)%eps )
+                    soluteloop: DO u=1,SIZE(solute%site)
+                        IF (solute%site(u)%eps==0.0_dp) CYCLE
+                        sigij = arithmetic_mean( solvent(1)%site(v)%sig, solute%site(u)%sig )
+                        epsij = geometric_mean(  solvent(1)%site(v)%eps, solute%site(u)%eps )
                         IF (fullpbc) THEN
                             DO a=-1,1; DO b=-1,1; DO c=-1,1
-                                dx =x_grid-soluteSite(u)%r(1)+a*Lx
-                                dy =y_grid-soluteSite(u)%r(2)+b*Ly
-                                dz =z_grid-soluteSite(u)%r(3)+c*Lz
+                                dx =x_grid-solute%site(u)%r(1)+a*Lx
+                                dy =y_grid-solute%site(u)%r(2)+b*Ly
+                                dz =z_grid-solute%site(u)%r(3)+c*Lz
                                 V_node =V_node + vlj( epsij, sigij, SQRT(dx**2+dy**2+dz**2))
                                 IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
                                     V_node = 100.0_dp
-                                    EXIT solute
+                                    EXIT soluteloop
                                 END IF
                             END DO; END DO; END DO
                         ELSE
-                            dx =ABS(x_grid-soluteSite(u)%r(1)); DO WHILE (dx>Lx/2._dp); dx =ABS(dx-Lx); END DO
-                            dy =ABS(y_grid-soluteSite(u)%r(2)); DO WHILE (dy>Ly/2._dp); dy =ABS(dy-Ly); END DO
-                            dz =ABS(z_grid-soluteSite(u)%r(3)); DO WHILE (dz>Lz/2._dp); dz =ABS(dz-Lz); END DO
+                            dx =ABS(x_grid-solute%site(u)%r(1)); DO WHILE (dx>Lx/2._dp); dx =ABS(dx-Lx); END DO
+                            dy =ABS(y_grid-solute%site(u)%r(2)); DO WHILE (dy>Ly/2._dp); dy =ABS(dy-Ly); END DO
+                            dz =ABS(z_grid-solute%site(u)%r(3)); DO WHILE (dz>Lz/2._dp); dz =ABS(dz-Lz); END DO
                             V_node =V_node + vlj( epsij, sigij, SQRT(dx**2+dy**2+dz**2))
                             IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
                                 V_node = 100.0_dp
-                                EXIT solute
+                                EXIT soluteloop
                             END IF
                         END IF
-                    END DO solute
+                    END DO soluteloop
               
                     Vext_lj (i,j,k,:,:,s) = V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
                 END DO

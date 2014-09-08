@@ -3,7 +3,7 @@
 SUBROUTINE read_solute
 
     USE precision_kinds, ONLY: i2b,dp
-    USE system,          ONLY: nb_solute_sites,Lx,Ly,Lz, soluteSite, nb_species
+    USE system,          ONLY: nb_solute_sites,Lx,Ly,Lz, solute, nb_species
     USE input,           ONLY: input_line, input_log, input_dp
     USE periodic_table,  ONLY: init_periodic_table, ptable
 
@@ -23,15 +23,15 @@ SUBROUTINE read_solute
 
         READ (5,*) ! comment line
         READ (5,*) nb_solute_sites ! total number of atom sites of the solute AND the total number of different types of atoms
-        ALLOCATE(soluteSite(nb_solute_sites))
+        ALLOCATE(solute%site(nb_solute_sites))
 
         READ (5,*)
-        DO n = 1, SIZE(soluteSite)
-            READ(5,*) i, soluteSite(n)%q, soluteSite(n)%sig, soluteSite(n)%eps, &
-                    soluteSite(n)%lambda1, soluteSite(n)%lambda2, soluteSite(n)%r, soluteSite(n)%Z
+        DO n = 1, SIZE(solute%site)
+            READ(5,*) i, solute%site(n)%q, solute%site(n)%sig, solute%site(n)%eps, &
+                    solute%site(n)%lambda1, solute%site(n)%lambda2, solute%site(n)%r, solute%site(n)%Z
         END DO
     CLOSE (5)
-    soluteSite%q = soluteSite%q * input_dp('solute_charges_scale_factor')
+    solute%site%q = solute%site%q * input_dp('solute_charges_scale_factor')
 
     CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
     CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell
@@ -45,9 +45,9 @@ SUBROUTINE read_solute
         USE input, ONLY: input_log
         USE system, ONLY: spaceGrid
         IF (input_log( 'translate_solute_to_center' )) THEN
-            soluteSite%r(1) = soluteSite%r(1) + spaceGrid%length(1)/2.0_dp
-            soluteSite%r(2) = soluteSite%r(2) + spaceGrid%length(2)/2.0_dp
-            soluteSite%r(3) = soluteSite%r(3) + spaceGrid%length(3)/2.0_dp
+            solute%site%r(1) = solute%site%r(1) + spaceGrid%length(1)/2.0_dp
+            solute%site%r(2) = solute%site%r(2) + spaceGrid%length(2)/2.0_dp
+            solute%site%r(3) = solute%site%r(3) + spaceGrid%length(3)/2.0_dp
         END IF
     END SUBROUTINE translate_to_center_of_supercell_if_needed
 
@@ -59,10 +59,10 @@ SUBROUTINE read_solute
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
-        DO CONCURRENT ( i=1:SIZE(soluteSite) )
-            soluteSite(i)%r(1) = MODULO ( soluteSite(i)%r(1) , spaceGrid%length(1) )
-            soluteSite(i)%r(2) = MODULO ( soluteSite(i)%r(2) , spaceGrid%length(2) )
-            soluteSite(i)%r(3) = MODULO ( soluteSite(i)%r(3) , spaceGrid%length(3) )
+        DO CONCURRENT ( i=1:SIZE(solute%site) )
+            solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , spaceGrid%length(1) )
+            solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , spaceGrid%length(2) )
+            solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , spaceGrid%length(3) )
         END DO
     END SUBROUTINE assure_coo_inside_cell
 

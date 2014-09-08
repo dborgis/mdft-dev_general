@@ -3,7 +3,7 @@
 SUBROUTINE compute_Vext_hard_cylinder
 USE precision_kinds,only : i2b , dp
 use input,only : input_line, input_dp
-use system,only : nfft1 , nfft2 , nfft3 , soluteSite , nb_solute_sites , Lx , Ly , nb_species
+use system,only : nfft1 , nfft2 , nfft3 , solute , nb_solute_sites , Lx , Ly , nb_species
 use external_potential,only : Vext_total
 use quadrature, only: angGrid, molRotGrid
 USE hardspheres ,ONLY: hs
@@ -27,7 +27,7 @@ write(*,*)'>>> Compute HS Vext Daniel for cylinder in z dir in hs fluid'
 ! look for tag 'hard_cylinder_radius' in dft.in
 hard_cylinder_radius=input_dp('radius_of_hard_cylinder')
 write ( * , * ) 'the hard cylinder solute has a radius of ' , hard_cylinder_radius
-write ( * , * ) 'this cylinder is along Z. position in x and y are extracted from input/solute.in soluteSite%r'
+write ( * , * ) 'this cylinder is along Z. position in x and y are extracted from input/solute.in solute%site%r'
 write ( * , * ) 'there are ' , nb_solute_sites , ' cylinders in the system. They all have same radius'
 ! compute if grid point is or not inside the hard cylinder
 ! hard cylinder is along axe x=Lx/2, y=Ly/2
@@ -35,9 +35,9 @@ do n = 1 , nb_solute_sites
   do species = 1 , nb_species
     sum_rad2 = ( hard_cylinder_radius + hs(species)%R ) ** 2
     do j = 1 , nfft2
-      y_nm2 = ( real(j-1,dp) * deltay - soluteSite(n)%r(2) )**2
+      y_nm2 = ( real(j-1,dp) * deltay - solute%site(n)%r(2) )**2
       do i = 1 , nfft1
-        x_nm2 = ( real(i-1,dp) * deltax - soluteSite(n)%r(1) )**2
+        x_nm2 = ( real(i-1,dp) * deltax - solute%site(n)%r(1) )**2
         ! relative distances between solute site and solvent site
         r_nm2 = x_nm2 + y_nm2
         ! if we are inside , vext is huge, ELSE vext is unchanged

@@ -1,7 +1,7 @@
 SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: nb_solvent_sites, nb_species, spaceGrid, soluteSite, solvent
+    USE system              ,ONLY: nb_solvent_sites, nb_species, spaceGrid, solute, solvent
     USE quadrature          ,ONLY: angGrid, molRotGrid, Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     USE external_potential  ,ONLY: vext_q
     USE constants           ,ONLY: qfact, zero
@@ -29,7 +29,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
     IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"
 
-    IF ( ALL(soluteSite%q == zero) .OR. ALL(solvent(1)%site%q == zero) ) RETURN
+    IF ( ALL(solute%site%q == zero) .OR. ALL(solvent(1)%site%q == zero) ) RETURN
 
     ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
     DO CONCURRENT( o=1:angGrid%n_angles , p=1:molRotGrid%n_angles , m=1:SIZE(solvent(1)%site) )

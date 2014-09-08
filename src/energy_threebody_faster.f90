@@ -4,7 +4,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     USE input           ,ONLY: verbose, input_dp
     USE constants       ,ONLY: twopi,zeroC
     USE quadrature      ,ONLY: angGrid, molRotGrid
-    USE system          ,ONLY: thermocond, spaceGrid, soluteSite, solvent
+    USE system          ,ONLY: thermocond, spaceGrid, solute, solvent
     USE minimizer       ,ONLY: cg_vect,dF,FF
     USE fft             ,ONLY: fftw3,kproj
     
@@ -30,7 +30,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
     
     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
-    nb_solute_sites = SIZE(soluteSite)
+    nb_solute_sites = SIZE(solute%site)
     deltaVk=(twopi)**3/PRODUCT(spaceGrid%length)
     lambda_w=input_dp ('lambda_solvent')!5.0_dp
     ! check if user wants to use this part of the functional
@@ -231,22 +231,22 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE ( DHz  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
     ALLOCATE ( DH0  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
 
-    DO CONCURRENT (n=1:nb_solute_sites, soluteSite(n)%lambda1/=0._dp)
+    DO CONCURRENT (n=1:nb_solute_sites, solute%site(n)%lambda1/=0._dp)
     
-        rmax1=0.5_dp*(soluteSite(n)%sig + solvent(1)%site(1)%sig) + d_w 
+        rmax1=0.5_dp*(solute%site(n)%sig + solvent(1)%site(1)%sig) + d_w 
         nmax1x = int(rmax1/deltax)
         nmax1y = int(rmax1/deltay)
         nmax1z = int(rmax1/deltaz)
-        ix = int(soluteSite(n)%r(1)/deltax) + 1
-        iy = int(soluteSite(n)%r(2)/deltay) + 1
-        iz = int(soluteSite(n)%r(3)/deltaz) + 1
+        ix = int(solute%site(n)%r(1)/deltax) + 1
+        iy = int(solute%site(n)%r(2)/deltay) + 1
+        iz = int(solute%site(n)%r(3)/deltaz) + 1
 
         DO k=iz-nmax1z,iz+nmax1z
-            zk2 = -(soluteSite(n)%r(3)-(k-1)*deltaz)
+            zk2 = -(solute%site(n)%r(3)-(k-1)*deltaz)
             DO j=iy-nmax1y, iy+nmax1y
-                yk2 = -(soluteSite(n)%r(2)-(j-1)*deltay)
+                yk2 = -(solute%site(n)%r(2)-(j-1)*deltay)
                 DO i=ix-nmax1x, ix+nmax1x
-                    xk2 = -(soluteSite(n)%r(1)-(i-1)*deltax)
+                    xk2 = -(solute%site(n)%r(1)-(i-1)*deltax)
                     rk2 = SQRT( xk2**2 + yk2**2 + zk2**2 )
                     fk1= deltaV*f_ww(rk2,rmin1,rsw1,rmax1)
                     IF (rk2 /= 0.0_dp .AND. fk1/=0._dp) THEN
@@ -303,21 +303,21 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE( G0(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
 
     
-    DO CONCURRENT ( n=1:nb_solute_sites , soluteSite(n)%lambda2/=0._dp )
+    DO CONCURRENT ( n=1:nb_solute_sites , solute%site(n)%lambda2/=0._dp )
         nmax2x = int(rmax1/deltax)
         nmax2y = int(rmax1/deltay)
         nmax2z = int(rmax1/deltaz)
-        ix = int(soluteSite(n)%r(1)/deltax) + 1
-        iy = int(soluteSite(n)%r(2)/deltay) + 1
-        iz = int(soluteSite(n)%r(3)/deltaz) + 1
+        ix = int(solute%site(n)%r(1)/deltax) + 1
+        iy = int(solute%site(n)%r(2)/deltay) + 1
+        iz = int(solute%site(n)%r(3)/deltaz) + 1
         DO k=iz-nmax2z,iz+nmax2z+1
-            zk2 = -(soluteSite(n)%r(3)-(k-1)*deltaz)
+            zk2 = -(solute%site(n)%r(3)-(k-1)*deltaz)
             DO j=iy-nmax2y, iy+nmax2y+1
-                yk2 = -(soluteSite(n)%r(2)-(j-1)*deltay)
+                yk2 = -(solute%site(n)%r(2)-(j-1)*deltay)
                 DO i=ix-nmax2x, ix+nmax2x+1
-                    xk2 = -(soluteSite(n)%r(1)-(i-1)*deltax)
+                    xk2 = -(solute%site(n)%r(1)-(i-1)*deltax)
                     rk2 = SQRT( xk2**2 + yk2**2 + zk2**2 )
-                    fk2 = soluteSite(n)%lambda2 * f_ww(rk2,rmin1,rsw1,rmax1)
+                    fk2 = solute%site(n)%lambda2 * f_ww(rk2,rmin1,rsw1,rmax1)
                     G0(i,j,k) = G0(i,j,k) + fk2                    
                     IF (rk2/=0.0_dp .AND. fk2/=0._dp) THEN
                         Gxx(i,j,k)= Gxx(i,j,k)+ fk2*xk2**2 /(rk2**2)
@@ -387,7 +387,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     CALL dothestuff( FG0  ,  A0_k , G0_k  )
 
 
-    F3B1 = thermocond%kbT/2._dp* SUM (soluteSite%lambda1*( Hxx**2+Hyy**2+Hzz**2 +2.0_dp*Hxy**2+2.0_dp*Hxz**2+2.0_dp*Hyz**2&
+    F3B1 = thermocond%kbT/2._dp* SUM (solute%site%lambda1*( Hxx**2+Hyy**2+Hzz**2 +2.0_dp*Hxy**2+2.0_dp*Hxz**2+2.0_dp*Hyz**2&
                                           -2.0_dp*costheta0*(Hx**2+Hy**2+Hz**2)+costheta0**2*H0**2   ))
     
 
@@ -429,13 +429,13 @@ BLOCK
                       2.0_dp*FAyz(i,j,k)*Ayz(i,j,k)+2.0_dp*FAxz(i,j,k)*Axz(i,j,k)&
               -2.0_dp*costheta0*(FAx(i,j,k)*Ax(i,j,k)+FAy(i,j,k)*Ay(i,j,k)+FAz(i,j,k)*Az(i,j,k))+costheta0**2*FA0(i,j,k)*A0(i,j,k)))
                       
-                    dF(icg)=dF(icg) +SUM(soluteSite%lambda1*thermocond%kbT*psi*opweight*solvent(1)%rho0*2.0_dp*(&
+                    dF(icg)=dF(icg) +SUM(solute%site%lambda1*thermocond%kbT*psi*opweight*solvent(1)%rho0*2.0_dp*(&
                         (Hxx(:)*DHxx(i,j,k,:)+Hyy(:)*DHyy(i,j,k,:)+Hzz(:)*DHzz(i,j,k,:)&
                         +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
                         -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
                         +costheta0**2*H0(:)*DH0(i,j,k,:)))
 !~                         DO n=1,nb_solute_sites
-!~                             dF(icg)=dF(icg)+soluteSite(n)%lambda1*thermocond%kbT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
+!~                             dF(icg)=dF(icg)+solute%site(n)%lambda1*thermocond%kbT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
 !~                                 Hzz(n)*DHzz(i,j,k,n)&
 !~                                 +2.0_dp*Hxy(n)*DHxy(i,j,k,n)+2.0_dp*Hxz(n)*DHxz(i,j,k,n)+2.0_dp*Hyz(n)*DHyz(i,j,k,n))&
 !~           -2.0_dp*costheta0*(Hx(n)*DHx(i,j,k,n)+Hy(n)*DHy(i,j,k,n)+Hz(n)*DHz(i,j,k,n))+costheta0**2*H0(n)*DH0(i,j,k,n))*solvent(1)%rho0*2.0_dp
