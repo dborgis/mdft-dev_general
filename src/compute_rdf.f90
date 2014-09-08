@@ -34,7 +34,7 @@ SUBROUTINE compute_rdf (array,filename)
 
     ALLOCATE (rdf (nbins) ,SOURCE=0._dp)
     
-    CALL UTest_histogram_3D
+    ! CALL UTest_histogram_3D
     DO n = 1, SIZE(soluteSite) ! loop over all sites of the solute
         CALL histogram_3d (array(:,:,:), rdf)
         IF (error%found) THEN; PRINT*,error%msg; STOP; END IF
