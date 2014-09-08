@@ -106,8 +106,12 @@ MODULE mod_lj
             REAL(dp) :: vlj
             REAL(dp), INTENT(IN) :: eps, sig, d ! ε,σ,distance
             REAL(dp) :: div
-            div = (sig/d)**6
-            vlj = 4._dp*eps*div*(div-1._dp)
+            IF (d <= EPSILON(1._dp)) THEN
+                vlj = HUGE(1._dp)
+            ELSE
+                div = (sig/d)**6
+                vlj = 4._dp*eps*div*(div-1._dp)
+            END IF
         END FUNCTION vlj
         
         PURE FUNCTION arithmetic_mean( A, B)
