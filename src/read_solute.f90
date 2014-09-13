@@ -3,13 +3,18 @@
 SUBROUTINE read_solute
 
     USE precision_kinds, ONLY: i2b,dp
-    USE system,          ONLY: nb_solute_sites,Lx,Ly,Lz, solute, nb_species
+    USE system,          ONLY: nb_solute_sites, solute, nb_species, spaceGrid
     USE input,           ONLY: input_line, input_log, input_dp
     USE periodic_table,  ONLY: init_periodic_table, ptable
 
     IMPLICIT NONE
 
     INTEGER(i2b) :: n,i,stat
+    REAL(dp) :: lx, ly, lz
+    
+    lx= spaceGrid%length(1)
+    ly= spacegrid%length(2)
+    lz= spaceGrid%length(3)
 
     CALL init_periodic_table
     ! print *, ptable ( 1 ) % name

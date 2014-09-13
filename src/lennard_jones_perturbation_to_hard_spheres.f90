@@ -4,8 +4,7 @@
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nfft1,nfft2,nfft3,Lx,Ly,Lz, v_perturbation_k,spaceGrid,nb_species, solvent, &
-                                solvent
+    USE system          ,ONLY: v_perturbation_k,spaceGrid,nb_species, solvent, solvent, spaceGrid
     USE quadrature      ,ONLY: angGrid
     USE minimizer       ,ONLY: cg_vect,dF,FF
     USE constants       ,ONLY: fourpi,twopi,zeroC
@@ -27,6 +26,10 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     REAL(dp) :: twopiolx , twopioly , twopiolz ! dummy for speeding up loops
     REAL(dp) :: potential ! dFp / drho at rho=rho_0 in order the grand potential to be zero at rho = rho_0
     REAL(dp) :: nb_molecule ! total number of hard spheres ie integral of density over all space
+    INTEGER(i2b) :: nfft1, nfft2, nfft3
+    nfft1= spaceGrid%n_nodes(1)
+    nfft2= spaceGrid%n_nodes(2)
+    nfft3= spaceGrid%n_nodes(3)
 
     IF (nb_species/=1) STOP "When dealing with LJ as perturbation in lennard_jones_..._spheres.f90, only nb_species=1 is ok."
     

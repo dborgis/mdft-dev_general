@@ -5,14 +5,25 @@
 SUBROUTINE compute_planar_density(array,filename)
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nfft1,nfft2,nfft3,nb_solute_sites,Lx,Ly,Lz,spaceGrid, solute
+    USE system          ,ONLY: nb_solute_sites, spaceGrid, solute
 
     IMPLICIT NONE
     
     CHARACTER(50), INTENT(IN)   :: filename
-    REAL(dp), INTENT(IN)        :: array(nfft1,nfft2,nfft3)
+    REAL(dp), INTENT(IN)        :: array(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3))
     INTEGER(i2b)                :: plandir,id,i,j,k
-    REAL(dp)                    :: x_com(nfft1), y_com(nfft2), z_com(nfft3)
+    REAL(dp)                    :: x_com(spaceGrid%n_nodes(1)), y_com(spaceGrid%n_nodes(2)), z_com(spaceGrid%n_nodes(3))
+    
+    INTEGER(i2b) :: nfft1, nfft2, nfft3
+    REAL(dp) :: lx, ly, lz
+    
+    lx= spaceGrid%length(1)
+    ly= spacegrid%length(2)
+    lz= spaceGrid%length(3)
+    nfft1= spaceGrid%n_nodes(1)
+    nfft2= spaceGrid%n_nodes(2)
+    nfft3= spaceGrid%n_nodes(3)
+    
     
     ! For now that only planes perpendicular to x, y and z are  Identify the plan coordinate which is 0 (see restrictions to using this program for now)
     IF      (solute%site(1)%r(1)==solute%site(2)%r(1) .and. solute%site(1)%r(1)==solute%site(3)%r(1)) THEN

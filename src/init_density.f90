@@ -4,7 +4,7 @@
 ! we thus init the density not using vext, but Vext_total - Vext_q
 SUBROUTINE init_density
 USE precision_kinds,only : dp , i2b
-use system,only : nfft1 , nfft2 , nfft3 , thermocond , nb_species
+use system,only : thermocond, nb_species, spaceGrid
 use quadrature, only: angGrid, molRotGrid
 USE minimizer, ONLY: cg_vect, nbd, ll, uu
 use external_potential,only : Vext_total , Vext_q
@@ -17,6 +17,11 @@ integer(i2b):: i , j , k , o , p , icg ! dummy
 real(dp):: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
 integer(i2b):: species, ios
 LOGICAL :: exists
+INTEGER(i2b) :: nfft1, nfft2, nfft3
+nfft1= spaceGrid%n_nodes(1)
+nfft2= spaceGrid%n_nodes(2)
+nfft3= spaceGrid%n_nodes(3)
+
 
 IF (input_log('reuse_density')) THEN
     INQUIRE (file='input/density.bin.in', EXIST=exists)

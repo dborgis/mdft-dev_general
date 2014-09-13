@@ -3,7 +3,7 @@
 SUBROUTINE compute_Vext_hard_cylinder
 USE precision_kinds,only : i2b , dp
 use input,only : input_line, input_dp
-use system,only : nfft1 , nfft2 , nfft3 , solute , nb_solute_sites , Lx , Ly , nb_species
+use system,only : solute , nb_solute_sites , nb_species, spaceGrid
 use external_potential,only : Vext_total
 use quadrature, only: angGrid, molRotGrid
 USE hardspheres ,ONLY: hs
@@ -14,6 +14,15 @@ real(dp):: hard_cylinder_radius ! radius of the hard cylinder solute
 real(dp):: deltax , deltay ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
 real(dp):: sum_rad2 ! sum of solute cylinder radius and radius of solvent hard sphere
 integer(i2b):: species ! dummy between 1 and nb_species
+    INTEGER(i2b) :: nfft1, nfft2, nfft3
+    REAL(dp) :: lx, ly, lz
+    
+    lx= spaceGrid%length(1)
+    ly= spacegrid%length(2)
+    lz= spaceGrid%length(3)
+    nfft1= spaceGrid%n_nodes(1)
+    nfft2= spaceGrid%n_nodes(2)
+    nfft3= spaceGrid%n_nodes(3)
 ! init variables
 deltax = Lx / real ( nfft1 , dp )
 deltay = Ly / real ( nfft2 , dp )

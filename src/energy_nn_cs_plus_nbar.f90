@@ -2,7 +2,7 @@
 ! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
 SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   USE precision_kinds,only : dp , i2b
-  use system,only : nfft1 , nfft2 , nfft3 , deltaV, thermocond ,  nb_species, Lx,Ly,Lz, solvent
+  use system,only : thermocond, nb_species, solvent, spaceGrid
   USE dcf, ONLY: c_s, nb_k ,delta_k
   use constants,only : fourpi , i_complex,twopi
   USE minimizer, ONLY: cg_vect , FF , dF
@@ -52,6 +52,18 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   real(dp) :: dF_cg_ijk ! dummy for local dF_cg
   real(dp) :: delta_n_ijk ! dummy for local delta_n 
   real(dp):: psi ! local cg_vect
+  
+    INTEGER(i2b) :: nfft1, nfft2, nfft3
+    REAL(dp) :: lx, ly, lz, deltav
+    
+    lx= spaceGrid%length(1)
+    ly= spacegrid%length(2)
+    lz= spaceGrid%length(3)
+    nfft1= spaceGrid%n_nodes(1)
+    nfft2= spaceGrid%n_nodes(2)
+    nfft3= spaceGrid%n_nodes(3)
+    deltav= PRODUCT(spaceGrid%dl)
+
   
   call cpu_time(time0)
   if (input_log('bridge_hard_sphere')) then
