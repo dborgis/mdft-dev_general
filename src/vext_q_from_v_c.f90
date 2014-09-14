@@ -52,7 +52,8 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
         DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
         
             x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
-        
+            WHERE (ABS(x)<=EPSILON(1._dp)) x=0._dp
+
             l = floorNode(gridnode,gridlen,x,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
             u = ceilingNode(gridnode,gridlen,x,.TRUE.)
             r = distToFloorNode(gridnode,gridlen,x,.TRUE.) ! 0 <= distToFloorNode < 1
