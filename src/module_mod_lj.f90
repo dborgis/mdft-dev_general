@@ -77,7 +77,7 @@ MODULE mod_lj
                                 dx =x_grid-soluteSite(u)%r(1)+a*Lx
                                 dy =y_grid-soluteSite(u)%r(2)+b*Ly
                                 dz =z_grid-soluteSite(u)%r(3)+c*Lz
-                                V_node =V_node + vlj( epsij, sigij, SQRT(dx**2+dy**2+dz**2))
+                                V_node =V_node + vlj( epsij, sigij, NORM2([dx,dy,dz]))
                                 IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
                                     V_node = 100.0_dp
                                     EXIT solute
@@ -106,8 +106,12 @@ MODULE mod_lj
             REAL(dp) :: vlj
             REAL(dp), INTENT(IN) :: eps, sig, d ! ε,σ,distance
             REAL(dp) :: div
-            div = (sig/d)**6
-            vlj = 4._dp*eps*div*(div-1._dp)
+            IF (d <= EPSILON(1._dp)) THEN
+                vlj = HUGE(1._dp)
+            ELSE
+                div = (sig/d)**6
+                vlj = 4._dp*eps*div*(div-1._dp)
+            END IF
         END FUNCTION vlj
         
         PURE FUNCTION arithmetic_mean( A, B)
