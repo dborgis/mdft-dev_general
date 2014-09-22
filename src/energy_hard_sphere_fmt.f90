@@ -1,8 +1,8 @@
 SUBROUTINE energy_hard_sphere_fmt (Fint)
 
     USE precision_kinds  ,ONLY: dp , i2b
-    USE system           ,ONLY: kBT , nb_species , n_0_multispec , mole_fraction , rho_0_multispec, spaceGrid
-    USE quadrature       ,ONLY: molRotSymOrder , angGrid, molRotGrid
+    USE system           ,ONLY: thermocond, nb_species, mole_fraction, spaceGrid, solvent
+    USE quadrature       ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer        ,ONLY: cg_vect , FF , dF
     USE constants        ,ONLY: pi , FourPi , twopi, zeroC
     USE fft              ,ONLY: fftw3
@@ -71,7 +71,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     ! total number of molecules of each species
     ALLOCATE ( nb_molecules ( nb_species ) ,SOURCE=0._dp)
     DO CONCURRENT ( s=1:nb_species )
-        nb_molecules(s) = SUM( rho(:,:,:,s ) ) * n_0_multispec(s) * mole_fraction(s) * deltav
+        nb_molecules(s) = SUM( rho(:,:,:,s ) ) * solvent(s)%n0 * mole_fraction(s) * deltav
 !~         IF (verbose) PRINT*,'There are',nb_molecules(s),'molecules of type',s
     END DO
 
@@ -86,7 +86,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
     DO s = 1 , nb_species
         fftw3%in_forward = rho(:,:,:,s)
         CALL dfftw_execute ( fftw3%plan_forward )
-        rho_k(:,:,:,s) = fftw3%out_forward * n_0_multispec(s) * mole_fraction(s)
+        rho_k(:,:,:,s) = fftw3%out_forward * solvent(s)%n0 * mole_fraction(s)
     END DO
     DEALLOCATE ( rho )
 
@@ -147,7 +147,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
         END DO
     END DO
 
-    Fint = Fint * kBT * DeltaV -SUM(hs%excchempot * nb_molecules) -SUM( hs%Fexc0 * mole_fraction )
+    Fint = Fint * thermocond%kbT * DeltaV -SUM(hs%excchempot * nb_molecules) -SUM( hs%Fexc0 * mole_fraction )
     FF = FF + Fint
 
     ! gradients
@@ -232,7 +232,7 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
                             psi = cg_vect ( icg )
     ! AHAAAAAAAAAAAAATTENTION ICI LE 12 SEPTEMBRE 2011 JE ME RENDS COMPTE QU iL Y A PEUT ETRE UN FACTEUR WEIGHT(o) QUI MANQUE, CA DEPEND DE LA DEF DE N0 par RAPPORT à rho_0
                             dF ( icg ) = dF ( icg ) &
-                            + 2.0_dp * psi * rho_0_multispec ( s ) * deltav * ( kBT * dFex ( i , j , k , s ) - hs(s)%excchempot )&
+                            + 2.0_dp * psi * solvent(s)%rho0 * deltav * ( thermocond%kbT * dFex(i,j,k,s) - hs(s)%excchempot )&
                             *angGrid%weight(o)*molRotGrid%weight(p)
     ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
                         END DO !p

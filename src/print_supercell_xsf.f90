@@ -2,7 +2,7 @@
 !! Type vmd --xsf output/supercell.xsf to visualise it.
 SUBROUTINE print_supercell_xsf
     USE precision_kinds, ONLY: i2b
-    USE system, ONLY: spaceGrid, soluteSite
+    USE system, ONLY: spaceGrid, solute
     IMPLICIT NONE
     integer(i2b) :: i
     
@@ -36,9 +36,9 @@ SUBROUTINE print_supercell_xsf
         write(5,100)'# The second number is always 1 for PRIMCOORD coordinates.'
         write(5,100)'# in angstroms and cartesian coordinates'
         write(5,100)'PRIMCOORD'
-        write(5,102) SIZE(soluteSite), 1
-        do i = 1, SIZE(soluteSite)
-            write(5,103) soluteSite(i)%Z, soluteSite(i)%r
+        write(5,102) SIZE(solute%site), 1
+        do i = 1, SIZE(solute%site)
+            write(5,103) solute%site(i)%Z, solute%site(i)%r
         END DO
     close(5)
 END SUBROUTINE print_supercell_xsf

@@ -4,7 +4,7 @@
 SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, soluteChargeDensity)
     
     USE precision_kinds, ONLY: i2b,dp
-    USE system,          ONLY: soluteSite
+    USE system,          ONLY: solute
     USE input,           ONLY: verbose
     USE mathematica     ,ONLY: distToFloorNode, floorNode, ceilingNode
     
@@ -21,26 +21,26 @@ SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, so
     soluteChargeDensity = 0._dp
 
     ! extrapolate each solute point charge to grid nodes
-    DO s = 1 , SIZE(soluteSite)
+    DO s = 1 , SIZE(solute%site)
 
-        IF ( soluteSite(s)%q == 0.0_dp ) CYCLE ! if the solute does not have charge, go to next solute
+        IF ( solute%site(s)%q == 0.0_dp ) CYCLE ! if the solute does not have charge, go to next solute
 
-        r = distToFloorNode (gridnode,gridlen,soluteSite(s)%r,.TRUE.)
-        m = floorNode       (gridnode,gridlen,soluteSite(s)%r,.TRUE.)
-        p = ceilingNode     (gridnode,gridlen,soluteSite(s)%r,.TRUE.)
+        r = distToFloorNode (gridnode,gridlen,solute%site(s)%r,.TRUE.)
+        m = floorNode       (gridnode,gridlen,solute%site(s)%r,.TRUE.)
+        p = ceilingNode     (gridnode,gridlen,solute%site(s)%r,.TRUE.)
 
         wp = r ! weights
         wm = 1._dp - r
 
         ! increase density accordingly
-        soluteChargeDensity (m(1),m(2),m(3)) = soluteChargeDensity (m(1),m(2),m(3)) + soluteSite(s)%q * wm(1) * wm(2) * wm(3)
-        soluteChargeDensity (p(1),m(2),m(3)) = soluteChargeDensity (p(1),m(2),m(3)) + soluteSite(s)%q * wp(1) * wm(2) * wm(3)
-        soluteChargeDensity (m(1),p(2),m(3)) = soluteChargeDensity (m(1),p(2),m(3)) + soluteSite(s)%q * wm(1) * wp(2) * wm(3)
-        soluteChargeDensity (m(1),m(2),p(3)) = soluteChargeDensity (m(1),m(2),p(3)) + soluteSite(s)%q * wm(1) * wm(2) * wp(3)
-        soluteChargeDensity (p(1),p(2),m(3)) = soluteChargeDensity (p(1),p(2),m(3)) + soluteSite(s)%q * wp(1) * wp(2) * wm(3)
-        soluteChargeDensity (p(1),m(2),p(3)) = soluteChargeDensity (p(1),m(2),p(3)) + soluteSite(s)%q * wp(1) * wm(2) * wp(3)
-        soluteChargeDensity (m(1),p(2),p(3)) = soluteChargeDensity (m(1),p(2),p(3)) + soluteSite(s)%q * wm(1) * wp(2) * wp(3)
-        soluteChargeDensity (p(1),p(2),p(3)) = soluteChargeDensity (p(1),p(2),p(3)) + soluteSite(s)%q * wp(1) * wp(2) * wp(3)
+        soluteChargeDensity (m(1),m(2),m(3)) = soluteChargeDensity (m(1),m(2),m(3)) + solute%site(s)%q * wm(1) * wm(2) * wm(3)
+        soluteChargeDensity (p(1),m(2),m(3)) = soluteChargeDensity (p(1),m(2),m(3)) + solute%site(s)%q * wp(1) * wm(2) * wm(3)
+        soluteChargeDensity (m(1),p(2),m(3)) = soluteChargeDensity (m(1),p(2),m(3)) + solute%site(s)%q * wm(1) * wp(2) * wm(3)
+        soluteChargeDensity (m(1),m(2),p(3)) = soluteChargeDensity (m(1),m(2),p(3)) + solute%site(s)%q * wm(1) * wm(2) * wp(3)
+        soluteChargeDensity (p(1),p(2),m(3)) = soluteChargeDensity (p(1),p(2),m(3)) + solute%site(s)%q * wp(1) * wp(2) * wm(3)
+        soluteChargeDensity (p(1),m(2),p(3)) = soluteChargeDensity (p(1),m(2),p(3)) + solute%site(s)%q * wp(1) * wm(2) * wp(3)
+        soluteChargeDensity (m(1),p(2),p(3)) = soluteChargeDensity (m(1),p(2),p(3)) + solute%site(s)%q * wm(1) * wp(2) * wp(3)
+        soluteChargeDensity (p(1),p(2),p(3)) = soluteChargeDensity (p(1),p(2),p(3)) + solute%site(s)%q * wp(1) * wp(2) * wp(3)
     END DO
     
     volumElem = PRODUCT(gridlen/REAL(gridnode,dp))

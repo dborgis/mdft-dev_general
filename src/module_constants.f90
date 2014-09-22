@@ -17,6 +17,7 @@ MODULE constants ! fondamental_constants
     REAL(dp)    ,PARAMETER :: twopi         = 2.0_dp * pi
     REAL(dp)    ,PARAMETER :: fourpi        = 4.0_dp * pi
     REAL(dp)    ,PARAMETER :: eightpi       = 8.0_dp * pi
+    REAL(dp)    ,PARAMETER :: eightpiSQ     = 8.0_dp * pi**2
     REAL(dp)    ,PARAMETER :: sqpi          = sqrt ( pi ) ! square root of pi
     REAL(dp)    ,PARAMETER :: eps0          = 8.854187817e-12_dp ! Electric constant ie Vacuum permittivity in Farad per meter == Coulomb^2 per (Joule x meter)
     REAL(dp)    ,PARAMETER :: qunit         = 1.602176565e-19_dp ! Elementary charge in Coulomb ; [C]

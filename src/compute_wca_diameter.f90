@@ -5,11 +5,11 @@
 ! 201109121800 Maximilien Levesque   Creation
 ! 201109122158 Maximilien Levesque   Better notations, equations, explicit interface for function, more coherent declaration of kb
 ! 201109182054 Maximilien Levesque   Comment about reduced units
-SUBROUTINE compute_wca_diameter ( n_0 , temp , sig , eps , d_wca )
+SUBROUTINE compute_wca_diameter ( n_0 , temperature , sig , eps , d_wca )
 USE precision_kinds,only : dp , i2b
 use constants,only : Boltz , Navo
 IMPLICIT NONE
-real(dp), intent(in) :: temp ! temperature
+real(dp), intent(in) :: temperature ! temperature
 real(dp), intent(in) :: n_0 ! density
 real(dp), intent(in) :: sig ! sigma of LJ potential
 real(dp), intent(in) :: eps ! epsilon of LJ potential
@@ -22,7 +22,7 @@ real(dp), parameter :: a1 = 0.3837_dp , a2 = 0.4293_dp , a3 = 1.068_dp , a4 = 21
 real(dp):: delta_b ! parameter from Verlet & Weis
 real(dp):: d_old ! backup value of d_wca during convergence
 ! init
-beta = 1.0_dp / ( kb * temp )
+beta = 1.0_dp / ( kb * temperature )
 ! Reduced temperature
 temp_reduite = 1.0_dp / ( beta * eps )
 write(*,*)'T*= ',temp_reduite

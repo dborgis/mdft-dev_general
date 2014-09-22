@@ -1,7 +1,7 @@
 SUBROUTINE energy_polarization_dipol (Fint)
 
     USE precision_kinds, ONLY : i2b, dp
-    USE system,          ONLY : kBT, rho_0, spaceGrid
+    USE system,          ONLY : thermocond, spaceGrid, solvent
     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid
     USE minimizer,       ONLY : cg_vect , FF , dF
     USE constants,       ONLY : twopi, zeroC
@@ -22,13 +22,13 @@ SUBROUTINE energy_polarization_dipol (Fint)
     Nk = REAL ( nfft1*nfft2*nfft3 , dp ) ! total number of k grid points
     
     
-    CALL build_polarization_vector_field_Px_Py_Pz ! Px(r) = \int_\Omega \Omega(r) * \rho(r,\Omega) d\Omega  see Borgis et al., DOI:10.1103/PhysRevE.66.031206
+    CALL build_polarization_vector_field_Px_Py_Pz ! Px(r) = \int_\Omega \Omega * \rho(r,\Omega) d\Omega  see Borgis et al., DOI:10.1103/PhysRevE.66.031206
     CALL build_Fourier_transformed_polarization_vector_field_Pkx_Pky_Pkz
     CALL build_excess_electric_field_in_Fourier_space
     CALL build_excess_electric_field_from_inverse_Fourier_transform
 
     
-    fact = spaceGrid%dv * rho_0! integration factor
+    fact = spaceGrid%dv * solvent(1)%rho0 ! integration factor
     Fint = 0.0_dp
     icg = 0
     DO i = 1, nfft1
@@ -38,7 +38,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
         Ey_tmp = Ey(i,j,k)
         Ez_tmp = Ez(i,j,k)
         DO o = 1 , angGrid%n_angles
-            Vint = -kBT*rho_0*( Omx(o)*Ex_tmp + Omy(o)*Ey_tmp + Omz(o)*Ez_tmp ) *angGrid%weight(o)
+            Vint = -thermocond%kbT*solvent(1)%rho0 *( Omx(o)*Ex_tmp + Omy(o)*Ey_tmp + Omz(o)*Ez_tmp ) *angGrid%weight(o)
             DO p=1 , molRotGrid%n_angles
                 icg = icg + 1
                 psi = cg_vect ( icg )
@@ -50,7 +50,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
     END DO
     END DO
     END DO
-    Fint = Fint * 0.5_dp * spaceGrid%dv * rho_0
+    Fint = Fint * 0.5_dp * spaceGrid%dv * solvent(1)%rho0
 
     FF = FF + Fint
 
@@ -106,7 +106,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
         !~             CLOSE(11)
                     !Compute Radial Polarization
                     filename='output/radial_polarization_dipolar'
-                    polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*rho_0
+                    polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*solvent(1)%rho0
                     CALL compute_rdf(polatot(:,:,:,1), filename)
 !~                     filename='output/radial_polarization_scalar'
                 END BLOCK

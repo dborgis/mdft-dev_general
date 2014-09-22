@@ -2,7 +2,7 @@
 SUBROUTINE energy_cs_hard_sphere (Fint)
 
     USE precision_kinds ,ONLY: i2b, dp
-    USE system          ,ONLY: c_s_hs, kBT, rho_0_multispec, nb_species, spaceGrid
+    USE system          ,ONLY: c_s_hs, thermocond, nb_species, spaceGrid, solvent
     USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer       ,ONLY: cg_vect, FF, dF
     USE constants       ,ONLY: fourpi, twopi, zero, zeroC
@@ -35,11 +35,11 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
     Fint = 0.0_dp
     icg = 0
     DO s = 1 , nb_species
-        fact = PRODUCT(spaceGrid%dl) * rho_0_multispec(s)
+        fact = PRODUCT(spaceGrid%dl) * solvent(s)%rho0
         DO i = 1 , nfft1
             DO j = 1 , nfft2
                 DO k = 1 , nfft3
-                    Vint = -kBT * rho_0_multispec(s) * gamma(i,j,k)
+                    Vint = -thermocond%kbt * solvent(s)%rho0 * gamma(i,j,k)
                     DO o = 1 , angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg + 1

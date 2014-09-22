@@ -1,7 +1,7 @@
 SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: nb_solvent_sites, nb_species, spaceGrid, soluteSite, solventSite
+    USE system              ,ONLY: nb_solvent_sites, nb_species, spaceGrid, solute, solvent
     USE quadrature          ,ONLY: angGrid, molRotGrid, Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     USE external_potential  ,ONLY: vext_q
     USE constants           ,ONLY: qfact, zero
@@ -29,13 +29,13 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
     IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"
 
-    IF ( ALL(soluteSite%q == zero) .OR. ALL(solventSite%q == zero) ) RETURN
+    IF ( ALL(solute%site%q == zero) .OR. ALL(solvent(1)%site%q == zero) ) RETURN
 
     ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
-    DO CONCURRENT( o=1:angGrid%n_angles , p=1:molRotGrid%n_angles , m=1:SIZE(solventSite) )
-        xmod(m,p,o) = Rotxx(o,p) * solventSite(m)%r(1) + Rotxy(o,p) * solventSite(m)%r(2) + Rotxz(o,p) * solventSite(m)%r(3)
-        ymod(m,p,o) = Rotyx(o,p) * solventSite(m)%r(1) + Rotyy(o,p) * solventSite(m)%r(2) + Rotyz(o,p) * solventSite(m)%r(3)
-        zmod(m,p,o) = Rotzx(o,p) * solventSite(m)%r(1) + Rotzy(o,p) * solventSite(m)%r(2) + Rotzz(o,p) * solventSite(m)%r(3)
+    DO CONCURRENT( o=1:angGrid%n_angles , p=1:molRotGrid%n_angles , m=1:SIZE(solvent(1)%site) )
+        xmod(m,p,o) = DOT_PRODUCT( [Rotxx(o,p),Rotxy(o,p),Rotxz(o,p)] , solvent(1)%site(m)%r )
+        ymod(m,p,o) = DOT_PRODUCT( [Rotyx(o,p),Rotyy(o,p),Rotyz(o,p)] , solvent(1)%site(m)%r )
+        zmod(m,p,o) = DOT_PRODUCT( [Rotzx(o,p),Rotzy(o,p),Rotzz(o,p)] , solvent(1)%site(m)%r )
     END DO
 
     CALL UTest_floorNode
@@ -49,7 +49,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vext_q_of_r_and_omega = 0.0_dp
         
-        DO CONCURRENT (m=1:nb_solvent_sites, solventSite(m)%q/=0._dp)
+        DO CONCURRENT (m=1:nb_solvent_sites, solvent(1)%site(m)%q/=0._dp)
         
             x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
             WHERE (ABS(x)<=EPSILON(1._dp)) x=0._dp
@@ -82,7 +82,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
             cube(0,1,1) = Vpoisson (l(1),u(2),u(3))
             cube(1,1,1) = Vpoisson (u(1),u(2),u(3))
             
-            vext_q_of_r_and_omega = vext_q_of_r_and_omega + solventSite(m)%q * TriLinearInterpolation(cube,r)
+            vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(1)%site(m)%q * TriLinearInterpolation(cube,r)
         END DO
         
         vext_q_of_r_and_omega = qfact * vext_q_of_r_and_omega

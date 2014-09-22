@@ -1,7 +1,7 @@
 SUBROUTINE get_final_polarization ( Px , Py , Pz )
 
     USE precision_kinds,    ONLY: dp,i2b
-    USE system,             ONLY: nfft1,nfft2,nfft3,nb_species
+    USE system,             ONLY: nb_species, spaceGrid
     USE constants,          ONLY: fourpi,twopi
     USE minimizer,          ONLY: CG_vect
     USE quadrature,         ONLY: Omx,Omy,Omz,angGrid,molRotGrid
@@ -11,7 +11,12 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
     INTEGER(i2b) :: i,j,k,o,icg,s,p,molRotSymOrder
     REAL(dp) :: rho_toto,local_Px,local_Py,local_Pz
     REAL(dp), ALLOCATABLE, DIMENSION(:) :: weight_omx,weight_omy,weight_omz ! weight(:)*omx(:) for speeding up
-    REAL(dp), DIMENSION(nfft1,nfft2,nfft3,nb_species), INTENT(OUT) :: Px,Py,Pz ! equilibrium polarization(r)
+    REAL(dp), DIMENSION(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),nb_species), INTENT(OUT) :: Px,Py,Pz ! equilibrium polarization(r)
+    INTEGER(i2b) :: nfft1, nfft2, nfft3
+    nfft1= spaceGrid%n_nodes(1)
+    nfft2= spaceGrid%n_nodes(2)
+    nfft3= spaceGrid%n_nodes(3)
+
 
     molRotSymOrder = input_int('molRotSymOrder')
     Px = 0.0_dp

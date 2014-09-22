@@ -1,7 +1,7 @@
 SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 
     USE precision_kinds, ONLY : i2b, dp
-    USE system,          ONLY : kBT, rho_0_multispec, spaceGrid
+    USE system,          ONLY : thermocond, spaceGrid, solvent
     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid, molRotSymOrder
     USE minimizer,       ONLY : cg_vect, FF, dF
     USE constants,       ONLY : twopi
@@ -33,7 +33,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
     nfft1 = spaceGrid%n_nodes(1); nfft2 = spaceGrid%n_nodes(2); nfft3 = spaceGrid%n_nodes(3)
     Nk = REAL(nfft1*nfft2*nfft3,dp) ! Total number of k grid points in real
     Fexc_ck_angular = 0.0_dp
-    integrationFactor = spaceGrid%dv * rho_0_multispec(1)
+    integrationFactor = spaceGrid%dv * solvent(1)%rho0
     delta_phi = twopi / num_phi
     delta_psi = twopi / (num_psi * molRotSymOrder)
     delta_cos = 2._dp / num_cos
@@ -165,7 +165,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 
     ! Transform gamma(k,Omega) to gamma(r,Omega)
         CALL dfftw_execute(fftw3%plan_backward)
-        gamma(:,:,:,o1,p1) = fftw3%out_backward/Nk *(-kBT)*rho_0_multispec(1)
+        gamma(:,:,:,o1,p1) = fftw3%out_backward/Nk *(-thermocond%kbT)* solvent(1)%rho0
 
     END DO; END DO
 

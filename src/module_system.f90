@@ -5,6 +5,9 @@ MODULE system
 
     IMPLICIT NONE
 
+    INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
+    INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
+
     TYPE :: sites
         CHARACTER(100) :: name
         INTEGER(i2b) :: type, n_sites
@@ -13,13 +16,24 @@ MODULE system
         INTEGER(i2b) :: Z ! atomic number
     END TYPE sites
     
-    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: soluteSite
-    TYPE (sites), ALLOCATABLE, DIMENSION(:) :: solventSite
-
-    INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
-    INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
-    REAL(dp) :: temp  ! temperature du systeme lue dans dft.in 'temperature : XXXX'
-    REAL(dp) :: kBT , beta
+    TYPE :: solventType
+        type (sites), allocatable :: site(:)
+        real(dp), allocatable :: n(:,:,:)  ! number density
+        real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
+        real(dp), allocatable :: Dn(:,:,:) ! Dn = n - n0
+        real(dp), allocatable :: rho(:,:,:,:,:)! number density per orientation = n0/(8pi²/molrotsymorder)
+        real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
+        real(dp), allocatable :: Drho(:,:,:,:,:) ! Drho = rho - rho0
+    END TYPE
+    TYPE (solventType), ALLOCATABLE :: solvent(:)
+    TYPE (solventType) :: solute
+    
+    TYPE :: thermoCondType
+        REAL(dp) :: T ! temperature
+        REAL(dp) :: kbT ! temperature energy unit
+        REAL(dp) :: beta ! 1/kbT
+    END TYPE
+    TYPE (thermoCondType) :: thermoCond ! everything related to the thermodynamic conditions
     
     TYPE :: spaceGridType
         INTEGER(i2b), DIMENSION(3) :: n_nodes ! number of grid nodes in direction x, y and z
@@ -28,13 +42,7 @@ MODULE system
         REAL(dp) :: dv ! elemental volume
     END TYPE spaceGridType
     TYPE( spaceGridType ), TARGET :: spaceGrid
-    REAL(dp), POINTER :: Lx => spaceGrid%length(1), Ly => spaceGrid%length(2), Lz => spaceGrid%length(3)
-    REAL(dp), POINTER :: DeltaV => spaceGrid%dv
-    REAL(dp), POINTER :: deltax => spaceGrid%dl(1), deltay => spaceGrid%dl(2), deltaz => spaceGrid%dl(3)
-    INTEGER(i2b), POINTER :: nfft1 => spaceGrid%n_nodes(1), nfft2 => spaceGrid%n_nodes(2), nfft3 => spaceGrid%n_nodes(3) ! deprecated. Should be removed at some point
 
-    REAL(dp) :: n_0 , rho_0   ! Densite du fluide homogene en part/A3 et incluant orientation
-    REAL(dp), ALLOCATABLE, DIMENSION (:) :: n_0_multispec , rho_0_multispec ! here are the equivalent of n_0 and rho_0 in multispecies case
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s_hs ! c(2)(k) of a hard sphere
     COMPLEX(dp),ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
 

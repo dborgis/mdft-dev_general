@@ -1,15 +1,17 @@
+!===================================================================================================================================
+SUBROUTINE energy_and_gradient (iter)
+!===================================================================================================================================
 ! In this SUBROUTINE one calls the different parts of the total energy
 ! first is computed the radial_part, then ... blabla.
 ! this SUBROUTINE is the one called by the minimization stuff
 ! for computing the total energy and associated gradient
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF is the gradient of FF with respect to all coordinates. Remember it is of the kind dF ( number of variables over density (ie angles etc))
-SUBROUTINE energy_and_gradient (iter)
 
     USE precision_kinds, ONLY: i2b , dp
     USE input, ONLY: input_log, input_char, input_dp
     USE minimizer, ONLY: FF , dF
-    USE system    ,ONLY: soluteSite
+    USE system    ,ONLY: solute
     IMPLICIT NONE
     
     INTEGER(i2b), INTENT(INOUT) :: iter
@@ -100,7 +102,7 @@ SUBROUTINE energy_and_gradient (iter)
 
 
     IF ( input_log('threebody') ) THEN
-        IF (SUM(ABS(soluteSite%lambda1)+ABS(soluteSite%lambda1))/=0.0_dp .OR. input_dp('lambda_solvent')/=0.0_dp) THEN
+        IF (SUM(ABS(solute%site%lambda1)+ABS(solute%site%lambda1))/=0.0_dp .OR. input_dp('lambda_solvent')/=0.0_dp) THEN
             CALL energy_threebody_faster (F3B1, F3B2)
         END IF
     END IF
@@ -137,10 +139,14 @@ SUBROUTINE energy_and_gradient (iter)
    
     CONTAINS
     
+    !===============================================================================================================================
     PURE SUBROUTINE init_functional_and_gradient_to_zero (FF,dF)
+    !===============================================================================================================================
         REAL(dp), INTENT(OUT) :: FF, dF(:)
         REAL(dp), PARAMETER :: zero=0._dp
         FF = zero ; dF = zero ! functional and gradient
     END SUBROUTINE init_functional_and_gradient_to_zero
+    !===============================================================================================================================
     
 END SUBROUTINE energy_and_gradient
+!===================================================================================================================================
