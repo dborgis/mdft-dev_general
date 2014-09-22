@@ -2,14 +2,14 @@
 ############################
 # SUPERCELL
 ############################
-Lx  = 32.0
-Ly  = 32.0
-Lz  = 32.0
+Lx  = 32
+Ly  = 32
+Lz  = 32
 nfft1 = 96
 nfft2 = 96
 nfft3 = 96
 quadrature = L
-order_of_quadrature = 14
+order_of_quadrature = 6
 nb_psi = 3  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
@@ -20,16 +20,16 @@ nb_implicit_species = 1
 mole_fractions
 1.0
 
-ck_species = perso  # spc or spce or stock or perso
-readDensityDensityCorrelationFunction = T
-polarization = T
+ck_species = spce  # spc or spce or stock or perso
+readDensityDensityCorrelationFunction = F
+polarization = F
 polarization_order = dipol # multi or dipol
 include_nc_coupling = F
 
 ref_bulk_density
-0.001
+0.0332891
 temperature = 300
-molRotSymOrder = 1
+molRotSymOrder = 2
 
 
 ############################
@@ -56,15 +56,15 @@ pgtol = 0.00000001 # default 0.00001
 ###########################
 imposed_chempot = 0.0
 Linearize_entropy = F
-if_Linearize_entropy = 1   #if linearize, use bridge on n(r):1 or rho(r,Omega):2
+if_Linearize_entropy = 1   # if linearize, use bridge on n(r):1 or rho(r,Omega):2
 
 
 ############################
 # POTENTIALS
 ############################
 solute_charges_scale_factor = 1.0
-poisson_solver = T
-point_charge_electrostatic = F
+poisson_solver = F
+direct_sum = F
 reuse_density = F
 
 
@@ -72,8 +72,6 @@ reuse_density = F
 # POST-PROCESSING
 ############################
 translate_solute_to_center = F
-rdfmaxrange = 10.0
-nbinsrdf = 120
 
 
 ############################
@@ -96,13 +94,10 @@ hydro_coarsegrainingradius = 2.2
 threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
-verbose = T
+verbose = F
 
 
-
-
-
-
+############################
 # HARD SPHERICAL SOLUTE
 hard_sphere_solute = F              # if there is a hard sphere in the center of the box
 radius_of_hard_sphere_solute = 15.0     # hard sphere solute radius for calculation of hard sphere external potential (Ang)

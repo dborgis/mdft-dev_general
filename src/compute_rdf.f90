@@ -55,6 +55,7 @@ SUBROUTINE compute_rdf (array,filename)
         !===========================================================================================================================
         SUBROUTINE deduce_optimal_histogram_properties
         !===========================================================================================================================
+            IMPLICIT NONE
             nbins = CEILING (2._sp*REAL (PRODUCT (spaceGrid%n_nodes), sp)**(1._sp/3._sp)) ! Rice Rule, see http://en.wikipedia.org/wiki/Histogram
             RdfMaxRange= SQRT(3._dp)*MINVAL(spaceGrid%length)/2._dp
             dr = RdfMaxRange/REAL(nbins,dp) ! Width of each bin of the histogram
@@ -64,6 +65,7 @@ SUBROUTINE compute_rdf (array,filename)
         !===========================================================================================================================
         SUBROUTINE histogram_3d (array3D, rdf)
         !===========================================================================================================================
+            IMPLICIT NONE
             REAL(dp), INTENT(IN) :: array3D(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3))
             REAL(dp), INTENT(OUT) :: rdf(nbins)
             INTEGER(i2b), ALLOCATABLE :: recurrence_bin(:)
@@ -88,7 +90,13 @@ SUBROUTINE compute_rdf (array,filename)
                 rdf           (bin) =rdf(bin) +array3D(i,j,k)
             END DO
 
-            !normalize the rdf
+            ! test if a problem found
+            IF (error%found) THEN
+                PRINT*, error%msg
+                STOP
+            END IF
+
+            ! normalize the rdf
             WHERE (recurrence_bin/=0)
                 rdf = rdf/REAL(recurrence_bin,dp)
             ELSEWHERE
@@ -101,31 +109,35 @@ SUBROUTINE compute_rdf (array,filename)
 
         !===========================================================================================================================
         SUBROUTINE UTest_histogram_3D
+            IMPLICIT NONE
             REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:) 
+            REAL(dp), ALLOCATABLE :: rdfUT(:)
             INTEGER(i2b) :: bin
+
             ALLOCATE (nullarray3D (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ,SOURCE=0._dp)
+            ALLOCATE (rdfUT(nbins),source=0._dp)
 
             ! Test 1
             nullarray3D = 0._dp
-            CALL histogram_3d (nullarray3D, rdf)
-            IF (ANY(rdf/=0._dp)) STOP "Test 1 in UTest_histogram_3D not passed."
+            CALL histogram_3d (nullarray3D, rdfUT)
+            IF (ANY(rdfUT/=0._dp)) STOP "Test 1 in UTest_histogram_3D not passed."
 
             ! Test 2
             nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, rdf)
-            IF (ANY(rdf<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
+            CALL histogram_3d (nullarray3D, rdfUT)
+            IF (ANY(rdfUT<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
 
             ! Test 3
             nullarray3D = -1._dp
-            CALL histogram_3d (nullarray3D, rdf)
-            IF (ANY(rdf>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
+            CALL histogram_3d (nullarray3D, rdfUT)
+            IF (ANY(rdfUT>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
 
             ! Test 4
             nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, rdf)
-            IF (ANY(rdf>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
+            CALL histogram_3d (nullarray3D, rdfUT)
+            IF (ANY(rdfUT>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
 
-            DEALLOCATE (nullarray3D)
+            DEALLOCATE (nullarray3D, rdfUT)
         END SUBROUTINE UTest_histogram_3D
         !===========================================================================================================================
 

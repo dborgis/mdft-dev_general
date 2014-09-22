@@ -20,7 +20,7 @@ MODULE dcf
     COMPLEX(spc), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: ck_angular ! angular dcf in the molecular frame
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_q ! dipole-charge correlation function
     REAL(dp) :: delta_k_ck_angular
-    TYPE TYP_angleInd; INTEGER(i1b) :: costheta,phi,psi; END TYPE
+    TYPE TYP_angleInd; INTEGER(i1b) :: costheta,psi; REAL(dp) :: phi; END TYPE
     TYPE(TYP_angleInd), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleInd ! integer table of correspondence omega(k,Omega)
     TYPE TYP_angleVal; REAL(dp) :: costheta,phi,psi; END TYPE
     TYPE(TYP_angleVal), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleVal ! real omega values for interpolation in energy_ck_angular
@@ -145,7 +145,7 @@ MODULE dcf
         ELSE
             ALLOCATE(angleInd(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
             angleInd%costheta = 0
-            angleInd%phi      = 0
+            angleInd%phi      = 0._dp
             angleInd%psi      = 0
         END IF
 
@@ -212,7 +212,7 @@ MODULE dcf
             ! Index omega(k,Omega)
                 ELSE
                     angleInd(l,m,n,o,p)%costheta = MIN(INT((1._dp + cos_value)*num_cos/2._dp) + 1, num_cos)
-                    angleInd(l,m,n,o,p)%phi      = MOD(INT(phi_value*num_phi/twopi), num_phi) + 1
+                    angleInd(l,m,n,o,p)%phi      = phi_value
                     angleInd(l,m,n,o,p)%psi      = MOD(INT(psi_value*num_psi*molRotSymOrder/twopi), num_psi) + 1
                 END IF
             END DO
@@ -220,10 +220,10 @@ MODULE dcf
 
     ! Check final nomega
         IF ( .NOT. karim ) THEN
-            IF ( ANY(angleInd%costheta<=0) .OR. ANY(angleInd%phi<=0) .OR. ANY(angleInd%psi<=0) ) THEN
+            IF ( ANY(angleInd%costheta<=0) .OR. ANY(angleInd%psi<=0) ) THEN
                 STOP "Some AngleInd is negative or zero"
             END IF
-            IF ( ANY(angleInd%costheta>num_cos) .OR. ANY(angleInd%phi>num_phi) .OR. ANY(angleInd%psi>num_psi) ) THEN
+            IF ( ANY(angleInd%costheta>num_cos) .OR. ANY(angleInd%psi>num_psi) ) THEN
                 STOP "Some AngleInd is > to its max authorized value"
             END IF
         END IF
