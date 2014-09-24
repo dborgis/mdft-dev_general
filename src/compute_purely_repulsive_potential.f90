@@ -68,10 +68,10 @@ SUBROUTINE compute_purely_repulsive_potential
                                     y_nm = y_m - solute%site(n)%r(2)
                                     z_nm = z_m - solute%site(n)%r(3)
                                     r_nm2 = x_nm**2+y_nm**2+z_nm**2
-                                    IF ( r_nm2 == 0._dp ) THEN!  <= radius_of_purely_repulsive_solute2 ) THEN
+                                    IF ( r_nm2   <= radius_of_purely_repulsive_solute2 ) THEN
                                         V_psi = Vmax
                                     ELSE
-                                        V_psi = V_psi + thermoCond%kbT/(r_nm2**6)!)-radius_of_purely_repulsive_solute)**12
+                                        V_psi = V_psi + thermoCond%kbT/(Sqrt(r_nm2)-radius_of_purely_repulsive_solute)**12
                                     END IF
                                     IF (V_psi >= Vmax) THEN
                                         V_psi = Vmax
