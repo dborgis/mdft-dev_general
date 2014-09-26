@@ -6,7 +6,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     USE external_potential  ,ONLY: vext_q
     USE constants           ,ONLY: qfact, zero
     USE mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode, floorNode, ceilingNode,&
-                                   UTest_ceilingNode, UTest_distToFloorNode, distToFloorNode
+                                   UTest_ceilingNode, UTest_distToFloorNode, distToFloorNode, chop
 
     IMPLICIT NONE
 
@@ -20,6 +20,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     TYPE :: testtype
         LOGICAL :: pb
         CHARACTER(180) :: msg
+        real(dp) :: l(3),u(3),r(3),x(3)
     END TYPE
     TYPE(testtype) :: err
 
@@ -49,10 +50,12 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
         vext_q_of_r_and_omega = 0.0_dp
         
-        DO CONCURRENT (m=1:nb_solvent_sites, solvent(1)%site(m)%q/=0._dp)
+        DO CONCURRENT (m=1:nb_solvent_sites, abs(solvent(1)%site(m)%q)>epsilon(1.0_dp))
         
             x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
-            WHERE (ABS(x)<=EPSILON(1._dp)) x=0._dp
+            x(1)=chop(x(1))
+            x(2)=chop(x(2))
+            x(3)=chop(x(3))
 
             l = floorNode(gridnode,gridlen,x,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
             u = ceilingNode(gridnode,gridlen,x,.TRUE.)
@@ -61,16 +64,28 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
             IF( ANY(r<0._dp) .or. ANY(r>1._dp) ) THEN
                 err%pb=.TRUE.
                 err%msg="Problem with r in vext_q_from_v_c.f90"
+                err%l = l
+                err%u = u
+                err%r = r
+                err%x = x
             END IF
             
             IF( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) ) THEN
                 err%pb=.TRUE.
                 err%msg="Problem with l in vext_q_from_v_c.f90"
+                err%l = l
+                err%u = u
+                err%r = r
+                err%x = x
             END IF
             
             IF( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) ) THEN
                 err%pb=.TRUE.
                 err%msg="Problem with u in vext_q_from_v_c.f90"
+                err%l = l
+                err%u = u
+                err%r = r
+                err%x = x
             END IF
             
             cube(0,0,0) = Vpoisson (l(1),l(2),l(3))
@@ -92,7 +107,14 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     END DO
     
     IF (err%pb) THEN
-        PRINT*,err%msg
+        PRINT*,"msg:",err%msg
+        print*,"Lxyz:",gridlen
+        PRINT*,"x:",err%x
+        PRINT*,"l/u min:",1,1,1
+        print*,"l/u max:",gridnode
+        PRINT*,"l:",err%l
+        PRINT*,"u:",err%u
+        PRINT*,"r:",err%r
         STOP
     END IF
 

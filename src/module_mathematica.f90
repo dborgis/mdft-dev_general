@@ -27,7 +27,7 @@ MODULE mathematica
         ELSE
             d=defaultdelta
         END IF
-        IF (x<=d) THEN
+        IF (abs(x)<=d) THEN
             chop=0._dp
         ELSE
             chop=x
