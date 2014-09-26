@@ -43,7 +43,10 @@ SUBROUTINE find_equilibrium_density
         END IF
 
         999 continue ! loops to find the minima is ended for one reason or the other
+        print*,
         PRINT*,"FREE ENERGY =",FF,"kJ/mol"
+        call adhoc_corrections_to_gsolv ! ad hoc corrections
+
         CALL finalizeMinimizer
     ELSE
         STOP "The minimizer you asked is not implemented yet."
