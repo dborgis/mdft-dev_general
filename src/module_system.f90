@@ -90,5 +90,9 @@ MODULE system
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing
 
+    type :: enertype
+        real(dp) :: tot, ext, id, fmt, fmtcs, excnn, excpol, b31, b32, exc_ck_angular
+    end type enertype
+    type (enertype) :: FF
 
 END MODULE system
