@@ -246,7 +246,8 @@ $(OBJDIR)/cs_of_k_hard_sphere.o:\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/dblas1.o:\
-	$(SRCDIR)/dblas1.f90
+	$(SRCDIR)/dblas1.f90\
+	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/adhoc_corrections_to_gsolv.o:\
 	$(SRCDIR)/adhoc_corrections_to_gsolv.f90\
@@ -487,7 +488,8 @@ $(OBJDIR)/mean_over_orientations.o:\
 
 $(OBJDIR)/module_bfgs.o:\
 	$(SRCDIR)/module_bfgs.f90\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/dblas1.o
 
 $(OBJDIR)/module_constants.o:\
 	$(SRCDIR)/module_constants.f90\
