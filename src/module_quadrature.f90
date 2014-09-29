@@ -8,7 +8,7 @@ module quadrature
     IMPLICIT NONE
 
     real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb
-    real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for orientation OMEGA and associated weight
+    real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for Euler angle Omega in lab frame
     real(dp), allocatable, dimension(:,:), public :: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
     type angularGrid
         integer(i2b) :: n_angles
