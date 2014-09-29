@@ -16,9 +16,6 @@ SUBROUTINE find_equilibrium_density
     REAL(dp):: time1, time2
     REAL(dp):: energy_before, dfoverf
 
-
-!   WRITE(*,'(''Iter.     FF       |dF|       Fext        Fid      Fexc/rad   Fexc/pol     F3B1       F3B2     Ffmt      Ffmtcs'')')
-
     IF ( minimizer_type(1:4) == 'bfgs' ) then
         iter = 0
         task = 'START'
