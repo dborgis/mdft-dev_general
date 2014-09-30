@@ -97,7 +97,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/module_solute_geometry.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/poissonSolver.o\
-	$(OBJDIR)/prepare_minimizer.o\
 	$(OBJDIR)/print_header.o\
 	$(OBJDIR)/print_input_in_output_folder.o\
 	$(OBJDIR)/print_supercell_xsf.o\
@@ -460,7 +459,8 @@ $(OBJDIR)/init_simu.o:\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o
+	$(OBJDIR)/module_quadrature.o\
+	$(OBJDIR)/module_minimizer.o
 
 $(OBJDIR)/init_solvent_polarization.o:\
 	$(SRCDIR)/init_solvent_polarization.f90\
@@ -529,7 +529,10 @@ $(OBJDIR)/module_input.o:\
 
 $(OBJDIR)/module_minimizer.o:\
 	$(SRCDIR)/module_minimizer.f90\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_quadrature.o\
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_input.o
 
 $(OBJDIR)/module_mod_lj.o:\
 	$(SRCDIR)/module_mod_lj.f90\
@@ -566,14 +569,6 @@ $(OBJDIR)/poissonSolver.o:\
 	$(SRCDIR)/poissonSolver.f90\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/prepare_minimizer.o:\
-	$(SRCDIR)/prepare_minimizer.f90\
-	$(OBJDIR)/module_quadrature.o\
-	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/print_header.o:\

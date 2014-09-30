@@ -5,6 +5,7 @@ SUBROUTINE init_simu
     USE fft         ,ONLY: prepare_fft => init
     USE dcf         ,ONLY: init_dcf => init
     USE input       ,ONLY: input_log, input_char
+    use minimizer   ,only: prepare_minimizer
     
     IMPLICIT NONE
 
