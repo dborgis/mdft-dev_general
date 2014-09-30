@@ -4,3 +4,6 @@ mod/
 input/solute/chloroform
 log
 *~
+*.mod
+*.o
+obj/
