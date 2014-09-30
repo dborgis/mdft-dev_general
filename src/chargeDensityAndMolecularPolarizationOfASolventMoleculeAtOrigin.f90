@@ -72,12 +72,11 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
         SUBROUTINE normalizeMolecularDensity
             REAL(dp)          :: angle_number
             INTEGER(i2b)      :: i,j,k,s,d
-            i =angGrid%n_angles * molRotGrid%n_angles
-            IF (i<1) STOP "I found no angle in normalizeMolecularDensity"
-            angle_number =REAL(i,dp)
+            angle_number = angGrid%n_angles * molRotGrid%n_angles
+            IF (angle_number<1) STOP "I found no angle in normalizeMolecularDensity"
             DO CONCURRENT (i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:size(solvent), d=1:3)
                 solvent(s)%molec_polar_k(d,i,j,k,:,:) = solvent(s)%molec_polar_k(d,i,j,k,:,:)  &
-                                                       -(SUM( solvent(s)%molec_polar_k(d,i,j,k,:,:) ) /angle_number)
+                                                       -SUM( solvent(s)%molec_polar_k(d,i,j,k,:,:) ) /real(angle_number,dp)
             END DO
         END SUBROUTINE normalizeMolecularDensity
 
