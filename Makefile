@@ -655,7 +655,7 @@ $(OBJDIR)/write_to_cube_file.o:\
 $(OBJDIR)/module_fastPoissonSolver.o:\
 	$(SRCDIR)/module_fastPoissonSolver.f90\
 	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
-	$(OBJDIR)/poissonSolver.o\
-	$(OBJDIR)/vext_q_from_v_c.o\
+#~ 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
+#~ 	$(OBJDIR)/poissonSolver.o\
+#~ 	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/module_system.o
