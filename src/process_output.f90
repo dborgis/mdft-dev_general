@@ -18,8 +18,10 @@ SUBROUTINE process_output
 
     CALL print_cg_vect ! print output/density.bin that contains cg_vect 
 
-    ALLOCATE ( neq (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
-    CALL get_final_density ( neq ) ! Get the final density(r) from the last minimizer step.
+    allocate ( neq (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
+    do s=1,size(solvent)
+        call get_final_density (neq,s) 
+    end do
     
     DO s=1,nb_species
         PRINT*,"NUMBER OF PARTICLES OF SPECIES",s,"IN SUPERCELL =",SUM(neq)*spaceGrid%dv *solvent(s)%n0
