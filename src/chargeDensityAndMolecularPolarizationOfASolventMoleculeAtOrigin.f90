@@ -45,7 +45,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
         prefactor =  exp(-Rc**2*k2(i,j,k)/2)
     
         do concurrent ( o=1:angGrid%n_angles, p=1:molRotGrid%n_angles, &
-                        n=1:SIZE(solvent(s)%site), (abs(solvent(s)%site(n)%q)<=epsilon(1.0_dp)) )
+                        n=1:SIZE(solvent(s)%site), (abs(solvent(s)%site(n)%q)>=epsilon(1.0_dp)) )
 
             r(1) = dot_product(   [Rotxx(o,p),Rotxy(o,p),Rotxz(o,p)]  ,  solvent(s)%site(n)%r  )
             r(2) = dot_product(   [Rotyx(o,p),Rotyy(o,p),Rotyz(o,p)]  ,  solvent(s)%site(n)%r  )
@@ -64,7 +64,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
 
         end do
     end do
-    
+
     CALL normalizeMolecularDensity
 
     CONTAINS
