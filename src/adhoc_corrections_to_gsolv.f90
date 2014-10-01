@@ -33,11 +33,9 @@ subroutine adhoc_corrections_to_gsolv
     end do
     allocate (nmolecule(size(solvent)))
     do concurrent (s=1:size(solvent))
-        nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *spacegrid%dv
+        nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *spacegrid%dv ! number of solvent molecules inside the supercell containing the solute
     end do
-    nmolecule%bulk = solvent%n0*product(spacegrid%length)
-    print*, "in the cell with solute =", nmolecule%withsolute
-    print*, "in the cell without solute =", nmolecule%bulk
+    nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
     open (14, file='output/cs.in', iostat=ios)
     if (ios/=0) stop 'Cant open file output/cs.in in adhoc_corrections_to_gsolv'
     block
