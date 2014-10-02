@@ -1,0 +1,449 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Electrostatics in MDFT
+\end_layout
+
+\begin_layout Author
+Maximilien Levesque*
+\end_layout
+
+\begin_layout Address
+*École Normale Supérieure, Paris, France
+\end_layout
+
+\begin_layout Abstract
+We describe the electrostatic part of the external potential.
+\end_layout
+
+\begin_layout Standard
+I will use bold symbols for vectors and matrices.
+\end_layout
+
+\begin_layout Section
+General considerations
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+The charge distribution of the solute is the sum of all the point charges
+ 
+\begin_inset Formula $s$
+\end_inset
+
+ of the solute:
+\begin_inset Formula 
+\begin{equation}
+\rho_{c}\left(\bm{r}\right)=\sum_{s}q_{s}\delta_{\bm{r}_{s}},
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $q_{s}$
+\end_inset
+
+ is the partial charge of the solute site 
+\begin_inset Formula $s$
+\end_inset
+
+ and 
+\begin_inset Formula $\delta_{\bm{r}_{s}}\equiv\delta\left(\bm{r}-\bm{r}_{s}\right)$
+\end_inset
+
+ in the sense of the dirac distribution.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The electrostatic potential 
+\begin_inset Formula $\phi\left(\bm{r}\right)$
+\end_inset
+
+ is defined as the scalar field of which the gradient gives the electric
+ field
+\begin_inset Formula 
+\begin{equation}
+\bm{E}\left(\bm{r}\right)=\bm{\nabla}\cdot\phi\left(\bm{r}\right).
+\end{equation}
+
+\end_inset
+
+The divergence of the electric field is related to the charge distribution
+ (also called source or forcing term) by the relation 
+\begin_inset Formula 
+\begin{equation}
+-\Delta\bm{E}\left(\bm{r}\right)=\frac{\rho\left(\bm{r}\right)}{\epsilon_{0}},
+\end{equation}
+
+\end_inset
+
+with 
+\begin_inset Formula $\epsilon_{0}$
+\end_inset
+
+ the permitivity of vaccum.
+ Finaly, using these previous equations, we get 
+\begin_inset Formula 
+\begin{equation}
+\Delta\phi\left(\bm{r}\right)=\frac{-\rho\left(\bm{r}\right)}{\epsilon_{0}},
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $\Delta\equiv\bm{\nabla}^{2}$
+\end_inset
+
+ is the Laplacian operator
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+\begin_inset Formula $\Delta$
+\end_inset
+
+ may be used for Laplacian operator and divergence operator.
+ When applied to a scalar field, it is the Laplacian operator.
+ When applied to a vector field, it is the divergence.
+\end_layout
+
+\end_inset
+
+.
+ This is known as the Poisson's equation.
+ Mathematicians call this class of equations 
+\begin_inset Quotes eld
+\end_inset
+
+elliptic partial differential equation, or elliptic PDE
+\begin_inset Quotes erd
+\end_inset
+
+.
+ It can be shown that such equation is uniquely determined if one of Dirichlet,
+ Newmann or Periodic boundary conditions are specified on the surface of
+ the closed region in which it is solved.
+\end_layout
+
+\begin_layout Subsection
+Discretizing Poisson's equation in 2D
+\end_layout
+
+\begin_layout Standard
+Let's consider the Poisson's equation in 2D and cartesian units:
+\begin_inset Formula 
+\begin{equation}
+\frac{\partial^{2}\phi}{\partial x^{2}}+\frac{\partial^{2}\phi}{\partial y^{2}}=-\frac{\rho\left(x,y\right)}{\epsilon_{0}}.
+\end{equation}
+
+\end_inset
+
+Suppose that we want to solve this in the interior of the 
+\begin_inset Formula $x$
+\end_inset
+
+--
+\begin_inset Formula $y$
+\end_inset
+
+ space.
+ We introduce a discret rectangular grid of points which form a spatial
+ lattice.
+ Let also assume that we have the same lattice spacing 
+\begin_inset Formula $h=\delta x=\delta y$
+\end_inset
+
+ along 
+\begin_inset Formula $x$
+\end_inset
+
+ and 
+\begin_inset Formula $y$
+\end_inset
+
+ directions.
+ By finite differenciation, we have
+\begin_inset Formula 
+\begin{equation}
+\frac{\phi_{i+1,j}+\phi_{i-1,j}-2\phi_{i,j}}{h^{2}}+\frac{\phi_{i,j+1}+\phi_{i,j-1}-2\phi_{i,j}}{h^{2}}=-\frac{\rho_{i,j}}{\epsilon_{0}},
+\end{equation}
+
+\end_inset
+
+which can be rewritten as
+\begin_inset Formula 
+\begin{equation}
+\phi_{i,j}=\frac{1}{4}\left[\phi_{i,j+1}+\phi_{i,j-1}+\phi_{i+1,j}+\phi_{i-1,j}+\frac{h^{2}\rho_{i,j}}{\epsilon_{0}}\right].
+\end{equation}
+
+\end_inset
+
+By virtue of what was said earlier, this equation has a unique solution
+ if one imposes the Dirichlet, Newman or periodic boundary conditions on
+ boundary nodes.
+ 
+\end_layout
+
+\begin_layout Standard
+These equations can be written in Matrix form, and solved by linear inversion.
+ Such algorithms scales at best as 
+\begin_inset Formula $O(N^{3/2})$
+\end_inset
+
+ with 
+\begin_inset Formula $N$
+\end_inset
+
+ the number of grid nodes and are prohibitive as soon as 
+\begin_inset Formula $N$
+\end_inset
+
+ reaches 100.
+ Instead, we will use iterative methods.
+\end_layout
+
+\begin_layout Standard
+Since 
+\begin_inset Formula $\rho_{i,j}$
+\end_inset
+
+ is know, suppose that we have a guess (even bad one) for the 4 components
+ of 
+\begin_inset Formula $\phi$
+\end_inset
+
+ on the right hand side.
+ The calculation of a new 
+\begin_inset Formula $\phi_{i,j}$
+\end_inset
+
+ can be done and the process continues with the new ones.
+ Thus if the 
+\begin_inset Formula $n$
+\end_inset
+
+-th iterate is denoted 
+\begin_inset Formula $\phi_{i,j}^{n}$
+\end_inset
+
+, Jacobi's algorithm is
+\begin_inset Formula 
+\begin{equation}
+\phi_{i,j}^{n+1}=\frac{1}{4}\left[\phi_{i,j+1}^{n}+\phi_{i,j-1}^{n}+\phi_{i+1,j}^{n}+\phi_{i-1,j}^{n}+\frac{h^{2}\rho_{i,j}}{\epsilon_{0}}\right].
+\end{equation}
+
+\end_inset
+
+Jacobi's algorithm necessitates an initial guess 
+\begin_inset Formula $\phi_{i,j}^{0}$
+\end_inset
+
+, and the solution is iterated until some convergence criterion is satisfied.
+ It can be shown that Jacobi's method is stable and converges.
+ I sometimes read that to divide the error by a factor of 
+\begin_inset Formula $p\times10$
+\end_inset
+
+, one need 
+\begin_inset Formula $\sim\frac{1}{2}pN$
+\end_inset
+
+ more iterations, where 
+\begin_inset Formula $N$
+\end_inset
+
+ is, again, the number of nodes.
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\bar under
+Input:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\rho_{i,j}$
+\end_inset
+
+, the charge distribution that generates the electrostatic potential
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\phi_{i,j}^{0}$
+\end_inset
+
+, an initial guess for the electrostatic potential at all grid nodes
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\mathcal{R}$
+\end_inset
+
+, an boolean array of size 
+\begin_inset Formula $\left(\sqrt{N},\sqrt{N}\right)$
+\end_inset
+
+ that is true for non-boundary nodes
+\end_layout
+
+\begin_layout Itemize
+a convergence criteria 
+\begin_inset Formula $\kappa$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\bar under
+Output:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\phi_{i,j}$
+\end_inset
+
+, the electrostatic potential at all grid nodes
+\end_layout
+
+\begin_layout Plain Layout
+
+\bar under
+Algo
+\end_layout
+
+\begin_layout Enumerate
+Compute 
+\begin_inset Formula $\phi_{i,j}^{1}=\frac{1}{4}\left[\phi_{i,j+1}^{0}+\phi_{i,j-1}^{0}+\phi_{i+1,j}^{0}+\phi_{i-1,j}^{0}+\frac{h^{2}\rho_{i,j}}{\epsilon_{0}}\right]$
+\end_inset
+
+ where 
+\begin_inset Formula $\mathcal{R}$
+\end_inset
+
+ is true.
+\end_layout
+
+\begin_layout Enumerate
+Compute 
+\begin_inset Formula $\phi_{i,j}^{n+1}=\frac{1}{4}\left[\phi_{i,j+1}^{n}+\phi_{i,j-1}^{n}+\phi_{i+1,j}^{n}+\phi_{i-1,j}^{n}+\frac{h^{2}\rho_{i,j}}{\epsilon_{0}}\right]$
+\end_inset
+
+ where 
+\begin_inset Formula $\mathcal{R}$
+\end_inset
+
+ is true.
+\end_layout
+
+\begin_layout Enumerate
+If 
+\begin_inset Formula $\kappa$
+\end_inset
+
+ exit, else goto 2.
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Jacobi's method
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
