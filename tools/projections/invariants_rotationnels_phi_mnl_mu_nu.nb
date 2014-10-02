@@ -1,0 +1,705 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     26180,        696]
+NotebookOptionsPosition[     24485,        640]
+NotebookOutlinePosition[     24821,        655]
+CellTagsIndexPosition[     24778,        652]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"\[CapitalPhi]", "[", 
+   RowBox[{
+   "m_", ",", "n_", ",", "l_", ",", "\[Mu]_", ",", "\[Nu]_", ",", 
+    "\[Lambda]_", ",", "\[Theta]1_", ",", "\[Phi]1_", ",", "\[Psi]1_", ",", 
+    "\[Theta]2_", ",", "\[Phi]2_", ",", "\[Psi]2_", ",", "\[Theta]3_", ",", 
+    "\[Phi]3_", ",", "\[Psi]3_"}], "]"}], ":=", "\[IndentingNewLine]", 
+  RowBox[{
+   SqrtBox[
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"2", " ", "m"}], "+", "1"}], ")"}], 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"2", "n"}], "+", "1"}], ")"}]}]], "*", 
+   RowBox[{"Sum", "[", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"ThreeJSymbol", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"m", ",", "\[Mu]2"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"n", ",", "\[Nu]2"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"l", ",", "\[Lambda]2"}], "}"}]}], "]"}], "*", 
+      RowBox[{"WignerD", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"m", ",", "\[Mu]2", ",", "\[Mu]"}], "}"}], ",", "\[Theta]1", 
+        ",", "\[Phi]1", ",", "\[Psi]1"}], "]"}], "*", 
+      RowBox[{"WignerD", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"n", ",", "\[Nu]2", ",", "\[Nu]"}], "}"}], ",", "\[Theta]2", 
+        ",", "\[Phi]2", ",", "\[Psi]2"}], "]"}], "*", 
+      RowBox[{"WignerD", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"l", ",", "\[Lambda]2", ",", "\[Lambda]"}], "}"}], ",", 
+        "\[Theta]3", ",", "\[Phi]3", ",", "\[Psi]3"}], "]"}]}], 
+     "\[IndentingNewLine]", ",", 
+     RowBox[{"{", 
+      RowBox[{"\[Mu]2", ",", 
+       RowBox[{"-", "m"}], ",", "m"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\[Nu]2", ",", 
+       RowBox[{"-", "n"}], ",", "n"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\[Lambda]2", ",", 
+       RowBox[{"-", "l"}], ",", "l"}], "}"}]}], "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.608975331497052*^9, 3.608975352104217*^9}, {
+  3.608975385121614*^9, 3.608975494231597*^9}, {3.6089755502448483`*^9, 
+  3.608975667471274*^9}, {3.6089757053716097`*^9, 3.6089758280257607`*^9}, {
+  3.608975954726656*^9, 3.6089759958162746`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"\[CapitalPhi]", "[", 
+  RowBox[{
+  "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "\[Theta]1", 
+   ",", "\[Phi]1", ",", "\[Psi]1", ",", "\[Theta]2", ",", "\[Phi]2", ",", 
+   "\[Psi]2", ",", "\[Theta]3", ",", "\[Phi]3", ",", "\[Psi]3"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.6089758690913*^9, 3.6089758979764853`*^9}}],
+
+Cell[BoxData["1"], "Output",
+ CellChangeTimes->{3.6089759028250313`*^9, 3.6089760006181107`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"\[CapitalPhi]", "[", 
+   RowBox[{
+   "1", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0", ",", "\[Theta]1", 
+    ",", "\[Phi]1", ",", "\[Psi]1", ",", "\[Theta]2", ",", "\[Phi]2", ",", 
+    "\[Psi]2", ",", "\[Theta]3", ",", "\[Phi]3", ",", "\[Psi]3"}], "]"}], "//",
+   "FullSimplify"}]], "Input",
+ CellChangeTimes->{{3.6089759198756733`*^9, 3.6089759292464237`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({0, 0}\\)\\)\\)\
+\\)]\\)\[NoBreak] is not physical. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", \
+ButtonNote -> \\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.6089759218277483`*^9, 3.6089759298755083`*^9}, 
+   3.608976003380886*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, 0}\\)\\), \\(\\({0, 0}\\)\\)\\)\\)]\\)\
+\[NoBreak] is not physical. \\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", \
+ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.6089759218277483`*^9, 3.6089759298755083`*^9}, 
+   3.608976003382419*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, 0}\\)\\), \\(\
+\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({0, 0}\\)\\)\\)\\)]\\)\[NoBreak] is not \
+physical. \\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", \
+ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.6089759218277483`*^9, 3.6089759298755083`*^9}, 
+   3.608976003400136*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"General", "::", "stop"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Further output of \
+\[NoBreak]\\!\\(\\*StyleBox[\\(ClebschGordan :: phy\\), \
+\\\"MessageName\\\"]\\)\[NoBreak] will be suppressed during this calculation. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/General/stop\\\", \
+ButtonNote -> \\\"General::stop\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.6089759218277483`*^9, 3.6089759298755083`*^9}, 
+   3.608976003417591*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"-", 
+   SqrtBox["3"]}], " ", 
+  RowBox[{"(", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"Cos", "[", "\[Phi]1", "]"}], " ", 
+     RowBox[{"Cos", "[", "\[Phi]2", "]"}]}], "+", 
+    RowBox[{
+     RowBox[{"Cos", "[", 
+      RowBox[{"\[Theta]1", "-", "\[Theta]2"}], "]"}], " ", 
+     RowBox[{"Sin", "[", "\[Phi]1", "]"}], " ", 
+     RowBox[{"Sin", "[", "\[Phi]2", "]"}]}]}], ")"}]}]], "Output",
+ CellChangeTimes->{{3.6089759219309387`*^9, 3.6089759306312313`*^9}, 
+   3.608976004212283*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"\[CapitalPhi]", "[", 
+   RowBox[{
+   "1", ",", "0", ",", "1", ",", "0", ",", "0", ",", "0", ",", "\[Theta]1", 
+    ",", "\[Phi]1", ",", "\[Psi]1", ",", "\[Theta]2", ",", "\[Phi]2", ",", 
+    "\[Psi]2", ",", "\[Theta]3", ",", "\[Phi]3", ",", "\[Psi]3"}], "]"}], "//",
+   "FullSimplify"}]], "Input",
+ CellChangeTimes->{{3.6089760151319447`*^9, 3.6089760158452063`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({0, 0}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\)\\)\
+\\)]\\)\[NoBreak] is not physical. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", \
+ButtonNote -> \\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.608976016679538*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({0, 0}\\)\\), \\(\\({1, 0}\\)\\)\\)\\)]\\)\
+\[NoBreak] is not physical. \\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", \
+ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.6089760167526712`*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, 0}\\)\\), \\(\
+\\({0, 0}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\)\\)\\)]\\)\[NoBreak] is not \
+physical. \\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", \
+ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.6089760167541018`*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"General", "::", "stop"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Further output of \
+\[NoBreak]\\!\\(\\*StyleBox[\\(ClebschGordan :: phy\\), \
+\\\"MessageName\\\"]\\)\[NoBreak] will be suppressed during this calculation. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/General/stop\\\", \
+ButtonNote -> \\\"General::stop\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.6089760167552767`*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"-", 
+    RowBox[{"Cos", "[", "\[Phi]1", "]"}]}], " ", 
+   RowBox[{"Cos", "[", "\[Phi]3", "]"}]}], "-", 
+  RowBox[{
+   RowBox[{"Cos", "[", 
+    RowBox[{"\[Theta]1", "-", "\[Theta]3"}], "]"}], " ", 
+   RowBox[{"Sin", "[", "\[Phi]1", "]"}], " ", 
+   RowBox[{"Sin", "[", "\[Phi]3", "]"}]}]}]], "Output",
+ CellChangeTimes->{3.608976017310906*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"\[CapitalPhi]", "[", 
+   RowBox[{
+   "0", ",", "1", ",", "1", ",", "0", ",", "0", ",", "0", ",", "\[Theta]1", 
+    ",", "\[Phi]1", ",", "\[Psi]1", ",", "\[Theta]2", ",", "\[Phi]2", ",", 
+    "\[Psi]2", ",", "\[Theta]3", ",", "\[Phi]3", ",", "\[Psi]3"}], "]"}], "//",
+   "FullSimplify"}]], "Input",
+ CellChangeTimes->{{3.608976084474581*^9, 3.608976087845552*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({0, 0}\\)\\), \\(\
+\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\)\\)\\)]\\)\
+\[NoBreak] is not physical. \\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", \
+ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608976085275055*^9, 3.608976088489655*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({0, 0}\\)\\), \\(\
+\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({1, 0}\\)\\)\\)\\)]\\)\[NoBreak] is not \
+physical. \\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", \
+ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608976085275055*^9, 3.60897608850532*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({0, 0}\\)\\), \\(\
+\\({1, 0}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\)\\)\\)]\\)\[NoBreak] is not \
+physical. \\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", \
+ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608976085275055*^9, 3.6089760885268297`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"General", "::", "stop"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Further output of \
+\[NoBreak]\\!\\(\\*StyleBox[\\(ClebschGordan :: phy\\), \
+\\\"MessageName\\\"]\\)\[NoBreak] will be suppressed during this calculation. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/General/stop\\\", \
+ButtonNote -> \\\"General::stop\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608976085275055*^9, 3.608976088546657*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"-", 
+    RowBox[{"Cos", "[", "\[Phi]2", "]"}]}], " ", 
+   RowBox[{"Cos", "[", "\[Phi]3", "]"}]}], "-", 
+  RowBox[{
+   RowBox[{"Cos", "[", 
+    RowBox[{"\[Theta]2", "-", "\[Theta]3"}], "]"}], " ", 
+   RowBox[{"Sin", "[", "\[Phi]2", "]"}], " ", 
+   RowBox[{"Sin", "[", "\[Phi]3", "]"}]}]}]], "Output",
+ CellChangeTimes->{{3.608976085380579*^9, 3.608976089116678*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"\[CapitalPhi]", "[", 
+  RowBox[{
+  "1", ",", "1", ",", "2", ",", "0", ",", "0", ",", "0", ",", "\[Theta]1", 
+   ",", "\[Phi]1", ",", "\[Psi]1", ",", "\[Theta]2", ",", "\[Phi]2", ",", 
+   "\[Psi]2", ",", "\[Theta]3", ",", "\[Phi]3", ",", "\[Psi]3"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.608976208227174*^9, 3.608976209321618*^9}, 
+   3.6089763547933283`*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({2, \\(\\(-2\\)\
+\\)}\\)\\)\\)\\)]\\)\[NoBreak] is not physical. \\!\\(\\*ButtonBox[\\\"\
+\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.608976214359891*^9, 3.6089763550745*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({2, \\(\\(-1\\)\
+\\)}\\)\\)\\)\\)]\\)\[NoBreak] is not physical. \\!\\(\\*ButtonBox[\\\"\
+\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.608976214359891*^9, 3.6089763550897617`*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({2, 0}\\)\\)\\)\
+\\)]\\)\[NoBreak] is not physical. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", \
+ButtonNote -> \\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.608976214359891*^9, 3.608976355109321*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"General", "::", "stop"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Further output of \
+\[NoBreak]\\!\\(\\*StyleBox[\\(ClebschGordan :: phy\\), \
+\\\"MessageName\\\"]\\)\[NoBreak] will be suppressed during this calculation. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/General/stop\\\", \
+ButtonNote -> \\\"General::stop\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.608976214359891*^9, 3.608976355128311*^9}],
+
+Cell[BoxData[
+ RowBox[{"3", " ", 
+  RowBox[{"(", 
+   RowBox[{
+    FractionBox[
+     RowBox[{
+      RowBox[{"Cos", "[", "\[Phi]1", "]"}], " ", 
+      RowBox[{"Cos", "[", "\[Phi]2", "]"}], " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "1"}], "+", 
+        RowBox[{"3", " ", 
+         SuperscriptBox[
+          RowBox[{"Cos", "[", "\[Phi]3", "]"}], "2"]}]}], ")"}]}], 
+     SqrtBox["30"]], "-", 
+    FractionBox[
+     RowBox[{
+      SuperscriptBox["\[ExponentialE]", 
+       RowBox[{
+        RowBox[{"\[ImaginaryI]", " ", "\[Theta]1"}], "-", 
+        RowBox[{"\[ImaginaryI]", " ", "\[Theta]2"}]}]], " ", 
+      RowBox[{"Cos", "[", 
+       FractionBox["\[Phi]1", "2"], "]"}], " ", 
+      RowBox[{"Cos", "[", 
+       FractionBox["\[Phi]2", "2"], "]"}], " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "1"}], "+", 
+        RowBox[{"3", " ", 
+         SuperscriptBox[
+          RowBox[{"Cos", "[", "\[Phi]3", "]"}], "2"]}]}], ")"}], " ", 
+      RowBox[{"Sin", "[", 
+       FractionBox["\[Phi]1", "2"], "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       FractionBox["\[Phi]2", "2"], "]"}]}], 
+     SqrtBox["30"]], "-", 
+    FractionBox[
+     RowBox[{
+      SuperscriptBox["\[ExponentialE]", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"-", "\[ImaginaryI]"}], " ", "\[Theta]1"}], "+", 
+        RowBox[{"\[ImaginaryI]", " ", "\[Theta]2"}]}]], " ", 
+      RowBox[{"Cos", "[", 
+       FractionBox["\[Phi]1", "2"], "]"}], " ", 
+      RowBox[{"Cos", "[", 
+       FractionBox["\[Phi]2", "2"], "]"}], " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "1"}], "+", 
+        RowBox[{"3", " ", 
+         SuperscriptBox[
+          RowBox[{"Cos", "[", "\[Phi]3", "]"}], "2"]}]}], ")"}], " ", 
+      RowBox[{"Sin", "[", 
+       FractionBox["\[Phi]1", "2"], "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       FractionBox["\[Phi]2", "2"], "]"}]}], 
+     SqrtBox["30"]], "+", 
+    RowBox[{
+     SqrtBox[
+      FractionBox["6", "5"]], " ", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]1"}], "-", 
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]3"}]}]], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", "\[Phi]2", "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", "\[Phi]3", "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}]}], "+", 
+    RowBox[{
+     SqrtBox[
+      FractionBox["6", "5"]], " ", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"-", "\[ImaginaryI]"}], " ", "\[Theta]1"}], "+", 
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]3"}]}]], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", "\[Phi]2", "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", "\[Phi]3", "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}]}], "+", 
+    RowBox[{
+     SqrtBox[
+      FractionBox["6", "5"]], " ", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]2"}], "-", 
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]3"}]}]], " ", 
+     RowBox[{"Cos", "[", "\[Phi]1", "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", "\[Phi]3", "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}]}], "+", 
+    RowBox[{
+     SqrtBox[
+      FractionBox["6", "5"]], " ", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"-", "\[ImaginaryI]"}], " ", "\[Theta]2"}], "+", 
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]3"}]}]], " ", 
+     RowBox[{"Cos", "[", "\[Phi]1", "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", "\[Phi]3", "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]3", "2"], "]"}]}], "+", 
+    RowBox[{"2", " ", 
+     SqrtBox[
+      FractionBox["6", "5"]], " ", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]1"}], "+", 
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]2"}], "-", 
+       RowBox[{"2", " ", "\[ImaginaryI]", " ", "\[Theta]3"}]}]], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     SuperscriptBox[
+      RowBox[{"Cos", "[", 
+       FractionBox["\[Phi]3", "2"], "]"}], "2"], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     SuperscriptBox[
+      RowBox[{"Sin", "[", 
+       FractionBox["\[Phi]3", "2"], "]"}], "2"]}], "+", 
+    RowBox[{"2", " ", 
+     SqrtBox[
+      FractionBox["6", "5"]], " ", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"-", "\[ImaginaryI]"}], " ", "\[Theta]1"}], "-", 
+       RowBox[{"\[ImaginaryI]", " ", "\[Theta]2"}], "+", 
+       RowBox[{"2", " ", "\[ImaginaryI]", " ", "\[Theta]3"}]}]], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Cos", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     SuperscriptBox[
+      RowBox[{"Cos", "[", 
+       FractionBox["\[Phi]3", "2"], "]"}], "2"], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]1", "2"], "]"}], " ", 
+     RowBox[{"Sin", "[", 
+      FractionBox["\[Phi]2", "2"], "]"}], " ", 
+     SuperscriptBox[
+      RowBox[{"Sin", "[", 
+       FractionBox["\[Phi]3", "2"], "]"}], "2"]}]}], ")"}]}]], "Output",
+ CellChangeTimes->{3.6089763160186987`*^9, 3.608976355163844*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"\[CapitalPhi]", "[", 
+   RowBox[{
+   "1", ",", "1", ",", "2", ",", "0", ",", "0", ",", "0", ",", "\[Theta]1", 
+    ",", "\[Phi]1", ",", "\[Psi]1", ",", "\[Theta]2", ",", "\[Phi]2", ",", 
+    "\[Psi]2", ",", "\[Theta]3", ",", "\[Phi]3", ",", "\[Psi]3"}], "]"}], "//",
+   "FullSimplify"}]], "Input",
+ CellChangeTimes->{{3.608977385145837*^9, 3.608977430617456*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({2, \\(\\(-2\\)\
+\\)}\\)\\)\\)\\)]\\)\[NoBreak] is not physical. \\!\\(\\*ButtonBox[\\\"\
+\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608977389501083*^9, 3.608977431161461*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({2, \\(\\(-1\\)\
+\\)}\\)\\)\\)\\)]\\)\[NoBreak] is not physical. \\!\\(\\*ButtonBox[\\\"\
+\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", ButtonNote -> \
+\\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608977389501083*^9, 3.6089774311630383`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"ClebschGordan", "::", "phy"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"\[NoBreak]\\!\\(ThreeJSymbol[\\(\\(\\(\\({1, \
+\\(\\(-1\\)\\)}\\)\\), \\(\\({1, \\(\\(-1\\)\\)}\\)\\), \\(\\({2, 0}\\)\\)\\)\
+\\)]\\)\[NoBreak] is not physical. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/ClebschGordan/phy\\\", \
+ButtonNote -> \\\"ClebschGordan::phy\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608977389501083*^9, 3.608977431163948*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"General", "::", "stop"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Further output of \
+\[NoBreak]\\!\\(\\*StyleBox[\\(ClebschGordan :: phy\\), \
+\\\"MessageName\\\"]\\)\[NoBreak] will be suppressed during this calculation. \
+\\!\\(\\*ButtonBox[\\\"\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", \
+ButtonFrame->None, ButtonData:>\\\"paclet:ref/message/General/stop\\\", \
+ButtonNote -> \\\"General::stop\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{{3.608977389501083*^9, 3.608977431180093*^9}}]
+}, Open  ]]
+},
+WindowSize->{1841, 1058},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+FrontEndVersion->"9.0 for Linux x86 (64-bit) (February 7, 2013)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[557, 20, 2172, 56, 109, "Input"],
+Cell[CellGroupData[{
+Cell[2754, 80, 359, 7, 32, "Input"],
+Cell[3116, 89, 96, 1, 32, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3249, 95, 402, 8, 32, "Input"],
+Cell[3654, 105, 609, 12, 23, "Message"],
+Cell[4266, 119, 596, 12, 23, "Message"],
+Cell[4865, 133, 596, 12, 23, "Message"],
+Cell[5464, 147, 589, 12, 23, "Message"],
+Cell[6056, 161, 516, 15, 36, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6609, 181, 402, 8, 32, "Input"],
+Cell[7014, 191, 555, 11, 23, "Message"],
+Cell[7572, 204, 544, 11, 23, "Message"],
+Cell[8119, 217, 544, 11, 23, "Message"],
+Cell[8666, 230, 537, 11, 23, "Message"],
+Cell[9206, 243, 388, 11, 32, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9631, 259, 398, 8, 32, "Input"],
+Cell[10032, 269, 579, 11, 23, "Message"],
+Cell[10614, 282, 565, 11, 23, "Message"],
+Cell[11182, 295, 568, 11, 23, "Message"],
+Cell[11753, 308, 559, 11, 23, "Message"],
+Cell[12315, 321, 412, 11, 32, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[12764, 337, 387, 8, 32, "Input"],
+Cell[13154, 347, 588, 11, 23, "Message"],
+Cell[13745, 360, 592, 11, 23, "Message"],
+Cell[14340, 373, 577, 11, 23, "Message"],
+Cell[14920, 386, 557, 11, 23, "Message"],
+Cell[15480, 399, 6218, 173, 239, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[21735, 577, 398, 8, 32, "Input"],
+Cell[22136, 587, 592, 11, 23, "Message"],
+Cell[22731, 600, 594, 11, 23, "Message"],
+Cell[23328, 613, 579, 11, 23, "Message"],
+Cell[23910, 626, 559, 11, 23, "Message"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
