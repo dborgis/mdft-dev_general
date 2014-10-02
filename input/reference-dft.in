@@ -91,7 +91,7 @@ threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 verbose = F
-
+number_of_fftw3_threads = 2  # defines the number of posix/openmp threads fftw3 will use for all FFT
 
 
 
