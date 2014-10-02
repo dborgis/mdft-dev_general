@@ -531,7 +531,9 @@ $(OBJDIR)/module_input.o:\
 
 $(OBJDIR)/module_minimizer.o:\
 	$(SRCDIR)/module_minimizer.f90\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_quadrature.o
 
 $(OBJDIR)/module_mod_lj.o:\
 	$(SRCDIR)/module_mod_lj.f90\
