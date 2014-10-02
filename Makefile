@@ -21,7 +21,7 @@ FC = gfortran
 # ——————————————— Compiling options ———————————————
 
 FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) -Wfatal-errors
-LDFLAGS = $(FFTW_LIBRARIES) -lfftw3
+LDFLAGS = $(FFTW_LIBRARIES) -lfftw3_threads -lfftw3
 
 # For POINCARE:
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
@@ -110,7 +110,8 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/steepest_descent_main.o\
 	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/vext_total_sum.o\
-	$(OBJDIR)/write_to_cube_file.o
+	$(OBJDIR)/write_to_cube_file.o\
+	$(OBJDIR)/finalize_simu.o
 
 # ——————————————— Global rules ———————————————
 
@@ -514,7 +515,8 @@ $(OBJDIR)/module_external_potential.o:\
 $(OBJDIR)/module_fft.o:\
 	$(SRCDIR)/module_fft.f90\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_input.o
 
 $(OBJDIR)/module_hardspheres.o:\
 	$(SRCDIR)/module_hardspheres.f90\
@@ -664,3 +666,8 @@ $(OBJDIR)/module_fastPoissonSolver.o:\
 	$(OBJDIR)/poissonSolver.o\
 	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/module_system.o
+
+$(OBJDIR)/finalize_simu.o:\
+	$(SRCDIR)/finalize_simu.f90\
+	$(OBJDIR)/module_fft.o
+
