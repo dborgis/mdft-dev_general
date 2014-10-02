@@ -16,9 +16,6 @@ SUBROUTINE find_equilibrium_density
     REAL(dp):: time1, time2
     REAL(dp):: energy_before, dfoverf
 
-
-!   WRITE(*,'(''Iter.     FF       |dF|       Fext        Fid      Fexc/rad   Fexc/pol     F3B1       F3B2     Ffmt      Ffmtcs'')')
-
     IF ( minimizer_type(1:4) == 'bfgs' ) then
         iter = 0
         task = 'START'
@@ -43,7 +40,10 @@ SUBROUTINE find_equilibrium_density
         END IF
 
         999 continue ! loops to find the minima is ended for one reason or the other
+        print*,
         PRINT*,"FREE ENERGY =",FF,"kJ/mol"
+        call adhoc_corrections_to_gsolv ! ad hoc corrections
+
         CALL finalizeMinimizer
     ELSE
         STOP "The minimizer you asked is not implemented yet."

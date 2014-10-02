@@ -20,11 +20,29 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
     IF (.NOT. ALLOCATED(Vext_q)) STOP "Vext_q should be allocated in SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
     IF ( ANY(Vext_q/=0.0_dp) ) STOP "Vext_q should be zero at the beginning of SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
 
-    ! test if all solutes have zero charge then don't waste your time : go to end of SUBROUTINE
-    IF ( ALL(solute%site%q == 0._dp) .OR. ALL(solvent(1)%site%q == 0._dp) ) THEN
+    if (size(solvent)/=1) stop "CRITICAL. Compute_vcoul_as_pointcharges implemented for one solvent species only"
+
+
+    !... return if no solute sites wear partial charges
+    IF ( ALL(abs(solute%site%q) <= epsilon(1.0_dp)) ) THEN
         IF (verbose) PRINT*,"The electrostatic potential energy is zero."
         RETURN
     END IF
+    
+    !... return if all sites of all solvent species are zero
+    block
+    logical :: ishouldreturn
+    ishouldreturn = .true.
+    do s=1,size(solvent)
+        if ( any( abs(solvent(s)%site%q) >= epsilon(1.0_dp) ) ) ishouldreturn = .false.
+    end do
+    if ( ishouldreturn ) then
+        if (verbose) print*, "The electrostatic potential is zero because no solvent site wear partial charges"
+        print*,"haaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        return
+    end if
+    end block
+
     
     ! precompute Rot_ij(omega,psi)*k_solv(a) for speeding up
     DO CONCURRENT (m=1:SIZE(solvent(1)%site), p=1:molRotGrid%n_angles, o=1:angGrid%n_angles)
@@ -40,7 +58,8 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
         xgrid = REAL([i,j,k]-1,dp)*spaceGrid%dl
         V_psi = 0._dp
 
-        DO CONCURRENT (m=1:SIZE(solvent(1)%site), n=1:SIZE(solute%site),(solvent(1)%site(m)%q/=0._dp .AND. solute%site(n)%q/=0._dp))
+        DO CONCURRENT (m=1:SIZE(solvent(s)%site), n=1:SIZE(solute%site),&
+                                ( abs(solvent(s)%site(m)%q)>=epsilon(1.0_dp) .AND. abs(solute%site(n)%q)>=epsilon(1.0_dp)) )
             xv = xgrid + [xmod(m,p,o), ymod(m,p,o), zmod(m,p,o)]
             xuv = xv - solute%site(n)%r
             xuv2 = SUM(xuv**2)
@@ -48,7 +67,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
                 V_psi = HUGE(1.0_dp)
                 CYCLE
             ELSE
-                V_psi = V_psi + qfact*solute%site(n)%q*solvent(1)%site(m)%q/SQRT(xuv2)
+                V_psi = V_psi + qfact*solute%site(n)%q*solvent(s)%site(m)%q/SQRT(xuv2)
             END IF
         END DO
 

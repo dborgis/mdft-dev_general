@@ -53,6 +53,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/cs_of_k_hard_sphere.o\
 	$(OBJDIR)/dblas1.o\
 	$(OBJDIR)/energy_and_gradient.o\
+	$(OBJDIR)/adhoc_corrections_to_gsolv.o\
 	$(OBJDIR)/energy_ck_angular.o\
 	$(OBJDIR)/energy_cs_hard_sphere.o\
 	$(OBJDIR)/energy_external.o\
@@ -245,7 +246,13 @@ $(OBJDIR)/cs_of_k_hard_sphere.o:\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/dblas1.o:\
-	$(SRCDIR)/dblas1.f90
+	$(SRCDIR)/dblas1.f90\
+	$(OBJDIR)/module_precision_kinds.o
+
+$(OBJDIR)/adhoc_corrections_to_gsolv.o:\
+	$(SRCDIR)/adhoc_corrections_to_gsolv.f90\
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_system.o
 
 $(OBJDIR)/energy_and_gradient.o:\
 	$(SRCDIR)/energy_and_gradient.f90\
@@ -392,7 +399,8 @@ $(OBJDIR)/find_equilibrium_density.o:\
 	$(SRCDIR)/find_equilibrium_density.f90\
 	$(OBJDIR)/module_bfgs.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/adhoc_corrections_to_gsolv.o
 
 $(OBJDIR)/get_final_density.o:\
 	$(SRCDIR)/get_final_density.f90\
@@ -480,7 +488,8 @@ $(OBJDIR)/mean_over_orientations.o:\
 
 $(OBJDIR)/module_bfgs.o:\
 	$(SRCDIR)/module_bfgs.f90\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/dblas1.o
 
 $(OBJDIR)/module_constants.o:\
 	$(SRCDIR)/module_constants.f90\

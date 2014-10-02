@@ -131,12 +131,9 @@ SUBROUTINE energy_and_gradient (iter)
         WRITE(111,*) "# ",'FF  ','|dF   |','  Fext','   Fid','    Fexc/rad','    Fexc/pol','    F3B1','      F3B2','    Ffmt',&
         '    Ffmtcs', '  Fexc_ck_angular'
         WRITE(111,*) '#########################################################################'
-        WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
-   ELSE
-        WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
-   END IF  
+    END IF
+    WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
     
-   
     CONTAINS
     
     !===============================================================================================================================
