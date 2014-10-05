@@ -524,14 +524,27 @@ MODULE dcf
                 WRITE(*,*)'Cant open file ',filename,' in readDensityDensityCorrelationFunction (c_s)'
                 STOP
             END IF
+            
+            open (14, file='output/cs.in', iostat=ios)
+                if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction (c_s)'
+
             DO i = 1, SIZE(c_s)
                 READ (13,*,IOSTAT=ios) norm_k, c_s(i)
                     IF (ios>0 .OR. ios<0) THEN
                         WRITE(*,*)'Error while reading ',filename, 'in readDensityDensityCorrelationFunction (c_s)'
                         STOP
                     END IF
+                WRITE(14,*,IOSTAT=ios) norm_k, c_s(i)
+                    if (ios/=0) then
+                        print*,'Something is wrong while writing norm_k and c_s(i) in readDensityDensityCorrelationFunction'
+                        print*,'for i=',i
+                        print*,'norm_k=',norm_k
+                        print*,'and c_s(i)=',c_s(i)
+                        stop
+                    end if
             END DO
         CLOSE (13)
+        close (14)
 
     END SUBROUTINE readDensityDensityCorrelationFunction
 
