@@ -24,9 +24,12 @@ MODULE fft
         implicit none
         integer :: n_threads, iRet
         n_threads = input_int('number_of_fftw3_threads',1)
-        print*,"FFTW3 will use:", n_threads
+        print*,"Number of threads for FFTW3:", n_threads
         call dfftw_init_threads(iRet)
-        print*,"fftw init thread status:",iRet
+            if (iRet/=1) then
+                print*, "Problem in dfftw_init_threads(), returned value is ",iRet
+                stop
+            end if
         call dfftw_plan_with_nthreads (n_threads)
     end subroutine
     !===============================================================================================================================
