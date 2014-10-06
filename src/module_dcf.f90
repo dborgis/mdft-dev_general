@@ -242,7 +242,7 @@ MODULE dcf
 
         REAL(dp), INTENT(IN)    :: x,y
         REAL(dp)                :: angle
-        REAL(dp)                :: xx,r
+        REAL(dp)                :: xx
 
         IF (x==0._dp .AND. y==0._dp) THEN
             angle = 0._dp
@@ -336,7 +336,7 @@ MODULE dcf
         REAL(dp) :: norm_k
         LOGICAL :: exists
         CHARACTER(80) :: file_nn, file_nc, file_cc
-        INTEGER(i2b) :: ios, nb_k_in_Cnn, i,nb_k_in_Cnc,nb_k_in_Ccc
+        INTEGER(i2b) :: ios, i
 
         
         file_nn = 'input/direct_correlation_functions/water/Cnn.dat'
