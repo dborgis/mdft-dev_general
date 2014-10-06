@@ -23,7 +23,7 @@ MODULE fft
         use input, only: input_int
         implicit none
         integer :: n_threads, iRet
-        n_threads = input_int('number_of_fftw3_threads')
+        n_threads = input_int('number_of_fftw3_threads',1)
         print*,"FFTW3 will use:", n_threads
         call dfftw_init_threads(iRet)
         print*,"fftw init thread status:",iRet
