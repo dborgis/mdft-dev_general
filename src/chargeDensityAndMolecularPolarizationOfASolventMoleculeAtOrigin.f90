@@ -15,7 +15,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     
     REAL(dp), DIMENSION(angGrid%n_angles,molRotGrid%n_angles), INTENT(IN) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     INTEGER(i2b) :: i, j, k, o, p, n, nf1, s, nfft1, nfft2, nfft3
-    REAL(dp)     :: xmod, ymod, zmod, Rc, Lx, Ly, Lz, kr,angle_number
+    REAL(dp)     :: xmod, ymod, zmod, Rc, Lx, Ly, Lz, kr
     COMPLEX(dp)  :: fac
 
     Lx = spaceGrid%length(1)
@@ -56,7 +56,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
 
         sigma_k (i,j,k,o,p,s) = sigma_k(i,j,k,o,p,s) + solvent(1)%site(n)%q *EXP(-iC*kr) *EXP(-Rc**2*k2(i,j,k)/2)
 
-        IF ( kr==0.0_dp ) THEN
+        IF ( abs(kr)<=epsilon(1._dp) ) THEN
             molec_polarx_k (i,j,k,o,p,s) = molec_polarx_k(i,j,k,o,p,s) + solvent(1)%site(n)%q*xmod
             molec_polary_k (i,j,k,o,p,s) = molec_polary_k(i,j,k,o,p,s) + solvent(1)%site(n)%q*ymod
             molec_polarz_k (i,j,k,o,p,s) = molec_polarz_k(i,j,k,o,p,s) + solvent(1)%site(n)%q*zmod
@@ -74,7 +74,6 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     CONTAINS
         
         SUBROUTINE normalizeMolecularDensity
-            USE constants ,ONLY: epsN
             REAL(dp)          :: angle_number
             COMPLEX(dp)       :: molxk, molyk,molzk
             INTEGER(i2b)      :: i,j,k,s
