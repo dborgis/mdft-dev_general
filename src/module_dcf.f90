@@ -409,23 +409,7 @@ MODULE dcf
 
     END SUBROUTINE readTotalPolarizationCorrelationFunction
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+!===================================================================================================================================
 
     SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
         INTEGER(i2b) :: ios, nb_kdelta, i, nb_kd
