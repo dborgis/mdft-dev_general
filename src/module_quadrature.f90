@@ -155,7 +155,7 @@ module quadrature
             call check_weights(angGrid%weight)
 
             do concurrent (n=1:angGrid%n_angles)
-                if ( x_leb(n)==zero .and. y_leb(n)==zero ) then 
+                if ( abs(x_leb(n))<=epsilon(1.0_dp) .and. abs(y_leb(n))<=epsilon(1._dp) ) then 
                     phi = zero
                 ELSE IF (y_leb(n)>=zero) then 
                     phi = acos(x_leb(n)/(sqrt ( x_leb(n)**2 + y_leb(n)**2 ) ) )
@@ -172,7 +172,7 @@ module quadrature
                 theta=acos(z_leb(n))
                 cos_theta=cos(theta)
                 sin_theta=sin(theta)
-                if    ( x_leb(n)  == 0.0_dp .and. y_leb(n)  == 0.0_dp ) then 
+                if    ( abs(x_leb(n)) <= epsilon(1._dp) .and. abs(y_leb(n)) <= epsilon(1._dp) ) then 
                     phi=0.0_dp
                 ELSE IF  (y_leb(n)>=0.0_dp) then 
                     phi=acos(x_leb(n)/(sqrt ( x_leb(n)**2 + y_leb(n)**2 ) ) )
