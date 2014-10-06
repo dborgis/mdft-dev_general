@@ -1,16 +1,15 @@
-# JOBID = 001
 ############################
-# SUPERCELL
+# SUPERCELL DISCRETIZATION
 ############################
-Lx  = 32
-Ly  = 32
-Lz  = 32
-nfft1 = 96
-nfft2 = 96
-nfft3 = 96
-quadrature = L
-order_of_quadrature = 6
-nb_psi = 3  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+Lx  = 25.0
+Ly  = 25.0
+Lz  = 25.0
+nfft1 = 64 
+nfft2 = 64 
+nfft3 = 64 
+quadrature = GL
+order_of_quadrature = 2
+nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
 ############################
@@ -20,8 +19,8 @@ nb_implicit_species = 1
 mole_fractions
 1.0
 
-ck_species = spce  # spc or spce or stock or perso
-readDensityDensityCorrelationFunction = F
+ck_species = spce   # spc or spce or stock or perso
+readDensityDensityCorrelationFunction = T
 polarization = F
 polarization_order = dipol # multi or dipol
 include_nc_coupling = F
@@ -47,8 +46,8 @@ ck_en_harm_sph = F
 ############################
 minimizer = bfgs
 maximum_iteration_nbr = 100
-epsg =  0.0000001  # default 0.0001
-pgtol = 0.00000001 # default 0.00001
+epsg =  0.00001  # default 0.0001
+pgtol = 0.000001 # default 0.00001
 
 
 ###########################
@@ -56,22 +55,19 @@ pgtol = 0.00000001 # default 0.00001
 ###########################
 imposed_chempot = 0.0
 Linearize_entropy = F
-if_Linearize_entropy = 1   # if linearize, use bridge on n(r):1 or rho(r,Omega):2
+if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):1 or rho(r,Omega):2
 
 
 ############################
-# POTENTIALS
+# ELECTROSTATIC POTENTIAL
 ############################
 solute_charges_scale_factor = 1.0
-poisson_solver = F
+poisson_solver = T
 direct_sum = F
+
+
 reuse_density = F
-
-
-############################
-# POST-PROCESSING
-############################
-translate_solute_to_center = F
+translate_solute_to_center = T
 
 
 ############################
@@ -80,9 +76,9 @@ translate_solute_to_center = F
 hard_sphere_fluid = F
 bridge_hard_sphere = F
 hard_sphere_radius
-1.75
+1.27
 hs_functional = CS # PY or CS
-lennard_jones_perturbation_to_hard_spheres = F # add a WCA perturbation. UNTESTED
+lennard_jones_perturbation_to_hard_spheres = F # add a Weeks-Chandler-Enderson perturbation to hard-sphere fonctional
 
 
 ############################
@@ -95,16 +91,19 @@ threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 verbose = F
+number_of_fftw3_threads = 1  # defines the number of posix/openmp threads fftw3 will use for all FFT
 
 
-############################
+
+
+
 # HARD SPHERICAL SOLUTE
 hard_sphere_solute = F              # if there is a hard sphere in the center of the box
 radius_of_hard_sphere_solute = 15.0     # hard sphere solute radius for calculation of hard sphere external potential (Ang)
 
 # HARD WALL
-hard_wall_number = 0
-1. 0. 0. 1. 0. 0. 0.
+hard_wall_number = 0                 #
+# do w=1,hard_wall_numner ; thickness(w) , normal_vec(1:3,w) , CooOfPointInWall (1:3,w); end do
 
 # HARD CORE with vdw radius
 vdw_hard_core = F                    # a hard core with vdw radius is like a hard sphere with vdw radius for the solute sites.
@@ -130,4 +129,4 @@ constraint = no_constraint  # Do you want to work with a constrained density? Ta
 lower_bound = 0.00000000 # Value of the minimum density, should be a float, this line is ignored if you set no_constraint 
 upper_bound = 125.00000000 # Value of maximimum density see supra
 number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
-constrain_density_to_zero_where_it_is_initiated_to_zero = F
+constrain_density_to_zero_where_it_is_initiated_to_zero = F # if True, the minimizer constrains the density to be zero where it is initiated to zero

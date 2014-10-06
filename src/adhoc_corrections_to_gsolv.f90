@@ -15,6 +15,7 @@ subroutine adhoc_corrections_to_gsolv
         real(dp) :: bulk
     end type nmoleculetype
     type (nmoleculetype), allocatable :: nmolecule(:)
+    logical :: file_exists
 
     !... We use P-scheme instead of M-scheme for the electrostatics in MDFT. See Kastenholz and Hunenberger, JCP 124, 124106 (2006)
     correction = 0._dp
@@ -36,14 +37,24 @@ subroutine adhoc_corrections_to_gsolv
         nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *spacegrid%dv ! number of solvent molecules inside the supercell containing the solute
     end do
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
-    open (14, file='output/cs.in', iostat=ios)
-    if (ios/=0) stop 'Cant open file output/cs.in in adhoc_corrections_to_gsolv'
-    block
-        real(dp) :: knorm, ck0
-        read(14,*) knorm, ck0
-        correction = (nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT * (-1._dp + 0.5_dp*solvent(1)%n0**2* ck0 )
-        print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY as partial molar volume correction"
-    end block
-    close(14)
+    
+    inquire(file='output/cs.in',exist=file_exists);
+    if (file_exists) then
+        open (14, file='output/cs.in', iostat=ios)
+        if (ios/=0) stop 'Cant open file output/cs.in in adhoc_corrections_to_gsolv. But it is present!'
+        if (ios==0) then
+            block
+                real(dp) :: knorm, ck0
+                read(14,*) knorm, ck0
+                correction = (nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT * (-1._dp + 0.5_dp*solvent(1)%n0**2* ck0)
+                print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY as partial molar volume correction"
+            end block
+            close(14)
+        end if
+    else
+        print*,"I could not find c(k=0) by myself. Please do the math yourself:"
+        print*,"You should add",(nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT,&
+        "*(-1+", 0.5_dp*solvent(1)%n0**2 ,"*c(k=0) ) kJ/mol to FREE ENERGY as partial molar volume correction"
+    end if
 
 end subroutine adhoc_corrections_to_gsolv

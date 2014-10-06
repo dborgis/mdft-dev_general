@@ -7,3 +7,13 @@ log
 *.mod
 *.o
 obj/
+input/cdelta.in
+input/ck_angular.in
+input/ck_angular_daniel.in
+input/ck_angular_dipolar_rebuilt_from_cs_cdelta_cd.dat
+input/ck_angular_dipolar_rebuilt_from_cs_cdelta_cd_cos32_phi64_psi1.in
+input/ck_angular_lu.in
+input/cs.in
+input/luc_ck_angular.in_nmax1
+input/luc_ck_angular.in_nmax5
+output
