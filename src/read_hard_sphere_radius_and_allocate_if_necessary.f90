@@ -37,7 +37,8 @@
             DO s = 1 , nb_species
                 READ( input_line(i+s) ,*) hs(s)%R
                 IF ( hs(s)%R <= 0.0_dp ) THEN ! check if one radius is negative, ie if one has to compute wca diameter
-                    CALL compute_wca_diameter (solvent(s)%n0 , thermocond%T, solvent(1)%site(s)%sig , solvent(1)%site(s)%eps,d_wca)
+                    print*, "You ask for a WCA calculation of hard sphere diameter"
+                    CALL compute_wca_diameter (solvent(s)%n0 , thermocond%T, solvent(s)%site(1)%sig , solvent(s)%site(1)%eps, d_wca)
                     hs(s)%R = d_wca / 2.0_dp
                 END IF
             END DO
