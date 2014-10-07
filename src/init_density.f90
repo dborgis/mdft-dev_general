@@ -38,7 +38,7 @@ IF (input_log('reuse_density')) THEN
                 STOP "problem while trying to read cg_vect in input/density.bin.in"
             END IF
         PRINT*, '*** RESTART ***'
-    CLOSE (10, STATUS="DELETE")
+    CLOSE (10)
     OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
         WRITE ( 10 ) cg_vect
     CLOSE (10)
