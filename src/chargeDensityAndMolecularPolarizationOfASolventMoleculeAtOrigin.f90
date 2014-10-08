@@ -33,7 +33,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     Rc=0.5_dp
     IF (Rc/=0.0_dp) THEN
         PRINT*,'WARNING: you convolute the solvent molecular charge density and the solvent molecular polarization &
-                with a Gaussian of radius 0.5. Angstroms in chargeDensity...'
+                &with a Gaussian of radius 0.5. Angstroms in chargeDensity...'
     END IF
     
     ALLOCATE (sigma_k        (nf1+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=zeroC)
