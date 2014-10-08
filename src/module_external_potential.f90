@@ -75,8 +75,6 @@ MODULE external_potential
     !===============================================================================================================================
         USE precision_kinds ,ONLY: dp
         USE system          ,ONLY: grd=>spaceGrid, nb_species
-        USE quadrature      ,ONLY: angrd=>angGrid,&
-                                   mrgrd=>molRotGrid
         IMPLICIT NONE
         REAL(dp), PARAMETER :: radius=1.0_dp 
         
@@ -100,7 +98,7 @@ MODULE external_potential
             !=======================================================================================================================
             SUBROUTINE wall
             !=======================================================================================================================
-                REAL(dp) :: d, distNode2Center, coo(2), l(2)
+                REAL(dp) :: d, coo(2), l(2)
                 INTEGER(i2b) :: i,j,n(2)
                 l(:) = grd%length(1:2)
                 n(:) = grd%n_nodes(1:2)
