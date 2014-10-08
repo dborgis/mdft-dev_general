@@ -54,8 +54,6 @@ pgtol = 0.000001 # default 0.00001
 #  IDEAL TERM
 ###########################
 imposed_chempot = 0.0
-Linearize_entropy = F
-if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):1 or rho(r,Omega):2
 
 
 ############################

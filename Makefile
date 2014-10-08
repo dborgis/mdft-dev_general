@@ -320,8 +320,6 @@ $(OBJDIR)/energy_hydro.o:\
 
 $(OBJDIR)/energy_ideal.o:\
 	$(SRCDIR)/energy_ideal.f90\
-	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_minimizer.o\
