@@ -5,7 +5,7 @@
 SUBROUTINE compute_planar_density(array,filename)
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nb_solute_sites, spaceGrid, solute
+    USE system          ,ONLY: spaceGrid, solute
 
     IMPLICIT NONE
     
