@@ -221,3 +221,14 @@ i.e.,
 ### solvent.in
 
 The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above
+
+###For Mac users
+
+The mdft code request the fftw3 multithread library to be installed. There can be trouble to install this library on Mac OS. Here is a way to do it properly:
+-Download fftw3 package from: http://www.fftw.org/download.html
+-untar the downloaded file and go to the fftw-3.XX repository
+-run the following commands
+>./configure --enable-threads
+>make
+>sudo make install
+
