@@ -8,7 +8,7 @@ SUBROUTINE allocate_from_input
     USE quadrature          ,ONLY: molRotSymOrder
 
     IMPLICIT NONE
-    INTEGER(i2b):: i, j, s
+    INTEGER(i2b):: i, s
 
     verbose = input_log('verbose')
     
