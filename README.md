@@ -26,7 +26,7 @@ sudo apt-get install git
 ```sh
 sudo apt-get install fftw3 fftw3-dev
 ```
-###For Mac users
+#For Mac users
 
 The mdft code request the fftw3 multithread library to be installed. There can be trouble to install the fftw3 multithread library on Mac OS. Here is a way to do it properly:
 
