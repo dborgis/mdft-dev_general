@@ -27,10 +27,11 @@ LDFLAGS = $(FFTW_LIBRARIES) -lfftw3_threads -lfftw3
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
 # LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3
 
-DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -Wimplicit-interface -frecursive
+DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -pg -Wunused-parameter -frecursive
 # -g turns on debugging
 # -p turns on profiling
 # -Wextra turns on extra warning. It is extremely verbose.
+# -fcheck-array-temporaries -Warray-temporaries -Wconversion -Wimplicit-interface
 
 OPTIM = -O3 -march=native -ffast-math -funroll-loops
 # FOR BACKUP : -march=native -O3 -ffast-math -funroll-loops   VERY AGRESSIVE
@@ -510,7 +511,6 @@ $(OBJDIR)/module_dcf.o:\
 $(OBJDIR)/module_external_potential.o:\
 	$(SRCDIR)/module_external_potential.f90\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -674,3 +674,6 @@ $(OBJDIR)/finalize_simu.o:\
 	$(SRCDIR)/finalize_simu.f90\
 	$(OBJDIR)/module_fft.o
 
+$(OBJDIR)/module_mathematica.o:\
+	$(SRCDIR)/module_mathematica.f90\
+	$(OBJDIR)/module_precision_kinds.o
