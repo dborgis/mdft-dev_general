@@ -22,7 +22,7 @@ MDFT has been tested on various flavours of Linux and MacOSX.
 ```bash
 sudo apt-get install git
 ```
-- [the (multithread) FFTW3 library](http://www.fftw.org/). It is a library handles fast fourier transforms.
+- [the (multithread) FFTW3 library](http://www.fftw.org/). This library handles fast fourier transforms.
 ```sh
 sudo apt-get install fftw3 fftw3-dev
 ```
