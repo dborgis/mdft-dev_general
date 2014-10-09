@@ -53,38 +53,6 @@ MODULE system
     !Polarization
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) ::  molec_polarx_k, molec_polary_k, molec_polarz_k 
     
-    !> 3body parameters
-    !NEW
-    !!a=100.0_dp
-    !!gam=2.0_dp/3.0_dp
-    !!rmin1=1.5_dp
-    !!rsw1=2.0_dp
-    !!rmax1=0.5_dp*(sig_mol(1)+sig_solv(1))+1.9_dp
-    !!rmin2=2.25_dp
-    !!rsw2=2.5_dp
-    !!rmax2=4.75_dp
-    !!lambda_fs=100.0_dp
-    !OLD
-    !gamma  :  2.9
-    !rsw1  :  2.0
-    !rsw2  :  2.75
-    !rmin1  :  1.5
-    !rmax1  :  5.0
-    !rmin2  :  2.25
-    !rmax2  :  5.00
-    !lambda  :  125.00
-    !lambda_fs  :  0.0
-    !a3  :  0.0
-    !b3  :  3.0
-    !REAL(dp), ALLOCATABLE , DIMENSION (:,:,:, : ) :: rho_n ! density per angle (=n/4pi) of each species at each node (nfft1,nfft2,nfft3,nb_species)
-    ! for maximum efficiency, rho_species(nfft1,nfft2,nfft3,nb_species) should be used in loops where species is the outer loop (varies slowliest)
-    !do species = 1 , nb_species
-    !do z
-    !do y 
-    !do x
-    !density(x,y,z,species)
-    !> Hard spheres
-    ! TODO this should be put in another module
     logical(4) :: HS
     COMPLEX(dp), ALLOCATABLE , DIMENSION (:,:,:) :: v_perturbation_k ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
