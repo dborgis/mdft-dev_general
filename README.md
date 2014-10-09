@@ -1,6 +1,6 @@
 # MDFT
 
-MDFT is a code for computing solvation free energies of a molecular solute in an arbitrary solvent in the molecular density functional theory framework.
+MDFT uses molecular density functional theory to computing solvation free energie and profile of any molecular solute in an arbitrary solvent.
 
 ## Authors
 
@@ -15,28 +15,62 @@ MDFT is being developped in the group of Daniel Borgis at École Normale Supéri
 ## Installation
 
 MDFT has been tested on various flavours of Linux and MacOSX.
-As a requirement, you should have [git](http://git-scm.com/) and [the FFTW3 library](http://www.fftw.org/) installed on your computer. 
 
-First, get the code using git by typing in your terminal:
+### Requirements
+
+- [git](http://git-scm.com/). It is our version control system.
+```bash
+sudo apt-get install git
 ```
+- [the (multithread) FFTW3 library](http://www.fftw.org/). This library handles fast fourier transforms.
+```sh
+sudo apt-get install fftw3 fftw3-dev
+```
+#####For Mac users
+
+The mdft code request the fftw3 multithread library to be installed. There can be trouble to install the fftw3 multithread library on Mac OS. Here is a way to do it properly:
+
+-Download fftw3 package from: http://www.fftw.org/download.html
+
+-untar the downloaded file and go to the fftw-3.XX repository
+
+-run the following commands
+
+```bash
+./configure --enable-threads
+make
+sudo make install
+```
+
+- [gfortran version 4.7 or later](https://gcc.gnu.org/wiki/GFortran). The fortran compiler.
+```sh
+sudo apt-get install gfortran
+```
+
+
+
+### Installation process
+
+1. Get the code using git
+```bash
 git clone https://github.com/dborgis/MDFT
 ```
 
 Then, compile everything using [GNU Make](https://www.gnu.org/software/make/):
-```
+```sh
 make optim
 ```
 
 *mdft* executable file should then be generated in its most performant version.
 You may want to compile *mdft* without optimization with:
-```
+```sh
 make
 ```
 or with debugging informations and profiling capabilities with:
-```
+```sh
 make debug
 ```
-Note that this latter possibility is currently too verbose.
+
 
 ## Input files
 
@@ -205,3 +239,6 @@ i.e.,
 ### solvent.in
 
 The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above
+
+
+
