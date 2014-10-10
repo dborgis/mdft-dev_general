@@ -1,12 +1,12 @@
 subroutine adhoc_corrections_to_gsolv
 ! ... Here, we print all the adhoc corrections one should take into account before comparing MDFT results to MD and/or experiments.
-  
+
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
-  
+
     implicit none
 
-    real(dp) :: correction
+    real(dp) :: correction, correction2
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
     integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
     integer :: s, ios
@@ -37,7 +37,7 @@ subroutine adhoc_corrections_to_gsolv
         nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *spacegrid%dv ! number of solvent molecules inside the supercell containing the solute
     end do
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
-    
+
     inquire(file='output/cs.in',exist=file_exists);
     if (file_exists) then
         open (14, file='output/cs.in', iostat=ios)
@@ -47,7 +47,11 @@ subroutine adhoc_corrections_to_gsolv
                 real(dp) :: knorm, ck0
                 read(14,*) knorm, ck0
                 correction = (nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT * (-1._dp + 0.5_dp*solvent(1)%n0* ck0)
-                print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction"
+                correction2 = (nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT * (-1._dp + 0.5_dp*solvent(1)%n0* ck0&
+              +9.2000475144588751) !MAGIC NUMBER FOR 3BODY PRESSURE TODO EXPLAIN WHAT IT IS
+              print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
+              print*,"You should add",correction2,"kJ/mol to FREE ENERGY as partial molar volume correction if you work with 3Body"!
+              !  print*,"You should add",correction2,"kJ/mol to FREE ENERGY as partial molar volume correction"
             end block
             close(14)
         end if
