@@ -99,7 +99,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/module_solute_geometry.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/poissonSolver.o\
-	$(OBJDIR)/prepare_minimizer.o\
 	$(OBJDIR)/print_header.o\
 	$(OBJDIR)/print_input_in_output_folder.o\
 	$(OBJDIR)/print_supercell_xsf.o\
@@ -462,7 +461,8 @@ $(OBJDIR)/init_simu.o:\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o
+	$(OBJDIR)/module_quadrature.o\
+	$(OBJDIR)/module_minimizer.o
 
 $(OBJDIR)/init_solvent_polarization.o:\
 	$(SRCDIR)/init_solvent_polarization.f90\
@@ -571,14 +571,6 @@ $(OBJDIR)/poissonSolver.o:\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_precision_kinds.o
 
-$(OBJDIR)/prepare_minimizer.o:\
-	$(SRCDIR)/prepare_minimizer.f90\
-	$(OBJDIR)/module_quadrature.o\
-	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_precision_kinds.o
-
 $(OBJDIR)/print_header.o:\
 	$(SRCDIR)/print_header.f90
 
@@ -663,9 +655,9 @@ $(OBJDIR)/write_to_cube_file.o:\
 $(OBJDIR)/module_fastPoissonSolver.o:\
 	$(SRCDIR)/module_fastPoissonSolver.f90\
 	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
-	$(OBJDIR)/poissonSolver.o\
-	$(OBJDIR)/vext_q_from_v_c.o\
+#~ 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
+#~ 	$(OBJDIR)/poissonSolver.o\
+#~ 	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/module_system.o
 
 $(OBJDIR)/finalize_simu.o:\

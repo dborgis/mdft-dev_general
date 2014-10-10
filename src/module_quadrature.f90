@@ -8,7 +8,7 @@ module quadrature
     IMPLICIT NONE
 
     real(dp), allocatable, dimension(:), private :: x_leb, y_leb , z_leb
-    real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for orientation OMEGA and associated weight
+    real(dp), allocatable, dimension(:), public :: Omx , Omy , Omz  ! unit vector for Euler angle Omega in lab frame
     real(dp), allocatable, dimension(:,:), public :: Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
     type angularGrid
         integer(i2b) :: n_angles
@@ -155,6 +155,7 @@ module quadrature
             call check_weights(angGrid%weight)
 
             do concurrent (n=1:angGrid%n_angles)
+
                 if ( abs(x_leb(n))<=epsilon(1.0_dp) .and. abs(y_leb(n))<=epsilon(1._dp) ) then 
                     phi = zero
                 ELSE IF (y_leb(n)>=zero) then 
@@ -172,6 +173,7 @@ module quadrature
                 theta=acos(z_leb(n))
                 cos_theta=cos(theta)
                 sin_theta=sin(theta)
+
                 if    ( abs(x_leb(n)) <= epsilon(1._dp) .and. abs(y_leb(n)) <= epsilon(1._dp) ) then 
                     phi=0.0_dp
                 ELSE IF  (y_leb(n)>=0.0_dp) then 

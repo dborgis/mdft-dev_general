@@ -5,6 +5,7 @@ SUBROUTINE init_simu
     USE fft         ,ONLY: prepare_corefft_for_MDFT => init, prepare_fft_threads => init_threads
     USE dcf         ,ONLY: init_dcf => init
     USE input       ,ONLY: input_log, input_char
+    use minimizer   ,only: prepare_minimizer
     
     IMPLICIT NONE
 
