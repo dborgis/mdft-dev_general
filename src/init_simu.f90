@@ -2,7 +2,7 @@
 SUBROUTINE init_simu
 
     USE quadrature  ,ONLY: prepare_quadrature => init
-    USE fft         ,ONLY: prepare_fft => init
+    USE fft         ,ONLY: prepare_corefft_for_MDFT => init, prepare_fft_threads => init_threads
     USE dcf         ,ONLY: init_dcf => init
     USE input       ,ONLY: input_log, input_char
     use minimizer   ,only: prepare_minimizer
@@ -12,7 +12,8 @@ SUBROUTINE init_simu
     CALL print_header ! package name, day & time
     CALL put_input_in_character_array ! more powerfull way of reading dft.in : put each line in an array
     CALL allocate_from_input ! TODO this should be removed and done only when needed ! read dft.in, solute.in and solvent.in
-    CALL prepare_fft
+    CALL prepare_fft_threads ! prepare le multithread de fftw3
+    CALL prepare_corefft_for_MDFT
     CALL print_input_to_output_folder! Print input parameters found in input files to output folder
     CALL read_solvent ! Read solvent atomic positions, charge and Lennard-Jones param
     CALL read_solute ! Read solute atomic positions, charge and Lennard-Jones param

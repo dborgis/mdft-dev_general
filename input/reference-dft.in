@@ -4,12 +4,12 @@
 Lx  = 25.0
 Ly  = 25.0
 Lz  = 25.0
-nfft1 = 128
-nfft2 = 128
-nfft3 = 128
+nfft1 = 64 
+nfft2 = 64 
+nfft3 = 64 
 quadrature = GL
-order_of_quadrature = 1
-nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+order_of_quadrature = 2
+nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
 ############################
@@ -20,7 +20,7 @@ mole_fractions
 1.0
 
 ck_species = spce   # spc or spce or stock or perso
-readDensityDensityCorrelationFunction = F
+readDensityDensityCorrelationFunction = T
 polarization = F
 polarization_order = dipol # multi or dipol
 include_nc_coupling = F
@@ -54,16 +54,14 @@ pgtol = 0.000001 # default 0.00001
 #  IDEAL TERM
 ###########################
 imposed_chempot = 0.0
-Linearize_entropy = F
-if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):1 or rho(r,Omega):2
 
 
 ############################
 # ELECTROSTATIC POTENTIAL
 ############################
 solute_charges_scale_factor = 1.0
-poisson_solver = F
-direct_sum = T
+poisson_solver = T
+direct_sum = F
 
 
 reuse_density = F
@@ -73,7 +71,7 @@ translate_solute_to_center = T
 ############################
 # HARD SPHERES
 ############################
-hard_sphere_fluid = T
+hard_sphere_fluid = F
 bridge_hard_sphere = F
 hard_sphere_radius
 1.27
@@ -84,14 +82,14 @@ lennard_jones_perturbation_to_hard_spheres = F # add a Weeks-Chandler-Enderson p
 ############################
 # OTHER STUFF
 ############################
-hydrophobicity = T
+hydrophobicity = F
 treatment_of_hydro = VdW  #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
 hydro_coarsegrainingradius = 2.2
 threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 verbose = F
-
+number_of_fftw3_threads = 1  # defines the number of posix/openmp threads fftw3 will use for all FFT
 
 
 

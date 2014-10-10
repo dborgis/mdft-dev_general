@@ -21,15 +21,17 @@ FC = gfortran
 # ——————————————— Compiling options ———————————————
 
 FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) -Wfatal-errors
-LDFLAGS = $(FFTW_LIBRARIES) -lfftw3
+LDFLAGS = $(FFTW_LIBRARIES) -lfftw3_threads -lfftw3
 
 # For POINCARE:
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
 # LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3
 
-DEBUG = -Og -g -Wall -Wextra -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -fcheck-array-temporaries -Warray-temporaries -Wconversion -pg -Wunused-parameter -Wimplicit-interface -frecursive
+DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -pg -Wunused-parameter -frecursive
 # -g turns on debugging
 # -p turns on profiling
+# -Wextra turns on extra warning. It is extremely verbose.
+# -fcheck-array-temporaries -Warray-temporaries -Wconversion -Wimplicit-interface
 
 OPTIM = -O3 -march=native -ffast-math -funroll-loops
 # FOR BACKUP : -march=native -O3 -ffast-math -funroll-loops   VERY AGRESSIVE
@@ -109,7 +111,8 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/steepest_descent_main.o\
 	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/vext_total_sum.o\
-	$(OBJDIR)/write_to_cube_file.o
+	$(OBJDIR)/write_to_cube_file.o\
+	$(OBJDIR)/finalize_simu.o
 
 # ——————————————— Global rules ———————————————
 
@@ -251,7 +254,8 @@ $(OBJDIR)/dblas1.o:\
 $(OBJDIR)/adhoc_corrections_to_gsolv.o:\
 	$(SRCDIR)/adhoc_corrections_to_gsolv.f90\
 	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/module_system.o
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/get_final_density.o
 
 $(OBJDIR)/energy_and_gradient.o:\
 	$(SRCDIR)/energy_and_gradient.f90\
@@ -315,8 +319,6 @@ $(OBJDIR)/energy_hydro.o:\
 
 $(OBJDIR)/energy_ideal.o:\
 	$(SRCDIR)/energy_ideal.f90\
-	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_minimizer.o\
@@ -507,14 +509,14 @@ $(OBJDIR)/module_dcf.o:\
 $(OBJDIR)/module_external_potential.o:\
 	$(SRCDIR)/module_external_potential.f90\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/module_fft.o:\
 	$(SRCDIR)/module_fft.f90\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_input.o
 
 $(OBJDIR)/module_hardspheres.o:\
 	$(SRCDIR)/module_hardspheres.f90\
@@ -530,9 +532,8 @@ $(OBJDIR)/module_input.o:\
 $(OBJDIR)/module_minimizer.o:\
 	$(SRCDIR)/module_minimizer.f90\
 	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_input.o
+	$(OBJDIR)/module_quadrature.o
 
 $(OBJDIR)/module_mod_lj.o:\
 	$(SRCDIR)/module_mod_lj.f90\
@@ -567,7 +568,6 @@ $(OBJDIR)/module_system.o:\
 
 $(OBJDIR)/poissonSolver.o:\
 	$(SRCDIR)/poissonSolver.f90\
-	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -659,3 +659,11 @@ $(OBJDIR)/module_fastPoissonSolver.o:\
 #~ 	$(OBJDIR)/poissonSolver.o\
 #~ 	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/module_system.o
+
+$(OBJDIR)/finalize_simu.o:\
+	$(SRCDIR)/finalize_simu.f90\
+	$(OBJDIR)/module_fft.o
+
+$(OBJDIR)/module_mathematica.o:\
+	$(SRCDIR)/module_mathematica.f90\
+	$(OBJDIR)/module_precision_kinds.o

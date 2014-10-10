@@ -37,7 +37,6 @@ SUBROUTINE compute_hard_spheres_parameters
     !===============================================================================================================================
     SUBROUTINE compute_packing_fractions_and_check_legality
         USE precision_kinds ,ONLY: dp , i2b
-        USE constants       ,ONLY: fourpi
         USE system          ,ONLY: nb_species
         USE input           ,ONLY: verbose
         USE hardspheres     ,ONLY: packfrac, hs

@@ -9,7 +9,6 @@ SUBROUTINE poissonSolver (gridnode, gridlen, soluteChargeDensity, Vpoisson)
 
     USE precision_kinds,    ONLY: dp, i2b, i4b
     USE constants,          ONLY: fourpi , zeroC, twopi
-    USE input,              ONLY: verbose
     ! Vpoisson = electrostatic potential from charge density and poisson equation
 
     IMPLICIT NONE

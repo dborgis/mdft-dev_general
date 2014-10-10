@@ -23,14 +23,22 @@ MODULE input
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
     
-        INTEGER(I2B) PURE FUNCTION input_int (that)
+        INTEGER(I2B) PURE FUNCTION input_int (that, def)
             IMPLICIT NONE
             CHARACTER(*), INTENT(IN) :: That
+            integer(i2b), optional, intent(in) :: def
             INTEGER(i2b) :: i, j
+            logical :: ifoundtag
+            ifoundtag = .false.
             j=LEN(That)
             DO i = 1, SIZE( input_line) 
-                IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ(input_line(i)(j+4:j+50),*)input_int
+                IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) then
+                    READ(input_line(i)(j+4:j+50),*) input_int
+                    ifoundtag = .true.
+                    exit
+                end if
             END DO
+            if (ifoundtag.eqv..false. .and. present(def)) input_int = def
         END FUNCTION input_int
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

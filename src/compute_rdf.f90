@@ -112,7 +112,6 @@ SUBROUTINE compute_rdf (array,filename)
             IMPLICIT NONE
             REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:) 
             REAL(dp), ALLOCATABLE :: rdfUT(:)
-            INTEGER(i2b) :: bin
 
             ALLOCATE (nullarray3D (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ,SOURCE=0._dp)
             ALLOCATE (rdfUT(nbins),source=0._dp)

@@ -1,0 +1,490 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Iterative solvers for linear equations
+\end_layout
+
+\begin_layout Author
+Maximilien Levesque
+\begin_inset Formula $^{*}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Address
+\begin_inset Formula $^{*}$
+\end_inset
+
+École Normale Supérieure, Département de Chimie, Paris, France
+\end_layout
+
+\begin_layout Standard
+Given a square system of 
+\begin_inset Formula $n$
+\end_inset
+
+ linear equations:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\bm{A}\bm{x}=\bm{b}.\label{eq:linsys}
+\end{equation}
+
+\end_inset
+
+ Some (very slow) direct techniques exist that involve algebra.
+ We will solve this equation by an iterative (also called relaxation) method.
+ We will use a sequence of 
+\begin_inset Formula $\bm{x}^{\left(k\right)}$
+\end_inset
+
+ that converges toward the fixed point 
+\begin_inset Formula $\bm{x}$
+\end_inset
+
+, solution of our problem.
+\end_layout
+
+\begin_layout Standard
+In conclusion, we want to write, for a given 
+\begin_inset Formula $\bm{x}^{\left(0\right)}$
+\end_inset
+
+, a sequence 
+\begin_inset Formula $\bm{x}^{\left(k+1\right)}=F\left(\bm{x}^{\left(k\right)}\right)$
+\end_inset
+
+ with 
+\begin_inset Formula $k\in\mathbb{N}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+Jacobi's method
+\end_layout
+
+\begin_layout Standard
+We decompose 
+\begin_inset Formula $A=D-L-U$
+\end_inset
+
+ where 
+\begin_inset Formula $D$
+\end_inset
+
+ is an inversible matrix.
+\begin_inset Formula 
+\begin{equation}
+\bm{A}\bm{x}=\bm{b}\Leftrightarrow\bm{D}\bm{x}=\left(\bm{L}+\bm{U}\right)\bm{x}+\bm{b}
+\end{equation}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{eqnarray}
+\Leftrightarrow\bm{x} & = & \bm{D}^{-1}\left(\bm{L}+\bm{U}\right)\bm{x}+\bm{D}^{-1}\bm{b}\\
+ & = & F\left(\bm{x}\right)
+\end{eqnarray}
+
+\end_inset
+
+where 
+\begin_inset Formula $F$
+\end_inset
+
+ is a linear function of 
+\begin_inset Formula $x$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+It is shown that we can solve this equation by iteratively solving, where
+ 
+\begin_inset Formula $k$
+\end_inset
+
+ indicates the iteration number
+\begin_inset Formula 
+\begin{equation}
+\bm{x}^{\left(k+1\right)}=\bm{D}^{-1}\left(\bm{L}+\bm{U}\right)\bm{x}^{\left(k\right)}+\bm{D}^{-1}\bm{b}.
+\end{equation}
+
+\end_inset
+
+Since 
+\begin_inset Formula $\mbox{diag}\left(\left(\bm{L}+\bm{U}\right)\bm{x}^{\left(k\right)}\right)=\bm{0}$
+\end_inset
+
+, each 
+\begin_inset Formula $x_{i}^{\left(k+1\right)}$
+\end_inset
+
+ is independent of 
+\begin_inset Formula $x_{i}^{\left(k\right)}$
+\end_inset
+
+.
+ It is instead a weighted average of other 
+\begin_inset Formula $x_{j\neq i}$
+\end_inset
+
+.
+ Since we don't know the solution 
+\emph on
+a priori
+\emph default
+, we define the residual at each step 
+\begin_inset Formula $k$
+\end_inset
+
+ as 
+\begin_inset Formula $\bm{r}^{\left(k\right)}=\bm{b}-\bm{A}\bm{x}^{\left(k\right)}$
+\end_inset
+
+.
+ See algorithm
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "alg:Jacobi's-algorithm"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\bar under
+Output
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\bm{x}$
+\end_inset
+
+, an approximate solution to 
+\begin_inset Formula $\bm{A}\bm{x}=\bm{b}$
+\end_inset
+
+ where 
+\begin_inset Formula $\bm{A}$
+\end_inset
+
+ and 
+\begin_inset Formula $\bm{b}$
+\end_inset
+
+ are known.
+\end_layout
+
+\begin_layout Plain Layout
+
+\bar under
+Inputs
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\bm{A}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\bm{b}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\bm{x}^{\left(0\right)}$
+\end_inset
+
+ including boundary conditions.
+ No restriction on 
+\begin_inset Formula $\bm{x}^{\left(0\right)}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\epsilon$
+\end_inset
+
+, the tolerance or convergence criteria.
+ A suitable tolerance might be 
+\begin_inset Formula $\left\Vert \bm{r}^{\left(k\right)}\right\Vert <\epsilon$
+\end_inset
+
+ or 
+\begin_inset Formula $\left\Vert \bm{r}^{\left(k\right)}-\bm{r}^{\left(k-1\right)}\right\Vert <\epsilon$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+\bar under
+Restrictions
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\bm{A}$
+\end_inset
+
+ must be strictly diagonaly dominant, 
+\emph on
+i.e.
+\emph default
+, 
+\begin_inset Formula $\left|A_{i,i}\right|>\sum_{j=1,n;j\neq i}\left|A_{i,j}\right|$
+\end_inset
+
+ 
+\begin_inset Formula $\Rightarrow A_{i,i}\neq0$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\epsilon>0$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\bar under
+Algo
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\bm{D}\longleftarrow\mbox{diag}\left(\bm{A}\right)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\bm{R}\longleftarrow\bm{D}-\bm{A}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\bm{D}^{-1}\longleftarrow1/\bm{D}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+do while 
+\begin_inset Formula $\xi\geq\epsilon$
+\end_inset
+
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+\begin_inset Formula $\bm{x}_{\mathrm{old}}\longleftarrow\bm{x}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\bm{x}\longleftarrow\bm{D}^{-1}\bm{R}\bm{x}_{\mathrm{old}}+\bm{D}^{-1}\bm{b}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\begin_inset Formula $\bm{r}\longleftarrow\bm{A}\bm{x}-\bm{b}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\xi\longleftarrow\left\Vert \bm{r}\right\Vert $
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Jacobi's algorithm
+\begin_inset CommandInset label
+LatexCommand label
+name "alg:Jacobi's-algorithm"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-2"
+
+\end_inset
+
+http://fr.wikipedia.org/wiki/M%C3%A9thode_de_Jacobi
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-1"
+
+\end_inset
+
+http://mathworld.wolfram.com/JacobiMethod.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-3"
+
+\end_inset
+
+http://en.wikipedia.org/wiki/Jacobi_method
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-4"
+
+\end_inset
+
+http://sfb649.wiwi.hu-berlin.de/fedc_homepage/xplore/ebooks/html/csa/node38.html
+\end_layout
+
+\end_body
+\end_document

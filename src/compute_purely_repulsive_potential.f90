@@ -19,7 +19,7 @@ SUBROUTINE compute_purely_repulsive_potential
     REAL(dp):: x_m,y_m,z_m ! solvent sites coordinates
     REAL(dp):: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
     REAL(dp):: r_nm2 ! norm**2 of vector x_nm;y_nm;z_nm
-    REAL(dp):: dx,dy,dz,kbT,V_psi
+    REAL(dp):: dx,dy,dz,V_psi
     REAL(dp):: time0,time1
     REAL(dp), ALLOCATABLE :: xmod(:,:,:), ymod(:,:,:), zmod(:,:,:), Vrep(:,:,:,:,:)
     REAL(dp):: radius_of_purely_repulsive_solute, radius_of_purely_repulsive_solute2
@@ -68,10 +68,10 @@ SUBROUTINE compute_purely_repulsive_potential
                                     y_nm = y_m - solute%site(n)%r(2)
                                     z_nm = z_m - solute%site(n)%r(3)
                                     r_nm2 = x_nm**2+y_nm**2+z_nm**2
-                                    IF ( r_nm2 == 0._dp ) THEN!  <= radius_of_purely_repulsive_solute2 ) THEN
+                                    IF ( r_nm2   <= radius_of_purely_repulsive_solute2 ) THEN
                                         V_psi = Vmax
                                     ELSE
-                                        V_psi = V_psi + thermoCond%kbT/(r_nm2**6)!)-radius_of_purely_repulsive_solute)**12
+                                        V_psi = V_psi + thermoCond%kbT/(Sqrt(r_nm2)-radius_of_purely_repulsive_solute)**12
                                     END IF
                                     IF (V_psi >= Vmax) THEN
                                         V_psi = Vmax

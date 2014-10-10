@@ -188,7 +188,7 @@ END SUBROUTINE energy_ck_angular
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 
-SUBROUTINE energy_ck_en_harm_sph (Fexc_ck_angular)
+SUBROUTINE energy_ck_en_harm_sph! (Fexc_ck_angular)
 
     STOP 'For computing energy by expansion on spherical harmonics with Luc''s full projections, to be developed.'
 
@@ -196,7 +196,7 @@ END SUBROUTINE energy_ck_en_harm_sph
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 
-SUBROUTINE proj_en_harm_sph(delta_rho_k, delta_rho_proj)
+SUBROUTINE proj_en_harm_sph!(delta_rho_k, delta_rho_proj)
 
     STOP 'For calculating projections delta_rho_proj(k,m,mu,mu'') from delta_rho_k(k,omega), to be developed.'
 
@@ -204,7 +204,7 @@ END SUBROUTINE proj_en_harm_sph
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 
-SUBROUTINE rot_proj(proj, proj_loc)
+SUBROUTINE rot_proj!(proj, proj_loc)
 
     STOP 'For rotating projections to local coordinates or inverse, to be developed.'
 

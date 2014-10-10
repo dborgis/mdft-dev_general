@@ -16,23 +16,25 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     REAL(dp)                                    :: fk1,rmax1,fk2,rho_temp,psi
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Gxx,Gyy,Gzz,Gxy,Gxz,Gyz,Gx,Gy,Gz,G0    
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Fxx,Fyy,Fzz,Fxy,Fxz,Fyz,Fx,Fy,Fz,F0 
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Fnxx,Fnyy,Fnzz,Fnxy,Fnxz,Fnyz,Fnx,Fny,Fnz,Fn0 
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Axx,Ayy,Azz,Axy,Axz,Ayz,Ax,Ay,Az,A0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:)   :: DHxx,DHyy,DHzz,DHxy,DHxz,DHyz,DH0,DHx,DHy,DHz 
     REAL(dp), ALLOCATABLE, DIMENSION(:)         :: Hxx,Hyy,Hzz,Hxy,Hxz,Hyz,Hx,Hy,Hz,H0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: rho
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:)  :: rho_k
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:)  :: Axx_k,Ayy_k,Azz_k,Axy_k,Axz_k,Ayz_k,Ax_k,Ay_k,Az_k,A0_k
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:)  :: Fnxx_k,Fnyy_k,Fnzz_k,Fnxy_k,Fnxz_k,Fnyz_k,Fnx_k,Fny_k,Fnz_k,Fn0_k
     INTEGER(i2b)                                :: nmax1x,nmax1y,nmax1z,ix,iy,iz,nmax2x,nmax2y,nmax2z
     REAL(dp), PARAMETER                         :: costheta0 = -1.0_dp/3.0_dp
     COMPLEX(dp) ,ALLOCATABLE, DIMENSION(:,:,:)  :: Gxx_k,Gyy_k,Gzz_k,Gxy_k,Gxz_k,Gyz_k,Gx_k,Gy_k,Gz_k,G0_k , function_rho_0k
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FGxx,FGyy,FGzz,FGxy,FGxz,FGyz,FGx,FGy,FGz,FG0
-    REAL(dp)                                    :: lambda_w , F3B_ww, rmax_w !lambda parameter for water water interaction
+    REAL(dp)                                    :: lambda_w , F3B_ww, rmax_w, temp1 !lambda parameter for water water interaction
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
     
     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
     nb_solute_sites = SIZE(solute%site)
     deltaVk=(twopi)**3/PRODUCT(spaceGrid%length)
-    lambda_w=input_dp ('lambda_solvent')!5.0_dp
+    lambda_w=input_dp ('lambda_solvent')!/PRODUCT(spaceGrid%length)!5.0_dp
     ! check if user wants to use this part of the functional
 
     CALL CPU_TIME(time0)
@@ -70,7 +72,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
 
     fftw3%in_forward=solvent(1)%n0
     CALL dfftw_execute(fftw3%plan_forward)
-    function_rho_0k=fftw3%out_forward
+    ALLOCATE (function_rho_0k(nfft1/2+1,nfft2,nfft3)  ,SOURCE=fftw3%out_forward*deltaV)
 
 
     ALLOCATE(Axx(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
@@ -291,6 +293,56 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     END DO
 
 
+    fftw3%in_forward=FAxx*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Fnxx_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnxx , Axx_k , Fnxx_k )
+        
+    fftw3%in_forward=FAyy*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Fnyy_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnyy , Ayy_k , Fnyy_k )
+    
+    fftw3%in_forward=FAzz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Fnzz_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnzz , Azz_k , Fnzz_k )
+    
+    fftw3%in_forward=FAxy*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Fnxy_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnxy , Axy_k , Fnxy_k )
+    
+    fftw3%in_forward=FAxz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Fnxz_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnxz , Axz_k , Fnxz_k )
+    
+    fftw3%in_forward=FAyz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Fnyz_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnyz , Ayz_k , Fnyz_k )
+    
+    fftw3%in_forward=FAx*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE( Fnx_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnx  ,  Ax_k , Fnx_k  )
+    
+    fftw3%in_forward=FAy*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE( Fny_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fny  ,  Ay_k , Fny_k  )
+    
+    fftw3%in_forward=FAz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE( Fnz_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fnz  ,  Az_k , Fnz_k  )
+    
+    fftw3%in_forward=FA0*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE( Fn0_k(nfft1/2+1,nfft2,nfft3), SOURCE=fftw3%out_forward*deltaV)
+    CALL dothestuff( Fn0  ,  A0_k , Fn0_k  )
+
     ALLOCATE(Gxx(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
     ALLOCATE(Gyy(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
     ALLOCATE(Gzz(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
@@ -398,6 +450,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
 
     CALL compute_water_water_3body_term (F3B_ww)
 
+    temp1=norm2(dF)         
 BLOCK
     REAL(dp) :: opweight
     icg=0
@@ -421,15 +474,15 @@ BLOCK
                       solvent(1)%rho0*deltaV*(FGxx(i,j,k)+FGyy(i,j,k)+FGzz(i,j,k)+2.0_dp*FGxy(i,j,k)&
                      +2.0_dp*FGxz(i,j,k)+2.0_dp*FGyz(i,j,k)+2.0_dp*costheta0*(FGx(i,j,k)+FGy(i,j,k)+FGz(i,j,k))+&
                      costheta0**2*FG0(i,j,k))
-             
-              dF(icg)=dF(icg)+thermocond%kbT*deltaV*opweight*solvent(1)%rho0*lambda_w*psi*((FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
+              
+              dF(icg)=dF(icg)+thermocond%kbT*opweight*solvent(1)%rho0*lambda_w*psi*(deltaV*(FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
               FAzz(i,j,k)**2+2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2&
               +FAz(i,j,k)**2)+costheta0**2*FA0(i,j,k)**2)&
-                      +2.0_dp*(FAxx(i,j,k)*Axx(i,j,k)+FAyy(i,j,k)*Ayy(i,j,k)+FAzz(i,j,k)*Azz(i,j,k)+2.0_dp*FAxy(i,j,k)*Axy(i,j,k)+&
-                      2.0_dp*FAyz(i,j,k)*Ayz(i,j,k)+2.0_dp*FAxz(i,j,k)*Axz(i,j,k)&
-              -2.0_dp*costheta0*(FAx(i,j,k)*Ax(i,j,k)+FAy(i,j,k)*Ay(i,j,k)+FAz(i,j,k)*Az(i,j,k))+costheta0**2*FA0(i,j,k)*A0(i,j,k)))
-                      
-                    dF(icg)=dF(icg) +SUM(solute%site%lambda1*thermocond%kbT*psi*opweight*solvent(1)%rho0*2.0_dp*(&
+
+              +2.0*deltaV*(Fnxx(i,j,k)+Fnyy(i,j,k)+Fnzz(i,j,k)+2.0_dp*Fnxy(i,j,k)+2.0_dp*Fnyz(i,j,k)+2.0_dp*Fnxz(i,j,k)&
+              -2.0_dp*costheta0*(Fnx(i,j,k)+Fny(i,j,k)+Fnz(i,j,k))+costheta0**2*Fn0(i,j,k)))
+                    
+                        dF(icg)=dF(icg) +SUM(solute%site%lambda1*thermocond%kbT*psi*opweight*solvent(1)%rho0*2.0_dp*(&
                         (Hxx(:)*DHxx(i,j,k,:)+Hyy(:)*DHyy(i,j,k,:)+Hzz(:)*DHzz(i,j,k,:)&
                         +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
                         -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
@@ -448,8 +501,9 @@ BLOCK
     END DO
 END BLOCK
 
+   print*, 'dF3Bww=', norm2(df)-temp1                   
     FF = FF + F3B2 + F3B1 + F3B_ww
-
+    print*, F3B_ww
     CALL CPU_TIME (time1)
     
     IF (verbose) THEN
@@ -503,7 +557,7 @@ END BLOCK
         k=spaceGrid%n_nodes(3)
         ALLOCATE( A(i,j,k) ,SOURCE=0.0_dp )
         fftw3%in_backward=B*C
-        DEALLOCATE(B)
+ !       DEALLOCATE(B)
         DEALLOCATE(C)
         CALL dfftw_execute ( fftw3%plan_backward )
         A=fftw3%out_backward*deltaVk/(twopi)**3
@@ -538,20 +592,12 @@ END BLOCK
     PURE SUBROUTINE compute_water_water_3body_term (F3B_ww)
         REAL(dp), INTENT(OUT) :: F3B_ww
         IF (lambda_w/=0._dp) THEN
-            F3B_ww= 0.5_dp*thermocond%kbT*deltaV*lambda_w*SUM(rho*(FAxx**2+FAyy**2+FAzz**2+2._dp*(FAxy**2+FAxz**2+FAyz**2)&
-                -2._dp*costheta0*(FAx**2+FAy**2+FAz**2) +costheta0**2*FA0**2))
+            F3B_ww= 0.5_dp*thermocond%kbT*deltaV*lambda_w*SUM((rho-solvent(1)%n0)*(FAxx**2+FAyy**2+FAzz**2+&
+            2._dp*(FAxy**2+FAxz**2+FAyz**2)-2._dp*costheta0*(FAx**2+FAy**2+FAz**2) +costheta0**2*FA0**2))
         ELSE
             F3B_ww=0._dp
         END IF
     END SUBROUTINE compute_water_water_3body_term
 
 END SUBROUTINE energy_threebody_faster
-
-
-
-
-    
-    
-    
-    
 

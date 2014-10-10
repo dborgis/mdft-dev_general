@@ -19,7 +19,8 @@ MODULE hardspheres
     
     
     CONTAINS
-    
+
+!===================================================================================================================================    
     
         ! packing fraction : eta = 4/3 * pi * R^3 * solvent density of the constituant ( /= total solvent density)
         PURE REAL(dp) FUNCTION packfrac (n,R)
@@ -28,7 +29,7 @@ MODULE hardspheres
             packfrac = 4._dp/3._dp * ACOS(-1._dp) * R**3 * n
         END FUNCTION packfrac
 
-
+!===================================================================================================================================
 
 
 
@@ -77,15 +78,15 @@ MODULE hardspheres
                     kR = norm_k_local * hs(s)%R
                     sinkR = SIN(kR)
                     coskR = COS(kR)
-                    hs(s)%w_k(l,m,n,3) = CMPLX(FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 ) ,0._dp)
-                    hs(s)%w_k(l,m,n,2) = CMPLX(FourPiR * sinkR / norm_k_local ,0._dp)
-                    hs(s)%w_k(l,m,n,1) = CMPLX(( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local ) ,0._dp)
-                    hs(s)%w_k(l,m,n,0) = CMPLX(coskR + 0.5_dp * kR * sinkR ,0._dp)
+                    hs(s)%w_k(l,m,n,3) = CMPLX(FourPi * ( sinkR - kR * coskR ) / ( norm_k_local ** 3 ) ,0._dp, dp)
+                    hs(s)%w_k(l,m,n,2) = CMPLX(FourPiR * sinkR / norm_k_local ,0._dp, dp)
+                    hs(s)%w_k(l,m,n,1) = CMPLX(( sinkR + kR * coskR ) / ( 2.0_dp * norm_k_local ) ,0._dp, dp)
+                    hs(s)%w_k(l,m,n,0) = CMPLX(coskR + 0.5_dp * kR * sinkR ,0._dp, dp)
                 ELSE
-                    hs(s)%w_k(l,m,n,3) = CMPLX(FourPi / 3.0_dp * hs(s)%R** 3  ,0._dp)! volume
-                    hs(s)%w_k(l,m,n,2) = CMPLX(FourPi * hs(s)%R** 2  ,0._dp)! surface area
-                    hs(s)%w_k(l,m,n,1) = CMPLX(hs(s)%R  ,0._dp)! radius
-                    hs(s)%w_k(l,m,n,0) = CMPLX(1.0_dp  ,0._dp)! unity
+                    hs(s)%w_k(l,m,n,3) = CMPLX(FourPi / 3.0_dp * hs(s)%R** 3  ,0._dp, dp)! volume
+                    hs(s)%w_k(l,m,n,2) = CMPLX(FourPi * hs(s)%R** 2  ,0._dp, dp)! surface area
+                    hs(s)%w_k(l,m,n,1) = CMPLX(hs(s)%R  ,0._dp, dp)! radius
+                    hs(s)%w_k(l,m,n,0) = CMPLX(1.0_dp  ,0._dp, dp)! unity
                 END IF
             END DO
         END SUBROUTINE populate_weight_functions_in_Fourier_space

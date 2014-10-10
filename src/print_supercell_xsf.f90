@@ -8,9 +8,9 @@ SUBROUTINE print_supercell_xsf
     
     open(5,file='output/supercell.xsf')
         100 format (xA)
-        101 format (3(xF10.5))
-        102 format (xI5,xI1)
-        103 format (xI3,3(xxF10.5))
+        101 format (3(1xF10.5))
+        102 format (1xI5,1xI1)
+        103 format (1xI3,3(1xxF10.5))
         write(5,100)'# this is the specification file of the supercell'
         write(5,100)'# lines beginning with # are commented. There cannot be comment lines within the sections'
         write(5,100)'# XSF format specifications can be found on the XCrySDen website http://www.xcrysden.org/doc/XSF.html'

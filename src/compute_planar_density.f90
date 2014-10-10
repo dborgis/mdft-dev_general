@@ -5,13 +5,13 @@
 SUBROUTINE compute_planar_density(array,filename)
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: nb_solute_sites, spaceGrid, solute
+    USE system          ,ONLY: spaceGrid, solute
 
     IMPLICIT NONE
     
     CHARACTER(50), INTENT(IN)   :: filename
     REAL(dp), INTENT(IN)        :: array(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3))
-    INTEGER(i2b)                :: plandir,id,i,j,k
+    INTEGER(i2b)                :: plandir,ig,i,j,k
     REAL(dp)                    :: x_com(spaceGrid%n_nodes(1)), y_com(spaceGrid%n_nodes(2)), z_com(spaceGrid%n_nodes(3))
     
     INTEGER(i2b) :: nfft1, nfft2, nfft3
@@ -38,11 +38,11 @@ SUBROUTINE compute_planar_density(array,filename)
 
     ! Get its grid index called id
     IF (plandir==1) THEN
-        id= NINT(solute%site(1)%r(1)*REAL(nfft1,dp)/Lx) +1
+        ig= NINT(solute%site(1)%r(1)*REAL(nfft1,dp)/Lx) +1
     ELSE IF (plandir==2) then
-        id= NINT(solute%site(1)%r(2)*REAL(nfft2,dp)/Ly) +1
+        ig= NINT(solute%site(1)%r(2)*REAL(nfft2,dp)/Ly) +1
     ELSE IF (plandir==3) then
-        id= NINT(solute%site(1)%r(3)*REAL(nfft3,dp)/Lz) +1
+        ig= NINT(solute%site(1)%r(3)*REAL(nfft3,dp)/Lz) +1
     ELSE
         WRITE(*,*) 'I did not find the direction of the plane in compute_planar_density.f90'
     END IF
@@ -59,19 +59,19 @@ SUBROUTINE compute_planar_density(array,filename)
         CASE (1)
             DO j=1,nfft2
                 DO k=1,nfft3
-                    WRITE(10,100) y_com(j), z_com(k), array(id,j,k)
+                    WRITE(10,100) y_com(j), z_com(k), array(ig,j,k)
                 END DO
             END DO
         CASE (2)
             DO i=1,nfft1
                 DO k=1,nfft3
-                    WRITE(10,100)x_com(i),z_com(k),array(i,id,k)
+                    WRITE(10,100)x_com(i),z_com(k),array(i,ig,k)
                 END DO
             END DO
         CASE (3)
             DO i=1,nfft1
                 DO j=1,nfft2
-                    WRITE(10,100)x_com(i),y_com(j),array(i,j,id)
+                    WRITE(10,100)x_com(i),y_com(j),array(i,j,ig)
                 END DO
             END DO
         END SELECT

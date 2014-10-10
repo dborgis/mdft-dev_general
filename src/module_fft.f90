@@ -3,7 +3,7 @@ MODULE fft
 !===================================================================================================================================
 ! This module deals with everything related to the fast fourier transforms and all Fourier space related functions
 
-    USE precision_kinds ,ONLY : i4b, i2b, dp
+    USE precision_kinds ,ONLY : i2b, dp, i4b
 
     IMPLICIT NONE
 
@@ -16,7 +16,31 @@ MODULE fft
     REAL(dp), PRIVATE, PARAMETER :: twopi = 2._dp*ACOS(-1._dp)
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: kx, ky, kz ! projection of k
 
-CONTAINS
+    CONTAINS
+
+    !===============================================================================================================================
+    subroutine init_threads
+        use input, only: input_int
+        implicit none
+        integer :: n_threads, iRet
+        n_threads = input_int('number_of_fftw3_threads',1)
+        print*,"Number of threads for FFTW3:", n_threads
+        call dfftw_init_threads(iRet)
+            if (iRet/=1) then
+                print*, "Problem in dfftw_init_threads(), returned value is ",iRet
+                stop
+            end if
+        call dfftw_plan_with_nthreads (n_threads)
+    end subroutine
+    !===============================================================================================================================
+
+
+    !===============================================================================================================================
+    subroutine finalize_fftw
+        implicit none
+        call dfftw_cleanup_threads()
+    end subroutine finalize_fftw
+    !===============================================================================================================================
 
 
     !===============================================================================================================================
