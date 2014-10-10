@@ -17,6 +17,7 @@ MODULE system
     END TYPE sites
     
     TYPE :: solventType
+        real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         type (sites), allocatable :: site(:)
         real(dp), allocatable :: n(:,:,:)  ! number density
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water

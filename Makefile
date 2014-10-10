@@ -615,6 +615,7 @@ $(OBJDIR)/read_solute.o:\
 $(OBJDIR)/read_solvent.o:\
 	$(SRCDIR)/read_solvent.f90\
 	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o:\
