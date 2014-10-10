@@ -22,32 +22,26 @@ MDFT has been tested on various flavours of Linux and MacOSX.
 ```bash
 sudo apt-get install git
 ```
+- [gfortran version 4.7 or later](https://gcc.gnu.org/wiki/GFortran). The fortran compiler.
+```sh
+sudo apt-get install gfortran
+```
 - [the (multithread) FFTW3 library](http://www.fftw.org/). This library handles fast fourier transforms.
 ```sh
 sudo apt-get install fftw3 fftw3-dev
 ```
 #####For Mac users
 
-The mdft code request the fftw3 multithread library to be installed. There can be trouble to install the fftw3 multithread library on Mac OS. Here is a way to do it properly:
+The mdft code request the fftw3 multithread library to be installed. There can be trouble to install the FFTW3 multithread library on Mac OS. Here is a way to do it properly:
 
--Download fftw3 package from: http://www.fftw.org/download.html
-
--untar the downloaded file and go to the fftw-3.XX repository
-
--run the following commands
-
+- Download the FFTW3 sources from [here](http://www.fftw.org/download.html)
+- Untar the downloaded file and go to the generated fftw-3.XX folder
+- Compile it from sources:
 ```bash
 ./configure --enable-threads
 make
 sudo make install
 ```
-
-- [gfortran version 4.7 or later](https://gcc.gnu.org/wiki/GFortran). The fortran compiler.
-```sh
-sudo apt-get install gfortran
-```
-
-
 
 ### Installation process
 
