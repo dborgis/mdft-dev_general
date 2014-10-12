@@ -16,7 +16,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                              nfft2=>spaceGrid%n_nodes(2),&
                              nfft3=>spaceGrid%n_nodes(3)
     REAL(dp) :: facsym,rhon,fact,psi,Vint,Fint,deltaVk,F_pol_long,F_pol_trans,F_pol,F_pol_tot
-    real(dp), parameter :: mu_SPCE = 0.4238_dp*0.5773525_dp*2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
     REAL(dp), POINTER :: Lx => spaceGrid%length(1), Ly => spaceGrid%length(2), Lz => spaceGrid%length(3)
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n, Vpair
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: rho,dF_pol
@@ -244,7 +243,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                 dot_product( P_trans_k(:,i,j,k,s) , P_trans_k(:,i,j,k,s)  ) &
                 /chi_t(k_index)*0.5_dp*qfact*solvent(s)%rho0**2*facsym/(twopi**3)
 
-            F_pol_tot_k =F_pol_tot_k-(thermocond%kbT*3/(2*mu_SPCE**2*solvent(1)%n0)*deltaVk*facsym/(twopi**3)*solvent(s)%rho0**2*&
+            F_pol_tot_k =F_pol_tot_k-(thermocond%kbT*3/(2*norm2(solvent(s)%dipole)**2&
+                *solvent(1)%n0)*deltaVk*facsym/(twopi**3)*solvent(s)%rho0**2*&
                 dot_product( P_tot_k(:,i,j,k,s) , P_tot_k(:,i,j,k,s))  )
 
             DO CONCURRENT (o=1:angGrid%n_angles, p=1:molRotGrid%n_angles)
@@ -275,7 +275,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                         +rho_c_k_myway(i,j,k,s)/solvent(s)%rho0)
                 END IF
     
-                dF_pol_tot_k_tmp =-thermocond%kbT*3.0_dp*solvent(s)%rho0/(mu_SPCE**2*solvent(1)%n0)*molRotGrid%weight(p)*&
+                dF_pol_tot_k_tmp =-thermocond%kbT*3.0_dp*solvent(s)%rho0/(norm2(solvent(s)%dipole)**2&
+                    *solvent(1)%n0)*molRotGrid%weight(p)*&
                     dot_product(molec_polar_k_local , P_tot_k(:,i,j,k,s)) *angGrid%weight(o)
 
                 dF_pol_k(i,j,k,o,p,s) = dF_pol_trans_k_tmp + dF_pol_long_k_tmp + dF_pol_tot_k_tmp

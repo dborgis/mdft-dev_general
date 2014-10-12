@@ -13,7 +13,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     REAL(dp), INTENT(OUT) :: F_pol
     REAL(dp) :: F_pol_long, F_pol_trans , F_pol_tot  ! Longitudinal, transverse and total Polarization free energy
-    REAL(dp) :: mu_SPCE, facsym, deltaVkn, Lweight, kvec(3)
+    REAL(dp) :: facsym, deltaVkn, Lweight, kvec(3)
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: rho, dF_pol_tot
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:,:) :: rho_k, dF_pol_tot_k,  dF_pol_long_k,   dF_pol_trans_k
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:,:,:) :: P_trans_k, P_long_k, P_tot_k
@@ -38,7 +38,6 @@ SUBROUTINE energy_polarization_multi (F_pol)
     F_pol_long = 0.0_dp
     F_pol_trans = 0.0_dp
     F_pol_tot = 0.0_dp
-    mu_SPCE = 0.4238_dp * 0.5773525_dp * 2.0_dp !dipolar moment of SPCE water molecule in e.Angstromm
 !======================================================================================================
 !            ====================================================
 !                 	Compute density in real and 		        !
@@ -138,7 +137,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
         F_pol_trans = F_pol_trans +        toto * dot_product( P_trans_k_loc, P_trans_k_loc)  /chi_t(k_index)
         
         F_pol_tot = F_pol_tot &
-                   - thermocond%kbT*3/(2*mu_SPCE**2*solvent(1)%n0) *deltaVkn*facsym*solvent(s)%rho0**2&
+                   - thermocond%kbT*3/(2*norm2(solvent(s)%dipole)**2*solvent(1)%n0) *deltaVkn*facsym*solvent(s)%rho0**2&
                         * dot_product( P_tot_k_loc , P_tot_k_loc )
 
         DO CONCURRENT ( o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
@@ -163,7 +162,8 @@ SUBROUTINE energy_polarization_multi (F_pol)
                     sum(   P_trans_k_loc * (conjg(molec_polar_k_loc) - k_tens_k_P/k2(i,j,k))      )
             END IF
             
-            dF_pol_tot_k(i,j,k,o,p,s)=-thermocond%kbT*3._dp*solvent(s)%rho0/(2._dp*mu_SPCE**2*solvent(1)%n0)*Lweight*2.0_dp*&
+            dF_pol_tot_k(i,j,k,o,p,s)=-thermocond%kbT*3._dp*solvent(s)%rho0/(2._dp*norm2(solvent(s)%dipole)**2&
+                *solvent(1)%n0)*Lweight*2.0_dp*&
                 dot_product(   molec_polar_k_loc     ,     P_tot_k_loc   )
                 
         END DO
