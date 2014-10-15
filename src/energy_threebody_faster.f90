@@ -13,11 +13,11 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     REAL(dp), PARAMETER                         :: rmin1=1.5_dp, rsw1=2.0_dp, rmin2=2.25_dp, rsw2=2.5_dp, rmax2=5.0_dp, d_w=1.9_dp
     INTEGER(i2b)                                :: icg,i,j,k,o,p,n,i1,j1,k1,nfft1,nfft2,nfft3,nb_solute_sites
     REAL(dp)                                    :: rk2,xk2,yk2,zk2,r,x,y,z,deltaVk,rb,fw,deltaV,time0,time1,deltax,deltay,deltaz
-    REAL(dp)                                    :: fk1,rmax1,fk2,rho_temp,psi
+    REAL(dp)                                    :: fk1,rmax1,fk2,rho_temp,psi, opweight, kvec(3), r2
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Gxx,Gyy,Gzz,Gxy,Gxz,Gyz,Gx,Gy,Gz,G0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Fxx,Fyy,Fzz,Fxy,Fxz,Fyz,Fx,Fy,Fz,F0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Fnxx,Fnyy,Fnzz,Fnxy,Fnxz,Fnyz,Fnx,Fny,Fnz,Fn0
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: Axx,Ayy,Azz,Axy,Axz,Ayz,Ax,Ay,Az,A0
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: A0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:)   :: DHxx,DHyy,DHzz,DHxy,DHxz,DHyz,DH0,DHx,DHy,DHz
     REAL(dp), ALLOCATABLE, DIMENSION(:)         :: Hxx,Hyy,Hzz,Hxy,Hxz,Hyz,Hx,Hy,Hz,H0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)     :: rho
@@ -62,9 +62,6 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         END DO
       END DO
     END DO
-    !rho_temp=rho
-    !rho=0.0_dp
-
 
     fftw3%in_forward=rho
     CALL dfftw_execute(fftw3%plan_forward)
@@ -75,150 +72,15 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(function_rho_0k(nfft1/2+1,nfft2,nfft3)  ,SOURCE=fftw3%out_forward*deltaV)
 
 
-    ALLOCATE(Axx(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE(Ayy(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE(Azz(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE(Axy(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE(Axz(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE(Ayz(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE( Ax(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE( Ay(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE( Az(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
-    ALLOCATE( A0(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
+!A0's definition. All Axx and Ax will be defined from A0.
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, norm2([kproj(1,i),kproj(2,j),kproj(3,k)])>epsilon(1._dp))
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        r = norm2(kvec)
+        A0 (i,j,k) = f_ww(r,rmin2,rsw2,rmax2)
+    end do
 
-
-!!!!!!!
-
-    BLOCK
-        REAL(dp) :: dl(3),x,y,z,r,r2
-        INTEGER(i2B) :: i,j,k
-        dl = spaceGrid%length * spaceGrid%dl / twopi
-        DO CONCURRENT (i=1:nfft1, j=1:nfft2, k=1:nfft3)
-            x = kproj(1,i) * dl(1)
-            y = kproj(2,j) * dl(2)
-            z = kproj(3,k) * dl(3)
-            r = SQRT(x**2+y**2+z**2)
-            IF (r/=0.0_dp) THEN
-                fw = f_ww(r,rmin2,rsw2,rmax2)
-                r2 = r**2
-                A0 (i,j,k) = fw
-                Axx(i,j,k) = fw*x*x/r2
-                Ayy(i,j,k) = fw*y*y/r2
-                Azz(i,j,k) = fw*z*z/r2
-                Axy(i,j,k) = fw*x*y/r2
-                Axz(i,j,k) = fw*x*z/r2
-                Ayz(i,j,k) = fw*z*y/r2
-                Ax (i,j,k) = fw*x/r
-                Ay (i,j,k) = fw*y/r
-                Az (i,j,k) = fw*z/r
-           !ELSE zero in all tables, i.e., they keep their initial value
-            END IF
-        END DO
-    END BLOCK
-
-!!!!!!!
-
-    fftw3%in_forward=Axx
-    DEALLOCATE(Axx)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Axx_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Axx_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(Fxx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Axx_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAxx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Ayy
-    DEALLOCATE(Ayy)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Ayy_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Ayy_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(Fyy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Ayy_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAyy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Azz
-    CALL dfftw_execute(fftw3%plan_forward)
-    DEALLOCATE(Azz)
-    ALLOCATE(Azz_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Azz_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(Fzz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Azz_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAzz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Axy
-    DEALLOCATE(Axy)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Axy_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Axy_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(Fxy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Axy_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAxy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Axz
-    DEALLOCATE(Axz)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Axz_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Axz_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(Fxz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Axz_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAxz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Ayz
-    DEALLOCATE(Ayz)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Ayz_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Ayz_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(Fyz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Ayz_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAyz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Ax
-    DEALLOCATE(Ax)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Ax_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Ax_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE( Fx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Ax_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Ay
-    DEALLOCATE(Ay)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Ay_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Ay_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE( Fy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Ay_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
-    fftw3%in_forward=Az
-    DEALLOCATE(Az)
-    CALL dfftw_execute(fftw3%plan_forward)
-    ALLOCATE(Az_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
-    fftw3%in_backward=Az_k*rho_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE( Fz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-    fftw3%in_backward=(rho_k-function_rho_0k)*Az_k
-    CALL dfftw_execute(fftw3%plan_backward)
-    ALLOCATE(FAz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
-
+!A0
     fftw3%in_forward=A0
-    DEALLOCATE(A0)
     CALL dfftw_execute(fftw3%plan_forward)
     ALLOCATE(A0_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
     fftw3%in_backward=A0_k*rho_k
@@ -228,7 +90,134 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     CALL dfftw_execute(fftw3%plan_backward)
     ALLOCATE(FA0(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
+!Ax
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(1) / norm2(kvec)
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Ax_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Ax_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE( Fx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Ax_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
+!Ay
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(2) / norm2(kvec)
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Ay_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Ay_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE( Fy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Ay_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Az
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(3) / norm2(kvec)
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Az_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Az_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE( Fz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Az_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Axx
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(1) * kvec(1) / norm2(kvec)**2
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Axx_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Axx_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(Fxx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Axx_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAxx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Ayy
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(2) * kvec(2) / norm2(kvec)**2
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Ayy_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Ayy_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(Fyy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Ayy_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAyy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Azz
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(3) * kvec(3) / norm2(kvec)**2
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Azz_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Azz_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(Fzz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Azz_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAzz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Axy
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(1) * kvec(2) / norm2(kvec)**2
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Axy_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Axy_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(Fxy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Axy_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAxy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Axz
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(1) * kvec(3) / norm2(kvec)**2
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Axz_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Axz_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(Fxz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Axz_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAxz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Ayz
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+        kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+        fftw3%in_forward (i,j,:) = A0(i,j,:) * kvec(2) * kvec(3) / norm2(kvec)**2
+    end do
+    CALL dfftw_execute(fftw3%plan_forward)
+    ALLOCATE(Ayz_k(nfft1/2+1, nfft2, nfft3),  source=fftw3%out_forward*deltaV)
+    fftw3%in_backward=Ayz_k*rho_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(Fyz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+    fftw3%in_backward=(rho_k-function_rho_0k)*Ayz_k
+    CALL dfftw_execute(fftw3%plan_backward)
+    ALLOCATE(FAyz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
+
+!Homage to you, A0!
+    DEALLOCATE(A0)
 
 !!!!!!!!!
 
@@ -279,69 +268,6 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         END DO
     END DO
 
-    ALLOCATE ( Hxx (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hyy (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hzz (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hxy (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hxz (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hyz (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hx  (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hy  (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( Hz  (nb_solute_sites) ,SOURCE=0._dp)
-    ALLOCATE ( H0  (nb_solute_sites) ,SOURCE=0._dp) ! USE ARRAY CONSTRUCTOR INSTEAD
-    DO CONCURRENT (n=1:nb_solute_sites)
-        Hxx(n)= SUM(  DHxx(:,:,:,n)*rho )
-        Hyy(n)= SUM(  DHyy(:,:,:,n)*rho )
-        Hzz(n)= SUM(  DHzz(:,:,:,n)*rho )
-        Hxy(n)= SUM(  DHxy(:,:,:,n)*rho )
-        Hxz(n)= SUM(  DHxz(:,:,:,n)*rho )
-        Hyz(n)= SUM(  DHyz(:,:,:,n)*rho )
-        Hx(n) = SUM(  DHx(:,:,:,n) *rho )
-        Hy(n) = SUM(  DHy(:,:,:,n) *rho )
-        Hz(n) = SUM(  DHz(:,:,:,n) *rho )
-        H0(n) = SUM(  DH0(:,:,:,n) *rho )
-    END DO
-
-
-    fftw3%in_forward=FAxx*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnxx , Axx_k , fftw3%out_forward*deltaV )
-
-    fftw3%in_forward=FAyy*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnyy , Ayy_k , fftw3%out_forward*deltaV )
-
-    fftw3%in_forward=FAzz*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnzz , Azz_k , fftw3%out_forward*deltaV )
-
-    fftw3%in_forward=FAxy*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnxy , Axy_k , fftw3%out_forward*deltaV )
-
-    fftw3%in_forward=FAxz*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnxz , Axz_k , fftw3%out_forward*deltaV )
-
-    fftw3%in_forward=FAyz*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnyz , Ayz_k , fftw3%out_forward*deltaV )
-
-    fftw3%in_forward=FAx*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnx  ,  Ax_k , fftw3%out_forward*deltaV  )
-
-    fftw3%in_forward=FAy*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fny  ,  Ay_k , fftw3%out_forward*deltaV  )
-
-    fftw3%in_forward=FAz*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fnz  ,  Az_k , fftw3%out_forward*deltaV  )
-
-    fftw3%in_forward=FA0*(rho-solvent(1)%n0)
-    CALL dfftw_execute(fftw3%plan_forward)
-    CALL dothestuff( Fn0  ,  A0_k , fftw3%out_forward*deltaV  )
 
     ALLOCATE(Gxx(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
     ALLOCATE(Gyy(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
@@ -387,58 +313,109 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         END DO
     END DO
 
-
+    fftw3%in_forward=FAxx*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnxx , Axx_k , fftw3%out_forward*deltaV )
     fftw3%in_forward=Gxx*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGxx , Axx_k , fftw3%out_forward*deltaV )
     DEALLOCATE(Axx_k)
 
+    fftw3%in_forward=FAyy*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnyy , Ayy_k , fftw3%out_forward*deltaV )
     fftw3%in_forward=Gyy*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGyy , Ayy_k , fftw3%out_forward*deltaV )
     DEALLOCATE(Ayy_k)
 
+    fftw3%in_forward=FAzz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnzz , Azz_k , fftw3%out_forward*deltaV )
     fftw3%in_forward=Gzz*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGzz , Azz_k , fftw3%out_forward*deltaV )
     DEALLOCATE(Azz_k)
 
+    fftw3%in_forward=FAxy*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnxy , Axy_k , fftw3%out_forward*deltaV )
     fftw3%in_forward=Gxy*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGxy , Axy_k , fftw3%out_forward*deltaV )
     DEALLOCATE(Axy_k)
 
+    fftw3%in_forward=FAxz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnxz , Axz_k , fftw3%out_forward*deltaV )
     fftw3%in_forward=Gxz*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGxz , Axz_k , fftw3%out_forward*deltaV )
     DEALLOCATE(Axz_k)
 
+    fftw3%in_forward=FAyz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnyz , Ayz_k , fftw3%out_forward*deltaV )
     fftw3%in_forward=Gyz*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGyz , Ayz_k , fftw3%out_forward*deltaV )
     DEALLOCATE(Ayz_k)
 
+    fftw3%in_forward=FAx*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnx  ,  Ax_k , fftw3%out_forward*deltaV  )
     fftw3%in_forward=Gx*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGx  ,  Ax_k , fftw3%out_forward*deltaV  )
     DEALLOCATE(Ax_k)
 
+    fftw3%in_forward=FAy*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fny  ,  Ay_k , fftw3%out_forward*deltaV  )
     fftw3%in_forward=Gy*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGy  ,  Ay_k , fftw3%out_forward*deltaV  )
     DEALLOCATE(Ay_k)
 
-
+    fftw3%in_forward=FAz*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fnz  ,  Az_k , fftw3%out_forward*deltaV  )
     fftw3%in_forward=Gz*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FGz  ,  Az_k , fftw3%out_forward*deltaV  )
     DEALLOCATE(Az_k)
 
+    fftw3%in_forward=FA0*(rho-solvent(1)%n0)
+    CALL dfftw_execute(fftw3%plan_forward)
+    CALL dothestuff( Fn0  ,  A0_k , fftw3%out_forward*deltaV  )
     fftw3%in_forward=G0*rho
     CALL dfftw_execute(fftw3%plan_forward)
     CALL dothestuff( FG0  ,  A0_k , fftw3%out_forward*deltaV  )
     DEALLOCATE(A0_k)
 
+
+    ALLOCATE ( Hxx (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hyy (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hzz (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hxy (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hxz (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hyz (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hx  (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hy  (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( Hz  (nb_solute_sites) ,SOURCE=0._dp)
+    ALLOCATE ( H0  (nb_solute_sites) ,SOURCE=0._dp) ! USE ARRAY CONSTRUCTOR INSTEAD
+    DO CONCURRENT (n=1:nb_solute_sites)
+        Hxx(n)= SUM(  DHxx(:,:,:,n)*rho )
+        Hyy(n)= SUM(  DHyy(:,:,:,n)*rho )
+        Hzz(n)= SUM(  DHzz(:,:,:,n)*rho )
+        Hxy(n)= SUM(  DHxy(:,:,:,n)*rho )
+        Hxz(n)= SUM(  DHxz(:,:,:,n)*rho )
+        Hyz(n)= SUM(  DHyz(:,:,:,n)*rho )
+        Hx(n) = SUM(  DHx(:,:,:,n) *rho )
+        Hy(n) = SUM(  DHy(:,:,:,n) *rho )
+        Hz(n) = SUM(  DHz(:,:,:,n) *rho )
+        H0(n) = SUM(  DH0(:,:,:,n) *rho )
+    END DO
 
     F3B1 = thermocond%kbT/2._dp* SUM (solute%site%lambda1*( Hxx**2+Hyy**2+Hzz**2 +2.0_dp*Hxy**2+2.0_dp*Hxz**2+2.0_dp*Hyz**2&
                                           -2.0_dp*costheta0*(Hx**2+Hy**2+Hz**2)+costheta0**2*H0**2   ))
@@ -452,8 +429,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     CALL compute_water_water_3body_term (F3B_ww)
 
     temp1=norm2(dF)
-BLOCK
-    REAL(dp) :: opweight
+
     icg=0
     DO i=1,nfft1
         DO j=1, nfft2
@@ -467,16 +443,16 @@ BLOCK
                         psi=cg_vect(icg)
 
                         dF(icg)=dF(icg)+thermocond%kbT*psi*deltaV*opweight*solvent(1)%rho0*(&
-                      (Fxx(i,j,k)*Gxx(i,j,k)+Fyy(i,j,k)*Gyy(i,j,k)+Fzz(i,j,k)*Gzz(i,j,k)&
-                      +2.0_dp*Fxy(i,j,k)*Gxy(i,j,k)+ 2.0_dp*Fxz(i,j,k)*Gxz(i,j,k)+ 2.0_dp*Fyz(i,j,k)*Gyz(i,j,k))&
-                      -2.0_dp*costheta0*(Fx(i,j,k)*Gx(i,j,k)+Fy(i,j,k)*Gy(i,j,k)+Fz(i,j,k)*Gz(i,j,k))&
-                      +costheta0**2*F0(i,j,k)*G0(i,j,k))+&
-                      thermocond%kbT*psi*opweight*&
-                      solvent(1)%rho0*deltaV*(FGxx(i,j,k)+FGyy(i,j,k)+FGzz(i,j,k)+2.0_dp*FGxy(i,j,k)&
-                     +2.0_dp*FGxz(i,j,k)+2.0_dp*FGyz(i,j,k)+2.0_dp*costheta0*(FGx(i,j,k)+FGy(i,j,k)+FGz(i,j,k))+&
-                     costheta0**2*FG0(i,j,k))
+                            (Fxx(i,j,k)*Gxx(i,j,k)+Fyy(i,j,k)*Gyy(i,j,k)+Fzz(i,j,k)*Gzz(i,j,k)&
+                            +2.0_dp*Fxy(i,j,k)*Gxy(i,j,k)+ 2.0_dp*Fxz(i,j,k)*Gxz(i,j,k)+ 2.0_dp*Fyz(i,j,k)*Gyz(i,j,k))&
+                            -2.0_dp*costheta0*(Fx(i,j,k)*Gx(i,j,k)+Fy(i,j,k)*Gy(i,j,k)+Fz(i,j,k)*Gz(i,j,k))&
+                            +costheta0**2*F0(i,j,k)*G0(i,j,k))+&
+                            thermocond%kbT*psi*opweight*&
+                            solvent(1)%rho0*deltaV*(FGxx(i,j,k)+FGyy(i,j,k)+FGzz(i,j,k)+2.0_dp*FGxy(i,j,k)&
+                            +2.0_dp*FGxz(i,j,k)+2.0_dp*FGyz(i,j,k)+2.0_dp*costheta0*(FGx(i,j,k)+FGy(i,j,k)+FGz(i,j,k))+&
+                            costheta0**2*FG0(i,j,k))
 
-              dF(icg)=dF(icg)+thermocond%kbT*opweight*solvent(1)%rho0*lambda_w*psi*(deltaV*(FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
+                    dF(icg)=dF(icg)+thermocond%kbT*opweight*solvent(1)%rho0*lambda_w*psi*(deltaV*(FAxx(i,j,k)**2+FAyy(i,j,k)**2+&
               FAzz(i,j,k)**2+2.0_dp*(FAxy(i,j,k)**2+FAxz(i,j,k)**2+FAyz(i,j,k)**2)-2.0_dp*costheta0*(FAx(i,j,k)**2+FAy(i,j,k)**2&
               +FAz(i,j,k)**2)+costheta0**2*FA0(i,j,k)**2)&
 
@@ -484,10 +460,11 @@ BLOCK
               -2.0_dp*costheta0*(Fnx(i,j,k)+Fny(i,j,k)+Fnz(i,j,k))+costheta0**2*Fn0(i,j,k)))
 
                         dF(icg)=dF(icg) +SUM(solute%site%lambda1*thermocond%kbT*psi*opweight*solvent(1)%rho0*2.0_dp*(&
-                        (Hxx(:)*DHxx(i,j,k,:)+Hyy(:)*DHyy(i,j,k,:)+Hzz(:)*DHzz(i,j,k,:)&
-                        +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
-                        -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
-                        +costheta0**2*H0(:)*DH0(i,j,k,:)))
+                            (Hxx(:)*DHxx(i,j,k,:)+Hyy(:)*DHyy(i,j,k,:)+Hzz(:)*DHzz(i,j,k,:)&
+                            +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
+                            -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
+                            +costheta0**2*H0(:)*DH0(i,j,k,:)))
+                            
 !~                         DO n=1,nb_solute_sites
 !~                             dF(icg)=dF(icg)+solute%site(n)%lambda1*thermocond%kbT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
 !~                                 Hzz(n)*DHzz(i,j,k,n)&
@@ -500,9 +477,8 @@ BLOCK
             END DO
         END DO
     END DO
-END BLOCK
 
-   print*, 'dF3Bww=', norm2(df)-temp1
+    print*, 'dF3Bww=', norm2(df)-temp1
     FF = FF + F3B2 + F3B1 + F3B_ww
     print*, F3B_ww
     CALL CPU_TIME (time1)
@@ -540,16 +516,11 @@ END BLOCK
 
     SUBROUTINE dothestuff (A,B,C)
         USE system  ,ONLY:  spaceGrid
-        INTEGER(i2b)    ::  i,j,k
         REAL(dp), ALLOCATABLE, INTENT(INOUT)    :: A(:,:,:)
         COMPLEX(dp), Dimension(nfft1/2+1,nfft2,nfft3), INTENT(IN):: B(:,:,:), C(:,:,:)
-        i=spaceGrid%n_nodes(1)
-        j=spaceGrid%n_nodes(2)
-        k=spaceGrid%n_nodes(3)
-        ALLOCATE( A(i,j,k) ,SOURCE=0.0_dp )
         fftw3%in_backward=B*C
         CALL dfftw_execute ( fftw3%plan_backward )
-        A=fftw3%out_backward*deltaVk/(twopi)**3
+        ALLOCATE( A(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ,SOURCE=fftw3%out_backward*deltaVk/(twopi)**3 )
     END SUBROUTINE
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
