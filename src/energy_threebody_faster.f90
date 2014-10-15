@@ -233,7 +233,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE ( DHz  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
     ALLOCATE ( DH0  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
 
-    DO CONCURRENT (n=1:nb_solute_sites, solute%site(n)%lambda1/=0._dp)
+    DO CONCURRENT (n=1:nb_solute_sites, abs(solute%site(n)%lambda1)>epsilon(1._dp))
 
         rmax1=0.5_dp*(solute%site(n)%sig + solvent(1)%site(1)%sig) + d_w
         nmax1x = int(rmax1/deltax)
@@ -282,7 +282,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE( G0(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
 
 
-    DO CONCURRENT ( n=1:nb_solute_sites , solute%site(n)%lambda2/=0._dp )
+    DO CONCURRENT ( n=1:nb_solute_sites , abs(solute%site(n)%lambda2)>epsilon(1.0_dp))
         nmax2x = int(rmax1/deltax)
         nmax2y = int(rmax1/deltay)
         nmax2z = int(rmax1/deltaz)
