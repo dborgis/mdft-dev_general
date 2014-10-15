@@ -74,7 +74,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     
 !A0's definition. All Axx and Ax will be defined from A0.
     allocate ( A0 (nfft1,nfft2,nfft3) ,source=0._dp)
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, norm2([kproj(1,i),kproj(2,j),kproj(3,k)])>epsilon(1._dp))
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         r = norm2(kvec)
         A0 (i,j,k) = f_ww(r,rmin2,rsw2,rmax2)
@@ -92,7 +92,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FA0(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Ax
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) / norm2(kvec)
     end do
@@ -106,7 +106,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Ay
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(2) / norm2(kvec)
     end do
@@ -120,7 +120,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Az
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(3) / norm2(kvec)
     end do
@@ -134,7 +134,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Axx
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) * kvec(1) / norm2(kvec)**2
     end do
@@ -148,7 +148,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAxx(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Ayy
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(2) * kvec(2) / norm2(kvec)**2
     end do
@@ -162,7 +162,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAyy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Azz
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(3) * kvec(3) / norm2(kvec)**2
     end do
@@ -176,7 +176,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAzz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Axy
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) * kvec(2) / norm2(kvec)**2
     end do
@@ -190,7 +190,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAxy(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Axz
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) * kvec(3) / norm2(kvec)**2
     end do
@@ -204,7 +204,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     ALLOCATE(FAxz(nfft1,nfft2,nfft3), SOURCE=fftw3%out_backward*deltaVk/(twopi)**3)
 
 !Ayz
-    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3)
+    do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(2) * kvec(3) / norm2(kvec)**2
     end do
