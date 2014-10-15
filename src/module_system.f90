@@ -18,6 +18,7 @@ MODULE system
     
     TYPE :: solventType
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
+        real(dp) :: diameter ! hard sphere diameter, for instance
         type (sites), allocatable :: site(:)
         real(dp), allocatable :: n(:,:,:)  ! number density
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
@@ -26,7 +27,7 @@ MODULE system
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
         real(dp), allocatable :: Drho(:,:,:,:,:) ! Drho = rho - rho0
         complex(dp), allocatable :: sigma_k(:,:,:,:,:) ! charge factor
-        complex(dp), allocatable, dimension(:,:,:,:,:,:) :: molec_polar_k ! molecule polarization factor
+        complex(dp), allocatable :: molec_polar_k(:,:,:,:,:,:) ! molecule polarization factor
     END TYPE
     TYPE (solventType), ALLOCATABLE :: solvent(:)
     TYPE (solventType) :: solute
