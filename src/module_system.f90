@@ -19,7 +19,7 @@ MODULE system
     type :: vextType
         real(dp) :: tot
         real(dp) :: lj
-        real(dp) :: q
+        real(dp) :: q, qold
         real(dp) :: h
     end type vextType
     

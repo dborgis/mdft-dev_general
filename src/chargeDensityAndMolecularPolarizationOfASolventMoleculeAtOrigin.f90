@@ -1,4 +1,4 @@
-!This routine compute : -The solvent molecular charge density, which can be used into Vcoul_from_solvent_charge_density.f90 to 
+!This routine compute : -The solvent molecular charge density, which can be used into Vcoul_from_solvent_charge_density.f90 to
 !evaluate the electrostatic potential.
 !                       -The solvent molecular polarization (from Ranieriet al : J. Chem. Phys. 98 (11) 1993) that can be used
 !into energy_polarization_..._.f90 to compute the (multipolar) polarization Free energy.
@@ -12,7 +12,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     USE fft                 ,ONLY: kx, ky, kz, k2
 
     IMPLICIT NONE
-    
+
     REAL(dp), DIMENSION(angGrid%n_angles,molRotGrid%n_angles), INTENT(IN) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
     integer, pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
     INTEGER(i2b) :: i, j, k, o, p, n, s
@@ -23,12 +23,13 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     !            !    	Initialization				!
     !            !							!
     !            ====================================================
-    Rc=0.5_dp
+    Rc=0.0_dp
+    PRINT*,"WARNING YOU CHANGED SIGMA_K RADIUS FROM 0.5 TO 0"
     IF (Rc/=0.0_dp) THEN
         PRINT*,'WARNING: you convolute the solvent molecular charge density and the solvent molecular polarization &
                 &with a Gaussian of radius 0.5. Angstroms in chargeDensity...'
     END IF
-    
+
     do concurrent( s=1:size(solvent) )
         allocate( solvent(s)%sigma_k(nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles), SOURCE=zeroC)
         allocate( solvent(s)%molec_polar_k(3,nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles), SOURCE=zeroC)
@@ -40,10 +41,10 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     !            ====================================================
 
     do concurrent ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:size(solvent) )
-    
+
         kvec = [ kx(i), ky(j), kz(k) ]
         prefactor =  exp(-Rc**2*k2(i,j,k)/2)
-    
+
         do concurrent ( o=1:angGrid%n_angles, p=1:molRotGrid%n_angles, &
                         n=1:SIZE(solvent(s)%site), (abs(solvent(s)%site(n)%q)>=epsilon(1.0_dp)) )
 
@@ -68,7 +69,7 @@ SUBROUTINE chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     CALL normalizeMolecularDensity
 
     CONTAINS
-        
+
         SUBROUTINE normalizeMolecularDensity
             REAL(dp)          :: angle_number
             INTEGER(i2b)      :: i,j,k,s,d

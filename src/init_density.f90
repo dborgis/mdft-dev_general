@@ -2,28 +2,25 @@
 ! it should be initiated to exp(-beta*Vext_total) but
 ! Vext_q is the electrostatic part of Vext_total, and is pathologic (it sometimes diverges)
 ! we thus init the density not using vext, but Vext_total - Vext_q
-SUBROUTINE init_density
-USE precision_kinds,only : dp , i2b
-use system,only : thermocond, nb_species, spaceGrid
-use quadrature, only: angGrid, molRotGrid
-USE minimizer, ONLY: cg_vect, nbd, ll, uu
-use external_potential,only : Vext_total , Vext_q
-use input,only : input_log
-USE mathematica ,ONLY: chop
+subroutine init_density
+  use precision_kinds,only : dp , i2b
+  use system,only : thermocond, nb_species, spaceGrid
+  use quadrature, only: angGrid, molRotGrid
+  use minimizer, ONLY: cg_vect, nbd, ll, uu
+  use external_potential,only : Vext_total , Vext_q
+  use input,only : input_log
+  use mathematica ,ONLY: chop
 
-IMPLICIT NONE
-real(dp):: local_density0 !> @var local_density0 is the density at a space and angular grid point
-integer(i2b):: i , j , k , o , p , icg ! dummy
-real(dp):: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
-integer(i2b):: species, ios
-LOGICAL :: exists
-INTEGER(i2b) :: nfft1, nfft2, nfft3
-nfft1= spaceGrid%n_nodes(1)
-nfft2= spaceGrid%n_nodes(2)
-nfft3= spaceGrid%n_nodes(3)
+  implicit none
+  real(dp) :: local_density0 !> @var local_density0 is the density at a space and angular grid point
+  integer(i2b) :: i , j , k , o , p , icg ! dummy
+  real(dp) :: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
+  integer(i2b) :: species, ios
+  logical :: exists
+  integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
 
-
-IF (input_log('reuse_density')) THEN
+  ! Read the density from a previous run
+  if (input_log('reuse_density')) then
     INQUIRE (file='input/density.bin.in', EXIST=exists)
         IF ( .NOT. exists) STOP "input/density.bin.in not found"
     OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
@@ -43,7 +40,7 @@ IF (input_log('reuse_density')) THEN
         WRITE ( 10 ) cg_vect
     CLOSE (10)
     RETURN
-END IF
+  end if
 
 
 ! We minimize with respect to sqrt(density) and not directly with respect to the density.

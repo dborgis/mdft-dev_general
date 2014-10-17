@@ -21,8 +21,8 @@ SUBROUTINE init_simu
     CALL init_dcf
     IF (input_log('hard_sphere_fluid')) CALL compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
     CALL prepare_minimizer ! Prepare minimization ! allocate tables and computes precision and so on
-    CALL init_external_potential
     CALL init_solvent_polarization
+    CALL init_external_potential
     CALL init_density
 
 END SUBROUTINE init_simu
