@@ -3,6 +3,7 @@ module fastPoissonSolver
   use precision_kinds     ,only: dp, i2b
   use system              ,only: spaceGrid, solute, solvent
   use external_potential  ,only: vext_q
+  use input               ,only: input_log
   implicit none
   integer(i2b), PRIVATE :: i
   character(180), PRIVATE :: j
@@ -48,6 +49,21 @@ subroutine init
   do concurrent (s=1:size(solvent))
     solvent(s)%vext%qold = vext_q(:,:,:,:,:,s)
   end do
+
+  if (input_log('better_poisson_solver')) then
+    print*,"BETTER POISSON SOLVER [ON]"
+    do s = 1, size(solvent)
+      vext_q(:,:,:,:,:,s) = solvent(s)%vext%q
+    end do
+  else
+    print*,"BETTER POISSON SOLVER [OFF]"
+  end if
+!
+! where ( vext_q > 100._dp )
+!   vext_q = 100._dp
+! else where ( vext_q < -50._dp )
+!   vext_q = -50_dp
+! end where
 
   ! print*, "maxval is", maxval( abs(solvent(1)%vext(:,:,:,:,:)%q) - abs(solvent(1)%vext(:,:,:,:,:)%qold) )
   ! print*, solvent(1)%vext(12,12,12,1,1)%q,solvent(1)%vext(12,12,12,1,1)%qold
