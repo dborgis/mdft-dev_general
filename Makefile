@@ -155,6 +155,7 @@ $(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o:\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_constants.o\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/compute_hard_spheres_parameters.o:\
