@@ -1,10 +1,13 @@
 module fastPoissonSolver
 ! This module contains everything related to the fast poisson solver(s) of MDFT.
+
   use precision_kinds     ,only: dp, i2b
   use system              ,only: spaceGrid, solute, solvent
   use external_potential  ,only: vext_q
   use input               ,only: input_log
+
   implicit none
+
   integer(i2b), PRIVATE :: i
   character(180), PRIVATE :: j
   real(dp), allocatable, dimension(:,:,:), private :: soluteChargeDensity, Vpoisson ! TODO THIS ON FINE GRID
@@ -46,40 +49,26 @@ subroutine init
   call poissonSolver (poissonSolverGrid%n, poissonSolverGrid%len, soluteChargeDensity, Vpoisson)
   call vext_q_from_v_c (poissonSolverGrid%n, poissonSolverGrid%len, Vpoisson) ! defines Vext_q(i,j,k,o,p) that we used in the past for Poisson solver
 
-  do concurrent (s=1:size(solvent))
-    solvent(s)%vext%qold = vext_q(:,:,:,:,:,s)
-  end do
+! at this point, one has Vext_q (old fashioned construction of Poisson potential and extrapolation to solvent sites outside grid nodes)
+! and of solvent(s)%vext(i,j,k,o,p)%q, the new construction with multipole expansion of the solvent molecular charge density.
 
+  ! Since vext_q is used later in the code, if one wants the newer construction, move solvent%vext%q to vext_q
   if (input_log('better_poisson_solver')) then
     print*,"BETTER POISSON SOLVER [ON]"
-    do s = 1, size(solvent)
+    do concurrent (s = 1:size(solvent))
       vext_q(:,:,:,:,:,s) = solvent(s)%vext%q
     end do
-  else
+  else ! this should be removed soon once we're used to this new construction
     print*,"BETTER POISSON SOLVER [OFF]"
   end if
-!
+
+! cutoff seems useless right now with the new construction
 ! where ( vext_q > 100._dp )
 !   vext_q = 100._dp
 ! else where ( vext_q < -50._dp )
 !   vext_q = -50_dp
 ! end where
 
-  ! print*, "maxval is", maxval( abs(solvent(1)%vext(:,:,:,:,:)%q) - abs(solvent(1)%vext(:,:,:,:,:)%qold) )
-  ! print*, solvent(1)%vext(12,12,12,1,1)%q,solvent(1)%vext(12,12,12,1,1)%qold
-  ! ! print*, "norm2(vext_q_new) vs norm2(vext_q_old) =",norm2(solvent(1)%vext%q), norm2(solvent(1)%vext%qold)
-  ! !
-  ! ! open(77,file="vq.dat")
-  ! ! open(78,file="vqold.dat")
-  ! ! do i=1,size(solvent(1)%vext%q,1)
-  ! !   write(77,*) i, solvent(1)%vext(i,i,i,1,1)%q
-  ! !   write(78,*) i, solvent(1)%vext(i,i,i,1,1)%qold
-  ! ! end do
-  ! ! close(77)
-  ! ! close(78)
-  ! call write_to_cube_file ( solvent(1)%vext(:,:,:,1,1)%q ,    "test_vext_q.cube" )
-  ! call write_to_cube_file ( solvent(1)%vext(:,:,:,1,1)%qold , "test_vext_qold.cube" )
-  ! stop "look at test_vext_q.cube and test_vext_qold.cube"
 end subroutine init
 
 !===================================================================================================================================
@@ -166,11 +155,13 @@ end subroutine init
             END DO
         END DO
 
+! old construction
         ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
         fftw3InBackward = Vpoisson_k
         call dfftw_execute (fpspb)
         Vpoisson = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
 
+! new construction
         ! get multipolar electrostatic potential in real space. It is already solvent dependent here
         do s=1,size(solvent)
           do o=1,angGrid%n_angles
@@ -313,8 +304,8 @@ end subroutine init
       vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(1)%site(m)%q * TriLinearInterpolation(cube,r)
     end do
     Vext_q(i,j,k,o,p,s) = vext_q_of_r_and_omega
-  end do
 
+  end do
   if (err%pb) then
     print*,"msg:",err%msg
     print*,"Lxyz:",gridlen
@@ -326,13 +317,6 @@ end subroutine init
     print*,"r:",err%r
     stop
   end if
-
-  print*, "DONT FORGET TO TURN LIMIT_POTENTIAL ON AGAIN"
-  ! where ( vext_q > 100._dp )
-  !   vext_q = 100._dp
-  ! else where ( vext_q < -100._dp )
-  !   vext_q = -100_dp
-  ! end where
 
 end subroutine vext_q_from_v_c
 
