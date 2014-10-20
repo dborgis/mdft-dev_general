@@ -5,6 +5,7 @@ subroutine adhoc_corrections_to_gsolv
     use system, only: solute, solvent, spacegrid, thermocond
     use minimizer, only: FF
     use mathematica, only: chop
+    use input, only: input_log
 
     implicit none
 
@@ -20,13 +21,13 @@ subroutine adhoc_corrections_to_gsolv
     logical :: file_exists
 
     !... We use P-scheme instead of M-scheme for the electrostatics in MDFT. See Kastenholz and Hunenberger, JCP 124, 124106 (2006)
-    if (input_char("poisson_solver") == .true.) then
+    if (input_log("poisson_solver") .eqv. .true.) then
       correction = -79.8_dp*sum(solute%site%q) ! in kJ/mol
       correction = chop(correction)
     else
       correction = 0._dp
     end if
-    rint*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
+    print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
     open(79,file="output/Pscheme_correction")
       write(79,*) correction
     close(79)
