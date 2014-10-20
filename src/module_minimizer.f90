@@ -4,7 +4,7 @@ module minimizer
 ! Defines minimizer parameters
 
     USE precision_kinds,only: i2b , dp
-    
+
     IMPLICIT NONE
 
     character(10) :: minimizer_type ! bfgs or cg
@@ -28,9 +28,10 @@ module minimizer
     character*60 :: task, csave
     logical, dimension (1:4) :: lsave
     integer(i2b), allocatable , dimension (:,:,:,:) :: indicg
-    
+    integer(i2b) :: iter ! iteration number of the minimizer. Goes from 1 to itermax during execution.
+
     contains
-    
+
         !===========================================================================================================================
         SUBROUTINE finalizeMinimizer
         !===========================================================================================================================
@@ -43,7 +44,7 @@ module minimizer
             IF (ALLOCATED ( indicg ) ) deallocate ( indicg )
         END SUBROUTINE finalizeMinimizer
         !===========================================================================================================================
-        
+
         !===========================================================================================================================
         subroutine from_cgvect_get_rho
         !===========================================================================================================================
@@ -82,7 +83,7 @@ module minimizer
             end do
         end subroutine from_cgvect_get_rho
         !===========================================================================================================================
-        
+
         !===========================================================================================================================
         subroutine from_rho_get_n
         !===========================================================================================================================
@@ -91,7 +92,7 @@ module minimizer
             implicit none
             integer(i2b) :: i,j,k,o,p,s
             integer(i2b) :: nfft(3)
-            
+
             nfft = spacegrid%n_nodes
 
             do concurrent (s=1:nb_species)
@@ -118,13 +119,13 @@ module minimizer
                     end do
                 end do
             end do
-            
+
 !~             do concurrent (s=1:nb_species, i=1:spacegrid%n_angles(1), j=1:spacegrid%n_angles(2), k=1:spacegrid%n_angles(3), &
 !~                            o=1:anggrid%n_angles, p=1:molrotgrid%n_angles)  ! TODO WHY DOESNT IT WORK??
         end subroutine from_rho_get_n
         !===========================================================================================================================
-        
-        
+
+
         !===========================================================================================================================
         subroutine deallocate_solvent_rho
         !===========================================================================================================================
@@ -139,14 +140,14 @@ module minimizer
 !===================================================================================================================================
         SUBROUTINE prepare_minimizer
         ! this subroutine gets the informations in input file and then allocate, prepare, compute needed data
-        
+
             USE precision_kinds, ONLY: dp
             USE input, ONLY: input_int, input_dp,input_char
             USE system , ONLY: spaceGrid, nb_species
             USE quadrature, ONLY: angGrid, molRotGrid
-            
+
             IMPLICIT NONE
-            
+
             ncg = PRODUCT(spaceGrid%n_nodes) * angGrid%n_angles *molRotGrid%n_angles* nb_species! total number of variables to optimize
             itermax=input_int('maximum_iteration_nbr')
             epsg=input_dp('epsg')
@@ -156,7 +157,7 @@ module minimizer
             ALLOCATE ( cg_vect(ncg), SOURCE=0._dp )
             ALLOCATE ( dF(ncg), SOURCE=0._dp )
             FF = 0._dp
-            
+
             IF ( minimizer_type(1:4) == 'bfgs') THEN ! if minimizer is bfgs then init what has to be init
                 mcg = input_int('number_of_memorized_Steps')
                 IF (input_char('constraint')=='no_constraint') THEN
@@ -177,7 +178,7 @@ module minimizer
                             WRITE(*,*) '***********************************************************************************'
                             ALLOCATE ( nbd(ncg), SOURCE=2)!nbd(i) is : 0 for no constaint, 1 for lower bounded by ll, 3 for upper bounded by uu, 2 for lower and upper bounded
                 END IF
-                
+
                 IF( input_dp('lower_bound') < 0._dp .OR. input_dp('upper_bound') < 0._dp ) THEN
                     STOP "In prepare_minimizer.f90, I suppose that lower_bound and upper_bound are positive or zero. \&
                         You found a bug. Thank you!"
@@ -195,6 +196,6 @@ module minimizer
 
         END SUBROUTINE prepare_minimizer
 !===================================================================================================================================
-        
+
 end module minimizer
 !===================================================================================================================================
