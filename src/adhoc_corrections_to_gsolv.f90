@@ -4,6 +4,7 @@ subroutine adhoc_corrections_to_gsolv
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
     use minimizer, only: FF
+    use mathematica, only: chop
 
     implicit none
 
@@ -19,15 +20,12 @@ subroutine adhoc_corrections_to_gsolv
     logical :: file_exists
 
     !... We use P-scheme instead of M-scheme for the electrostatics in MDFT. See Kastenholz and Hunenberger, JCP 124, 124106 (2006)
-    correction = 0._dp
-    if (  abs(sum(solute%site%q)) >= epsilon(1.0_dp)  ) then
-        correction = -79.8_dp*sum(solute%site%q) ! in kJ/mol
-        print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
-        open(79,file="output/Pscheme_correction")
-          write(79,*) correction
-        close(79)
-    end if
-
+    correction = -79.8_dp*sum(solute%site%q) ! in kJ/mol
+    correction = chop(correction)
+    print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
+    open(79,file="output/Pscheme_correction")
+      write(79,*) correction
+    close(79)
 
     !... Volodymyr's partial molar volume correction. See J. Phys. Chem. Lett. 5, 1935-1942 (2014)
     correction = 0._dp
@@ -65,7 +63,7 @@ subroutine adhoc_corrections_to_gsolv
             end block
             close(14)
         end if
-    else
+    else ! if file does not exist
         print*,"I could not find c(k=0) by myself. Please do the math yourself:"
         print*,"You should add",(nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT,&
         "*(-1+", 0.5_dp*solvent(1)%n0 ,"*c(k=0) ) kJ/mol to FREE ENERGY as partial molar volume correction"
