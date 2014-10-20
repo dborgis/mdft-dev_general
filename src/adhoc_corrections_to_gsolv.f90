@@ -3,6 +3,7 @@ subroutine adhoc_corrections_to_gsolv
 
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
+    use minimizer, only: FF
 
     implicit none
 
@@ -22,6 +23,9 @@ subroutine adhoc_corrections_to_gsolv
     if (  abs(sum(solute%site%q)) >= epsilon(1.0_dp)  ) then
         correction = -79.8_dp*sum(solute%site%q) ! in kJ/mol
         print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
+        open(79,file="output/Pscheme_correction")
+          write(79,*) correction
+        close(79)
     end if
 
 
@@ -50,7 +54,13 @@ subroutine adhoc_corrections_to_gsolv
                 correction2 = (nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT * (-1._dp + 0.5_dp*solvent(1)%n0* ck0&
               +9.2000475144588751) !MAGIC NUMBER FOR 3BODY PRESSURE TODO EXPLAIN WHAT IT IS
               print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
+              open(79,file="output/PMV_correction")
+                write(79,*) correction
+              close(79)
               print*,"You should add",correction2,"kJ/mol to FREE ENERGY as partial molar volume correction if you work with 3Body"!
+              open(79,file="output/PMV3b_correction")
+                write(79,*) correction2
+              close(79)
               !  print*,"You should add",correction2,"kJ/mol to FREE ENERGY as partial molar volume correction"
             end block
             close(14)
@@ -60,5 +70,9 @@ subroutine adhoc_corrections_to_gsolv
         print*,"You should add",(nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT,&
         "*(-1+", 0.5_dp*solvent(1)%n0 ,"*c(k=0) ) kJ/mol to FREE ENERGY as partial molar volume correction"
     end if
+
+  open(79,file="FF")
+    write(79,*) FF
+  close(79)
 
 end subroutine adhoc_corrections_to_gsolv

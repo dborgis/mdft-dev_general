@@ -253,6 +253,7 @@ $(OBJDIR)/adhoc_corrections_to_gsolv.o:\
 	$(SRCDIR)/adhoc_corrections_to_gsolv.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/get_final_density.o
 
 $(OBJDIR)/energy_and_gradient.o:\
