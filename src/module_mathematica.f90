@@ -6,7 +6,7 @@ MODULE mathematica
     IMPLICIT NONE
     PRIVATE
     PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, &
-        UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode
+        UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode, factorial
 
     CONTAINS
 
