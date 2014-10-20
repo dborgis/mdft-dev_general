@@ -71,7 +71,7 @@ subroutine adhoc_corrections_to_gsolv
         "*(-1+", 0.5_dp*solvent(1)%n0 ,"*c(k=0) ) kJ/mol to FREE ENERGY as partial molar volume correction"
     end if
 
-  open(79,file="FF")
+  open(79,file="output/FF")
     write(79,*) FF
   close(79)
 
