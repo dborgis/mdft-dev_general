@@ -308,7 +308,12 @@ MODULE mathematica
     implicit none
     integer(i2b), intent(in) :: n
     integer(i2b) :: i, factorial
-    factorial = product([(i, i=1,n)])
+    select case (n)
+    case (0)
+      factorial = 1
+    case default
+      factorial = product([(i, i=1,n)])
+    end select
   end function factorial
 
 END MODULE
