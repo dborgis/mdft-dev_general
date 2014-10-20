@@ -9,14 +9,15 @@ SUBROUTINE find_equilibrium_density
     USE minimizer, ONLY: ncg, mcg, cg_vect, ll, uu, nbd, FF, dF, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave , dsave,&
                         minimizer_type, itermax, epsg, finalizeMinimizer
     USE bfgs, ONLY: startBFGS => setulb
-    
+
     IMPLICIT NONE
-    
+
     INTEGER(i2b):: iter
     REAL(dp):: time1, time2
     REAL(dp):: energy_before, dfoverf
 
-    IF ( minimizer_type(1:4) == 'bfgs' ) then
+  if (minimizer_type(1:4) /= 'bfgs') stop "You ask for a minimizer that is not implemented."
+
         iter = 0
         task = 'START'
         111 continue
@@ -45,42 +46,4 @@ SUBROUTINE find_equilibrium_density
         call adhoc_corrections_to_gsolv ! ad hoc corrections
 
         CALL finalizeMinimizer
-    ELSE
-        STOP "The minimizer you asked is not implemented yet."
-    END IF
-        ! test if minimizer is cg+
-        !if ( minimizer_type ( 1 : 2 ) == 'cg' ) then
-        !  call driver ( ncg , cg_vect , FF , dF , epsg )
-        !END IF
-        !! if minimizer is steepest descent
-        !if ( minimizer_type ( 1 : 2 ) == 'sd' ) then
-        !  call steepest_descent_main(ncg,epsg,itermax,cg_vect)
-        !END IF 
 END SUBROUTINE find_equilibrium_density
-
-
-SUBROUTINE interface_compute_energy_and_gradients ( n , x , f , g , stopouencore )
-
-    USE precision_kinds,only : dp , i2b
-    USE minimizer, ONLY: ncg , cg_vect , FF , dF , minimizer_iter , itermax
-
-    IMPLICIT NONE
-    integer(i2b):: n
-    real(dp), dimension ( ncg ) , intent ( inout ) :: x
-    real(dp), intent ( inout ) :: f
-    real(dp), dimension ( ncg ) , intent ( inout ) :: g
-
-    character ( len = 10 ) , intent(out) :: stopouencore
-    minimizer_iter = minimizer_iter + 1
-    if ( minimizer_iter <= itermax ) then
-    call energy_and_gradient
-    n = ncg
-    x = cg_vect
-    f = FF
-    g = dF
-    stopouencore = 'ENCORE'
-    ELSE IF ( minimizer_iter > itermax ) then
-    stopouencore = 'STOP'
-    END IF
-    
-END SUBROUTINE interface_compute_energy_and_gradients
