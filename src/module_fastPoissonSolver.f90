@@ -47,7 +47,6 @@ subroutine init
   end if
   call soluteChargeDensityFromSoluteChargeCoordinates (poissonSolverGrid%n, poissonSolverGrid%len, soluteChargeDensity)
   call poissonSolver (poissonSolverGrid%n, poissonSolverGrid%len, soluteChargeDensity, Vpoisson)
-  call vext_q_from_v_c (poissonSolverGrid%n, poissonSolverGrid%len, Vpoisson) ! defines Vext_q(i,j,k,o,p) that we used in the past for Poisson solver
 
 ! at this point, one has Vext_q (old fashioned construction of Poisson potential and extrapolation to solvent sites outside grid nodes)
 ! and of solvent(s)%vext(i,j,k,o,p)%q, the new construction with multipole expansion of the solvent molecular charge density.
@@ -60,6 +59,7 @@ subroutine init
     end do
   else ! this should be removed soon once we're used to this new construction
     print*,"BETTER POISSON SOLVER [OFF]"
+    call vext_q_from_v_c (poissonSolverGrid%n, poissonSolverGrid%len, Vpoisson) ! defines Vext_q(i,j,k,o,p) that we used in the past for Poisson solver
   end if
 
 ! cutoff seems useless right now with the new construction
@@ -155,23 +155,26 @@ end subroutine init
             END DO
         END DO
 
-! old construction
-        ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
-        fftw3InBackward = Vpoisson_k
-        call dfftw_execute (fpspb)
-        Vpoisson = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
 
+! old construction
+        if (.not. input_log('better_poisson_solver')) then
+          ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
+          fftw3InBackward = Vpoisson_k
+          call dfftw_execute (fpspb)
+          Vpoisson = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
+        else
 ! new construction
-        ! get multipolar electrostatic potential in real space. It is already solvent dependent here
-        do s=1,size(solvent)
-          do o=1,angGrid%n_angles
-            do p=1,molRotGrid%n_angles
-              fftw3InBackward = Vpoisson_k * conjg( solvent(s)%sigma_k(:,:,:,o,p) )
-              call dfftw_execute (fpspb)
-              solvent(s)%vext(:,:,:,o,p)%q = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
+          ! get multipolar electrostatic potential in real space. It is already solvent dependent here
+          do s=1,size(solvent)
+            do o=1,angGrid%n_angles
+              do p=1,molRotGrid%n_angles
+                fftw3InBackward = Vpoisson_k * conjg( solvent(s)%sigma_k(:,:,:,o,p) )
+                call dfftw_execute (fpspb)
+                solvent(s)%vext(:,:,:,o,p)%q = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
+              end do
             end do
           end do
-        end do
+        end if
 
         deallocate( soluteChargeDensity_k, Vpoisson_k, fftw3InForward, fftw3OutForward, fftw3OutBackward, fftw3InBackward)
 
@@ -217,8 +220,8 @@ end subroutine init
     INTEGER(i2b), INTENT(IN) :: gridnode(3)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
     REAL(dp), INTENT(IN) :: gridlen(3)
-    INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3)
-    REAL(dp), DIMENSION(nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) :: xmod, ymod, zmod
+    INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d
+    real(dp), dimension(3,nb_species,nb_solvent_sites,molRotGrid%n_angles,angGrid%n_angles) :: xmod
     REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
     REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
     TYPE :: testtype
@@ -237,10 +240,12 @@ end subroutine init
     IF ( ALL(solute%site%q == zero) .OR. ALL(solvent(1)%site%q == zero) ) RETURN
 
     ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
-    DO CONCURRENT( o=1:angGrid%n_angles , p=1:molRotGrid%n_angles , m=1:SIZE(solvent(1)%site) )
-        xmod(m,p,o) = DOT_PRODUCT( [Rotxx(o,p),Rotxy(o,p),Rotxz(o,p)] , solvent(1)%site(m)%r )
-        ymod(m,p,o) = DOT_PRODUCT( [Rotyx(o,p),Rotyy(o,p),Rotyz(o,p)] , solvent(1)%site(m)%r )
-        zmod(m,p,o) = DOT_PRODUCT( [Rotzx(o,p),Rotzy(o,p),Rotzz(o,p)] , solvent(1)%site(m)%r )
+    do concurrent (s=1:size(solvent))
+      DO CONCURRENT( o=1:angGrid%n_angles , p=1:molRotGrid%n_angles , m=1:size(solvent(s)%site) )
+        xmod(1,s,m,p,o) = DOT_PRODUCT( [Rotxx(o,p),Rotxy(o,p),Rotxz(o,p)] , solvent(s)%site(m)%r )
+        xmod(2,s,m,p,o) = DOT_PRODUCT( [Rotyx(o,p),Rotyy(o,p),Rotyz(o,p)] , solvent(s)%site(m)%r )
+        xmod(3,s,m,p,o) = DOT_PRODUCT( [Rotzx(o,p),Rotzy(o,p),Rotzz(o,p)] , solvent(s)%site(m)%r )
+      end do
     END DO
 
     CALL UTest_floorNode
@@ -254,9 +259,9 @@ end subroutine init
   DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
     vext_q_of_r_and_omega = 0.0_dp
 
-      DO CONCURRENT (m=1:nb_solvent_sites, abs(solvent(1)%site(m)%q)>epsilon(1.0_dp))
+      DO CONCURRENT (m=1:nb_solvent_sites, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))
 
-      x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(m,p,o),ymod(m,p,o),zmod(m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
+      x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(1,s,m,p,o),xmod(2,s,m,p,o),xmod(3,s,m,p,o)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
       x(1)=chop(x(1))
       x(2)=chop(x(2))
       x(3)=chop(x(3))
@@ -301,7 +306,7 @@ end subroutine init
       cube(0,1,1) = Vpoisson (l(1),u(2),u(3))
       cube(1,1,1) = Vpoisson (u(1),u(2),u(3))
 
-      vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(1)%site(m)%q * TriLinearInterpolation(cube,r)
+      vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(s)%site(m)%q * TriLinearInterpolation(cube,r)
     end do
     Vext_q(i,j,k,o,p,s) = vext_q_of_r_and_omega
 
