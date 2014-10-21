@@ -8,8 +8,6 @@ module fastPoissonSolver
 
   implicit none
 
-  integer(i2b), PRIVATE :: i
-  character(180), PRIVATE :: j
   real(dp), allocatable, dimension(:,:,:), private :: soluteChargeDensity, Vpoisson ! TODO THIS ON FINE GRID
   type :: PoissonGridType
     integer(i2b) :: n(3)
