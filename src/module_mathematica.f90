@@ -119,8 +119,7 @@ MODULE mathematica
         IMPLICIT NONE
         LOGICAL, SAVE :: alreadydone=.FALSE.
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
-        INTEGER(i2b) :: gridnode(3)
-        REAL(dp) :: gridlen(3), x(3)
+        REAL(dp) :: gridlen(3)
         IF (alreadydone) RETURN
         CALL RANDOM_NUMBER(gridlen)
         IF( ANY( floorNode([1,1,1],gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem 1 in UTest_floorNode"
@@ -213,8 +212,6 @@ MODULE mathematica
     SUBROUTINE UTest_distToFloorNode
     !===============================================================================================================================
         REAL(dp)     :: xfloor(3)
-        INTEGER(i2b) :: gridnode(3)
-        REAL(dp)     :: gridlen(3), x(3)
         LOGICAL      :: pbc ! periodic boundary counditions
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
 
