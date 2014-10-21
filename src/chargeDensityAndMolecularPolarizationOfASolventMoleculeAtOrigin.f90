@@ -45,9 +45,9 @@ subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
       r(3) = dot_product(   [Rotzx(o,p),Rotzy(o,p),Rotzz(o,p)]  ,  solvent(s)%site(n)%r  )
       kr = dot_product( kvec, r )
       X = -iC*kr
-      ! solvent(s)%sigma_k(i,j,k,o,p) = solvent(s)%sigma_k(i,j,k,o,p) + solvent(s)%site(n)%q *exp(X) *smoother%factor ! exact
-      solvent(s)%sigma_k(i,j,k,o,p) = solvent(s)%sigma_k(i,j,k,o,p) +solvent(s)%site(n)%q* sum([(X**i/factorial(i), i=0,4)])&
-            * smoother%factor ! Series expansion of exp(x) at 0 => multipole expansion of Vcoul(x). i=4 :: hexadecapole (16)
+      solvent(s)%sigma_k(i,j,k,o,p) = solvent(s)%sigma_k(i,j,k,o,p) + solvent(s)%site(n)%q *exp(X) *smoother%factor ! exact
+      ! solvent(s)%sigma_k(i,j,k,o,p) = solvent(s)%sigma_k(i,j,k,o,p) +solvent(s)%site(n)%q* sum([(X**i/factorial(i), i=0,4)])&
+            ! * smoother%factor ! Series expansion of exp(x) at 0 => multipole expansion of Vcoul(x). i=4 :: hexadecapole (16)
       if ( abs(kr)<=epsilon(1.0_dp) ) then
         solvent(s)%molec_polar_k(:,i,j,k,o,p) = solvent(s)%molec_polar_k(:,i,j,k,o,p) + solvent(s)%site(n)%q *r
       else
