@@ -11,7 +11,7 @@ MODULE dcf
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_delta, c_d ! polarization polarization correlation function
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: chi_l, chi_t ! longitudinal and transverse dielectric susceptibilities
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: Cnn, Cnc, Ccc ! longitudinal and transverse dielectric susceptibilities
-    
+
     REAL(dp) :: delta_k_cs, delta_k_cd, delta_k_cdelta, delta_k_chi_l, delta_k_chi_t, delta_k_Cnn, delta_k_Cnc, delta_k_Ccc
 
 ! parameters for branch ck_angular ONLY
@@ -28,7 +28,7 @@ MODULE dcf
 
     CONTAINS
 !-----------------------------------------------------------------------------------------------------------------------------------
-    
+
     SUBROUTINE init
 
         IF ( input_log('readDensityDensityCorrelationFunction') ) THEN
@@ -39,9 +39,9 @@ MODULE dcf
             IF ( input_char('polarization_order')=='dipol' ) THEN
                 CALL readPolarizationPolarizationCorrelationFunction
             ELSE IF (( input_char('polarization_order')=='multi') .AND. (.NOT. input_log('include_nc_coupling'))) THEN
-                CALL readDielectricSusceptibilities   
+                CALL readDielectricSusceptibilities
             ELSE IF (( input_char('polarization_order')=='multi') .AND. (input_log('include_nc_coupling'))) THEN
-                CALL readDielectricSusceptibilities 
+                CALL readDielectricSusceptibilities
                 CALL readTotalPolarizationCorrelationFunction
             END IF
         END IF
@@ -234,7 +234,7 @@ MODULE dcf
 
     ! Compute the angle between (0,x) and (x,y).
     PURE FUNCTION angle(x,y)
-    
+
 
         USE precision_kinds,    ONLY: dp
         USE constants,          ONLY: twopi
@@ -260,30 +260,32 @@ MODULE dcf
 !-----------------------------------------------------------------------------------------------------------------------------------
 
     SUBROUTINE readDielectricSusceptibilities ! chi_l, chi_t
-        
+
         IMPLICIT NONE
-        
+
         REAL(dp) :: norm_k
         LOGICAL :: exists
         CHARACTER(80) :: file_l, file_t
         INTEGER(i2b) :: ios, n_k, i
 
-        
-        file_l = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in'
-        file_t = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in'
+
+        ! file_l = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in'
+        file_l = "input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in"
+        ! file_t = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in'
+        file_t = "input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in" ! 2014-10-22, compatible with newest spce cs
         INQUIRE (FILE=file_l, EXIST=exists )
             IF (.NOT. exists) THEN
-                WRITE(*,*) "chi_l not found in ", file_l
+                WRITE(*,*) "chi_l not found in readDielectricSusceptibilities in file", file_l
                 STOP
             END IF
         INQUIRE (FILE=file_t, EXIST=exists )
             IF (.NOT. exists) THEN
-                WRITE(*,*) "chi_t not found in ", file_t
+                WRITE(*,*) "chi_t not found in readDielectricSusceptibilities in file", file_t
                 STOP
             END IF
-            
+
         n_k = MIN( n_linesInFile(file_l), n_linesInFile(file_t) )
-        
+
         ALLOCATE ( chi_l (n_k), SOURCE=0._dp)
         ALLOCATE ( chi_t (n_k), SOURCE=0._dp)
 
@@ -323,26 +325,26 @@ MODULE dcf
                     END IF
             END DO
         CLOSE (10)
-        
+
         nb_k=n_k
 
     END SUBROUTINE readDielectricSusceptibilities
 
 
     SUBROUTINE readTotalPolarizationCorrelationFunction !Cnn, Cnc, Ccc
-        
+
         IMPLICIT NONE
-        
+
         REAL(dp) :: norm_k
         LOGICAL :: exists
         CHARACTER(80) :: file_nn, file_nc, file_cc
         INTEGER(i2b) :: ios, i
 
-        
+
         file_nn = 'input/direct_correlation_functions/water/Cnn.dat'
         file_nc = 'input/direct_correlation_functions/water/Cnc.dat'
         file_cc = 'input/direct_correlation_functions/water/Ccc.dat'
-        
+
         INQUIRE (FILE=file_nn, EXIST=exists )
             IF (.NOT. exists) THEN
                 WRITE(*,*) "Cnn not found in ", file_nn
@@ -358,9 +360,9 @@ MODULE dcf
                 WRITE(*,*) "Ccc not found in ", file_cc
                 STOP
             END IF
-                        
+
         nb_k_in_c = MIN( n_linesInFile(file_nn), n_linesInFile(file_nc), n_linesInFile(file_cc) )
-        
+
         ALLOCATE ( Cnn (nb_k_in_c), SOURCE=0._dp)
         ALLOCATE ( Cnc (nb_k_in_c), SOURCE=0._dp)
         ALLOCATE ( Ccc (nb_k_in_c), SOURCE=0._dp)
@@ -368,7 +370,7 @@ MODULE dcf
         delta_k_Cnn = deltaAbscissa(file_nn)
         delta_k_Cnc = deltaAbscissa(file_nc)
         delta_k_Ccc = deltaAbscissa(file_cc)
-        
+
         IF ( (delta_k_Cnn-delta_k_Cnc)/delta_k_Cnn >= 1.E-10 ) THEN
             WRITE(*,*)"Cnn and Cnc should have same delta k, i.e., same step in abscissa"
             STOP
@@ -415,9 +417,9 @@ MODULE dcf
         INTEGER(i2b) :: ios, nb_kdelta, i, nb_kd
         REAL(dp) :: norm_k
         CHARACTER(80) :: filename, ck_species
-    
+
         ck_species = input_char('ck_species')
-        
+
         IF ( ck_species == 'spc  ' ) THEN
             filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
         ELSE IF ( ck_species == 'stock' ) THEN
@@ -457,8 +459,8 @@ MODULE dcf
         END IF
         nb_kd = n_linesInFile(filename)
         ALLOCATE(c_d(nb_kd), SOURCE=0._dp)
-        
-        
+
+
         delta_k = deltaAbscissa(filename)
         OPEN (13, FILE=filename, IOSTAT=ios)
             IF (ios/=0) THEN
@@ -475,7 +477,7 @@ MODULE dcf
         CLOSE (13)
 
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
-    
+
 
 
 
@@ -485,7 +487,7 @@ MODULE dcf
         CHARACTER(80) :: filename, ck_species
         INTEGER(i2b) :: ios, i
         REAL(dp) :: norm_k
-        
+
         ck_species = input_char('ck_species')
         IF ( ck_species == 'spc  ' ) THEN
             filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
@@ -500,15 +502,15 @@ MODULE dcf
         delta_k = deltaAbscissa(filename)
         delta_k_cs = delta_k
         nb_k = n_linesInFile(filename)
-        
+
         ALLOCATE ( c_s(nb_k), SOURCE=0._dp )
-        
+
         OPEN (13, FILE=filename, IOSTAT=ios)
             IF (ios/=0) THEN
                 WRITE(*,*)'Cant open file ',filename,' in readDensityDensityCorrelationFunction (c_s)'
                 STOP
             END IF
-            
+
             open (14, file='output/cs.in', iostat=ios)
                 if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction (c_s)'
 
