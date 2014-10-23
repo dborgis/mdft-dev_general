@@ -6,10 +6,10 @@ MODULE mathematica
     IMPLICIT NONE
     PRIVATE
     PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, &
-        UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode
-    
+        UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode, factorial
+
     CONTAINS
-    
+
     !===============================================================================================================================
     PURE FUNCTION chop(x,delta)
     !===============================================================================================================================
@@ -34,8 +34,8 @@ MODULE mathematica
         END IF
     END FUNCTION chop
     !===============================================================================================================================
-    
-    
+
+
     !===============================================================================================================================
     PURE FUNCTION TriLinearInterpolation (cube,x)
     !===============================================================================================================================
@@ -58,8 +58,8 @@ MODULE mathematica
         END IF
     END FUNCTION TriLinearInterpolation
     !===============================================================================================================================
-    
-    
+
+
     !===============================================================================================================================
     SUBROUTINE UTest_TrilinearInterpolation
     !===============================================================================================================================
@@ -111,16 +111,15 @@ MODULE mathematica
         floorNode = FLOOR(MODULO(x,gridlen)/(gridlen/REAL(gridnode))) +1
     END FUNCTION floorNode
     !===============================================================================================================================
-    
-    
+
+
     !===============================================================================================================================
     SUBROUTINE UTest_floorNode
     !===============================================================================================================================
         IMPLICIT NONE
         LOGICAL, SAVE :: alreadydone=.FALSE.
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
-        INTEGER(i2b) :: gridnode(3)
-        REAL(dp) :: gridlen(3), x(3)
+        REAL(dp) :: gridlen(3)
         IF (alreadydone) RETURN
         CALL RANDOM_NUMBER(gridlen)
         IF( ANY( floorNode([1,1,1],gridlen*100,[z,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem 1 in UTest_floorNode"
@@ -144,8 +143,8 @@ MODULE mathematica
         ceilingNode = MODULO( floorNode(gridnode,gridlen,x,pbc)  ,gridnode) +1
     END FUNCTION ceilingNode
     !===============================================================================================================================
-    
-    
+
+
     !===============================================================================================================================
     SUBROUTINE UTest_ceilingNode
     !===============================================================================================================================
@@ -163,13 +162,13 @@ MODULE mathematica
         IF ( ANY( ceilingNode(gridnode,gridlen,x,pbc=.TRUE.) /= [2,2,2] ) ) THEN
             STOP "Test 1 of UTest_ceilingNode failed"
         END IF
-        
+
         ! Test 2, for x at end of supercell, i.e., at gridlen, x is gridlen==[0,0,0], so ceilingNode should be the same as Test 1
         x = gridlen
         IF ( ANY( ceilingNode(gridnode,gridlen,x,pbc=.TRUE.) /= [2,2,2] ) ) THEN
             STOP "Test 2 of UTest_ceilingNode failed"
         END IF
-        
+
         ! Test 3, for x just after the origin, it is obviously in first bin again, so ceiling should be [2,2,2] again
         x = EPSILON(1.0_dp)
         IF ( ANY( ceilingNode(gridnode,gridlen,x,pbc=.TRUE.) /= [2,2,2] ) ) THEN
@@ -186,8 +185,8 @@ MODULE mathematica
         alreadydone=.TRUE.
     END SUBROUTINE UTest_ceilingNode
     !===============================================================================================================================
-    
-    
+
+
     !===============================================================================================================================
     PURE FUNCTION distToFloorNode(gridnode,gridlen,x,pbc)
     !===============================================================================================================================
@@ -207,93 +206,91 @@ MODULE mathematica
 !~                             )
     END FUNCTION distToFloorNode
     !===============================================================================================================================
-    
-    
+
+
     !===============================================================================================================================
     SUBROUTINE UTest_distToFloorNode
     !===============================================================================================================================
         REAL(dp)     :: xfloor(3)
-        INTEGER(i2b) :: gridnode(3)
-        REAL(dp)     :: gridlen(3), x(3)
         LOGICAL      :: pbc ! periodic boundary counditions
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[z,z,z],pbc=.TRUE.) /= [z,z,z] )) THEN
             STOP "UTest_distToFloorNode: Test 1 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[1._dp,1._dp,1._dp],pbc=.TRUE.) /= [z,z,z] )) THEN
             STOP "UTest_distToFloorNode: Test 2 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[2._dp,2._dp,2._dp],pbc=.TRUE.) /= [z,z,z]     )) THEN
-            STOP "UTest_distToFloorNode: Test 3 Failed."        
+            STOP "UTest_distToFloorNode: Test 3 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[10._dp,10._dp,10._dp],pbc=.TRUE.) /= [z,z,z]  )) THEN
             STOP "UTest_distToFloorNode: Test 4 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[11._dp,11._dp,11._dp],pbc=.TRUE.) /= [z,z,z]  )) THEN
             STOP "UTest_distToFloorNode: Test 5 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[2._dp,3._dp,4._dp],pbc=.TRUE.) /= [z,z,z]     )) THEN
             STOP "UTest_distToFloorNode: Test 6 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[10._dp,10._dp,10._dp],.TRUE.) /= [z,z,z]  )) THEN
             STOP "UTest_distToFloorNode: Test 7 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[0.5_dp,0.5_dp,0.5_dp],.TRUE.) /= [o,o,o]/2.0_dp  )) THEN
             STOP "UTest_distToFloorNode: Test 8 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[50._dp,50._dp,50._dp],.TRUE.) /= [z,z,z]   )) THEN
             STOP "UTest_distToFloorNode: Test 9 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[55._dp,55._dp,55._dp],.TRUE.) /= [0.5_dp,0.5_dp,0.5_dp] ))&
          THEN
             STOP "UTest_distToFloorNode: Test 10 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[15._dp,15._dp,15._dp],.TRUE.) /= [0.5_dp,0.5_dp,0.5_dp] ))&
          THEN
             STOP "UTest_distToFloorNode: Test 11 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[51._dp,51._dp,51._dp],.TRUE.) - [0.1_dp,0.1_dp,0.1_dp] &
             > EPSILON(1.0_dp)*[100._dp,100._dp,100._dp])) THEN
             STOP "UTest_distToFloorNode: Test 12 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[13._dp,13._dp,13._dp],.TRUE.) - [z,z,z] &
             > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
             STOP "UTest_distToFloorNode: Test 13 Failed."
         END IF
-    
+
         IF( ANY(   distToFloorNode([10,10,10],[100._dp,100._dp,100._dp],[13._dp,13._dp,13._dp],.TRUE.) - [0.3_dp,0.3_dp,0.3_dp] &
             > EPSILON(1.0_dp)*[100._dp,100._dp,100._dp] )) THEN
             STOP "UTest_distToFloorNode: Test 14 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[13._dp,13._dp,13._dp],.TRUE.) - [z,z,z] &
             > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
             STOP "UTest_distToFloorNode: Test 15 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[13.1_dp,13.1_dp,13.1_dp],.TRUE.) - [z,z,z] &
             > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
             STOP "UTest_distToFloorNode: Test 16 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[13.31_dp,13.31_dp,13.31_dp],.TRUE.) - [o,o,o]/10._dp &
             > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
             STOP "UTest_distToFloorNode: Test 17 Failed."
         END IF
-        
+
         IF( ANY(   distToFloorNode([100,100,100],[10._dp,10._dp,10._dp],[19.99_dp,19.99_dp,19.99_dp],.TRUE.) - [o,o,o]*0.9_dp &
             > EPSILON(1.0_dp)*[10._dp,10._dp,10._dp] )) THEN
             STOP "UTest_distToFloorNode: Test 18 Failed."
@@ -301,6 +298,20 @@ MODULE mathematica
 
     END SUBROUTINE UTest_distToFloorNode
     !===============================================================================================================================
+
+  ! factorial
+  pure function factorial(n)
+    use precision_kinds, only: i2b
+    implicit none
+    integer(i2b), intent(in) :: n
+    integer(i2b) :: i, factorial
+    select case (n)
+    case (0)
+      factorial = 1
+    case default
+      factorial = product([(i, i=1,n)])
+    end select
+  end function factorial
 
 END MODULE
 !===================================================================================================================================

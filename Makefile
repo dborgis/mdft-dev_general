@@ -98,7 +98,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_solute_geometry.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/poissonSolver.o\
 	$(OBJDIR)/print_header.o\
 	$(OBJDIR)/print_input_in_output_folder.o\
 	$(OBJDIR)/print_supercell_xsf.o\
@@ -109,7 +108,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/read_solvent.o\
 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
 	$(OBJDIR)/steepest_descent_main.o\
-	$(OBJDIR)/vext_q_from_v_c.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o\
 	$(OBJDIR)/finalize_simu.o
@@ -157,6 +155,7 @@ $(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o:\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_constants.o\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/compute_hard_spheres_parameters.o:\
@@ -255,6 +254,7 @@ $(OBJDIR)/adhoc_corrections_to_gsolv.o:\
 	$(SRCDIR)/adhoc_corrections_to_gsolv.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/get_final_density.o
 
 $(OBJDIR)/energy_and_gradient.o:\
@@ -566,11 +566,6 @@ $(OBJDIR)/module_system.o:\
 	$(SRCDIR)/module_system.f90\
 	$(OBJDIR)/module_precision_kinds.o
 
-$(OBJDIR)/poissonSolver.o:\
-	$(SRCDIR)/poissonSolver.f90\
-	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_precision_kinds.o
-
 $(OBJDIR)/print_header.o:\
 	$(SRCDIR)/print_header.f90
 
@@ -629,16 +624,6 @@ $(OBJDIR)/steepest_descent_main.o:\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_precision_kinds.o
 
-$(OBJDIR)/vext_q_from_v_c.o:\
-	$(SRCDIR)/vext_q_from_v_c.f90\
-	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_external_potential.o\
-	$(OBJDIR)/module_quadrature.o\
-	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/module_mathematica.o
-
 $(OBJDIR)/vext_total_sum.o:\
 	$(SRCDIR)/vext_total_sum.f90\
 	$(OBJDIR)/module_input.o\
@@ -656,9 +641,7 @@ $(OBJDIR)/write_to_cube_file.o:\
 $(OBJDIR)/module_fastPoissonSolver.o:\
 	$(SRCDIR)/module_fastPoissonSolver.f90\
 	$(OBJDIR)/module_precision_kinds.o\
-#~ 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
-#~ 	$(OBJDIR)/poissonSolver.o\
-#~ 	$(OBJDIR)/vext_q_from_v_c.o\
+	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o
 
 $(OBJDIR)/finalize_simu.o:\

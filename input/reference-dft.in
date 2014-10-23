@@ -59,9 +59,10 @@ imposed_chempot = 0.0
 ############################
 # ELECTROSTATIC POTENTIAL
 ############################
-solute_charges_scale_factor = 1.0
-poisson_solver = T
-direct_sum = F
+solute_charges_scale_factor = 1.0 # scales the charges of the solute. 1: does not change anything. 0: turn off all charges. 0.5: divide all charges by 2.
+poisson_solver = T # use Fourier space to get electrostatic part of external free energy
+better_poisson_solver = T # use the multipole expansion of the solvent molecular charge density
+direct_sum = F # use direct summation to get electrostatic potential
 
 
 reuse_density = F

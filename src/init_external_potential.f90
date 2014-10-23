@@ -6,7 +6,7 @@ SUBROUTINE init_external_potential
 
     USE precision_kinds     ,ONLY: dp , i2b
     USE input               ,ONLY: input_log, input_char
-    USE system              ,ONLY: solute, spaceGrid, nb_species
+    USE system              ,ONLY: solute, spaceGrid, nb_species, solvent
     USE external_potential  ,ONLY: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,ONLY: init_lennardjones => init
     USE quadrature          ,ONLY: angGrid, molRotGrid
@@ -15,12 +15,34 @@ SUBROUTINE init_external_potential
     
     IMPLICIT NONE
     
-    INTEGER(i2b) :: nfft(3),i
-    CHARACTER(180) :: j
-    nfft = spaceGrid%n_nodes
+    INTEGER(i2b) :: nfft(3),i,j,k,o,p,s
+    type errType
+        integer(i2b) :: i
+        character(180) :: msg
+    end type errType
+    type (errType) :: er
 
-    ALLOCATE( Vext_total(nfft(1),nfft(2),nfft(3),angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zerodp ,STAT=i,ERRMSG=j)
-        IF (i/=0) THEN; PRINT*,j; STOP "I can't allocate Vext_total in subroutine init_external_potential"; END IF
+    nfft = spaceGrid%n_nodes
+    i = spacegrid%n_nodes(1)
+    j = spacegrid%n_nodes(2)
+    k = spacegrid%n_nodes(3)
+    o = angGrid%n_angles
+    p = molRotGrid%n_angles
+    s = size(solvent)
+
+    allocate ( Vext_total(i,j,k,o,p,s), SOURCE=zerodp ,STAT=er%i,ERRMSG=er%msg)
+    if (er%i/=0) then
+        print*,"Reported error is:", er%msg
+        stop "I can't allocate Vext_total in init_external_potential.f90:init_external_potential"
+    end if
+
+    do s = 1, size(solvent)
+        allocate ( solvent(s)%vext(i,j,k,o,p), stat=er%i, errmsg=er%msg )
+        if (er%i/=0) then
+            print*,"Reported error is:", er%msg
+            stop "I can't allocate solvent(:)%vext in init_external_potential.f90:init_external_potential"
+        end if
+    end do
     
     CALL external_potential_hard_walls ! HARD WALLS
 
@@ -44,9 +66,10 @@ SUBROUTINE init_external_potential
     
     CONTAINS
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
+
         SUBROUTINE init_electrostatic_potential
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
             IMPLICIT NONE
             INTEGER(i2b) :: i,al(6)
             CHARACTER(180) :: j
@@ -70,13 +93,11 @@ SUBROUTINE init_external_potential
                 CALL start_fastPoissonSolver
             END IF
         END SUBROUTINE
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    
-    
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!===================================================================================================================================
+
         SUBROUTINE prevent_numerical_catastrophes
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
             USE system    ,ONLY: spacegrid, solvent
             USE constants ,ONLY: qfact
             IMPLICIT NONE
@@ -141,7 +162,7 @@ SUBROUTINE init_external_potential
                 END IF
             END DO
         END SUBROUTINE prevent_numerical_catastrophes
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        
+
+!===================================================================================================================================
     
 END SUBROUTINE init_external_potential

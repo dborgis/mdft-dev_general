@@ -19,3 +19,4 @@ input/luc_ck_angular.in_nmax5
 output
 input/density.bin.in
 input/density.bin.out
+src/useless_for_now/
