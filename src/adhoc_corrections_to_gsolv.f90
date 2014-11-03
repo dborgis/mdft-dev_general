@@ -9,7 +9,7 @@ subroutine adhoc_corrections_to_gsolv
 
     implicit none
 
-    real(dp) :: correction,  P_bulk
+    real(dp) :: correction,  Pressure_bulk
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
     integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
     integer :: s, ios
@@ -49,13 +49,13 @@ subroutine adhoc_corrections_to_gsolv
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
 
 
-!!!!!!!There is a Systematic Way to compute the PV corection, it compute the Fonctional for rho=rho_0 everywhere which is equal to PV
+! The value of the grand potential is equal to PV, with P pressure and V volume when the system is the bulk fluid.
   cg_vect(:)=0.0_dp  !Set Density to 0.0_dp
   FF=0.0_dp
-  Call energy_and_gradient(-10)
-  P_bulk=FF/PRODUCT(spaceGrid%length) ! Omega[rho=rho_0]=PV
+  Call energy_and_gradient(-10)  !this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
+  Pressure_bulk=FF/PRODUCT(spaceGrid%length) ! Omega[rho=rho_0]=PV
 
-              correction=-(nmolecule(1)%bulk - nmolecule(1)%withsolute)/solvent(1)%n0*P_bulk  !correction is -PV where V is excluded Volume
+              correction=-(nmolecule(1)%bulk - nmolecule(1)%withsolute)/solvent(1)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume
               print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
               open(79,file="output/PMV_correction")
               write(79,*) correction
