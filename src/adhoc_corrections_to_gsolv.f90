@@ -3,13 +3,13 @@ subroutine adhoc_corrections_to_gsolv
 
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
-    use minimizer, only: FF , cg_vect, iprint
+    use minimizer, only: FF , cg_vect
     use mathematica, only: chop
     use input, only: input_log
 
     implicit none
 
-    real(dp) :: correction, correction2, P_bulk
+    real(dp) :: correction,  P_bulk
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
     integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
     integer :: s, ios
@@ -31,7 +31,7 @@ subroutine adhoc_corrections_to_gsolv
       correction = 0._dp
     end if
     print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
-    open(79,file="output/PMV_correction")
+    open(79,file="output/Pscheme_correction")
       write(79,*) correction
     close(79)
 
@@ -49,7 +49,7 @@ subroutine adhoc_corrections_to_gsolv
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
 
 
-!!!!!!!There is a Systematic Way to compute the PV corection, it compute the Fonctional for rho=0 everywhere which is equal to PV
+!!!!!!!There is a Systematic Way to compute the PV corection, it compute the Fonctional for rho=rho_0 everywhere which is equal to PV
   cg_vect(:)=0.0_dp  !Set Density to 0.0_dp
   FF=0.0_dp
   Call energy_and_gradient(-10)
@@ -57,7 +57,7 @@ subroutine adhoc_corrections_to_gsolv
 
               correction=-(nmolecule(1)%bulk - nmolecule(1)%withsolute)/solvent(1)%n0*P_bulk  !correction is -PV where V is excluded Volume
               print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
-              open(79,file="output/Pscheme_correction")
+              open(79,file="output/PMV_correction")
               write(79,*) correction
               close(79)
 
