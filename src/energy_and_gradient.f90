@@ -13,7 +13,7 @@ SUBROUTINE energy_and_gradient (iter)
     USE minimizer, ONLY: FF , dF
     USE system    ,ONLY: solute
     IMPLICIT NONE
-    
+
     INTEGER(i2b), INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
     LOGICAL :: opn
@@ -109,7 +109,7 @@ SUBROUTINE energy_and_gradient (iter)
 
 !   WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
 !   iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
-
+IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute ad_hoc correction, i.e rho=rho_O
     PRINT*,"iteration : ",iter
     PRINT*,"======================================"
     PRINT*,"FF              =",FF
@@ -124,6 +124,7 @@ SUBROUTINE energy_and_gradient (iter)
     PRINT*,"Ffmtcs          =",Ffmtcs
     PRINT*,"Fexc_ck_angular =",Fexc_ck_angular
     PRINT*,
+END IF
 
     INQUIRE(FILE='output/iterate.dat', OPENED = opn)
     IF (.not. opn) THEN
@@ -133,9 +134,9 @@ SUBROUTINE energy_and_gradient (iter)
         WRITE(111,*) '#########################################################################'
     END IF
     WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
-    
+
     CONTAINS
-    
+
     !===============================================================================================================================
     PURE SUBROUTINE init_functional_and_gradient_to_zero (FF,dF)
     !===============================================================================================================================
@@ -144,6 +145,6 @@ SUBROUTINE energy_and_gradient (iter)
         FF = zero ; dF = zero ! functional and gradient
     END SUBROUTINE init_functional_and_gradient_to_zero
     !===============================================================================================================================
-    
+
 END SUBROUTINE energy_and_gradient
 !===================================================================================================================================

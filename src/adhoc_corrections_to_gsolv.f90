@@ -3,13 +3,13 @@ subroutine adhoc_corrections_to_gsolv
 
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
-    use minimizer, only: FF
+    use minimizer, only: FF , cg_vect
     use mathematica, only: chop
     use input, only: input_log
 
     implicit none
 
-    real(dp) :: correction, correction2
+    real(dp) :: correction,  Pressure_bulk
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
     integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
     integer :: s, ios
@@ -20,6 +20,9 @@ subroutine adhoc_corrections_to_gsolv
     type (nmoleculetype), allocatable :: nmolecule(:)
     logical :: file_exists
 
+    open(79,file="output/FF")
+      write(79,*) FF
+    close(79)
     !... We use P-scheme instead of M-scheme for the electrostatics in MDFT. See Kastenholz and Hunenberger, JCP 124, 124106 (2006)
     if (input_log("poisson_solver") .eqv. .true.) then
       correction = -79.8_dp*sum(solute%site%q) ! in kJ/mol
@@ -45,37 +48,19 @@ subroutine adhoc_corrections_to_gsolv
     end do
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
 
-    inquire(file='output/cs.in',exist=file_exists);
-    if (file_exists) then
-        open (14, file='output/cs.in', iostat=ios)
-        if (ios/=0) stop 'Cant open file output/cs.in in adhoc_corrections_to_gsolv. But it is present!'
-        if (ios==0) then
-            block
-                real(dp) :: knorm, ck0
-                read(14,*) knorm, ck0
-                correction = (nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT * (-1._dp + 0.5_dp*solvent(1)%n0* ck0)
-                correction2 = (nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT * (-1._dp + 0.5_dp*solvent(1)%n0* ck0&
-              +9.2000475144588751) !MAGIC NUMBER FOR 3BODY PRESSURE TODO EXPLAIN WHAT IT IS
+
+! The value of the grand potential is equal to PV, with P pressure and V volume when the system is the bulk fluid.
+  cg_vect(:)=0.0_dp  !Set Density to 0.0_dp
+  FF=0.0_dp
+  Call energy_and_gradient(-10)  !this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
+  Pressure_bulk=FF/PRODUCT(spaceGrid%length) ! Omega[rho=rho_0]=PV
+
+              correction=-(nmolecule(1)%bulk - nmolecule(1)%withsolute)/solvent(1)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume
               print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
               open(79,file="output/PMV_correction")
-                write(79,*) correction
+              write(79,*) correction
               close(79)
-              print*,"You should add",correction2,"kJ/mol to FREE ENERGY as partial molar volume correction if you work with 3Body"!
-              open(79,file="output/PMV3b_correction")
-                write(79,*) correction2
-              close(79)
-              !  print*,"You should add",correction2,"kJ/mol to FREE ENERGY as partial molar volume correction"
-            end block
-            close(14)
-        end if
-    else ! if file does not exist
-        print*,"I could not find c(k=0) by myself. Please do the math yourself:"
-        print*,"You should add",(nmolecule(1)%bulk - nmolecule(1)%withsolute) *thermoCond%kbT,&
-        "*(-1+", 0.5_dp*solvent(1)%n0 ,"*c(k=0) ) kJ/mol to FREE ENERGY as partial molar volume correction"
-    end if
 
-  open(79,file="output/FF")
-    write(79,*) FF
-  close(79)
+
 
 end subroutine adhoc_corrections_to_gsolv
