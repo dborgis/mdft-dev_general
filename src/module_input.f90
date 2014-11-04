@@ -9,7 +9,7 @@ MODULE input
 
 CONTAINS
 
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   PURE FUNCTION input_dp (tag, defaultValue)
     IMPLICIT NONE
@@ -74,66 +74,66 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-PURE FUNCTION input_int (tag, defaultValue)
-  IMPLICIT NONE
-  INTEGER(I2B) :: input_int
-  CHARACTER(*), INTENT(IN) :: tag
-  integer(i2b), optional, intent(in) :: defaultValue
-  INTEGER(i2b) :: i, j
-  logical :: ifoundtag
-  ifoundtag = .false.
-  j=LEN(tag)
-  DO i = 1, SIZE( input_line)
-    IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
-      READ(input_line(i)(j+4:j+50),*) input_int
-      ifoundtag = .true.
-      exit
-    end if
-  END DO
-  if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int = defaultValue
-END FUNCTION input_int
+  PURE FUNCTION input_int (tag, defaultValue)
+    IMPLICIT NONE
+    INTEGER(I2B) :: input_int
+    CHARACTER(*), INTENT(IN) :: tag
+    integer(i2b), optional, intent(in) :: defaultValue
+    INTEGER(i2b) :: i, j
+    logical :: ifoundtag
+    ifoundtag = .false.
+    j=LEN(tag)
+    DO i = 1, SIZE( input_line)
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
+        READ(input_line(i)(j+4:j+50),*) input_int
+        ifoundtag = .true.
+        exit
+      end if
+    END DO
+    if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int = defaultValue
+  END FUNCTION input_int
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-PURE FUNCTION input_int2 (tag, defaultValue)
-  IMPLICIT NONE
-  INTEGER(I2B) :: input_int2(2)
-  CHARACTER(*), INTENT(IN) :: tag
-  integer(i2b), optional, intent(in) :: defaultValue(2)
-  INTEGER(i2b) :: i, j
-  logical :: ifoundtag
-  ifoundtag = .false.
-  j=LEN(tag)
-  DO i = 1, SIZE( input_line)
-    IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
-      READ(input_line(i)(j+4:j+50),*) input_int2
-      ifoundtag = .true.
-      exit
-    end if
-  END DO
-  if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int2 = defaultValue
-END FUNCTION input_int2
+  PURE FUNCTION input_int2 (tag, defaultValue)
+    IMPLICIT NONE
+    INTEGER(I2B) :: input_int2(2)
+    CHARACTER(*), INTENT(IN) :: tag
+    integer(i2b), optional, intent(in) :: defaultValue(2)
+    INTEGER(i2b) :: i, j
+    logical :: ifoundtag
+    ifoundtag = .false.
+    j=LEN(tag)
+    DO i = 1, SIZE( input_line)
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
+        READ(input_line(i)(j+4:j+50),*) input_int2
+        ifoundtag = .true.
+        exit
+      end if
+    END DO
+    if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int2 = defaultValue
+  END FUNCTION input_int2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-PURE FUNCTION input_int3 (tag, defaultValue)
-  IMPLICIT NONE
-  INTEGER(I2B) :: input_int3(3)
-  CHARACTER(*), INTENT(IN) :: tag
-  integer(i2b), optional, intent(in) :: defaultValue(3)
-  INTEGER(i2b) :: i, j
-  logical :: ifoundtag
-  ifoundtag = .false.
-  j=LEN(tag)
-  DO i = 1, SIZE( input_line)
-    IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
-      READ(input_line(i)(j+4:j+50),*) input_int3
-      ifoundtag = .true.
-      exit
-    end if
-  END DO
-  if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int3 = defaultValue
-END FUNCTION input_int3
+  PURE FUNCTION input_int3 (tag, defaultValue)
+    IMPLICIT NONE
+    INTEGER(I2B) :: input_int3(3)
+    CHARACTER(*), INTENT(IN) :: tag
+    integer(i2b), optional, intent(in) :: defaultValue(3)
+    INTEGER(i2b) :: i, j
+    logical :: ifoundtag
+    ifoundtag = .false.
+    j=LEN(tag)
+    DO i = 1, SIZE( input_line)
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
+        READ(input_line(i)(j+4:j+50),*) input_int3
+        ifoundtag = .true.
+        exit
+      end if
+    END DO
+    if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int3 = defaultValue
+  END FUNCTION input_int3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -222,7 +222,7 @@ END FUNCTION input_int3
       CLOSE (77)
   END FUNCTION n_linesInFile
 
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   FUNCTION deltaAbscissa (filename)
     REAL(dp) :: abscissa, previousAbscissa, ordonates, deltaAbscissa
@@ -277,6 +277,6 @@ END FUNCTION input_int3
     CLOSE(10)
   END FUNCTION deltaAbscissa
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 END MODULE input
