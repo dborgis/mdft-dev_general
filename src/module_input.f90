@@ -11,30 +11,30 @@ CONTAINS
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_dp (That)
+  PURE FUNCTION input_dp (tag)
     IMPLICIT NONE
     REAL(DP) :: input_dp
-    CHARACTER(*), INTENT(IN) :: That
+    CHARACTER(*), INTENT(IN) :: tag
     INTEGER(i2b) :: i, j
-    j=LEN(That)
+    j=LEN(tag)
     DO i =1,SIZE(input_line)
-      IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ(input_line(i)(j+4:j+50),*) input_dp
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) READ(input_line(i)(j+4:j+50),*) input_dp
     END DO
   END FUNCTION input_dp
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_int (that, defaultValue)
+  PURE FUNCTION input_int (tag, defaultValue)
     IMPLICIT NONE
     INTEGER(I2B) :: input_int
-    CHARACTER(*), INTENT(IN) :: That
+    CHARACTER(*), INTENT(IN) :: tag
     integer(i2b), optional, intent(in) :: defaultValue
     INTEGER(i2b) :: i, j
     logical :: ifoundtag
     ifoundtag = .false.
-    j=LEN(That)
+    j=LEN(tag)
     DO i = 1, SIZE( input_line)
-      IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) then
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
         READ(input_line(i)(j+4:j+50),*) input_int
         ifoundtag = .true.
         exit
@@ -45,18 +45,18 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION input_log (that)
+  FUNCTION input_log (tag)
     IMPLICIT NONE
     logical :: input_log
-    CHARACTER(*), INTENT(IN) :: that
+    CHARACTER(*), INTENT(IN) :: tag
     CHARACTER :: text
     INTEGER(i2b) :: i, j
-    IF (that=='point_charge_electrostatic') THEN
+    IF (tag=='point_charge_electrostatic') THEN
       STOP 'The tag point_charge_electrostatic in dft.in must be renamed direct_sum since July 27th, 2014'
     END IF
-    j=LEN(That)
+    j=LEN(tag)
     DO i =1,SIZE( input_line)
-      IF( input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ' ) READ( input_line (i) (j+4:j+50) , * ) text
+      IF( input_line(i)(1:j)==tag .AND. input_line(i)(j+1:j+1)==' ' ) READ( input_line (i) (j+4:j+50) , * ) text
     END DO
     j = 999 ! means error in reading
     IF( text(1:1) == 'T' ) j = 1 ! means true, 2 means false
@@ -64,7 +64,7 @@ CONTAINS
     IF( text(1:1) == 'F' ) j = 2
     IF( text(1:1) == 'f' ) j = 2
     IF( j == 999 ) THEN
-      PRINT*, 'I did not find the tag ', that,' in dft.in'
+      PRINT*, 'I did not find the tag ', tag,' in dft.in'
       STOP
     END IF
     IF( j == 1 ) input_log = .TRUE.
@@ -73,20 +73,20 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION input_char (that)
+  FUNCTION input_char (tag)
     IMPLICIT NONE
     CHARACTER(50) :: input_char
-    CHARACTER(*), INTENT(IN) :: that
+    CHARACTER(*), INTENT(IN) :: tag
     INTEGER(i2b) :: i,j,imax,iostatint
-    j=LEN(That)
+    j=LEN(tag)
     i=0
     imax=SIZE(input_line)
     DO i=1,imax+1
       IF (i==imax+1) THEN
-        PRINT*,"I didnt find keyword '",That,"' in dft.in"
+        PRINT*,"I didnt find keyword '",tag,"' in dft.in"
         STOP
       END IF
-      IF (input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ') THEN
+      IF (input_line(i)(1:j)==tag .AND. input_line(i)(j+1:j+1)==' ') THEN
         READ(input_line(i)(j+4:j+50),*,IOSTAT=iostatint) input_char
         IF (iostatint/=0) THEN
           PRINT*,"I have a problem in reading input line:"
@@ -98,11 +98,11 @@ CONTAINS
       END IF
     END DO
     IF (input_char(1:1)==' ') THEN
-      PRINT*,"First character of ",that," is a whitespace"
+      PRINT*,"First character of ",tag," is a whitespace"
       STOP
     END IF
     IF (LEN(TRIM(ADJUSTL(input_char)))==0) THEN
-      PRINT*,"Tag after ",That," is only whitespaces."
+      PRINT*,"Tag after ",tag," is only whitespaces."
       STOP
     END IF
   END FUNCTION input_char
