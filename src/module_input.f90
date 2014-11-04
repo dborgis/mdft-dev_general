@@ -11,124 +11,129 @@ contains
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  real(dp) pure function input_dp (that)
-  implicit none
-  character(*), intent(in) :: that
-  integer(i2b) :: i, j
-  j=len(that)
-  do i =1,size(input_line)
-    if( input_line( i)( 1:j) == that  .and. input_line(i)(j+1:j+1)==' ' ) read(input_line(i)(j+4:j+50),*) input_dp
-  end do
-end function input_dp
+  pure function input_dp (that)
+    implicit none
+    real(dp) :: input_dp
+    character(*), intent(in) :: that
+    integer(i2b) :: i, j
+    j=len(that)
+    do i =1,size(input_line)
+      if( input_line( i)( 1:j) == that  .and. input_line(i)(j+1:j+1)==' ' ) read(input_line(i)(j+4:j+50),*) input_dp
+    end do
+  end function input_dp
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-integer(i2b) pure function input_int (that, def)
-implicit none
-character(*), intent(in) :: that
-integer(i2b), optional, intent(in) :: def
-integer(i2b) :: i, j
-logical :: ifoundtag
-ifoundtag = .false.
-j=len(that)
-do i = 1, size( input_line)
-  if( input_line( i)( 1:j) == that  .and. input_line(i)(j+1:j+1)==' ' ) then
-    read(input_line(i)(j+4:j+50),*) input_int
-    ifoundtag = .true.
-    exit
-  end if
-end do
-if (ifoundtag.eqv..false. .and. present(def)) input_int = def
-end function input_int
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-logical function input_log (that)
-implicit none
-character(*), intent(in) :: that
-character :: text
-integer(i2b) :: i, j
-if (that=='point_charge_electrostatic') then
-  stop 'the tag point_charge_electrostatic in dft.in must be renamed direct_sum since july 27th, 2014'
-end if
-j=len(that)
-do i =1,size( input_line)
-  if( input_line(i)(1:j)==that .and. input_line(i)(j+1:j+1)==' ' ) read( input_line (i) (j+4:j+50) , * ) text
-end do
-j = 999 ! means error in reading
-if( text(1:1) == 't' ) j = 1 ! means true, 2 means false
-if( text(1:1) == 't' ) j = 1
-if( text(1:1) == 'f' ) j = 2
-if( text(1:1) == 'f' ) j = 2
-if( j == 999 ) then
-  print*, 'i did not find the tag ', that,' in dft.in'
-  stop
-end if
-if( j == 1 ) input_log = .true.
-if( j == 2 ) input_log = .false.
-end function input_log
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-character(50) function input_char (that)
-implicit none
-character(*), intent(in) :: that
-integer(i2b) :: i,j,imax,iostatint
-j=len(that)
-i=0
-imax=size(input_line)
-do i=1,imax+1
-  if (i==imax+1) then
-    print*,"i didnt find keyword '",that,"' in dft.in"
-    stop
-  end if
-  if (input_line(i)(1:j)==that .and. input_line(i)(j+1:j+1)==' ') then
-    read(input_line(i)(j+4:j+50),*,iostat=iostatint) input_char
-    if (iostatint/=0) then
-      print*,"i have a problem in reading input line:"
-      print*,trim(adjustl(input_line(i)))
-      if (trim(adjustl(input_line(i)(j+4:j+50)))=='') print*,"i found nothing after sign ="
-      stop
-    end if
-    exit
-  end if
-end do
-if (input_char(1:1)==' ') then
-  print*,"first character of ",that," is a whitespace"
-  stop
-end if
-if (len(trim(adjustl(input_char)))==0) then
-  print*,"tag after ",that," is only whitespaces."
-  stop
-end if
-end function input_char
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-function n_linesinfile (filename)
-  implicit none
-  integer :: n_linesinfile
-  character(*), intent(in) :: filename
-  integer :: ios
-  open (77, file=filename)
-  n_linesinfile = 0
-  do while (.true.)
-    read (77,*,iostat=ios)
-    if (ios>0) then
-      write(*,*)'error in file:',filename
-      stop
-      else if (ios<0) then ! end of file reached
+  pure function input_int (that, def)
+    implicit none
+    integer(i2b) :: input_int
+    character(*), intent(in) :: that
+    integer(i2b), optional, intent(in) :: def
+    integer(i2b) :: i, j
+    logical :: ifoundtag
+    ifoundtag = .false.
+    j=len(that)
+    do i = 1, size( input_line)
+      if( input_line( i)( 1:j) == that  .and. input_line(i)(j+1:j+1)==' ' ) then
+        read(input_line(i)(j+4:j+50),*) input_int
+        ifoundtag = .true.
         exit
-      else
-        n_linesinfile = n_linesinfile +1
       end if
     end do
-    close (77)
+    if (ifoundtag.eqv..false. .and. present(def)) input_int = def
+  end function input_int
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  function input_log (that)
+    implicit none
+    logical :: input_log
+    character(*), intent(in) :: that
+    character :: text
+    integer(i2b) :: i, j
+    if (that=='point_charge_electrostatic') then
+      stop 'the tag point_charge_electrostatic in dft.in must be renamed direct_sum since july 27th, 2014'
+    end if
+    j=len(that)
+    do i =1,size( input_line)
+      if( input_line(i)(1:j)==that .and. input_line(i)(j+1:j+1)==' ' ) read( input_line (i) (j+4:j+50) , * ) text
+    end do
+    j = 999 ! means error in reading
+    if( text(1:1) == 't' ) j = 1 ! means true, 2 means false
+    if( text(1:1) == 't' ) j = 1
+    if( text(1:1) == 'f' ) j = 2
+    if( text(1:1) == 'f' ) j = 2
+    if( j == 999 ) then
+      print*, 'i did not find the tag ', that,' in dft.in'
+      stop
+    end if
+    if( j == 1 ) input_log = .true.
+    if( j == 2 ) input_log = .false.
+  end function input_log
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  function input_char (that)
+    implicit none
+    character(50) :: input_char
+    character(*), intent(in) :: that
+    integer(i2b) :: i,j,imax,iostatint
+    j=len(that)
+    i=0
+    imax=size(input_line)
+    do i=1,imax+1
+      if (i==imax+1) then
+        print*,"i didnt find keyword '",that,"' in dft.in"
+        stop
+      end if
+      if (input_line(i)(1:j)==that .and. input_line(i)(j+1:j+1)==' ') then
+        read(input_line(i)(j+4:j+50),*,iostat=iostatint) input_char
+        if (iostatint/=0) then
+          print*,"i have a problem in reading input line:"
+          print*,trim(adjustl(input_line(i)))
+          if (trim(adjustl(input_line(i)(j+4:j+50)))=='') print*,"i found nothing after sign ="
+          stop
+        end if
+        exit
+      end if
+    end do
+    if (input_char(1:1)==' ') then
+      print*,"first character of ",that," is a whitespace"
+      stop
+    end if
+    if (len(trim(adjustl(input_char)))==0) then
+      print*,"tag after ",that," is only whitespaces."
+      stop
+    end if
+  end function input_char
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  function n_linesinfile (filename)
+    implicit none
+    integer :: n_linesinfile
+    character(*), intent(in) :: filename
+    integer :: ios
+    open (77, file=filename)
+    n_linesinfile = 0
+    do while (.true.)
+      read (77,*,iostat=ios)
+      if (ios>0) then
+        write(*,*)'error in file:',filename
+        stop
+        else if (ios<0) then ! end of file reached
+          exit
+        else
+          n_linesinfile = n_linesinfile +1
+        end if
+      end do
+      close (77)
   end function
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   function deltaabscissa (filename)
+    implicit none
     real(dp) :: abscissa, previousabscissa, ordonates, deltaabscissa
     character(*), intent(in) :: filename
     integer(i2b) :: i, ios, n_lines
@@ -183,4 +188,4 @@ function n_linesinfile (filename)
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  end module input
+end module input
