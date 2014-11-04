@@ -1,186 +1,186 @@
-MODULE input
+module input
 
-    USE precision_kinds ,ONLY: i2b,dp
-    IMPLICIT NONE
-    CHARACTER(len=100), ALLOCATABLE, DIMENSION(:) :: input_line ! array containing all input lines
-    LOGICAL :: verbose
-    PRIVATE
-    PUBLIC :: verbose, input_line, input_dp, input_int, input_log, input_char, n_linesInFile, deltaAbscissa
+  use precision_kinds ,only: i2b,dp
+  implicit none
+  character(len=100), allocatable, dimension(:) :: input_line ! array containing all input lines
+  logical :: verbose
+  private
+  public :: verbose, input_line, input_dp, input_int, input_log, input_char, n_linesinfile, deltaabscissa
 
-    CONTAINS
+contains
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        REAL(DP) PURE FUNCTION input_dp (That)
-            IMPLICIT NONE
-            CHARACTER(*), INTENT(IN) :: That
-            INTEGER(i2b) :: i, j
-            j=LEN(That)
-            DO i =1,SIZE(input_line) 
-                IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) READ(input_line(i)(j+4:j+50),*) input_dp
-            END DO
-        END FUNCTION input_dp
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
-    
-        INTEGER(I2B) PURE FUNCTION input_int (that, def)
-            IMPLICIT NONE
-            CHARACTER(*), INTENT(IN) :: That
-            integer(i2b), optional, intent(in) :: def
-            INTEGER(i2b) :: i, j
-            logical :: ifoundtag
-            ifoundtag = .false.
-            j=LEN(That)
-            DO i = 1, SIZE( input_line) 
-                IF( input_line( i)( 1:j) == That  .AND. input_line(i)(j+1:j+1)==' ' ) then
-                    READ(input_line(i)(j+4:j+50),*) input_int
-                    ifoundtag = .true.
-                    exit
-                end if
-            END DO
-            if (ifoundtag.eqv..false. .and. present(def)) input_int = def
-        END FUNCTION input_int
-    
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-        LOGICAL FUNCTION input_log (that)
-            IMPLICIT NONE
-            CHARACTER(*), INTENT(IN) :: that
-            CHARACTER :: text
-            INTEGER(i2b) :: i, j
-            IF (that=='point_charge_electrostatic') THEN
-                STOP 'The tag point_charge_electrostatic in dft.in must be renamed direct_sum since July 27th, 2014'
-            END IF
-            j=LEN(That)
-            DO i =1,SIZE( input_line) 
-                IF( input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ' ) READ( input_line (i) (j+4:j+50) , * ) text
-            END DO
-            j = 999 ! means error in reading
-            IF( text(1:1) == 'T' ) j = 1 ! means true, 2 means false
-            IF( text(1:1) == 't' ) j = 1
-            IF( text(1:1) == 'F' ) j = 2
-            IF( text(1:1) == 'f' ) j = 2
-            IF( j == 999 ) THEN
-                PRINT*, 'I did not find the tag ', that,' in dft.in'
-                STOP
-            END IF
-            IF( j == 1 ) input_log = .TRUE.
-            IF( j == 2 ) input_log = .FALSE.
-        END FUNCTION input_log
-            
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        CHARACTER(50) FUNCTION input_char (that)
-            IMPLICIT NONE
-            CHARACTER(*), INTENT(IN) :: that
-            INTEGER(i2b) :: i,j,imax,iostatint
-            j=LEN(That)
-            i=0
-            imax=SIZE(input_line)
-            DO i=1,imax+1
-                IF (i==imax+1) THEN
-                    PRINT*,"I didnt find keyword '",That,"' in dft.in"
-                    STOP
-                END IF
-                IF (input_line(i)(1:j)==that .AND. input_line(i)(j+1:j+1)==' ') THEN
-                    READ(input_line(i)(j+4:j+50),*,IOSTAT=iostatint) input_char
-                        IF (iostatint/=0) THEN
-                            PRINT*,"I have a problem in reading input line:"
-                            PRINT*,TRIM(ADJUSTL(input_line(i)))
-                            IF (TRIM(ADJUSTL(input_line(i)(j+4:j+50)))=='') PRINT*,"I found nothing after sign ="
-                            STOP
-                        END IF
-                    EXIT
-                END IF
-            END DO
-            IF (input_char(1:1)==' ') THEN
-                PRINT*,"First character of ",that," is a whitespace"
-                STOP
-            END IF
-            IF (LEN(TRIM(ADJUSTL(input_char)))==0) THEN
-                PRINT*,"Tag after ",That," is only whitespaces."
-                STOP
-            END IF
-        END FUNCTION input_char
-            
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-        FUNCTION n_linesInFile (filename)
-            IMPLICIT NONE
-            INTEGER :: n_linesInFile
-            CHARACTER(*), INTENT(IN) :: filename
-            INTEGER :: ios
-            OPEN (77, FILE=filename)
-                n_linesInFile = 0
-                DO WHILE (.true.)
-                    READ (77,*,IOSTAT=ios)
-                    IF (ios>0) THEN
-                        WRITE(*,*)'Error in file:',filename
-                        STOP
-                    ELSE IF (ios<0) THEN ! end of file reached
-                        EXIT
-                    ELSE
-                        n_linesInFile = n_linesInFile +1
-                    END IF
-                END DO
-            CLOSE (77)
-        END FUNCTION
+  real(dp) pure function input_dp (that)
+  implicit none
+  character(*), intent(in) :: that
+  integer(i2b) :: i, j
+  j=len(that)
+  do i =1,size(input_line)
+    if( input_line( i)( 1:j) == that  .and. input_line(i)(j+1:j+1)==' ' ) read(input_line(i)(j+4:j+50),*) input_dp
+  end do
+end function input_dp
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        FUNCTION deltaAbscissa (filename)
-            REAL(dp) :: abscissa, previousAbscissa, ordonates, deltaAbscissa
-            CHARACTER(*), INTENT(IN) :: filename
-            INTEGER(i2b) :: i, ios, n_lines
-            OPEN (10, FILE=filename, IOSTAT=ios)
-                IF (ios /= 0) THEN
-                    WRITE(*,*)"Cant open file ",filename," in FUNCTION deltaAbscissa"
-                END IF
-            
-                DO i= 1, 2
-                    READ(10,*,IOSTAT=ios) previousAbscissa, ordonates
-                        IF (ios/=0) then
-                            PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
-                            STOP
-                        END IF
-                    READ(10,*, IOSTAT=ios) abscissa, ordonates
-                        IF (ios/=0) then
-                            PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
-                            STOP
-                        END IF
-                END DO
-            deltaAbscissa = abscissa-previousAbscissa
-            CLOSE(10)
-            n_lines = n_linesInFile(filename)
-            OPEN (10, FILE=filename, IOSTAT=ios)
-                IF (ios /= 0) THEN
-                    WRITE(*,*)"Cant open file ",filename," in FUNCTION deltaAbscissa"
-                END IF
-            
-                READ(10,*,IOSTAT=ios) abscissa, ordonates
-                    IF (ios/=0) then
-                        PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
-                        STOP
-                    END IF
-                DO i=1, n_lines-1
-                    previousAbscissa = abscissa
-                    READ(10,*,IOSTAT=ios) abscissa, ordonates
-                    IF (ios>0) then
-                        PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
-                        STOP
-                    ELSE IF (ios<0) THEN
-                        EXIT
-                    ELSE
-                        IF ((abscissa-previousAbscissa-deltaAbscissa)/deltaAbscissa > 1E-5) THEN
-                            PRINT*, abscissa, previousAbscissa,abscissa-previousAbscissa ,deltaAbscissa
-                            PRINT*, 'STOP. Non uniform absissa in ', filename
-                            STOP
-                        END IF
-                    END IF
-                END DO
-            CLOSE(10)
-        END FUNCTION deltaAbscissa
+integer(i2b) pure function input_int (that, def)
+implicit none
+character(*), intent(in) :: that
+integer(i2b), optional, intent(in) :: def
+integer(i2b) :: i, j
+logical :: ifoundtag
+ifoundtag = .false.
+j=len(that)
+do i = 1, size( input_line)
+  if( input_line( i)( 1:j) == that  .and. input_line(i)(j+1:j+1)==' ' ) then
+    read(input_line(i)(j+4:j+50),*) input_int
+    ifoundtag = .true.
+    exit
+  end if
+end do
+if (ifoundtag.eqv..false. .and. present(def)) input_int = def
+end function input_int
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-END MODULE input
+logical function input_log (that)
+implicit none
+character(*), intent(in) :: that
+character :: text
+integer(i2b) :: i, j
+if (that=='point_charge_electrostatic') then
+  stop 'the tag point_charge_electrostatic in dft.in must be renamed direct_sum since july 27th, 2014'
+end if
+j=len(that)
+do i =1,size( input_line)
+  if( input_line(i)(1:j)==that .and. input_line(i)(j+1:j+1)==' ' ) read( input_line (i) (j+4:j+50) , * ) text
+end do
+j = 999 ! means error in reading
+if( text(1:1) == 't' ) j = 1 ! means true, 2 means false
+if( text(1:1) == 't' ) j = 1
+if( text(1:1) == 'f' ) j = 2
+if( text(1:1) == 'f' ) j = 2
+if( j == 999 ) then
+  print*, 'i did not find the tag ', that,' in dft.in'
+  stop
+end if
+if( j == 1 ) input_log = .true.
+if( j == 2 ) input_log = .false.
+end function input_log
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+character(50) function input_char (that)
+implicit none
+character(*), intent(in) :: that
+integer(i2b) :: i,j,imax,iostatint
+j=len(that)
+i=0
+imax=size(input_line)
+do i=1,imax+1
+  if (i==imax+1) then
+    print*,"i didnt find keyword '",that,"' in dft.in"
+    stop
+  end if
+  if (input_line(i)(1:j)==that .and. input_line(i)(j+1:j+1)==' ') then
+    read(input_line(i)(j+4:j+50),*,iostat=iostatint) input_char
+    if (iostatint/=0) then
+      print*,"i have a problem in reading input line:"
+      print*,trim(adjustl(input_line(i)))
+      if (trim(adjustl(input_line(i)(j+4:j+50)))=='') print*,"i found nothing after sign ="
+      stop
+    end if
+    exit
+  end if
+end do
+if (input_char(1:1)==' ') then
+  print*,"first character of ",that," is a whitespace"
+  stop
+end if
+if (len(trim(adjustl(input_char)))==0) then
+  print*,"tag after ",that," is only whitespaces."
+  stop
+end if
+end function input_char
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+function n_linesinfile (filename)
+  implicit none
+  integer :: n_linesinfile
+  character(*), intent(in) :: filename
+  integer :: ios
+  open (77, file=filename)
+  n_linesinfile = 0
+  do while (.true.)
+    read (77,*,iostat=ios)
+    if (ios>0) then
+      write(*,*)'error in file:',filename
+      stop
+      else if (ios<0) then ! end of file reached
+        exit
+      else
+        n_linesinfile = n_linesinfile +1
+      end if
+    end do
+    close (77)
+  end function
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  function deltaabscissa (filename)
+    real(dp) :: abscissa, previousabscissa, ordonates, deltaabscissa
+    character(*), intent(in) :: filename
+    integer(i2b) :: i, ios, n_lines
+    open (10, file=filename, iostat=ios)
+    if (ios /= 0) then
+      write(*,*)"cant open file ",filename," in function deltaabscissa"
+    end if
+
+    do i= 1, 2
+      read(10,*,iostat=ios) previousabscissa, ordonates
+      if (ios/=0) then
+        print*, 'something went wrong while reading ', trim(adjustl(filename)), ' in module_input>deltaabscissa'
+        stop
+      end if
+      read(10,*, iostat=ios) abscissa, ordonates
+      if (ios/=0) then
+        print*, 'something went wrong while reading ', trim(adjustl(filename)), ' in module_input>deltaabscissa'
+        stop
+      end if
+    end do
+    deltaabscissa = abscissa-previousabscissa
+    close(10)
+    n_lines = n_linesinfile(filename)
+    open (10, file=filename, iostat=ios)
+    if (ios /= 0) then
+      write(*,*)"cant open file ",filename," in function deltaabscissa"
+    end if
+
+    read(10,*,iostat=ios) abscissa, ordonates
+    if (ios/=0) then
+      print*, 'something went wrong while reading ', trim(adjustl(filename)), ' in module_input>deltaabscissa'
+      stop
+    end if
+    do i=1, n_lines-1
+      previousabscissa = abscissa
+      read(10,*,iostat=ios) abscissa, ordonates
+      if (ios>0) then
+        print*, 'something went wrong while reading ', trim(adjustl(filename)), ' in module_input>deltaabscissa'
+        stop
+        else if (ios<0) then
+          exit
+        else
+          if ((abscissa-previousabscissa-deltaabscissa)/deltaabscissa > 1e-5) then
+            print*, abscissa, previousabscissa,abscissa-previousabscissa ,deltaabscissa
+            print*, 'stop. non uniform absissa in ', filename
+            stop
+          end if
+        end if
+      end do
+      close(10)
+    end function deltaabscissa
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  end module input
