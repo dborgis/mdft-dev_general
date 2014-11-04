@@ -11,16 +11,66 @@ CONTAINS
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_dp (tag)
+  PURE FUNCTION input_dp (tag, defaultValue)
     IMPLICIT NONE
     REAL(DP) :: input_dp
     CHARACTER(*), INTENT(IN) :: tag
+    REAL(DP), optional, intent(in) :: defaultValue
     INTEGER(i2b) :: i, j
+    logical :: ifoundtag
+    ifoundtag = .false.
     j=LEN(tag)
-    DO i =1,SIZE(input_line)
-      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) READ(input_line(i)(j+4:j+50),*) input_dp
+    DO i = 1, SIZE( input_line)
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
+        READ(input_line(i)(j+4:j+50),*) input_dp
+        ifoundtag = .true.
+        exit
+      end if
     END DO
+    if (ifoundtag .eqv. .false. .and. present(defaultValue)) input_dp = defaultValue
   END FUNCTION input_dp
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  PURE FUNCTION input_dp2 (tag, defaultValue)
+    IMPLICIT NONE
+    REAL(DP) :: input_dp2(2)
+    CHARACTER(*), INTENT(IN) :: tag
+    REAL(DP), optional, intent(in) :: defaultValue(2)
+    INTEGER(i2b) :: i, j
+    logical :: ifoundtag
+    ifoundtag = .false.
+    j=LEN(tag)
+    DO i = 1, SIZE( input_line)
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
+        READ(input_line(i)(j+4:j+50),*) input_dp2
+        ifoundtag = .true.
+        exit
+      end if
+    END DO
+    if (ifoundtag .eqv. .false. .and. present(defaultValue)) input_dp2 = defaultValue
+  END FUNCTION input_dp2
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  PURE FUNCTION input_dp3 (tag, defaultValue)
+    IMPLICIT NONE
+    REAL(DP) :: input_dp3(3)
+    CHARACTER(*), INTENT(IN) :: tag
+    REAL(DP), optional, intent(in) :: defaultValue(3)
+    INTEGER(i2b) :: i, j
+    logical :: ifoundtag
+    ifoundtag = .false.
+    j=LEN(tag)
+    DO i = 1, SIZE( input_line)
+      IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
+        READ(input_line(i)(j+4:j+50),*) input_dp3
+        ifoundtag = .true.
+        exit
+      end if
+    END DO
+    if (ifoundtag .eqv. .false. .and. present(defaultValue)) input_dp3 = defaultValue
+  END FUNCTION input_dp3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
