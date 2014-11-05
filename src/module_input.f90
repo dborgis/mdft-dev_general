@@ -5,7 +5,8 @@ MODULE input
   CHARACTER(len=100), ALLOCATABLE, DIMENSION(:) :: input_line ! array containing all input lines
   LOGICAL :: verbose
   PRIVATE
-  PUBLIC :: verbose, input_line, input_dp, input_int, input_log, input_char, n_linesInFile, deltaAbscissa
+  PUBLIC :: verbose, input_line, input_dp, input_int, input_log, input_char, n_linesInFile, deltaAbscissa, &
+    input_dp2, input_dp3, input_int2, input_int3
 
 CONTAINS
 
