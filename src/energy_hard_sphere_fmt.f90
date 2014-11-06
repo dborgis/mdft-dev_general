@@ -67,12 +67,10 @@ SUBROUTINE energy_hard_sphere_fmt (Fint)
             END DO
         END DO
     END DO
-
     if ( all(rho<=epsilon(1._dp)) ) then
       Fint = 0._dp
       return
     end if
-
     ! total number of molecules of each species
     ALLOCATE ( nb_molecules ( nb_species ) ,SOURCE=0._dp)
     DO CONCURRENT ( s=1:nb_species )

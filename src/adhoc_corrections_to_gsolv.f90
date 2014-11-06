@@ -3,10 +3,10 @@ subroutine adhoc_corrections_to_gsolv
 
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
-    use minimizer, only: FF , cg_vect
+    use minimizer, only: FF , cg_vect, finalizeMinimizer
+
     use mathematica, only: chop
     use input, only: input_log
-
     implicit none
 
     real(dp) :: correction,  Pressure_bulk
@@ -48,11 +48,11 @@ subroutine adhoc_corrections_to_gsolv
     end do
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
 
-
 ! The value of the grand potential is equal to PV, with P pressure and V volume when the system is the bulk fluid.
   cg_vect(:)=0.0_dp  !Set Density to 0.0_dp
   FF=0.0_dp
   Call energy_and_gradient(-10)  !this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
+
   Pressure_bulk=FF/PRODUCT(spaceGrid%length) ! Omega[rho=rho_0]=PV
 
               correction=-(nmolecule(1)%bulk - nmolecule(1)%withsolute)/solvent(1)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume

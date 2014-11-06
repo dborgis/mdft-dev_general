@@ -1,4 +1,4 @@
-SUBROUTINE energy_threebody_faster (F3B1,F3B2)
+SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 
     USE precision_kinds ,ONLY: i2b, dp
     USE input           ,ONLY: verbose, input_dp
@@ -9,7 +9,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     USE fft             ,ONLY: fftw3,kproj
 
     IMPLICIT NONE
-    REAL(dp), INTENT(OUT)                       :: F3B1, F3B2
+    REAL(dp), INTENT(OUT)                       :: F3B1, F3B2, F3B_ww
     REAL(dp), PARAMETER                         :: rmin1=1.5_dp, rsw1=2.0_dp, rmin2=2.25_dp, rsw2=2.5_dp, rmax2=5.0_dp, d_w=1.9_dp
     INTEGER(i2b)                                :: icg,i,j,k,o,p,n,i1,j1,k1,nfft1,nfft2,nfft3,nb_solute_sites
     REAL(dp)                                    :: rk2,xk2,yk2,zk2,r,x,y,z,deltaVk,rb,fw,deltaV,time0,time1,deltax,deltay,deltaz
@@ -28,7 +28,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     REAL(dp), PARAMETER                         :: costheta0 = -1.0_dp/3.0_dp
     COMPLEX(dp) ,ALLOCATABLE, DIMENSION(:,:,:)  :: Gxx_k,Gyy_k,Gzz_k,Gxy_k,Gxz_k,Gyz_k,Gx_k,Gy_k,Gz_k,G0_k , function_rho_0k
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FGxx,FGyy,FGzz,FGxy,FGxz,FGyz,FGx,FGy,FGz,FG0
-    REAL(dp)                                    :: lambda_w , F3B_ww, rmax_w, temp1 !lambda parameter for water water interaction
+    REAL(dp)                                    :: lambda_w , rmax_w, temp1 !lambda parameter for water water interaction
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
 
     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
@@ -71,13 +71,13 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     CALL dfftw_execute(fftw3%plan_forward)
     ALLOCATE(function_rho_0k(nfft1/2+1,nfft2,nfft3)  ,SOURCE=fftw3%out_forward*deltaV)
 
-    
+
 !A0's definition. All Axx and Ax will be defined from A0.
     allocate ( A0 (nfft1,nfft2,nfft3) ,source=0._dp)
     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         r = norm2(kvec)
-        A0 (i,j,k) = f_ww(r,rmin2,rsw2,rmax2)
+        A0 (i,j,k) = f_ww(r,0.0_dp, 0.0_dp,rmax2)
     end do
 
 !A0
@@ -465,7 +465,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
                             +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
                             -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
                             +costheta0**2*H0(:)*DH0(i,j,k,:)))
-                            
+
 !~                         DO n=1,nb_solute_sites
 !~                             dF(icg)=dF(icg)+solute%site(n)%lambda1*thermocond%kbT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
 !~                                 Hzz(n)*DHzz(i,j,k,n)&
@@ -479,9 +479,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         END DO
     END DO
 
-    print*, 'dF3Bww=', norm2(df)-temp1
     FF = FF + F3B2 + F3B1 + F3B_ww
-    print*, F3B_ww
     CALL CPU_TIME (time1)
 
     IF (verbose) THEN
