@@ -44,8 +44,7 @@ SUBROUTINE find_equilibrium_density
   print*,
   print*,"FREE ENERGY =",FF,"kJ/mol"
 
-  if (iter < itermax) call adhoc_corrections_to_gsolv ! ad hoc corrections
+!  if (iter < itermax) call adhoc_corrections_to_gsolv ! ad hoc corrections
 
-  call finalizeMinimizer
 
 END SUBROUTINE find_equilibrium_density
