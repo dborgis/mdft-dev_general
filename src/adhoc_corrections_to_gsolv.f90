@@ -62,7 +62,7 @@ subroutine adhoc_corrections_to_gsolv
               write(79,*) correction
               close(79)
 
-call finalizeMinimizer
+CALL finalizeMinimizer
 
 
 end subroutine adhoc_corrections_to_gsolv
