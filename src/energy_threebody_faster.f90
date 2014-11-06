@@ -1,4 +1,4 @@
-SUBROUTINE energy_threebody_faster (F3B1,F3B2)
+SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 
     USE precision_kinds ,ONLY: i2b, dp
     USE input           ,ONLY: verbose, input_dp
@@ -9,7 +9,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     USE fft             ,ONLY: fftw3,kproj
 
     IMPLICIT NONE
-    REAL(dp), INTENT(OUT)                       :: F3B1, F3B2
+    REAL(dp), INTENT(OUT)                       :: F3B1, F3B2, F3B_ww
     REAL(dp), PARAMETER                         :: rmin1=1.5_dp, rsw1=2.0_dp, rmin2=2.25_dp, rsw2=2.5_dp, rmax2=5.0_dp, d_w=1.9_dp
     INTEGER(i2b)                                :: icg,i,j,k,o,p,n,i1,j1,k1,nfft1,nfft2,nfft3,nb_solute_sites
     REAL(dp)                                    :: rk2,xk2,yk2,zk2,r,x,y,z,deltaVk,rb,fw,deltaV,time0,time1,deltax,deltay,deltaz
@@ -28,7 +28,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     REAL(dp), PARAMETER                         :: costheta0 = -1.0_dp/3.0_dp
     COMPLEX(dp) ,ALLOCATABLE, DIMENSION(:,:,:)  :: Gxx_k,Gyy_k,Gzz_k,Gxy_k,Gxz_k,Gyz_k,Gx_k,Gy_k,Gz_k,G0_k , function_rho_0k
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FGxx,FGyy,FGzz,FGxy,FGxz,FGyz,FGx,FGy,FGz,FG0
-    REAL(dp)                                    :: lambda_w , F3B_ww, rmax_w, temp1 !lambda parameter for water water interaction
+    REAL(dp)                                    :: lambda_w , rmax_w, temp1 !lambda parameter for water water interaction
     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
 
     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
@@ -479,9 +479,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
         END DO
     END DO
 
-    print*, 'dF3Bww=', norm2(df)-temp1
     FF = FF + F3B2 + F3B1 + F3B_ww
-    print*, F3B_ww
     CALL CPU_TIME (time1)
 
     IF (verbose) THEN

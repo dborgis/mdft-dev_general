@@ -52,15 +52,8 @@ if ( .not. allocated ( hs ) ) then
     print*,'an HS solute but no HS Solvent'
     print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
     HS_Solv_R(:)=0.0_dp
-    print*, 'bla1'
 ELSE
-  print*, 'bla0'
-
-  print*, SIZE(HS_Solv_R), SIZE(hs(:)%R)
-  do i = 1 , nb_species
-    HS_Solv_R(i)=hs(i)%R
-  end do
-    print*, 'bla2'
+    HS_Solv_R(:)=hs(:)%R
 END IF
 ! compute the sum of solute and solvent radius
 do solute_site = 1 , nb_solute_sites

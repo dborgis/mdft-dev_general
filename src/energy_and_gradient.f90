@@ -15,7 +15,7 @@ SUBROUTINE energy_and_gradient (iter)
     IMPLICIT NONE
 
     INTEGER(i2b), INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
+    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
     LOGICAL :: opn
     INTEGER(i2b) :: karim
 
@@ -103,7 +103,7 @@ SUBROUTINE energy_and_gradient (iter)
 
     IF ( input_log('threebody') ) THEN
         IF (SUM(ABS(solute%site%lambda1)+ABS(solute%site%lambda1))/=0.0_dp .OR. input_dp('lambda_solvent')/=0.0_dp) THEN
-            CALL energy_threebody_faster (F3B1, F3B2)
+            CALL energy_threebody_faster (F3B1, F3B2, F3B_ww)
         END IF
     END IF
 
@@ -120,6 +120,7 @@ IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute a
     PRINT*,"FexcPol         =",FexcPol
     PRINT*,"F3B1            =",F3B1
     PRINT*,"F3B2            =",F3B2
+    PRINT*,"F3B_solvent     =",F3B_ww
     PRINT*,"Ffmt            =",Ffmt
     PRINT*,"Ffmtcs          =",Ffmtcs
     PRINT*,"Fexc_ck_angular =",Fexc_ck_angular
