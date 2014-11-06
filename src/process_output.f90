@@ -8,6 +8,7 @@ SUBROUTINE process_output
     USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
+    USE minimizer,          ONLY : finalizeminimizer
 
     IMPLICIT NONE
 
@@ -86,6 +87,7 @@ SUBROUTINE process_output
     CALL compute_rdf ( neq(:,:,:,1) , filename ) ! Get radial distribution functions
 
     CALL adhoc_corrections_to_gsolv
+    CALL finalizeMinimizer
 
 
     CONTAINS

@@ -16,9 +16,8 @@ real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
 real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
 real(dp):: hard_sphere_solute_radius ! radius of the hard sphere solute. tag in dft.in
 real(dp):: sum_of_solute_and_solvent_radius ! sum of solute and solvent radius
-real(dp), dimension (nb_species) :: HS_Solv_R
-    INTEGER(i2b) :: nfft1, nfft2, nfft3
-    REAL(dp) :: lx, ly, lz, deltax, deltay, deltaz
+INTEGER(i2b) :: nfft1, nfft2, nfft3
+REAL(dp) :: lx, ly, lz, deltax, deltay, deltaz
 
     lx= spaceGrid%length(1)
     ly= spacegrid%length(2)
@@ -51,14 +50,15 @@ if ( .not. allocated ( hs ) ) then
     print*,'WARNING solvent radius is not defined in comput_vext_hard_sphere it is now equal to 0, which is ok ONLY if you want '
     print*,'an HS solute but no HS Solvent'
     print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
-    HS_Solv_R(:)=0.0_dp
-ELSE
-    HS_Solv_R(:)=hs(:)%R
 END IF
 ! compute the sum of solute and solvent radius
 do solute_site = 1 , nb_solute_sites
   do species = 1 , nb_species
-    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + HS_Solv_R(species) ) ** 2
+    if ( .not. allocated ( hs ) ) then
+       sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius)**2
+    else
+    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + HS(species)%R ) ** 2
+    end if
     do k = 1 , nfft3
       z_grid = real( k - 1 , dp ) * deltaz
       z_nm2 = ( z_grid - solute%site(solute_site)%r(3) ) ** 2

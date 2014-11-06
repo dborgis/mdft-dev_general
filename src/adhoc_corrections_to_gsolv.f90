@@ -7,7 +7,6 @@ subroutine adhoc_corrections_to_gsolv
 
     use mathematica, only: chop
     use input, only: input_log
-
     implicit none
 
     real(dp) :: correction,  Pressure_bulk
@@ -62,7 +61,6 @@ subroutine adhoc_corrections_to_gsolv
               write(79,*) correction
               close(79)
 
-CALL finalizeMinimizer
 
 
 end subroutine adhoc_corrections_to_gsolv
