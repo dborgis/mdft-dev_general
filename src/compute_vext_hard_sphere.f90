@@ -16,10 +16,10 @@ real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
 real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
 real(dp):: hard_sphere_solute_radius ! radius of the hard sphere solute. tag in dft.in
 real(dp):: sum_of_solute_and_solvent_radius ! sum of solute and solvent radius
-
+real(dp), dimension (nb_species) :: HS_Solv_R
     INTEGER(i2b) :: nfft1, nfft2, nfft3
     REAL(dp) :: lx, ly, lz, deltax, deltay, deltaz
-    
+
     lx= spaceGrid%length(1)
     ly= spacegrid%length(2)
     lz= spaceGrid%length(3)
@@ -43,7 +43,7 @@ END IF
 ! look for tag 'hard_sphere_solute_radius' which gives the radius of the sphere for the external potential
 hard_sphere_solute_radius=input_dp('radius_of_hard_sphere_solute')
 write (*,*) 'the radius of these solute hard spheres is defined as a constant for now and is ', hard_sphere_solute_radius
- 
+
 !check if radius is allocated. if not it may be because you wand an hard sphere solute but no hardsphere solvent, in that case
 !radius=0, if you want an hard sphere solvent there is a bug
 if ( .not. allocated ( hs ) ) then
@@ -51,13 +51,21 @@ if ( .not. allocated ( hs ) ) then
     print*,'WARNING solvent radius is not defined in comput_vext_hard_sphere it is now equal to 0, which is ok ONLY if you want '
     print*,'an HS solute but no HS Solvent'
     print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
-    STOP
+    HS_Solv_R(:)=0.0_dp
+    print*, 'bla1'
+ELSE
+  print*, 'bla0'
+
+  print*, SIZE(HS_Solv_R), SIZE(hs(:)%R)
+  do i = 1 , nb_species
+    HS_Solv_R(i)=hs(i)%R
+  end do
+    print*, 'bla2'
 END IF
-write(*,*) 'radius' , hs%R
 ! compute the sum of solute and solvent radius
 do solute_site = 1 , nb_solute_sites
   do species = 1 , nb_species
-    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + hs(species)%R ) ** 2
+    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + HS_Solv_R(species) ) ** 2
     do k = 1 , nfft3
       z_grid = real( k - 1 , dp ) * deltaz
       z_nm2 = ( z_grid - solute%site(solute_site)%r(3) ) ** 2

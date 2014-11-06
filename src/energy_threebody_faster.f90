@@ -71,13 +71,13 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
     CALL dfftw_execute(fftw3%plan_forward)
     ALLOCATE(function_rho_0k(nfft1/2+1,nfft2,nfft3)  ,SOURCE=fftw3%out_forward*deltaV)
 
-    
+
 !A0's definition. All Axx and Ax will be defined from A0.
     allocate ( A0 (nfft1,nfft2,nfft3) ,source=0._dp)
     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
         r = norm2(kvec)
-        A0 (i,j,k) = f_ww(r,rmin2,rsw2,rmax2)
+        A0 (i,j,k) = f_ww(r,0.0_dp, 0.0_dp,rmax2)
     end do
 
 !A0
@@ -465,7 +465,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2)
                             +2.0_dp*Hxy(:)*DHxy(i,j,k,:)+2.0_dp*Hxz(:)*DHxz(i,j,k,:)+2.0_dp*Hyz(:)*DHyz(i,j,k,:))&
                             -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
                             +costheta0**2*H0(:)*DH0(i,j,k,:)))
-                            
+
 !~                         DO n=1,nb_solute_sites
 !~                             dF(icg)=dF(icg)+solute%site(n)%lambda1*thermocond%kbT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
 !~                                 Hzz(n)*DHzz(i,j,k,n)&
