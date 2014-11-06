@@ -55,9 +55,9 @@ END IF
 do solute_site = 1 , nb_solute_sites
   do species = 1 , nb_species
     if ( .not. allocated ( hs ) ) then
-       sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius)**2
+        sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius)**2
     else
-    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + HS(species)%R ) ** 2
+        sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + HS(species)%R ) ** 2
     end if
     do k = 1 , nfft3
       z_grid = real( k - 1 , dp ) * deltaz
