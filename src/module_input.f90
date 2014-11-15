@@ -143,21 +143,33 @@ CONTAINS
     logical :: input_log
     CHARACTER(*), INTENT(IN) :: tag
     CHARACTER :: text
-    INTEGER(i2b) :: i, j
+    INTEGER(i2b) :: i, j, lentag
+    logical :: found
+    found = .false.
     IF (tag=='point_charge_electrostatic') THEN
       STOP 'The tag point_charge_electrostatic in dft.in must be renamed direct_sum since July 27th, 2014'
     END IF
-    j=LEN(tag)
-    DO i =1,SIZE( input_line)
-      IF( input_line(i)(1:j)==tag .AND. input_line(i)(j+1:j+1)==' ' ) READ( input_line (i) (j+4:j+50) , * ) text
+    lentag = LEN(tag)
+    DO i =1, SIZE( input_line)
+      IF( input_line(i)(1:lentag)==tag .AND. input_line(i)(lentag+1:lentag+1)==' ' ) then
+        READ( input_line(i)(lentag+4:lentag+50) ,*) text
+        found = .true.
+        exit
+      end if
     END DO
+    if( .not.found ) then
+      print*, "I could not find keyword '", tag,"' in ./input/dft.in"
+      print*, "It should have been there associated to logical T or F"
+      stop
+    end if
     j = 999 ! means error in reading
     IF( text(1:1) == 'T' ) j = 1 ! means true, 2 means false
     IF( text(1:1) == 't' ) j = 1
     IF( text(1:1) == 'F' ) j = 2
     IF( text(1:1) == 'f' ) j = 2
     IF( j == 999 ) THEN
-      PRINT*, 'I did not find the tag ', tag,' in dft.in'
+      PRINT*, 'Problem with logical tag "', tag,' in ./input/dft.in'
+      print*, "It is here but is not logical. I read from it: '",text
       STOP
     END IF
     IF( j == 1 ) input_log = .TRUE.
