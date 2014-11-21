@@ -19,6 +19,7 @@ SUBROUTINE energy_and_gradient (iter)
     LOGICAL :: opn
     INTEGER(i2b) :: karim
 
+    F3B_ww=0.0_dp
     Fext = 0._dp
     Fid = 0._dp
     Ffmt = 0._dp
