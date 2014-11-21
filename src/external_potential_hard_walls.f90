@@ -69,7 +69,7 @@ SUBROUTINE external_potential_hard_walls
         dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
         IF (.NOT. ALLOCATED(hs)) THEN
           IF ( dplan <= 0.5_dp*thickness(w)  ) Vext_total(i,j,k,:,:,s) = HUGE(1.0_dp)
-          IF (i*j*k*s*w==1) PRINT*, 'WARNING : Radius of Solvent is not allocated in external_potential_hard_wall, it is set to zero'
+           PRINT*, 'WARNING : Radius of Solvent is not allocated in external_potential_hard_wall, it is set to zero'
         ELSE
           IF ( dplan <= 0.5_dp*thickness(w) + hs(s)%R ) Vext_total(i,j,k,:,:,s) = HUGE(1.0_dp)
         ENDIF
