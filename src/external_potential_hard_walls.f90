@@ -3,7 +3,7 @@ SUBROUTINE external_potential_hard_walls
 !===================================================================================================================================
 ! this SUBROUTINE computes the external potential created by several (0 to infty) hard walls
 ! The hard walls "plans" have coordinates read in input/dft.in
-! For a brief description of the coordinates of a plan, see wikipedia: 
+! For a brief description of the coordinates of a plan, see wikipedia:
 ! Step 1/ we read how many walls are to be found in the supercell.
 ! Step 2/ we read their coordinates
 ! Step 3/ we read their thinkness (2*radius) in dft.in
@@ -60,14 +60,19 @@ SUBROUTINE external_potential_hard_walls
         ALLOCATE( Vext_total (nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ,SOURCE=0._dp)
     END IF
 ! be sure radius(:) (solvent radius) is already computed
-    IF(.NOT. ALLOCATED(hs)) STOP 'Molecular radius of solvent not allocated. critial stop in external_potential_hard_walls.f90'
+  !  IF(.NOT. ALLOCATED(hs)) STOP 'Molecular radius of solvent not allocated. critial stop in external_potential_hard_walls.f90'
 
-    
+
     ! compute the potential potential
     DO CONCURRENT ( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species, w=1:nwall)
         OM = [ REAL(i-1,dp)*spaceGrid%dl(1) , REAL(j-1,dp)*spaceGrid%dl(2) , REAL(k-1,dp)*spaceGrid%dl(3) ]
         dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
-        IF ( dplan <= 0.5_dp*thickness(w) + hs(s)%R ) Vext_total(i,j,k,:,:,s) = HUGE(1.0_dp)
+        IF (.NOT. ALLOCATED(hs)) THEN
+          IF ( dplan <= 0.5_dp*thickness(w)  ) Vext_total(i,j,k,:,:,s) = HUGE(1.0_dp)
+          IF (i*j*k*s*w==1) PRINT*, 'WARNING : Radius of Solvent is not allocated in external_potential_hard_wall, it is set to zero'
+        ELSE
+          IF ( dplan <= 0.5_dp*thickness(w) + hs(s)%R ) Vext_total(i,j,k,:,:,s) = HUGE(1.0_dp)
+        ENDIF
     END DO
 
 END SUBROUTINE external_potential_hard_walls
