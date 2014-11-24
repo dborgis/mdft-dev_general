@@ -30,7 +30,6 @@ MODULE dcf
 !-----------------------------------------------------------------------------------------------------------------------------------
 
     SUBROUTINE init
-
         IF ( input_log('readDensityDensityCorrelationFunction') ) THEN
             CALL readDensityDensityCorrelationFunction
         END IF
@@ -62,7 +61,7 @@ MODULE dcf
             IF( input_log("ck_angular") .OR. input_log('ck_debug') .OR. input_log('ck_debug_extended') ) STOP 'not implemented yet'
             CALL cs_of_k_hard_sphere! in case of bridge calculation, one also need the direct correlation function c2 of the hard sphere.
         END IF
-
+        !Debug
     END SUBROUTINE init
 
 !-----------------------------------------------------------------------------------------------------------------------------------
@@ -269,18 +268,16 @@ MODULE dcf
         INTEGER(i2b) :: ios, n_k, i
 
 
-        ! file_l = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in'
-        file_l = "input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in"
-        ! file_t = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in'
-        file_t = "input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in" ! 2014-10-22, compatible with newest spce cs
+        file_l = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in'
+        file_t = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in'
         INQUIRE (FILE=file_l, EXIST=exists )
             IF (.NOT. exists) THEN
-                WRITE(*,*) "chi_l not found in readDielectricSusceptibilities in file", file_l
+                WRITE(*,*) "chi_l not found in ", file_l
                 STOP
             END IF
         INQUIRE (FILE=file_t, EXIST=exists )
             IF (.NOT. exists) THEN
-                WRITE(*,*) "chi_t not found in readDielectricSusceptibilities in file", file_t
+                WRITE(*,*) "chi_t not found in ", file_t
                 STOP
             END IF
 
@@ -433,6 +430,7 @@ MODULE dcf
         nb_kdelta = n_linesInFile(filename)
         ALLOCATE(c_delta(nb_kdelta), SOURCE=0._dp)
         delta_k = deltaAbscissa(filename)
+        delta_k_cdelta=delta_k
         OPEN (13, FILE=filename, IOSTAT=ios)
             IF (ios/=0) THEN
                 WRITE(*,*)'Cant open file ',filename,' in readDensityDensityCorrelationFunction (c_delta)'
@@ -462,6 +460,7 @@ MODULE dcf
 
 
         delta_k = deltaAbscissa(filename)
+        delta_k_cd=delta_k
         OPEN (13, FILE=filename, IOSTAT=ios)
             IF (ios/=0) THEN
                 WRITE(*,*)'Cant open file ',filename,' in readDensityDensityCorrelationFunction (c_d)'
@@ -475,6 +474,10 @@ MODULE dcf
                     END IF
             END DO
         CLOSE (13)
+        If (delta_k_cs/=delta_k_cd .or. delta_k_cs/=delta_k_cdelta) THEN
+          Print*, 'Not the same deltak in cs and cdelta or cd, This will give you untrustfull results'
+          STOP
+        END If
 
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
 
