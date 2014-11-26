@@ -9,7 +9,7 @@ subroutine adhoc_corrections_to_gsolv
     use input, only: input_log
     implicit none
 
-    real(dp) :: correction,  Pressure_bulk
+    real(dp) :: correction,correction2, Pressure_bulk
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
     integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
     integer :: s, ios
@@ -54,10 +54,18 @@ subroutine adhoc_corrections_to_gsolv
   Call energy_and_gradient(-10)  !this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
 
   Pressure_bulk=FF/PRODUCT(spaceGrid%length) ! Omega[rho=rho_0]=PV
+  print*, 'Pressurebulk=' , pressure_bulk*1.66113*10**9 , "Pa"
 
               correction=-(nmolecule(1)%bulk - nmolecule(1)%withsolute)/solvent(1)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume
+              correction2=(nmolecule(1)%bulk - nmolecule(1)%withsolute)*thermoCond%kbT  !correction is -PV where V is excluded Volume
               print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
+              print*,"You should add",correction2,"kJ/mol to FREE ENERGY as ideal partial molar volume correction" !
               open(79,file="output/PMV_correction")
+              write(79,*) correction
+              close(79)
+              open(80,file="output/Pideal_PMV_correction")
+              write(80,*) correction2
+              close(80)
               write(79,*) correction
               close(79)
 
