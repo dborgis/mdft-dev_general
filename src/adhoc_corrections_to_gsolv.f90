@@ -4,7 +4,7 @@ subroutine adhoc_corrections_to_gsolv
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
     use minimizer, only: FF , cg_vect, finalizeMinimizer
-
+    use constants, only: zerodp
     use mathematica, only: chop
     use input, only: input_log
     implicit none
@@ -19,16 +19,17 @@ subroutine adhoc_corrections_to_gsolv
     end type nmoleculetype
     type (nmoleculetype), allocatable :: nmolecule(:)
     logical :: file_exists
+    real(dp), parameter :: kJpermolperang3_to_Pa = 1.66113*10**9
 
     open(79,file="output/FF")
       write(79,*) FF
     close(79)
     !... We use P-scheme instead of M-scheme for the electrostatics in MDFT. See Kastenholz and Hunenberger, JCP 124, 124106 (2006)
-    if (input_log("poisson_solver") .eqv. .true.) then
+    if( input_log("poisson_solver") ) then
       correction = -79.8_dp*sum(solute%site%q) ! in kJ/mol
       correction = chop(correction)
     else
-      correction = 0._dp
+      correction = zerodp
     end if
     print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
     open(79,file="output/Pscheme_correction")
@@ -36,7 +37,7 @@ subroutine adhoc_corrections_to_gsolv
     close(79)
 
     !... Volodymyr's partial molar volume correction. See J. Phys. Chem. Lett. 5, 1935-1942 (2014)
-    correction = 0._dp
+    correction = zerodp
     if (size(solvent)/=1) stop "CRITICAL in adhoc_corrections_to_gsolv. only 1 solvent species is implemented."
     do s=1,size(solvent)
         if (.not. allocated( solvent(s)%n )) allocate ( solvent(s)%n(nfft1,nfft2,nfft3) ,source=0._dp)
@@ -49,15 +50,17 @@ subroutine adhoc_corrections_to_gsolv
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
 
 ! The value of the grand potential is equal to PV, with P pressure and V volume when the system is the bulk fluid.
-  cg_vect(:)=0.0_dp  !Set Density to 0.0_dp
-  FF=0.0_dp
+  cg_vect(:) = zerodp  !Set Density to 0.0_dp
+  FF = zerodp
   Call energy_and_gradient(-10)  !this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
 
   Pressure_bulk=FF/PRODUCT(spaceGrid%length) ! Omega[rho=rho_0]=PV
-  print*, 'Pressurebulk=' , pressure_bulk*1.66113*10**9 , "Pa"
+  print*, 'Pressurebulk=' , pressure_bulk*kJpermolperang3_to_Pa , "Pa"
 
-  correction=-(nmolecule(1)%bulk - nmolecule(1)%withsolute)/solvent(1)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume
-  correction2=(nmolecule(1)%bulk - nmolecule(1)%withsolute)*thermoCond%kbT  !correction is -PV where V is excluded Volume
+  s = 1
+  if( s == 1 ) stop "line 61 of adhoc_corr... we have not thought of multi species case"
+  correction  = -(nmolecule(s)%bulk - nmolecule(s)%withsolute)/solvent(s)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume
+  correction2 =  (nmolecule(s)%bulk - nmolecule(s)%withsolute)*thermoCond%kbT  !correction is -PV where V is excluded Volume
   print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
   print*,"You should add",correction2,"kJ/mol to FREE ENERGY as ideal partial molar volume correction" !
   open(79,file="output/PMV_correction")
@@ -66,9 +69,5 @@ subroutine adhoc_corrections_to_gsolv
   open(80,file="output/Pideal_PMV_correction")
   write(80,*) correction2
   close(80)
-  write(79,*) correction
-  close(79)
-
-
 
 end subroutine adhoc_corrections_to_gsolv
