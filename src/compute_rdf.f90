@@ -10,7 +10,7 @@ SUBROUTINE compute_rdf (array,filename)
 
     USE precision_kinds ,ONLY: dp, i2b, sp
     USE system          ,ONLY: nb_species, spaceGrid, solute
-    
+
     IMPLICIT NONE
 
     REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: array
@@ -23,17 +23,17 @@ SUBROUTINE compute_rdf (array,filename)
         CHARACTER(180) :: msg
     END TYPE
     TYPE (errortype) :: error
-    
+
     CALL deduce_optimal_histogram_properties
-    
+
     OPEN (10, FILE=filename, FORM='formatted')
     WRITE (10,*) '# r  rdf'
 
-    error%found = .FALSE.    
+    error%found = .FALSE.
     IF (nb_species/=1) STOP "compute_rdf.f90 is written for 1 solvent species only."
 
     ALLOCATE (rdf (nbins) ,SOURCE=0._dp)
-    
+
 !    CALL UTest_histogram_3D
     DO n = 1, SIZE(solute%site) ! loop over all sites of the solute
         CALL histogram_3d (array(:,:,:), rdf)
@@ -49,7 +49,7 @@ SUBROUTINE compute_rdf (array,filename)
     DEALLOCATE (rdf)
     CLOSE(10)
 
-    
+
     CONTAINS
 
         !===========================================================================================================================
@@ -57,11 +57,11 @@ SUBROUTINE compute_rdf (array,filename)
         !===========================================================================================================================
             IMPLICIT NONE
             nbins = CEILING (2._sp*REAL (PRODUCT (spaceGrid%n_nodes), sp)**(1._sp/3._sp)) ! Rice Rule, see http://en.wikipedia.org/wiki/Histogram
-            RdfMaxRange= SQRT(3._dp)*MINVAL(spaceGrid%length)/2._dp
+            RdfMaxRange= MINVAL(spaceGrid%length)/2._dp
             dr = RdfMaxRange/REAL(nbins,dp) ! Width of each bin of the histogram
         END SUBROUTINE deduce_optimal_histogram_properties
         !===========================================================================================================================
-    
+
         !===========================================================================================================================
         SUBROUTINE histogram_3d (array3D, rdf)
         !===========================================================================================================================
@@ -71,10 +71,10 @@ SUBROUTINE compute_rdf (array,filename)
             INTEGER(i2b), ALLOCATABLE :: recurrence_bin(:)
             REAL(dp) :: r
             INTEGER(i2b) :: bin, i, j, k
-            
+
             ALLOCATE( recurrence_bin (nbins) ,SOURCE=0)
             rdf = 0._dp
-            
+
             ! Transform array(position) in rdf(radialdistance)
             ! counts the total number of appearence of a value in each bin
             DO CONCURRENT (i=1:spaceGrid%n_nodes(1), j=1:spaceGrid%n_nodes(2), k=1:spaceGrid%n_nodes(3))
@@ -102,7 +102,7 @@ SUBROUTINE compute_rdf (array,filename)
             ELSEWHERE
                 rdf = 0.0_dp
             END WHERE
-            
+
             DEALLOCATE (recurrence_bin)
         END SUBROUTINE
         !===========================================================================================================================
@@ -110,7 +110,7 @@ SUBROUTINE compute_rdf (array,filename)
         !===========================================================================================================================
         SUBROUTINE UTest_histogram_3D
             IMPLICIT NONE
-            REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:) 
+            REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:)
             REAL(dp), ALLOCATABLE :: rdfUT(:)
 
             ALLOCATE (nullarray3D (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ,SOURCE=0._dp)
