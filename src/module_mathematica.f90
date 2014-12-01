@@ -6,7 +6,7 @@ MODULE mathematica
     IMPLICIT NONE
     PRIVATE
     PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, &
-        UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode, factorial
+        UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode, factorial, deduce_optimal_histogram_properties
 
     CONTAINS
 
@@ -299,8 +299,9 @@ MODULE mathematica
     END SUBROUTINE UTest_distToFloorNode
     !===============================================================================================================================
 
-  ! factorial
-  pure function factorial(n)
+  !=================================================================================================================================
+  pure function factorial(n) ! computes the factorial of any integer n, i.e., n!
+  !=================================================================================================================================
     use precision_kinds, only: i2b
     implicit none
     integer(i2b), intent(in) :: n
@@ -312,6 +313,20 @@ MODULE mathematica
       factorial = product([(i, i=1,n)])
     end select
   end function factorial
+  !=================================================================================================================================
+
+  !=================================================================================================================================
+  pure subroutine deduce_optimal_histogram_properties( n, maxrange, nbins, binwidth)
+  !=================================================================================================================================
+    implicit none
+    integer, intent(in)   :: n ! total number of points to be histogramed
+    real(dp), intent(in)  :: maxrange ! maximum range of the histogram (e.g., r max for g(r))
+    integer, intent(out)  :: nbins ! number of bins
+    real(dp), intent(out) :: binwidth ! width of a bin
+    nbins    = ceiling( 2*real(n)**(1._dp/3._dp) ) ! Rice Rule, see http://en.wikipedia.org/wiki/Histogram
+    binwidth = maxrange/real(nbins,dp) ! Width of each bin of the histogram
+  end subroutine deduce_optimal_histogram_properties
+  !=================================================================================================================================
 
 END MODULE
 !===================================================================================================================================

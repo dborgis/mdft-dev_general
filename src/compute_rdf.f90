@@ -10,6 +10,7 @@ SUBROUTINE compute_rdf (array,filename)
 
     USE precision_kinds ,ONLY: dp, i2b, sp
     USE system          ,ONLY: nb_species, spaceGrid, solute
+    use mathematica     ,only: deduce_optimal_histogram_properties
 
     IMPLICIT NONE
 
@@ -24,7 +25,8 @@ SUBROUTINE compute_rdf (array,filename)
     END TYPE
     TYPE (errortype) :: error
 
-    CALL deduce_optimal_histogram_properties
+    rdfmaxrange = minval(spaceGrid%length)/2._dp
+    CALL deduce_optimal_histogram_properties( product(spaceGrid%n_nodes), rdfmaxrange, nbins, dr )
 
     OPEN (10, FILE=filename, FORM='formatted')
     WRITE (10,*) '# r  rdf'
@@ -52,15 +54,6 @@ SUBROUTINE compute_rdf (array,filename)
 
     CONTAINS
 
-        !===========================================================================================================================
-        SUBROUTINE deduce_optimal_histogram_properties
-        !===========================================================================================================================
-            IMPLICIT NONE
-            nbins = CEILING (2._sp*REAL (PRODUCT (spaceGrid%n_nodes), sp)**(1._sp/3._sp)) ! Rice Rule, see http://en.wikipedia.org/wiki/Histogram
-            RdfMaxRange= MINVAL(spaceGrid%length)/2._dp
-            dr = RdfMaxRange/REAL(nbins,dp) ! Width of each bin of the histogram
-        END SUBROUTINE deduce_optimal_histogram_properties
-        !===========================================================================================================================
 
         !===========================================================================================================================
         SUBROUTINE histogram_3d (array3D, rdf)
