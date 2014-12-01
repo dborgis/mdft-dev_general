@@ -58,7 +58,7 @@ subroutine adhoc_corrections_to_gsolv
   print*, 'Pressurebulk=' , pressure_bulk*kJpermolperang3_to_Pa , "Pa"
 
   s = 1
-  if( s == 1 ) stop "line 61 of adhoc_corr... we have not thought of multi species case"
+  if( s /= 1 ) stop "line 61 of adhoc_corr... we have not thought of multi species case"
   correction  = -(nmolecule(s)%bulk - nmolecule(s)%withsolute)/solvent(s)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume
   correction2 =  (nmolecule(s)%bulk - nmolecule(s)%withsolute)*thermoCond%kbT  !correction is -PV where V is excluded Volume
   print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
