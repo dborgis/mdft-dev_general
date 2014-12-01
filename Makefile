@@ -110,7 +110,8 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/steepest_descent_main.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o\
-	$(OBJDIR)/finalize_simu.o
+	$(OBJDIR)/finalize_simu.o\
+	$(OBJDIR)/compute_gofrandcostheta.o
 
 # ——————————————— Global rules ———————————————
 
@@ -651,3 +652,11 @@ $(OBJDIR)/finalize_simu.o:\
 $(OBJDIR)/module_mathematica.o:\
 	$(SRCDIR)/module_mathematica.f90\
 	$(OBJDIR)/module_precision_kinds.o
+
+$(OBJDIR)/compute_gofrandcostheta.o:\
+	$(SRCDIR)/compute_gofrandcostheta.f90\
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_quadrature.o\
+	$(OBJDIR)/module_constants.o\
+	$(OBJDIR)/module_minimizer.o
