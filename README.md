@@ -9,7 +9,7 @@ MDFT is being developped in the group of Daniel Borgis at École Normale Supéri
 	- [Maximilien Levesque](http://www.chimie.ens.fr/?q=en/umr-8640/physico-chimie-th-orique/profil/maximilien.levesque) (since Nov. 2010)  
 	- Guillaume Jeanmairet (since Oct. 2011)  
         - Volodymyr Sergiievskyi (from Mar. 2013 to Mar. 2014)  
-        - Ljiljana Stojanovic (since Oct. 2013)  
+        - Ljiljana Stojanovic (from Oct. 2013 to Nov. 2014)  
         - Lu Ding (since Oct. 2013)  
 
 ## Installation
@@ -26,6 +26,7 @@ sudo apt-get install git
 ```sh
 sudo apt-get install gfortran
 ```
+How to know which version you have? `gfortran --version`
 - [the (multithread) FFTW3 library](http://www.fftw.org/). This library handles fast fourier transforms.
 ```sh
 sudo apt-get install fftw3 fftw3-dev
