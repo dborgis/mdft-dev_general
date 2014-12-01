@@ -86,6 +86,10 @@ SUBROUTINE process_output
     filename = 'output/rdf.out'
     CALL compute_rdf ( neq(:,:,:,1) , filename ) ! Get radial distribution functions
 
+    filename = 'output/g-r-theta.dat'
+    print*,"INFO: Entering subroutine compute_gofrandcostheta"
+    call compute_gOfRandCosTheta
+
     CALL adhoc_corrections_to_gsolv
     CALL finalizeMinimizer
 
