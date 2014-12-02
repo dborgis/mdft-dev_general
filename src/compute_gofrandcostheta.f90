@@ -57,8 +57,7 @@ subroutine compute_gOfRandCosTheta
   allocate( g(binrmax,binthetamax) )
   allocate( gcount(binrmax,binthetamax)  )
 
-  ! Compute the
-  open(124,file="./output/gro.out")
+  open(124,file="./output/g-of-r-theta.out")
   do n=1,size(solute%site)
     g = zerodp
     gcount = zerodp
@@ -68,17 +67,28 @@ subroutine compute_gOfRandCosTheta
       do j=1,jmax
         do k=1,kmax
           if( all([i,j,k]==1) ) cycle
-          r = ([i,j,k]-1)*[dx,dy,dz] - solute%site(n)%r
-          normr = norm2(r) ! vector that joins the grid node with index [i,j,k] to solute site [0,0,0] ! TODO
-          if( normr > maxrange ) cycle
-          binr = int(normr/dr)+1; if(binr==0) STOP "hoooooooooooooooooalllkjsdlkjazd"
+          r = ([i,j,k]-1)*[dx,dy,dz] - solute%site(n)%r  ! vector that joins the grid node with index [i,j,k] to solute site n
+          normr = norm2(r)
           if( abs(normr) <= epsdp ) cycle
+          binr = int(normr/dr)+1
+          if( binr > binrmax ) cycle ! don't try to bin something outside the range
+          if( binr<=0 .or. binr>size(g,1) ) then
+            print*,"ERROR: l.76 of compute_gofrandcostheta.f90 binr has forbidden value",binr
+            print*,"-----  binr = int(normr/dr)+1 with normr, dr, int(normr/dr)+1 =",normr,dr,int(normr/dr)+1
+            stop
+          end if
           do o=1,omax
             costheta = dot_product( r, [OMx(o), OMy(o), OMz(o)] )/normr
             if( costheta < costhetamin ) costhetamin=costheta
             if( costheta > costhetamax ) costhetamax=costheta
             theta = acos(costheta)
-            bintheta = int(theta/dtheta) +1
+            bintheta = int(theta/(dtheta+epsdp)) +1 ! if dtheta is exactly theta/binthetamax, we end up with int(theta/dtheta)+1 = binthetamax+1. Numerical pb.
+            if( bintheta <= 0 .or. bintheta > binthetamax ) then
+              print*,"ERROR: l.87 of compute_gofrandcostheta.f90: bintheta has forbidden value",bintheta
+              print*,"-----  bintheta = int(theta/dtheta) +1, with theta, dtheta, int(theta/dtheta)+1 =",&
+                theta, dtheta, int(theta/dtheta)+1
+              stop
+            end if
             g(binr,bintheta) = g(binr,bintheta) + rho(i,j,k,o)
             gcount(binr,bintheta) = gcount(binr,bintheta) +1
             ! write(124,*) real([normr, theta, rho(i,j,k,o)], 4)
@@ -86,19 +96,24 @@ subroutine compute_gOfRandCosTheta
         end do
       end do
     end do
+
+    ! test anormalities in g
+    if( any(g/=g) ) then
+      print*,"STOP: Nan or Infty somewhere in the histogram of g(r,theta), l.96 of compute_gofrtheta.f90"
+      STOP
+    end if
+
     ! normalize
-    do concurrent( binr=1:binrmax, bintheta=1:binthetamax )
-      if( gcount(binr,bintheta) /= 0 ) then
-        g(binr,bintheta) = g(binr,bintheta) / gcount(binr,bintheta)
-      else
-        g(binr,bintheta) = zerodp
-      end if
-    end do
+    where( gcount /= 0 )
+      g = g/gcount
+    else where
+      g = zerodp
+    end where
 
     write(124,*)"#solute site",n
     do binr=1,binrmax
       do bintheta=1,binthetamax
-        write(124,*) (binr-0.5)*dr, (bintheta-0.5)*dtheta, real(g(binr,bintheta),4)
+        write(124,*) (binr-0.5)*dr, (bintheta-0.5)*dtheta, g(binr,bintheta)
       end do
     end do
     write(124,*) ! empty line
