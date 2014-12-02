@@ -184,7 +184,8 @@ $(OBJDIR)/compute_purely_repulsive_potential.o:\
 $(OBJDIR)/compute_rdf.o:\
 	$(SRCDIR)/compute_rdf.f90\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_mathematica.o
 
 $(OBJDIR)/compute_vcoul_as_sum_of_pointcharges.o:\
 	$(SRCDIR)/compute_vcoul_as_sum_of_pointcharges.f90\
@@ -659,4 +660,5 @@ $(OBJDIR)/compute_gofrandcostheta.o:\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_minimizer.o
+	$(OBJDIR)/module_minimizer.o\
+	$(OBJDIR)/module_mathematica.o
