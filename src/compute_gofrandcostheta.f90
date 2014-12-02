@@ -39,10 +39,6 @@ subroutine compute_gOfRandCosTheta
     end do
   end do
 
-  ! for each grid node [i,j,k], compute the distance r
-  print*,"WARNING: l.35 of compute_gOfRandCosTheta.f90. Works only for 1 solute site"
-  print*,"-------"
-
   ! Test that all vectors Omega are normalized
   do o=1,omax
     if( abs( norm2([OMx(o),OMy(o),OMz(o)])-1 ) > epsdp ) then
@@ -58,50 +54,56 @@ subroutine compute_gOfRandCosTheta
   binthetamax = 10 ! this has to be decided, but we have a very large number of angles, even if the quadrature over omega is by 1 angle only in fixed frame
   ! theta is between 0 and pi
   dtheta = pi/real(binthetamax,dp)
-  allocate( g(binrmax,binthetamax) ,source=zerodp )
-  allocate( gcount(binrmax,binthetamax) ,source=zerodp )
+  allocate( g(binrmax,binthetamax) )
+  allocate( gcount(binrmax,binthetamax)  )
 
   ! Compute the
   open(124,file="./output/gro.out")
-  costhetamin=  2
-  costhetamax= -2
-  do i=1,imax
-    do j=1,jmax
-      do k=1,kmax
-        if( all([i,j,k]==1) ) cycle
-        r = ([i,j,k]-1)*[dx,dy,dz] - solute%site(1)%r
-        normr = norm2(r) ! vector that joins the grid node with index [i,j,k] to solute site [0,0,0] ! TODO
-        if( normr > maxrange ) cycle
-        binr = int(normr/dr)+1; if(binr==0) STOP "hoooooooooooooooooalllkjsdlkjazd"
-        if( abs(normr) <= epsdp ) cycle
-        do o=1,omax
-          costheta = dot_product( r, [OMx(o), OMy(o), OMz(o)] )/normr
-          if( costheta < costhetamin ) costhetamin=costheta
-          if( costheta > costhetamax ) costhetamax=costheta
-          theta = acos(costheta)
-          bintheta = int(theta/dtheta) +1
-          g(binr,bintheta) = g(binr,bintheta) + rho(i,j,k,o)
-          gcount(binr,bintheta) = gcount(binr,bintheta) +1
-          ! write(124,*) real([normr, theta, rho(i,j,k,o)], 4)
+  do n=1,size(solute%site)
+    g = zerodp
+    gcount = zerodp
+    costhetamin=  2
+    costhetamax= -2
+    do i=1,imax
+      do j=1,jmax
+        do k=1,kmax
+          if( all([i,j,k]==1) ) cycle
+          r = ([i,j,k]-1)*[dx,dy,dz] - solute%site(n)%r
+          normr = norm2(r) ! vector that joins the grid node with index [i,j,k] to solute site [0,0,0] ! TODO
+          if( normr > maxrange ) cycle
+          binr = int(normr/dr)+1; if(binr==0) STOP "hoooooooooooooooooalllkjsdlkjazd"
+          if( abs(normr) <= epsdp ) cycle
+          do o=1,omax
+            costheta = dot_product( r, [OMx(o), OMy(o), OMz(o)] )/normr
+            if( costheta < costhetamin ) costhetamin=costheta
+            if( costheta > costhetamax ) costhetamax=costheta
+            theta = acos(costheta)
+            bintheta = int(theta/dtheta) +1
+            g(binr,bintheta) = g(binr,bintheta) + rho(i,j,k,o)
+            gcount(binr,bintheta) = gcount(binr,bintheta) +1
+            ! write(124,*) real([normr, theta, rho(i,j,k,o)], 4)
+          end do
         end do
       end do
     end do
-  end do
-  do concurrent( binr=1:binrmax, bintheta=1:binthetamax )
-    if( gcount(binr,bintheta) /= 0 ) then
-      g(binr,bintheta) = g(binr,bintheta) / gcount(binr,bintheta)
-    else
-      g(binr,bintheta) = zerodp
-    end if
-  end do
-
-  do binr=1,binrmax
-    do bintheta=1,binthetamax
-      write(124,*) (binr-0.5)*dr, (bintheta-0.5)*dtheta, real(g(binr,bintheta),4)
+    ! normalize
+    do concurrent( binr=1:binrmax, bintheta=1:binthetamax )
+      if( gcount(binr,bintheta) /= 0 ) then
+        g(binr,bintheta) = g(binr,bintheta) / gcount(binr,bintheta)
+      else
+        g(binr,bintheta) = zerodp
+      end if
     end do
+
+    write(124,*)"#solute site",n
+    do binr=1,binrmax
+      do bintheta=1,binthetamax
+        write(124,*) (binr-0.5)*dr, (bintheta-0.5)*dtheta, real(g(binr,bintheta),4)
+      end do
+    end do
+    write(124,*) ! empty line
+
   end do
   close(124)
-  print*,"cos theta min and max:", costhetamin, costhetamax
-  stop
-
+  deallocate( g, gcount )
 end subroutine compute_gOfRandCosTheta
