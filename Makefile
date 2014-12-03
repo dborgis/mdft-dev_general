@@ -111,7 +111,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o\
 	$(OBJDIR)/finalize_simu.o\
-	$(OBJDIR)/compute_gofrandcostheta.o
+	$(OBJDIR)/compute_g-r-theta.o
 
 # ——————————————— Global rules ———————————————
 
@@ -654,8 +654,8 @@ $(OBJDIR)/module_mathematica.o:\
 	$(SRCDIR)/module_mathematica.f90\
 	$(OBJDIR)/module_precision_kinds.o
 
-$(OBJDIR)/compute_gofrandcostheta.o:\
-	$(SRCDIR)/compute_gofrandcostheta.f90\
+$(OBJDIR)/compute_g-r-theta.o:\
+	$(SRCDIR)/compute_g-r-theta.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_quadrature.o\
