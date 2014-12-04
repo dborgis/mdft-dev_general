@@ -44,7 +44,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/compute_hard_spheres_parameters.o\
 	$(OBJDIR)/compute_planar_density.o\
 	$(OBJDIR)/compute_purely_repulsive_potential.o\
-	$(OBJDIR)/compute_rdf.o\
+	$(OBJDIR)/output_rdf.o\
 	$(OBJDIR)/compute_vcoul_as_sum_of_pointcharges.o\
 	$(OBJDIR)/compute_vext_hard_cylinder.o\
 	$(OBJDIR)/compute_vext_hard_sphere.o\
@@ -181,8 +181,8 @@ $(OBJDIR)/compute_purely_repulsive_potential.o:\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_precision_kinds.o
 
-$(OBJDIR)/compute_rdf.o:\
-	$(SRCDIR)/compute_rdf.f90\
+$(OBJDIR)/output_rdf.o:\
+	$(SRCDIR)/output_rdf.f90\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_mathematica.o
