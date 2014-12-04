@@ -113,7 +113,9 @@ subroutine compute_gOfRandCosTheta
     write(124,*)"#solute site",n
     do binr=1,binrmax
       do bintheta=1,binthetamax
-        write(124,*) (binr-0.5)*dr, (bintheta-0.5)*dtheta, g(binr,bintheta)
+        if( abs(g(binr,bintheta)) > epsdp ) then ! write to file only non-zero values. Consequences: File 10-20% smaller, but in-homogeneous printed grid
+          write(124,*) (binr-0.5)*dr, (bintheta-0.5)*dtheta, g(binr,bintheta)
+        end if
       end do
     end do
     write(124,*) ! empty line
