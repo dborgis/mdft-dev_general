@@ -1,5 +1,5 @@
 !===================================================================================================================================
-SUBROUTINE compute_rdf (array,filename)
+SUBROUTINE output_rdf (array,filename)
 !===================================================================================================================================
 ! Returns the radial distribution functions of each couple solute site - solvent site
 ! Since the supercell is orthorombic, the maximum range of the RDF is given by half the length of the largest diagonal of a cubic box
@@ -136,4 +136,4 @@ SUBROUTINE compute_rdf (array,filename)
         END SUBROUTINE UTest_histogram_3D
         !===========================================================================================================================
 
-END SUBROUTINE compute_rdf
+END SUBROUTINE output_rdf

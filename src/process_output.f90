@@ -84,9 +84,9 @@ SUBROUTINE process_output
 
 
     filename = 'output/rdf.out'
-    CALL compute_rdf ( neq(:,:,:,1) , filename ) ! Get radial distribution functions
-
-    call compute_gOfRandCosTheta
+    CALL output_rdf ( neq(:,:,:,1) , filename ) ! Get radial distribution functions
+    call output_gsitesite
+    call output_gOfRandCosTheta
 
     CALL adhoc_corrections_to_gsolv
     CALL finalizeMinimizer

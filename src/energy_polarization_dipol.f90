@@ -9,25 +9,25 @@ SUBROUTINE energy_polarization_dipol (Fint)
     USE input,           ONLY : verbose
 
     IMPLICIT NONE
-    
+
     REAL(dp), INTENT(OUT) :: Fint ! Internal part of the free energy due to polarization
     REAL(dp), ALLOCATABLE, DIMENSION (:,:,:)    :: Px , Py , Pz , Ex , Ey , Ez
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: Pkx, Pky, Pkz, Ekx, Eky, Ekz
     REAL(dp) :: rho, psi, fact, Vint, Lx, Ly, Lz, Nk
     REAL(dp) :: pxt, pyt, pzt, r, Ex_tmp, Ey_tmp, Ez_tmp
     INTEGER(i2b):: icg, i, j, k, l, m, n, o, p, nfft1, nfft2, nfft3
-    
+
     nfft1 = spaceGrid%n_nodes(1); nfft2 = spaceGrid%n_nodes(2); nfft3 = spaceGrid%n_nodes(3)
     Lx = spaceGrid%length(1); Ly = spaceGrid%length(2); Lz = spaceGrid%length(3)
     Nk = REAL ( nfft1*nfft2*nfft3 , dp ) ! total number of k grid points
-    
-    
+
+
     CALL build_polarization_vector_field_Px_Py_Pz ! Px(r) = \int_\Omega \Omega * \rho(r,\Omega) d\Omega  see Borgis et al., DOI:10.1103/PhysRevE.66.031206
     CALL build_Fourier_transformed_polarization_vector_field_Pkx_Pky_Pkz
     CALL build_excess_electric_field_in_Fourier_space
     CALL build_excess_electric_field_from_inverse_Fourier_transform
 
-    
+
     fact = spaceGrid%dv * solvent(1)%rho0 ! integration factor
     Fint = 0.0_dp
     icg = 0
@@ -45,7 +45,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
                 rho = psi ** 2
                 Fint = Fint + (rho - 1.0_dp) * molRotGrid%weight(p) * Vint
                 dF(icg) = dF(icg) + 2.0_dp * psi * molRotGrid%weight(p) * Vint * fact
-            END DO  
+            END DO
         END DO
     END DO
     END DO
@@ -76,7 +76,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
             icg = 0
             DO i =1,nfft1
                 DO j =1,nfft2
-                    DO k = 1,nfft3    
+                    DO k = 1,nfft3
                         pxt = 0.0_dp
                         pyt = 0.0_dp
                         pzt = 0.0_dp
@@ -107,7 +107,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
                     !Compute Radial Polarization
                     filename='output/radial_polarization_dipolar'
                     polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*solvent(1)%rho0
-                    CALL compute_rdf(polatot(:,:,:,1), filename)
+                    CALL output_rdf(polatot(:,:,:,1), filename)
 !~                     filename='output/radial_polarization_scalar'
                 END BLOCK
             END IF
@@ -121,12 +121,12 @@ SUBROUTINE energy_polarization_dipol (Fint)
             DEALLOCATE ( Px )
             CALL dfftw_execute ( fftw3%plan_forward )
             ALLOCATE ( Pkx (nfft1/2+1, nfft2, nfft3) ,SOURCE=fftw3%out_forward)
-            
+
             fftw3%in_forward = Py
             DEALLOCATE ( Py )
             CALL dfftw_execute ( fftw3%plan_forward )
             ALLOCATE ( Pky (nfft1/2+1, nfft2, nfft3) ,SOURCE=fftw3%out_forward)
-            
+
             fftw3%in_forward = Pz
             DEALLOCATE ( Pz )
             CALL dfftw_execute ( fftw3%plan_forward )

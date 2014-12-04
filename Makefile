@@ -111,7 +111,8 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o\
 	$(OBJDIR)/finalize_simu.o\
-	$(OBJDIR)/output_g-r-theta.o
+	$(OBJDIR)/output_g-r-theta.o\
+	$(OBJDIR)/output_gsitesite.o
 
 # ——————————————— Global rules ———————————————
 
@@ -656,6 +657,15 @@ $(OBJDIR)/module_mathematica.o:\
 
 $(OBJDIR)/output_g-r-theta.o:\
 	$(SRCDIR)/output_g-r-theta.f90\
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_quadrature.o\
+	$(OBJDIR)/module_constants.o\
+	$(OBJDIR)/module_minimizer.o\
+	$(OBJDIR)/module_mathematica.o
+
+$(OBJDIR)/output_gsitesite.o:\
+	$(SRCDIR)/output_gsitesite.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_quadrature.o\
