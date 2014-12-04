@@ -38,7 +38,7 @@ SUBROUTINE compute_rdf (array,filename)
 
 !    CALL UTest_histogram_3D
     DO n = 1, SIZE(solute%site) ! loop over all sites of the solute
-        CALL histogram_3d (array(:,:,:), rdf)
+        CALL histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
         IF (error%found) THEN; PRINT*,error%msg; STOP; END IF
         ! Write to output/rdf.out
         WRITE(10,*)'# solute site', n
@@ -56,11 +56,12 @@ SUBROUTINE compute_rdf (array,filename)
 
 
         !===========================================================================================================================
-        SUBROUTINE histogram_3d (array3D, rdf)
+        SUBROUTINE histogram_3d (array3D, origin, rdf)
         !===========================================================================================================================
             IMPLICIT NONE
             REAL(dp), INTENT(IN) :: array3D(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3))
             REAL(dp), INTENT(OUT) :: rdf(nbins)
+            real(dp), intent(in) :: origin(3)
             INTEGER(i2b), ALLOCATABLE :: recurrence_bin(:)
             REAL(dp) :: r
             INTEGER(i2b) :: bin, i, j, k
@@ -71,7 +72,7 @@ SUBROUTINE compute_rdf (array,filename)
             ! Transform array(position) in rdf(radialdistance)
             ! counts the total number of appearence of a value in each bin
             DO CONCURRENT (i=1:spaceGrid%n_nodes(1), j=1:spaceGrid%n_nodes(2), k=1:spaceGrid%n_nodes(3))
-                r = NORM2(REAL([i,j,k]-1,dp)*spaceGrid%dl - solute%site(n)%r)
+                r = NORM2(REAL([i,j,k]-1,dp)*spaceGrid%dl - origin(:))
                 bin = INT(r/dr)+1
                 IF (bin>nbins) THEN
                     CYCLE
@@ -97,36 +98,38 @@ SUBROUTINE compute_rdf (array,filename)
             END WHERE
 
             DEALLOCATE (recurrence_bin)
-        END SUBROUTINE
+        END SUBROUTINE histogram_3d
         !===========================================================================================================================
 
         !===========================================================================================================================
         SUBROUTINE UTest_histogram_3D
+            use constants, only: zerodp
             IMPLICIT NONE
             REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:)
             REAL(dp), ALLOCATABLE :: rdfUT(:)
+            real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
 
             ALLOCATE (nullarray3D (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ,SOURCE=0._dp)
             ALLOCATE (rdfUT(nbins),source=0._dp)
 
             ! Test 1
             nullarray3D = 0._dp
-            CALL histogram_3d (nullarray3D, rdfUT)
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
             IF (ANY(rdfUT/=0._dp)) STOP "Test 1 in UTest_histogram_3D not passed."
 
             ! Test 2
             nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, rdfUT)
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
             IF (ANY(rdfUT<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
 
             ! Test 3
             nullarray3D = -1._dp
-            CALL histogram_3d (nullarray3D, rdfUT)
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
             IF (ANY(rdfUT>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
 
             ! Test 4
             nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, rdfUT)
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
             IF (ANY(rdfUT>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
 
             DEALLOCATE (nullarray3D, rdfUT)
