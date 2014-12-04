@@ -8,7 +8,7 @@ subroutine compute_gOfRandCosTheta
 
   implicit none
   integer  :: icg,n,i,j,k,o,p,s,omax,pmax,imax,jmax,kmax,binthetamax,bintheta,binrmax,binr
-  real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, maxrange, rho0
+  real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, maxrange
   real(dp), allocatable :: rho(:,:,:,:)
   real(dp), parameter :: epsdp=epsilon(1._dp)
   real(dp), allocatable :: g(:,:), gcount(:,:) ! g(r,theta)
@@ -26,7 +26,6 @@ subroutine compute_gOfRandCosTheta
   ! Get the density per spherical angle Omega (integrate over psi)
   icg=0
   do s=1,size(solvent)
-    rho0=solvent(s)%rho0
     do i=1,imax
       do j=1,jmax
         do k=1,kmax
