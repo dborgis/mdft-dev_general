@@ -9,7 +9,7 @@ subroutine compute_gOfRandCosTheta
   implicit none
   integer  :: icg,n,i,j,k,o,p,s,omax,pmax,imax,jmax,kmax,binthetamax,bintheta,binrmax,binr
   real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, maxrange, rho0
-  real(dp), allocatable :: rho(:,:,:,:), den(:,:,:)
+  real(dp), allocatable :: rho(:,:,:,:)
   real(dp), parameter :: epsdp=epsilon(1._dp)
   real(dp), allocatable :: g(:,:), gcount(:,:) ! g(r,theta)
 
@@ -23,7 +23,6 @@ subroutine compute_gOfRandCosTheta
   dy=spacegrid%dl(2)
   dz=spacegrid%dl(3)
 
-  allocate(den(imax,jmax,kmax),source=zerodp)
   ! Get the density per spherical angle Omega (integrate over psi)
   icg=0
   do s=1,size(solvent)
