@@ -50,7 +50,7 @@ subroutine compute_gOfRandCosTheta
   ! for the distance r between solute site and grid node:
   maxrange   = minval(spaceGrid%length)/2._dp
   call deduce_optimal_histogram_properties( imax*jmax*kmax, maxrange, binrmax, dr)
-  binthetamax = 3 ! this has to be decided, but we have a very large number of angles, even if the quadrature over omega is by 1 angle only in fixed frame
+  binthetamax = 10 ! this has to be decided, but we have a very large number of angles, even if the quadrature over omega is by 1 angle only in fixed frame
   ! theta is between 0 and pi
   dtheta = pi/real(binthetamax,dp)
   allocate( g(binrmax,binthetamax) )
