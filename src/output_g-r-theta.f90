@@ -1,4 +1,4 @@
-subroutine compute_gOfRandCosTheta
+subroutine output_gOfRandCosTheta
   use precision_kinds, only: dp
   use system,          only: spacegrid, solute, solvent
   use quadrature,      only: anggrid, molrotgrid, molrotsymorder, OMx, OMy, OMz
@@ -123,4 +123,4 @@ subroutine compute_gOfRandCosTheta
   end do ! loop over solute sites
   close(124)
   deallocate( g, gcount )
-end subroutine compute_gOfRandCosTheta
+end subroutine output_gOfRandCosTheta
