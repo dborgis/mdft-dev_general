@@ -110,7 +110,8 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/steepest_descent_main.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o\
-	$(OBJDIR)/finalize_simu.o
+	$(OBJDIR)/finalize_simu.o\
+	$(OBJDIR)/output_g-r-theta.o
 
 # ——————————————— Global rules ———————————————
 
@@ -183,7 +184,8 @@ $(OBJDIR)/compute_purely_repulsive_potential.o:\
 $(OBJDIR)/compute_rdf.o:\
 	$(SRCDIR)/compute_rdf.f90\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_mathematica.o
 
 $(OBJDIR)/compute_vcoul_as_sum_of_pointcharges.o:\
 	$(SRCDIR)/compute_vcoul_as_sum_of_pointcharges.f90\
@@ -651,3 +653,12 @@ $(OBJDIR)/finalize_simu.o:\
 $(OBJDIR)/module_mathematica.o:\
 	$(SRCDIR)/module_mathematica.f90\
 	$(OBJDIR)/module_precision_kinds.o
+
+$(OBJDIR)/output_g-r-theta.o:\
+	$(SRCDIR)/output_g-r-theta.f90\
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_quadrature.o\
+	$(OBJDIR)/module_constants.o\
+	$(OBJDIR)/module_minimizer.o\
+	$(OBJDIR)/module_mathematica.o
