@@ -77,7 +77,8 @@ SUBROUTINE energy_polarization_multi (F_pol)
                 CALL dfftw_execute (fftw3%plan_forward)
                 rho_k = fftw3%out_forward *spacegrid%dv
                 do concurrent (d=1:3)
-                  Ptot_k(d,:,:,:,s) = rho_k * angGrid%weight(o) * molRotGrid%weight(p) * solvent(s)%molec_polar_k(d,:,:,:,o,p)
+                  Ptot_k(d,:,:,:,s) =  Ptot_k(d,:,:,:,s)+&
+                    rho_k * angGrid%weight(o) * molRotGrid%weight(p) * solvent(s)%molec_polar_k(d,:,:,:,o,p)
                 end do
             END DO
         END DO
@@ -127,7 +128,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
         k_index = INT ( norm_k(i,j,k) / delta_k ) + 1
         IF ( k_index > nb_k ) k_index = nb_k ! Here it happens that k_index gets higher than the highest c_k index. In this case one imposes k_index = k_index_max
 
-        toto = deltaVkn*0.5_dp*qfact*solvent(s)%rho0**2*facsym
+        toto = deltaVkn*0.5_dp*qfact*solvent(s)%rho0**2*facsym!/(twopi)**3
 
         F_pol_long = F_pol_long + fourpi * toto * dot_product( Plong_k_loc, Plong_k_loc)    /chi_l(k_index)
 
