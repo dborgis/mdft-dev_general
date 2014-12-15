@@ -112,7 +112,8 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/write_to_cube_file.o\
 	$(OBJDIR)/finalize_simu.o\
 	$(OBJDIR)/output_g-r-theta.o\
-	$(OBJDIR)/output_gsitesite.o
+	$(OBJDIR)/output_gsitesite.o\
+	$(OBJDIR)/module_time.o
 
 # ——————————————— Global rules ———————————————
 
@@ -672,3 +673,6 @@ $(OBJDIR)/output_gsitesite.o:\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_mathematica.o
+
+$(OBJDIR)/module_time.o:\
+	$(SRCDIR)/module_time.f90
