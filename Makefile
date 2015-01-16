@@ -25,7 +25,7 @@ LDFLAGS = $(FFTW_LIBRARIES) -lfftw3_threads -lfftw3
 
 # For POINCARE:
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
-# LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3
+# LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3_threads -lfftw3
 
 DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -pg -Wunused-parameter -frecursive
 # -g turns on debugging
