@@ -69,6 +69,30 @@
 \begin_body
 
 \begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\Fex}{F_{\mathtt{ex}}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\oo}{\boldsymbol{\Omega}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\rr}{\boldsymbol{r}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Hard spheres of diameter 
 \begin_inset Formula $\sigma$
 \end_inset
@@ -93,10 +117,14 @@ Hard spheres of diameter
 
  la densité du fluide dimensionnée comme l'inverse d'un volume.
  La fraction d'empilement, packing fraction, 
-\begin_inset Formula $\eta\equiv\frac{\pi}{6}\rho\sigma$
+\begin_inset Formula 
+\begin{equation}
+\eta\equiv\frac{\pi}{6}\rho\sigma
+\end{equation}
+
 \end_inset
 
-.
+
 \end_layout
 
 \begin_layout Section
@@ -133,6 +161,43 @@ The celebrated Carnahan-Starling EOS is the interpolation between the pressure
 \begin_inset Formula 
 \begin{equation}
 Z_{CS}\left(\eta\right)=\frac{1}{3}Z_{PY}\left(\eta\right)+\frac{2}{3}Z_{SPT}\left(\eta\right)=\frac{1+\eta+\eta^{2}-\eta^{3}}{\left(1-\eta\right)^{3}}.
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+FMT
+\end_layout
+
+\begin_layout Subsection
+Ansatz : weighted density approximation
+\end_layout
+
+\begin_layout Standard
+The ansatz is that one can write the excess free energy of a mixture of
+ hard spheres as
+\begin_inset Formula 
+\begin{equation}
+\frac{\delta\beta\Fex\left(\left\{ \rho_{i}\left(\rr\right)\right\} \right)}{\delta\rho_{i}\left(\rr\right)}{}_{\rho\rightarrow0}=\sum\rho_{j}\left(\rr\right)\theta\left(\left|\rr-\rr^{\prime}\right|-\left(R_{i}=R_{j}\right)\right)=\sum_{j}\bar{\rho_{j}}\left(\rr\right)
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Rosenfeld's FMT
+\end_layout
+
+\begin_layout Standard
+PY
+\begin_inset Formula 
+\begin{equation}
+\frac{3n_{2}^{2}-3n_{2v}.n_{2v}}{24\pi\left(1-n_{3}\right){}^{2}}+\frac{n_{1}}{1-n_{3}}
 \end{equation}
 
 \end_inset
