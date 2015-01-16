@@ -51,7 +51,7 @@ SUBROUTINE find_equilibrium_density
       iter = iter+1
       FFdiff = FF
       call energy_and_gradient(iter) ! après ca on a le nouveau FF et le nouveau dF et le nouveau cg_vect
-      cg_vect = cg_vect - dF
+      cg_vect = cg_vect - 0.5_dp*dF
       FFdiff = abs(FFdiff-FF) ! old - new
     end do
 
