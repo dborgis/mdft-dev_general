@@ -44,7 +44,7 @@ ck_en_harm_sph = F
 ############################
 # SOLVER
 ############################
-minimizer = bfgs
+minimizer = bfgs # bfgs or sd
 maximum_iteration_nbr = 100
 epsg =  0.00001  # default 0.0001
 pgtol = 0.000001 # default 0.00001
