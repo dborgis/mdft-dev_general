@@ -22,7 +22,7 @@ MODULE system
         real(dp) :: q, qold
         real(dp) :: h
     end type vextType
-    
+
     TYPE :: solventType
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         real(dp) :: diameter ! hard sphere diameter, for instance
@@ -37,17 +37,17 @@ MODULE system
         complex(dp), allocatable :: molec_polar_k(:,:,:,:,:,:) ! molecule polarization factor
         type(vextType), allocatable :: vext(:,:,:,:,:) ! nfft1,nfft2,nfft3,om,psi
     END TYPE
-    
+
     TYPE (solventType), ALLOCATABLE :: solvent(:)
     TYPE (solventType) :: solute
-   
+
     TYPE :: thermoCondType
         REAL(dp) :: T ! temperature
         REAL(dp) :: kbT ! temperature energy unit
         REAL(dp) :: beta ! 1/kbT
     END TYPE
     TYPE (thermoCondType) :: thermoCond ! everything related to the thermodynamic conditions
-    
+
     TYPE :: spaceGridType
         INTEGER(i2b), DIMENSION(3) :: n_nodes ! number of grid nodes in direction x, y and z
         REAL(dp), DIMENSION(3) :: length ! total length in direction x, y and z
@@ -56,7 +56,6 @@ MODULE system
     END TYPE spaceGridType
     TYPE( spaceGridType ), TARGET :: spaceGrid
 
-    REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s_hs ! c(2)(k) of a hard sphere
     COMPLEX(dp),ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
 
     logical(4) :: HS
