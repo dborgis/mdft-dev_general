@@ -26,7 +26,7 @@ SUBROUTINE energy_hydro (Fint)
     REAL(dp) :: time0 , time1 ! timesteps
     REAL(dp) :: R_cg ! radius of the coarse graining gaussian function
     REAL(dp) :: a, mm, b1, b2, factn, c_s_loc, c_s_hs_loc
-    INTEGER(i2b) :: icg,i,j,k,o,l,m,p,k_index,nfft1,nfft2,nfft3
+    INTEGER(i2b) :: icg,i,j,k,o,l,m,p,nfft1,nfft2,nfft3
 
     CALL CPU_TIME (time0)
     !print*, c_s(1) , c_s_hs(1)
