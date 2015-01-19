@@ -2,14 +2,15 @@
 SUBROUTINE energy_hydro (Fint)
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: c_s_hs, thermocond, nb_species, spaceGrid, solvent
-    USE dcf                 ,ONLY: c_s, nb_k, delta_k
+    USE system              ,ONLY: thermocond, nb_species, spaceGrid, solvent
+    USE dcf                 ,ONLY: c_s, nb_k, delta_k, c_s_hs
     USE constants           ,ONLY: fourpi,i_complex,twopi,zerodp,zeroC
     USE minimizer           ,ONLY: cg_vect , FF , dF
     USE quadrature          ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE fft                 ,ONLY: fftw3,norm_k,kx,ky,kz,k2,timesExpPrefactork2
     USE input               ,ONLY: input_log, verbose, input_dp
-    
+    use mathematica         ,only: splint
+
     IMPLICIT NONE
     REAL(dp) :: mu_0 ! phenomenological potential
     REAL(dp) :: Nk ! total number of k points. Real because really often used as a divisor of a real number
@@ -23,10 +24,10 @@ SUBROUTINE energy_hydro (Fint)
     REAL(dp) :: Fint, Vint ! excess energy one wants to compute here
     REAL(dp) :: S_cg, F_cg ! surface part of the energy (Cahn Hilliard)
     REAL(dp) :: time0 , time1 ! timesteps
-    REAL(dp) :: R_cg ! radius of the coarse graining gaussian function  
-    REAL(dp) :: a, mm, b1, b2, factn
-    INTEGER(i2b) :: icg,i,j,k,o,l,m,p,k_index,nfft1,nfft2,nfft3
-    
+    REAL(dp) :: R_cg ! radius of the coarse graining gaussian function
+    REAL(dp) :: a, mm, b1, b2, factn, c_s_loc, c_s_hs_loc
+    INTEGER(i2b) :: icg,i,j,k,o,l,m,p,nfft1,nfft2,nfft3
+
     CALL CPU_TIME (time0)
     !print*, c_s(1) , c_s_hs(1)
     !a=c_s(1)-c_s_hs(1)
@@ -42,17 +43,17 @@ SUBROUTINE energy_hydro (Fint)
         print*, a,12.3*2.0_dp*8.1812242666880284_dp
         print*, 'Hydrophobicity Van der Waals way'
     END IF
-    
-    
+
+
     nfft1 = spaceGrid%n_nodes(1)
     nfft2 = spaceGrid%n_nodes(2)
     nfft3 = spaceGrid%n_nodes(3)
-    
+
     !In this routine we use the pair correlation function of a hard sphere fluid.
-    IF (.NOT. ALLOCATED(c_s_hs)) THEN
+    IF (.NOT. ALLOCATED(c_s_hs%x)) THEN
         PRINT*,"I'm going through cs_of_k_hard_sphere"
         CALL cs_of_k_hard_sphere
-        IF (ALL(c_s_hs==zerodp)) STOP "problem in the cs hard sphere generated from call from energy_hydro.f90"
+        IF (ALL(c_s_hs%y==zerodp)) STOP "problem in the cs hard sphere generated from call from energy_hydro.f90"
     END IF
     IF (.not. input_log('hard_sphere_fluid')) THEN
         PRINT*, 'energy_hydro MUST be used with hard sphere solvent correction  TAG of hard_sphere_solute in dft.in must be T'
@@ -83,7 +84,7 @@ SUBROUTINE energy_hydro (Fint)
     prefactor = -R_cg**2 / 2.0_dp ! dummy for later in the gaussian in k space g(k)=exp(prefactor*k2)
 
     BLOCK
-        REAL(dp) :: delta_n_ijk ! dummy for local delta_n 
+        REAL(dp) :: delta_n_ijk ! dummy for local delta_n
         ! get density from last minimization step
         ALLOCATE(delta_n(nfft1,nfft2,nfft3) ,SOURCE=zerodp)
         ! HERE WE WORK WITH delta_n = delta_n normalized wrt n0 = delta_n/n0 = (n-n0)/n0
@@ -96,7 +97,7 @@ SUBROUTINE energy_hydro (Fint)
                         DO p=1, molRotGrid%n_angles
                             icg = icg +1
                             delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect(icg) ** 2 ! sum over all orientations
-                        END DO  
+                        END DO
                     END DO
                     delta_n(i,j,k) = delta_n_ijk
                 END DO
@@ -168,8 +169,9 @@ SUBROUTINE energy_hydro (Fint)
     ALLOCATE ( V_nk (nfft1/2+1,nfft2,nfft3) ,SOURCE=(delta_nk-delta_nbark))
     DEALLOCATE (delta_nk, delta_nbark)
     DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, p=1:nfft3)
-        k_index = MIN ( INT(norm_k(l,m,p)/delta_k)+1 ,nb_k) ! get index of k point wrt input/cs.in
-        V_nk (l,m,p) = V_nk(l,m,p)*(c_s(k_index)-c_s_hs(k_index)) ! we suppose c_s(nbar)=cst=c_s(n_0) which is a crude approximation ! compute radial excess potential in kspace
+      call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=norm_k(l,m,p), y=c_s_hs_loc)
+      call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=size(c_s%y), x=norm_k(l,m,p), y=c_s_loc)
+        V_nk (l,m,p) = V_nk(l,m,p)*(c_s_loc-c_s_hs_loc) ! we suppose c_s(nbar)=cst=c_s(n_0) which is a crude approximation ! compute radial excess potential in kspace
     END DO
 
     ! coarse grain V_nk
@@ -195,29 +197,29 @@ SUBROUTINE energy_hydro (Fint)
     !!!!!!!!!!!!!!!!!!!!!!!!
     !       gradients
     !!!!!!!!!!!!!!!!!!!!!!!!
-    
+
     ! compute coarse grained free energy and gradient small part
     ALLOCATE ( dF_cg (nfft1,nfft2,nfft3) ,SOURCE=zerodp)
     dF_cg = (  delta_nbar    *(-a*solvent(1)%n0**2) &
              + delta_nbar**2 *(3._dp*b1*solvent(1)%n0**3) &
              + delta_nbar**3 *(4._dp*b2*solvent(1)%n0**4) ) *thermocond%kbT*spaceGrid%dv
     DEALLOCATE (delta_nbar)
-    
+
     ! FFT (dF_cg) in order to work in kspace
     fftw3%in_forward = dF_cg
     CALL dfftw_execute(fftw3%plan_forward)
     ALLOCATE ( dF_cgk (nfft1/2+1,nfft2,nfft3) ,SOURCE=zeroC)
-    
+
     ! define coarse grained gradients in k space
     dF_cgk = timesExpPrefactork2 ( fftw3%out_forward + dS_cgk, prefactor)
     DEALLOCATE(dS_cgk)
-    
+
     ! get back coarse grained gradients in r space
     fftw3%in_backward = dF_cgk
     DEALLOCATE ( dF_cgk )
-    CALL dfftw_execute ( fftw3%plan_backward ) 
-    dF_cg = fftw3%out_backward/Nk 
-    
+    CALL dfftw_execute ( fftw3%plan_backward )
+    dF_cg = fftw3%out_backward/Nk
+
 
     ! compute final FF and dF
     BLOCK
@@ -226,7 +228,7 @@ SUBROUTINE energy_hydro (Fint)
         DO i = 1, nfft1
             DO j = 1, nfft2
                 DO k = 1, nfft3
-                    Vint = -thermocond%kBT * solvent(1)%n0 * fact_n * V_n(i,j,k) 
+                    Vint = -thermocond%kBT * solvent(1)%n0 * fact_n * V_n(i,j,k)
                     dF_cg_ijk = dF_cg(i,j,k)
                     aa = 1._dp/(fourpi*twopi/molRotSymOrder)*(Vint+dF_cg_ijk)
                     DO o = 1, angGrid%n_angles
@@ -244,7 +246,7 @@ SUBROUTINE energy_hydro (Fint)
 
     Fint = Fint + F_cg + S_cg
     FF = FF + Fint
-    
+
 
     CALL CPU_TIME ( time1 )
 

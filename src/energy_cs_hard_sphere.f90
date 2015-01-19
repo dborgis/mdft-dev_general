@@ -2,20 +2,22 @@
 SUBROUTINE energy_cs_hard_sphere (Fint)
 
     USE precision_kinds ,ONLY: i2b, dp
-    USE system          ,ONLY: c_s_hs, thermocond, nb_species, spaceGrid, solvent
+    USE system          ,ONLY: thermocond, nb_species, spaceGrid, solvent
     USE quadrature      ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE minimizer       ,ONLY: cg_vect, FF, dF
     USE constants       ,ONLY: fourpi, twopi, zero, zeroC
     USE fft             ,ONLY: fftw3, norm_k
     USE input           ,ONLY: verbose
-    
+    use dcf             ,only: c_s_hs
+    use mathematica     ,only: splint
+
     IMPLICIT NONE
     INTEGER(i2b) :: i, j, k, l, m, n, o, p, s, icg, species, nfft1, nfft2, nfft3
     REAL(dp), INTENT(OUT) :: Fint ! Internal part of the free energy
     REAL(dp) :: Vint, fact, psi, lx, ly, lz, time1, time0
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: delta_rho, gamma
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: delta_rho_k
-    
+
 
     CALL CPU_TIME ( time0 )
 
@@ -59,8 +61,8 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
 
     CALL CPU_TIME(time1)
     IF (verbose) WRITE(*,*) 'Fexc c_hs   = ' , Fint , 'computed in (sec)' , time1 - time0
- 
- 
+
+
     CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -97,12 +99,14 @@ SUBROUTINE energy_cs_hard_sphere (Fint)
 
         SUBROUTINE build_gamma_is_delta_rho_k_dot_cs_k
             USE dcf ,ONLY: nb_k, delta_k
-            INTEGER(i2b) :: k_index
+            use fft, only: norm_k
+            implicit none
+            real(dp) :: c_s_hs_loc
             ! gamma(k)=cs(k)*rho(k)
             ! gamma is named fftw3%in_backward not to have useless big table
             DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
-                k_index = MIN(  INT(norm_k(l,m,n)/delta_k)+1  ,nb_k) ! Here it happens that k_index gets higher than the highest c_k index.
-                fftw3%in_backward(l,m,n) = delta_rho_k(l,m,n) * c_s_hs(k_index)
+              call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=norm_k(l,m,n), y=c_s_hs_loc)
+              fftw3%in_backward(l,m,n) = delta_rho_k(l,m,n) * c_s_hs_loc
             END DO
             DEALLOCATE ( delta_rho_k )
             CALL dfftw_execute (fftw3%plan_backward)

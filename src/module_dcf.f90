@@ -2,17 +2,26 @@ MODULE dcf
 
     USE precision_kinds, ONLY: dp, i2b
     USE input, ONLY: input_log, input_char, n_linesInFile, deltaAbscissa
+    use mathematica, only: spline, splint
+
 
     IMPLICIT NONE
 
     REAL(dp) :: delta_k , delta_k_in_C! distance between two k points in cs.in, cdelta.in, cd.in
     INTEGER(i2b) :: nb_k, nb_k_in_c ! nb of k points in cs.in, cdelta.in, cd.in
-    REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s ! density density correlation function
-    REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_delta, c_d ! polarization polarization correlation function
+    ! REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s ! density density correlation function
+    ! REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_delta, c_d ! polarization polarization correlation function
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: chi_l, chi_t ! longitudinal and transverse dielectric susceptibilities
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: Cnn, Cnc, Ccc ! longitudinal and transverse dielectric susceptibilities
 
     REAL(dp) :: delta_k_cs, delta_k_cd, delta_k_cdelta, delta_k_chi_l, delta_k_chi_t, delta_k_Cnn, delta_k_Cnc, delta_k_Ccc
+
+    type cfile
+      real(dp), allocatable :: x(:), y(:), y2(:)
+      character(150) :: filename
+    end type
+    type(cfile) :: c_s, c_delta, c_d, c_s_hs
+
 
 ! parameters for branch ck_angular ONLY
     INTEGER, PARAMETER :: i1b = SELECTED_INT_KIND(2)
@@ -98,19 +107,20 @@ MODULE dcf
 
         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
         LOGICAL :: exists
-
-        INQUIRE(FILE="input/ck_projection.in", EXIST=exists)
-        IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_projection.in is not found."
-        OPEN(39,FILE="input/ck_projection.in",FORM='UNFORMATTED')
-            READ(39) nb_k, delta_k_ck_angular
-            ALLOCATE(c_s(nb_k)); ALLOCATE(c_q(nb_k)); ALLOCATE(c_delta(nb_k)); ALLOCATE(c_d(nb_k));
-            REWIND(39)
-            READ(39) nb_k, delta_k_ck_angular, num_symm, c_s, c_q, c_delta, c_d
-            IF (num_symm /= molRotSymOrder) THEN
-                PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', molRotSymOrder, ' being different with num_symm ',num_symm
-                STOP
-            END IF
-        CLOSE(39)
+        stop "maybe ck_debug does not work anymore since c_s c_delta and c_d have been improved a lot since dec 2014"
+        !
+        ! INQUIRE(FILE="input/ck_projection.in", EXIST=exists)
+        ! IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_projection.in is not found."
+        ! OPEN(39,FILE="input/ck_projection.in",FORM='UNFORMATTED')
+        !     READ(39) nb_k, delta_k_ck_angular
+        !     ALLOCATE(c_s(nb_k)); ALLOCATE(c_q(nb_k)); ALLOCATE(c_delta(nb_k)); ALLOCATE(c_d(nb_k));
+        !     REWIND(39)
+        !     READ(39) nb_k, delta_k_ck_angular, num_symm, c_s, c_q, c_delta, c_d
+        !     IF (num_symm /= molRotSymOrder) THEN
+        !         PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', molRotSymOrder, ' being different with num_symm ',num_symm
+        !         STOP
+        !     END IF
+        ! CLOSE(39)
 
     END SUBROUTINE read_ck_projection
 
@@ -411,132 +421,118 @@ MODULE dcf
 !===================================================================================================================================
 
     SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
-        INTEGER(i2b) :: ios, nb_kdelta, i, nb_kd
+        INTEGER(i2b) :: ios, nk, i
         REAL(dp) :: norm_k
-        CHARACTER(80) :: filename, ck_species
+        CHARACTER(80) :: ck_species
 
         ck_species = input_char('ck_species')
 
         IF ( ck_species == 'spc  ' ) THEN
-            filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
+          c_delta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
+          c_d%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
         ELSE IF ( ck_species == 'stock' ) THEN
-            filename='input/direct_correlation_functions/stockmayer/cdelta.in'
+          c_delta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
+          c_d%filename='input/direct_correlation_functions/stockmayer/cd.in'
         ELSE IF ( ck_species == 'perso' ) THEN
-            filename='input/cdelta.in'
+          c_delta%filename='input/cdelta.in'
+          c_d%filename='input/cd.in'
         ELSE IF ( ck_species == 'spce' ) then
-            filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
+          c_delta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
+          c_d%filename='input/direct_correlation_functions/water/SPCE/cd.in'
         END IF
 
-        nb_kdelta = n_linesInFile(filename)
-        ALLOCATE(c_delta(nb_kdelta), SOURCE=0._dp)
-        delta_k = deltaAbscissa(filename)
-        delta_k_cdelta=delta_k
-        OPEN (13, FILE=filename, IOSTAT=ios)
-            IF (ios/=0) THEN
-                WRITE(*,*)'Cant open file ',filename,' in readDensityDensityCorrelationFunction (c_delta)'
-                STOP
-            END IF
-            DO i = 1, SIZE(c_delta)
-                READ (13,*,IOSTAT=ios) norm_k, c_delta(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',filename, 'in readDensityDensityCorrelationFunction (c_delta)'
-                        STOP
-                    END IF
-            END DO
-        CLOSE (13)
+        nk = n_linesInFile(c_delta%filename)
+        allocate( c_delta%x(nk), source=0._dp)
+        allocate( c_delta%y(nk), source=0._dp)
+        allocate( c_delta%y2(nk), source=0._dp)
+        nk = n_linesInFile(c_d%filename)
+        allocate( c_d%x(nk), source=0._dp)
+        allocate( c_d%y(nk), source=0._dp)
+        allocate( c_d%y2(nk), source=0._dp)
 
-
-        IF ( ck_species == 'spc  ' ) THEN
-            filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
-        ELSE IF ( ck_species == 'stock' ) THEN
-            filename='input/direct_correlation_functions/stockmayer/cd.in'
-        ELSE IF ( ck_species == 'perso' ) THEN
-            filename='input/cd.in'
-        ELSE IF ( ck_species == 'spce' ) then
-            filename='input/direct_correlation_functions/water/SPCE/cd.in'
-        END IF
-        nb_kd = n_linesInFile(filename)
-        ALLOCATE(c_d(nb_kd), SOURCE=0._dp)
-
-
-        delta_k = deltaAbscissa(filename)
-        delta_k_cd=delta_k
-        OPEN (13, FILE=filename, IOSTAT=ios)
-            IF (ios/=0) THEN
-                WRITE(*,*)'Cant open file ',filename,' in readDensityDensityCorrelationFunction (c_d)'
-                STOP
-            END IF
-            DO i = 1, SIZE(c_d)
-                READ (13,*,IOSTAT=ios) norm_k, c_d(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',filename, 'in readDensityDensityCorrelationFunction (c_d)'
-                        STOP
-                    END IF
-            END DO
-        CLOSE (13)
-        If (delta_k_cs/=delta_k_cd .or. delta_k_cs/=delta_k_cdelta) THEN
-          Print*, 'Not the same deltak in cs and cdelta or cd, This will give you untrustfull results'
+        OPEN (13, FILE=c_delta%filename, IOSTAT=ios)
+        IF (ios/=0) THEN
+          WRITE(*,*)'Cant open file ',c_delta%filename,' in readPolarizationPolarizationCorrelationFunction'
           STOP
-        END If
+        END IF
+        DO i = 1, size(c_delta%x)
+          READ (13,*,IOSTAT=ios) c_delta%x(i), c_delta%y(i)
+          IF (ios/=0) THEN
+            WRITE(*,*)'Error while reading ',c_delta%filename, 'in readDensityDensityCorrelationFunction (c_delta)'
+            STOP
+          END IF
+        END DO
+        CLOSE (13)
 
+        OPEN (13, FILE=c_d%filename, IOSTAT=ios)
+        IF (ios/=0) THEN
+          WRITE(*,*)'Cant open file ',c_d%filename,' in readPolarizationPolarizationCorrelationFunction'
+          STOP
+        END IF
+        DO i = 1, size(c_d%x)
+          READ (13,*,IOSTAT=ios) c_d%x(i), c_d%y(i)
+          IF (ios/=0) THEN
+            WRITE(*,*)'Error while reading ',c_d%filename, 'in readDensityDensityCorrelationFunction (c_d)'
+            STOP
+          END IF
+        END DO
+        CLOSE (13)
+
+        call spline( x=c_delta%x, y=c_delta%y, n=size(c_delta%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_delta%y2)
+        call spline( x=c_d%x, y=c_d%y, n=size(c_d%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_d%y2)
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
-
-
+!===================================================================================================================================
 
 
 
     SUBROUTINE readDensityDensityCorrelationFunction ! c_s
-
-        CHARACTER(80) :: filename, ck_species
+        implicit none
+        CHARACTER(80) :: ck_species
         INTEGER(i2b) :: ios, i
-        REAL(dp) :: norm_k
 
         ck_species = input_char('ck_species')
         IF ( ck_species == 'spc  ' ) THEN
-            filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
+          c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
         ELSE IF ( ck_species == 'stock' ) THEN
-            filename = 'input/direct_correlation_functions/stockmayer/cs.in'
+          c_s%filename = 'input/direct_correlation_functions/stockmayer/cs.in'
         ELSE IF ( ck_species == 'perso' ) THEN
-            filename = 'input/cs.in'
+          c_s%filename = 'input/cs.in'
         ELSE IF ( ck_species == 'spce' ) then
-            filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
+          c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
         END IF
 
-        delta_k = deltaAbscissa(filename)
-        delta_k_cs = delta_k
-        nb_k = n_linesInFile(filename)
+        nb_k = n_linesInFile(c_s%filename)
+        allocate( c_s%x(nb_k) ,source=0._dp)
+        allocate( c_s%y(nb_k) ,source=0._dp)
+        allocate( c_s%y2(nb_k), source=0._dp)
 
-        ALLOCATE ( c_s(nb_k), SOURCE=0._dp )
+        OPEN (13, FILE=c_s%filename, IOSTAT=ios)
+        IF (ios/=0) THEN
+          WRITE(*,*)'Cant open file ',c_s%filename,' in readDensityDensityCorrelationFunction (c_s)'
+          STOP
+        END IF
 
-        OPEN (13, FILE=filename, IOSTAT=ios)
-            IF (ios/=0) THEN
-                WRITE(*,*)'Cant open file ',filename,' in readDensityDensityCorrelationFunction (c_s)'
-                STOP
-            END IF
-
-            open (14, file='output/cs.in', iostat=ios)
-                if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction (c_s)'
-
-            DO i = 1, SIZE(c_s)
-                READ (13,*,IOSTAT=ios) norm_k, c_s(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',filename, 'in readDensityDensityCorrelationFunction (c_s)'
-                        STOP
-                    END IF
-                WRITE(14,*,IOSTAT=ios) norm_k, c_s(i)
-                    if (ios/=0) then
-                        print*,'Something is wrong while writing norm_k and c_s(i) in readDensityDensityCorrelationFunction'
-                        print*,'for i=',i
-                        print*,'norm_k=',norm_k
-                        print*,'and c_s(i)=',c_s(i)
-                        stop
-                    end if
-            END DO
+        open (14, file='output/cs.in', iostat=ios)
+        if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction (c_s)'
+        DO i = 1, nb_k
+          READ (13,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
+          IF (ios/=0) THEN
+            WRITE(*,*)'Error while reading ',c_s%filename, 'in readDensityDensityCorrelationFunction (c_s)'
+            STOP
+          END IF
+          WRITE(14,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
+          if (ios/=0) then
+            print*,'Something is wrong while writing c_s%x and c_s%y in readDensityDensityCorrelationFunction'
+            print*,'for i=',i
+            print*,'c_s%x(i)=',c_s%x(i)
+            print*,'and c_s%y(i)=',c_s%y(i)
+            stop
+          end if
+        END DO
         CLOSE (13)
         close (14)
 
+        call spline( x=c_s%x, y=c_s%y, n=size(c_s%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
     END SUBROUTINE readDensityDensityCorrelationFunction
-
-
 
 END MODULE dcf

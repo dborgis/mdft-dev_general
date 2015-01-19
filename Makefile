@@ -319,7 +319,8 @@ $(OBJDIR)/energy_hydro.o:\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_mathematica.o
 
 $(OBJDIR)/energy_ideal.o:\
 	$(SRCDIR)/energy_ideal.f90\
@@ -346,6 +347,7 @@ $(OBJDIR)/energy_nn_cs_plus_nbar.o:\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/energy_polarization_dipol.o:\
@@ -357,6 +359,7 @@ $(OBJDIR)/energy_polarization_dipol.o:\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/energy_polarization_multi.o:\
@@ -508,7 +511,8 @@ $(OBJDIR)/module_dcf.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_mathematica.o
 
 $(OBJDIR)/module_external_potential.o:\
 	$(SRCDIR)/module_external_potential.f90\

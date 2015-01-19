@@ -131,31 +131,34 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
                     Ck = ck_angular(ipsi1,ipsi2,iphi,icos1,icos2,ik)
                 END IF
 
-            CASE(2) ! ck_debug
-                om1_dot_om2 = Omx(o1)*Omx(o2) + Omy(o1)*Omy(o2) + Omz(o1)*Omz(o2)
-                IF ((kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp == 0._dp) THEN
-                    k_dot_om1 = Omz(o1)
-                    k_dot_om2 = Omz(o2)
-                ELSE
-                    k_dot_om1 = (kx(l)*Omx(o1) + ky(m)*Omy(o1) + kz(n)*Omz(o1))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
-                    k_dot_om2 = (kx(l)*Omx(o2) + ky(m)*Omy(o2) + kz(n)*Omz(o2))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
-                END IF
+            ! CASE(2) ! ck_debug
+            !   stop "maybe ck_debug doesnt work anymore since c_s c_delta and c_d have been improved a lot in 2015"
+            !     om1_dot_om2 = Omx(o1)*Omx(o2) + Omy(o1)*Omy(o2) + Omz(o1)*Omz(o2)
+            !     IF ((kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp == 0._dp) THEN
+            !         k_dot_om1 = Omz(o1)
+            !         k_dot_om2 = Omz(o2)
+            !     ELSE
+            !         k_dot_om1 = (kx(l)*Omx(o1) + ky(m)*Omy(o1) + kz(n)*Omz(o1))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
+            !         k_dot_om2 = (kx(l)*Omx(o2) + ky(m)*Omy(o2) + kz(n)*Omz(o2))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
+            !     END IF
+            !
+            !     Ck = c_s(ik) + c_delta(ik) * om1_dot_om2 + c_d(ik) * (3._dp * k_dot_om1 * k_dot_om2 - om1_dot_om2) ! For factors of Daniel
 
-                Ck = c_s(ik) + c_delta(ik) * om1_dot_om2 + c_d(ik) * (3._dp * k_dot_om1 * k_dot_om2 - om1_dot_om2) ! For factors of Daniel
-
-            CASE(3) ! ck_debug_extended
-                om1_dot_om2 = Omx(o1)*Omx(o2) + Omy(o1)*Omy(o2) + Omz(o1)*Omz(o2)
-                IF ((kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp == 0._dp) THEN
-                    k_dot_om1 = Omz(o1)
-                    k_dot_om2 = Omz(o2)
-                ELSE
-                    k_dot_om1 = (kx(l)*Omx(o1) + ky(m)*Omy(o1) + kz(n)*Omz(o1))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
-                    k_dot_om2 = (kx(l)*Omx(o2) + ky(m)*Omy(o2) + kz(n)*Omz(o2))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
-                END IF
-
-                Ck = c_s(ik) - root3 * c_delta(ik) * om1_dot_om2 &
-                    + imag * c_q(ik) * k_dot_om1 - imag * c_q(ik) * k_dot_om2 & ! here ck is not the conjugated function of Luc
-                    + c_d(ik) * root03 * (3._dp * k_dot_om1 * k_dot_om2 - om1_dot_om2) ! For factors of Luc
+            ! CASE(3) ! ck_debug_extended
+            !   stop "maybe ck_debug does not work anymore since c_s c_delta and c_d have been improved a lot since dec 2014"
+            !
+            !     om1_dot_om2 = Omx(o1)*Omx(o2) + Omy(o1)*Omy(o2) + Omz(o1)*Omz(o2)
+            !     IF ((kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp == 0._dp) THEN
+            !         k_dot_om1 = Omz(o1)
+            !         k_dot_om2 = Omz(o2)
+            !     ELSE
+            !         k_dot_om1 = (kx(l)*Omx(o1) + ky(m)*Omy(o1) + kz(n)*Omz(o1))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
+            !         k_dot_om2 = (kx(l)*Omx(o2) + ky(m)*Omy(o2) + kz(n)*Omz(o2))/(kx(l)**2 + ky(m)**2 + kz(n)**2)**0.5_dp
+            !     END IF
+            !
+            !     Ck = c_s(ik) - root3 * c_delta(ik) * om1_dot_om2 &
+            !         + imag * c_q(ik) * k_dot_om1 - imag * c_q(ik) * k_dot_om2 & ! here ck is not the conjugated function of Luc
+            !         + c_d(ik) * root03 * (3._dp * k_dot_om1 * k_dot_om2 - om1_dot_om2) ! For factors of Luc
 
             END SELECT
 
@@ -209,4 +212,3 @@ SUBROUTINE rot_proj!(proj, proj_loc)
     STOP 'For rotating projections to local coordinates or inverse, to be developed.'
 
 END SUBROUTINE rot_proj
-
