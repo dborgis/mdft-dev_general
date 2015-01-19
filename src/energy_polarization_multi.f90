@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
     USE system, ONLY: thermocond, nb_species, spaceGrid, solvent
-    USE dcf, ONLY: chi_l, chi_t, c_s, nb_k, delta_k
+    USE dcf, ONLY: chi_l, chi_t, nb_k, delta_k
     USE quadrature,ONLY : angGrid, molRotGrid
     USE minimizer, ONLY: cg_vect, FF, dF
     USE constants, ONLY : twopi, fourpi, qfact, zeroC
@@ -25,9 +25,9 @@ SUBROUTINE energy_polarization_multi (F_pol)
 
     if (size(solvent)/=1) STOP 'energy_polarization_multi.f90 not working for multisolvent species'
 
-    IF ( (SIZE(c_s) /= SIZE(chi_l)) .OR. (SIZE(c_s)/=SIZE(chi_t))) THEN
-        WRITE(*,*)"c_s, chi_l and chi_t should have the same number of points, at least for now"
-        PRINT*, SIZE(c_s), SIZE(chi_l), SIZE(chi_t)
+    IF ( (SIZE(chi_l)/=SIZE(chi_t))) THEN
+        WRITE(*,*)"chi_l and chi_t should have the same number of points, at least for now"
+        PRINT*, SIZE(chi_l), SIZE(chi_t)
         STOP
     END IF
 

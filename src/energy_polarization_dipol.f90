@@ -7,6 +7,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
     USE constants,       ONLY : twopi, zeroC
     USE fft,             ONLY : fftw3, k2, kproj, norm_k
     USE input,           ONLY : verbose
+    use mathematica,     only : splint
 
     IMPLICIT NONE
 
@@ -136,10 +137,9 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         SUBROUTINE build_excess_electric_field_in_Fourier_space
-            USE dcf, ONLY : c_delta , c_d, delta_k, nb_k
+            USE dcf, ONLY : c_delta , c_d
             COMPLEX(dp) :: k_dot_P, pxt_k , pyt_k , pzt_k
-            REAL(dp) :: c_deltat, c_dt ! dummy local values of c_delta and c_d in loops
-            INTEGER(i2b):: k_index
+            REAL(dp) :: c_delta_loc, c_d_loc, norm_k_loc
             ALLOCATE ( Ekx (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
             ALLOCATE ( Eky (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
             ALLOCATE ( Ekz (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)
@@ -153,12 +153,12 @@ SUBROUTINE energy_polarization_dipol (Fint)
                 ELSE
                     k_dot_P = CMPLX( tiny(1.0_dp),tiny(1.0_dp) ,dp )
                 END IF
-                k_index = MIN( INT( norm_k(l,m,n)/delta_k ) +1, nb_k)
-                c_deltat = c_delta ( k_index )
-                c_dt = c_d ( k_index )
-                Ekx ( l,m,n ) = c_deltat * pxt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(1,l) - pxt_k )
-                Eky ( l,m,n ) = c_deltat * pyt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(2,m) - pyt_k )
-                Ekz ( l,m,n ) = c_deltat * pzt_k + c_dt * ( 3.0_dp * k_dot_P * kproj(3,n) - pzt_k )
+                norm_k_loc = norm_k(l,m,n)
+                call splint( xa=c_delta%x, ya=c_delta%y, y2a=c_delta%y2, n=size(c_delta%y), x=norm_k_loc, y=c_delta_loc)
+                call splint( xa=c_d%x, ya=c_d%y, y2a=c_d%y2, n=size(c_d%y), x=norm_k_loc, y=c_d_loc)
+                Ekx ( l,m,n ) = c_delta_loc * pxt_k + c_d_loc * ( 3.0_dp * k_dot_P * kproj(1,l) - pxt_k )
+                Eky ( l,m,n ) = c_delta_loc * pyt_k + c_d_loc * ( 3.0_dp * k_dot_P * kproj(2,m) - pyt_k )
+                Ekz ( l,m,n ) = c_delta_loc * pzt_k + c_d_loc * ( 3.0_dp * k_dot_P * kproj(3,n) - pzt_k )
             END DO
             DEALLOCATE ( Pkx, Pky, Pkz )
         END SUBROUTINE build_excess_electric_field_in_Fourier_space

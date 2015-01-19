@@ -6,22 +6,21 @@ SUBROUTINE energy_nn_cs (Fint)
 
     use precision_kinds ,only: i2b, dp
     use system          ,only: spaceGrid, nb_species, solvent, thermocond
-    use dcf             ,only: c_s, delta_k
+    use dcf             ,only: c_s
     use quadrature      ,only: molRotSymOrder, angGrid, molRotGrid
     use minimizer       ,only: cg_vect, FF, dF, from_cgvect_get_rho, from_rho_get_n, deallocate_solvent_rho
-    use fft             ,only: fftw3, norm_k
+    use fft             ,only: fftw3, kx, ky, kz
+    use mathematica     ,only: splint
 
     IMPLICIT NONE
 
     real(dp), intent(out)    :: Fint
-    integer(i2b)             :: i, j, k, l, m, n, o, p, icg, s
-    integer(i2b), pointer    :: nfft1, nfft2, nfft3
-    real(dp)                 :: Vint, fact, psi, time1, time0
-    logical, save            :: c_s_isOK =.FALSE.
+    integer(i2b)             :: i, j, k, l, m, n, o, p, icg, s, nfft1, nfft2, nfft3
+    real(dp)                 :: Vint, fact, psi, time1, time0, c_s_loc, kx_loc, ky_loc, kz_loc, knorm
 
-    nfft1 => spacegrid%n_nodes(1)
-    nfft2 => spacegrid%n_nodes(2)
-    nfft3 => spacegrid%n_nodes(3)
+    nfft1 = spacegrid%n_nodes(1)
+    nfft2 = spacegrid%n_nodes(2)
+    nfft3 = spacegrid%n_nodes(3)
 
     call cpu_time (time0)
 
@@ -30,16 +29,25 @@ SUBROUTINE energy_nn_cs (Fint)
     call deallocate_solvent_rho                     ! solvent%rho becomes useless
     fftw3%in_forward = solvent(1)%n - solvent(1)%n0 ! solvent%Dn
     call dfftw_execute (fftw3%plan_forward)         ! build solvent%Dn(k) in fftw3%outward
-    call check_c_s
-    do concurrent (i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3)
-        fftw3%in_backward(i,j,k) = fftw3%out_forward(i,j,k) * c_s(k_index(i,j,k))     ! gamma(k) = cs(k) * Dn(k)
+
+    do k=1,nfft3
+      kz_loc=kz(k)
+      do j=1,nfft2
+        ky_loc=ky(j)
+        do i=1,nfft1/2+1
+          kx_loc=kx(i)
+          knorm=sqrt(kx_loc**2+ky_loc**2+kz_loc**2)
+          call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=size(c_s%y), x=knorm, y=c_s_loc)
+          fftw3%in_backward(i,j,k) = fftw3%out_forward(i,j,k) * c_s_loc     ! gamma(k) = cs(k) * Dn(k)
+        end do
+      end do
     end do
     call dfftw_execute (fftw3%plan_backward)        ! Inverse Fourier transform gamma(k) => gamma(r)
     fftw3%out_backward = fftw3%out_backward / real(product(spacegrid%n_nodes),dp) ! Normalize the iFFT with FFTW3 conventions.
 
     ! excess free energy and its gradient
     Fint = -0.5_dp*thermocond%kbT * sum((solvent(1)%n-solvent(1)%n0) * fftw3%out_backward) * spacegrid%dv ! Gloria OOP !
-    
+
     icg = 0
     DO s =1, nb_species
         fact = -thermocond%kbT * spaceGrid%dV * solvent(s)%rho0
@@ -62,28 +70,4 @@ SUBROUTINE energy_nn_cs (Fint)
     FF = FF + Fint
     call cpu_time (time1)
 
- 
-    contains
-
-        !===========================================================================================================================
-        subroutine check_c_s
-        !===========================================================================================================================   
-            IF (.NOT. c_s_isOK) THEN
-                IF (.NOT. ALLOCATED(c_s)) STOP "c_s(k) not allocated in energy_nn_cs.f90"
-                IF (ALL(c_s==0._dp)) STOP "I find c_s(k) to be 0 everywhere in energy_nn_cs.f90"
-                c_s_isOK = .TRUE.
-            END IF
-        end subroutine check_c_s
-        !===========================================================================================================================
-        
-        
-        !===========================================================================================================================
-        pure function k_index (i,j,k)
-        !===========================================================================================================================
-            integer(i2b) :: k_index
-            integer(i2b), intent(in) :: i, j, k
-            k_index = MIN(  INT(norm_k(i,j,k)/delta_k)+1  ,  size(c_s)  ) ! Min prevents looking for undefined bin
-        end function k_index
-        !===========================================================================================================================
- 
 end subroutine energy_nn_cs
