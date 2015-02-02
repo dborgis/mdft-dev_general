@@ -19,17 +19,24 @@ subroutine adhoc_corrections_to_gsolv
     end type nmoleculetype
     type (nmoleculetype), allocatable :: nmolecule(:)
     logical :: file_exists
+    real(dp) :: gamma ! quadrupole moment trace
+    real(dp) :: numberdensity ! molecular number density, for instance 0.0332891 molecule per angstrom^3
+    real(dp) :: solutecharge ! net charge of the solute, for instance -1 for Cl- ion
     real(dp), parameter :: kJpermolperang3_to_Pa = 1.66113*10**9
 
     open(79,file="output/FF")
       write(79,*) FF
     close(79)
-    !... We use P-scheme instead of M-scheme for the electrostatics in MDFT. See Kastenholz and Hunenberger, JCP 124, 124106 (2006)
+
+    !... We use P-scheme instead of M-scheme for the electrostatics in MDFT.
+    ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 35 and 37 with Ri=0
+    ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
+    ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
     if( input_log("poisson_solver") ) then
-      correction = -79.8_dp*sum(solute%site%q) ! in kJ/mol
-      correction = chop(correction)
-    else
-      correction = zerodp
+      gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
+      numberdensity = solvent(1)%n0
+      solutecharge = sum(solute%site%q)
+      correction = -gamma*numberdensity*2.909857E3*solutecharge ! in kJ/mol
     end if
     print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
     open(79,file="output/Pscheme_correction")
