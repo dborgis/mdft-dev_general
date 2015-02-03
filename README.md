@@ -96,6 +96,8 @@ Voici la procédure de signalement de bug efficace que je propose. Elle est elle
 6. Idéalement, proposer un correctif en créant une branche dédiée à résoudre ce bug et en faisant un pull request. On pourra citer le numéro de bug "issue number" dans le pull request.
 7. Tous les développeurs recevront un mail indiquant le nouveau bug dans le gestionnaire. Y'a plus qu'à.
 
+Vous pouvez écrire en français ou en anglais. Au 2 Février 2015, tous les développeurs de MDFT sont francophones.
+
 Enfin, une note désagréable : Si vous êtes assez compétent pour intégrer de la nouvelle physique dans MDFT, alors vous êtes assez compétent pour débugger une partie du code qui n'est pas écrite par vous. Il ne saurait s'agir de reprocher un bug à quelqu'un, car seuls ceux qui ne font rien n'introduisent jamais de bugs.
 
 
