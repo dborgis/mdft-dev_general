@@ -18,19 +18,19 @@ subroutine output_gOfRandCosTheta
   kmax=spacegrid%n_nodes(3)
   omax=anggrid%n_angles
   allocate( rho(imax,jmax,kmax,omax) )
-  pmax=molrotgrid%n_angles
   dx=spacegrid%dl(1)
   dy=spacegrid%dl(2)
   dz=spacegrid%dl(3)
 
   ! Get the density per spherical angle Omega (integrate over psi)
+  pmax=molrotgrid%n_angles
   icg=0
   do s=1,size(solvent)
     do i=1,imax
       do j=1,jmax
         do k=1,kmax
           do o=1,omax
-            rho(i,j,k,o) = solvent(s)%rho0 * sum( molRotGrid%weight * cg_vect(icg+1:icg+1+pmax)**2 )
+            rho(i,j,k,o) = solvent(s)%rho0 * sum( molRotGrid%weight * cg_vect(icg+1:icg+pmax)**2 )
             icg = icg +pmax
           end do
         end do
