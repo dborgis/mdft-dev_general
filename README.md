@@ -31,9 +31,9 @@ How to know which version you have? `gfortran --version`
 ```sh
 sudo apt-get install fftw3 fftw3-dev
 ```
-#####For Mac users
+##### Notes for Mac users
 
-The mdft code request the fftw3 multithread library to be installed. There can be trouble to install the FFTW3 multithread library on Mac OS. Here is a way to do it properly:
+MDFT needs the fftw3-multithread library. There can be trouble to install the FFTW3 multithread library on Mac OS. Here is a way to do it properly:
 
 - Download the FFTW3 sources from [here](http://www.fftw.org/download.html)
 - Untar the downloaded file and go to the generated fftw-3.XX folder
@@ -74,7 +74,33 @@ Three files are necessary: *input/dft.in*, *input/solute.in*, *input/solvent.in*
 -   `solute.in` contains informations about the solute (force field, position, etc)
 -   `solvent.in` contains all information about the solvent (force field, position, etc)
 
+## Comment signaler efficacement un bug ?
 
+Au fil du temps, MDFT est devenu complexe: codé à plusieurs mains, sur plusieurs années, avec beaucoup de possibilités intrinquées.
+MDFT est écrit par des chercheurs, pas par des développeurs professionnels.
+*Malgré tous nos efforts, MDFT est donc buggé. De plus en plus.*
+
+Dans un rapport de bug, on peut vouloir signaler une erreur de code (bug grave), mais aussi simplement suggérer une amélioration.
+
+Pour éviter que je ne me transforme en chèvre, *il faut savoir signaler efficacement un bug quand on en rencontre un.*
+
+Je recommande la lecture suivante, [du blog de Simon Tatham](http://www.chiark.greenend.org.uk/~sgtatham/bugs-fr.html), un développeur professionnel.
+
+Voici la procédure de signalement de bug efficace que je propose. Elle est elle-même perfectible: Ouvrir un rapport de bug pour suggérer des améliorations est une excellente idée. Par contre, m'envoyer un mail "c'est nul ton truc" ... n'est pas un rapport de bug acceptable ;).
+
+1. Récupérer toutes les informations permettant de reproduire le bug: fichiers d'input, routines, lignes incréminées, explications, photos d'explications au tableau, enregistrement vidéo ou audio, ...
+2. Se rendre sur le gestionnaire de bugs intégré à Github pour MDFT [ici](https://github.com/dborgis/MDFT/issues)
+3. Vérifier que le bug n'est pas déjà listé. Si c'est le cas, alors mettre un mot pour améliorer sa description, préciser les choses, et indiquer que vous aussi vous rencontrez ce bug. Ce sera une source de motivation pour s'en occuper.
+4. Remplir un nouveau rapport de bug sur ce gestionnaire. Uploader les fichiers nécessaire à sa reproduction, l'analyse qu'on a faite, les suggestions, ...
+5. Utiliser les "labels" du gestionnaire pour indiquer si le bug est grave, si c'est une suggestion d'amélioration, ...
+6. Idéalement, proposer un correctif en créant une branche dédiée à résoudre ce bug et en faisant un pull request. On pourra citer le numéro de bug "issue number" dans le pull request.
+7. Tous les développeurs recevront un mail indiquant le nouveau bug dans le gestionnaire. Y'a plus qu'à.
+
+Enfin, une note désagréable : Si vous êtes assez compétent pour intégrer de la nouvelle physique dans MDFT, alors vous êtes assez compétent pour débugger une partie du code qui n'est pas écrite par vous. Il ne saurait s'agir de reprocher un bug à quelqu'un, car seuls ceux qui ne font rien n'introduisent jamais de bugs.
+
+
+
+<!--
 ### dft.in
 
 *dft.in* is read by the program in any order. Lines may be thus be interchanged.
@@ -105,10 +131,10 @@ Empty and blank lines are not considered.
     - `3` is recommanded for water
     - For Gauss-Legendre quadratures, the number of angles is 2*2^order.
     - For Lebedev quadratures, the number of angles is the order. It is 2/3 of the number of angles one would have for Gauss-Legendre quadratures. Works only for 6, 14, 26 and 38.
-* `nb_psi` Number of discrete angles for third Euler angle, i.e., for the rotation around the molecular axis. MDFT 
+* `nb_psi` Number of discrete angles for third Euler angle, i.e., for the rotation around the molecular axis. MDFT
     - `1` for stockmayer and other linear molecules
     - `4` or more are recommanded for water
-    
+
 #####SOLVENT DEFINITION
 * `nb_implicit_species` Number of solvent species
     - `1` if the solvent is pure
@@ -123,7 +149,7 @@ Empty and blank lines are not considered.
 * `temperature` Temperature in Kelvin, it is only involved in KbT terms
 * `molRotSymOrder` Order of symetry of the main axis of the solvent molecule
     - `2` for a water molecule that is of molecular point group C2v
-    
+
 #####SOLVER
 * `minimizer` The minimizer you want to use, bfgs is the more convincing, this should be you 1st choice
 * `maximum_iteration_nbr` is the number of iterations afterwich you will stop the minimization if a minimum has not been found yet. Usually if you have not converged after 50 iterations you can give up, something went wrong.
@@ -151,11 +177,11 @@ WARNING: Note that if you set T to the two previous keywords, you will computed 
 * `hard_sphere_fluid` T if you want to treat your solvent as an hard sphere fluid, if it is the case your should also choose an hard sphere as solvent in solvent.in, except if you want to add a Hard sphere correction to a molecular fluid, or if you want to use an HS bridge.(cf supra)
 * `hard_sphere_radius`The radius in Angstrom of the Hard sphere solvent is set in line right after this keyword
 * `hs_functional` which type of functional you want to use for the hard sphere fluid, either Carnahan-Starling(CS) or Percus-Yevick (PY)
-* `lennard_jones_perturbation_to_hard_spheres`T if you want to add a lennard jones contribution to the hard sphere solvent, this contribution is computed using the WCA theory. If you are not using a HS solvent then the tag MUST BE F. 
+* `lennard_jones_perturbation_to_hard_spheres`T if you want to add a lennard jones contribution to the hard sphere solvent, this contribution is computed using the WCA theory. If you are not using a HS solvent then the tag MUST BE F.
 
 #####OTHER STUFF
 * `hydrophobicity` if T you will include long range correction designed to get some hydrophobic behaviour for your solvent, the way it is done is specified in the next keyword
-* `treatment_of_hydro` the way you want to compute this hydrophobic correction: VdW use a correction which is based on the Hard Sphere Bridge Correction so if you want to use it you MUST set T to hard_sphere_fluid AND set F to bridge_hard_sphere, the theory is described in jeanmairet et al., THE JOURNAL OF CHEMICAL PHYSICS 139, 154101 (2013). C use a correction that CANNOT BE USE with an HS bridge and it is base on Varrilly et al., THE JOURNAL OF CHEMICAL PHYSICS 134, 074109 (2011) 
+* `treatment_of_hydro` the way you want to compute this hydrophobic correction: VdW use a correction which is based on the Hard Sphere Bridge Correction so if you want to use it you MUST set T to hard_sphere_fluid AND set F to bridge_hard_sphere, the theory is described in jeanmairet et al., THE JOURNAL OF CHEMICAL PHYSICS 139, 154101 (2013). C use a correction that CANNOT BE USE with an HS bridge and it is base on Varrilly et al., THE JOURNAL OF CHEMICAL PHYSICS 134, 074109 (2011)
 * `threebody` if T you will include a correction which will enforse the tetrahedrality of the solvent, this necessary to get good rdf for solvation of ions in water, this is based on the Molinero-Stillinger model described in Molinero et al., J. Phys. Chem. B 2009, 113, 4008–4016. there is currenty two way to add this correction.
 *`lambda_solvent` You can add a term which will enforce the solvent-solvent tetrahedrality if you want to you can set the value of this parameter to a non-zero value, but please be carefull because it has not been really tested for the moment.
 The parameters of the correction for the solute/solvent interactions are stored in solute.in, please see the solute.in description.
@@ -206,9 +232,9 @@ Here is the description of the differents parameters you must give to describe a
 * `epsilon`is a real, it is the value, in kJ/mol of the epsilon parameter in the LJ potential describing the interaction of the site with a identical site according to the following expression of the LJ potential: V=4\epsilon((\sigma/r)^12-(\sigma/r)^6)
 * `lambda1_mol` is a real without dimension it is a parameter describing the strength of the tetrahedrality added by the three body correction for H-bond interactions from the solute site to the water molecules in first shell
 * `lambda2_mol` is a real without dimension it is a parameter describing the strength of the tetrahedrality added by the three body correction for H-bond interactions  water molecules in first shell to water molecule in the second shell. See Zhao et al., J. Chem. Phys. 134, 194102 (2011).
-* `x` real. The coordinate on the X axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in. 
-* `y` real. The coordinate on the Y axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in. 
-* `z` real. The coordinate on the Z axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in. 
+* `x` real. The coordinate on the X axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in.
+* `y` real. The coordinate on the Y axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in.
+* `z` real. The coordinate on the Z axis of the solute site, in Angstrom, please note that the center of the box is in (Lx/2,Ly/2, Lz/2). See also translate_solute_to_center in dft.in.
 * `Zatomic` integer, is the Atomic Number of the Atom of the site. This is not used in the computation, so you could set whatever you want for a site as long as it is an integer.
 * `Atom Name` String it is the name of the atom of the site,This is not used in the computation, so you could set whatever you want for a site as long as it is a string
 * `Surname` Surname of the site, this can be usefull if you have different type of the same atom to remember what kind it is, (e.g for the description of the type of H in a protein described by Amber forcefield) This is not used in the computation, so you could set whatever you want for a site as long as it is a string.
@@ -219,7 +245,7 @@ Here is the description of the differents parameters you must give to describe a
 *solute.in* contains all information regarding the solute. It has the following format:
 ```
 Acetonitrile CH3-C-N
-3  3                                      
+3  3
 # charge sigma epsilon lamda1_mol lambda2_mol   x      y      z        Zatomic   Atom name   Surname
 1  0.269 3.60   1.59    0.0        0.0          0.0    0.0  -1.3254      40         CH3          CH3
 2  0.129 3.40  0.416    0.0        0.0          0.0    0.0  0.1346       6          C            C
@@ -233,7 +259,4 @@ i.e.,
 
 ### solvent.in
 
-The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above
-
-
-
+The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above -->
