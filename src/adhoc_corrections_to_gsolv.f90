@@ -32,6 +32,7 @@ subroutine adhoc_corrections_to_gsolv
     ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 35 and 37 with Ri=0
     ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
     ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
+    correction = 0._dp
     if( input_log("poisson_solver") ) then
       gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
       numberdensity = solvent(1)%n0
