@@ -1,4 +1,4 @@
 Kr, Guillot and Guissani, J. Chem. Phys. 99 (10), 8075 (1993)
-1 1
-#    charge     sigma     epsilon       x            y           z      Zatomic   Atom Name  Surname
-1      0.0     3.67500    1.40510    0.00000    0.000000    0.000100      36         Kr        Kr
+1
+#    charge     sigma     epsilon  lambda1 lambda2     x            y           z      Zatomic   Atom Name  Surname
+1      0.0     3.67500    1.40510  0.0  0.0  0.00000    0.000000    0.000100      36         Kr        Kr
