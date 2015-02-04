@@ -77,7 +77,7 @@ subroutine adhoc_corrections_to_gsolv
   if( s /= 1 ) stop "line 61 of adhoc_corr... we have not thought of multi species case"
   correction  = -(nmolecule(s)%bulk - nmolecule(s)%withsolute)/solvent(s)%n0*Pbulk  !correction is -PV where V is excluded Volume
   correction2 =  (nmolecule(s)%bulk - nmolecule(s)%withsolute)*thermoCond%kbT  !correction is -PV where V is excluded Volume
-  FFcorrected_final = FFcorrected_final + correction + correction2
+  FFcorrected_final = FFcorrected_final + correction !+ correction2
   write(*,'(A,F12.2,A)') "PMV correction      ", correction," kJ/mol"
   write(*,'(A,F12.2,A)') "Pid correction      ", correction2," kJ/mol"
   open(79,file="output/PMV_correction")
@@ -87,6 +87,6 @@ subroutine adhoc_corrections_to_gsolv
     write(80,*) correction2
   close(80)
 
-  write(*,'(A,F12.2,A)') "μ solute            ", FFcorrected_final," kJ/mol"
+  write(*,'(A,F12.2,A)') "μ solute without Pid correction", FFcorrected_final," kJ/mol"
 
 end subroutine adhoc_corrections_to_gsolv
