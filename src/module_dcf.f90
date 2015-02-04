@@ -533,6 +533,18 @@ MODULE dcf
         close (14)
 
         call spline( x=c_s%x, y=c_s%y, n=size(c_s%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
+
+        open(14,file="output/cs_spline.dat")
+        block
+          real(dp) :: x_loc, y_loc
+          do i=0,1000
+            x_loc = i*0.1
+            call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=size(c_s%y), x=x_loc, y=y_loc)
+            write(14,*) x_loc, y_loc
+          end do
+        end block
+        close(14)
+
     END SUBROUTINE readDensityDensityCorrelationFunction
 
 END MODULE dcf
