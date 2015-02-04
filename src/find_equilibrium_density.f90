@@ -62,8 +62,6 @@ SUBROUTINE find_equilibrium_density
   999 continue ! loops to find the minima is ended for one reason or the other
 
   print*,
-  print*,"FREE ENERGY =",FF,"kJ/mol"
-
-
+  write(*,'(A,F12.2,A)') "FF before correction", FF," kJ/mol"
 
 END SUBROUTINE find_equilibrium_density

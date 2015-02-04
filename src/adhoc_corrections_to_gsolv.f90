@@ -24,6 +24,9 @@ subroutine adhoc_corrections_to_gsolv
     real(dp) :: solutecharge ! net charge of the solute, for instance -1 for Cl- ion
     real(dp), parameter :: kJpermolperang3_to_Pa = 1.66113*10**9
     real(dp), parameter :: Pa_to_atm = 9.8692327e-06
+    real(dp) :: FFcorrected_final
+
+    FFcorrected_final = FF
 
     open(79,file="output/FF")
       write(79,*) FF
@@ -40,10 +43,11 @@ subroutine adhoc_corrections_to_gsolv
       solutecharge = sum(solute%site%q)
       correction = -gamma*numberdensity*2.909857E3*solutecharge ! in kJ/mol
     end if
-    print*,"You should add",real(correction,sp),"kJ/mol to FREE ENERGY because we use the P-scheme electrostatics"
+    write(*,'(A,F12.2,A)') "P-scheme correction ", correction," kJ/mol"
     open(79,file="output/Pscheme_correction")
       write(79,*) correction
     close(79)
+    FFcorrected_final = FFcorrected_final + correction
 
     !... Volodymyr's partial molar volume correction. See J. Phys. Chem. Lett. 5, 1935-1942 (2014)
     correction = zerodp
@@ -64,7 +68,7 @@ subroutine adhoc_corrections_to_gsolv
   FF = zerodp         ! set energy to 0
   call energy_and_gradient(-10) ! this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
   Pbulk = FF/product(spaceGrid%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
-  print*, 'Bulk pressure ', Pbulk*kJpermolperang3_to_Pa*Pa_to_atm ,"atm"
+  write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa*Pa_to_atm," atm"
   open(81,file="output/bulk-pressure")
     write(81,*) Pbulk
   close(81)
@@ -73,13 +77,16 @@ subroutine adhoc_corrections_to_gsolv
   if( s /= 1 ) stop "line 61 of adhoc_corr... we have not thought of multi species case"
   correction  = -(nmolecule(s)%bulk - nmolecule(s)%withsolute)/solvent(s)%n0*Pbulk  !correction is -PV where V is excluded Volume
   correction2 =  (nmolecule(s)%bulk - nmolecule(s)%withsolute)*thermoCond%kbT  !correction is -PV where V is excluded Volume
-  print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
-  print*,"You should add",correction2,"kJ/mol to FREE ENERGY as ideal partial molar volume correction" !
+  FFcorrected_final = FFcorrected_final + correction + correction2
+  write(*,'(A,F12.2,A)') "PMV correction      ", correction," kJ/mol"
+  write(*,'(A,F12.2,A)') "Pid correction      ", correction2," kJ/mol"
   open(79,file="output/PMV_correction")
-  write(79,*) correction
+    write(79,*) correction
   close(79)
   open(80,file="output/Pideal_PMV_correction")
-  write(80,*) correction2
+    write(80,*) correction2
   close(80)
+
+  write(*,'(A,F12.2,A)') "μ solute            ", FFcorrected_final," kJ/mol"
 
 end subroutine adhoc_corrections_to_gsolv

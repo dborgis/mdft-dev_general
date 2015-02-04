@@ -25,7 +25,7 @@ SUBROUTINE process_output
     end do
 
     DO s=1,nb_species
-        PRINT*,"NUMBER OF PARTICLES OF SPECIES",s,"IN SUPERCELL =",SUM(neq)*spaceGrid%dv *solvent(s)%n0
+      write(*,'(A,F12.2)') "Solvent molecules in supercell", SUM(neq)*spaceGrid%dv *solvent(s)%n0
     END DO
 
 
