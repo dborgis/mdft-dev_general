@@ -11,7 +11,7 @@ SUBROUTINE read_solute
 
     INTEGER(i2b) :: n,i,stat
     REAL(dp) :: lx, ly, lz
-    
+
     lx= spaceGrid%length(1)
     ly= spacegrid%length(2)
     lz= spaceGrid%length(3)
@@ -27,7 +27,7 @@ SUBROUTINE read_solute
         END IF
 
         READ (5,*) ! comment line
-        READ (5,*) nb_solute_sites ! total number of atom sites of the solute AND the total number of different types of atoms
+        READ (5,*) nb_solute_sites ! total number of atom sites of the solute
         ALLOCATE(solute%site(nb_solute_sites))
 
         READ (5,*)
@@ -60,7 +60,7 @@ SUBROUTINE read_solute
 
     SUBROUTINE assure_coo_inside_cell
         USE SYSTEM, ONLY: spaceGrid
-        INTEGER(i2b) :: i 
+        INTEGER(i2b) :: i
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
