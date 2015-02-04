@@ -9,7 +9,7 @@ subroutine adhoc_corrections_to_gsolv
     use input, only: input_log
     implicit none
 
-    real(dp) :: correction,correction2, Pressure_bulk
+    real(dp) :: correction,correction2, Pbulk
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
     integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
     integer :: s, ios
@@ -23,6 +23,7 @@ subroutine adhoc_corrections_to_gsolv
     real(dp) :: numberdensity ! molecular number density, for instance 0.0332891 molecule per angstrom^3
     real(dp) :: solutecharge ! net charge of the solute, for instance -1 for Cl- ion
     real(dp), parameter :: kJpermolperang3_to_Pa = 1.66113*10**9
+    real(dp), parameter :: Pa_to_atm = 9.8692327e-06
 
     open(79,file="output/FF")
       write(79,*) FF
@@ -62,12 +63,15 @@ subroutine adhoc_corrections_to_gsolv
   cg_vect(:) = zerodp ! set Density to 0
   FF = zerodp         ! set energy to 0
   call energy_and_gradient(-10) ! this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
-  Pressure_bulk = FF/product(spaceGrid%length) ! Omega[rho=rho_0]=PV
-  print*, 'Bulk pressure ', pressure_bulk*kJpermolperang3_to_Pa*9.8692327e-06 ,"atm"
+  Pbulk = FF/product(spaceGrid%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
+  print*, 'Bulk pressure ', Pbulk*kJpermolperang3_to_Pa*Pa_to_atm ,"atm"
+  open(81,file="output/bulk-pressure")
+    write(81,*) Pbulk
+  close(81)
 
   s = 1
   if( s /= 1 ) stop "line 61 of adhoc_corr... we have not thought of multi species case"
-  correction  = -(nmolecule(s)%bulk - nmolecule(s)%withsolute)/solvent(s)%n0*Pressure_bulk  !correction is -PV where V is excluded Volume
+  correction  = -(nmolecule(s)%bulk - nmolecule(s)%withsolute)/solvent(s)%n0*Pbulk  !correction is -PV where V is excluded Volume
   correction2 =  (nmolecule(s)%bulk - nmolecule(s)%withsolute)*thermoCond%kbT  !correction is -PV where V is excluded Volume
   print*,"You should add",correction,"kJ/mol to FREE ENERGY as partial molar volume correction" !
   print*,"You should add",correction2,"kJ/mol to FREE ENERGY as ideal partial molar volume correction" !
