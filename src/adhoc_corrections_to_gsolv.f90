@@ -57,13 +57,13 @@ subroutine adhoc_corrections_to_gsolv
     end do
     nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
 
-! The value of the grand potential is equal to PV, with P pressure and V volume when the system is the bulk fluid.
-  cg_vect(:) = zerodp  !Set Density to 0.0_dp
-  FF = zerodp
-  Call energy_and_gradient(-10)  !this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
-
-  Pressure_bulk=FF/PRODUCT(spaceGrid%length) ! Omega[rho=rho_0]=PV
-  print*, 'Pressurebulk=' , pressure_bulk*kJpermolperang3_to_Pa , "Pa"
+  ! what is the pressure of the bulk solvent?
+  ! grand potential[rho_bulk] == PV
+  cg_vect(:) = zerodp ! set Density to 0
+  FF = zerodp         ! set energy to 0
+  call energy_and_gradient(-10) ! this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
+  Pressure_bulk = FF/product(spaceGrid%length) ! Omega[rho=rho_0]=PV
+  print*, 'Bulk pressure ', pressure_bulk*kJpermolperang3_to_Pa*9.8692327e-06 ,"atm"
 
   s = 1
   if( s /= 1 ) stop "line 61 of adhoc_corr... we have not thought of multi species case"
