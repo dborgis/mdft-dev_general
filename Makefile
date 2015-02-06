@@ -11,8 +11,8 @@ OBJDIR = obj
 
 # _______________ Libraries and other folders __________
 
-FFTW_INCLUDES  = -I/usr/local/include -I/usr/include
-FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib
+FFTW_INCLUDES  = -I/usr/local/include -I/usr/include -I/sw/include
+FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib -L/sw/lib
 
 # ——————————————— Fortran compiler ———————————————
 
@@ -21,7 +21,7 @@ FC = gfortran
 # ——————————————— Compiling options ———————————————
 
 FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) -Wfatal-errors
-LDFLAGS = $(FFTW_LIBRARIES) -lfftw3_threads -lfftw3
+LDFLAGS = $(FFTW_LIBRARIES) -lfftw3 -lfftw3_threads
 
 # For POINCARE:
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
@@ -33,7 +33,7 @@ DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-fi
 # -Wextra turns on extra warning. It is extremely verbose.
 # -fcheck-array-temporaries -Warray-temporaries -Wconversion -Wimplicit-interface
 
-OPTIM = -O3 -march=native -ffast-math -funroll-loops
+OPTIM = -O3 -ffast-math -funroll-loops
 # FOR BACKUP : -march=native -O3 -ffast-math -funroll-loops   VERY AGRESSIVE
 # -fopenmp for OPENMP support
 
