@@ -27,25 +27,25 @@ real (dp) :: k ! k-space vector norm
 logical :: PY , CS ! the one which is true is the right equation of state
 
 if ( .not. allocated ( hs ) ) call read_hard_sphere_radius_and_allocate_if_necessary
-call is_it_only_one_species! Works only for one implicit species
+write(*,'(A,F12.4)')'I will compute direct correlation function for hard sphere fluid with radius',hs(1)%R
+call is_it_only_one_species ! Works only for one implicit species
 call do_we_use_cs_or_py_eos ( PY , CS )! Check if you want to use Perkus-Yevick or Carnahan Starling equation of state
 
 ! Here we could generate as many points as wanted. In order to be coherent, we will use the same number of points as in cs.in
 ! read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
 
-IF (.NOT. ((ALLOCATED(c_s_hs%x)) .OR. (ALLOCATED(chi_l)))) THEN
-    PRINT*, "YOU WANT TO COMPUTE correlation function for HS, i.e you want to compute HSB, but you have not included any other"
-    PRINT*, " excess FUNCTIONAL. THIS IS NON-SENSE"
-    STOP
-END IF
+! IF (.NOT. ((ALLOCATED(c_s_hs%x)) .OR. (ALLOCATED(chi_l)))) THEN
+!     PRINT*, "YOU WANT TO COMPUTE correlation function for HS, i.e you want to compute HSB, but you have not included any other"
+!     PRINT*, " excess FUNCTIONAL. THIS IS NON-SENSE"
+!     STOP
+! END IF
 
-nb_k = size(c_s_hs%x)
-allocate( c_s_hs%x(nb_k), source=0._dp)
-allocate( c_s_hs%y(nb_k), source=0._dp)
-allocate( c_s_hs%y2(nb_k), source=0._dp)
-
+nb_k = size(c_s%x)
+allocate( c_s_hs%x(nb_k), source=0._dp) ! k
+allocate( c_s_hs%y(nb_k), source=0._dp) ! c(k) hard sphere
+allocate( c_s_hs%y2(nb_k), source=0._dp)! dc(k)/dk
 do i = 1, nb_k
-  k = c_s%x(i+1)
+  k = c_s%x(i)
   c_s_hs%x(i) = k
   ! weight functions
   R = hs(1)%R
@@ -59,17 +59,18 @@ do i = 1, nb_k
     w1 = R
     w2 = FourPi *R**2
     w3 = FourPi/3.d0 *R**3
-    ! weighted densities
-    n0 = solvent(1)%n0 * w0
-    n1 = solvent(1)%n0 * w1
-    n2 = solvent(1)%n0 * w2
-    n3 = solvent(1)%n0 * w3
-  ELSE ! k/=0
+  ELSE ! k > 0
     w0 = coskR + .5d0*kR*sinkR
     w1 = (sinkR + kR*coskR) / (2.d0*k)
     w2 = (FourPiR*sinkR) /k
     w3 = FourPi*(sinkR-kR*coskR) / k**3
   END IF
+
+  ! weighted densities
+  n0 = solvent(1)%n0 * w0
+  n1 = solvent(1)%n0 * w1
+  n2 = solvent(1)%n0 * w2
+  n3 = solvent(1)%n0 * w3
 
   ! expression of phi_exc depends obviously of the choice of the excess functional
   if ( PY ) then ! PY
@@ -80,21 +81,11 @@ do i = 1, nb_k
     !dphi(3) = (n1*n2)/(1.d0 - n3)**2 + n0/(1.d0 - n3) + n2**3/(12.d0*(1.d0 - n3)**3*Pi)
 
     ! second partial derivative of phi wrt n_\alpha n_\beta
-    d2phi(0,0) = 0.d0
-    d2phi(0,1) = 0.d0
-    d2phi(0,2) = 0.d0
-    d2phi(0,3) = 1.d0/(1.d0 - n3)
-
-    d2phi(1,0) = 0.d0
-    d2phi(1,1) = 0.d0
-    d2phi(1,2) = 1.d0/(1.d0 - n3)
-    d2phi(1,3) = n2/(1.d0 - n3)**2
-
-    d2phi(2,0) = 0.d0
-    d2phi(2,1) = 1.d0/(1.d0 - n3)
-    d2phi(2,2) = n2/(4.d0*(1.d0 - n3)**2*Pi)
-    d2phi(2,3) = n1/(1.d0 - n3)**2 + n2**2/(4.d0*(1.d0 - n3)**3*Pi)
-
+    d2phi(0,0) = 0.d0 ; d2phi(0,1) = 0.d0 ; d2phi(0,2) = 0.d0             ; d2phi(0,3) = 1.d0/(1.d0 - n3)
+    d2phi(1,0) = 0.d0 ; d2phi(1,1) = 0.d0 ; d2phi(1,2) = 1.d0/(1.d0 - n3) ; d2phi(1,3) = n2/(1.d0 - n3)**2
+    d2phi(2,0) = 0.d0 ; d2phi(2,1) = 1.d0/(1.d0 - n3) ;
+      d2phi(2,2) = n2/(4.d0*(1.d0 - n3)**2*Pi)
+      d2phi(2,3) = n1/(1.d0 - n3)**2 + n2**2/(4.d0*(1.d0 - n3)**3*Pi)
     d2phi(3,0) = 1.d0/(1.d0 - n3)
     d2phi(3,1) = n2/(1.d0 - n3)**2
     d2phi(3,2) = d2phi(2,3)
@@ -131,7 +122,7 @@ do i = 1, nb_k
   END IF ! only PY or CS for now
 
   ! direct correlation function
-  c_s_hs%y(i+1) =  -( d2phi(0,0)*w0*w0 &
+  c_s_hs%y(i) =    -( d2phi(0,0)*w0*w0 &
                     + d2phi(0,1)*w0*w1 &
                     + d2phi(0,2)*w0*w2 &
                     + d2phi(0,3)*w0*w3 &
@@ -147,22 +138,34 @@ do i = 1, nb_k
                     + d2phi(3,1)*w3*w1 &
                     + d2phi(3,2)*w3*w2 &
                     + d2phi(3,3)*w3*w3 )
-END DO
+end do
 
+open(99,file="output/cs_hs_tabulated.dat")
+  do i=1,size(c_s_hs%x)
+    write(99,*) c_s_hs%x(i), c_s_hs%y(i)
+  end do
+close(99)
+
+! Prepare the future use of splines by calculating the second order derivative (y2) at each point
 call spline( x=c_s_hs%x, y=c_s_hs%y, n=size(c_s_hs%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s_hs%y2)
 
-OPEN (99, FILE='output/cs_of_k_hard_sphere.out')
+open(14,file="output/cs_hs_spline.dat")
 block
-  real(dp) :: dk, norm_k, c_s_hs_loc
-  dk=0.01_dp
-  norm_k=0._dp
-  do while( norm_k<100 )
-    call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=norm_k, y=c_s_hs_loc)
-    WRITE(99,*) k, c_s_hs_loc
-    norm_k = norm_k + dk
+  real(dp) :: x_loc, y_loc
+  do i=0,1000
+    x_loc = i*0.1
+    call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=x_loc, y=y_loc)
+    write(14,*) x_loc, y_loc
   end do
 end block
-CLOSE (99)
+close(14)
+! 
+! open(14,file="output/cs_analytic_PY_wertheim.dat")
+!   real(dp) :: e, R, n
+!   n = solvent(1)%n0
+!   R = hs(1)%R*2 ! diameter
+!   e = acos(-1._dp)/6. * R**3 * n
+! close(14)
 
 contains
 
