@@ -20,3 +20,4 @@ output
 input/density.bin.in
 input/density.bin.out
 src/useless_for_now/
+MDFT.log.*
