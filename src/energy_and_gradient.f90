@@ -12,12 +12,13 @@ SUBROUTINE energy_and_gradient (iter)
     USE input, ONLY: input_log, input_char, input_dp
     USE minimizer, ONLY: FF , dF
     USE system    ,ONLY: solute
+    use dcf, only: c_s, c_s_hs
     IMPLICIT NONE
 
     INTEGER(i2b), INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
+    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular, dF_loc(size(dF))
     LOGICAL :: opn
-    INTEGER(i2b) :: karim
+    INTEGER(i2b) :: karim, exitstatus
 
     F3B_ww=0.0_dp
     Fext = 0._dp
@@ -57,6 +58,7 @@ SUBROUTINE energy_and_gradient (iter)
 
     ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
     IF (input_log('lennard_jones_perturbation_to_hard_spheres') ) CALL lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
+    ! NOTE THAT THIS SHOULD USE THE NEW energy_cs.f90  instead of rewritting again and again the same things.
 
     IF (input_log('readDensityDensityCorrelationFunction')) THEN
         IF (input_log('hydrophobicity')) THEN
@@ -75,9 +77,12 @@ SUBROUTINE energy_and_gradient (iter)
 
         ELSE
 
-            IF   (.NOT. input_log('include_nc_coupling')) THEN
-                 CALL energy_nn_cs (Fexcnn)
-            END IF
+            if( .not. input_log('include_nc_coupling') ) then
+              call energy_cs( c_s, Fexcnn, dF_loc, exitstatus)
+              if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s, Fexcnn, dF_loc, exitstatus)"
+              FF=FF+Fexcnn
+              dF=dF+dF_loc
+            end if
 
         END IF
     END IF
@@ -86,7 +91,12 @@ SUBROUTINE energy_and_gradient (iter)
     IF (input_log('bridge_hard_sphere') .AND. .NOT. input_log('hard_sphere_fluid')) THEN
         STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
     END IF
-    IF (input_log('bridge_hard_sphere')) CALL energy_cs_hard_sphere (Ffmtcs) ! better name should be given
+    if (input_log('bridge_hard_sphere')) then
+      call energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)
+      if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)"
+      FF=FF-Ffmtcs
+      dF=dF-dF_loc
+    end if
 
 
     IF ( input_log('polarization') ) THEN
@@ -111,21 +121,21 @@ SUBROUTINE energy_and_gradient (iter)
 !   WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
 !   iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
 IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute ad_hoc correction, i.e rho=rho_O
-    PRINT*,"iteration : ",iter
-    PRINT*,"======================================"
-    PRINT*,"FF              =",FF
-    PRINT*,"norm2(dF)       =",norm2(dF)
-    PRINT*,"Fext            =",Fext
-    PRINT*,"Fid             =",Fid
-    PRINT*,"Fexcnn          =",Fexcnn
-    PRINT*,"FexcPol         =",FexcPol
-    PRINT*,"F3B1            =",F3B1
-    PRINT*,"F3B2            =",F3B2
-    PRINT*,"F3B_solvent     =",F3B_ww
-    PRINT*,"Ffmt            =",Ffmt
-    PRINT*,"Ffmtcs          =",Ffmtcs
-    PRINT*,"Fexc_ck_angular =",Fexc_ck_angular
-    PRINT*,
+    write(*,'(A,I3)') "iteration : ",iter
+    write(*,'(A)')"======================================"
+    write(*,'(A,F16.8)') "FF              =",FF
+    write(*,'(A,F16.8)') "norm2(dF)       =",norm2(dF)
+    write(*,'(A,F16.8)') "Fext            =",Fext
+    write(*,'(A,F16.8)') "Fid             =",Fid
+    write(*,'(A,F16.8)') "Fexcnn          =",Fexcnn
+    write(*,'(A,F16.8)') "FexcPol         =",FexcPol
+    write(*,'(A,F16.8)') "F3B1            =",F3B1
+    write(*,'(A,F16.8)') "F3B2            =",F3B2
+    write(*,'(A,F16.8)') "F3B_solvent     =",F3B_ww
+    write(*,'(A,F16.8)') "Ffmt            =",Ffmt
+    write(*,'(A,F16.8)') "Ffmtcs          =",Ffmtcs
+    write(*,'(A,F16.8)') "Fexc_ck_angular =",Fexc_ck_angular
+    write(*,'(A)')
 END IF
 
     INQUIRE(FILE='output/iterate.dat', OPENED = opn)
