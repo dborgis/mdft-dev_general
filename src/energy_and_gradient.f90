@@ -79,9 +79,9 @@ SUBROUTINE energy_and_gradient (iter)
 
             if( .not. input_log('include_nc_coupling') ) then
               call energy_cs( c_s, Fexcnn, dF_loc, exitstatus)
+              if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s, Fexcnn, dF_loc, exitstatus)"
               FF=FF+Fexcnn
               dF=dF+dF_loc
-              if( exitstatus /= 1 ) stop "problem in subroutine energy_cs"
             end if
 
         END IF
@@ -93,6 +93,7 @@ SUBROUTINE energy_and_gradient (iter)
     END IF
     if (input_log('bridge_hard_sphere')) then
       call energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)
+      if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)"
       FF=FF-Ffmtcs
       dF=dF-dF_loc
     end if
