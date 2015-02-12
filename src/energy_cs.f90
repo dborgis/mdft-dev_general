@@ -1,9 +1,9 @@
-subroutine energy_cs (cs, Fexcnn, exitstatus)
+subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
 
   use precision_kinds , only: i2b, dp
   use system          , only: spacegrid, solvent, thermocond
   use quadrature      , only: anggrid, molrotgrid
-  use minimizer       , only: from_cgvect_get_rho, from_rho_get_n, cg_vect, dF, deallocate_solvent_rho
+  use minimizer       , only: from_cgvect_get_rho, from_rho_get_n, cg_vect, deallocate_solvent_rho
   use fft             , only: fftw3, kx, ky, kz
   use dcf             , only: cfile
   use mathematica     , only: splint
@@ -14,6 +14,7 @@ subroutine energy_cs (cs, Fexcnn, exitstatus)
   real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint
   integer, intent(inout) :: exitstatus
   type(cfile), intent(in) :: cs
+  real(dp), intent(out) :: dFexcnn(size(cg_vect)) ! gradient
 
   exitstatus=1 ! everything is fine
   nfft1 = spacegrid%n_nodes(1)
@@ -65,7 +66,7 @@ subroutine energy_cs (cs, Fexcnn, exitstatus)
             do p=1,molrotgrid%n_angles
               icg=icg +1
               psi=cg_vect(icg)
-              dF(icg)=dF(icg) +2*psi*anggrid%weight(o)*molrotgrid%weight(p)*Vint
+              dFexcnn(icg)= 2*psi*anggrid%weight(o)*molrotgrid%weight(p)*Vint
             end do
           end do
         end do

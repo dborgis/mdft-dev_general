@@ -16,7 +16,7 @@ SUBROUTINE energy_and_gradient (iter)
     IMPLICIT NONE
 
     INTEGER(i2b), INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
+    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular, dF_loc(size(dF))
     LOGICAL :: opn
     INTEGER(i2b) :: karim, exitstatus
 
@@ -78,7 +78,9 @@ SUBROUTINE energy_and_gradient (iter)
         ELSE
 
             if( .not. input_log('include_nc_coupling') ) then
-              call energy_cs( c_s, Fexcnn, exitstatus)
+              call energy_cs( c_s, Fexcnn, dF_loc, exitstatus)
+              FF=FF+Fexcnn
+              dF=dF+dF_loc
               if( exitstatus /= 1 ) stop "problem in subroutine energy_cs"
             end if
 
@@ -90,7 +92,9 @@ SUBROUTINE energy_and_gradient (iter)
         STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
     END IF
     if (input_log('bridge_hard_sphere')) then
-      call energy_cs( c_s_hs, Ffmtcs, exitstatus)
+      call energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)
+      FF=FF-Ffmtcs
+      dF=dF-dF_loc
     end if
 
 
@@ -116,21 +120,21 @@ SUBROUTINE energy_and_gradient (iter)
 !   WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
 !   iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
 IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute ad_hoc correction, i.e rho=rho_O
-    PRINT*,"iteration : ",iter
-    PRINT*,"======================================"
-    PRINT*,"FF              =",FF
-    PRINT*,"norm2(dF)       =",norm2(dF)
-    PRINT*,"Fext            =",Fext
-    PRINT*,"Fid             =",Fid
-    PRINT*,"Fexcnn          =",Fexcnn
-    PRINT*,"FexcPol         =",FexcPol
-    PRINT*,"F3B1            =",F3B1
-    PRINT*,"F3B2            =",F3B2
-    PRINT*,"F3B_solvent     =",F3B_ww
-    PRINT*,"Ffmt            =",Ffmt
-    PRINT*,"Ffmtcs          =",Ffmtcs
-    PRINT*,"Fexc_ck_angular =",Fexc_ck_angular
-    PRINT*,
+    write(*,'(A,I3)') "iteration : ",iter
+    write(*,'(A)')"======================================"
+    write(*,'(A,F16.8)') "FF              =",FF
+    write(*,'(A,F16.8)') "norm2(dF)       =",norm2(dF)
+    write(*,'(A,F16.8)') "Fext            =",Fext
+    write(*,'(A,F16.8)') "Fid             =",Fid
+    write(*,'(A,F16.8)') "Fexcnn          =",Fexcnn
+    write(*,'(A,F16.8)') "FexcPol         =",FexcPol
+    write(*,'(A,F16.8)') "F3B1            =",F3B1
+    write(*,'(A,F16.8)') "F3B2            =",F3B2
+    write(*,'(A,F16.8)') "F3B_solvent     =",F3B_ww
+    write(*,'(A,F16.8)') "Ffmt            =",Ffmt
+    write(*,'(A,F16.8)') "Ffmtcs          =",Ffmtcs
+    write(*,'(A,F16.8)') "Fexc_ck_angular =",Fexc_ck_angular
+    write(*,'(A)')
 END IF
 
     INQUIRE(FILE='output/iterate.dat', OPENED = opn)
