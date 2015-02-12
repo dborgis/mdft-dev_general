@@ -11,8 +11,8 @@ OBJDIR = obj
 
 # _______________ Libraries and other folders __________
 
-FFTW_INCLUDES  = -I/usr/local/include -I/usr/include 
-FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib 
+FFTW_INCLUDES  = -I/usr/local/include -I/usr/include
+FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib
 
 # ——————————————— Fortran compiler ———————————————
 
@@ -57,12 +57,10 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/energy_and_gradient.o\
 	$(OBJDIR)/adhoc_corrections_to_gsolv.o\
 	$(OBJDIR)/energy_ck_angular.o\
-	$(OBJDIR)/energy_cs_hard_sphere.o\
 	$(OBJDIR)/energy_external.o\
 	$(OBJDIR)/energy_hard_sphere_fmt.o\
 	$(OBJDIR)/energy_hydro.o\
 	$(OBJDIR)/energy_ideal.o\
-	$(OBJDIR)/energy_nn_cs.o\
 	$(OBJDIR)/energy_nn_cs_plus_nbar.o\
 	$(OBJDIR)/energy_polarization_dipol.o\
 	$(OBJDIR)/energy_polarization_multi.o\
@@ -113,7 +111,8 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/finalize_simu.o\
 	$(OBJDIR)/output_g-r-theta.o\
 	$(OBJDIR)/output_gsitesite.o\
-	$(OBJDIR)/module_time.o
+	$(OBJDIR)/module_time.o\
+	$(OBJDIR)/energy_cs.o
 
 # ——————————————— Global rules ———————————————
 
@@ -279,17 +278,6 @@ $(OBJDIR)/energy_ck_angular.o:\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
-$(OBJDIR)/energy_cs_hard_sphere.o:\
-	$(SRCDIR)/energy_cs_hard_sphere.f90\
-	$(OBJDIR)/module_dcf.o\
-	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
-	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
-
 $(OBJDIR)/energy_external.o:\
 	$(SRCDIR)/energy_external.f90\
 	$(OBJDIR)/module_external_potential.o\
@@ -327,15 +315,6 @@ $(OBJDIR)/energy_ideal.o:\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/energy_nn_cs.o:\
-	$(SRCDIR)/energy_nn_cs.f90\
-	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
-	$(OBJDIR)/module_dcf.o\
-	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/energy_nn_cs_plus_nbar.o:\
@@ -680,3 +659,13 @@ $(OBJDIR)/output_gsitesite.o:\
 
 $(OBJDIR)/module_time.o:\
 	$(SRCDIR)/module_time.f90
+
+$(OBJDIR)/energy_cs.o:\
+	$(SRCDIR)/energy_cs.f90\
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_quadrature.o\
+	$(OBJDIR)/module_minimizer.o\
+	$(OBJDIR)/module_fft.o\
+	$(OBJDIR)/module_dcf.o\
+	$(OBJDIR)/module_mathematica.o

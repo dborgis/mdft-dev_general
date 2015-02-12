@@ -12,12 +12,13 @@ SUBROUTINE energy_and_gradient (iter)
     USE input, ONLY: input_log, input_char, input_dp
     USE minimizer, ONLY: FF , dF
     USE system    ,ONLY: solute
+    use dcf, only: c_s, c_s_hs
     IMPLICIT NONE
 
     INTEGER(i2b), INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
     LOGICAL :: opn
-    INTEGER(i2b) :: karim
+    INTEGER(i2b) :: karim, exitstatus
 
     F3B_ww=0.0_dp
     Fext = 0._dp
@@ -75,9 +76,10 @@ SUBROUTINE energy_and_gradient (iter)
 
         ELSE
 
-            IF   (.NOT. input_log('include_nc_coupling')) THEN
-                 CALL energy_nn_cs (Fexcnn)
-            END IF
+            if( .not. input_log('include_nc_coupling') ) then
+              call energy_cs( c_s, Fexcnn, exitstatus)
+              if( exitstatus /= 1 ) stop "problem in subroutine energy_cs"
+            end if
 
         END IF
     END IF
@@ -86,7 +88,9 @@ SUBROUTINE energy_and_gradient (iter)
     IF (input_log('bridge_hard_sphere') .AND. .NOT. input_log('hard_sphere_fluid')) THEN
         STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
     END IF
-    IF (input_log('bridge_hard_sphere')) CALL energy_cs_hard_sphere (Ffmtcs) ! better name should be given
+    if (input_log('bridge_hard_sphere')) then
+      call energy_cs( c_s_hs, Ffmtcs, exitstatus)
+    end if
 
 
     IF ( input_log('polarization') ) THEN

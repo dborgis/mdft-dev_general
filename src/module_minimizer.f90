@@ -64,7 +64,7 @@ module minimizer
                     solvent(s)%rho = 0._dp
                 end if
             end do
-            if (i /= 0) stop "ERROR in allocate solvent%rho in energy_nn_cs.f90 > from_cgvect_get_rho"
+            if (i /= 0) stop "ERROR in from_cgvect_get_rho"
 
             icg = 0
             do s =1, nb_species
@@ -103,7 +103,7 @@ module minimizer
                     solvent(s)%n = 0._dp
                 end if
             end do
-            if (i /= 0) stop "ERROR in allocate solvent%n in energy_nn_cs.f90 > from_rho_get_n"
+            if (i /= 0) stop "ERROR in allocate solvent%n in from_rho_get_n"
 
             do s =1, nb_species
                 do i =1, spacegrid%n_nodes(1)
