@@ -11,8 +11,8 @@ OBJDIR = obj
 
 # _______________ Libraries and other folders __________
 
-FFTW_INCLUDES  = -I/usr/local/include -I/usr/include -I/sw/include
-FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib -L/sw/lib
+FFTW_INCLUDES  = -I/usr/local/include -I/usr/include 
+FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib 
 
 # ——————————————— Fortran compiler ———————————————
 
