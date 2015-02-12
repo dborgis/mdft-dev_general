@@ -131,7 +131,7 @@ debug: $(EXE)
 	$(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
 
 clean:
-	rm -vf gmon.out $(EXE) $(MODDIR)/* $(OBJDIR)/*
+	-@rm -vf gmon.out $(EXE) $(MODDIR)/* $(OBJDIR)/* >/dev/null 2>/dev/null
 
 # ——————————————— Pattern rules ———————————————
 
