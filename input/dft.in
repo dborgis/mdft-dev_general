@@ -1,15 +1,15 @@
 ############################
 # SUPERCELL DISCRETIZATION
 ############################
-Lx  = 25.0
-Ly  = 25.0
-Lz  = 25.0
-nfft1 = 64 
-nfft2 = 64 
-nfft3 = 64 
+Lx  = 40.0
+Ly  = 40.0
+Lz  = 40.0
+nfft1 = 64
+nfft2 = 64
+nfft3 = 64
 quadrature = GL
-order_of_quadrature = 2
-nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+order_of_quadrature = 1
+nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
 
 
 ############################
@@ -28,7 +28,7 @@ include_nc_coupling = F
 ref_bulk_density
 0.0332891
 temperature = 298
-molRotSymOrder = 2
+molRotSymOrder = 1
 
 
 ############################
@@ -45,9 +45,8 @@ ck_en_harm_sph = F
 # SOLVER
 ############################
 minimizer = bfgs
-maximum_iteration_nbr = 100
-epsg =  0.00001  # default 0.0001
-pgtol = 0.000001 # default 0.00001
+maximum_iteration_nbr = 50
+epsg =  0.0001  # default 0.0001
 
 
 ###########################
@@ -62,8 +61,8 @@ if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):
 # ELECTROSTATIC POTENTIAL
 ############################
 solute_charges_scale_factor = 1.0 # scales the charges of the solute. 1: does not change anything. 0: turn off all charges. 0.5: divide all charges by 2.
-poisson_solver = T # use Fourier space to get electrostatic part of external free energy
-better_poisson_solver = T # use the multipole expansion of the solvent molecular charge density
+poisson_solver = F # use Fourier space to get electrostatic part of external free energy
+better_poisson_solver = F # use the multipole expansion of the solvent molecular charge density
 direct_sum = F
 
 
@@ -121,13 +120,3 @@ purely_repulsive_solute = F          # if there is a 1/r12 repulsive point in th
 radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^12) solute as defined by Dzubiella
 other_predefined_vext = none
 
-
-##########################################################################################
-# MINIMIZER BFGS OPTION, DO NOT TOUCH UNLESS YOU KNOW WHAT YOU ARE DOING!!!!!!
-##########################################################################################
-
-constraint = no_constraint  # Do you want to work with a constrained density? Tags are: lower_bounded, upper_bounded, both_bounded, and the regular one by default : no_constraint
-lower_bound = 0.00000000 # Value of the minimum density, should be a float, this line is ignored if you set no_constraint 
-upper_bound = 125.00000000 # Value of maximimum density see supra
-number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
-constrain_density_to_zero_where_it_is_initiated_to_zero = F # if True, the minimizer constrains the density to be zero where it is initiated to zero

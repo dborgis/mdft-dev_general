@@ -5,63 +5,59 @@
 
 SUBROUTINE find_equilibrium_density
 
-  USE precision_kinds,only : i2b , dp
-  USE minimizer, ONLY: ncg, mcg, cg_vect, ll, uu, nbd, FF, dF, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave , dsave,&
-    minimizer_type, itermax, epsg, finalizeMinimizer, iter
-  USE bfgs, ONLY: startBFGS => setulb
-  use input, only: input_dp
+  USE precision_kinds,only : i2b, dp
+  use input, only: input_dp, input_int
+  use minimizer, only: ncg, cg_vect, FF, dF, minimizer_type, epsg, iter
 
   IMPLICIT NONE
-
-  REAL(dp):: time1, time2
-  REAL(dp):: energy_before, dfoverf, FFdiff
-
-  if( minimizer_type(1:4)=='bfgs' ) then
-    iter = 0
-    task = 'START'
-    111 continue
-    call CPU_TIME ( time1 )
-    call startBFGS (ncg, mcg, cg_vect, ll, uu, nbd, FF, dF, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave , dsave )
-
-    if ( task (1:2) == 'FG' ) then ! continue one more step
-      iter = iter + 1
-      if ( iter > iterMAX ) go to 999 ! get out of minimizer.
-      energy_before = FF
-      call energy_and_gradient (iter)
-      call cpu_time(time2)
-      dfoverf = (FF-energy_before)/FF*100._dp
-      ! L-BFGS knows when it is converged but I prefer to control it here by myself ...
-      if ( abs ( FF - energy_before ) <= epsg ) goto 999
-      goto 111 ! minimization continues ...
-    else if ( task (1:5) == 'NEW_X' ) then
-      goto 111
-    else
-      if ( iprint <= -1 .and. task (1:4) /= 'STOP' ) write (6,*) task
-    end if
-
-
-
-  else if(minimizer_type(1:2)=='SD'.or.minimizer_type(1:2)=='sd') then
-    epsg = input_dp("epsg") ! we want a variation in energy between two consecutive steps to be less than epsg
-    FF = 0._dp
-    dF = 0._dp
-    FFdiff=huge(1._dp) ! FFdiff can only be positive or zero
-    iter = 0
-    do while(FFdiff>epsg .and. iter<iterMAX)
-      iter = iter+1
-      FFdiff = FF
-      call energy_and_gradient(iter) ! après ca on a le nouveau FF et le nouveau dF et le nouveau cg_vect
-      cg_vect = cg_vect - 0.5_dp*dF
-      FFdiff = abs(FFdiff-FF) ! old - new
-    end do
-
+  external myfunc
+  real(dp):: time1, time2
+  real(dp):: energy_before, dfoverf, FFdiff
+  integer*8 :: opt
+  integer :: xsize, ires, M, maxeval
+  double precision :: minf ! minimum value
+  include 'nlopt.f'
+  maxeval = input_int("maximum_iteration_nbr")
+  epsg = input_dp("epsg", 0.0001_dp ) ! in kJ/mol
+  iter = 0
+  opt = 0
+  if (minimizer_type(1:5)=='bfgs') then
+    call nlo_create(opt, NLOPT_LD_LBFGS, ncg) ! Low-storage BFGS
+  else if (minimizer_type(1:3)=='var') then
+    call nlo_create(opt, NLOPT_LD_VAR1, ncg) ! Shifted limited-memory variable-metric
+  else if (minimizer_type(1:3)=='ptn') then
+    call nlo_create(opt, NLOPT_LD_TNEWTON_PRECOND_RESTART, ncg) ! Preconditioned truncated Newton
   else
     stop "You ask for a minimizer that is not implemented."
   end if
-
-  999 continue ! loops to find the minima is ended for one reason or the other
-
+  if (opt==0) stop "STOP: problem in find_equilibrium_density.f90 at l.65: while creating the nlopt_opt object"
+  call nlo_set_min_objective( ires, opt, myfunc, 0)
+  call nlo_set_ftol_abs( ires, opt, epsg)
+  call nlo_set_maxeval( ires, opt, maxeval)
+  call nlo_optimize( ires, opt, cg_vect, minf)
+  if (ires<0) then
+    write(*,*) 'minimization failed!'
+  else
+    write(*,*) 'minimization succeeded'
+  end if
+  call nlo_destroy(opt)
   print*,
   write(*,'(A,F12.2,A)') "FF before correction", FF," kJ/mol"
 
 END SUBROUTINE find_equilibrium_density
+
+subroutine myfunc(result, n, x, grad, need_gradient, f_data)
+  use minimizer, only: cg_vect, iter, dF, FF
+  implicit none
+  integer, intent(in)          :: n ! number of parameters
+  integer          :: need_gradient ! different from 0 if one wants to use gradient-based algorithms
+  double precision, intent(out) :: result, f_data ! the return value of our function we want to optimize
+  double precision, intent(inout) :: x(n), grad(n)
+  iter = iter +1
+  cg_vect = x
+  call energy_and_gradient(iter)
+  if(need_gradient/=0) then
+    grad = dF
+  end if
+  result = FF
+  end subroutine myfunc

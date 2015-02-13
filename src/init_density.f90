@@ -6,7 +6,7 @@ subroutine init_density
   use precision_kinds,only : dp , i2b
   use system,only : thermocond, nb_species, spaceGrid
   use quadrature, only: angGrid, molRotGrid
-  use minimizer, ONLY: cg_vect, nbd, ll, uu
+  use minimizer, ONLY: cg_vect
   use external_potential,only : Vext_total , Vext_q
   use input,only : input_log
   use mathematica ,ONLY: chop
@@ -76,15 +76,4 @@ END DO ! species
 ! only Vext_total is used in the functional. We may deallocate it now.
 !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
 
-IF (input_log('constrain_density_to_zero_where_it_is_initiated_to_zero')) THEN
-    IF (ALLOCATED(nbd) .AND. ALLOCATED(ll) .AND. ALLOCATED(uu)) THEN
-        WHERE( cg_vect==0._dp )
-            nbd = 2 ! both lower and upper bound in constrained minimization by lbfgs
-            ll = 0._dp ! both bounds = 0
-            uu = 0._dp
-        END WHERE
-    ELSE
-        STOP "I am willing to modify nbd. It should have been defined before. Something is wrong."
-    END IF
-END IF
 END SUBROUTINE init_density
