@@ -31,6 +31,9 @@ How to know which version you have? `gfortran --version`
 ```sh
 sudo apt-get install fftw3 fftw3-dev
 ```
+- [NLopt](http://ab-initio.mit.edu/wiki/index.php/NLopt), the library we use for nonlinear optimization.
+
+
 ##### Notes for Mac users
 
 MDFT needs the fftw3-multithread library. There can be trouble to install the FFTW3 multithread library on Mac OS. Here is a way to do it properly:
