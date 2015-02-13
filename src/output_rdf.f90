@@ -16,7 +16,7 @@ SUBROUTINE output_rdf (array,filename)
 
     REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: array
     CHARACTER(50), INTENT(IN) :: filename
-    REAL(dp) :: RdfMaxRange, dr, r
+    REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
     INTEGER(i2b):: n,bin,nbins
     TYPE :: errortype
