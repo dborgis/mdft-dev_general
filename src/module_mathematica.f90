@@ -69,7 +69,7 @@ MODULE mathematica
     ! - if it is on the center of the cube
     ! Then it tests that no answer is higher or lower than the maximum or minimum value of any corner.
         IMPLICIT NONE
-        REAL(dp) :: A(0:1,0:1,0:1), x(1:3)
+        REAL(dp) :: x(1:3)
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
         LOGICAL, SAVE :: alreadydone=.FALSE.
         REAL(dp) :: cube(0:1,0:1,0:1), t0, t1
@@ -151,7 +151,7 @@ MODULE mathematica
     !===============================================================================================================================
         IMPLICIT NONE
         LOGICAL, SAVE :: alreadydone=.FALSE.
-        REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
+        REAL(dp), PARAMETER :: z=0._dp
         INTEGER(i2b) :: gridnode(3)
         REAL(dp) :: gridlen(3), x(3)
         IF (alreadydone) RETURN
