@@ -2,7 +2,7 @@
 ! hard cylinder is along axe z=0, x=Lx/2, y=Ly/2
 SUBROUTINE compute_Vext_hard_cylinder
 USE precision_kinds,only : i2b , dp
-use input,only : input_line, input_dp
+use input,only : input_dp
 use system,only : solute , nb_solute_sites , nb_species, spaceGrid
 use external_potential,only : Vext_total
 use quadrature, only: angGrid, molRotGrid
