@@ -44,7 +44,8 @@ SUBROUTINE compute_planar_density(array,filename)
     ELSE IF (plandir==3) then
         ig= NINT(solute%site(1)%r(3)*REAL(nfft3,dp)/Lz) +1
     ELSE
-        WRITE(*,*) 'I did not find the direction of the plane in compute_planar_density.f90'
+        print*,'I did not find the direction of the plane in compute_planar_density.f90'
+        return
     END IF
 
     ! Compute grid points cartesian coordinates
