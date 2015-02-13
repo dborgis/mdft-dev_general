@@ -55,7 +55,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/compute_z_density.o\
 	$(OBJDIR)/convert_coordinate_into_icg.o\
 	$(OBJDIR)/cs_of_k_hard_sphere.o\
-	$(OBJDIR)/dblas1.o\
 	$(OBJDIR)/energy_and_gradient.o\
 	$(OBJDIR)/adhoc_corrections_to_gsolv.o\
 	$(OBJDIR)/energy_ck_angular.o\
@@ -247,10 +246,6 @@ $(OBJDIR)/cs_of_k_hard_sphere.o:\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/dblas1.o:\
-	$(SRCDIR)/dblas1.f90\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/adhoc_corrections_to_gsolv.o:\
