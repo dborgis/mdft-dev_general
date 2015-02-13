@@ -3,7 +3,7 @@ subroutine adhoc_corrections_to_gsolv
 
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
-    use minimizer, only: FF , cg_vect, finalizeMinimizer
+    use minimizer, only: FF , cg_vect
     use constants, only: zerodp
     use mathematica, only: chop
     use input, only: input_log

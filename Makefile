@@ -12,7 +12,9 @@ OBJDIR = obj
 # _______________ Libraries and other folders __________
 
 FFTW_INCLUDES  = -I/usr/local/include -I/usr/include
-FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib
+FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib -lfftw3 -lfftw3_threads
+NLOPT_INCLUDES = -I/usr/local/include
+NLOPT_LIBRARIES = -lnlopt -lm
 
 # ——————————————— Fortran compiler ———————————————
 
@@ -20,8 +22,8 @@ FC = gfortran
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) -Wfatal-errors
-LDFLAGS = $(FFTW_LIBRARIES) -lfftw3 -lfftw3_threads
+FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -Wfatal-errors
+LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 
 # For POINCARE:
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
@@ -80,7 +82,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o\
 	$(OBJDIR)/main.o\
 	$(OBJDIR)/mean_over_orientations.o\
-	$(OBJDIR)/module_bfgs.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_external_potential.o\
@@ -105,7 +106,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/read_solute.o\
 	$(OBJDIR)/read_solvent.o\
 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
-	$(OBJDIR)/steepest_descent_main.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o\
 	$(OBJDIR)/finalize_simu.o\
@@ -384,7 +384,6 @@ $(OBJDIR)/external_potential_hard_walls.o:\
 
 $(OBJDIR)/find_equilibrium_density.o:\
 	$(SRCDIR)/find_equilibrium_density.f90\
-	$(OBJDIR)/module_bfgs.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/adhoc_corrections_to_gsolv.o
@@ -473,11 +472,6 @@ $(OBJDIR)/mean_over_orientations.o:\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/module_bfgs.o:\
-	$(SRCDIR)/module_bfgs.f90\
-	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/dblas1.o
 
 $(OBJDIR)/module_constants.o:\
 	$(SRCDIR)/module_constants.f90\
@@ -604,11 +598,6 @@ $(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o:\
 	$(SRCDIR)/soluteChargeDensityFromSoluteChargeCoordinates.f90\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/steepest_descent_main.o:\
-	$(SRCDIR)/steepest_descent_main.f90\
-	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/vext_total_sum.o:\

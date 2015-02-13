@@ -4,9 +4,9 @@
 Lx  = 25.0
 Ly  = 25.0
 Lz  = 25.0
-nfft1 = 64 
-nfft2 = 64 
-nfft3 = 64 
+nfft1 = 64
+nfft2 = 64
+nfft3 = 64
 quadrature = GL
 order_of_quadrature = 2
 nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
@@ -46,8 +46,7 @@ ck_en_harm_sph = F
 ############################
 minimizer = bfgs # bfgs or sd
 maximum_iteration_nbr = 100
-epsg =  0.00001  # default 0.0001
-pgtol = 0.000001 # default 0.00001
+epsg =  0.0001  # default 0.0001
 
 
 ###########################
@@ -118,14 +117,3 @@ hard_well_total_length = 2.0         # total length of the hard well (length or 
 purely_repulsive_solute = F          # if there is a 1/r12 repulsive point in the box
 radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^12) solute as defined by Dzubiella
 other_predefined_vext = none
-
-
-##########################################################################################
-# MINIMIZER BFGS OPTION, DO NOT TOUCH UNLESS YOU KNOW WHAT YOU ARE DOING!!!!!!
-##########################################################################################
-
-constraint = no_constraint  # Do you want to work with a constrained density? Tags are: lower_bounded, upper_bounded, both_bounded, and the regular one by default : no_constraint
-lower_bound = 0.00000000 # Value of the minimum density, should be a float, this line is ignored if you set no_constraint 
-upper_bound = 125.00000000 # Value of maximimum density see supra
-number_of_memorized_Steps =  4 # Number of steps you want to keep in memory, by default 4
-constrain_density_to_zero_where_it_is_initiated_to_zero = F # if True, the minimizer constrains the density to be zero where it is initiated to zero
