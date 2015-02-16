@@ -43,7 +43,6 @@ OPTIM = -O3 -march=native -ffast-math -funroll-loops -ftree-vectorizer-verbose=6
 
 FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o\
-	$(OBJDIR)/compute_hard_spheres_parameters.o\
 	$(OBJDIR)/compute_planar_density.o\
 	$(OBJDIR)/compute_purely_repulsive_potential.o\
 	$(OBJDIR)/output_rdf.o\
@@ -158,14 +157,6 @@ $(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o:\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/compute_hard_spheres_parameters.o:\
-	$(SRCDIR)/compute_hard_spheres_parameters.f90\
-	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_hardspheres.o\
-	$(OBJDIR)/module_system.o
 
 $(OBJDIR)/compute_planar_density.o:\
 	$(SRCDIR)/compute_planar_density.f90\
@@ -442,7 +433,8 @@ $(OBJDIR)/init_simu.o:\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_quadrature.o\
-	$(OBJDIR)/module_minimizer.o
+	$(OBJDIR)/module_minimizer.o\
+	$(OBJDIR)/module_hardspheres.o
 
 $(OBJDIR)/init_solvent_polarization.o:\
 	$(SRCDIR)/init_solvent_polarization.f90\

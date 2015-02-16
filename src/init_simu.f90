@@ -6,7 +6,8 @@ SUBROUTINE init_simu
     USE dcf         ,ONLY: init_dcf => init
     USE input       ,ONLY: input_log, input_char
     use minimizer   ,only: prepare_minimizer
-    
+    use hardspheres ,only: compute_hard_spheres_parameters
+
     IMPLICIT NONE
 
     CALL print_header ! package name, day & time
