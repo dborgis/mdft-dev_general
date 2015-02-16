@@ -29,13 +29,13 @@ LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
 # LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3_threads -lfftw3
 
-DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2008 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -pg -Wunused-parameter -frecursive
+DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2003 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -pg -Wunused-parameter -frecursive
 # -g turns on debugging
 # -p turns on profiling
 # -Wextra turns on extra warning. It is extremely verbose.
 # -fcheck-array-temporaries -Warray-temporaries -Wconversion -Wimplicit-interface
 
-OPTIM = -O3 -ffast-math -funroll-loops
+OPTIM = -O3 -march=native -ffast-math -funroll-loops -ftree-vectorizer-verbose=6
 # FOR BACKUP : -march=native -O3 -ffast-math -funroll-loops   VERY AGRESSIVE
 # -fopenmp for OPENMP support
 
