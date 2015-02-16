@@ -22,12 +22,17 @@ CONTAINS
 
   !===================================================================================================================================
 
-  ! packing fraction : eta = 4/3 * pi * R^3 * solvent density of the constituant ( /= total solvent density)
-  PURE REAL(dp) FUNCTION packfrac (n,R)
-    REAL(dp), INTENT(IN) :: n ! density of the constituant (/= total solvant density)
-    REAL(dp), INTENT(IN) :: R ! radius of the constituant
-    packfrac = 4._dp/3._dp * ACOS(-1._dp) * R**3 * n
-  END FUNCTION packfrac
+  ! packing fraction : eta = 4/3 * pi * R^3 * number density of the constituant ( /= total solvent density)
+  pure function packfrac (numberdensity, HSradius)
+    use precision_kinds ,only: dp
+    use constants       ,only: pi
+    implicit none
+    real(dp) :: packfrac
+    real(dp), parameter  :: fourthird=4./3.
+    real(dp), intent(in) :: numberdensity ! density of the constituant (/= total solvant density)
+    real(dp), intent(in) :: HSradius ! radius of the constituant
+    packfrac = fourthird*pi*numberdensity*HSradius**3
+  end function packfrac
 
   !===================================================================================================================================
 
