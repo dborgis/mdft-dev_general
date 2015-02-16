@@ -21,7 +21,6 @@ MODULE hardspheres
 CONTAINS
 
   !===================================================================================================================================
-
   ! packing fraction : eta = 4/3 * pi * R^3 * number density of the constituant ( /= total solvent density)
   pure function packfrac (numberdensity, HSradius)
     use precision_kinds ,only: dp
@@ -33,15 +32,7 @@ CONTAINS
     real(dp), intent(in) :: HSradius ! radius of the constituant
     packfrac = fourthird*pi*numberdensity*HSradius**3
   end function packfrac
-
   !===================================================================================================================================
-
-
-
-
-
-
-
 
   !===========================================================================================================================
   ! This SUBROUTINE computes the density independant weight functions as defined by Kierlik and Rosinberg in 1990
@@ -139,7 +130,7 @@ CONTAINS
       IMPLICIT NONE
       INTEGER(i2b) :: s
       DO s = 1, nb_species
-        hs(s)%pf = packfrac(solvent(s)%n0,hs(s)%R)
+        hs(s)%pf = packfrac( numberdensity=solvent(s)%n0, HSradius=hs(s)%R )
         IF (verbose) PRINT*,'Packing fraction of species ',s,') is ',hs(s)%pf
         ! compute homogeneous fluid reference with Perkus Yevick
         ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.
