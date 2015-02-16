@@ -138,10 +138,11 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION input_log (tag)
+  FUNCTION input_log (tag, defaultValue)
     IMPLICIT NONE
     logical :: input_log
     CHARACTER(*), INTENT(IN) :: tag
+    logical, intent(in), optional :: defaultValue
     CHARACTER :: text
     INTEGER(i2b) :: i, j, lentag
     logical :: found
@@ -157,7 +158,10 @@ CONTAINS
         exit
       end if
     END DO
-    if( .not.found ) then
+    if( .not.found .and. present(defaultValue) ) then
+      input_log = defaultValue
+      return
+    else if( .not.found ) then
       print*, "I could not find keyword '", tag,"' in ./input/dft.in"
       print*, "It should have been there associated to logical T or F"
       stop
