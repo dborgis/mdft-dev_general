@@ -15,7 +15,7 @@ subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
   implicit none
 
   real(dp), dimension(angGrid%n_angles,molRotGrid%n_angles), intent(in) :: Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz
-  integer, pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
+  integer :: nfft1, nfft2, nfft3
   integer(i2b) :: i, j, k, o, p, n, s
   real(dp)     :: r(3), kr, kvec(3)
   complex(dp)  :: fac, X
@@ -24,6 +24,10 @@ subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin (Rotx
     real(dp) :: factor
   end type smoother_type
   type (smoother_type) :: smoother
+
+  nfft1 = spacegrid%n_nodes(1)
+  nfft2 = spacegrid%n_nodes(2)
+  nfft3 = spacegrid%n_nodes(3)
 
   ! sigma_k is the Fourier transformed charge density of a single solvent molecule in the reference frame defined by solvent.in
   ! molec_polar_k is the Fourier transformed molecular polarization
