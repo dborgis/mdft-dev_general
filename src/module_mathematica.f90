@@ -387,15 +387,14 @@ MODULE mathematica
     REAL(dp) :: a,b,h
     klo=1
     khi=n
-    1 if (khi-klo>1) then
+    do while (khi-klo>1)
       k=(khi+klo)/2
       if(xa(k).gt.x)then
         khi=k
       else
         klo=k
       end if
-      goto 1
-    end if
+    end do
     h=xa(khi)-xa(klo)
     a=(xa(khi)-x)/h
     b=(x-xa(klo))/h
