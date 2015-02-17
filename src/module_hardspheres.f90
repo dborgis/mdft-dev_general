@@ -135,8 +135,10 @@ CONTAINS
         ! compute homogeneous fluid reference with Perkus Yevick
         ! It is important to keep in mind it is the packing fraction of the REFERENCE fluid(s), not a partial packing fraction of our mixture.
         ! although the Percus-Yevick equation shows no singularities for eta < 1 , the region beyond eta = pi / (3 sqrt(2) ) = 0.74 is unphysical, since the fluid then has a packing density greater than that of a closed packed solid.
-        IF ( hs(s)%pf >= 0.74_dp ) then
-          PRINT*,'packing fraction of species ',s,'>= 0.74 , ie closed packed solid. unphysical region explored. stop'
+        if (hs(s)%pf >= 0.492 .and. hs(s)%pf <0.74 ) then
+          print*,"packing fraction of species",s,"is",hs(s)%pf,"which is higher than freezing packing fraction of 0.492"
+        else IF ( hs(s)%pf >= 0.74_dp ) then
+          print*,'packing fraction of species',s,"is",hs(s)%pf,"which is higher than metastable fluid-solid pack. frac. of 0.72"
           STOP
         END IF
       END DO
@@ -192,22 +194,22 @@ CONTAINS
       DO s=1,nb_species ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
 
         ! weighted densities in the case of constant density = ref bulk density
-        n0 = 1.0_dp * solvent(s)%n0
-        n1 = hs(s)%R * solvent(s)%n0
-        n2 = 4.0_dp * pi * hs(s)%R ** 2 * solvent(s)%n0
-        n3 = 4.0_dp / 3.0_dp * pi * hs(s)%R ** 3 * solvent(s)%n0
+        n0 = solvent(s)%n0
+        n1 = hs(s)%R * n0
+        n2 = 4*pi * hs(s)%R**2 *n0
+        n3 = 4./3.*pi *hs(s)%R**3 *n0
 
         ! partial derivative of phi w.r.t. weighted densities
-        IF ( hs_functional(1:2)=='PY' ) THEN
-          dphidn(0) = -log ( 1.0_dp - n3 )
-          dphidn(1) = n2 / ( 1.0_dp - n3 )
-          dphidn(2) = n1 / ( 1.0_dp - n3 ) + n2 ** 2 / ( 8.0_dp * pi * ( 1.0_dp - n3 ) ** 2 )
-          dphidn(3) = n0 / ( 1.0_dp - n3 ) + n1 * n2 / ( 1.0_dp - n3 ) ** 2 &
-          - n2 ** 3 / ( 12.0_dp * pi * ( n3 - 1.0_dp ) ** 3 )
+        if ( hs_functional(1:2)=='PY' ) then
+          dphidn(0) = -log(1-n3)
+          dphidn(1) = n2/(1-n3)
+          dphidn(2) = n1/(1-n3) + n2**2/(8*pi*(1-n3)**2)
+          dphidn(3) = n0/(1-n3) + n1*n2/(1-n3)**2 + n2**3/(12*pi*(1-n3)**3)
+
         ELSE IF ( hs_functional(1:2)=='CS' .OR. hs_functional(1:4)=='MCSL' ) THEN
-          dphidn(0) = - log ( 1.0_dp - n3 )
-          dphidn(1) = n2 / ( 1.0_dp - n3 )
-          dphidn(2) = ( n3 * ( n2 ** 2 - 12.0_dp * n1 * ( -1.0_dp + n3 ) * n3 * Pi ) &
+          dphidn(0) = -log(1-n3)
+          dphidn(1) = n2/(1-n3)
+          dphidn(2) = (n3 * ( n2 ** 2 - 12.0_dp * n1 * ( -1.0_dp + n3 ) * n3 * Pi ) &
           + n2 ** 2 * ( -1.0_dp + n3 ) ** 2 * log ( 1.0_dp - n3 ) )/( 12.0_dp * ( -1.0_dp + n3 ) ** 2 * n3 ** 2 * pi )
           dphidn(3) = ( n3 * ( n2 ** 3 * ( 2.0_dp-5.0_dp*n3 + n3 ** 2 ) + 36.0_dp * n1 * n2 * (-1.0_dp+n3)&
           * n3 ** 2 * Pi - 36.0_dp * n0 * (-1.0_dp + n3) ** 2 * n3**2 * Pi) - 2.0_dp * n2 ** 3 *&
@@ -215,10 +217,10 @@ CONTAINS
         END IF
 
         ! partial derivative of weighted densities w.r.t. density of constituant i. It may be shown it is weight function (k=0)
-        dndrho(0) = 1.0_dp
+        dndrho(0) = 1
         dndrho(1) = hs(s)%R
-        dndrho(2) = fourpi * hs(s)%R ** 2
-        dndrho(3) = fourpi / 3.0_dp * hs(s)%R ** 3
+        dndrho(2) = fourpi*hs(s)%R**2
+        dndrho(3) = fourpi/3*hs(s)%R**3
 
         ! excess chemical potential
         hs(s)%excchempot = thermoCond%kbT * SUM(dphidn*dndrho)
@@ -226,14 +228,13 @@ CONTAINS
 
         ! compute reference bulk grand-potential Omega(rho = rho_0) !! Do not forget the solver minimizes Omega[rho]-Omega[rho_0] = Fsolvatation
         IF ( hs_functional(1:2)=='PY' ) THEN
-          hs(s)%Fexc0 = thermoCond%kbT * ( - n0 * log ( 1.0_dp - n3 )                            &
-          + n1 * n2 / ( 1.0_dp - n3 )                           &
-          + n2 ** 3 / ( 24.0_dp * pi * ( 1.0_dp - n3 ) ** 2 ) )
+          hs(s)%Fexc0 = thermoCond%kbT*( -n0*log(1-n3) + n1*n2/(1-n3) + n2**3/(24*pi*(1-n3)**2) )
+
         ELSE IF ( hs_functional(1:2)=='CS' .or. hs_functional(1:4)=='MCSL' ) THEN
-          hs(s)%Fexc0 = thermoCond%kbT * ( ( ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / n3 ** 2 - n0 ) * log ( 1.0_dp - n3 ) &
-          + n1 * n2 / ( 1.0_dp - n3 )                                                &
-          + ( 1.0_dp / ( 36.0_dp * pi ) ) * n2 ** 3 / ( ( 1.0_dp - n3 ) ** 2 * n3 )   )
+          hs(s)%Fexc0 = thermoCond%kbT*(&
+           ((1./(36*pi))*n2**3/n3**2-n0) *log(1-n3) + n1*n2/(1-n3) + (1./(36*pi))*n2**3/((1-n3)**2*n3)    )
         END IF
+
         ! integration factors
         hs(s)%Fexc0 = (hs(s)%Fexc0 - hs(s)%excchempot * solvent(s)%n0) * PRODUCT(spaceGrid%length)
         IF (verbose) PRINT*,'Fexc0 ( ' , s , ' ) = ' , hs(s)%Fexc0
