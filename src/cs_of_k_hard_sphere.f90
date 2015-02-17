@@ -1,5 +1,5 @@
-! This SUBROUTINE computes the radial distribution function c_s (k)
-!@GUILLAUME THIS ROUTINE SHOULD BE MOVED INTO MODULE DCF
+! This subroutine computes the direct correlation function of a hard sphere fluid
+
 SUBROUTINE cs_of_k_hard_sphere
 
 USE precision_kinds, ONLY: i2b, dp
@@ -159,7 +159,7 @@ block
   end do
 end block
 close(14)
-! 
+!
 ! open(14,file="output/cs_analytic_PY_wertheim.dat")
 !   real(dp) :: e, R, n
 !   n = solvent(1)%n0
