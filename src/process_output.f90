@@ -4,10 +4,11 @@ SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spaceGrid, solvent
+    USE system,             ONLY: nb_species, spaceGrid, solvent, thermocond
     USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
+    use hardspheres,        only: hs
 
     IMPLICIT NONE
 
@@ -88,6 +89,23 @@ SUBROUTINE process_output
     call output_gOfRandCosTheta
 
     CALL adhoc_corrections_to_gsolv
+
+
+    write(*,'(A,F7.2,A)') "T       ", thermocond%T,    " K"
+    write(*,'(A,F7.2,A)') "kT      ", thermocond%kbT,  " kJ/mol"
+    write(*,'(A,F7.2,A)') "β=(kT)⁻¹", thermocond%beta, " (kJ/mol)⁻¹"
+    if( allocated(hs) ) then
+      block
+        real(dp)::x
+        x=hs(1)%pf
+        write(*,'(A,F7.2)') "packing fraction η =",x
+        write(*,'(A,F7.2)') "βP/n PY by pressure route        = (1+2η+3η²)           /(1-η)² =",(1+2*x+3*x**2)/(1-x)**2
+        write(*,'(A,F7.2)') "βP/n PY by compressibility route = (1+ η+ η²)           /(1-η)³ =",(1+x+x**2)/(1-x)**3
+        write(*,'(A,F7.2)') "βP/n CS                          = (1+ η+ η²-η³)        /(1-η)³ =",(1+x+x**2-x**3)/(1-x)**3
+        write(*,'(A,F7.2)') "βP/n CSK                         = (1+ η+ η²-2(1+η)η³/3)/(1-η)³ =",&
+          (1+x+x**2-(2./3.)*(1+x)*x**3)/((1.-x)**3)
+      end block
+    end if
 
 
     CONTAINS
