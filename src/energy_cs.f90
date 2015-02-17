@@ -12,7 +12,7 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
   implicit none
   integer :: nfft1, nfft2, nfft3, i,j,k,s,icg,o,p
   real(dp), intent(out) :: Fexcnn ! what we want to compute in this routine
-  real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint, k2max
+  real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint
   integer, intent(inout) :: exitstatus
   type(cfile), intent(in) :: cs
   real(dp), intent(out) :: dFexcnn(size(cg_vect)) ! gradient
@@ -37,7 +37,6 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
   fftw3%in_forward = solvent(s)%n - solvent(s)%n0
   call dfftw_execute( fftw3%plan_forward )
 
-  k2max=-1
   do k=1,nfft3
     kz2 = kz(k)**2
     do j=1,nfft2
