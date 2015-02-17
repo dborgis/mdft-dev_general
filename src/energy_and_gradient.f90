@@ -1,5 +1,5 @@
 !===================================================================================================================================
-SUBROUTINE energy_and_gradient (iter)
+subroutine energy_and_gradient (iter)
 !===================================================================================================================================
 ! In this SUBROUTINE one calls the different parts of the total energy
 ! first is computed the radial_part, then ... blabla.
@@ -8,12 +8,13 @@ SUBROUTINE energy_and_gradient (iter)
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF is the gradient of FF with respect to all coordinates. Remember it is of the kind dF ( number of variables over density (ie angles etc))
 
-    USE precision_kinds, ONLY: i2b , dp
-    USE input, ONLY: input_log, input_char, input_dp
-    USE minimizer, ONLY: FF , dF
-    USE system    ,ONLY: solute
-    use dcf, only: c_s, c_s_hs
-    IMPLICIT NONE
+use precision_kinds ,only: i2b, dp
+use input           ,only: input_log, input_char, input_dp
+use minimizer       ,only: FF, dF
+use system          ,only: solute
+use dcf             ,only: c_s, c_s_hs
+
+implicit none
 
     INTEGER(i2b), INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular, dF_loc(size(dF))
@@ -31,7 +32,8 @@ SUBROUTINE energy_and_gradient (iter)
     F3B2 = 0._dp
     Fexc_ck_angular = 0._dp
 
-    CALL init_functional_and_gradient_to_zero( FF, dF )
+    FF=0
+    dF=0
 
     IF (iter==1) PRINT*,
 
@@ -146,17 +148,6 @@ END IF
         WRITE(111,*) '#########################################################################'
     END IF
     WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
-
-    CONTAINS
-
-    !===============================================================================================================================
-    PURE SUBROUTINE init_functional_and_gradient_to_zero (FF,dF)
-    !===============================================================================================================================
-        REAL(dp), INTENT(OUT) :: FF, dF(:)
-        REAL(dp), PARAMETER :: zero=0._dp
-        FF = zero ; dF = zero ! functional and gradient
-    END SUBROUTINE init_functional_and_gradient_to_zero
-    !===============================================================================================================================
 
 END SUBROUTINE energy_and_gradient
 !===================================================================================================================================
