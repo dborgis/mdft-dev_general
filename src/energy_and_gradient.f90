@@ -91,12 +91,12 @@ SUBROUTINE energy_and_gradient (iter)
     IF (input_log('bridge_hard_sphere') .AND. .NOT. input_log('hard_sphere_fluid')) THEN
         STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
     END IF
-    if (input_log('bridge_hard_sphere')) then
-      call energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)
-      if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)"
-      FF=FF-Ffmtcs
-      dF=dF-dF_loc
-    end if
+    ! if (input_log('bridge_hard_sphere')) then
+    !   call energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)
+    !   if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)"
+    !   FF=FF-Ffmtcs
+    !   dF=dF-dF_loc
+    ! end if
 
 
     IF ( input_log('polarization') ) THEN
@@ -133,7 +133,7 @@ IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute a
     write(*,'(A,F16.8)') "F3B2            =",F3B2
     write(*,'(A,F16.8)') "F3B_solvent     =",F3B_ww
     write(*,'(A,F16.8)') "Ffmt            =",Ffmt
-    write(*,'(A,F16.8)') "Ffmtcs          =",Ffmtcs
+    ! write(*,'(A,F16.8)') "Ffmtcs          =",Ffmtcs
     write(*,'(A,F16.8)') "Fexc_ck_angular =",Fexc_ck_angular
     write(*,'(A)')
 END IF

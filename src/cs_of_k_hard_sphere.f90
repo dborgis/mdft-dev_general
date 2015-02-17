@@ -149,16 +149,34 @@ close(99)
 ! Prepare the future use of splines by calculating the second order derivative (y2) at each point
 call spline( x=c_s_hs%x, y=c_s_hs%y, n=size(c_s_hs%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s_hs%y2)
 
+
+! print the splined version of the direct correlation function to test both the spline function
 open(14,file="output/cs_hs_spline.dat")
 block
-  real(dp) :: x_loc, y_loc
-  do i=0,1000
-    x_loc = i*0.1
-    call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=x_loc, y=y_loc)
-    write(14,*) x_loc, y_loc
-  end do
+real(dp) :: x_loc, y_loc
+do i=0,1000
+  x_loc = i*0.1
+  call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=x_loc, y=y_loc)
+  write(14,*) x_loc, y_loc
+end do
 end block
 close(14)
+
+
+
+! cs is replaced by cs-cshs
+block
+real(dp) :: x_loc,y_loc
+do i=1,size(c_s%x)
+  x_loc=c_s%x(i)
+  call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=x_loc, y=y_loc)
+  c_s%y(i)= c_s%y(i) -y_loc
+end do
+call spline( x=c_s%x, y=c_s%y, n=size(c_s%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
+end block
+
+
+
 !
 ! open(14,file="output/cs_analytic_PY_wertheim.dat")
 !   real(dp) :: e, R, n
