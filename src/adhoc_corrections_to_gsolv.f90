@@ -65,8 +65,8 @@ subroutine adhoc_corrections_to_gsolv
   write(*,'(A,F12.2)') "Solvent molecules with solute   ", nmolecule%withsolute
   write(*,'(A,F12.2)') "Solvent molecules without solute", nmolecule%bulk
   write(*,'(A,F12.2)') "ΔN solvent", nmolecule(s)%bulk - nmolecule(s)%withsolute
-  write(*,'(A,F12.7,A)') "Solvent density", solvent(1)%n0," molecule.Ang^-3"
-  write(*,'(A,F12.5,A)') "Supercell volume", spacegrid%dv," Ang^-3"
+  write(*,'(A,F12.7,A)') "Solvent density", solvent(1)%n0," molecule.Ang⁻³"
+  write(*,'(A,F12.5,A)') "Supercell volume", spacegrid%dv," Ang⁻³"
 
 
 
