@@ -119,7 +119,7 @@ Hard spheres of diameter
  La fraction d'empilement, packing fraction, 
 \begin_inset Formula 
 \begin{equation}
-\eta\equiv\frac{\pi}{6}\rho\sigma
+\eta\equiv\frac{\pi}{6}\rho\sigma^{3}=\frac{4}{3}\pi R^{3}
 \end{equation}
 
 \end_inset
@@ -140,10 +140,6 @@ Z_{PY}\left(\eta\right)=\frac{1+2\eta+3\eta^{2}}{\left(1-\eta\right)^{2}}.
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 The compressibility route and Scaled particle theory (SPT) give:
 \begin_inset Formula 
 \begin{equation}
@@ -152,15 +148,19 @@ Z_{SPT}\left(\eta\right)=\frac{1+\eta+\eta^{2}}{\left(1-\eta\right)^{3}}.
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-The celebrated Carnahan-Starling EOS is the interpolation between the pressure
- and compressibility routes:
+The Carnahan-Starling EOS is the interpolation between the pressure and
+ compressibility routes:
 \begin_inset Formula 
 \begin{equation}
 Z_{CS}\left(\eta\right)=\frac{1}{3}Z_{PY}\left(\eta\right)+\frac{2}{3}Z_{SPT}\left(\eta\right)=\frac{1+\eta+\eta^{2}-\eta^{3}}{\left(1-\eta\right)^{3}}.
+\end{equation}
+
+\end_inset
+
+The improved Carnahan-Starling-Kolafa EOS is
+\begin_inset Formula 
+\begin{equation}
+Z_{CSK}=\frac{1+\eta+\eta^{2}-\frac{2}{3}\left(1+\eta\right)\eta^{3}}{\left(1-\eta\right)^{3}}.
 \end{equation}
 
 \end_inset
