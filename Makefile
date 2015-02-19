@@ -29,7 +29,7 @@ LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
 # LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3_threads -lfftw3
 
-DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -std=f2003 -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -pg -Wunused-parameter -frecursive
+DEBUG = -Og -g -Wall -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -fcheck=all -pg -frecursive
 # -g turns on debugging
 # -p turns on profiling
 # -Wextra turns on extra warning. It is extremely verbose.
@@ -100,7 +100,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/print_supercell_xsf.o\
 	$(OBJDIR)/process_output.o\
 	$(OBJDIR)/put_input_in_character_array.o\
-	$(OBJDIR)/read_hard_sphere_radius_and_allocate_if_necessary.o\
 	$(OBJDIR)/read_solute.o\
 	$(OBJDIR)/read_solvent.o\
 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
@@ -491,7 +490,8 @@ $(OBJDIR)/module_hardspheres.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_dcf.o
 
 $(OBJDIR)/module_input.o:\
 	$(SRCDIR)/module_input.f90\
@@ -558,13 +558,6 @@ $(OBJDIR)/process_output.o:\
 
 $(OBJDIR)/put_input_in_character_array.o:\
 	$(SRCDIR)/put_input_in_character_array.f90\
-	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/read_hard_sphere_radius_and_allocate_if_necessary.o:\
-	$(SRCDIR)/read_hard_sphere_radius_and_allocate_if_necessary.f90\
-	$(OBJDIR)/module_hardspheres.o\
-	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_precision_kinds.o
 

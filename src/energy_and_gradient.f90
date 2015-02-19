@@ -56,7 +56,10 @@ implicit none
     IF (input_log("ck_en_harm_sph") ) CALL energy_ck_en_harm_sph (Fexc_ck_angular)
 
     ! compute radial part of the excess free energy
-    IF (input_log('hard_sphere_fluid') ) CALL energy_hard_sphere_fmt (Ffmt) ! => pure hard sphere contribution
+    if (input_log('hard_sphere_fluid') ) then
+      call energy_hard_sphere_fmt (Ffmt) ! => pure hard sphere contribution
+      FF=FF+Ffmt
+    end if
 
     ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
     IF (input_log('lennard_jones_perturbation_to_hard_spheres') ) CALL lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
