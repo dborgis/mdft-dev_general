@@ -12,6 +12,7 @@ SUBROUTINE energy_hydro (Fint)
     use mathematica         ,only: splint
 
     IMPLICIT NONE
+
     REAL(dp) :: mu_0 ! phenomenological potential
     REAL(dp) :: Nk ! total number of k points. Real because really often used as a divisor of a real number
     REAL(dp) :: deltaVk ! volume unit per k point

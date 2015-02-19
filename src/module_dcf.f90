@@ -29,9 +29,14 @@ MODULE dcf
     COMPLEX(spc), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: ck_angular ! angular dcf in the molecular frame
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_q ! dipole-charge correlation function
     REAL(dp) :: delta_k_ck_angular
-    TYPE TYP_angleInd; INTEGER(i1b) :: costheta,psi; REAL(dp) :: phi; END TYPE
+    TYPE TYP_angleInd
+      INTEGER(i1b) :: costheta, psi
+      REAL(dp) :: phi
+    END TYPE
     TYPE(TYP_angleInd), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleInd ! integer table of correspondence omega(k,Omega)
-    TYPE TYP_angleVal; REAL(dp) :: costheta,phi,psi; END TYPE
+    TYPE TYP_angleVal
+      REAL(dp) :: costheta,phi,psi
+    END TYPE
     TYPE(TYP_angleVal), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleVal ! real omega values for interpolation in energy_ck_angular
     INTEGER(i2b) :: num_phi, num_cos, num_psi ! global variables for ck_angular, used in energy_ck_angular for reproducing angles
 
@@ -66,12 +71,14 @@ MODULE dcf
             CALL read_ck_projection
         END IF
 
-        IF ( input_log('bridge_hard_sphere')) THEN
-            IF( input_log("ck_angular") .OR. input_log('ck_debug') .OR. input_log('ck_debug_extended') ) STOP 'not implemented yet'
-            CALL cs_of_k_hard_sphere! in case of bridge calculation, one also need the direct correlation function c2 of the hard sphere.
-        END IF
-        !Debug
-    END SUBROUTINE init
+        if( input_log('bridge_hard_sphere')) then
+            if( input_log("ck_angular") .or. input_log('ck_debug') .or. input_log('ck_debug_extended') ) then
+              stop 'not implemented yet'
+            else
+              call cs_of_k_hard_sphere! in case of bridge calculation, one also need the direct correlation function c2 of the hard sphere.
+            end if
+        end if
+    end subroutine init
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 
