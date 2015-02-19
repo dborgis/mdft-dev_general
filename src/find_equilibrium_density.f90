@@ -1,7 +1,5 @@
 ! This SUBROUTINE should minimize FF by finding the ground state of CGVECT array
-! two methods for now: LBFGS and Conjugate Gradient
-! LBFGS and CG+ seem equivalent in terms of velocity but
-! LBFGS recquires much more memory than CG+ (around 8 times)
+! We use the Low Memory BFGS algorithm, provided by the NLOpt library.
 
 SUBROUTINE find_equilibrium_density
 
