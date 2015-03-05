@@ -58,7 +58,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/adhoc_corrections_to_gsolv.o\
 	$(OBJDIR)/energy_ck_angular.o\
 	$(OBJDIR)/energy_external.o\
-	$(OBJDIR)/energy_hard_sphere_fmt.o\
+	$(OBJDIR)/energy_fmt.o\
 	$(OBJDIR)/energy_hydro.o\
 	$(OBJDIR)/energy_ideal.o\
 	$(OBJDIR)/energy_nn_cs_plus_nbar.o\
@@ -114,12 +114,12 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 # ——————————————— Global rules ———————————————
 
 all: $(EXE)
-	$(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
+	@ $(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
 
 optim: MKFLAGS = $(OPTIM)
 
 optim: $(EXE)
-	$(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
+	@ $(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
 
 debug: MKFLAGS = $(DEBUG)
 
@@ -127,12 +127,12 @@ debug: $(EXE)
 	$(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
 
 clean:
-	-@rm -vf gmon.out $(EXE) $(MODDIR)/* $(OBJDIR)/* >/dev/null 2>/dev/null
+	-@ rm -vf gmon.out $(EXE) $(MODDIR)/* $(OBJDIR)/* >/dev/null 2>/dev/null
 
 # ——————————————— Pattern rules ———————————————
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC) $(FCFLAGS) $(MKFLAGS) -c $< -o $@
+	@ $(FC) $(FCFLAGS) $(MKFLAGS) -c $< -o $@
 
 # For GNU make, *.f90 cannot be compiled automatically.
 
@@ -272,8 +272,8 @@ $(OBJDIR)/energy_external.o:\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_input.o
 
-$(OBJDIR)/energy_hard_sphere_fmt.o:\
-	$(SRCDIR)/energy_hard_sphere_fmt.f90\
+$(OBJDIR)/energy_fmt.o:\
+	$(SRCDIR)/energy_fmt.f90\
 	$(OBJDIR)/module_hardspheres.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_fft.o\
