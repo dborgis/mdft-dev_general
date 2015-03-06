@@ -30,5 +30,7 @@ MODULE constants ! fondamental_constants
     REAL(dp)    ,PARAMETER :: epsN          = TINY(1.0_dp) ! what is numerically considered as zero
     COMPLEX(dp) ,PARAMETER :: zeroC         = (0.0_dp,0.0_dp)
     REAL(dp)    ,PARAMETER :: zerodp        = 0._dp
+    real(dp)    ,parameter :: onedp         = 1._dp
+    real(dp)    ,parameter :: epsdp         = epsilon(1._dp)
 
 END MODULE constants
