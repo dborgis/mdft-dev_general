@@ -1,6 +1,5 @@
 subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
 
-  USE ISO_FORTRAN_ENV
   use precision_kinds , only: i2b, dp
   use system          , only: spacegrid, solvent, thermocond
   use quadrature      , only: anggrid, molrotgrid
@@ -12,7 +11,7 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
   implicit none
   integer :: nfft1, nfft2, nfft3, i,j,k,s,icg,o,p
   real(dp), intent(out) :: Fexcnn ! what we want to compute in this routine
-  real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint
+  real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint, k2max
   integer, intent(inout) :: exitstatus
   type(cfile), intent(in) :: cs
   real(dp), intent(out) :: dFexcnn(size(cg_vect)) ! gradient
@@ -37,13 +36,18 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
   fftw3%in_forward = solvent(s)%n - solvent(s)%n0
   call dfftw_execute( fftw3%plan_forward )
 
+  k2max=maxval(cs%x)
   do k=1,nfft3
     kz2 = kz(k)**2
     do j=1,nfft2
       kz2_ky2=kz2+ky(j)**2
       do i=1,nfft1/2+1
         k2 = sqrt(kz2_ky2+kx(i)**2)
-        call splint( xa=cs%x, ya=cs%y, y2a=cs%y2, n=size(cs%y), x=k2, y=c_loc)
+        if( k2<k2max ) then
+          call splint( xa=cs%x, ya=cs%y, y2a=cs%y2, n=size(cs%y), x=k2, y=c_loc)
+        else
+          c_loc=0
+        end if
         fftw3%in_backward(i,j,k) = fftw3%out_forward(i,j,k) * c_loc
       end do
     end do
