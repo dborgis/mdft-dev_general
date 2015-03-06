@@ -24,13 +24,11 @@ MODULE dcf
 
 
 ! parameters for branch ck_angular ONLY
-    INTEGER, PARAMETER :: i1b = SELECTED_INT_KIND(2)
-    INTEGER, PARAMETER :: spc = KIND((1.0,1.0))
-    COMPLEX(spc), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: ck_angular ! angular dcf in the molecular frame
+    COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: ck_angular ! angular dcf in the molecular frame
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_q ! dipole-charge correlation function
     REAL(dp) :: delta_k_ck_angular
     TYPE TYP_angleInd
-      INTEGER(i1b) :: costheta, psi
+      INTEGER :: costheta, psi
       REAL(dp) :: phi
     END TYPE
     TYPE(TYP_angleInd), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleInd ! integer table of correspondence omega(k,Omega)
@@ -47,7 +45,6 @@ MODULE dcf
         IF ( input_log('readDensityDensityCorrelationFunction') ) THEN
             CALL readDensityDensityCorrelationFunction
         END IF
-
         IF ( input_log('polarization') ) THEN
             IF ( input_char('polarization_order')=='dipol' ) THEN
                 CALL readPolarizationPolarizationCorrelationFunction
@@ -113,7 +110,6 @@ MODULE dcf
         IMPLICIT NONE
 
         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
-        LOGICAL :: exists
         stop "maybe ck_debug does not work anymore since c_s c_delta and c_d have been improved a lot since dec 2014"
         !
         ! INQUIRE(FILE="input/ck_projection.in", EXIST=exists)
@@ -145,7 +141,7 @@ MODULE dcf
 
         INTEGER(i2b) :: l,m,n,o,p,nfft1,nfft2,nfft3
         REAL(dp) :: costheta_k,sintheta_k,phi_k,cosphi_k,sinphi_k,cos_value,phi_value,psi_value
-        REAL(dp) :: u_kx,u_ky,u_kz,v_kx,v_ky,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
+        REAL(dp) :: u_kz,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
         LOGICAL :: karim
 
         nfft1 = spaceGrid%n_nodes(1)
@@ -429,7 +425,6 @@ MODULE dcf
 
     SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
         INTEGER(i2b) :: ios, nk, i
-        REAL(dp) :: norm_k
         CHARACTER(80) :: ck_species
 
         ck_species = input_char('ck_species')
@@ -492,7 +487,9 @@ MODULE dcf
 
 
 
-    SUBROUTINE readDensityDensityCorrelationFunction ! c_s
+    SUBROUTINE readDensityDensityCorrelationFunction ! c(k)
+      use mathematica, only: spline, splint
+      use constants  , only: onedp, zerodp
         implicit none
         CHARACTER(80) :: ck_species
         INTEGER(i2b) :: ios, i
@@ -507,24 +504,22 @@ MODULE dcf
         ELSE IF ( ck_species == 'spce' ) then
           c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
         END IF
-
         nb_k = n_linesInFile(c_s%filename)
-        allocate( c_s%x(nb_k) ,source=0._dp)
-        allocate( c_s%y(nb_k) ,source=0._dp)
-        allocate( c_s%y2(nb_k), source=0._dp)
-
+        allocate( c_s%x(nb_k) , source=zerodp)
+        allocate( c_s%y(nb_k) , source=zerodp)
+        allocate( c_s%y2(nb_k), source=zerodp)
+        ! read c(k) as given by user and print to output folder
         OPEN (13, FILE=c_s%filename, IOSTAT=ios)
         IF (ios/=0) THEN
           WRITE(*,*)'Cant open file ',c_s%filename,' in readDensityDensityCorrelationFunction (c_s)'
           STOP
         END IF
-
         open (14, file='output/cs.in', iostat=ios)
         if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction (c_s)'
-        DO i = 1, nb_k
+        do i=1,nb_k
           READ (13,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
           IF (ios/=0) THEN
-            WRITE(*,*)'Error while reading ',c_s%filename, 'in readDensityDensityCorrelationFunction (c_s)'
+            WRITE(*,*)'Error while reading line',i,"of",c_s%filename, 'in readDensityDensityCorrelationFunction(c_s)'
             STOP
           END IF
           WRITE(14,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
@@ -536,8 +531,8 @@ MODULE dcf
             stop
           end if
         END DO
-        CLOSE (13)
-        close (14)
+        CLOSE(13)
+        close(14)
 
         call spline( x=c_s%x, y=c_s%y, n=size(c_s%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
 
