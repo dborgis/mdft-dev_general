@@ -1,6 +1,5 @@
 !===================================================================================================================================
 MODULE mathematica
-!===================================================================================================================================
 ! This module implements several usefull functions of Mathematica
     USE precision_kinds     ,ONLY:dp,i2b
     IMPLICIT NONE
@@ -13,7 +12,6 @@ MODULE mathematica
 
     !===============================================================================================================================
     PURE FUNCTION chop(x,delta)
-    !===============================================================================================================================
     ! see http://reference.wolfram.com/mathematica/ref/Chop.html
     ! It replaces numbers smaller in absolute magnitude than delta by 0.
     ! chop uses a default tolerance of 10._dp**(-10)
@@ -34,12 +32,10 @@ MODULE mathematica
             chop=x
         END IF
     END FUNCTION chop
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     PURE FUNCTION TriLinearInterpolation (cube,x)
-    !===============================================================================================================================
     ! Returns the value at position x(1:3) within the cube. The value is known at each corner of the cube.
     ! It is thus an interpolation of value at the corners the cube to a point inside the cube.
         IMPLICIT NONE
@@ -58,12 +54,10 @@ MODULE mathematica
                                     +cube(1,1,1) * x(1) * x(2) * x(3)
         END IF
     END FUNCTION TriLinearInterpolation
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     SUBROUTINE UTest_TrilinearInterpolation
-    !===============================================================================================================================
     ! Tests the pure function TriLinearInterpolation where result is known:
     ! - if the point is one of the corners
     ! - if it is on the center of the cube
@@ -98,25 +92,21 @@ MODULE mathematica
         END DO
         alreadydone = .TRUE.
     END SUBROUTINE UTest_TrilinearInterpolation
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     PURE FUNCTION floorNode(gridnode,gridlen,x,pbc)
-    !===============================================================================================================================
         IMPLICIT NONE
         INTEGER(i2b) :: floorNode(3)
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
         REAL(dp), INTENT(IN) :: gridlen(3), x(3)
         LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
-        floorNode = FLOOR(MODULO(x,gridlen)/(gridlen/REAL(gridnode))) +1
+        if(pbc) floorNode = FLOOR(MODULO(x,gridlen)/(gridlen/REAL(gridnode))) +1
     END FUNCTION floorNode
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     SUBROUTINE UTest_floorNode
-    !===============================================================================================================================
         IMPLICIT NONE
         LOGICAL, SAVE :: alreadydone=.FALSE.
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
@@ -130,12 +120,10 @@ MODULE mathematica
         IF( ANY( floorNode([100,1,1],[50._dp,o,o],[50._dp,z,z],.TRUE.) /=[1,1,1]) ) STOP "problem 5 in UTest_floorNode"
         alreadydone=.TRUE.
     END SUBROUTINE UTest_floorNode
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     PURE FUNCTION ceilingNode(gridnode,gridlen,x,pbc)
-    !===============================================================================================================================
         IMPLICIT NONE
         INTEGER(i2b) :: ceilingNode(3)
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
@@ -143,12 +131,10 @@ MODULE mathematica
         LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
         ceilingNode = MODULO( floorNode(gridnode,gridlen,x,pbc)  ,gridnode) +1
     END FUNCTION ceilingNode
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     SUBROUTINE UTest_ceilingNode
-    !===============================================================================================================================
         IMPLICIT NONE
         LOGICAL, SAVE :: alreadydone=.FALSE.
         REAL(dp), PARAMETER :: z=0._dp
@@ -185,12 +171,10 @@ MODULE mathematica
 
         alreadydone=.TRUE.
     END SUBROUTINE UTest_ceilingNode
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     PURE FUNCTION distToFloorNode(gridnode,gridlen,x,pbc)
-    !===============================================================================================================================
     ! Given a grid (number of nodes per direction and length in Angstroms per direction),
     ! returns the distance to floor node in  grid units, i.e., in dx.
     ! 0._dp <= distToFloorNode < 1._dp
@@ -199,21 +183,17 @@ MODULE mathematica
         INTEGER(i2b), INTENT(IN) :: gridnode(3)
         REAL(dp), INTENT(IN) :: gridlen(3), x(3)
         LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
-        xfloor = ABS(  x/(gridlen/REAL(gridnode)) - FLOOR(x/(gridlen/REAL(gridnode)))  )
+        if( pbc) xfloor = ABS(  x/(gridlen/REAL(gridnode)) - FLOOR(x/(gridlen/REAL(gridnode)))  )
         distToFloorNode = xfloor
 !~         distToFloorNode = MIN(&
 !~                                 xfloor,&
 !~                                 ABS(1._dp-xfloor)&
 !~                             )
     END FUNCTION distToFloorNode
-    !===============================================================================================================================
 
 
     !===============================================================================================================================
     SUBROUTINE UTest_distToFloorNode
-    !===============================================================================================================================
-        REAL(dp)     :: xfloor(3)
-        LOGICAL      :: pbc ! periodic boundary counditions
         REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
 
         IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[z,z,z],pbc=.TRUE.) /= [z,z,z] )) THEN
@@ -298,11 +278,9 @@ MODULE mathematica
         END IF
 
     END SUBROUTINE UTest_distToFloorNode
-    !===============================================================================================================================
 
   !=================================================================================================================================
   pure function factorial(n) ! computes the factorial of any integer n, i.e., n!
-  !=================================================================================================================================
     use precision_kinds, only: i2b
     implicit none
     integer(i2b), intent(in) :: n
@@ -314,11 +292,9 @@ MODULE mathematica
       factorial = product([(i, i=1,n)])
     end select
   end function factorial
-  !=================================================================================================================================
 
   !=================================================================================================================================
   pure subroutine deduce_optimal_histogram_properties( n, maxrange, nbins, binwidth)
-  !=================================================================================================================================
     implicit none
     integer, intent(in)   :: n ! total number of points to be histogramed
     real(dp), intent(in)  :: maxrange ! maximum range of the histogram (e.g., r max for g(r))
@@ -327,11 +303,9 @@ MODULE mathematica
     nbins    = ceiling( 2*real(n)**(1._dp/3._dp) ) ! Rice Rule, see http://en.wikipedia.org/wiki/Histogram
     binwidth = maxrange/real(nbins,dp) ! Width of each bin of the histogram
   end subroutine deduce_optimal_histogram_properties
-  !=================================================================================================================================
 
   !=================================================================================================================================
-  pure subroutine spline(x,y,n,yp1,ypn,y2)
-  !=================================================================================================================================
+  subroutine spline(x,y,n,yp1,ypn,y2)
     implicit none
     integer, intent(in) :: n
     real(dp), intent(in) :: yp1,ypn,x(n),y(n)
@@ -344,7 +318,7 @@ MODULE mathematica
     ! the corresponding boundary condition for a natural spline, with zero second derivative on
     ! that boundary.
     ! see http://www.haoli.org/nr/bookfpdf/f3-3.pdf
-    integer :: i,k
+    integer(i2b) :: i,k
     real(dp) :: p, qn, sig, un, u(n)
     if(yp1>0.99e30) then
       y2(1)=0._dp
@@ -371,11 +345,9 @@ MODULE mathematica
       y2(k)=y2(k)*y2(k+1)+u(k)
     end do
   end subroutine spline
-  !=================================================================================================================================
 
   !=================================================================================================================================
   pure subroutine splint(xa,ya,y2a,n,x,y)
-  !=================================================================================================================================
     implicit none
     INTEGER, intent(in) :: n
     REAL(dp), intent(in) :: x,xa(n),y2a(n),ya(n)
@@ -400,7 +372,5 @@ MODULE mathematica
     b=(x-xa(klo))/h
     y=a*ya(klo)+b*ya(khi)+ ((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
   end subroutine splint
-  !=================================================================================================================================
 
 END MODULE
-!===================================================================================================================================
