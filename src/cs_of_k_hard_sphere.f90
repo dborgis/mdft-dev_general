@@ -1,28 +1,35 @@
 ! This subroutine computes the direct correlation function of a hard sphere fluid
 subroutine cs_of_k_hard_sphere
-  use precision_kinds, ONLY: i2b, dp
-  use system, ONLY: nb_species, solvent !@GUILLAUME c_s_hs should go into MODULE DCF
-  use input, ONLY: input_line, n_linesInFile, verbose
-  use constants, ONLY: fourpi, pi, zerodp
-  use dcf, ONLY: c_s, c_s_hs
-  use mathematica, only: spline, splint
-  use hardspheres, only: hs, read_hard_sphere_radius
+
+  use precision_kinds ,only: i2b, dp
+  use system          ,only: nb_species, solvent !@GUILLAUME c_s_hs should go into MODULE DCF
+  use input           ,only: input_line, n_linesInFile, verbose
+  use constants       ,only: fourpi, pi, zerodp
+  use dcf             ,only: c_s, c_s_hs
+  use mathematica     ,only: spline, splint
+  use hardspheres     ,only: hs, read_hard_sphere_radius
+
   implicit none
-  real (dp) :: phi ! excess free energy density
-  real (dp) :: n0, n1, n2, n3 ! weighted densities of homogeneous fluid
-  real (dp) :: w0, w1, w2, w3 ! weight functions of homogeneous fluid
-  real (dp) :: kR,R,x_loc,y_loc,k,coskR,sinkR
-  real (dp), dimension (0:3,0:3) :: d2phi ! second partial derivative of phi wrt ni nj
-  integer (i2b) :: i,j,nb_k, ios
+
+  real(dp) :: phi ! excess free energy density
+  real(dp) :: n0, n1, n2, n3 ! weighted densities of homogeneous fluid
+  real(dp) :: w0, w1, w2, w3 ! weight functions of homogeneous fluid
+  real(dp) :: kR,R,x_loc,y_loc,k,coskR,sinkR
+  real(dp), dimension (0:3,0:3) :: d2phi ! second partial derivative of phi wrt ni nj
+  integer(i2b) :: i,j,nb_k, ios
   logical :: PY,CS ! the one which is true is the right equation of state
+
+  ! type HS should be allocated. It contains radius etc.
   if( .not. allocated(hs) ) then
     allocate( hs(nb_species) )
     call read_hard_sphere_radius
   end if
+
   write(*,'(A,F12.4)') 'I will compute direct correlation function for hard sphere fluid with radius',hs(1)%R
   if( nb_species/=1 ) then
     stop "cs_of_k_hard_sphere works only for 1 solvent species"
   end if
+
   CS = .false.
   PY = .false.
   do i = 1 , size ( input_line )
@@ -30,6 +37,10 @@ subroutine cs_of_k_hard_sphere
     if ( input_line(i)(1:j)=='hs_functional' .and. input_line(i)(j+4:j+5)=='CS') CS=.true.
     if ( input_line(i)(1:j)=='hs_functional' .and. input_line(i)(j+4:j+5)=='PY') PY=.true.
   end do
+  if( all([CS,PY].eqv..false.) ) then
+    stop "in cs_of_k_hard_sphere I could not detect if you want PY or CS functions"
+  end if
+
   ! Here we could generate as many points as wanted. In order to be coherent, we will use the same number of points as in cs.in
   ! read the total number of lines in input/cs.in (which is the same as in input/cd.in and input/cdelta.in
   if( .not. allocated(c_s%x) ) stop "Problem in cs_of_k_hard_sphere.f90:l32. c_s is not allocated. You must use the solvent'cs"
@@ -54,18 +65,26 @@ subroutine cs_of_k_hard_sphere
       w1 = R
       w2 = FourPi*R**2
       w3 = FourPi/3.*R**3
+
+      ! weighted densities of homogeneous fluid
+      n0 = solvent(1)%n0 * w0
+      n1 = solvent(1)%n0 * w1
+      n2 = solvent(1)%n0 * w2
+      n3 = solvent(1)%n0 * w3
+
     ELSE ! k > 0
       w0 = coskR + kR*sinkR/2.
       w1 = (sinkR + kR*coskR)/(2.*k)
       w2 = (FourPi*R*sinkR)/k
       w3 = FourPi*(sinkR-kR*coskR)/k**3
+      ! n0 etc that are used below are thoses for the k=0
     END IF
 
     ! weighted densities
-    n0 = solvent(1)%n0 * w0
-    n1 = solvent(1)%n0 * w1
-    n2 = solvent(1)%n0 * w2
-    n3 = solvent(1)%n0 * w3
+!    n0 = solvent(1)%n0 * w0
+!    n1 = solvent(1)%n0 * w1
+!    n2 = solvent(1)%n0 * w2
+!    n3 = solvent(1)%n0 * w3
     if( abs(n3-1)<=epsilon(1.0_dp) ) then
       stop "n3-1=0 in cs_of_k_hard_sphere.f90:69"
     end if
@@ -76,14 +95,17 @@ subroutine cs_of_k_hard_sphere
       d2phi(0,1) = 0
       d2phi(0,2) = 0
       d2phi(0,3) = 1./(1.-n3)
+
       d2phi(1,0) = 0
       d2phi(1,1) = 0
       d2phi(1,2) = 1./(1.-n3)
       d2phi(1,3) = n2/(1.-n3)**2
+
       d2phi(2,0) = 0
       d2phi(2,1) = d2phi(1,2)
       d2phi(2,2) = n2/(4*pi*(1-n3)**2)
       d2phi(2,3) = n1/(1.-n3)**2 +n2**2/(4*pi*(1-n3)**3)
+
       d2phi(3,0) = d2phi(0,3)
       d2phi(3,1) = d2phi(1,3)
       d2phi(3,2) = d2phi(2,3)
@@ -164,6 +186,15 @@ subroutine cs_of_k_hard_sphere
     c_s%y(i)= c_s%y(i) -y_loc
   end do
   call spline( x=c_s%x, y=c_s%y, n=size(c_s%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
+
+  open(14,file="output/cs_hnc-hs.dat")
+  do i=0,1000
+    x_loc = i*0.1
+    call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=size(c_s%y), x=x_loc, y=y_loc)
+    write(14,*) x_loc, y_loc
+  end do
+  close(14)
+
   !
   ! open(14,file="output/cs_analytic_PY_wertheim.dat")
   !   real(dp) :: e, R, n
