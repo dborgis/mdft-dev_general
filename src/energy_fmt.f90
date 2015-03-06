@@ -1,10 +1,10 @@
-SUBROUTINE energy_hard_sphere_fmt (Ffmt)
+SUBROUTINE energy_fmt (Ffmt)
 
   USE precision_kinds  ,ONLY: dp , i2b
   USE system           ,ONLY: thermocond, nb_species, mole_fraction, spaceGrid, solvent
   USE quadrature       ,ONLY: molRotSymOrder, angGrid, molRotGrid
   USE minimizer        ,ONLY: cg_vect, dF
-  USE constants        ,ONLY: pi , FourPi , twopi, zeroC
+  USE constants        ,ONLY: pi, fourPi, twopi, zeroC, zerodp, onedp, epsdp
   USE fft              ,ONLY: fftw3
   USE input            ,ONLY: input_char
   USE hardspheres      ,ONLY: hs, weight_functions
@@ -13,11 +13,8 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
 
   real(dp), intent(out) :: Ffmt ! Internal part of free energy
   integer(i2b) :: icg,i,j,k,o,p,s,nfft1,nfft2,nfft3,wdl,wdu
-  real(dp) :: local_density, psi, dV
-  real(dp) :: nb_molecules(size(solvent))
-  real(dp), ALLOCATABLE, DIMENSION(:,:,:,:) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
-  real(dp) :: time0 , time1 ! time stamps
-  real(dp) :: w0,w1,w2,w3,omw3, kT
+  real(dp) :: local_density, psi, dV, nb_molecules(size(solvent)), time0, time1, kT
+  real(dp)   , ALLOCATABLE, DIMENSION(:,:,:,:) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
   real(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: wd ! weighted density at node i,j,k, for index 0:3
   real(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: dFHS
   complex(dp), ALLOCATABLE , DIMENSION(:,:,:,:) :: dFHS_k
@@ -40,7 +37,7 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
   kT = thermocond%kbT
 
   ! in case of empty supercell
-  if( all(abs(cg_vect)<=epsilon(1._dp)) ) then
+  if( all(abs(cg_vect)<=epsdp) ) then
     Ffmt = -sum( hs%Fexc0 * mole_fraction )
     return
   end if
@@ -51,7 +48,7 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
     do i=1,nfft1
       do j=1,nfft2
         do k=1,nfft3
-          local_density=0._dp
+          local_density=0
           do o=1,angGrid%n_angles
             do p=1,molRotGrid%n_angles
               icg = icg + 1
@@ -89,7 +86,7 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
     fftw3%in_forward = rho(:,:,:,s)
     call dfftw_execute ( fftw3%plan_forward ) ! fourier transform the density and put it into fftw3%out_forward
     do i=0,3
-      fftw3%in_backward = fftw3%out_forward * solvent(s)%n0 * mole_fraction(s) * hs(s)%w_k(:,:,:,i) ! rho_k(s) * w_k(i)
+      fftw3%in_backward = fftw3%out_forward * solvent(s)%n0 * mole_fraction(s) * cmplx( hs(s)%w_k(:,:,:,i) ,0)! rho_k(s) * w_k(i)
       call dfftw_execute( fftw3%plan_backward )
       wd(:,:,:,i) = wd(:,:,:,i) + fftw3%out_backward /(nfft1*nfft2*nfft3)
     end do
@@ -100,20 +97,13 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
   ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
   hs_functional=input_char('hs_functional')
   if( hs_functional(1:2)=='PY') then
-    if( any(wd(:,:,:,3)>=1) ) then
-      print*, "problem in log(1-w3)"
-      call error_message_energy_hard_sphere_fmt (i,j,k,w0,w1,w2,w3)
-      call process_output
-    end if
+    if( any(wd(:,:,:,3)>=1) ) stop "problem in log(1-w3) in energy_fmt"
     Ffmt =  -sum(wd(:,:,:,0)*log(1-wd(:,:,:,3))) &
             +sum(wd(:,:,:,1)*wd(:,:,:,2)/(1-wd(:,:,:,3))) &
             +sum(wd(:,:,:,2)**3/(1-wd(:,:,:,3))**2)/(24*pi)
   else if( hs_functional(1:2)=='CS') then
-    if( any(wd(:,:,:,3)<=epsilon(1._dp)) ) then
-      print*,"I stop before dividing by",w3
-      call error_message_energy_hard_sphere_fmt (i,j,k,w0,w1,w2,w3)
-      call process_output
-    end if
+    if( any(wd(:,:,:,3)>=1) ) stop "problem in log(1-w3) in energy_fmt"
+    if( any(wd(:,:,:,3)<=epsdp) ) stop "I stop before dividing by 0 in energy_fmt"
     Ffmt = sum(wd(:,:,:,1)*wd(:,:,:,2)/(1-wd(:,:,:,3))) &
           +sum( (inv36pi*wd(:,:,:,2)**3 / wd(:,:,:,3)**2 -wd(:,:,:,0)) * LOG((1-wd(:,:,:,3)))  ) &
           +sum( inv36pi*wd(:,:,:,2)**3/(wd(:,:,:,3)*(1-wd(:,:,:,3))**2)  )
@@ -125,22 +115,19 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
 
   ! gradients
   ! dFHS_i and weighted_density_j are arrays of dimension (nfft1,nfft2,nfft3)
-  ! one_min_weighted_density_3 is dummy for speeding up and simplifying while using unnecessary memory.
-
   ! excess free energy per atom derived wrt weighted density 0 (eq. A5 in Sears2003)
   allocate ( dFHS(nfft1,nfft2,nfft3,wdl:wdu) ,SOURCE=0._dp)
 
   ! Perkus Yevick
-  select case( hs_functional)
-  case('PY')
-    IF( ANY((1-wd(:,:,:,3))<=epsilon(1.0_dp))) stop "I found some value in 1-weightedensity3 that cannot go in log"
+  if( hs_functional(1:2)=='PY') then
+    IF( ANY((1-wd(:,:,:,3))<=epsdp)) stop "I found some value in 1-weightedensity3 that cannot go in log"
     dFHS(:,:,:,0) = -log(1-wd(:,:,:,3))
     dFHS(:,:,:,1) = wd(:,:,:,2)/(1-wd(:,:,:,3))
     dFHS(:,:,:,2) = wd(:,:,:,1)/(1-wd(:,:,:,3)) +inv8pi*dFHS(:,:,:,1)**2
     dFHS(:,:,:,3) = (wd(:,:,:,0)+wd(:,:,:,1)*dFHS(:,:,:,1))/(1-wd(:,:,:,3)) +inv12pi*dFHS(:,:,:,1)**3
-  case('CS')
-    IF( ANY((1-wd(:,:,:,3))<=epsilon(1.0_dp))) STOP "I found some value of 1-weightedensity3 that cannot go in log"
-    IF( ANY(ABS(wd(:,:,:,3))<=epsilon(1.0_dp))) STOP "I found some value in w3 that would lead to divide by 0"
+  else if( hs_functional(1:2)=='CS') then
+    IF( ANY((1-wd(:,:,:,3))<=epsdp)) STOP "I found some value of 1-weightedensity3 that cannot go in log"
+    IF( ANY(ABS(wd(:,:,:,3))<=epsdp)) STOP "I found some value in w3 that would lead to divide by 0"
 
     dFHS(:,:,:,0) = - log ( (1-wd(:,:,:,3)) )
 
@@ -155,7 +142,9 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
     + wd(:,:,:,1) * dFHS(:,:,:,1) / (1-wd(:,:,:,3)) + inv36pi * &
     wd(:,:,:,2) ** 3 / wd(:,:,:,3) ** 2 * &
     ( 3.0_dp * wd(:,:,:,3) - 1.0_dp ) / (1-wd(:,:,:,3)) ** 3
-  end select
+  else
+    stop "hs_functional not initialized in energy_hard_spheres_fmt.f90:121"
+  end if
   deallocate(wd) ! deallocate weighted_densities
 
   ! compute gradients in k space
@@ -169,7 +158,7 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
   deallocate( dFHS )
 
   ! compute final gradient in k-space
-  allocate( dFex (nfft1,nfft2,nfft3,nb_species) ,SOURCE=0._dp)
+  allocate( dFex (nfft1,nfft2,nfft3,nb_species) ,source=zerodp)
   do s=1,nb_species
     fftw3%in_backward= dFHS_k(:,:,:,0)*hs(s)%w_k(:,:,:,0) &
                       +dFHS_k(:,:,:,1)*hs(s)%w_k(:,:,:,1) &
@@ -178,6 +167,7 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
     call dfftw_execute ( fftw3%plan_backward )
     dFex(:,:,:,s) = fftw3%out_backward / (nfft1*nfft2*nfft3)
   end do
+
   deallocate( dFHS_k )
   do s=1,nb_species
     deallocate( hs(s)%w_k )
@@ -206,20 +196,4 @@ SUBROUTINE energy_hard_sphere_fmt (Ffmt)
 
   call cpu_time( time1 )
 
-contains
-
-!===============================================================================================================================
-! this SUBROUTINE prints error message related to SUBROUTINE excess_cs_hard_sphere
-! it may stop program execution depending on the error.
-SUBROUTINE error_message_energy_hard_sphere_fmt ( i , j , k , w0 , w1 , w2 , w3 )
-  USE precision_kinds ,ONLY: i2b, dp
-  IMPLICIT NONE
-  INTEGER(i2b), INTENT(IN) :: i,j,k
-  real(dp), INTENT(IN) :: w0,w1,w2,w3
-  PRINT*,'i , j , k = ',i,j,k
-  PRINT*,'log (1-w3<=0) in energy_hard_sphere_fmt.f90. Critical stop'
-  PRINT*,'w0, w1, w2, w3 = ' ,w0,w1,w2,w3
-  STOP
-END SUBROUTINE error_message_energy_hard_sphere_fmt
-
-end subroutine energy_hard_sphere_fmt
+end subroutine energy_fmt
