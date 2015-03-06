@@ -184,8 +184,6 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
       write(*,'(A,i1,A,f10.2)') 'Fexc0 ( ' , s , ' ) = ' , hs(s)%Fexc0
     end if
   end do
-  print*,"XXXXXXX Fexc0=",hs(1)%Fexc0
-  print*,"XXXXXXX muxc=",hs(1)%excchempot
 end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
 
 !===================================================================================================================================
