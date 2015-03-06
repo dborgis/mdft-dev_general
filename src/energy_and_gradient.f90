@@ -1,6 +1,6 @@
 !===================================================================================================================================
 subroutine energy_and_gradient (iter)
-!===================================================================================================================================
+
 ! In this SUBROUTINE one calls the different parts of the total energy
 ! first is computed the radial_part, then ... blabla.
 ! this SUBROUTINE is the one called by the minimization stuff
@@ -57,7 +57,7 @@ implicit none
 
     ! compute radial part of the excess free energy
     if (input_log('hard_sphere_fluid') ) then
-      call energy_hard_sphere_fmt (Ffmt) ! => pure hard sphere contribution
+      call energy_fmt (Ffmt) ! => pure hard sphere contribution
       FF=FF+Ffmt
     end if
 
