@@ -45,6 +45,7 @@ SUBROUTINE find_equilibrium_density
 END SUBROUTINE find_equilibrium_density
 
 subroutine myfunc(result, n, x, grad, need_gradient, f_data)
+  use precision_kinds, only: dp
   use minimizer, only: cg_vect, iter, dF, FF
   implicit none
   integer, intent(in)          :: n ! number of parameters
