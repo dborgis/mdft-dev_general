@@ -22,7 +22,7 @@ FC = gfortran
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -Wfatal-errors -fdiagnostics-color=auto
+FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -Wfatal-errors -fdiagnostics-color=auto -O3 -march=native -ffast-math -funroll-loops
 LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 
 # For POINCARE:
@@ -35,7 +35,7 @@ DEBUG = -Og -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncat
 # -Wextra turns on extra warning. It is extremely verbose.
 # -fcheck-array-temporaries -Warray-temporaries -Wconversion -Wimplicit-interface
 
-OPTIM = -O3 -march=native -ffast-math -funroll-loops -ftree-vectorizer-verbose=6
+OPTIM = #-O3 -march=native -mpc64  -fno-exceptions -ffast-math -funroll-loops -fstrict-aliasing
 # FOR BACKUP : -march=native -O3 -ffast-math -funroll-loops   VERY AGRESSIVE
 # -fopenmp for OPENMP support
 
