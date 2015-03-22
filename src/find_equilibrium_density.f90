@@ -13,7 +13,7 @@ SUBROUTINE find_equilibrium_density
   real(dp):: energy_before, dfoverf, FFdiff
   integer*8 :: opt
   integer :: xsize, ires, M, maxeval
-  double precision :: minf ! minimum value
+  real(dp) :: minf ! minimum value
   include 'nlopt.f'
   maxeval = input_int("maximum_iteration_nbr")
   epsg = input_dp("epsg", 0.0001_dp ) ! in kJ/mol
@@ -49,8 +49,8 @@ subroutine myfunc(result, n, x, grad, need_gradient, f_data)
   implicit none
   integer, intent(in)          :: n ! number of parameters
   integer          :: need_gradient ! different from 0 if one wants to use gradient-based algorithms
-  double precision, intent(out) :: result, f_data ! the return value of our function we want to optimize
-  double precision, intent(inout) :: x(n), grad(n)
+  real(dp), intent(out) :: result, f_data ! the return value of our function we want to optimize
+  real(dp), intent(inout) :: x(n), grad(n)
   iter = iter +1
   cg_vect = x
   call energy_and_gradient(iter)

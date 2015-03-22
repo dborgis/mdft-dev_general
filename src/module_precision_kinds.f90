@@ -4,10 +4,10 @@ MODULE precision_kinds
 
     IMPLICIT NONE
         
-    INTEGER( KIND=KIND(1) ), PARAMETER :: i2b = KIND(1) !> simple precision integer 
-    INTEGER(i2b), PARAMETER :: dp = KIND(0.0d0) !> double precision real
-    INTEGER(i2b), PARAMETER :: sp = KIND(0.0) !> simple precision real
-    INTEGER(i2b), PARAMETER :: i4b = 2_i2b * i2b !> double precision integer
+    INTEGER( KIND=KIND(1) ), PARAMETER :: i2b = KIND(1) ! usual integer 
+    INTEGER(i2b), PARAMETER :: dp = KIND(0.0d0)         ! usual double precision float
+    INTEGER(i2b), PARAMETER :: sp = KIND(0.0)           ! usual simple precision float
+    INTEGER(i2b), PARAMETER :: i4b = 2_i2b * i2b        ! usual double precision integer
 
 END MODULE precision_kinds
 ! defining the precision kind this way we say to the computer : use the default single precision and double precision.
