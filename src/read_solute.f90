@@ -36,10 +36,10 @@ SUBROUTINE read_solute
                     solute%site(n)%lambda1, solute%site(n)%lambda2, solute%site(n)%r, solute%site(n)%Z
         END DO
     CLOSE (5)
-    solute%site%q = solute%site%q * input_dp('solute_charges_scale_factor')
+    solute%site%q = solute%site%q * input_dp('solute_charges_scale_factor', defaultvalue=1._dp)
 
     CALL translate_to_center_of_supercell_if_needed ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
-    CALL assure_coo_inside_cell ! check if cartesian coordinates read in input/solute.in are in the supercell
+    CALL assert_inside ! check if cartesian coordinates read in input/solute.in are in the supercell
     CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
 
 
@@ -58,7 +58,7 @@ SUBROUTINE read_solute
 
 
 
-    SUBROUTINE assure_coo_inside_cell
+    SUBROUTINE assert_inside
         USE SYSTEM, ONLY: spaceGrid
         INTEGER(i2b) :: i
         ! check if some positions are out of the supercell
@@ -69,7 +69,7 @@ SUBROUTINE read_solute
             solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , spaceGrid%length(2) )
             solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , spaceGrid%length(3) )
         END DO
-    END SUBROUTINE assure_coo_inside_cell
+    END SUBROUTINE assert_inside
 
 
 END SUBROUTINE read_solute
