@@ -1,0 +1,116 @@
+############################
+# SUPERCELL DISCRETIZATION
+############################
+Lx  = 30.0
+Ly  = 30.0
+Lz  = 30.0 
+nfft1 = 64 
+nfft2 = 64 
+nfft3 = 64 
+quadrature = GL
+order_of_quadrature = 1
+nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+
+
+############################
+# SOLVENT DEFINITION
+############################
+nb_implicit_species = 1
+mole_fractions
+1.0
+
+ck_species = spce   # spc or spce or stock or perso
+readDensityDensityCorrelationFunction = T
+polarization = F
+polarization_order = dipol # multi or dipol
+include_nc_coupling = F
+
+ref_bulk_density
+0.0332891
+temperature = 298
+molRotSymOrder = 1
+
+
+############################
+# BRANCH CK_ANGULAR
+############################
+ck_angular = F
+ck_angular_interpolation = F
+ck_debug = F
+ck_debug_extended = F
+ck_en_harm_sph = F
+
+
+############################
+# SOLVER
+############################
+minimizer = bfgs
+maximum_iteration_nbr = 50
+epsg =  1.E-7  # default 0.0001
+
+
+###########################
+#  IDEAL TERM
+###########################
+imposed_chempot = 0.0
+Linearize_entropy = F
+if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):1 or rho(r,Omega):2
+
+
+############################
+# ELECTROSTATIC POTENTIAL
+############################
+solute_charges_scale_factor = 1.0 # scales the charges of the solute. 1: does not change anything. 0: turn off all charges. 0.5: divide all charges by 2.
+poisson_solver = F # use Fourier space to get electrostatic part of external free energy
+better_poisson_solver = F # use the multipole expansion of the solvent molecular charge density
+direct_sum = F
+
+
+reuse_density = F
+translate_solute_to_center = T
+
+
+############################
+# HARD SPHERES
+############################
+hard_sphere_fluid = T
+bridge_hard_sphere = T
+hard_sphere_radius
+HSB666
+hs_functional = PY # PY or CS
+lennard_jones_perturbation_to_hard_spheres = F # add a Weeks-Chandler-Enderson perturbation to hard-sphere fonctional
+
+# OTHER STUFF
+hydrophobicity = F
+treatment_of_hydro = VdW  #C for Chandler, VdW(which cannot be used with a bridge term for the moment) for Van der Waals (which include a bridge term)
+hydro_coarsegrainingradius = 2.2
+threebody = F
+lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
+
+verbose = T
+number_of_fftw3_threads = 1  # defines the number of posix/openmp threads fftw3 will use for all FFT
+
+# HARD SPHERICAL SOLUTE
+hard_sphere_solute = F              # if there is a hard sphere in the center of the box
+radius_of_hard_sphere_solute = 0.5     # hard sphere solute radius for calculation of hard sphere external potential (Ang)
+
+# HARD WALL
+hard_wall_number = 0
+1.   0. 0. 1.   0. 0. 0.
+# do w=1,hard_wall_numner ; thickness(w) , normal_vec(1:3,w) , CooOfPointInWall (1:3,w); end do
+
+# HARD CORE with vdw radius
+vdw_hard_core = F                    # a hard core with vdw radius is like a hard sphere with vdw radius for the solute sites.
+
+# HARD CYLINDER
+hard_cylinder_solute = F             # if there is a hard cylinder in the box (in z direction, at x=Lx/2, y=Ly/2)
+radius_of_hard_cylinder = 0.5           # radius of the hard cylinder solute (Ang)
+
+# PERSONAL VEXT
+personnal_vext = F                   # if you want to use the external potential calculated in personnal_vext.f90 that you may want to edit to make something complicated
+vext_hard_square_well = F            # if the external potential is of kind hard well
+hard_well_total_length = 2.0         # total length of the hard well (length or diameter). potential is zero from Lz/2-hard_well_total_length/2 to Lz/2+hard_well_total_length/2 and \infty elsewhere
+purely_repulsive_solute = F          # if there is a 1/r12 repulsive point in the box
+radius_of_purely_repulsive_solute = 4.75 # radius of the purely repulsive (1/r^12) solute as defined by Dzubiella
+other_predefined_vext = none
+
