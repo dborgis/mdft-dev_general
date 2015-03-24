@@ -11,17 +11,14 @@ SUBROUTINE allocate_from_input
     INTEGER(i2b):: i, s
 
     verbose = input_log('verbose')
-    
+
     molRotSymOrder = input_int('molRotSymOrder') !Get the order of the main symmetry axis of the solvent
     IF (molRotSymOrder < 1) THEN
         PRINT*,'order of main symetric axe cannot be less than 1. molRotSymOrder is declared as ',molRotSymOrder
         STOP 'CRITICAL STOP. CHANGE molRotSymOrder IN INPUT'
-    END IF
-    
-    spaceGrid%n_nodes = [ input_int('nfft1'), input_int('nfft2'), input_int('nfft3') ] ! number of grid nodes in each direction
-    IF (ANY( spaceGrid%n_nodes  <= 0) ) THEN
-        PRINT*,'The space is divided into grid nodes. For each direction, you ask', spaceGrid%n_nodes,'node.'
-        STOP 'This is unphysical.'
+    else if (molRotSymOrder > 2) then
+      print*,"I am surprise your molrotsymorder >2. Certainly a problem somewhere."
+      stop
     END IF
 
     spaceGrid%length = [ input_dp('Lx'), input_dp('Ly'), input_dp('Lz') ]
@@ -30,6 +27,14 @@ SUBROUTINE allocate_from_input
         PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',spaceGrid%length
         STOP 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
     END IF
+
+    spaceGrid%n_nodes = [ input_int('nfft1'), input_int('nfft2'), input_int('nfft3') ] ! number of grid nodes in each direction
+PRINT*,"nfft1 2 3 =",spacegrid%n_nodes;stop "ok"
+    IF (ANY( spaceGrid%n_nodes  <= 0) ) THEN
+        PRINT*,'The space is divided into grid nodes. For each direction, you ask', spaceGrid%n_nodes,'node.'
+        STOP 'This is unphysical.'
+    END IF
+
     spaceGrid%dl = spaceGrid%length/REAL(spaceGrid%n_nodes,dp)
     spaceGrid%dv = product(spaceGrid%dl)
 
@@ -40,7 +45,7 @@ SUBROUTINE allocate_from_input
     END IF
     thermoCond%kbT = Boltz * Navo * thermoCond%T * 1.0e-3_dp
     thermoCond%beta = 1.0_dp / thermocond%kbT
-    
+
     nb_species = input_int('nb_implicit_species') ! get the number of implicit solvant species
     if (nb_species < 1) then
         print*,"STOP. nb_species =",nb_species,". The number of solvent species must be >0."
@@ -48,8 +53,8 @@ SUBROUTINE allocate_from_input
     end if
     allocate (solvent(nb_species), stat=i)
     if (i /= 0) stop "Problem during allocation of type solvent in allocate from input."
-    
-    ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer  
+
+    ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer
     do i = 1, size(input_line)
         if (input_line(i)(1:len('ref_bulk_density')) == 'ref_bulk_density') then
             do s = 1, nb_species
@@ -79,10 +84,10 @@ SUBROUTINE allocate_from_input
     END IF
 
 
-    
-    
-    contains  
-    
+
+
+    contains
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Subroutine to read the mole fractions in dft.in.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -106,7 +111,7 @@ SUBROUTINE allocate_from_input
             exit ! loop over i
         END IF
         END DO
-    
+
         ! check error in mole fraction : sum of all mole fractions should be equal to 1
         call check_error_in_mole_fraction ( mole_fraction )
     END SUBROUTINE read_mole_fractions
@@ -123,7 +128,7 @@ SUBROUTINE allocate_from_input
         IMPLICIT NONE
         real(dp), dimension ( nb_species ) , intent(in) :: mole_fraction
         integer(i2b):: s
-    
+
         ! sum of all mole fractions should be equal to 1
         if ( sum ( mole_fraction ) /= 1.0_dp ) THEN
             write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
