@@ -49,7 +49,7 @@ SUBROUTINE read_solute
     SUBROUTINE translate_to_center_of_supercell_if_needed
         USE input, ONLY: input_log
         USE system, ONLY: spaceGrid
-        IF (input_log( 'translate_solute_to_center' )) THEN
+        IF (input_log( 'translate_solute_to_center', defaultvalue=.true. )) THEN
             solute%site%r(1) = solute%site%r(1) + spaceGrid%length(1)/2.0_dp
             solute%site%r(2) = solute%site%r(2) + spaceGrid%length(2)/2.0_dp
             solute%site%r(3) = solute%site%r(3) + spaceGrid%length(3)/2.0_dp
