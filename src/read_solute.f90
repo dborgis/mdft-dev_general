@@ -35,12 +35,12 @@ subroutine read_solute
   block
     real(dp) :: solutexmin, solutexmax, soluteymin, soluteymax, solutezmin, solutezmax, &
                 solutediameterx, solutediametery, solutediameterz, solutesigmaljmax
-    solutexmin = minval(solute%site%r(1)) ; print*,"solutexmin=",solutexmin
-    soluteymin = minval(solute%site%r(2)) ; print*,"soluteymin=",soluteymin
-    solutezmin = minval(solute%site%r(3)) ; print*,"solutezmin=",solutezmin
-    solutexmax = maxval(solute%site%r(1)) ; print*,"solutexmin=",solutexmax
-    soluteymax = maxval(solute%site%r(2)) ; print*,"soluteymin=",soluteymax
-    solutezmax = maxval(solute%site%r(3)) ; print*,"solutezmin=",solutezmax
+    solutexmin = minval(solute%site%r(1))
+    soluteymin = minval(solute%site%r(2))
+    solutezmin = minval(solute%site%r(3))
+    solutexmax = maxval(solute%site%r(1))
+    soluteymax = maxval(solute%site%r(2))
+    solutezmax = maxval(solute%site%r(3))
     solutediameterx = sqrt((solutexmax-solutexmin)**2)
     solutediametery = sqrt((soluteymax-soluteymin)**2)
     solutediameterz = sqrt((solutezmax-solutezmin)**2)
