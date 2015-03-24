@@ -31,7 +31,7 @@ SUBROUTINE read_solute
         ALLOCATE(solute%site(nb_solute_sites))
 
         READ (5,*)
-        DO n = 1, SIZE(solute%site)
+        DO n = 1, nb_solute_sites
             READ(5,*) i, solute%site(n)%q, solute%site(n)%sig, solute%site(n)%eps, &
                     solute%site(n)%lambda1, solute%site(n)%lambda2, solute%site(n)%r, solute%site(n)%Z
         END DO
@@ -64,7 +64,7 @@ SUBROUTINE read_solute
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
-        DO CONCURRENT ( i=1:SIZE(solute%site) )
+        DO CONCURRENT ( i=1:nb_solute_sites) 
             solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , spaceGrid%length(1) )
             solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , spaceGrid%length(2) )
             solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , spaceGrid%length(3) )
