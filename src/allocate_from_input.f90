@@ -3,7 +3,7 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose
-    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, spaceGrid, solvent
+    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, spaceGrid, solvent, solute, nb_solute_sites
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     USE quadrature          ,ONLY: molRotSymOrder
 
@@ -21,15 +21,21 @@ SUBROUTINE allocate_from_input
       stop
     END IF
 
-    spaceGrid%length = [ input_dp('Lx'), input_dp('Ly'), input_dp('Lz') ]
+    spaceGrid%length = [  input_dp('Lx', defaultvalue=spacegrid%length(1)),&
+                          input_dp('Ly', defaultvalue=spacegrid%length(2)),&
+                          input_dp('Lz', defaultvalue=spacegrid%length(3)) ]
     IF (ANY( spaceGrid%length  <= 0._dp ) ) THEN
         PRINT*,'The supercell cannot have negative length.'
         PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',spaceGrid%length
         STOP 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
     END IF
 
-    spaceGrid%n_nodes = [ input_int('nfft1'), input_int('nfft2'), input_int('nfft3') ] ! number of grid nodes in each direction
-PRINT*,"nfft1 2 3 =",spacegrid%n_nodes;stop "ok"
+    spaceGrid%n_nodes = [ input_int('nfft1', defaultvalue=int(spacegrid%length(1)*3)+1 ), &
+                          input_int('nfft2', defaultvalue=int(spacegrid%length(2)*3)+1), &
+                          input_int('nfft3', defaultvalue=int(spacegrid%length(3)*3)+1) ] ! number of grid nodes in each direction
+PRINT*,"spacegrid%length =",spacegrid%length
+PRINT*,"spacegrid%n_nodes =",spacegrid%n_nodes
+
     IF (ANY( spaceGrid%n_nodes  <= 0) ) THEN
         PRINT*,'The space is divided into grid nodes. For each direction, you ask', spaceGrid%n_nodes,'node.'
         STOP 'This is unphysical.'
@@ -84,9 +90,37 @@ PRINT*,"nfft1 2 3 =",spacegrid%n_nodes;stop "ok"
     END IF
 
 
+    CALL mv_solute_to_center ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
+    CALL assert_solute_inside ! check if cartesian coordinates read in input/solute.in are in the supercell
+    CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
 
+    CONTAINS
 
-    contains
+    ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
+    subroutine mv_solute_to_center
+        use input  ,only: input_log
+        use system ,only: spaceGrid, solute
+        implicit none
+        if( input_log( 'translate_solute_to_center', defaultvalue=.true. )) then
+            solute%site%r(1) = solute%site%r(1) + spaceGrid%length(1)/2.0_dp
+            solute%site%r(2) = solute%site%r(2) + spaceGrid%length(2)/2.0_dp
+            solute%site%r(3) = solute%site%r(3) + spaceGrid%length(3)/2.0_dp
+        end if
+    end subroutine mv_solute_to_center
+
+    subroutine assert_solute_inside
+        use system, only: spaceGrid, solute
+        implicit none
+        integer :: i
+        ! check if some positions are out of the supercell
+        !j is a test tag. We loop over this test until every atom is in the box.
+        ! This allows for instance, if a site is two boxes too far to still be ok.
+        do concurrent( i=1:nb_solute_sites )
+            solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , spaceGrid%length(1) )
+            solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , spaceGrid%length(2) )
+            solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , spaceGrid%length(3) )
+        end do
+    end subroutine assert_solute_inside
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Subroutine to read the mole fractions in dft.in.

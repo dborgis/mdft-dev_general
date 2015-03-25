@@ -53,6 +53,7 @@ MODULE system
         REAL(dp), DIMENSION(3) :: length ! total length in direction x, y and z
         REAL(dp), DIMENSION(3) :: dl ! elemental distance between two nodes in direction x, y and z
         REAL(dp) :: dv ! elemental volume
+        real(dp) :: buffer_length ! length of free space between the extremam of the solute. 
     END TYPE spaceGridType
     TYPE( spaceGridType ), TARGET :: spaceGrid
 
