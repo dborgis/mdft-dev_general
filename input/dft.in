@@ -1,12 +1,12 @@
 ############################
 # SUPERCELL DISCRETIZATION
 ############################
-Lx  = 40.0
-Ly  = 40.0
-Lz  = 40.0
-nfft1 = 64
-nfft2 = 64
-nfft3 = 64
+#Lx  = 40.0
+#Ly  = 40.0
+#Lz  = 40.0
+#nfft1 = 64
+#nfft2 = 64
+#nfft3 = 64
 quadrature = GL
 order_of_quadrature = 1
 nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
@@ -73,8 +73,8 @@ translate_solute_to_center = T
 ############################
 # HARD SPHERES
 ############################
-hard_sphere_fluid = T
-bridge_hard_sphere = T
+hard_sphere_fluid = F
+bridge_hard_sphere = F
 hard_sphere_radius
 1.457429
 hs_functional = PY # PY or CS
