@@ -1,6 +1,6 @@
 # ——————————————— Program property ———————————————
 
-EXE = mdft
+EXE = mdft-dev
 MKFLAGS = $(NULLSTRING)
 
 # ——————————————— Variables of locations ———————————————
@@ -11,10 +11,10 @@ OBJDIR = obj
 
 # _______________ Libraries and other folders __________
 
-FFTW_INCLUDES  = -I/usr/local/include -I/usr/include
-FFTW_LIBRARIES = -L/usr/local/lib -L/usr/lib -lfftw3 -lfftw3_threads
-NLOPT_INCLUDES = -I/usr/local/include
-NLOPT_LIBRARIES = -lnlopt -lm
+FFTW_INCLUDES  = -I${HOME}/usr/include
+FFTW_LIBRARIES = -lfftw3 -lfftw3_threads -L${HOME}/usr/lib   -Wl,-rpath=${HOME}/usr/lib
+NLOPT_INCLUDES = -I${HOME}/usr/include
+NLOPT_LIBRARIES = -lnlopt -lm -L${HOME}/usr/lib  -Wl,-rpath=${HOME}/usr/lib  
 
 # ——————————————— Fortran compiler ———————————————
 
@@ -105,7 +105,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
 	$(OBJDIR)/vext_total_sum.o\
 	$(OBJDIR)/write_to_cube_file.o\
-	$(OBJDIR)/finalize_simu.o\
 	$(OBJDIR)/output_g-r-theta.o\
 	$(OBJDIR)/output_gsitesite.o\
 	$(OBJDIR)/module_time.o\
@@ -600,10 +599,6 @@ $(OBJDIR)/module_fastPoissonSolver.o:\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o
-
-$(OBJDIR)/finalize_simu.o:\
-	$(SRCDIR)/finalize_simu.f90\
-	$(OBJDIR)/module_fft.o
 
 $(OBJDIR)/module_mathematica.o:\
 	$(SRCDIR)/module_mathematica.f90\
