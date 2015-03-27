@@ -12,7 +12,6 @@ PROGRAM mdft
     CALL init_simu
     CALL find_equilibrium_density
     CALL process_output
-    CALL finalize_simu
 
     write(*,'(A)')"=="
 
