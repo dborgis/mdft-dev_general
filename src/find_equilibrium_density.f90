@@ -32,6 +32,8 @@ SUBROUTINE find_equilibrium_density
   call nlo_set_min_objective( ires, opt, myfunc, 0)
   call nlo_set_ftol_abs( ires, opt, epsg)
   call nlo_set_maxeval( ires, opt, maxeval)
+  M = 3
+  call nlo_set_vector_storage( ires, opt, M)
   call nlo_optimize( ires, opt, cg_vect, minf)
   if (ires<0) then
     write(*,*) 'minimization failed!'
