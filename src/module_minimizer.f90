@@ -122,10 +122,10 @@ module minimizer
             IMPLICIT NONE
 
             ncg = PRODUCT(spaceGrid%n_nodes) * angGrid%n_angles *molRotGrid%n_angles* nb_species! total number of variables to optimize
-            itermax=input_int('maximum_iteration_nbr')
-            epsg=input_dp('epsg')
+            !itermax=input_int('maximum_iteration_nbr',30) ! 30 iteration max by default
+            !epsg=input_dp('epsg',0.01_dp) ! kJ/mol
             ! pgtol=input_dp('pgtol')
-            minimizer_type = input_char('minimizer') ! get from input the type of minimization one wants to do
+            !minimizer_type = input_char('minimizer',"bfgs") ! get from input the type of minimization one wants to do
             ALLOCATE ( cg_vect(ncg), SOURCE=0._dp )
             ALLOCATE ( dF(ncg), SOURCE=0._dp )
             FF = 0._dp

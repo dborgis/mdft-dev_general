@@ -3,7 +3,7 @@
 subroutine find_equilibrium_density
 
   use precision_kinds,only : i2b, dp
-  use input, only: input_dp, input_int
+  use input, only: input_dp, input_int, input_char
   use minimizer, only: ncg, cg_vect, FF, dF, minimizer_type, epsg, iter
 
   implicit none
@@ -20,6 +20,8 @@ subroutine find_equilibrium_density
 
   iter = 0
 
+  !minimizer_type = input_char("minimizer")
+  minimizer_type = "bfgs" ! TODO input_char can't now deal with default values
   select case (minimizer_type(1:3))
   case ("bfg")
     algorithm = NLOPT_LD_LBFGS
