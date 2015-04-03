@@ -12,14 +12,15 @@ SUBROUTINE allocate_from_input
 
     verbose = input_log('verbose')
 
-    molRotSymOrder = input_int('molRotSymOrder') !Get the order of the main symmetry axis of the solvent
-    IF (molRotSymOrder < 1) THEN
-        PRINT*,'order of main symetric axe cannot be less than 1. molRotSymOrder is declared as ',molRotSymOrder
-        STOP 'CRITICAL STOP. CHANGE molRotSymOrder IN INPUT'
+    molRotSymOrder = input_int('molRotSymOrder',1) !Get the order of the main symmetry axis of the solvent
+
+    if (molRotSymOrder < 1) THEN
+      print*, 'order of main symetric axe cannot be less than 1. molRotSymOrder is declared as ',molRotSymOrder
+      stop    'CRITICAL STOP. CHANGE molRotSymOrder IN INPUT'
     else if (molRotSymOrder > 2) then
-      print*,"I am surprise your molrotsymorder >2. Certainly a problem somewhere."
+      print*, "I am surprise your molrotsymorder >2. Certainly a problem somewhere."
       stop
-    END IF
+    end if
 
     spaceGrid%length = [  input_dp('Lx', defaultvalue=spacegrid%length(1)),&
                           input_dp('Ly', defaultvalue=spacegrid%length(2)),&
@@ -28,7 +29,7 @@ SUBROUTINE allocate_from_input
         PRINT*,'The supercell cannot have negative length.'
         PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',spaceGrid%length
         STOP 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
-    END IF
+    end if
 
     spaceGrid%n_nodes = [ input_int('nfft1', defaultvalue=int(spacegrid%length(1)*3)+1 ), &
                           input_int('nfft2', defaultvalue=int(spacegrid%length(2)*3)+1), &
@@ -39,20 +40,20 @@ PRINT*,"spacegrid%n_nodes =",spacegrid%n_nodes
     IF (ANY( spaceGrid%n_nodes  <= 0) ) THEN
         PRINT*,'The space is divided into grid nodes. For each direction, you ask', spaceGrid%n_nodes,'node.'
         STOP 'This is unphysical.'
-    END IF
+    end if
 
     spaceGrid%dl = spaceGrid%length/REAL(spaceGrid%n_nodes,dp)
     spaceGrid%dv = product(spaceGrid%dl)
 
-    thermoCond%T = input_dp('temperature') ! look for temperature in input
+    thermoCond%T = input_dp('temperature', defaultvalue=300._dp) ! look for temperature in input
     IF (thermoCond%T <= 0 ) THEN
         PRINT*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',thermoCond%T
         STOP
-    END IF
+    end if
     thermoCond%kbT = Boltz * Navo * thermoCond%T * 1.0e-3_dp
     thermoCond%beta = 1.0_dp / thermocond%kbT
 
-    nb_species = input_int('nb_implicit_species') ! get the number of implicit solvant species
+    nb_species = input_int('nb_implicit_species',defaultvalue=1) ! get the number of implicit solvant species
     if (nb_species < 1) then
         print*,"STOP. nb_species =",nb_species,". The number of solvent species must be >0."
         stop
@@ -69,6 +70,7 @@ PRINT*,"spacegrid%n_nodes =",spacegrid%n_nodes
             exit
         end if
     end do
+
     if (any (solvent%n0 <= 0._dp) ) then
         print *,"You ask for negative densities!"
         do s =1, nb_species
@@ -87,7 +89,7 @@ PRINT*,"spacegrid%n_nodes =",spacegrid%n_nodes
     ELSE
         ALLOCATE ( mole_fraction ( nb_species ) ) ! molar fraction of each species.
         call read_mole_fractions ( nb_species , mole_fraction )
-    END IF
+    end if
 
 
     CALL mv_solute_to_center ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
@@ -136,18 +138,21 @@ PRINT*,"spacegrid%n_nodes =",spacegrid%n_nodes
         integer(i2b), intent(in) :: nb_species
         real(dp), dimension ( nb_species ) , intent ( inout ) :: mole_fraction
         integer(i2b):: i, j, s
-        do i = 1 , size ( input_line )
-        j = len ( 'mole_fractions' )
-        if ( input_line (i) (1:j) == 'mole_fractions' ) THEN
-            do s = 1 , nb_species
-                read ( input_line ( i + s ) , * ) mole_fraction ( s )
-            END DO
-            exit ! loop over i
-        END IF
-        END DO
-
-        ! check error in mole fraction : sum of all mole fractions should be equal to 1
-        call check_error_in_mole_fraction ( mole_fraction )
+        select case (nb_species)
+        case (1)
+          mole_fraction = 1._dp
+        case default
+          do i = 1, size( input_line )
+            j = len ( 'mole_fractions' )
+            if ( input_line(i)(1:j) == 'mole_fractions' ) then
+              do s = 1, nb_species
+                  read( input_line(i+s),*) mole_fraction(s)
+              end do
+              exit ! loop over i
+            end if
+          end do
+        end select
+        call check_error_in_mole_fraction ( mole_fraction ) ! check mole fractions are physical
     END SUBROUTINE read_mole_fractions
 
 
@@ -168,23 +173,21 @@ PRINT*,"spacegrid%n_nodes =",spacegrid%n_nodes
             write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
             write (*,*) 'here are the number of the species and its associated mole fraction'
             do s = 1 , nb_species
-                PRINT*, s , mole_fraction(s)
-            END DO
+              print*, s , mole_fraction(s)
+            end do
             write (*,*) 'STOP'
-            STOP
-        END IF
+            stop
+        end if
         ! a mole fraction should be between 0 and 1
         do s = 1 , nb_species
-            if ( mole_fraction ( s ) < 0.0_dp .or. mole_fraction ( s ) > 1.0_dp ) THEN
-                write (*,*) 'Critical errror in ALLOCATE_from_input.f90. Mole fractions should be between 0 and 1'
-                write (*,*) 'here are the number of the species and its associated mole fraction'
-                write (*,*) 'species number ' , s , ' has mole fraction ' , mole_fraction ( s )
-                write (*,*) 'STOP'
-                STOP
-            END IF
-        END DO
+          if ( mole_fraction ( s ) < 0.0_dp .or. mole_fraction ( s ) > 1.0_dp ) THEN
+            write (*,*) 'Critical errror in ALLOCATE_from_input.f90. Mole fractions should be between 0 and 1'
+            write (*,*) 'here are the number of the species and its associated mole fraction'
+            write (*,*) 'species number ' , s , ' has mole fraction ' , mole_fraction ( s )
+            write (*,*) 'STOP'
+            stop
+          end if
+        end do
     END SUBROUTINE check_error_in_mole_fraction
-
-
 
 END SUBROUTINE ALLOCATE_from_input
