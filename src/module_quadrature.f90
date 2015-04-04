@@ -199,8 +199,7 @@ module quadrature
         allocate (angGrid%weight(angGrid%n_angles), source=0._dp)
         call gauss (angGrid, intScheme, molRotGrid, Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz)
     end if
-print*,anggrid%n_angles
-print*,intscheme%root;stop
+
   end subroutine init
 
   ! GAUSS
