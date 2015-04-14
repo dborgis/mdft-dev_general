@@ -361,14 +361,9 @@ module quadrature
         stop 
     end if
 
-
     N = qsu2%n
     allocate( anggrid%weight(N) ,source=qsu2%w )
     angGrid%n_angles = qsu2%n
-
-    print*,"aaaaaa"
-    print*,anggrid%n_angles
-    print*,anggrid%weight
 
   end subroutine init
 
