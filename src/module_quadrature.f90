@@ -248,25 +248,25 @@ module quadrature
       case default
         stop "order not implemented"
       end select
-    case("SDG")
+    case("SD")
       select case (qsu2%o)
       case (0)
         qsu2%x( 1) = 0._dp; qsu2%y(1)=0._dp; qsu2%z(1)=1._dp; qsu2%w(1)=1._dp
       case(1)
-        qsu2%x(1)=0;  qsu2%y(1)= 0 ; qsu2%z(1)=  1 ; qsu2%w(1)=  0.5
-        qsu2%x(2)=0;  qsu2%y(2)= 0 ; qsu2%z(2)=  -1; qsu2%w(2)=  0.5
+        qsu2%x(1)=0._dp;  qsu2%y(1)= 0._dp ; qsu2%z(1)=   1._dp  ; qsu2%w(1)=  0.5_dp 
+        qsu2%x(2)=0._dp;  qsu2%y(2)= 0._dp ; qsu2%z(2)=  -1._dp  ; qsu2%w(2)=  0.5_dp
       case(2)
-        qsu2%x(1)=0.57735026919  ;qsu2%y(1)= 0.57735026919 ;qsu2%z(1)=0.57735026919  ; qsu2%w(1)=   0.25
-        qsu2%x(2)=-0.57735026919 ;qsu2%y(2)=-0.57735026919 ;qsu2%z(2)=0.57735026919  ; qsu2%w(2)=   0.25
-        qsu2%x(3)=-0.57735026919 ;qsu2%y(3)= 0.57735026919 ;qsu2%z(3)=-0.57735026919 ; qsu2%w(3)=    0.25
-        qsu2%x(4)=0.57735026919  ;qsu2%y(4)=-0.57735026919 ;qsu2%z(4)=-0.57735026919 ; qsu2%w(4)=    0.25
+        qsu2%x(1)= 0.57735026918962573_dp  ;qsu2%y(1)= 0.57735026918962573_dp ;qsu2%z(1)= 0.57735026918962573_dp  ; qsu2%w(1)=   0.25_dp 
+        qsu2%x(2)=-0.57735026918962573_dp  ;qsu2%y(2)=-0.57735026918962573_dp ;qsu2%z(2)= 0.57735026918962573_dp  ; qsu2%w(2)=   0.25_dp
+        qsu2%x(3)=-0.57735026918962573_dp  ;qsu2%y(3)= 0.57735026918962573_dp ;qsu2%z(3)=-0.57735026918962573_dp ; qsu2%w(3)=    0.25_dp
+        qsu2%x(4)= 0.57735026918962573_dp  ;qsu2%y(4)=-0.57735026918962573_dp ;qsu2%z(4)=-0.57735026918962573_dp ; qsu2%w(4)=    0.25_dp
       case(3)
-        qsu2%x(1)=1  ;qsu2%y(1)=      0  ;qsu2%z(1)=      0 ; qsu2%w(1)=0.16666666667
-        qsu2%x(2)=0  ;qsu2%y(2)=      1  ;qsu2%z(2)=      0 ; qsu2%w(2)=0.16666666667
-        qsu2%x(3)=0  ;qsu2%y(3)=      0  ;qsu2%z(3)=      1 ; qsu2%w(3)=0.16666666667
-        qsu2%x(4)=-1 ;qsu2%y(4)=       0 ;qsu2%z(4)=      0 ; qsu2%w(4)=0.16666666667
-        qsu2%x(5)=0  ;qsu2%y(5)=     -1  ;qsu2%z(5)=      0 ; qsu2%w(5)=0.16666666667
-        qsu2%x(6)=0  ;qsu2%y(6)=      0  ;qsu2%z(6)=     -1 ; qsu2%w(6)=0.16666666667
+        qsu2%x(1)= 1._dp  ;qsu2%y(1)=      0._dp  ;qsu2%z(1)=      0._dp ; qsu2%w(1)=0.166666666666666667_dp 
+        qsu2%x(2)= 0._dp  ;qsu2%y(2)=      1._dp  ;qsu2%z(2)=      0._dp ; qsu2%w(2)=0.166666666666666667_dp
+        qsu2%x(3)= 0._dp  ;qsu2%y(3)=      0._dp  ;qsu2%z(3)=      1._dp ; qsu2%w(3)=0.166666666666666667_dp
+        qsu2%x(4)=-1._dp ;qsu2%y(4)=      0._dp  ;qsu2%z(4)=      0._dp ; qsu2%w(4)=0.166666666666666667_dp
+        qsu2%x(5)= 0._dp  ;qsu2%y(5)=     -1._dp  ;qsu2%z(5)=      0._dp ; qsu2%w(5)=0.166666666666666667_dp
+        qsu2%x(6)= 0._dp  ;qsu2%y(6)=      0._dp  ;qsu2%z(6)=     -1._dp ; qsu2%w(6)=0.166666666666666667_dp
       case(4)
          qsu2%x(1)=0  ;qsu2%y(1)=        0 ;qsu2%z(1)=         1 ;qsu2%w(1)=0.083333333333
          qsu2%x(2)=0  ;qsu2%y(2)=        0 ;qsu2%z(2)=        -1 ;qsu2%w(2)=0.083333333333
@@ -294,7 +294,7 @@ module quadrature
       case default
         stop "Spherical design quadratures of order >5 not implemented"
       end select
-
+      qsu2%w = qsu2%w * fourpi
     case default
       stop "your quadrature is not implemented."
     end select
@@ -355,7 +355,7 @@ module quadrature
         print*,"should be 2pi=",twopi
         stop 
     end if
-    if( abs( fourpi -sum(qsu2%w) ) > epsdp ) then
+    if( abs( fourpi -sum(qsu2%w) ) > 1E-10 ) then
         print*,"sum of all weights over phi theta is",sum(qsu2%w)
         print*,"should be 4pi=",fourpi
         stop 
