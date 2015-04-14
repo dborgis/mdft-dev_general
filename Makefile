@@ -70,8 +70,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/find_equilibrium_density.o\
 	$(OBJDIR)/get_final_density.o\
 	$(OBJDIR)/get_final_polarization.o\
-	$(OBJDIR)/get_gauss_legendre_integration_roots_and_weights.o\
-	$(OBJDIR)/get_lebedev_integration_roots_and_weights.o\
 	$(OBJDIR)/init_density.o\
 	$(OBJDIR)/init_external_potential.o\
 	$(OBJDIR)/init_fftw3_plans.o\
@@ -389,14 +387,6 @@ $(OBJDIR)/get_final_polarization.o:\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/get_gauss_legendre_integration_roots_and_weights.o:\
-	$(SRCDIR)/get_gauss_legendre_integration_roots_and_weights.f90\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/get_lebedev_integration_roots_and_weights.o:\
-	$(SRCDIR)/get_lebedev_integration_roots_and_weights.f90\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/init_density.o:\
