@@ -5,13 +5,13 @@ subroutine read_solute
   use precision_kinds, ONLY: i2b,dp
   use system,          ONLY: nb_solute_sites, solute, nb_species, spaceGrid
   use input,           ONLY: input_line, input_log, input_dp
-  use periodic_table,  ONLY: init_periodic_table, ptable
+!  use periodic_table,  ONLY: init_periodic_table, ptable
 
   implicit none
 
   integer :: n,i,stat
 
-  call init_periodic_table
+!  call init_periodic_table
   ! print *, ptable ( 1 ) % name
   ! open and test if input/solute.in is ok
 
