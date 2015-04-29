@@ -64,7 +64,7 @@ subroutine adhoc_corrections_to_gsolv
   nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
   write(*,'(A,F12.2)') "Solvent molecules with solute   ", nmolecule%withsolute
   write(*,'(A,F12.2)') "Solvent molecules without solute", nmolecule%bulk
-  write(*,'(A,F12.2)') "ΔN solvent", nmolecule(s)%bulk - nmolecule(s)%withsolute
+  write(*,'(A,F12.2)') "ΔN solvent", nmolecule(1)%bulk - nmolecule(1)%withsolute
   write(*,'(A,F12.7,A)') "Solvent density", solvent(1)%n0," molecule.Ang⁻³"
   write(*,'(A,F12.5,A)') "Supercell volume", product(spacegrid%length)," Ang⁻³"
 
