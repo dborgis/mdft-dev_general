@@ -18,7 +18,7 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
     nfft3= spaceGrid%n_nodes(3)
 
 
-    molRotSymOrder = input_int('molRotSymOrder')
+    molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1)
     Px = 0.0_dp
     Py = 0.0_dp
     Pz = 0.0_dp
