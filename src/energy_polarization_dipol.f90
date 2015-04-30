@@ -52,7 +52,6 @@ SUBROUTINE energy_polarization_dipol (Fint)
     END DO
     END DO
     Fint = Fint * 0.5_dp * spaceGrid%dv * solvent(1)%rho0
-
     FF = FF + Fint
 
     DEALLOCATE ( Ex, Ey, Ez )
@@ -74,6 +73,11 @@ SUBROUTINE energy_polarization_dipol (Fint)
             ALLOCATE ( weight_omx ( angGrid%n_angles ), SOURCE=angGrid%weight*Omx )
             ALLOCATE ( weight_omy ( angGrid%n_angles ), SOURCE=angGrid%weight*Omy )
             ALLOCATE ( weight_omz ( angGrid%n_angles ), SOURCE=angGrid%weight*Omz )
+!            print*,anggrid%weight
+!            print*,OMx
+!            print*,OMy
+!            print*,OMz
+!            error stop "totoalaa"
             icg = 0
             DO i =1,nfft1
                 DO j =1,nfft2
@@ -148,10 +152,10 @@ SUBROUTINE energy_polarization_dipol (Fint)
                 pxt_k = Pkx(l,m,n)
                 pyt_k = Pky(l,m,n)
                 pzt_k = Pkz(l,m,n)
-                IF ( k2(l,m,n) /= 0.0_dp) THEN
+                IF ( k2(l,m,n) > epsilon(1._dp) ) then
                     k_dot_P = ( kproj(1,l)*pxt_k + kproj(2,m)*pyt_k + kproj(3,n)*pzt_k )/ k2(l,m,n)
                 ELSE
-                    k_dot_P = CMPLX( tiny(1.0_dp),tiny(1.0_dp) ,dp )
+                    k_dot_P = CMPLX( 0._dp,0._dp ,dp )
                 END IF
                 norm_k_loc = norm_k(l,m,n)
                 call splint( xa=c_delta%x, ya=c_delta%y, y2a=c_delta%y2, n=size(c_delta%y), x=norm_k_loc, y=c_delta_loc)
