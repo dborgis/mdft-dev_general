@@ -45,6 +45,7 @@ MODULE dcf
         IF ( input_log('readDensityDensityCorrelationFunction') ) THEN
             CALL readDensityDensityCorrelationFunction
         END IF
+
         IF ( input_log('polarization') ) THEN
             IF ( input_char('polarization_order')=='dipol' ) THEN
                 CALL readPolarizationPolarizationCorrelationFunction
@@ -457,31 +458,54 @@ MODULE dcf
           WRITE(*,*)'Cant open file ',c_delta%filename,' in readPolarizationPolarizationCorrelationFunction'
           STOP
         END IF
+        open( 30, file="./output/cdelta.in")
         DO i = 1, size(c_delta%x)
           READ (13,*,IOSTAT=ios) c_delta%x(i), c_delta%y(i)
           IF (ios/=0) THEN
             WRITE(*,*)'Error while reading ',c_delta%filename, 'in readDensityDensityCorrelationFunction (c_delta)'
             STOP
           END IF
+          write(30,*) c_delta%x(i) , c_delta%y(i)
         END DO
         CLOSE (13)
+        close (30)
 
         OPEN (13, FILE=c_d%filename, IOSTAT=ios)
         IF (ios/=0) THEN
           WRITE(*,*)'Cant open file ',c_d%filename,' in readPolarizationPolarizationCorrelationFunction'
           STOP
         END IF
+        open (30, file="./output/cd.in")
         DO i = 1, size(c_d%x)
           READ (13,*,IOSTAT=ios) c_d%x(i), c_d%y(i)
           IF (ios/=0) THEN
             WRITE(*,*)'Error while reading ',c_d%filename, 'in readDensityDensityCorrelationFunction (c_d)'
             STOP
           END IF
+          write(30,*) c_d%x(i) , c_d%y(i)
         END DO
         CLOSE (13)
+        close (30)
 
         call spline( x=c_delta%x, y=c_delta%y, n=size(c_delta%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_delta%y2)
         call spline( x=c_d%x, y=c_d%y, n=size(c_d%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_d%y2)
+
+        open(14,file="output/cd_spline.dat")
+        open(15,file="output/cdelta_spline.dat")
+        block
+          real(dp) :: x_loc, y_loc
+          do i=0,2000
+            x_loc = i*0.1
+            call splint( xa=c_d%x, ya=c_d%y, y2a=c_d%y2, n=size(c_d%x), x=x_loc, y=y_loc)
+            write(14,*) x_loc, y_loc
+            call splint( xa=c_delta%x, ya=c_delta%y, y2a=c_delta%y2, n=size(c_delta%x), x=x_loc, y=y_loc)
+            write(15,*) x_loc, y_loc
+          end do
+        end block
+        close(14)
+        close(15)
+
+
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
 
 !===================================================================================================================================
@@ -536,7 +560,7 @@ MODULE dcf
         open(14,file="output/cs_spline.dat")
         block
           real(dp) :: x_loc, y_loc
-          do i=0,1000
+          do i=0,2000
             x_loc = i*0.1
             call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=nb_k, x=x_loc, y=y_loc)
             write(14,*) x_loc, y_loc
