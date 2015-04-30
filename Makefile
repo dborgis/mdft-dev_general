@@ -22,8 +22,9 @@ FC = gfortran
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -fdiagnostics-color=auto -O3 -march=native -ffast-math -funroll-loops -fimplicit-none -ffree-line-length-none 
+FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -fdiagnostics-color=auto -O3 -march=native -fimplicit-none -ffree-line-length-none #-ffpe-trap=invalid,zero,overflow# -Wall -fcheck=all -g3 -fbacktrace
 LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
+
 
 # For POINCARE:
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
