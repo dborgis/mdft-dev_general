@@ -12,7 +12,7 @@ use precision_kinds ,only: i2b, dp
 use input           ,only: input_log, input_char, input_dp
 use minimizer       ,only: FF, dF
 use system          ,only: solute
-use dcf             ,only: c_s, c_s_hs
+use dcf             ,only: c_s!, c_s_hs
 
 implicit none
 
