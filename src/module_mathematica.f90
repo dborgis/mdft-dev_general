@@ -320,20 +320,21 @@ MODULE mathematica
     ! see http://www.haoli.org/nr/bookfpdf/f3-3.pdf
     integer(i2b) :: i,k
     real(dp) :: p, qn, sig, un, u(n)
-    if(yp1>0.99e30) then
+    if(yp1>0.99e30 .or. yp1==huge(1._dp)) then
       y2(1)=0._dp
       u(1)=0._dp
     else
       y2(1)=-0.5
       u(1)=(3./(x(2)-x(1)))*((y(2)-y(1))/(x(2)-x(1))-yp1)
     end if
+    ! this next loop induces IEEE underflow and denormal
     do i=2,n-1
       sig=(x(i)-x(i-1))/(x(i+1)-x(i-1))
       p=sig*y2(i-1)+2
       y2(i)=(sig-1)/p
       u(i)=(6.*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1))-sig*u(i-1))/p
     end do
-    if (ypn>0.99e30) then
+    if (ypn>0.99e30 .or. ypn==huge(1._dp)) then
       qn=0.
       un=0.
     else
