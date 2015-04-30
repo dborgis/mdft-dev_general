@@ -112,7 +112,7 @@ implicit none
         ELSE IF ( input_char('polarization_order')=='multi' .AND. ( input_log('include_nc_coupling', defaultvalue=.false.)) ) THEN ! ( polarization_order = multi )
             CALL energy_polarization_multi_with_nccoupling(FexcPol)
         ELSE
-        STOP "You want to include polarization but the tag for polarization order is neither dipol nor multi"
+            ERROR STOP "You want to include polarization but the tag for polarization order is neither dipol nor multi"
         END IF
     END IF
 
