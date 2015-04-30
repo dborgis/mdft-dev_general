@@ -483,17 +483,14 @@ MODULE dcf
         call spline( x=c_delta%x, y=c_delta%y, n=size(c_delta%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_delta%y2)
         call spline( x=c_d%x, y=c_d%y, n=size(c_d%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_d%y2)
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
+
 !===================================================================================================================================
-
-
-
     SUBROUTINE readDensityDensityCorrelationFunction ! c(k)
       use mathematica, only: spline, splint
       use constants  , only: onedp, zerodp
         implicit none
         CHARACTER(80) :: ck_species
         INTEGER(i2b) :: ios, i
-
         ck_species = input_char('ck_species')
         IF ( ck_species == 'spc  ' ) THEN
           c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
@@ -534,19 +531,18 @@ MODULE dcf
         CLOSE(13)
         close(14)
 
-        call spline( x=c_s%x, y=c_s%y, n=size(c_s%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
+        call spline( x=c_s%x, y=c_s%y, n=nb_k, yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
 
         open(14,file="output/cs_spline.dat")
         block
           real(dp) :: x_loc, y_loc
           do i=0,1000
             x_loc = i*0.1
-            call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=size(c_s%y), x=x_loc, y=y_loc)
+            call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=nb_k, x=x_loc, y=y_loc)
             write(14,*) x_loc, y_loc
           end do
         end block
         close(14)
-
     END SUBROUTINE readDensityDensityCorrelationFunction
 
 END MODULE dcf
