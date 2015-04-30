@@ -511,6 +511,7 @@ $(OBJDIR)/module_precision_kinds.o:\
 
 $(OBJDIR)/module_quadrature.o:\
 	$(SRCDIR)/module_quadrature.f90\
+	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_precision_kinds.o

@@ -34,7 +34,7 @@ module quadrature
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine init
-
+    use mathematica, only: chop
     implicit none
     integer :: N, P, i, j
 
@@ -312,15 +312,14 @@ module quadrature
         r = sqrt(x**2+y**2)
 
         ! phi
-        phi = huge(1._dp)
         if (r <= epsdp) then
           phi = 0
         else if (y >= 0) then
-          phi = asin(y/r)
+          phi = acos(x/r)
         else if (y < 0) then
-          phi = twopi-asin(y/r)
+          phi = twopi-acos(x/r)
         else
-          stop "something is wrong with phi, this else statement should not appear"
+          error stop "something is wrong with phi, this else statement should not appear"
         end if
 
         cos_phi = cos(phi)
@@ -328,9 +327,9 @@ module quadrature
         cos_theta = cos(theta)
         sin_theta = sin(theta)
 
-        OMx(i) = cos_phi*sin_theta
-        OMy(i) = sin_phi*sin_theta
-        OMz(i) = cos_theta
+        OMx(i) = chop( cos_phi*sin_theta )
+        OMy(i) = chop( sin_phi*sin_theta )
+        OMz(i) = chop( cos_theta         )
 
         P = molrotgrid%n_angles
         if (P<=0) stop "problem sur P in module_quadrature"
