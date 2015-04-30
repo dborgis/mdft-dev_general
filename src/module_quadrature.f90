@@ -50,7 +50,8 @@ module quadrature
     molRotGrid%n_angles = input_int('nb_psi', defaultvalue=4 ) ! number of nodes for the grid over psi
     N = molrotgrid%n_angles
     print*,"Quadrature for psi : uniform"
-    print*,"Number of nodes for psi :",N
+    print*,"Number of nodes for psi :",N * molRotSymOrder
+    print*,"Thanks to symetries, we will only use this number of nodes for psi :",N
     if ( N < 1 ) stop "in module_quadrature, nb_psi, readen from input/dft.in is unphysical. critical stop."
     allocate( molRotGrid%root(N), source=0._dp)
     do concurrent (i=1:N) ! equidistant repartition between 0 and 2Pi
@@ -86,7 +87,7 @@ module quadrature
       case(9); qsu2%n=38
       case default
         print*, "Quadrature order",qsu2%o,"is not implemented with Lebedev."
-        stop
+        error stop
       end select
     case ("SD")
       select case (qsu2%o)
@@ -158,12 +159,12 @@ module quadrature
       case (0)
         qsu2%x( 1) = 0._dp; qsu2%y(1)=0._dp; qsu2%z(1)=1._dp; qsu2%w(1)=fourpi
       case (3)
-        qsu2%x( 1) =   1.0000000000000000_dp ; qsu2%y( 1) =   0.0000000000000000_dp ; qsu2%z( 1) =   0.0000000000000000_dp ; qsu2%w(1)=  2.0943951023931953_dp
-        qsu2%x( 2) =  -1.0000000000000000_dp ; qsu2%y( 2) =   0.0000000000000000_dp ; qsu2%z( 2) =   0.0000000000000000_dp ; qsu2%w(2)=  2.0943951023931953_dp
-        qsu2%x( 3) =   0.0000000000000000_dp ; qsu2%y( 3) =   1.0000000000000000_dp ; qsu2%z( 3) =   0.0000000000000000_dp ; qsu2%w(3)=  2.0943951023931953_dp
-        qsu2%x( 4) =   0.0000000000000000_dp ; qsu2%y( 4) =  -1.0000000000000000_dp ; qsu2%z( 4) =   0.0000000000000000_dp ; qsu2%w(4)=  2.0943951023931953_dp
-        qsu2%x( 5) =   0.0000000000000000_dp ; qsu2%y( 5) =   0.0000000000000000_dp ; qsu2%z( 5) =   1.0000000000000000_dp ; qsu2%w(5)=  2.0943951023931953_dp
-        qsu2%x( 6) =   0.0000000000000000_dp ; qsu2%y( 6) =   0.0000000000000000_dp ; qsu2%z( 6) =  -1.0000000000000000_dp ; qsu2%w(6)=  2.0943951023931953_dp
+        qsu2%x( 1) =  1.0_dp ; qsu2%y( 1) =  0.0_dp ; qsu2%z( 1) =  0.0_dp ; qsu2%w(1)= 2.0943951023931953_dp
+        qsu2%x( 2) = -1.0_dp ; qsu2%y( 2) =  0.0_dp ; qsu2%z( 2) =  0.0_dp ; qsu2%w(2)= 2.0943951023931953_dp
+        qsu2%x( 3) =  0.0_dp ; qsu2%y( 3) =  1.0_dp ; qsu2%z( 3) =  0.0_dp ; qsu2%w(3)= 2.0943951023931953_dp
+        qsu2%x( 4) =  0.0_dp ; qsu2%y( 4) = -1.0_dp ; qsu2%z( 4) =  0.0_dp ; qsu2%w(4)= 2.0943951023931953_dp
+        qsu2%x( 5) =  0.0_dp ; qsu2%y( 5) =  0.0_dp ; qsu2%z( 5) =  1.0_dp ; qsu2%w(5)= 2.0943951023931953_dp
+        qsu2%x( 6) =  0.0_dp ; qsu2%y( 6) =  0.0_dp ; qsu2%z( 6) = -1.0_dp ; qsu2%w(6)= 2.0943951023931953_dp
       case (5)
         qsu2%x( 1) =   1.0000000000000000_dp ; qsu2%y( 1) =   0.0000000000000000_dp ; qsu2%z( 1) =   0.0000000000000000_dp ; qsu2%w( 1) = 0.83775804095727813_dp
         qsu2%x( 2) =  -1.0000000000000000_dp ; qsu2%y( 2) =   0.0000000000000000_dp ; qsu2%z( 2) =   0.0000000000000000_dp ; qsu2%w( 2) = 0.83775804095727813_dp
@@ -268,16 +269,16 @@ module quadrature
         qsu2%x(5)= 0._dp  ;qsu2%y(5)=     -1._dp  ;qsu2%z(5)=      0._dp ; qsu2%w(5)=0.166666666666666667_dp
         qsu2%x(6)= 0._dp  ;qsu2%y(6)=      0._dp  ;qsu2%z(6)=     -1._dp ; qsu2%w(6)=0.166666666666666667_dp
       case(4)
-         qsu2%x(1)=0  ;qsu2%y(1)=        0 ;qsu2%z(1)=         1 ;qsu2%w(1)=0.083333333333
-         qsu2%x(2)=0  ;qsu2%y(2)=        0 ;qsu2%z(2)=        -1 ;qsu2%w(2)=0.083333333333
-         qsu2%x(3)=0.047060422787  ;qsu2%y(3)=  0.89318828732  ;qsu2%z(3)= 0.4472135955 ;qsu2%w(3)=  0.10416666667
-         qsu2%x(4)=0.66485623892   ;qsu2%y(4)= 0.59830275076   ;qsu2%z(4)=-0.4472135955 ;qsu2%w(4)=  0.10416666667
-         qsu2%x(5)=-0.047060422787 ;qsu2%y(5)= -0.89318828732  ;qsu2%z(5)=0.4472135955  ;qsu2%w(5)=  0.10416666667
-         qsu2%x(6)=-0.66485623892  ;qsu2%y(6)= -0.59830275076  ;qsu2%z(6)= -0.4472135955;qsu2%w(6)=  0.10416666667
-         qsu2%x(7)=-0.89318828732  ;qsu2%y(7)= 0.047060422787  ;qsu2%z(7)=0.4472135955  ;qsu2%w(7)=  0.10416666667
-         qsu2%x(8)=-0.59830275076  ;qsu2%y(8)= 0.66485623892   ;qsu2%z(8)=-0.4472135955 ;qsu2%w(8)=   0.10416666667
-         qsu2%x(9)=0.89318828732   ;qsu2%y(9)= -0.047060422787 ;qsu2%z(9)=0.4472135955  ;qsu2%w(9)=  0.10416666667
-         qsu2%x(10)=0.59830275076  ;qsu2%y(10)= -0.66485623892  ;qsu2%z(10)=-0.4472135955 ;qsu2%w(10)=   0.10416666667
+         qsu2%x(1)=0._dp  ;qsu2%y(1)= 0._dp ;qsu2%z(1)= 1._dp ;qsu2%w(1)=0.0833333333333333333_dp
+         qsu2%x(2)=0._dp  ;qsu2%y(2)= 0._dp ;qsu2%z(2)=-1._dp ;qsu2%w(2)=0.0833333333333333333_dp
+         qsu2%x(3)=0.047060422787  ;qsu2%y(3)=  0.89318828732  ;qsu2%z(3)= 0.4472135955 ;qsu2%w(3)=      0.10416666666666667_dp 
+         qsu2%x(4)=0.66485623892   ;qsu2%y(4)= 0.59830275076   ;qsu2%z(4)=-0.4472135955 ;qsu2%w(4)=      0.10416666666666667_dp
+         qsu2%x(5)=-0.047060422787 ;qsu2%y(5)= -0.89318828732  ;qsu2%z(5)=0.4472135955  ;qsu2%w(5)=      0.10416666666666667_dp
+         qsu2%x(6)=-0.66485623892  ;qsu2%y(6)= -0.59830275076  ;qsu2%z(6)= -0.4472135955;qsu2%w(6)=      0.10416666666666667_dp
+         qsu2%x(7)=-0.89318828732  ;qsu2%y(7)= 0.047060422787  ;qsu2%z(7)=0.4472135955  ;qsu2%w(7)=      0.10416666666666667_dp
+         qsu2%x(8)=-0.59830275076  ;qsu2%y(8)= 0.66485623892   ;qsu2%z(8)=-0.4472135955 ;qsu2%w(8)=      0.10416666666666667_dp
+         qsu2%x(9)=0.89318828732   ;qsu2%y(9)= -0.047060422787 ;qsu2%z(9)=0.4472135955  ;qsu2%w(9)=      0.10416666666666667_dp
+         qsu2%x(10)=0.59830275076  ;qsu2%y(10)= -0.66485623892  ;qsu2%z(10)=-0.4472135955 ;qsu2%w(10)=   0.10416666666666667_dp
       case(5)
         qsu2%x(1 )=  0.85065080835   ; qsu2%y(1 )=  0.52573111212   ; qsu2%z(1 )=  0.00000000000  ; qsu2%w(1 )=0.083333333333
         qsu2%x(2 )=  0.85065080835   ; qsu2%y(2 )=  -0.52573111212  ; qsu2%z(2 )=  0.00000000000  ; qsu2%w(2 )=0.083333333333
@@ -294,7 +295,7 @@ module quadrature
       case default
         stop "Spherical design quadratures of order >5 not implemented"
       end select
-      qsu2%w = qsu2%w * fourpi
+      qsu2%w = qsu2%w * fourpi ! tabulates weights for SD are normalized to 1
     case default
       stop "your quadrature is not implemented."
     end select
@@ -350,21 +351,32 @@ module quadrature
     end block
 
     ! Assert sum of all weights is 2pi for psi and 4pi for phi theta
-    if( abs( twopi - molrotsymorder*sum( molrotgrid%weight )) > epsdp ) then
-        print*,"sum of all weights over psi is",sum(molrotgrid%weight) *molrotsymorder
+    if( abs( twopi - molrotsymorder*sum( molrotgrid%weight )) > 10*epsdp  ) then
+        print*,"sum of all weights over psi is",sum(molrotgrid%weight) *real(molrotsymorder,dp)
         print*,"should be 2pi=",twopi
-        stop 
+        print*,"the difference is",twopi - sum(molrotgrid%weight) *real(molrotsymorder,dp)
+        print*,"epsilon machine=",epsdp
+        error stop 
     end if
-    if( abs( fourpi -sum(qsu2%w) ) > 1E-10 ) then
+
+    if( abs( fourpi -sum(qsu2%w) ) > 10*epsdp ) then
         print*,"sum of all weights over phi theta is",sum(qsu2%w)
         print*,"should be 4pi=",fourpi
-        stop 
+        print*,"the difference is",fourpi-sum(qsu2%w)
+        print*,"epsilon machine=",epsdp
+        error stop 
     end if
 
     N = qsu2%n
     allocate( anggrid%weight(N) ,source=qsu2%w )
-    angGrid%n_angles = qsu2%n
+    angGrid%n_angles = N
+    anggrid%n = anggrid%n_angles ! just a shortcut
 
+    !!!
+!    print*,"anggrid"
+!    print*,"n_angles=",anggrid%n_angles
+!    print*,"weights=",anggrid%weight
+!    error stop 'subroutine init module quadrature'
   end subroutine init
 
 end module quadrature
