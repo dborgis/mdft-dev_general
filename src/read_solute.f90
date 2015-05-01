@@ -44,11 +44,11 @@ subroutine read_solute
     solutediameterx = sqrt((solutexmax-solutexmin)**2)
     solutediametery = sqrt((soluteymax-soluteymin)**2)
     solutediameterz = sqrt((solutezmax-solutezmin)**2)
-    solutesigmaljmax = maxval(solute%site%sig)
-    spacegrid%buffer_length = input_dp("buffer_length", defaultvalue=10._dp)
-    spacegrid%length(1) = solutediameterx +2*solutesigmaljmax +2.*spacegrid%buffer_length
-    spacegrid%length(2) = solutediametery +2*solutesigmaljmax +2.*spacegrid%buffer_length
-    spacegrid%length(3) = solutediameterz +2*solutesigmaljmax +2.*spacegrid%buffer_length
+!    solutesigmaljmax = maxval(solute%site%sig)
+    spacegrid%buffer_length = input_dp("buffer_length", defaultvalue=15._dp)
+    spacegrid%length(1) = solutediameterx +2.*spacegrid%buffer_length !+2*solutesigmaljmax 
+    spacegrid%length(2) = solutediametery +2.*spacegrid%buffer_length !+2*solutesigmaljmax 
+    spacegrid%length(3) = solutediameterz +2.*spacegrid%buffer_length !+2*solutesigmaljmax 
   end block
 
 end subroutine read_solute
