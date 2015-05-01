@@ -5,7 +5,7 @@ MODULE mathematica
     PRIVATE
     PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, &
         UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode, factorial, deduce_optimal_histogram_properties, &
-        splint, spline
+        splint, spline, akima_spline
 
     CONTAINS
 
@@ -378,7 +378,7 @@ MODULE mathematica
   ! Cubic spline interpolation
   !   [Reference:] Akima, H., 1970: J. ACM, 17, 589-602.
   !-----------------------------------------------------------------------
-  pure subroutine com_interp_spline(ndim,x,y,n,x5,y5)
+  pure subroutine akima_spline(ndim,x,y,n,x5,y5)
     use precision_kinds, only: dp
     implicit none
     integer,intent(in) :: ndim         ! number of grid points
@@ -450,6 +450,6 @@ MODULE mathematica
           & + dx*dx*dx*(t(1)+t(2)-2.0d0*dydx(3))/dx21/dx21
     end do tgt
 
-  end subroutine com_interp_spline
+  end subroutine akima_spline
 
 END MODULE mathematica

@@ -10,7 +10,7 @@ SUBROUTINE output_rdf (array,filename)
 
     USE precision_kinds ,ONLY: dp, i2b, sp
     USE system          ,ONLY: nb_species, spaceGrid, solute
-    use mathematica     ,only: deduce_optimal_histogram_properties
+    use mathematica     ,only: deduce_optimal_histogram_properties, akima_spline, chop
 
     IMPLICIT NONE
 
@@ -18,7 +18,7 @@ SUBROUTINE output_rdf (array,filename)
     CHARACTER(50), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
-    INTEGER(i2b):: n,bin,nbins
+    INTEGER(i2b):: n,bin,nbins, i, j
     TYPE :: errortype
         LOGICAL :: found
         CHARACTER(180) :: msg
@@ -37,20 +37,50 @@ SUBROUTINE output_rdf (array,filename)
     ALLOCATE (rdf (nbins) ,SOURCE=0._dp)
 
 !    CALL UTest_histogram_3D
-    DO n = 1, SIZE(solute%site) ! loop over all sites of the solute
-        CALL histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
-        IF (error%found) THEN; PRINT*,error%msg; STOP; END IF
+    block
+
+    integer, parameter :: sxs = 1000
+    real(dp) :: x(nbins), xs(sxs) , rdfs(sxs), lastx
+    lastx = (real(nbins,dp)-0.5)*dr
+    
+    do i = 1, sxs
+        xs(i) = real(i-1)/sxs * lastx
+    end do
+
+    open( 12, file=trim(adjustl(filename))//"-spline")
+
+    do n = 1, size( solute%site) ! loop over all sites of the solute
+       
+        call histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
+
+        if (error%found) then
+            print*, error%msg
+            error stop
+        end if
+
         ! Write to output/rdf.out
         WRITE(10,*)'# solute site', n
         WRITE(10,*) 0._dp,0._dp ! we impose
         DO bin =1,nbins
-            WRITE(10,*) (REAL(bin,dp)-0.5_dp)*dr, rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
+            x(bin) = (real(bin,dp)-0.5_dp)*dr
+            WRITE(10,*) x(bin), rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
         END DO
         WRITE(10,*)
-    END DO
-    DEALLOCATE (rdf)
-    CLOSE(10)
 
+        call akima_spline( nbins, x, rdf, size(xs), xs, rdfs )
+
+        write(12,*) "#solute site", n
+        do i = 1, size(xs)
+            write(12,*) xs(i), chop( rdfs(i) )
+        end do
+        write(12,*)
+
+    end do
+
+    close(10)
+    close(12)
+    deallocate( rdf)
+    end block
 
     CONTAINS
 
