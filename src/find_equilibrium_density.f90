@@ -46,7 +46,7 @@ subroutine find_equilibrium_density
 !  call nlo_set_lower_bounds1(ires, opt, -huge(1._dp))
 !  call nlo_set_upper_bounds1(ires, opt,  huge(1._dp))
 
-  maxeval = input_int("maximum_iteration_nbr", defaultValue=50)
+  maxeval = input_int("maximum_iteration_nbr", defaultValue=100)
 !  call nlo_set_maxeval( ires, opt, maxeval)
 
 !  M = 1 ! default 3
@@ -68,9 +68,9 @@ BLOCK
     do iter = 1, maxeval
         call energy_and_gradient( iter) ! updates FF and dF
 
-        print*,"=========> at iter",iter,"FF,best_FF,normdF",FF,best_FF,norm2(dF)
+!        print*,"=========> at iter",iter,"FF,best_FF,normdF",FF,best_FF,norm2(dF)
         if( FF < best_FF ) then
-            print*,"FF < best_FF"
+!            print*,"FF < best_FF"
             if( abs(FF-best_FF) <= epsg ) then ! convergence reached
                 print*,"CONVERGENCE REACHED"
                 exit
@@ -79,17 +79,19 @@ BLOCK
             best_FF = FF
             best_dF = dF
             cg_vect = cg_vect - alpha*dF
-            print*,"alpha appliqué à cg_vect =",alpha
+!            print*,"alpha appliqué à cg_vect =",alpha
             alpha = alpha*1.1
-            print*,"alpha futur",alpha
+!            print*,"alpha futur",alpha
         else if( FF >= best_FF) then
-            print*,"FF >= best_FF"
-            print*,"alpha that should have been applied =",alpha
+!            print*,"FF >= best_FF"
+!            print*,"alpha that should have been applied =",alpha
             alpha = alpha/1.27
             cg_vect = best_cg_vect - alpha*best_dF
-            print*,"alpha futur =",alpha
+!            print*,"alpha futur =",alpha
         end if
     end do
+    
+    if( iter == maxeval+1 ) print*,"MAXIMUM ITERATION REACHED. CONVERGENCE NOT REACHED."
 
 END BLOCK
 !!!!!!!!!!!!
