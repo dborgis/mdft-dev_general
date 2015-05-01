@@ -1,4 +1,3 @@
-!===================================================================================================================================
 MODULE mathematica
 ! This module implements several usefull functions of Mathematica
     USE precision_kinds     ,ONLY:dp,i2b
@@ -301,6 +300,7 @@ MODULE mathematica
     integer, intent(out)  :: nbins ! number of bins
     real(dp), intent(out) :: binwidth ! width of a bin
     nbins    = ceiling( 2*real(n)**(1._dp/3._dp) ) ! Rice Rule, see http://en.wikipedia.org/wiki/Histogram
+    nbins    = nbins/2. ! @Max sans lien avec la Rice Rule mais pragmatique. Mon nombre de bins est trop grand.
     binwidth = maxrange/real(nbins,dp) ! Width of each bin of the histogram
   end subroutine deduce_optimal_histogram_properties
 
@@ -374,4 +374,82 @@ MODULE mathematica
     y=a*ya(klo)+b*ya(khi)+ ((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
   end subroutine splint
 
-END MODULE
+  !-----------------------------------------------------------------------
+  ! Cubic spline interpolation
+  !   [Reference:] Akima, H., 1970: J. ACM, 17, 589-602.
+  !-----------------------------------------------------------------------
+  pure subroutine com_interp_spline(ndim,x,y,n,x5,y5)
+    use precision_kinds, only: dp
+    implicit none
+    integer,intent(in) :: ndim         ! number of grid points
+    real(dp),intent(in) :: x(ndim) ! coordinate
+    real(dp),intent(in) :: y(ndim) ! variable
+    integer,intent(in) :: n            ! number of targets
+    real(dp),intent(in) :: x5(n)   ! target coordinates
+    real(dp),intent(out) :: y5(n)  ! target values
+    integer :: i,j,m
+    real(dp) :: dydx(5), ddydx(4), t(2), dx21, dx
+    real(dp) :: wk
+
+    tgt: do j=1,n
+      do i=1,ndim
+        if(x5(j) == x(i)) then
+          y5(j) = y(i)
+          cycle tgt
+        end if
+        if(x5(j) < x(i)) exit
+      end do
+  !       i-3   i-2   i-1    i    i+1   i+2
+  !     ---+-----+-----+---*-+-----+-----+---
+  !dydx       1     2     3     4     5
+  !ddydx         1     2     3     4
+  !t                   1     2
+      if(i==2) then
+        do m=3,5
+          dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
+        end do
+        dydx(2) = 2.0d0*dydx(3) - dydx(4)
+        dydx(1) = 2.0d0*dydx(2) - dydx(3)
+      else if(i==3) then
+        do m=2,5
+          dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
+        end do
+        dydx(1) = 2.0d0*dydx(2) - dydx(3)
+      else if(i==ndim) then
+        do m=1,3
+          dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
+        end do
+        dydx(4) = 2.0d0*dydx(3) - dydx(2)
+        dydx(5) = 2.0d0*dydx(4) - dydx(3)
+      else if(i==ndim-1) then
+        do m=1,4
+          dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
+        end do
+        dydx(5) = 2.0d0*dydx(4) - dydx(3)
+      else
+        do m=1,5
+          dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
+        end do
+      end if
+      do m=1,4
+        ddydx(m) = abs(dydx(m+1) - dydx(m))
+      end do
+      do m=1,2
+        wk = ddydx(m+2) + ddydx(m)
+        if(wk == 0) then
+          t(m) = 0.0d0
+        else
+          t(m) = (ddydx(m+2)*dydx(m+1)+ddydx(m)*dydx(m+2))/wk
+        end if
+      end do
+      dx21 = x(i)-x(i-1)
+      dx = x5(j) - x(i-1)
+      y5(j) = y(i-1) &
+          & + dx*t(1) &
+          & + dx*dx*(3.0d0*dydx(3)-2.0d0*t(1)-t(2))/dx21 &
+          & + dx*dx*dx*(t(1)+t(2)-2.0d0*dydx(3))/dx21/dx21
+    end do tgt
+
+  end subroutine com_interp_spline
+
+END MODULE mathematica
