@@ -126,8 +126,8 @@ implicit none
 !   WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
 !   iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
 IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute ad_hoc correction, i.e rho=rho_O
-    write(*,'(A,I3)') "iteration : ",iter
     write(*,'(A)')"======================================"
+    write(*,'(A,I3)')    "iteration       :",iter
     write(*,'(A,F16.8)') "FF              =",FF
     write(*,'(A,F16.8)') "norm2(dF)       =",norm2(dF)
     write(*,'(A,F16.8)') "Fext            =",Fext
