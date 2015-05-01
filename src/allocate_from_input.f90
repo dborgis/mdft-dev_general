@@ -31,11 +31,24 @@ SUBROUTINE allocate_from_input
         STOP 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
     end if
 
-    spaceGrid%n_nodes = [ input_int('nfft1', defaultvalue=int(spacegrid%length(1)*3)+1 ), &
-                          input_int('nfft2', defaultvalue=int(spacegrid%length(2)*3)+1), &
-                          input_int('nfft3', defaultvalue=int(spacegrid%length(3)*3)+1) ] ! number of grid nodes in each direction
-PRINT*,"spacegrid%length =",spacegrid%length
-PRINT*,"spacegrid%n_nodes =",spacegrid%n_nodes
+!    spaceGrid%n_nodes = [ input_int('nfft1', defaultvalue=int(spacegrid%length(1)*3)+1 ), &
+!                          input_int('nfft2', defaultvalue=int(spacegrid%length(2)*3)+1), &
+!                          input_int('nfft3', defaultvalue=int(spacegrid%length(3)*3)+1) ] ! number of grid nodes in each direction
+    block
+        integer :: n1,n2,n3
+        real(dp) :: resox, resoy, resoz
+        resox = input_dp("resox", defaultvalue=0.33_dp )
+        resoy = input_dp("resoy", defaultvalue=0.33_dp )
+        resoz = input_dp("resoz", defaultvalue=0.33_dp )
+        n1 = int(resox * spacegrid%length(1))
+        n2 = int(resoy * spacegrid%length(2))
+        n3 = int(resoz * spacegrid%length(3))
+        spacegrid%n_nodes = [n1, n2, n3]
+    end block
+
+    print*, "Box Length  :", spacegrid%length
+    print*, "Space grid  :", spacegrid%n_nodes
+    print*, "Grid resol° :", spacegrid%length / real(spacegrid%n_nodes,dp)
 
     IF (ANY( spaceGrid%n_nodes  <= 0) ) THEN
         PRINT*,'The space is divided into grid nodes. For each direction, you ask', spaceGrid%n_nodes,'node.'
