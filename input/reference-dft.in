@@ -4,9 +4,9 @@
 Lx  = 25.0
 Ly  = 25.0
 Lz  = 25.0
-nfft1 = 64
-nfft2 = 64
-nfft3 = 64
+resox = 4
+resoy = 4
+resoz = 4
 quadrature = GL
 order_of_quadrature = 2
 nb_psi = 2  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
