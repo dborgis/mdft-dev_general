@@ -4,7 +4,7 @@ subroutine output_gsitesite
   use quadrature,      only: anggrid, molrotgrid, molrotsymorder, OMx, OMy, OMz,&
                               Rotxx, Rotxy, Rotxz, Rotyx, Rotyy, Rotyz, Rotzx, Rotzy, Rotzz
   use constants,       only: zerodp, pi
-  use minimizer,       only: cg_vect
+  use minimizer,       only: cg_vect_new
   use mathematica,     only: deduce_optimal_histogram_properties
 
   implicit none
@@ -33,7 +33,7 @@ subroutine output_gsitesite
           do o=1,omax
             do p=1,pmax
               icg = icg+1
-              rho(i,j,k,o,p) = cg_vect(icg)**2 ! rho(r,o,p)/rho0
+              rho(i,j,k,o,p) = cg_vect_new(i,j,k,o,p,s)**2 ! rho(r,o,p)/rho0
             end do
           end do
         end do

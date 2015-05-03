@@ -3,7 +3,7 @@ SUBROUTINE energy_fmt (Ffmt)
   USE precision_kinds  ,ONLY: dp , i2b
   USE system           ,ONLY: thermocond, nb_species, mole_fraction, spaceGrid, solvent
   USE quadrature       ,ONLY: molRotSymOrder, angGrid, molRotGrid
-  USE minimizer        ,ONLY: cg_vect, dF
+  USE minimizer        ,ONLY: cg_vect_new, dF_new
   USE constants        ,ONLY: pi, fourPi, twopi, zeroC, zerodp, onedp, epsdp
   USE fft              ,ONLY: fftw3
   USE input            ,ONLY: input_char
@@ -37,7 +37,7 @@ SUBROUTINE energy_fmt (Ffmt)
   kT = thermocond%kbT
 
   ! in case of empty supercell
-  if( all(abs(cg_vect)<=epsdp) ) then
+  if( all(abs(cg_vect_new)<=epsdp) ) then
     Ffmt = -sum( hs%Fexc0 * mole_fraction )
     return
   end if
@@ -53,7 +53,7 @@ SUBROUTINE energy_fmt (Ffmt)
             do p=1,molRotGrid%n_angles
               icg = icg + 1
               local_density = local_density &
-                + cg_vect(icg)**2 *molRotGrid%weight(p) *angGrid%weight(o)
+                + cg_vect_new(i,j,k,o,p,s)**2 *molRotGrid%weight(p) *angGrid%weight(o)
             end do
           end do
           ! correct by *(8*pi²/n)**-1 as the integral over all orientations o and psi is 4pi and 2pi/n
@@ -182,10 +182,9 @@ SUBROUTINE energy_fmt (Ffmt)
           do o=1,angGrid%n_angles
             do p=1,molRotGrid%n_angles
               icg=icg+1
-              psi=cg_vect(icg)
-              dF(icg)=dF(icg)&
-              + 2*psi*solvent(s)%rho0*dV*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*angGrid%weight(o)*molRotGrid%weight(p)
-              ! ATTENTION J'AI MULTIPLIE PAR WEIGHT(O) QD PASSAGE A angGrid%n_angles /=1 LE 18 JUILLET 2011
+              psi=cg_vect_new(i,j,k,o,p,s)
+              dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s)&
+                  + 2*psi*solvent(s)%rho0*dV*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*angGrid%weight(o)*molRotGrid%weight(p)
             end do
           end do
         end do

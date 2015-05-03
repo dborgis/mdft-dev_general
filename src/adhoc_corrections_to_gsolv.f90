@@ -3,7 +3,7 @@ subroutine adhoc_corrections_to_gsolv
 
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, spacegrid, thermocond
-    use minimizer, only: FF , cg_vect
+    use minimizer, only: FF , cg_vect_new
     use constants, only: zerodp
     use mathematica, only: chop
     use input, only: input_log
@@ -66,13 +66,13 @@ subroutine adhoc_corrections_to_gsolv
   write(*,'(A,F12.2)') "Solvent molecules without solute", nmolecule%bulk
   write(*,'(A,F12.2)') "ΔN solvent", nmolecule(1)%bulk - nmolecule(1)%withsolute
   write(*,'(A,F12.7,A)') "Solvent density", solvent(1)%n0," molecule.Ang⁻³"
-  write(*,'(A,F12.5,A)') "Supercell volume", product(spacegrid%length)," Ang⁻³"
+  write(*,'(A,F12.5,A)') "Supercell volume", product(spacegrid%length)," Ang³"
 
 
 
   ! pressure of the bulk solvent?  GrandPotential(homogeneous system) = -PV
   ! grand potential[rho_bulk] == PV
-  cg_vect(:) = zerodp ! set Density to 0
+  cg_vect_new = zerodp ! set Density to 0
   FF = zerodp         ! set energy to 0
   call energy_and_gradient(-10) ! this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
   Pbulk = FF/product(spaceGrid%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3

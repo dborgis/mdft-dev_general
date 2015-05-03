@@ -17,7 +17,7 @@ SUBROUTINE process_output
     INTEGER(i2b) ,POINTER :: nfft1=>spaceGrid%n_nodes(1), nfft2=>spaceGrid%n_nodes(2), nfft3=>spaceGrid%n_nodes(3)
     INTEGER(i2b) :: s
 
-    CALL print_cg_vect ! print output/density.bin that contains cg_vect
+    CALL print_cg_vect_new ! print output/density.bin that contains cg_vect_new
 
     allocate ( neq (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
     do s=1,size(solvent)
@@ -110,15 +110,15 @@ SUBROUTINE process_output
 
     CONTAINS
 
-        SUBROUTINE print_cg_vect
-            USE minimizer, ONLY: cg_vect
-            if ( .not. allocated ( cg_vect ) ) then
-                print *, 'cg_vect is not allocated in SUBROUTINE print_cg_vect in process_output.f90. STOP.'
+        SUBROUTINE print_cg_vect_new
+            USE minimizer, ONLY: cg_vect_new
+            if ( .not. allocated ( cg_vect_new ) ) then
+                print *, 'cg_vect_new is not allocated in SUBROUTINE print_cg_vect_new in process_output.f90. STOP.'
                 stop
             END IF
             OPEN (10, file = 'output/density.bin.out' , form = 'unformatted' )
-                write ( 10 ) cg_vect
+                write ( 10 ) cg_vect_new
             CLOSE (10)
-        END SUBROUTINE print_cg_vect
+        END SUBROUTINE print_cg_vect_new
 
 END SUBROUTINE process_output

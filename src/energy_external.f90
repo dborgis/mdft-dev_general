@@ -4,7 +4,7 @@ subroutine energy_external (Fext)
   use precision_kinds   ,only: dp , i2b
   use system            ,only: nb_species, spaceGrid, solvent
   use quadrature        ,only: angGrid, molRotGrid
-  use minimizer         ,only: CG_vect , FF , dF
+  use minimizer         ,only: cg_vect_new , FF , dF_new
   use external_potential,only: Vext_total
   use input             ,only: input_dp
 
@@ -33,10 +33,10 @@ subroutine energy_external (Fext)
           do o = 1 , angGrid%n_angles
             do p = 1 , molRotGrid%n_angles
               icg   = icg + 1
-              psi   = cg_vect(icg)
+              psi   = cg_vect_new(i,j,k,o,p,s)
               wdfve = angGrid%weight(o) * molRotGrid%weight(p) * spaceGrid%dv * solvent(s)%rho0 * (Vext_total(i,j,k,o,p,s) - imposedChemPot)
               Fext  = Fext + psi**2 * wdfve
-              dF(icg) = dF(icg) + 2.0_dp*psi*wdfve
+              dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2.0_dp*psi*wdfve
             end do
           end do
         end do

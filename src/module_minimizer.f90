@@ -8,8 +8,7 @@ module minimizer
     character(10) :: minimizer_type ! bfgs or cg
     integer(i2b):: ncg ! nbr of variables
     real(dp):: FF ! value of the minimum found for the functional
-    real(dp), allocatable , dimension(:) :: CG_vect ! functional. It has to be a one dimensional array
-    real(dp), allocatable , dimension(:) :: dF ! gradient of the functional
+    real(dp), allocatable :: cg_vect_new(:,:,:,:,:,:), df_new(:,:,:,:,:,:)
     real(dp):: epsg
     integer(i2b) :: iter ! iteration number of the minimizer. Goes from 1 to itermax during execution.
     integer(i2b) :: itermax ! maximum number of iterations
@@ -37,20 +36,8 @@ contains
         end do
         if (i /= 0) stop "ERROR in from_cgvect_get_rho"
 
-        icg = 0
-        do s =1, nb_species
-        do i =1, spacegrid%n_nodes(1)
-        do j =1, spacegrid%n_nodes(2)
-        do k =1, spacegrid%n_nodes(3)
-        do o =1, anggrid%n_angles
-        do p =1, molrotgrid%n_angles
-        icg = icg+1
-        solvent(s)%rho(i,j,k,o,p) = cg_vect(icg)**2 *solvent(s)%rho0
-        end do
-        end do
-        end do
-        end do
-        end do
+        do concurrent( s= 1: nb_species)
+            solvent(s)%rho = cg_vect_new(:,:,:,:,:,s)**2 * solvent(s)%rho0
         end do
     end subroutine from_cgvect_get_rho
 
@@ -115,13 +102,19 @@ contains
 
         IMPLICIT NONE
 
-        ncg = PRODUCT(spaceGrid%n_nodes) * angGrid%n_angles *molRotGrid%n_angles* nb_species! total number of variables to optimize
-        !itermax=input_int('maximum_iteration_nbr',30) ! 30 iteration max by default
-        !epsg=input_dp('epsg',0.01_dp) ! kJ/mol
-        ! pgtol=input_dp('pgtol')
-        !minimizer_type = input_char('minimizer',"bfgs") ! get from input the type of minimization one wants to do
-        ALLOCATE ( cg_vect(ncg), SOURCE=0._dp )
-        ALLOCATE ( dF(ncg), SOURCE=0._dp )
+        integer :: nfft1, nfft2, nfft3, npsi, nomega
+
+        nfft1 = spacegrid%n_nodes(1)
+        nfft2 = spacegrid%n_nodes(2)
+        nfft3 = spacegrid%n_nodes(3)
+        npsi  = molrotgrid%n_angles
+        nomega = anggrid%n_angles
+
+        ncg = nfft1*nfft2*nfft3*npsi*nomega*nb_species
+
+        allocate( cg_vect_new( nfft1, nfft2, nfft3, nomega, npsi, nb_species) ,source=0._dp)
+        allocate(      df_new( nfft1, nfft2, nfft3, nomega, npsi, nb_species) ,source=0._dp)
+
         FF = 0._dp
 
     END subroutine prepare_minimizer

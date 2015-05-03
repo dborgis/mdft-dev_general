@@ -5,7 +5,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   use system,only : thermocond, nb_species, solvent, spaceGrid
   USE dcf, ONLY: c_s, nb_k ,delta_k
   use constants,only : fourpi , i_complex,twopi
-  USE minimizer, ONLY: cg_vect , FF , dF
+  USE minimizer, ONLY: cg_vect_new, FF , dF_new
   use quadrature, only: molRotSymOrder,angGrid, molRotGrid
   use fft,only : fftw3, norm_k, kx, ky, kz, k2, timesExpPrefactork2
   use input, only : input_log
@@ -22,7 +22,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   real(dp) :: fact_n ! integration factor = deltaV*n_0 = deltaV*rho_0/fourpi
 
   integer(i2b) :: icg,i,j,k,o,l,m,p ! dummy for loops
-
+  integer(i2b), parameter :: s=1
   real(dp) :: nbar ! temp for local coarse grained n
 
   real(dp), allocatable, dimension(:,:,:) :: delta_n ! =n-1
@@ -50,7 +50,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
   real(dp) :: R_cg ! radius of the coarse graining gaussian function
   real(dp) :: dF_cg_ijk ! dummy for local dF_cg
   real(dp) :: delta_n_ijk ! dummy for local delta_n
-  real(dp):: psi ! local cg_vect
+  real(dp):: psi ! local 
 
     INTEGER(i2b) :: nfft1, nfft2, nfft3
     REAL(dp) :: lx, ly, lz, deltav
@@ -99,7 +99,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
         do o=1,angGrid%n_angles
           do p=1, molRotGrid%n_angles
             icg=icg+1
-            delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect(icg) ** 2 ! sum over all orientations
+            delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect_new(i,j,k,o,p,s) ** 2 ! sum over all orientations
           END DO
         END DO
           delta_n(i,j,k)=delta_n_ijk*molRotSymOrder/(twopi*fourpi) - 1.0_dp ! normalize (n=1/fourpi int_o rho(r,o))
@@ -276,7 +276,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
     print *, 'nb_species /= 1 and this is not implemented yet in cs_plus_hydro.f90'
     stop
   END IF
-  ! compute final FF and dF
+  ! compute final FF and dF_new
   Fint = 0.0_dp
   icg = 0
   do i = 1, nfft1
@@ -288,8 +288,8 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
         do o = 1, angGrid%n_angles
           do p=1,molRotGrid%n_angles
             icg = icg + 1
-            psi = cg_vect ( icg )
-            dF (icg) = dF ( icg )+2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)/(fourpi*twopi/molRotSymOrder)*(Vint+dF_cg_ijk)
+            psi = cg_vect_new(i,j,k,o,p,s)
+            dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) +2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)/(fourpi*twopi/molRotSymOrder)*(Vint+dF_cg_ijk)
           END DO
         END DO
       END DO

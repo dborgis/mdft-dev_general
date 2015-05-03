@@ -245,6 +245,7 @@ $(OBJDIR)/adhoc_corrections_to_gsolv.o:\
 
 $(OBJDIR)/energy_and_gradient.o:\
 	$(SRCDIR)/energy_and_gradient.f90\
+	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_input.o\

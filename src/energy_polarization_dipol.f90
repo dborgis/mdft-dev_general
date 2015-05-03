@@ -3,7 +3,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
     USE precision_kinds, ONLY : i2b, dp
     USE system,          ONLY : thermocond, spaceGrid, solvent
     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid
-    USE minimizer,       ONLY : cg_vect , FF , dF
+    USE minimizer,       ONLY : cg_vect_new , FF , dF_new
     USE constants,       ONLY : twopi, zeroC
     USE fft,             ONLY : fftw3, k2, kproj, norm_k
     USE input,           ONLY : verbose
@@ -16,7 +16,8 @@ SUBROUTINE energy_polarization_dipol (Fint)
     COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: Pkx, Pky, Pkz, Ekx, Eky, Ekz
     REAL(dp) :: rho, psi, fact, Vint, Lx, Ly, Lz, Nk
     REAL(dp) :: pxt, pyt, pzt, r, Ex_tmp, Ey_tmp, Ez_tmp
-    INTEGER(i2b):: icg, i, j, k, l, m, n, o, p, nfft1, nfft2, nfft3
+    INTEGER(i2b):: i, j, k, l, m, n, o, p, nfft1, nfft2, nfft3
+    integer(i2b), parameter :: s=1
 
     nfft1 = spaceGrid%n_nodes(1); nfft2 = spaceGrid%n_nodes(2); nfft3 = spaceGrid%n_nodes(3)
     Lx = spaceGrid%length(1); Ly = spaceGrid%length(2); Lz = spaceGrid%length(3)
@@ -31,7 +32,6 @@ SUBROUTINE energy_polarization_dipol (Fint)
 
     fact = spaceGrid%dv * solvent(1)%rho0 ! integration factor
     Fint = 0.0_dp
-    icg = 0
     DO i = 1, nfft1
     DO j = 1, nfft2
     DO k = 1, nfft3
@@ -41,11 +41,10 @@ SUBROUTINE energy_polarization_dipol (Fint)
         DO o = 1 , angGrid%n_angles
             Vint = -thermocond%kbT*solvent(1)%rho0 *( Omx(o)*Ex_tmp + Omy(o)*Ey_tmp + Omz(o)*Ez_tmp ) *angGrid%weight(o)
             DO p=1 , molRotGrid%n_angles
-                icg = icg + 1
-                psi = cg_vect ( icg )
+                psi = cg_vect_new(i,j,k,o,p,s)
                 rho = psi ** 2
                 Fint = Fint + (rho - 1.0_dp) * molRotGrid%weight(p) * Vint
-                dF(icg) = dF(icg) + 2.0_dp * psi * molRotGrid%weight(p) * Vint * fact
+                dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2.0_dp * psi * molRotGrid%weight(p) * Vint * fact
             END DO
         END DO
     END DO
@@ -78,7 +77,6 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !            print*,OMy
 !            print*,OMz
 !            error stop "totoalaa"
-            icg = 0
             DO i =1,nfft1
                 DO j =1,nfft2
                     DO k = 1,nfft3
@@ -87,8 +85,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
                         pzt = 0.0_dp
                         DO o = 1 , angGrid%n_angles
                             DO p=1, molRotGrid%n_angles
-                                icg = icg + 1
-                                rho = cg_vect(icg) ** 2
+                                rho = cg_vect_new(i,j,k,o,p,s) ** 2
                                 pxt = pxt + weight_Omx(o) * molRotGrid%weight(p) * rho
                                 pyt = pyt + weight_Omy(o) * molRotGrid%weight(p) * rho
                                 pzt = pzt + weight_Omz(o) * molRotGrid%weight(p) * rho

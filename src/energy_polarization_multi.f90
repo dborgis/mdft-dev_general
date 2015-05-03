@@ -4,7 +4,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
     USE system, ONLY: thermocond, nb_species, spaceGrid, solvent
     USE dcf, ONLY: chi_l, chi_t, nb_k, delta_k
     USE quadrature,ONLY : angGrid, molRotGrid
-    USE minimizer, ONLY: cg_vect, FF, dF
+    USE minimizer, ONLY: cg_vect_new, FF, dF_new
     USE constants, ONLY : twopi, fourpi, qfact, zeroC
     USE fft, ONLY: fftw3, kx, ky, kz, k2, norm_k
     USE input, ONLY: verbose
@@ -56,7 +56,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
                     DO o=1, angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg + 1
-                            rho(i,j,k,o,p,s) = cg_vect(icg)**2 ! this is rho(r,o)/rho0
+                            rho(i,j,k,o,p,s) = cg_vect_new(i,j,k,o,p,s)**2 ! this is rho(r,o)/rho0
                         END DO
                     END DO
                 END DO
@@ -191,7 +191,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
                     DO o=1,angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg + 1
-                            dF(icg) = dF(icg) + dF_pol_tot (i,j,k,o,p,s) * cg_vect(icg) * solvent(s)%rho0 * 2.0_dp * spaceGrid%dv
+                            dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dF_pol_tot (i,j,k,o,p,s) * cg_vect_new(i,j,k,o,p,s) * solvent(s)%rho0 * 2.0_dp * spaceGrid%dv
                         END DO
                     END DO
                 END DO

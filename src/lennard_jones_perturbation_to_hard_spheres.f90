@@ -5,8 +5,8 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
     USE system          ,ONLY: v_perturbation_k,spaceGrid,nb_species, solvent, solvent, spaceGrid
-    USE quadrature      ,ONLY: angGrid
-    USE minimizer       ,ONLY: cg_vect,dF,FF
+    USE quadrature      ,ONLY: angGrid, molrotgrid
+    USE minimizer       ,ONLY: cg_vect_new, dF_new, FF
     USE constants       ,ONLY: fourpi,twopi,zeroC
     USE fft             ,ONLY: fftw3, norm_k
 
@@ -26,7 +26,8 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     REAL(dp) :: twopiolx , twopioly , twopiolz ! dummy for speeding up loops
     REAL(dp) :: potential ! dFp / drho at rho=rho_0 in order the grand potential to be zero at rho = rho_0
     REAL(dp) :: nb_molecule ! total number of hard spheres ie integral of density over all space
-    INTEGER(i2b) :: nfft1, nfft2, nfft3
+    INTEGER(i2b) :: nfft1, nfft2, nfft3, p
+    integer(i2b), parameter :: s=1
     nfft1= spaceGrid%n_nodes(1)
     nfft2= spaceGrid%n_nodes(2)
     nfft3= spaceGrid%n_nodes(3)
@@ -48,8 +49,11 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
             DO k = 1 , nfft3
                 local_density = 0.0_dp
                 DO o = 1, angGrid%n_angles ! angGrid%n_angles=1
-                    icg = icg + 1
-                    local_density = local_density + angGrid%weight (o) * cg_vect (icg) ** 2
+                    do p =1, molrotgrid%n_angles
+                        icg = icg + 1
+                        local_density = local_density + angGrid%weight (o) * cg_vect_new(i,j,k,o,p,s) ** 2
+                        error stop "psi not implemented in lennard_jones_perturbation_to_hard_spheres.f90"
+                    end do
                 END DO
                 local_density = local_density / fourpi ! correct by fourpi as the integral over all orientations o is 4pi
                 ! at the same time integrate rho_n in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
@@ -124,7 +128,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
             DO k = 1 , nfft3
                 DO o = 1 , angGrid%n_angles
                     icg = icg + 1
-                    dF(icg) = dF(icg) + 2.0_dp * cg_vect(icg) * spaceGrid%dv * v_perturbation_r(i,j,k)
+                    dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2.0_dp * cg_vect_new(i,j,k,o,p,s) * spaceGrid%dv * v_perturbation_r(i,j,k)
                 END DO
             END DO
         END DO

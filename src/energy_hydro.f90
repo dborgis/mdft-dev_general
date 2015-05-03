@@ -2,10 +2,10 @@
 SUBROUTINE energy_hydro (Fint)
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: thermocond, nb_species, spaceGrid, solvent
+    USE system              ,ONLY: thermocond, nb_species, spaceGrid, solvent, nb_species
     USE dcf                 ,ONLY: c_s, nb_k, delta_k, c_s_hs
     USE constants           ,ONLY: fourpi,i_complex,twopi,zerodp,zeroC
-    USE minimizer           ,ONLY: cg_vect , FF , dF
+    USE minimizer           ,ONLY: cg_vect_new, FF, dF_new
     USE quadrature          ,ONLY: molRotSymOrder, angGrid, molRotGrid
     USE fft                 ,ONLY: fftw3,norm_k,kx,ky,kz,k2,timesExpPrefactork2
     USE input               ,ONLY: input_log, verbose, input_dp
@@ -27,7 +27,7 @@ SUBROUTINE energy_hydro (Fint)
     REAL(dp) :: time0 , time1 ! timesteps
     REAL(dp) :: R_cg ! radius of the coarse graining gaussian function
     REAL(dp) :: a, mm, b1, b2, factn, c_s_loc, c_s_hs_loc
-    INTEGER(i2b) :: icg,i,j,k,o,l,m,p,nfft1,nfft2,nfft3
+    INTEGER(i2b) :: icg,i,j,k,o,l,m,p,nfft1,nfft2,nfft3,s
 
     CALL CPU_TIME (time0)
     !print*, c_s(1) , c_s_hs(1)
@@ -90,6 +90,7 @@ SUBROUTINE energy_hydro (Fint)
         ALLOCATE(delta_n(nfft1,nfft2,nfft3) ,SOURCE=zerodp)
         ! HERE WE WORK WITH delta_n = delta_n normalized wrt n0 = delta_n/n0 = (n-n0)/n0
         icg=0
+        s=1
         DO i=1,nfft1
             DO j=1,nfft2
                 DO k=1,nfft3
@@ -97,7 +98,7 @@ SUBROUTINE energy_hydro (Fint)
                     DO o=1,angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
                             icg = icg +1
-                            delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect(icg) ** 2 ! sum over all orientations
+                            delta_n_ijk = delta_n_ijk + angGrid%weight(o)*molRotGrid%weight(p) * cg_vect_new(i,j,k,o,p,s) ** 2 ! sum over all orientations
                         END DO
                     END DO
                     delta_n(i,j,k) = delta_n_ijk
@@ -222,10 +223,11 @@ SUBROUTINE energy_hydro (Fint)
     dF_cg = fftw3%out_backward/Nk
 
 
-    ! compute final FF and dF
+    ! compute final FF and dF_new
     BLOCK
         REAL(dp) :: aa, dF_cg_ijk, psi
         icg = 0
+        s=1
         DO i = 1, nfft1
             DO j = 1, nfft2
                 DO k = 1, nfft3
@@ -235,8 +237,8 @@ SUBROUTINE energy_hydro (Fint)
                     DO o = 1, angGrid%n_angles
                         DO p=1,molRotGrid%n_angles
                             icg = icg + 1
-                            psi = cg_vect(icg)
-                            dF (icg) = dF(icg) +2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)*aa
+                            psi = cg_vect_new(i,j,k,o,p,s)
+                            dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) +2.0_dp*psi*molRotGrid%weight(p)*angGrid%weight(o)*aa
                         END DO
                     END DO
                 END DO

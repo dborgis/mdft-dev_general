@@ -6,18 +6,22 @@ subroutine energy_and_gradient (iter)
 ! this SUBROUTINE is the one called by the minimization stuff
 ! for computing the total energy and associated gradient
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
-! dF is the gradient of FF with respect to all coordinates. Remember it is of the kind dF ( number of variables over density (ie angles etc))
+! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
 use precision_kinds ,only: i2b, dp
 use input           ,only: input_log, input_char, input_dp
-use minimizer       ,only: FF, dF
-use system          ,only: solute
+use minimizer       ,only: FF, dF_new
+use system          ,only: solute, nb_species, spacegrid
+use quadrature      ,only: anggrid, molrotgrid
 use dcf             ,only: c_s!, c_s_hs
+
+USE ENERGY, ONLY : energy_cs
 
 implicit none
 
     INTEGER(i2b), INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular, dF_loc(size(dF))
+    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
+    real(dp) :: df_loc(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),anggrid%n_angles,molrotgrid%n_angles,nb_species)
     LOGICAL :: opn
     INTEGER(i2b) :: i, exitstatus
 
@@ -33,12 +37,13 @@ implicit none
     Fexc_ck_angular = 0._dp
 
     FF=0
-    dF=0
+    dF_new=0
 
     IF (iter==1) PRINT*,
 
     CALL energy_external (Fext)
-    CALL energy_ideal (Fid)
+    CALL energy_ideal (Fid) 
+
 
     ! compute Fexc_ck_angular
     i=0
@@ -86,7 +91,7 @@ implicit none
               call energy_cs( c_s, Fexcnn, dF_loc, exitstatus)
               if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s, Fexcnn, dF_loc, exitstatus)"
               FF=FF+Fexcnn
-              dF=dF+dF_loc
+              dF_new = dF_new +dF_loc
             end if
 
         END IF
@@ -100,7 +105,7 @@ implicit none
     !   call energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)
     !   if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)"
     !   FF=FF-Ffmtcs
-    !   dF=dF-dF_loc
+    !   dF_new = dF_new -dF_loc
     ! end if
 
 
@@ -124,12 +129,12 @@ implicit none
     END IF
 
 !   WRITE(*,'(  i3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)')&
-!   iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
+!   iter,FF,norm2(dF_new),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs
 IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute ad_hoc correction, i.e rho=rho_O
     write(*,'(A)')"======================================"
     write(*,'(A,I3)')    "iteration       :",iter
     write(*,'(A,F16.8)') "FF              =",FF
-    write(*,'(A,F16.8)') "norm2(dF)       =",norm2(dF)
+    write(*,'(A,F16.8)') "norm2(dF_new)   =",norm2(dF_new)
     write(*,'(A,F16.8)') "Fext            =",Fext
     write(*,'(A,F16.8)') "Fid             =",Fid
     write(*,'(A,F16.8)') "Fexcnn          =",Fexcnn
@@ -146,11 +151,10 @@ END IF
     INQUIRE(FILE='output/iterate.dat', OPENED = opn)
     IF (.not. opn) THEN
         OPEN(111, file='output/iterate.dat')
-        WRITE(111,*) "# ",'FF  ','|dF   |','  Fext','   Fid','    Fexc/rad','    Fexc/pol','    F3B1','      F3B2','    Ffmt',&
+        WRITE(111,*) "# ",'FF  ','|dF_new   |','  Fext','   Fid','    Fexc/rad','    Fexc/pol','    F3B1','      F3B2','    Ffmt',&
         '    Ffmtcs', '  Fexc_ck_angular'
         WRITE(111,*) '#########################################################################'
     END IF
-    WRITE(111, *) iter,FF,norm2(dF),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
+    WRITE(111, *) iter,FF,norm2(dF_new),Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,Ffmt,Ffmtcs,Fexc_ck_angular
 
 END SUBROUTINE energy_and_gradient
-!===================================================================================================================================

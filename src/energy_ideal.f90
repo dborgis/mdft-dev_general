@@ -2,8 +2,8 @@
 SUBROUTINE energy_ideal (Fideal)
 
     USE precision_kinds, ONLY: i2b, dp
-    USE minimizer, ONLY: cg_vect, FF, dF
-    USE system, ONLY: thermocond, spaceGrid, solvent
+    USE minimizer, ONLY: cg_vect_new, FF, dF_new
+    USE system, ONLY: thermocond, spaceGrid, solvent, nb_species
     USE quadrature, ONLY: molRotSymOrder, angGrid, molRotGrid
 
     IMPLICIT NONE
@@ -20,17 +20,17 @@ SUBROUTINE energy_ideal (Fideal)
     Fideal = 0.0_dp! init Fideal to zero and its gradient
 
     icg = 0
-    do s = 1 , size(solvent)
+    do s = 1 , nb_species
         do i = 1 , spaceGrid%n_nodes(1)
             do j = 1 , spaceGrid%n_nodes(2)
                 do k = 1 , spaceGrid%n_nodes(3)
                     do o = 1 , angGrid%n_angles
                         do p = 1 , molRotGrid%n_angles
                             icg = icg + 1
-                            psi = CG_vect (icg)
+                            psi = cg_vect_new(i,j,k,o,p,s)
                             rho = psi**2
                             Fideal = Fideal + Fideal_local (o,p,s,rho)
-                            dF (icg) = dF (icg) + dFideal_local (o,p,s,psi,0._dp)
+                            dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dFideal_local (o,p,s,psi,0._dp)
                         END DO
                     END DO
                 END DO

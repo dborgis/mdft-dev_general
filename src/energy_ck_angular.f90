@@ -3,7 +3,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
     USE precision_kinds, ONLY : i2b, dp
     USE system,          ONLY : thermocond, spaceGrid, solvent
     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid, molRotSymOrder
-    USE minimizer,       ONLY : cg_vect, FF, dF
+    USE minimizer,       ONLY : cg_vect_new, FF, dF_new
     USE constants,       ONLY : twopi
     USE fft,             ONLY : fftw3, kx, ky, kz
     USE input,           ONLY : input_log
@@ -15,11 +15,11 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
     REAL(dp),  INTENT(OUT) :: Fexc_ck_angular ! excess part of the free energy
     REAL(dp),    PARAMETER :: root3=SQRT(3._dp),root03=SQRT(0.3_dp)
     COMPLEX(dp), PARAMETER :: imag=(0._dp,1._dp)
-    INTEGER(i2b) :: icg, i, j, k, l, m, n, o, p, o1, p1, o2, p2, nfft1, nfft2, nfft3
+    INTEGER(i2b) :: icg, i, j, k, l, m, n, o, p, o1, p1, o2, p2, nfft1, nfft2, nfft3, s
     INTEGER(i2b) :: ik, iphi, ipsi1, ipsi2, icos1, icos2
     INTEGER(i2b) :: n1, n2, n3, n4, n5
     INTEGER(i2b) :: karim
-    REAL(dp) :: chi ! chi = cg_vect(icg), chi**2 = rho, the density
+    REAL(dp) :: chi 
     REAL(dp) :: Nk, integrationFactor, local_weight
     REAL(dp) :: om1_dot_om2, k_dot_om1, k_dot_om2
     REAL(dp) :: phi12_value, psi1_value, psi2_value, cos1_value, cos2_value
@@ -41,11 +41,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
     ALLOCATE(delta_rho  (nfft1    , nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles), SOURCE=0._dp        )
     ALLOCATE(delta_rho_k(nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles), SOURCE=(0._dp,0._dp))
 
-    icg = 0
-    DO i = 1, nfft1; DO j = 1, nfft2; DO k = 1, nfft3; DO o = 1, angGrid%n_angles; DO p = 1, molRotGrid%n_angles
-        icg = icg + 1
-        delta_rho(i,j,k,o,p) = cg_vect(icg) ** 2 - 1._dp
-    END DO; END DO; END DO; END DO; END DO
+    delta_rho(i,j,k,o,p) = cg_vect_new(i,j,k,o,p,1)**2 -1._dp
 
 ! Fourier transform of delta_rho to delta_rho_k
     DO o1 = 1, angGrid%n_angles; DO p1 = 1, molRotGrid%n_angles
@@ -174,12 +170,13 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 
 ! Calculation of excess part of the free energy functional
     icg = 0
+    s = 1
     DO i = 1, nfft1; DO j = 1, nfft2; DO k = 1, nfft3; DO o = 1, angGrid%n_angles; DO p = 1, molRotGrid%n_angles
         icg = icg + 1
-        chi = cg_vect(icg)
+        chi = cg_vect_new(i,j,k,o,p,1)
         local_weight = angGrid%weight(o) * molRotGrid%weight(p)
         Fexc_ck_angular = Fexc_ck_angular + gamma(i,j,k,o,p) * (chi ** 2 - 1) * local_weight
-        dF(icg) = dF(icg) + 2._dp * chi * gamma(i,j,k,o,p) * integrationFactor * local_weight
+        dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2._dp * chi * gamma(i,j,k,o,p) * integrationFactor * local_weight
     END DO; END DO; END DO; END DO; END DO
 
     Fexc_ck_angular = Fexc_ck_angular / 2._dp * integrationFactor

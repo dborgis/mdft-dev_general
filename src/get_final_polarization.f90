@@ -3,7 +3,7 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
     USE precision_kinds,    ONLY: dp,i2b
     USE system,             ONLY: nb_species, spaceGrid
     USE constants,          ONLY: fourpi,twopi
-    USE minimizer,          ONLY: CG_vect
+    USE minimizer,          ONLY: cg_vect_new
     USE quadrature,         ONLY: Omx,Omy,Omz,angGrid,molRotGrid
     USE input,              ONLY: input_int
     
@@ -37,7 +37,7 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
                     DO o =1,angGrid%n_angles
                         DO p =1,molRotGrid%n_angles
                             icg = icg+1
-                            rho_toto = cg_vect(icg)**2 /(twopi*fourpi/molRotSymOrder)
+                            rho_toto = cg_vect_new(i,j,k,o,p,s)**2 /(twopi*fourpi/molRotSymOrder)
                             local_Px = local_Px + weight_Omx(o) * rho_toto * molRotGrid%weight(p)
                             local_Py = local_Py + weight_Omy(o) * rho_toto * molRotGrid%weight(p)
                             local_Pz = local_Pz + weight_Omz(o) * rho_toto * molRotGrid%weight(p)

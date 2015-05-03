@@ -4,14 +4,14 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
     USE system,          ONLY: spaceGrid, thermocond, nb_species, solvent
     USE dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
     USE quadrature,      ONLY: angGrid, molRotGrid, molRotSymOrder
-    USE minimizer,       ONLY: cg_vect, FF, dF
+    USE minimizer,       ONLY: cg_vect_new, FF, dF_new
     USE constants,       ONLY: twopi, fourpi, qfact
     USE fft,             ONLY: fftw3, kx, ky, kz, k2, norm_k
     USE input,           ONLY: verbose
 
     IMPLICIT NONE
     
-    INTEGER(i2b) :: icg,i,j,k,o,p,n,m,l,s,k_index,ios,kindex_in_C,d
+    INTEGER(i2b) :: i,j,k,o,p,n,m,l,s,k_index,ios,kindex_in_C,d
     INTEGER(i2b), POINTER :: nfft1=>spaceGrid%n_nodes(1),&
                              nfft2=>spaceGrid%n_nodes(2),&
                              nfft3=>spaceGrid%n_nodes(3)
@@ -37,7 +37,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     ALLOCATE ( rho_n (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
     ALLOCATE ( rho (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=0.0_dp )
-    icg = 0
     DO s=1,nb_species
         DO i=1,nfft1
             DO j=1,nfft2
@@ -45,9 +44,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                     rhon=0.0_dp
                     DO o=1,angGrid%n_angles
                         DO p=1,molRotGrid%n_angles
-                          icg = icg + 1
-                          rhon=rhon+cg_vect(icg)**2*angGrid%weight(o)*molRotGrid%weight(p)
-                          rho(i,j,k,o,p,s) = cg_vect ( icg ) ** 2
+                          rhon=rhon+cg_vect_new(i,j,k,o,p,s)**2*angGrid%weight(o)*molRotGrid%weight(p)
+                          rho(i,j,k,o,p,s) = cg_vect_new(i,j,k,o,p,s) ** 2
                         END DO
                     END DO
                     rho_n(i,j,k)=rhon-REAL(2.0_dp*twopi**2/molRotSymOrder, dp)
@@ -103,7 +101,6 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     ! compute excess energy and its gradient
     Fint = 0.0_dp ! excess energy
-    icg = 0 ! index of cg_vect
     DO s = 1 , nb_species
         fact = spaceGrid%dv * solvent(s)%rho0 ! facteur d'integration
         DO i = 1 , nfft1
@@ -112,10 +109,9 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                 Vint   = -thermocond%kbT * solvent(s)%rho0 * Vpair(i,j,k)
                     DO o = 1 , angGrid%n_angles
                         DO p=1, molRotGrid%n_angles
-                            icg=icg + 1
-                            psi=CG_vect ( icg )
+                            psi=CG_vect_new(i,j,k,o,p,s)
                             Fint=Fint+angGrid%weight(o)*fact*0.5_dp*(psi**2-1.0_dp)*Vint*molRotGrid%weight(p)
-                            dF (icg)=dF(icg)+2.0_dp*psi*angGrid%weight(o)*fact* Vint*molRotGrid%weight(p)!&
+                            dF_new(i,j,k,o,p,s)=dF_new(i,j,k,o,p,s)+2.0_dp*psi*angGrid%weight(o)*fact* Vint*molRotGrid%weight(p)
                         END DO       
                     END DO
                 END DO
@@ -297,27 +293,15 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
                 dF_pol (:,:,:,o,p,s) =fftw3%out_backward*deltaVk/(twopi)**3
             END DO
         END DO
+        dF_pol(:,:,:,:,:,s) = dF_pol(:,:,:,:,:,s) * solvent(s)%rho0
     END DO
     DEALLOCATE( dF_pol_k )
     
     !!========================================================================================================================
     !!						Allocate it for minimizing
     !!========================================================================================================================
-    icg=0
-    DO s=1, nb_species
-        DO i=1,nfft1
-            DO j=1, nfft2
-                DO k=1,nfft3
-                    DO o=1,angGrid%n_angles
-                        DO p=1, molRotGrid%n_angles
-                            icg=icg+1
-                            dF(icg)=dF(icg)+dF_pol(i,j,k,o,p,s)*cg_vect(icg)*solvent(s)%rho0*2.0_dp*spaceGrid%dv
-                        END DO
-                    END DO
-                END DO
-            END DO
-        END DO
-    END DO
+    dF_new = dF_new + dF_pol*cg_vect_new*2*spacegrid%dv
+
     !!========================================================================================================================
     !!					Check if Polarization Free energy is Real
     !!========================================================================================================================

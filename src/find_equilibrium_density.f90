@@ -4,7 +4,7 @@ subroutine find_equilibrium_density
 
   use precision_kinds,only : i2b, dp
   use input, only: input_dp, input_int, input_char
-  use minimizer, only: ncg, cg_vect, FF, dF, minimizer_type, epsg, iter
+  use minimizer, only: ncg, cg_vect_new, FF, dF_new, minimizer_type, epsg, iter
 
   implicit none
 
@@ -52,41 +52,44 @@ subroutine find_equilibrium_density
 !  M = 1 ! default 3
 !  call nlo_set_vector_storage( ires, opt, M)
 
-!  call nlo_optimize( ires, opt, cg_vect, minf)
+!  call nlo_optimize( ires, opt, cg_vect_new, minf)
 
 BLOCK
 
     ! ceci est un steepest descent de compet <= selon moi ^^
-    real(dp) :: FFold, dFF, best_cg_vect(size(cg_vect)), alpha, best_dF(size(dF)), touched, best_FF, dF_old(size(dF))
+    use quadrature, only: anggrid, molrotgrid
+    use system, only: spacegrid, nb_species
+    real(dp) :: FFold, dFF, best_cg_vect_new(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3), anggrid%n_angles, molrotgrid%n_angles,nb_species), alpha,&
+        best_dF_new(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),anggrid%n_angles,molrotgrid%n_angles,nb_species), best_FF
     real(dp), parameter :: hugedp=huge(1._dp)
 
-    dF = 0
+    dF_new = 0
     alpha = 10._dp
     FF = hugedp
     best_FF = hugedp
 
     do iter = 1, maxeval
-        call energy_and_gradient( iter) ! updates FF and dF
+        call energy_and_gradient( iter) ! updates FF and dF_new
 
-!        print*,"=========> at iter",iter,"FF,best_FF,normdF",FF,best_FF,norm2(dF)
+!        print*,"=========> at iter",iter,"FF,best_FF,normdF_new",FF,best_FF,norm2(dF_new)
         if( FF < best_FF ) then
 !            print*,"FF < best_FF"
             if( abs(FF-best_FF) <= epsg ) then ! convergence reached
                 print*,"CONVERGENCE REACHED"
                 exit
             end if
-            best_cg_vect = cg_vect
+            best_cg_vect_new = cg_vect_new
             best_FF = FF
-            best_dF = dF
-            cg_vect = cg_vect - alpha*dF
-!            print*,"alpha appliqué à cg_vect =",alpha
+            best_dF_new = dF_new
+            cg_vect_new = cg_vect_new - alpha*dF_new
+!            print*,"alpha appliqué à cg_vect_new =",alpha
             alpha = alpha*1.1
 !            print*,"alpha futur",alpha
         else if( FF >= best_FF) then
 !            print*,"FF >= best_FF"
 !            print*,"alpha that should have been applied =",alpha
             alpha = alpha/1.27
-            cg_vect = best_cg_vect - alpha*best_dF
+            cg_vect_new = best_cg_vect_new - alpha*best_dF_new
 !            print*,"alpha futur =",alpha
         end if
     end do
@@ -135,7 +138,7 @@ end subroutine find_equilibrium_density
 !subroutine myfunc(result, n, x, grad, need_gradient, f_data)
 !
 !  use precision_kinds, only: dp
-!  use minimizer      , only: cg_vect, iter, dF, FF
+!  use minimizer      , only: cg_vect_new, iter, dF_new, FF
 !
 !  implicit none
 !
@@ -145,14 +148,14 @@ end subroutine find_equilibrium_density
 !  real(dp), intent(inout) :: x(n), grad(n)
 !
 !  iter = iter + 1
-!  cg_vect = x
-!  dF = 0._dp
+!  cg_vect_new = x
+!  dF_new = 0._dp
 !
 !  PRINT*,"====================================> BEFOR ITERATION",iter
 !  call energy_and_gradient(iter)
 !
 !  if( need_gradient/=0 ) then
-!    grad = dF
+!    grad = dF_new
 !  else
 !    stop "don't you need the gradient? something's wrong in myfunc"
 !  end if

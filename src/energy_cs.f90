@@ -1,9 +1,13 @@
+module energy
+    implicit none
+contains
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
 
   use precision_kinds , only: i2b, dp
-  use system          , only: spacegrid, solvent, thermocond
+  use system          , only: spacegrid, solvent, thermocond, nb_species
   use quadrature      , only: anggrid, molrotgrid
-  use minimizer       , only: from_cgvect_get_rho, from_rho_get_n, cg_vect, deallocate_solvent_rho
+  use minimizer       , only: from_cgvect_get_rho, from_rho_get_n, cg_vect_new, deallocate_solvent_rho, dF_new
   use fft             , only: fftw3, kx, ky, kz
   use dcf             , only: cfile
   use mathematica     , only: splint
@@ -12,21 +16,23 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
   integer :: nfft1, nfft2, nfft3, i,j,k,s,icg,o,p
   real(dp), intent(out) :: Fexcnn ! what we want to compute in this routine
   real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint, k2max
-  integer, intent(inout) :: exitstatus
+  integer, intent(out) :: exitstatus
   type(cfile), intent(in) :: cs
-  real(dp), intent(out) :: dFexcnn(size(cg_vect)) ! gradient
+  real(dp), intent(out) :: dFexcnn(:,:,:,:,:,:)
 
   exitstatus=1 ! everything is fine
   nfft1 = spacegrid%n_nodes(1)
   nfft2 = spacegrid%n_nodes(2)
   nfft3 = spacegrid%n_nodes(3)
+  o = anggrid%n_angles
+  p = molrotgrid%n_angles
+ ! allocate( dFexcnn(nfft1,nfft2,nfft3,o,p,nb_species) ,source=0._dp)
   kT = thermocond%kbT
   dV = spacegrid%dV
 
   call from_cgvect_get_rho ! returns
   call from_rho_get_n      ! returns solvent(:)%n(nfft1,nfft2,nfft3)
   call deallocate_solvent_rho
-
   if( size(solvent)/=1 ) then
     exitstatus=-1
   else
@@ -58,11 +64,11 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
   fftw3%out_backward = fftw3%out_backward /(nfft1*nfft2*nfft3)
 
   ! excess free energy
+  if( nb_species /= 1 ) error stop "Only nb_species=1 implemented in energy_cs.f90"
   Fexcnn = -kT/2 *sum( (solvent(1)%n-solvent(1)%n0 )*fftw3%out_backward )*dV
 
   ! gradient
-  icg=0
-  do s=1,size(solvent)
+  do s=1,nb_species
     fact= -kT*dV*solvent(s)%rho0
     do i=1,nfft1
       do j=1,nfft2
@@ -70,9 +76,8 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
           Vint=fftw3%out_backward(i,j,k) *fact
           do o=1,anggrid%n_angles
             do p=1,molrotgrid%n_angles
-              icg=icg +1
-              psi=cg_vect(icg)
-              dFexcnn(icg)= 2*psi*anggrid%weight(o)*molrotgrid%weight(p)*Vint
+              psi=cg_vect_new(i,j,k,o,p,s)
+              dFexcnn(i,j,k,o,p,s) = 2*psi*anggrid%weight(o)*molrotgrid%weight(p)*Vint
             end do
           end do
         end do
@@ -81,3 +86,4 @@ subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
   end do
 
 end subroutine energy_cs
+end module energy

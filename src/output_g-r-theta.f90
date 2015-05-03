@@ -3,11 +3,11 @@ subroutine output_gOfRandCosTheta
   use system,          only: spacegrid, solute, solvent
   use quadrature,      only: anggrid, molrotgrid, molrotsymorder, OMx, OMy, OMz
   use constants,       only: zerodp, pi
-  use minimizer,       only: cg_vect
+  use minimizer,       only: cg_vect_new
   use mathematica,     only: deduce_optimal_histogram_properties
 
   implicit none
-  integer  :: icg,n,i,j,k,o,p,s,omax,pmax,imax,jmax,kmax,binthetamax,bintheta,binrmax,binr
+  integer  :: n,i,j,k,o,p,s,omax,pmax,imax,jmax,kmax,binthetamax,bintheta,binrmax,binr
   real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, maxrange
   real(dp), allocatable :: rho(:,:,:,:)
   real(dp), parameter :: epsdp=epsilon(1._dp)
@@ -24,14 +24,12 @@ subroutine output_gOfRandCosTheta
 
   ! Get the density per spherical angle Omega (integrate over psi)
   pmax=molrotgrid%n_angles
-  icg=0
   do s=1,size(solvent)
     do i=1,imax
       do j=1,jmax
         do k=1,kmax
           do o=1,omax
-            rho(i,j,k,o) = solvent(s)%rho0 * sum( molRotGrid%weight * cg_vect(icg+1:icg+pmax)**2 )
-            icg = icg +pmax
+            rho(i,j,k,o) = solvent(s)%rho0 * sum( molRotGrid%weight * cg_vect_new(i,j,k,o,:,s)**2 )
           end do
         end do
       end do
