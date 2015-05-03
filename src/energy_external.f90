@@ -11,10 +11,9 @@ subroutine energy_external (Fext)
   implicit none
 
   real(dp), intent(out) :: Fext
-  integer(i2b) :: icg , i , j , k , o , p,s, nfft1, nfft2, nfft3
+  integer(i2b) :: i, j, k, o, p, s, nfft1, nfft2, nfft3
   real(dp) :: psi, wdfve, imposedChemPot
 
-  Fext = 0.0_dp
   nfft1 = spacegrid%n_nodes(1)
   nfft2 = spacegrid%n_nodes(2)
   nfft3 = spacegrid%n_nodes(3)
@@ -25,25 +24,13 @@ subroutine energy_external (Fext)
 
   ! F_{ext}[\rho(\vec{r},\vec{\Omega})]=\int d \vec{r} d \vec{\Omega} V_{ext}(\vec{r},\vec{\Omega})\rho(\vec{r},\vec{\Omega})
 
-  icg = 0
-  do s = 1 , nb_species
-    do i = 1 , nfft1
-      do j = 1 , nfft2
-        do k = 1 , nfft3
-          do o = 1 , angGrid%n_angles
-            do p = 1 , molRotGrid%n_angles
-              icg   = icg + 1
-              psi   = cg_vect_new(i,j,k,o,p,s)
-              wdfve = angGrid%weight(o) * molRotGrid%weight(p) * spaceGrid%dv * solvent(s)%rho0 * (Vext_total(i,j,k,o,p,s) - imposedChemPot)
-              Fext  = Fext + psi**2 * wdfve
-              dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2.0_dp*psi*wdfve
-            end do
-          end do
-        end do
-      end do
-    end do
+  Fext = 0._dp
+  do concurrent( i=1:nfft1, j=1:nfft2, k=1:nfft3, o=1:anggrid%n_angles, p=1:molrotgrid%n_angles, s=1:nb_species )
+      psi = cg_vect_new(i,j,k,o,p,s)
+      wdfve = angGrid%weight(o) * molRotGrid%weight(p) * spaceGrid%dv * solvent(s)%rho0 * (Vext_total(i,j,k,o,p,s) - imposedChemPot)
+      Fext  = Fext + psi**2 * wdfve
+      dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2.0_dp*psi*wdfve
   end do
-
   FF = FF + Fext
 
 end subroutine energy_external
