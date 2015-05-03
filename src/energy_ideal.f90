@@ -7,46 +7,37 @@ SUBROUTINE energy_ideal (Fideal)
     USE quadrature, ONLY: molRotSymOrder, angGrid, molRotGrid
 
     IMPLICIT NONE
-    
+
     REAL(dp), INTENT(OUT) :: Fideal
-    INTEGER(i2b) :: icg , i , j , k , o , p, s! dummy for loops
+    INTEGER(i2b) :: icg , i , j , k , o , p, s, nfft1, nfft2, nfft3
     REAL(dp) :: psi ! dummy for cg_vext(i)
     REAL(dp) :: rho, rhon ! local density
     REAL(dp) :: logrho ! dummy for log(rho)
     REAL(dp) :: time0, time1
-    
+
+    nfft1 = spacegrid%n_nodes(1)
+    nfft2 = spacegrid%n_nodes(2)
+    nfft3 = spacegrid%n_nodes(3)
+
     CALL CPU_TIME (time0) ! init timer
 
     Fideal = 0.0_dp! init Fideal to zero and its gradient
-
-    icg = 0
-    do s = 1 , nb_species
-        do i = 1 , spaceGrid%n_nodes(1)
-            do j = 1 , spaceGrid%n_nodes(2)
-                do k = 1 , spaceGrid%n_nodes(3)
-                    do o = 1 , angGrid%n_angles
-                        do p = 1 , molRotGrid%n_angles
-                            icg = icg + 1
-                            psi = cg_vect_new(i,j,k,o,p,s)
-                            rho = psi**2
-                            Fideal = Fideal + Fideal_local (o,p,s,rho)
-                            dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dFideal_local (o,p,s,psi,0._dp)
-                        END DO
-                    END DO
-                END DO
-            END DO
-        END DO
-    END DO
+    do concurrent( i=1:nfft1, j=1:nfft2, k=1:nfft3, o=1:anggrid%n_angles, p=1:molrotgrid%n_angles, s=1:nb_species )
+      psi = cg_vect_new(i,j,k,o,p,s)
+      rho = psi**2
+      Fideal = Fideal + Fideal_local (o,p,s,rho)
+      dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dFideal_local (o,p,s,psi,0._dp)
+    end do
 
     Fideal = Fideal * thermocond%kbT * spaceGrid%dv ! integration factor
     FF = FF + Fideal
-    
+
     CALL CPU_TIME (time1)
 
     CONTAINS
 
 !===================================================================================================================================
-    
+
     PURE FUNCTION dFideal_local (o,p,s,psi,toadd)
         INTEGER(i2b), INTENT(IN) :: o,p,s
         REAL(dp), INTENT(IN) :: psi, toadd
@@ -59,7 +50,7 @@ SUBROUTINE energy_ideal (Fideal)
     END FUNCTION dFideal_local
 
 !===================================================================================================================================
-    
+
     PURE FUNCTION Fideal_local (o,p,s,rho)
         INTEGER(i2b), INTENT(IN) :: o,p,s
         REAL(dp), INTENT(IN) :: rho
