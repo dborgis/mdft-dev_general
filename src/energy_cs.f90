@@ -1,7 +1,8 @@
 module energy
     implicit none
+    private
+    public :: energy_cs
 contains
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
 
   use precision_kinds , only: i2b, dp
