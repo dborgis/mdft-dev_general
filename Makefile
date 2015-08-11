@@ -487,8 +487,7 @@ $(OBJDIR)/module_hardspheres.o:\
 	$(OBJDIR)/module_dcf.o
 
 $(OBJDIR)/module_input.o:\
-	$(SRCDIR)/module_input.f90\
-	$(OBJDIR)/module_precision_kinds.o
+	$(SRCDIR)/module_input.f90
 
 $(OBJDIR)/module_minimizer.o:\
 	$(SRCDIR)/module_minimizer.f90\
