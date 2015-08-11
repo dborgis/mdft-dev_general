@@ -5,13 +5,33 @@ module input
 
     use iso_c_binding, only: dp => C_DOUBLE
     implicit none
-    character(len=100), allocatable :: input_line(:) ! array containing all input lines
-    logical :: verbose
     private
-    public :: verbose, n_linesInFile, deltaAbscissa, input_line,&
+
+    character(len=100), public, allocatable :: input_line(:) ! array containing all input lines
+    logical, public :: verbose
+
+    type file_type
+        integer :: unit
+        character :: name
+        integer :: nline = -1
+        contains
+            procedure :: line_count => file_line_count
+    end type
+
+    public :: n_linesInFile, deltaAbscissa,&
               input_dp, input_int, input_log, input_char, input_dp2, input_dp3, input_int2, input_int3
 
 contains
+
+    function file_line_count(file) result (line_count)
+        class (file_type), intent(in) :: file
+        integer :: line_count
+        if (file%nline < 0) then
+            line_count = 1
+        else
+            line_count = file%nline
+        end if
+    end function file_line_count
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
