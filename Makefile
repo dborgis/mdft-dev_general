@@ -98,7 +98,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/print_input_in_output_folder.o\
 	$(OBJDIR)/print_supercell_xsf.o\
 	$(OBJDIR)/process_output.o\
-	$(OBJDIR)/put_input_in_character_array.o\
 	$(OBJDIR)/read_solute.o\
 	$(OBJDIR)/read_solvent.o\
 	$(OBJDIR)/soluteChargeDensityFromSoluteChargeCoordinates.o\
@@ -112,12 +111,12 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 # ——————————————— Global rules ———————————————
 
 all: $(EXE)
-	@ $(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
+	$(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
 
 optim: MKFLAGS = $(OPTIM)
 
 optim: $(EXE)
-	@ $(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
+	$(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
 
 debug: MKFLAGS = $(DEBUG)
 
@@ -126,6 +125,9 @@ debug: $(EXE)
 
 clean:
 	-@ rm -vf gmon.out $(EXE) $(MODDIR)/* $(OBJDIR)/* >/dev/null 2>/dev/null
+
+dot:
+	dot -Tpdf tools/mdft.dot -o mdft.pdf && evince mdft.pdf &
 
 # ——————————————— Pattern rules ———————————————
 
@@ -443,7 +445,6 @@ $(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o:\
 
 $(OBJDIR)/main.o:\
 	$(SRCDIR)/main.f90\
-	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/mean_over_orientations.o:\
 	$(SRCDIR)/mean_over_orientations.f90\
@@ -549,11 +550,6 @@ $(OBJDIR)/process_output.o:\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_hardspheres.o
-
-$(OBJDIR)/put_input_in_character_array.o:\
-	$(SRCDIR)/put_input_in_character_array.f90\
-	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/read_solute.o:\
 	$(SRCDIR)/read_solute.f90\

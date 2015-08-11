@@ -1,24 +1,28 @@
-MODULE input
+! Module dedicated to reading the input file etc.
+! It also contains the input parser.
 
-  USE precision_kinds ,ONLY: i2b,dp
-  IMPLICIT NONE
-  CHARACTER(len=100), ALLOCATABLE, DIMENSION(:) :: input_line ! array containing all input lines
-  LOGICAL :: verbose
-  PRIVATE
-  PUBLIC :: verbose, input_line, input_dp, input_int, input_log, input_char, n_linesInFile, deltaAbscissa, &
-    input_dp2, input_dp3, input_int2, input_int3
+module input
 
-CONTAINS
+    use iso_c_binding, only: dp => C_DOUBLE
+    implicit none
+    character(len=100), allocatable :: input_line(:) ! array containing all input lines
+    logical :: verbose
+    private
+    public :: verbose, n_linesInFile, deltaAbscissa, input_line,&
+              input_dp, input_int, input_log, input_char, input_dp2, input_dp3, input_int2, input_int3
+
+contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_dp (tag, defaultValue)
+  function input_dp (tag, defaultValue)
     IMPLICIT NONE
     REAL(DP) :: input_dp
     CHARACTER(*), INTENT(IN) :: tag
     REAL(DP), optional, intent(in) :: defaultValue
-    INTEGER(i2b) :: i, j
+    INTEGER :: i, j
     logical :: ifoundtag
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     ifoundtag = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
@@ -33,13 +37,14 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_dp2 (tag, defaultValue)
+  function input_dp2 (tag, defaultValue)
     IMPLICIT NONE
     REAL(DP) :: input_dp2(2)
     CHARACTER(*), INTENT(IN) :: tag
     REAL(DP), optional, intent(in) :: defaultValue(2)
-    INTEGER(i2b) :: i, j
+    INTEGER :: i, j
     logical :: ifoundtag
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     ifoundtag = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
@@ -54,13 +59,14 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_dp3 (tag, defaultValue)
+  function input_dp3 (tag, defaultValue)
     IMPLICIT NONE
     REAL(DP) :: input_dp3(3)
     CHARACTER(*), INTENT(IN) :: tag
     REAL(DP), optional, intent(in) :: defaultValue(3)
-    INTEGER(i2b) :: i, j
+    INTEGER :: i, j
     logical :: ifoundtag
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     ifoundtag = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
@@ -75,13 +81,14 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_int (tag, defaultValue)
+  function input_int (tag, defaultValue)
     IMPLICIT NONE
-    INTEGER(I2B) :: input_int
+    INTEGER :: input_int
     CHARACTER(*), INTENT(IN) :: tag
-    integer(i2b), optional, intent(in) :: defaultValue
-    INTEGER(i2b) :: i, j
+    integer, optional, intent(in) :: defaultValue
+    INTEGER :: i, j
     logical :: ifoundtag
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     ifoundtag = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
@@ -96,13 +103,14 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_int2 (tag, defaultValue)
+  function input_int2 (tag, defaultValue)
     IMPLICIT NONE
-    INTEGER(I2B) :: input_int2(2)
+    INTEGER :: input_int2(2)
     CHARACTER(*), INTENT(IN) :: tag
-    integer(i2b), optional, intent(in) :: defaultValue(2)
-    INTEGER(i2b) :: i, j
+    integer, optional, intent(in) :: defaultValue(2)
+    INTEGER :: i, j
     logical :: ifoundtag
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     ifoundtag = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
@@ -117,13 +125,14 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  PURE FUNCTION input_int3 (tag, defaultValue)
+  function input_int3 (tag, defaultValue)
     IMPLICIT NONE
-    INTEGER(I2B) :: input_int3(3)
+    INTEGER :: input_int3(3)
     CHARACTER(*), INTENT(IN) :: tag
-    integer(i2b), optional, intent(in) :: defaultValue(3)
-    INTEGER(i2b) :: i, j
+    integer, optional, intent(in) :: defaultValue(3)
+    INTEGER :: i, j
     logical :: ifoundtag
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     ifoundtag = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
@@ -144,11 +153,12 @@ CONTAINS
     CHARACTER(*), INTENT(IN) :: tag
     logical, intent(in), optional :: defaultValue
     CHARACTER :: text
-    INTEGER(i2b) :: i, j, lentag
+    INTEGER :: i, j, lentag
     logical :: found
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     found = .false.
     IF (tag=='point_charge_electrostatic') THEN
-      STOP 'The tag point_charge_electrostatic in dft.in must be renamed direct_sum since July 27th, 2014'
+      STOP 'The tag point_charge_electrostatic in input/dft.in must be renamed direct_sum since July 27th, 2014'
     END IF
     lentag = LEN(tag)
     DO i =1, SIZE( input_line)
@@ -162,7 +172,7 @@ CONTAINS
       input_log = defaultValue
       return
     else if( .not.found ) then
-      print*, "I could not find keyword '", tag,"' in ./input/dft.in"
+      print*, "I could not find keyword '", tag,"' in input/dft.in"
       print*, "It should have been there associated to logical T or F"
       stop
     end if
@@ -172,7 +182,7 @@ CONTAINS
     IF( text(1:1) == 'F' ) j = 2
     IF( text(1:1) == 'f' ) j = 2
     IF( j == 999 ) THEN
-      PRINT*, 'Problem with logical tag "', tag,' in ./input/dft.in'
+      PRINT*, 'Problem with logical tag "', tag,' in input/dft.in'
       print*, "It is here but is not logical. I read from it: '",text
       STOP
     END IF
@@ -186,13 +196,14 @@ CONTAINS
     IMPLICIT NONE
     CHARACTER(50) :: input_char
     CHARACTER(*), INTENT(IN) :: tag
-    INTEGER(i2b) :: i,j,imax,iostatint
+    INTEGER :: i,j,imax,iostatint
+    if (.not. allocated(input_line) ) call put_input_in_character_array
     j=LEN(tag)
     i=0
     imax=SIZE(input_line)
     DO i=1,imax+1
       IF (i==imax+1) THEN
-        PRINT*,"I didnt find keyword '",tag,"' in dft.in"
+        PRINT*,"I didnt find keyword '",tag,"' in input/dft.in"
         STOP
       END IF
       IF (input_line(i)(1:j)==tag .AND. input_line(i)(j+1:j+1)==' ') THEN
@@ -244,7 +255,7 @@ CONTAINS
   FUNCTION deltaAbscissa (filename)
     REAL(dp) :: abscissa, previousAbscissa, ordonates, deltaAbscissa
     CHARACTER(*), INTENT(IN) :: filename
-    INTEGER(i2b) :: i, ios, n_lines
+    INTEGER :: i, ios, n_lines
     OPEN (10, FILE=filename, IOSTAT=ios)
     IF (ios /= 0) THEN
       WRITE(*,*)"Cant open file ",filename," in FUNCTION deltaAbscissa"
@@ -293,7 +304,78 @@ CONTAINS
     END DO
     CLOSE(10)
   END FUNCTION deltaAbscissa
+!
+!
+!
+subroutine put_input_in_character_array
+    implicit none
+    integer :: i, j, k, n, n_lines, linelen ! dummy
+    character(len=100) :: text ! temporary input line
+    character(len=100), allocatable, dimension(:) :: arraytemp  ! Temporary array to stock data for resizing input_line
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    n_lines = n_linesInFile('input/dft.in')
+    allocate( input_line(n_lines), stat=i)
+    if (i /= 0) print *, "input_line: Allocation request denied"
 
-END MODULE input
+    open(unit=11, file="input/dft.in", iostat=i, status="old", action="read")
+    if ( i /= 0 ) stop "Error opening file input/dft.in"
+
+    DO i=1, n_lines
+        READ(11,'(a)') text
+        input_line (i) = trim(adjustl(text))
+    end do
+
+    close(unit=11, iostat=i)
+    if ( i /= 0 ) stop "Error closing file input/dft.in"
+
+    !  clean up comments in the lines (for instance, "option = 3 # blabla" should become "option = 3")
+    DO i = 1, n_lines
+        DO j = 1, len(text)
+            IF ( input_line (i) (j:j) == '#' ) THEN
+                DO CONCURRENT ( k=j:LEN(text) )
+                    input_line(i)(k:k) = ' '
+                end do
+                EXIT
+            end if
+        end do
+        input_line(i) = TRIM( ADJUSTL( input_line(i) ))
+    end do
+
+  !Delete blank lines and count the size of the smallest array containing initial data
+  n = 0
+  do i = 1 , n_lines
+    if ( input_line (i) (1:1) /= ' ' )  then
+      input_line (n+1) = input_line(i)
+      n = n + 1
+    endif
+  end do
+
+  !Resize input_line to the smallest size by using a temporary array
+  allocate ( arraytemp(n) , SOURCE= input_line(1:n) )
+  deallocate ( input_line )
+  allocate ( input_line (n), SOURCE= arraytemp )
+  deallocate (arraytemp)
+
+  ! now look for script information {}
+  block
+  character(100) :: txtstart, txtstop, txtstep
+  integer :: kdot(6)
+  do i=1,size(input_line)
+    linelen=len(input_line(i))
+    do j=1,linelen
+      if( input_line(i)(j:j)=="{") then ! Found some script command
+        kdot=0
+        do k=j+1,linelen
+          if( input_line(i)(k:k)=="." ) then
+            stop "{} found in input/dft.in. Scripting is not implemented yet"
+            print*,trim(adjustl(txtstart))
+          end if
+        end do
+      end if
+    end do
+  end do
+  end block
+
+END SUBROUTINE put_input_in_character_array
+
+END MODULE
