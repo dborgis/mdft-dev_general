@@ -10,7 +10,7 @@ module input
     character(len=100), public, allocatable :: input_line(:) ! array containing all input lines
     logical, public :: verbose
 
-    type file_type
+    type, public :: file_type
         integer :: unit
         character :: name
         integer :: nline = -1
