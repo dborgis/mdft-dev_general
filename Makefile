@@ -14,11 +14,17 @@ OBJDIR = obj
 FFTW_INCLUDES  = -I${HOME}/usr/include
 FFTW_LIBRARIES = -lfftw3 -lfftw3_threads -L${HOME}/usr/lib   -Wl,-rpath=${HOME}/usr/lib
 NLOPT_INCLUDES = -I${HOME}/usr/include
-NLOPT_LIBRARIES = -lnlopt -lm -L${HOME}/usr/lib  -Wl,-rpath=${HOME}/usr/lib  
+NLOPT_LIBRARIES = -lnlopt -lm -L${HOME}/usr/lib  -Wl,-rpath=${HOME}/usr/lib
 
 # ——————————————— Fortran compiler ———————————————
 
-FC = gfortran
+# If I compile on Maximilien's laptop named portmax2, then use my own special gfortran
+UNAME_N := $(shell uname -n)
+ifeq ($(UNAME_N),portmax2)
+	FC = /home/levesque/usr/gcc-6-20150809/bin/gfortran
+else
+	FC = gfortran
+endif
 
 # ——————————————— Compiling options ———————————————
 
@@ -30,7 +36,7 @@ LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
 # LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3_threads -lfftw3
 
-DEBUG = -Og -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall 
+DEBUG = -Og -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall
 # -g turns on debugging
 # -p turns on profiling
 # -Wextra turns on extra warning. It is extremely verbose.
@@ -106,7 +112,11 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/output_g-r-theta.o\
 	$(OBJDIR)/output_gsitesite.o\
 	$(OBJDIR)/module_time.o\
-	$(OBJDIR)/energy_cs.o
+	$(OBJDIR)/energy_cs.o\
+	$(OBJDIR)/grid_mod.o\
+	$(OBJDIR)/functional_mod.o\
+	$(OBJDIR)/ideal_functional_mod.o\
+	$(OBJDIR)/density_mod.o
 
 # ——————————————— Global rules ———————————————
 
@@ -139,6 +149,23 @@ $(OBJDIR)/%.o : $(SRCDIR)/%.f90
 # ——————————————— Dependence rules ———————————————
 
 $(EXE): $(FOBJ)
+
+$(OBJDIR)/density_mod.o:\
+	$(SRCDIR)/density_mod.f90\
+	$(OBJDIR)/grid_mod.o
+
+$(OBJDIR)/ideal_functional_mod.o:\
+	$(SRCDIR)/ideal_functional_mod.f90\
+	$(OBJDIR)/functional_mod.o\
+	$(OBJDIR)/grid_mod.o\
+	$(OBJDIR)/density_mod.o
+
+$(OBJDIR)/functional_mod.o:\
+	$(SRCDIR)/functional_mod.f90\
+	$(OBJDIR)/grid_mod.o
+
+$(OBJDIR)/grid_mod.o:\
+	$(SRCDIR)/grid_mod.f90
 
 $(OBJDIR)/allocate_from_input.o:\
 	$(SRCDIR)/allocate_from_input.f90\
@@ -445,6 +472,8 @@ $(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o:\
 
 $(OBJDIR)/main.o:\
 	$(SRCDIR)/main.f90\
+	$(OBJDIR)/grid_mod.o\
+	$(OBJDIR)/density_mod.o
 
 $(OBJDIR)/mean_over_orientations.o:\
 	$(SRCDIR)/mean_over_orientations.f90\
