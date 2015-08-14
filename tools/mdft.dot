@@ -1,0 +1,46 @@
+digraph g {
+#    site_site_radial_distirbution_function -> equilibrium_density
+#    solvation_free_energy -> equilibrium_deltaGrandPotential, PC_correction, PCplus_correction, charge_correction
+#    PC_correction -> HNC_pressure
+#    PCplus_correction -> HNC_pressure
+#    charge_correction -> solute_net_charge
+#    solute_net_charge -> solute_molecular_charge_distribution
+#    deltaGrandPotential -> minimizer
+#    equilibrium_deltaGrandPotential -> minimizer
+#    equilibrium_density -> minimizer
+#    density -> minimizer
+#    minimizer -> convergence_criteria, free_energy_functional_and_gradient, initial_density, density
+#    excess_functional_and_gradient -> density, direct_correlation_function, space_grid, system_size, angular_grid, boundary_conditions
+#    free_energy_functional_and_gradient -> ideal_functional_and_gradient, excess_functional_and_gradient, external_functional_and_gradient, hard_sphere_functional_and_gradient
+#    ideal_functional_and_gradient -> density, space_grid, angular_grid, temperature
+#    initial_density -> external_potential, system_size, space_grid, angular_grid, boundary_conditions
+#    external_potential -> system_size, space_grid, angular_grid, boundary_conditions, electrostatic_potential, lennard_jones_potential
+#    lennard_jones_potential -> solute_forcefield, solvent_forcefield, lennard_jones_mixing_rules
+#    electrostatic_potential -> poisson_solver
+#    poisson_solver -> solute_molecular_charge_distribution, solvent_molecular_charge_distribution, space_grid, system_size, angular_grid, boundary_conditions
+#    solute_molecular_charge_distribution -> solute_forcefield, space_grid, angular_grid, system_size
+#    solvent_molecular_charge_distribution -> solvent_forcefield, space_grid, angular_grid, system_size
+#    external_functional_and_gradient -> external_potential, system_size, space_grid, angular_grid, boundary_conditions, density
+#    hard_sphere_functional_and_gradient -> hard_sphere_diameter, temperature, hard_sphere_packingfraction, density
+#    angular_grid -> choice_angular_integration_scheme, angular_integration_order
+#    choice_angular_integration_scheme -> Lebedev_quadrature_roots_and_weights, Gauss_Legendre_quadrature_roots_and_weights, spherical_design_quadrature_roots_and_weights
+#    Gauss_Legendre_quadrature_roots_and_weights -> mmax
+#
+#    quadrature -> quadrature_roots, quadrature_weights, quadrature_name, quadrature_order
+#    quadrature_roots -> quadrature_name
+#    quadrature_roots -> lebedev_quadrature [ label = "if quadrature_name = lebedev" ]
+#    quadrature_roots -> gauss_legendre_quadrature [ label = "if quadrature_name = gauss_legendre" ]
+#    quadrature_roots -> spherical_design_quadrature [ label = "if quadrature_name = spherical_design" ]
+#    lebedev_quadrature -> lebedev_quadrature_roots, lebedev_quadrature_weights
+#    quadrature_weights -> quadrature_name
+#    quadrature_weights -> lebedev_quadrature_weights [ label = "if quadrature_name = lebedev" ]
+#    quadrature_weights -> gauss_legendre_quadrature_weights [ label = "if quadrature_name = gauss_legendre" ]
+#    quadrature_weights -> spherical_design_quadrature_weights [ label = "if quadrature_name = spherical_design" ]
+#
+    mdft -> external_potential, level_of_theory, initial_density
+    initial_density -> read_it [ label = "if given" ]
+    initial_density -> guess_from_external_potential [ label = "else"]
+    guess_from_external_potential -> external_potential
+    external_potential -> system_size, space_grid, angular_grid, boundary_conditions, electrostatic_potential, lennard_jones_potential
+
+}

@@ -1,34 +1,39 @@
 ############################
 # SUPERCELL DISCRETIZATION
 ############################
-#Lx  = 40.0
-#Ly  = 40.0
-#Lz  = 40.0
-#nfft1 = 64
+#Lx  = 50.0
+#Ly  = 50.0
+#Lz  = 50.0
+resox = 4 #pt/ang
+resoy = 4
+resoz = 2
+#nfft1 = 64 #OBSCOLET FEATURE. USE RESOX
 #nfft2 = 64
 #nfft3 = 64
-quadrature = GL
-order_of_quadrature = 1
-nb_psi = 1  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+quadrature = LE
+order_of_quadrature = 3 # LE 3/1/1 HS, LE 5/1/1 HS, LE 7/1/1 OK
+nb_psi = 3  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+molRotSymOrder = 1
+mmax=3
 
 
 ############################
 # SOLVENT DEFINITION
 ############################
-nb_implicit_species = 1
-mole_fractions
-1.0
+#nb_implicit_species = 1
+#mole_fractions
+#1.0
 
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = F
+polarization = T
 polarization_order = dipol # multi or dipol
 include_nc_coupling = F
 
 ref_bulk_density
-0.0332891
-temperature = 298
-molRotSymOrder = 1
+0.0333
+bulk_density = 0.0333
+temperature = 298.15
 
 
 ############################
@@ -44,15 +49,15 @@ ck_en_harm_sph = F
 ############################
 # SOLVER
 ############################
-minimizer = bfgs
-maximum_iteration_nbr = 50
-epsg =  0.01  # default 0.0001
+#minimizer = bfgs
+#maximum_iteration_nbr = 5
+#epsg =  0.0001  # default 0.0001
 
 
 ###########################
 #  IDEAL TERM
 ###########################
-imposed_chempot = 0.0
+#imposed_chempot = 0.0
 Linearize_entropy = F
 if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):1 or rho(r,Omega):2
 
@@ -60,14 +65,14 @@ if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):
 ############################
 # ELECTROSTATIC POTENTIAL
 ############################
-solute_charges_scale_factor = 1.0 # scales the charges of the solute. 1: does not change anything. 0: turn off all charges. 0.5: divide all charges by 2.
-poisson_solver = F # use Fourier space to get electrostatic part of external free energy
-better_poisson_solver = F # use the multipole expansion of the solvent molecular charge density
+#solute_charges_scale_factor = 1.0 # scales the charges of the solute. 1: does not change anything. 0: turn off all charges. 0.5: divide all charges by 2.
+poisson_solver = T # use Fourier space to get electrostatic part of external free energy
+better_poisson_solver = T # use the multipole expansion of the solvent molecular charge density
 direct_sum = F
 
 
 reuse_density = F
-translate_solute_to_center = T
+#translate_solute_to_center = T
 
 
 ############################
@@ -90,11 +95,8 @@ hydro_coarsegrainingradius = 2.2
 threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
-verbose = F
+verbose = T
 number_of_fftw3_threads = 1  # defines the number of posix/openmp threads fftw3 will use for all FFT
-
-
-
 
 
 # HARD SPHERICAL SOLUTE

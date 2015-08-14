@@ -1,7 +1,7 @@
 ! This SUBROUTINE computes the ideal part of the free energy functional.
 SUBROUTINE energy_ideal (Fideal)
 
-    USE precision_kinds, ONLY: i2b, dp
+    USE precision_kinds, ONLY: dp
     USE minimizer, ONLY: cg_vect_new, FF, dF_new
     USE system, ONLY: thermocond, spaceGrid, solvent, nb_species
     USE quadrature, ONLY: molRotSymOrder, angGrid, molRotGrid
@@ -9,7 +9,7 @@ SUBROUTINE energy_ideal (Fideal)
     IMPLICIT NONE
 
     REAL(dp), INTENT(OUT) :: Fideal
-    INTEGER(i2b) :: icg , i , j , k , o , p, s, nfft1, nfft2, nfft3
+    INTEGER :: icg , i , j , k , o , p, s, nfft1, nfft2, nfft3
     REAL(dp) :: psi ! dummy for cg_vext(i)
     REAL(dp) :: rho, rhon ! local density
     REAL(dp) :: logrho ! dummy for log(rho)
@@ -33,13 +33,14 @@ SUBROUTINE energy_ideal (Fideal)
     FF = FF + Fideal
 
     CALL CPU_TIME (time1)
+    print*, "IDEAL TERM BENCH:", time1-time0
 
     CONTAINS
 
 !===================================================================================================================================
 
     PURE FUNCTION dFideal_local (o,p,s,psi,toadd)
-        INTEGER(i2b), INTENT(IN) :: o,p,s
+        INTEGER, INTENT(IN) :: o,p,s
         REAL(dp), INTENT(IN) :: psi, toadd
         REAL(dp) :: dFideal_local
         IF (abs(psi) > epsilon(1._dp)) THEN
@@ -52,7 +53,7 @@ SUBROUTINE energy_ideal (Fideal)
 !===================================================================================================================================
 
     PURE FUNCTION Fideal_local (o,p,s,rho)
-        INTEGER(i2b), INTENT(IN) :: o,p,s
+        INTEGER, INTENT(IN) :: o,p,s
         REAL(dp), INTENT(IN) :: rho
         REAL(dp) :: Fideal_local
         IF (abs(rho) > epsilon(1.0_dp) ) THEN
@@ -65,7 +66,7 @@ SUBROUTINE energy_ideal (Fideal)
 !===================================================================================================================================
 
     PURE FUNCTION prefactor (o,p,s)
-        INTEGER(i2b), INTENT(IN) :: o,p,s
+        INTEGER, INTENT(IN) :: o,p,s
         REAL(dp) :: prefactor
         prefactor = angGrid%weight(o) * molRotGrid%weight(p) * solvent(s)%rho0
     END FUNCTION

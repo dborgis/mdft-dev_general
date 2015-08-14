@@ -1,0 +1,50 @@
+ala.mdft:
+FF before correction       27.13 kJ/mol
+Solvent molecules in supercell     1039.62
+P-scheme correction        -0.00 kJ/mol
+Solvent molecules with solute        1039.62
+Solvent molecules without solute     1040.89
+ΔN solvent        1.26
+Solvent density   0.0333000 molecule.Ang⁻³
+Supercell volume 31257.85922 Ang⁻³
+Bulk pressure           11268.49 atm
+PMV correction            -26.11 kJ/mol
+Pid correction              3.14 kJ/mol
+SFE ISc                     1.02 kJ/mol
+SFE ISc*                    4.15 kJ/mol
+
+asn.mdft:
+ MAXIMUM ITERATION REACHED. CONVERGENCE NOT REACHED.
+
+ FF before correction      -40.48 kJ/mol
+ Solvent molecules in supercell     1190.04
+ P-scheme correction        -0.00 kJ/mol
+ Solvent molecules with solute        1190.04
+ Solvent molecules without solute     1190.44
+ ΔN solvent        0.40
+ Solvent density   0.0333000 molecule.Ang⁻³
+ Supercell volume 35748.92550 Ang⁻³
+ Bulk pressure           11268.49 atm
+ PMV correction             -8.23 kJ/mol
+ Pid correction              0.99 kJ/mol
+ SFE ISc                   -48.71 kJ/mol
+ SFE ISc*                  -47.72 kJ/mol
+ T        298.15 K
+
+cys.mdft
+ CONVERGENCE REACHED
+
+ FF before correction       17.98 kJ/mol
+ Solvent molecules in supercell     1105.13
+ P-scheme correction         0.00 kJ/mol
+ Solvent molecules with solute        1105.13
+ Solvent molecules without solute     1106.57
+ ΔN solvent        1.45
+ Solvent density   0.0333000 molecule.Ang⁻³
+ Supercell volume 33230.46281 Ang⁻³
+ Bulk pressure           11268.49 atm
+ PMV correction            -29.88 kJ/mol
+ Pid correction              3.59 kJ/mol
+ SFE ISc                   -11.90 kJ/mol
+ SFE ISc*                   -8.31 kJ/mol
+

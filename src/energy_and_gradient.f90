@@ -8,7 +8,7 @@ subroutine energy_and_gradient (iter)
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
-use precision_kinds ,only: i2b, dp
+use precision_kinds ,only: dp
 use input           ,only: input_log, input_char, input_dp
 use minimizer       ,only: FF, dF_new
 use system          ,only: solute, nb_species, spacegrid
@@ -19,11 +19,11 @@ USE ENERGY, ONLY : energy_cs
 
 implicit none
 
-    INTEGER(i2b), INTENT(INOUT) :: iter
+    INTEGER, INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
     real(dp) :: df_loc(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),anggrid%n_angles,molrotgrid%n_angles,nb_species)
     LOGICAL :: opn
-    INTEGER(i2b) :: i, exitstatus
+    INTEGER :: i, exitstatus
 
     F3B_ww=0.0_dp
     Fext = 0._dp
@@ -41,8 +41,9 @@ implicit none
 
     IF (iter==1) PRINT*,
 
+    CALL energy_ideal (Fid)
     CALL energy_external (Fext)
-    CALL energy_ideal (Fid) 
+
 
 
     ! compute Fexc_ck_angular

@@ -116,7 +116,9 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/grid_mod.o\
 	$(OBJDIR)/functional_mod.o\
 	$(OBJDIR)/ideal_functional_mod.o\
-	$(OBJDIR)/density_mod.o
+	$(OBJDIR)/density_mod.o\
+	$(OBJDIR)/external_potential_mod.o\
+	$(OBJDIR)/external_functional_mod.o
 
 # ——————————————— Global rules ———————————————
 
@@ -149,6 +151,16 @@ $(OBJDIR)/%.o : $(SRCDIR)/%.f90
 # ——————————————— Dependence rules ———————————————
 
 $(EXE): $(FOBJ)
+
+$(OBJDIR)/external_potential_mod.o:\
+	$(SRCDIR)/external_potential_mod.f90\
+	$(OBJDIR)/grid_mod.o
+
+$(OBJDIR)/external_functional_mod.o:\
+	$(SRCDIR)/external_functional_mod.f90\
+	$(OBJDIR)/grid_mod.o\
+	$(OBJDIR)/density_mod.o\
+	$(OBJDIR)/external_potential_mod.o
 
 $(OBJDIR)/density_mod.o:\
 	$(SRCDIR)/density_mod.f90\
@@ -472,7 +484,10 @@ $(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o:\
 
 $(OBJDIR)/main.o:\
 	$(SRCDIR)/main.f90\
+	$(OBJDIR)/external_potential_mod.o\
+	$(OBJDIR)/functional_mod.o\
 	$(OBJDIR)/grid_mod.o\
+	$(OBJDIR)/ideal_functional_mod.o\
 	$(OBJDIR)/density_mod.o
 
 $(OBJDIR)/mean_over_orientations.o:\

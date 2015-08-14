@@ -377,24 +377,24 @@ subroutine put_input_in_character_array
   deallocate (arraytemp)
 
   ! now look for script information {}
-  block
-  character(100) :: txtstart, txtstop, txtstep
-  integer :: kdot(6)
-  do i=1,size(input_line)
-    linelen=len(input_line(i))
-    do j=1,linelen
-      if( input_line(i)(j:j)=="{") then ! Found some script command
-        kdot=0
-        do k=j+1,linelen
-          if( input_line(i)(k:k)=="." ) then
-            stop "{} found in input/dft.in. Scripting is not implemented yet"
-            print*,trim(adjustl(txtstart))
-          end if
-        end do
-      end if
-    end do
-  end do
-  end block
+  !block
+  !character(100) :: txtstart
+  !integer :: kdot(6)
+  !do i=1,size(input_line)
+  !  linelen=len(input_line(i))
+  !  do j=1,linelen
+  !    if( input_line(i)(j:j)=="{") then ! Found some script command
+  !      kdot=0
+  !      do k=j+1,linelen
+  !        if( input_line(i)(k:k)=="." ) then
+  !          stop "{} found in input/dft.in. Scripting is not implemented yet"
+  !          print*,trim(adjustl(txtstart))
+  !        end if
+  !      end do
+  !    end if
+  !  end do
+  !end do
+  !end block
 
 END SUBROUTINE put_input_in_character_array
 

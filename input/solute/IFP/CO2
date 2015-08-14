@@ -1,0 +1,6 @@
+CO2 : EPM2 (Harris, 1995)
+3
+#   charge  sigma   epsilon lambda  lambda  x       y       z       Z   Atom name    Surname
+1   0.6512  2.76    0.234  0.0     0.0     0.000   0.000   0.000   6   C-CO2HY
+2  -0.3256  3.03    0.67  0.0     0.0    -1.149   0.000   0.000   8   O-CO2HY
+3  -0.3256  3.03    0.67  0.0     0.0     1.149   0.000   0.000   8   O-CO2HY
