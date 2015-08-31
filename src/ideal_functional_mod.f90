@@ -26,11 +26,11 @@ contains
         do concurrent (io=1:gr%no, ix=1:gr%nx, iy=1:gr%ny, iz=1:gr%nz)
             rho = den%rho(io,ix,iy,iz)
             if (rho < eps) then
-                fid%energy = gr%tw(io)*rho_b
+                fid%energy = gr%w(io)*rho_b
                 fid%grad(io,ix,iy,iz) = 0._dp
             else
                 fid%energy = fid%energy + rho*log(rho/rho_b)-rho+rho_b
-                fid%grad(io,ix,iy,iz) = gr%tw(io)*log(rho/rho_b)
+                fid%grad(io,ix,iy,iz) = gr%w(io)*log(rho/rho_b)
                 print*, fid%grad(io,ix,iy,iz)
             end if
         end do

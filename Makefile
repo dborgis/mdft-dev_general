@@ -28,7 +28,7 @@ endif
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -fdiagnostics-color=auto -O3 -march=native -fimplicit-none -ffree-line-length-none #-ffpe-trap=invalid,zero,overflow# -Wall -fcheck=all -g3 -fbacktrace
+FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -fdiagnostics-color=auto -march=native -fimplicit-none -ffree-line-length-none #-ffpe-trap=invalid,zero,overflow# -Wall -fcheck=all -g3 -fbacktrace
 LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 
 
@@ -81,7 +81,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/init_external_potential.o\
 	$(OBJDIR)/init_fftw3_plans.o\
 	$(OBJDIR)/init_simu.o\
-	$(OBJDIR)/init_solvent_polarization.o\
 	$(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o\
 	$(OBJDIR)/main.o\
 	$(OBJDIR)/mean_over_orientations.o\
@@ -181,7 +180,6 @@ $(OBJDIR)/grid_mod.o:\
 
 $(OBJDIR)/allocate_from_input.o:\
 	$(SRCDIR)/allocate_from_input.f90\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
@@ -190,7 +188,6 @@ $(OBJDIR)/allocate_from_input.o:\
 $(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o:\
 	$(SRCDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.f90\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_mathematica.o\
@@ -204,7 +201,6 @@ $(OBJDIR)/compute_planar_density.o:\
 $(OBJDIR)/compute_purely_repulsive_potential.o:\
 	$(SRCDIR)/compute_purely_repulsive_potential.f90\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
@@ -219,7 +215,6 @@ $(OBJDIR)/output_rdf.o:\
 $(OBJDIR)/compute_vcoul_as_sum_of_pointcharges.o:\
 	$(SRCDIR)/compute_vcoul_as_sum_of_pointcharges.f90\
 	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
@@ -228,7 +223,6 @@ $(OBJDIR)/compute_vcoul_as_sum_of_pointcharges.o:\
 $(OBJDIR)/compute_vext_hard_cylinder.o:\
 	$(SRCDIR)/compute_vext_hard_cylinder.f90\
 	$(OBJDIR)/module_hardspheres.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
@@ -237,7 +231,6 @@ $(OBJDIR)/compute_vext_hard_cylinder.o:\
 $(OBJDIR)/compute_vext_hard_sphere.o:\
 	$(SRCDIR)/compute_vext_hard_sphere.f90\
 	$(OBJDIR)/module_hardspheres.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
@@ -264,7 +257,6 @@ $(OBJDIR)/compute_z_density.o:\
 
 $(OBJDIR)/convert_coordinate_into_icg.o:\
 	$(SRCDIR)/convert_coordinate_into_icg.f90\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -287,7 +279,6 @@ $(OBJDIR)/adhoc_corrections_to_gsolv.o:\
 $(OBJDIR)/energy_and_gradient.o:\
 	$(SRCDIR)/energy_and_gradient.f90\
 	$(OBJDIR)/energy_cs.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_input.o\
@@ -300,7 +291,6 @@ $(OBJDIR)/energy_ck_angular.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -308,7 +298,6 @@ $(OBJDIR)/energy_external.o:\
 	$(SRCDIR)/energy_external.f90\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_input.o
@@ -320,7 +309,6 @@ $(OBJDIR)/energy_fmt.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -328,7 +316,6 @@ $(OBJDIR)/energy_hydro.o:\
 	$(SRCDIR)/energy_hydro.f90\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_dcf.o\
@@ -338,7 +325,6 @@ $(OBJDIR)/energy_hydro.o:\
 
 $(OBJDIR)/energy_ideal.o:\
 	$(SRCDIR)/energy_ideal.f90\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_precision_kinds.o
@@ -347,7 +333,6 @@ $(OBJDIR)/energy_nn_cs_plus_nbar.o:\
 	$(SRCDIR)/energy_nn_cs_plus_nbar.f90\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_dcf.o\
@@ -362,7 +347,6 @@ $(OBJDIR)/energy_polarization_dipol.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
@@ -373,7 +357,6 @@ $(OBJDIR)/energy_polarization_multi.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
@@ -384,7 +367,6 @@ $(OBJDIR)/energy_polarization_multi_with_nccoupling.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
@@ -394,7 +376,6 @@ $(OBJDIR)/energy_threebody_faster.o:\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_precision_kinds.o
@@ -402,7 +383,6 @@ $(OBJDIR)/energy_threebody_faster.o:\
 $(OBJDIR)/external_potential_hard_walls.o:\
 	$(SRCDIR)/external_potential_hard_walls.f90\
 	$(OBJDIR)/module_hardspheres.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
@@ -418,7 +398,6 @@ $(OBJDIR)/get_final_density.o:\
 	$(SRCDIR)/get_final_density.f90\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
@@ -427,7 +406,6 @@ $(OBJDIR)/get_final_density.o:\
 $(OBJDIR)/get_final_polarization.o:\
 	$(SRCDIR)/get_final_polarization.f90\
 	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
@@ -439,14 +417,12 @@ $(OBJDIR)/init_density.o:\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/init_external_potential.o:\
 	$(SRCDIR)/init_external_potential.f90\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_mod_lj.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_system.o\
@@ -469,18 +445,12 @@ $(OBJDIR)/init_simu.o:\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_hardspheres.o
 
-$(OBJDIR)/init_solvent_polarization.o:\
-	$(SRCDIR)/init_solvent_polarization.f90\
-	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_quadrature.o
-
 $(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o:\
 	$(SRCDIR)/lennard_jones_perturbation_to_hard_spheres.f90\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_minimizer.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o
 
 $(OBJDIR)/main.o:\
@@ -493,7 +463,6 @@ $(OBJDIR)/main.o:\
 
 $(OBJDIR)/mean_over_orientations.o:\
 	$(SRCDIR)/mean_over_orientations.f90\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -506,7 +475,6 @@ $(OBJDIR)/module_dcf.o:\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_mathematica.o
@@ -538,11 +506,9 @@ $(OBJDIR)/module_minimizer.o:\
 	$(SRCDIR)/module_minimizer.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_quadrature.o
 
 $(OBJDIR)/module_mod_lj.o:\
 	$(SRCDIR)/module_mod_lj.f90\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
@@ -558,6 +524,7 @@ $(OBJDIR)/module_precision_kinds.o:\
 
 $(OBJDIR)/module_quadrature.o:\
 	$(SRCDIR)/module_quadrature.f90\
+	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_constants.o\
@@ -619,7 +586,6 @@ $(OBJDIR)/vext_total_sum.o:\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -631,7 +597,6 @@ $(OBJDIR)/write_to_cube_file.o:\
 $(OBJDIR)/module_fastPoissonSolver.o:\
 	$(SRCDIR)/module_fastPoissonSolver.f90\
 	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_system.o
 
 $(OBJDIR)/module_mathematica.o:\
@@ -642,7 +607,6 @@ $(OBJDIR)/output_g-r-theta.o:\
 	$(SRCDIR)/output_g-r-theta.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_mathematica.o
@@ -651,7 +615,6 @@ $(OBJDIR)/output_gsitesite.o:\
 	$(SRCDIR)/output_gsitesite.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_mathematica.o
@@ -663,7 +626,6 @@ $(OBJDIR)/energy_cs.o:\
 	$(SRCDIR)/energy_cs.f90\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_fft.o\
 	$(OBJDIR)/module_dcf.o\

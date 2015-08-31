@@ -8,20 +8,19 @@ subroutine energy_and_gradient (iter)
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
-use precision_kinds ,only: dp
-use input           ,only: input_log, input_char, input_dp
-use minimizer       ,only: FF, dF_new
-use system          ,only: solute, nb_species, spacegrid
-use quadrature      ,only: anggrid, molrotgrid
-use dcf             ,only: c_s!, c_s_hs
+    use precision_kinds ,only: dp
+    use input           ,only: input_log, input_char, input_dp
+    use minimizer       ,only: FF, dF_new
+    use system          ,only: solute, nb_species, grid => spacegrid
+    use dcf             ,only: c_s!, c_s_hs
 
-USE ENERGY, ONLY : energy_cs
+    USE ENERGY, ONLY : energy_cs
 
-implicit none
+    implicit none
 
     INTEGER, INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
-    real(dp) :: df_loc(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),anggrid%n_angles,molrotgrid%n_angles,nb_species)
+    real(dp) :: df_loc (grid%nx, grid%ny, grid%nz, grid%no, nb_species)
     LOGICAL :: opn
     INTEGER :: i, exitstatus
 
@@ -45,21 +44,21 @@ implicit none
     CALL energy_external (Fext)
 
 
-
-    ! compute Fexc_ck_angular
-    i=0
-    IF( input_log( "ck_angular"        , defaultvalue=.false.) ) i=i+1
-    IF( input_log( "ck_debug"          , defaultvalue=.false.) ) i=i+1
-    IF( input_log( "ck_debug_extended" , defaultvalue=.false.) ) i=i+1
-    IF( i==1 ) THEN
-        IF( input_log("ck_en_harm_sph", defaultvalue=.false.) ) STOP 'The ck_angular methods and ck_en_harm_sph are exclusive.'
-        CALL energy_ck_angular (Fexc_ck_angular)
-    ELSE IF (i>2) THEN
-        STOP 'The ck methods - ck_angular, ck_debug, ck_debug_extended are exclusive.'
-    END IF
-
-    ! compute Fexc_ck_angular en harmoniques spheres
-    IF (input_log("ck_en_harm_sph", defaultvalue=.false.) ) CALL energy_ck_en_harm_sph (Fexc_ck_angular)
+    !
+    ! ! compute Fexc_ck_angular
+    ! i=0
+    ! IF( input_log( "ck_angular"        , defaultvalue=.false.) ) i=i+1
+    ! IF( input_log( "ck_debug"          , defaultvalue=.false.) ) i=i+1
+    ! IF( input_log( "ck_debug_extended" , defaultvalue=.false.) ) i=i+1
+    ! IF( i==1 ) THEN
+    !     IF( input_log("ck_en_harm_sph", defaultvalue=.false.) ) STOP 'The ck_angular methods and ck_en_harm_sph are exclusive.'
+    !     CALL energy_ck_angular (Fexc_ck_angular)
+    ! ELSE IF (i>2) THEN
+    !     STOP 'The ck methods - ck_angular, ck_debug, ck_debug_extended are exclusive.'
+    ! END IF
+    !
+    ! ! compute Fexc_ck_angular en harmoniques spheres
+    ! IF (input_log("ck_en_harm_sph", defaultvalue=.false.) ) CALL energy_ck_en_harm_sph (Fexc_ck_angular)
 
     ! compute radial part of the excess free energy
     if (input_log('hard_sphere_fluid', defaultvalue=.false.) ) then

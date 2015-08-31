@@ -1,20 +1,12 @@
 ############################
 # SUPERCELL DISCRETIZATION
 ############################
-#Lx  = 50.0
-#Ly  = 50.0
-#Lz  = 50.0
-resox = 4 #pt/ang
-resoy = 4
-resoz = 2
-#nfft1 = 64 #OBSCOLET FEATURE. USE RESOX
-#nfft2 = 64
-#nfft3 = 64
-quadrature = LE
-order_of_quadrature = 3 # LE 3/1/1 HS, LE 5/1/1 HS, LE 7/1/1 OK
-nb_psi = 3  # rotation angle psi around the omega orientation of the gauss legendre integration. 4 for water ; 1 for stockmayer and linear molecules
+
+inputpourri = 0.1
+
+
 molRotSymOrder = 1
-mmax=3
+mmax = 2
 
 
 ############################
@@ -33,7 +25,7 @@ include_nc_coupling = F
 ref_bulk_density
 0.0333
 bulk_density = 0.0333
-temperature = 298.15
+temperature = 300.
 
 
 ############################
@@ -96,7 +88,7 @@ threebody = F
 lambda_solvent = 0.0     # This is lamda parameter for solent 3B term
 
 verbose = T
-number_of_fftw3_threads = 1  # defines the number of posix/openmp threads fftw3 will use for all FFT
+#number_of_fftw3_threads = 1  # defines the number of posix/openmp threads fftw3 will use for all FFT
 
 
 # HARD SPHERICAL SOLUTE

@@ -3,17 +3,18 @@
 ! Vext_q is the electrostatic part of Vext_total, and is pathologic (it sometimes diverges)
 ! we thus init the density not using vext, but Vext_total - Vext_q
 subroutine init_density
-  use precision_kinds,only : dp , i2b
-  use system,only : thermocond, nb_species, spaceGrid
-  use quadrature, only: angGrid, molRotGrid
-  use minimizer, ONLY: cg_vect_new
-  use external_potential,only : Vext_total , Vext_q
-  use input,only : input_log
-  use mathematica ,ONLY: chop
+
+  use precision_kinds, only : dp, i2b
+  use system, only: thermocond, nb_species, spaceGrid
+  use minimizer, only: cg_vect_new
+  use external_potential, only: Vext_total, Vext_q
+  use input, only: input_log
+  use mathematica, only: chop
 
   implicit none
+
   real(dp) :: local_density0 !> @var local_density0 is the density at a space and angular grid point
-  integer(i2b) :: i , j , k , o , p , icg ! dummy
+  integer(i2b) :: i, j, k, icg, io
   real(dp) :: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
   integer(i2b) :: species, ios, s
   logical :: exists
@@ -51,28 +52,26 @@ subroutine init_density
 !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
 
 do s = 1, nb_species
-    do p = 1, molrotgrid%n_angles
-        do o = 1, anggrid%n_angles
-            do k = 1, nfft3
-                do j = 1, nfft2
-                    do i = 1, nfft1
+    do io = 1, spacegrid%no
+        do k = 1, spacegrid%nz
+            do j = 1, spacegrid%ny
+                do i = 1, spacegrid%nx
 
-                        Vext_total_local = Vext_total (i,j,k,o,p,s)
-                        if ( allocated ( Vext_q ) ) then
-                            Vext_total_local_min_Vext_q = Vext_total_local - Vext_q (i,j,k,o,p,s)
-                        ELSE
-                            Vext_total_local_min_Vext_q = Vext_total_local
-                        END IF
-                    
-                        if ( Vext_total_local >= 100.0_dp .or. Vext_total_local_min_Vext_q >= 100.0_dp ) then
-                            local_density0 = 0.0_dp!tiny ( 0.0_dp ) ! Don't put 0 as it induces problems in the calculations of log(density) in ideal part of F.
-                        ELSE
-                            local_density0 = chop( EXP(- thermocond%beta * Vext_total_local_min_Vext_q ) )
-                        END IF
-                        ! put result in cg_vect_new. note that we do prefer to minimize sqrt(density) than the density in order to avoid sign problems
-                        cg_vect_new(i,j,k,o,p,s) = chop( sqrt( local_density0) )
-                        
-                    end do
+                    Vext_total_local = Vext_total (i,j,k,io,s)
+                    if ( allocated( Vext_q) ) then
+                        Vext_total_local_min_Vext_q = Vext_total_local - Vext_q (i,j,k,io,s)
+                    else
+                        Vext_total_local_min_Vext_q = Vext_total_local
+                    end if
+
+                    if ( Vext_total_local >= 100.0_dp .or. Vext_total_local_min_Vext_q >= 100.0_dp ) then
+                        local_density0 = 0.0_dp!tiny ( 0.0_dp ) ! Don't put 0 as it induces problems in the calculations of log(density) in ideal part of F.
+                    ELSE
+                        local_density0 = chop( EXP(- thermocond%beta * Vext_total_local_min_Vext_q ) )
+                    END IF
+                    ! put result in cg_vect_new. note that we do prefer to minimize sqrt(density) than the density in order to avoid sign problems
+                    cg_vect_new(i,j,k,io,s) = chop( sqrt( local_density0) )
+
                 end do
             end do
         end do

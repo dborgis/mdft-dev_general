@@ -1,49 +1,47 @@
 ! This SUBROUTINE computes the external potential. It is one of the most time consuming routine.
 !Warning there are two ways of calculating the electrostatic potential (Poisson solver and point charge) you should always have one tag
-!T and one tag F for the electrostatic potential, if thera are 2 tags T, it is the last evaluation which counts, i.e Poisson solver. 
+!T and one tag F for the electrostatic potential, if thera are 2 tags T, it is the last evaluation which counts, i.e Poisson solver.
 
 SUBROUTINE init_external_potential
 
-    USE precision_kinds     ,ONLY: dp , i2b
-    USE input               ,ONLY: input_log, input_char
-    USE system              ,ONLY: solute, spaceGrid, nb_species, solvent
-    USE external_potential  ,ONLY: Vext_total, Vext_q, vextdef0, vextdef1
-    USE mod_lj              ,ONLY: init_lennardjones => init
-    USE quadrature          ,ONLY: angGrid, molRotGrid
-    USE constants           ,ONLY: zerodp=>zero
-    USE fastPoissonSolver   ,ONLY: start_fastPoissonSolver=>init
-    
+    USE precision_kinds     ,only: dp, i2b
+    USE input               ,only: input_log, input_char
+    USE system              ,only: solute, spaceGrid, nb_species, solvent
+    USE external_potential  ,only: Vext_total, Vext_q, vextdef0, vextdef1
+    USE mod_lj              ,only: init_lennardjones => init
+    USE fastPoissonSolver   ,only: start_fastPoissonSolver => init
+
     IMPLICIT NONE
-    
-    INTEGER(i2b) :: nfft(3),i,j,k,o,p,s
+
+    INTEGER(i2b) :: nx, ny, nz, no, nfft(3), i,j,k,o,s, ns
     type errType
         integer(i2b) :: i
         character(180) :: msg
     end type errType
     type (errType) :: er
+    real(dp), parameter :: zerodp = 0._dp
 
     nfft = spaceGrid%n_nodes
     i = spacegrid%n_nodes(1)
     j = spacegrid%n_nodes(2)
     k = spacegrid%n_nodes(3)
-    o = angGrid%n_angles
-    p = molRotGrid%n_angles
+    o = spacegrid%no
     s = size(solvent)
 
-    allocate ( Vext_total(i,j,k,o,p,s), SOURCE=zerodp ,STAT=er%i,ERRMSG=er%msg)
+    allocate ( Vext_total(i,j,k,o,s), SOURCE=zerodp ,STAT=er%i,ERRMSG=er%msg)
     if (er%i/=0) then
         print*,"Reported error is:", er%msg
         stop "I can't allocate Vext_total in init_external_potential.f90:init_external_potential"
     end if
 
     do s = 1, size(solvent)
-        allocate ( solvent(s)%vext(i,j,k,o,p), stat=er%i, errmsg=er%msg )
+        allocate ( solvent(s)%vext(i,j,k,o), stat=er%i, errmsg=er%msg )
         if (er%i/=0) then
             print*,"Reported error is:", er%msg
             stop "I can't allocate solvent(:)%vext in init_external_potential.f90:init_external_potential"
         end if
     end do
-    
+
     CALL external_potential_hard_walls ! HARD WALLS
 
     CALL init_electrostatic_potential ! ELECTROSTATIC POTENTIAL
@@ -58,12 +56,12 @@ SUBROUTINE init_external_potential
     IF (input_char('other_predefined_vext')=='vextdef1') CALL vextdef1
 
     CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
-    
+
     CALL prevent_numerical_catastrophes
 
 !~ STOP "OH MY GOD"
-    
-    
+
+
     CONTAINS
 
 !===================================================================================================================================
@@ -71,7 +69,7 @@ SUBROUTINE init_external_potential
         SUBROUTINE init_electrostatic_potential
 
             IMPLICIT NONE
-            INTEGER(i2b) :: i,al(6)
+            INTEGER(i2b) :: i, nx, ny, nz, no, ns
             CHARACTER(180) :: j
 
             IF ( input_log('direct_sum') .AND. input_log('poisson_solver')) THEN
@@ -79,9 +77,16 @@ SUBROUTINE init_external_potential
             END IF
 
             ! ALLOCATE THE ELECTROSTATIC POTENTIAL
-            al(1:3) = nfft(1:3); al(4) = angGrid%n_angles; al(5) = molRotGrid%n_angles; al(6) = nb_species
-            ALLOCATE ( vext_q (al(1),al(2),al(3),al(4),al(5),al(6)), SOURCE=zerodp ,STAT=i, ERRMSG=j)
-                IF (i/=0) THEN; PRINT j; STOP "I cant allocate vext_q in subroutine init_electrostatic_potential."; END IF
+            nx = spacegrid%nx
+            ny = spacegrid%ny
+            nz = spacegrid%nz
+            no = spacegrid%no
+            ns = nb_species
+            allocate ( vext_q (nx,ny,nz,no,ns) , SOURCE=zerodp ,STAT=i, ERRMSG=j)
+            IF (i/=0) THEN
+                PRINT j
+                STOP "I cant allocate vext_q in subroutine init_electrostatic_potential."
+            END IF
 
             ! DIRECT SUMMATION, pot = sum of qq'/r
             IF ( input_log('direct_sum') ) THEN
@@ -98,14 +103,14 @@ SUBROUTINE init_external_potential
 
         SUBROUTINE prevent_numerical_catastrophes
 
-            USE system    ,ONLY: spacegrid, solvent
-            USE constants ,ONLY: qfact
+            USE system    ,only: spacegrid, solvent
+            USE constants ,only: qfact
             IMPLICIT NONE
             INTEGER(i2b) :: i,j
             REAL(dp) :: d(3)
             REAL(dp), ALLOCATABLE :: dnn(:),epsnn(:),signn(:),qnn(:),rblock(:,:)
             LOGICAL :: iFoundTheNN
-            
+
             i=SIZE(solute%site)
             j=SIZE(solvent(1)%site)
             ALLOCATE (dnn(i)) ; dnn=HUGE(1._dp)
@@ -117,7 +122,7 @@ SUBROUTINE init_external_potential
                 IF( solute%site(i)%q/=0. .and. (solute%site(i)%eps==0. .or. solute%site(i)%sig==0.) ) THEN
                     iFoundTheNN=.false.
                     PRINT*,"-- found one charged site that is purely attractive"
-                    PRINT*,"-- its q, eps and sig are ",solute%site(i)%q, solute%site(i)%eps, solute%site(i)%sig                    
+                    PRINT*,"-- its q, eps and sig are ",solute%site(i)%q, solute%site(i)%eps, solute%site(i)%sig
                     ! trouve le site répulsif de soluté le plus proche, sa distance (dnn), eps et sig lj (epsnn et signn)
                     DO j=1, SIZE(solute%site)
                         IF (j==i) CYCLE
@@ -130,7 +135,7 @@ SUBROUTINE init_external_potential
                             iFoundTheNN=.true.
                         END IF
                     END DO
-                    
+
                     IF (iFoundTheNN) THEN
                         PRINT*,"-- nearest repulsive site is at (Ang)",dnn(i)
                         PRINT*,"-- its q, eps and sig are:",qnn(i),epsnn(i),signn(i)
@@ -164,5 +169,5 @@ SUBROUTINE init_external_potential
         END SUBROUTINE prevent_numerical_catastrophes
 
 !===================================================================================================================================
-    
+
 END SUBROUTINE init_external_potential

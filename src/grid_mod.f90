@@ -8,7 +8,7 @@ module grid_mod
         integer, allocatable :: tproj(:,:,:), tmup(:), tmu(:), tm(:)
         real(dp) :: lx, ly, lz, dx, dy, dz, dv, volume
         real(dp), allocatable :: tx(:), ty(:), tz(:)
-        real(dp), allocatable :: tw(:), tr(:)
+        real(dp), allocatable :: w(:)
         real(dp), allocatable :: wtheta(:), theta(:), wphi(:), phi(:), wpsi(:), psi(:)
         logical :: is_built = .false.
         integer, allocatable :: tio(:,:,:) ! index of orientation corresponding to itheta,iphi,ipsi
@@ -23,10 +23,16 @@ contains
         integer :: err, i, m, mup, mu, itheta, iphi, ipsi, io
         real(dp) :: weight_of_each_phi, weight_of_each_psi
         real(dp), parameter :: twopi = acos(-1._dp)*2._dp
+        real(dp), allocatable :: thetaofitheta(:), phiofiphi(:), psiofipsi(:), wthetaofitheta(:), wphiofiphi(:), wpsiofipsi(:)
         if (gr%is_built) return
+        stop "I dont want to use this yet. PB IN RESOX INT HERE DP IN ALLOCATE_FROM_INPUT"
         gr%ptperangx = input_int("resox", defaultvalue=3)
         gr%ptperangy = input_int("resoy", defaultvalue=3)
         gr%ptperangz = input_int("resoz", defaultvalue=3)
+        print*, "gr%ptperangx=",gr%ptperangx
+        print*, "gr%ptperangy=",gr%ptperangy
+        print*, "gr%ptperangz=",gr%ptperangz
+        stop "ptperang"
         gr%lx = input_dp("Lx", defaultvalue=10._dp)
         gr%ly = input_dp("Ly", defaultvalue=10._dp)
         gr%lz = input_dp("Lz", defaultvalue=10._dp)
@@ -55,42 +61,48 @@ contains
         ! allocate (gr%tm(gr%nproj), source=-huge(1))
         ! allocate (gr%tmup(gr%nproj), source=-huge(1))
         ! allocate (gr%tmu(gr%nproj), source=-huge(1))
-        allocate (gr%tw(gr%no), source=1._dp, stat=err)
-        if (err /= 0) error stop "gr%tw: Allocation request denied"
-        allocate (gr%tr(gr%no), source=1._dp, stat=err)
-        if (err /= 0) error stop "gr%tr: Allocation request denied"
+        allocate (gr%w(gr%no), source=1._dp, stat=err)
+        if (err /= 0) error stop "gr%w: Allocation request denied"
         !
         ! Build the Euler representation suitable for Gauss-Legendre quadrature
         !
         gr%dphi = twopi/real(gr%nphi,dp)
         gr%dpsi = twopi/real(gr%npsi*gr%molrotsymorder,dp)
-        allocate( gr%theta(gr%ntheta) , source=huge(1._dp) )
-        allocate( gr%phi(gr%nphi) , source=[(   real(i-1,dp)*gr%dphi   , i=1,gr%nphi )] )
-        allocate( gr%psi(gr%npsi) , source=[(   real(i-1,dp)*gr%dpsi   , i=1,gr%npsi )] )
+        allocate( thetaofitheta(gr%ntheta) ,source=huge(1._dp) )
+        allocate( phiofiphi(gr%nphi)   ,source=[(   real(i-1,dp)*gr%dphi   , i=1,gr%nphi )] )
+        allocate( psiofipsi(gr%npsi)   ,source=[(   real(i-1,dp)*gr%dpsi   , i=1,gr%npsi )] )
+        allocate( wthetaofitheta(gr%ntheta))
+        allocate( wphiofiphi(gr%nphi) ,source=1._dp/gr%nphi)
+        allocate( wpsiofipsi(gr%npsi) ,source=1._dp/gr%npsi)
+        allocate( gr%theta(gr%no) )
+        allocate( gr%phi(gr%no) )
+        allocate( gr%psi(gr%no) )
+        allocate( gr%wtheta(gr%no))
+        allocate( gr%wphi(gr%no))
+        allocate( gr%wpsi(gr%no))
+        call gauss_legendre( gr%ntheta, thetaofitheta, wthetaofitheta, err )
+        if (err /= 0) error stop "problem in gauss_legendre"
+        thetaofitheta = acos(thetaofitheta)
         allocate( gr%tio(gr%ntheta,gr%nphi,gr%npsi), source=-huge(1) )
-        i = 0
+        io = 0
         do itheta = 1, gr%ntheta
             do iphi = 1, gr%nphi
                 do ipsi = 1, gr%npsi
-                    i = i+1
-                    gr%tio(itheta,iphi,ipsi) = i
+                    io = io+1
+                    gr%theta(io) = thetaofitheta(itheta)
+                    gr%phi(io) = phiofiphi(iphi)
+                    gr%psi(io) = psiofipsi(ipsi)
+                    gr%tio(itheta,iphi,ipsi) = io
+                    gr%wtheta(io) = wthetaofitheta(itheta)
+                    gr%wphi(io) = wphiofiphi(iphi)
+                    gr%wpsi(io) = wpsiofipsi(ipsi)
+                    gr%w(io) = gr%wtheta(io) * gr%wphi(io) * gr%wpsi(io)
                 end do
             end do
         end do
         gr%is_built = .true.
-        call gauss_legendre( gr%ntheta, gr%theta, gr%wtheta, err )
-        if (err /= 0) error stop "problem in gauss_legendre"
-        gr%theta = acos( gr%theta ) ! gauss_legendre returns roots in cos(theta), not theta
-        gr%wphi(1:gr%nphi) = 1._dp/gr%nphi
-        gr%wpsi(1:gr%npsi) = 1._dp/gr%npsi
-        do concurrent (io=1:gr%no)
-            itheta = gr%theta(io)
-            iphi = gr%phi(io)
-            ipsi = gr%psi(io)
-            gr%tw(io) = gr%wtheta(itheta) * gr%wphi(iphi) * gr%wpsi(ipsi)
-        end do
     end subroutine
-    pure subroutine gauss_legendre( n, x, w, exitstatus) ! copy paste from Luc's subroutine Luc74p85
+    subroutine gauss_legendre( n, x, w, exitstatus) ! copy paste from Luc's subroutine Luc74p85
         !
         ! Returns the n roots (x) and associated weights(w) of a gauss legendre quadrature of order n
         ! The roots are the Cos(theta) so that if you need theta, don't forget to acos(x)
@@ -102,7 +114,7 @@ contains
         integer :: m, i, j
         real(dp), PARAMETER :: pi=acos(-1._dp)
         real(dp) :: xi, p1, p2, p3, pp, deltaxi
-        exitstatus = 1
+        exitstatus = 0
         if( n <= 0 ) then
             exitstatus = -1
             return

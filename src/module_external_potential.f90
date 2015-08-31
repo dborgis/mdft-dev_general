@@ -3,23 +3,23 @@ MODULE external_potential
 !===================================================================================================================================
 ! This module is dedicated to the external potential and its parts
 
-    USE precision_kinds ,ONLY: dp, i2b
+    USE precision_kinds, only: dp, i2b
 
     IMPLICIT NONE
     !real(dp), allocatable, dimension(:,:,:,:) :: Vext ! external potential of the whole solute on a position and angular grid
     !real(dp), allocatable, dimension(:,:,:,:) :: Vlj ! lennard jones potential of the whole solute on a position and angular grid
     !real(dp), allocatable, dimension(:,:,:,:) :: Vcoul ! electrostatic potential of the whole solute on a position and angular grid
     ! we want the outer loop (slowest varying) to be over species, so nb_species is the last rank.
-    ! the arrays are thus defined as  array ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_species )
+    ! the arrays are thus defined as  array ( nfft1 , nfft2 , nfft3 , no )
     ! the most efficient loops are thus over
     ! species
     !   omega
     !     nfft3
     !       nfft2
     !         nfft1
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: Vext_total ! external potential as the sum of all external potentials (LJ + charge + ... )
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: Vext_lj
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , nb_species )
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_total ! external potential as the sum of all external potentials (LJ + charge + ... )
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_lj
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , angles , nb_species )
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:)   :: Vext_hard ! hard potential
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:)     :: Vext_hard_core ! hard core potential
 
@@ -76,15 +76,15 @@ MODULE external_potential
         USE precision_kinds ,ONLY: dp
         USE system          ,ONLY: grd=>spaceGrid, nb_species
         IMPLICIT NONE
-        REAL(dp), PARAMETER :: radius=1.0_dp 
-        
+        REAL(dp), PARAMETER :: radius=1.0_dp
+
         CALL allocate_vext_hard_core_if_necessary
         CALL disk
         CALL wall
-        
+
         CONTAINS
-            
-            !=======================================================================================================================            
+
+            !=======================================================================================================================
             SUBROUTINE allocate_vext_hard_core_if_necessary
             !=======================================================================================================================
                 USE constants, ONLY: zero
@@ -93,8 +93,8 @@ MODULE external_potential
                 END IF
             END SUBROUTINE allocate_vext_hard_core_if_necessary
             !=======================================================================================================================
-            
-            
+
+
             !=======================================================================================================================
             SUBROUTINE wall
             !=======================================================================================================================
@@ -112,7 +112,7 @@ MODULE external_potential
             END SUBROUTINE wall
             !=======================================================================================================================
 
-            
+
             !=======================================================================================================================
             SUBROUTINE disk
             !=======================================================================================================================

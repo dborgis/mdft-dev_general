@@ -5,20 +5,19 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
     USE system          ,ONLY: v_perturbation_k,spaceGrid,nb_species, solvent, solvent, spaceGrid
-    USE quadrature      ,ONLY: angGrid, molrotgrid
     USE minimizer       ,ONLY: cg_vect_new, dF_new, FF
     USE constants       ,ONLY: fourpi,twopi,zeroC
     USE fft             ,ONLY: fftw3, norm_k
 
     IMPLICIT NONE
-    
+
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n ! local density
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_k ! fourier transformed rho_n
     REAL(dp) :: local_density ! dummy for rho_n
     INTEGER(i2b) :: icg , i , j , k , o , l , m , n , m1 , m2 , m3 ! dummy
     INTEGER(i2b) :: nf1 , nf2 , nf3 ! dummy for nfft1 /2 , nfft2 /2, nfft3 /2
     REAL(dp) :: Nk ! total number of k points
-    REAL(dp) :: kx2 , ky2 , kz2 
+    REAL(dp) :: kx2 , ky2 , kz2
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: vk ! fourier transform of the lennard jones perturbation (WCA)
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: v_perturbation_r ! vk in REAL space
     REAL(dp) :: Fperturbation ! what we want : the perturbative contribution of the lennard jones attractive potential tail
@@ -26,14 +25,14 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     REAL(dp) :: twopiolx , twopioly , twopiolz ! dummy for speeding up loops
     REAL(dp) :: potential ! dFp / drho at rho=rho_0 in order the grand potential to be zero at rho = rho_0
     REAL(dp) :: nb_molecule ! total number of hard spheres ie integral of density over all space
-    INTEGER(i2b) :: nfft1, nfft2, nfft3, p
+    INTEGER(i2b) :: nfft1, nfft2, nfft3, p, io
     integer(i2b), parameter :: s=1
     nfft1= spaceGrid%n_nodes(1)
     nfft2= spaceGrid%n_nodes(2)
     nfft3= spaceGrid%n_nodes(3)
 
     IF (nb_species/=1) STOP "When dealing with LJ as perturbation in lennard_jones_..._spheres.f90, only nb_species=1 is ok."
-    
+
     ! init
     CALL cpu_time ( time0 )
     nf1 = nfft1 / 2
@@ -48,16 +47,13 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
         DO j = 1 , nfft2
             DO k = 1 , nfft3
                 local_density = 0.0_dp
-                DO o = 1, angGrid%n_angles ! angGrid%n_angles=1
-                    do p =1, molrotgrid%n_angles
-                        icg = icg + 1
-                        local_density = local_density + angGrid%weight (o) * cg_vect_new(i,j,k,o,p,s) ** 2
-                        error stop "psi not implemented in lennard_jones_perturbation_to_hard_spheres.f90"
-                    end do
+                DO io = 1, spacegrid%no
+                    icg = icg + 1
+                    local_density = local_density + spacegrid%w(io) * cg_vect_new(i,j,k,io,s) ** 2
                 END DO
                 local_density = local_density / fourpi ! correct by fourpi as the integral over all orientations o is 4pi
                 ! at the same time integrate rho_n in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
-                rho_n ( i , j , k ) = local_density
+                rho_n(i,j,k) = local_density
                 nb_molecule = nb_molecule + local_density * solvent(1)%n0 * spaceGrid%dv
             END DO
         END DO
@@ -70,9 +66,9 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     CALL dfftw_execute ( fftw3%plan_forward )
     ALLOCATE( rho_k ( nfft1 / 2 + 1 , nfft2 , nfft3 ) ,SOURCE=zeroC)
     rho_k = fftw3%out_forward
-    
+
     ! compute lennard jones perturbation in k space
-    ! if v_perturbation_k doesn't exist, then compute it and put it in Vk. 
+    ! if v_perturbation_k doesn't exist, then compute it and put it in Vk.
     IF ( .NOT. ALLOCATED( v_perturbation_k ) ) THEN
         ALLOCATE ( v_perturbation_k (nfft1/2+1,nfft2,nfft3) ,SOURCE=zeroC )
         DO n=1,nfft3
@@ -85,9 +81,9 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     END IF
 
     ! put the backup in what we use (perhaps redondant)
-    ALLOCATE( Vk ( nfft1 / 2 + 1 , nfft2 , nfft3 ) ,SOURCE=v_perturbation_k) ! Vk is the one we use in this routine. It may be saved in v_perturbation_k in order not to compute it each time.
+    ALLOCATE( Vk(nfft1/2+1, nfft2, nfft3) ,SOURCE=v_perturbation_k) ! Vk is the one we use in this routine. It may be saved in v_perturbation_k in order not to compute it each time.
     ! once equation written, dFp / drho at rho = rho_0 is shown to be equal to rho_0 * Vk(k=0)
-    potential = solvent(1)%n0 * REAL ( Vk ( 1 , 1 , 1 ) )
+    potential = solvent(1)%n0 * REAL( Vk(1,1,1) )
 
     ! FFT-1 of perturbation
     fftw3%in_backward = Vk * rho_k
@@ -98,14 +94,14 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     CALL dfftw_execute (fftw3%plan_backward)
     ALLOCATE( v_perturbation_r ( nfft1 , nfft2 , nfft3 ) ,SOURCE=(fftw3%out_backward/Nk))
-    
+
     ! Compute the free energy due to the perturbation
     Fperturbation = 0.0_dp
     DO i = 1 , nfft1
         DO j = 1 , nfft2
             DO k = 1 , nfft3
-                DO o = 1, angGrid%n_angles ! angGrid%n_angles=1
-                    Fperturbation = Fperturbation + rho_n ( i , j , k ) * v_perturbation_r ( i , j , k )
+                DO io = 1, spacegrid%no
+                    Fperturbation = Fperturbation + rho_n(i,j,k) * v_perturbation_r(i,j,k)
                 END DO
             END DO
         END DO
@@ -126,9 +122,9 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     DO i = 1 , nfft1
         DO j = 1 , nfft2
             DO k = 1 , nfft3
-                DO o = 1 , angGrid%n_angles
+                DO io = 1 , spacegrid%no
                     icg = icg + 1
-                    dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2.0_dp * cg_vect_new(i,j,k,o,p,s) * spaceGrid%dv * v_perturbation_r(i,j,k)
+                    dF_new(i,j,k,io,s) = dF_new(i,j,k,io,s) + 2*cg_vect_new(i,j,k,io,s) * spaceGrid%dv * v_perturbation_r(i,j,k)
                 END DO
             END DO
         END DO
@@ -142,17 +138,17 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     CONTAINS
 
-    
+
         !===========================================================================================================================
         ! Here we compute Uperturbation in kspace. it's an integration we DO numericaly
         FUNCTION vlj_wca_k ( k , sigma_lj , epsilon_lj )
         !===========================================================================================================================
-        
+
             USE precision_kinds ,ONLY: dp, i2b
             USE constants       ,ONLY: fourpi, zeroC
-            
+
             IMPLICIT NONE
-            
+
             COMPLEX(dp):: vlj_wca_k ! which computes the reciprocal value of the potential 'vk'
             REAL(dp), INTENT(IN) :: k ! one gives the k point 'k' to eat to the routine
             REAL(dp), INTENT(IN) :: sigma_lj , epsilon_lj ! lennard jones parameters in Angstroms and KJ/mol
@@ -163,23 +159,23 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
             REAL(dp):: ri !integrants
             REAL(dp):: sigmaori6 !dummy for (sigma_lj/ri)**6
             INTEGER(i2b):: i !dummy for loop
-            
+
             !the integration is theoreticaly between 2^(1/6)*sigma and infinity
             !we do it between sigma_lj and N*sigma for a beginning
             !perhaps 10*sigma is more than enough
             !we use 10**3 steps for the integration.
-            
+
             borne_sup = 10.0_dp * sigma_lj ! TODO 40 is better and converged. check later and do analyticaly
             borne_inf = 0.0_dp
-            
+
             ! TODO here one integrates over the whole range of r. one could calculate the first part (U=-epsilon_lj) analyticaly and thus speed up everything by a factor of d_wca/borne_sup
             dx = ( borne_sup - borne_inf ) / REAL(nstep,dp)
-            
+
             cutoff = 2.0_dp**(1.0_dp/6.0_dp)*sigma_lj ! compute the value after which U = Vlj, which is the value of x for which Vlj is minimum, thus 2^(1/6)sigma
 
             ! init vk
             vlj_wca_k = zeroC
-            
+
             ! integrate v(r) over all r in R^3
             DO i = 1 , nstep
                 ri = borne_inf + REAL ( i - 1 , dp ) * dx
@@ -193,7 +189,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
                     sigmaori6 = (sigma_lj/ri)**6
                     IF ( k > 0.0_dp ) then ! general case
                         vlj_wca_k = vlj_wca_k + CMPLX(4.0_dp*epsilon_lj*ri*(sigmaori6**2-sigmaori6)*SIN(k*ri)/k  ,0.0_dp)
-                    ELSE ! if k = 0 then lim sin(k*r)/k = r 
+                    ELSE ! if k = 0 then lim sin(k*r)/k = r
                         vlj_wca_k = vlj_wca_k + CMPLX(4.0_dp*epsilon_lj*ri*(sigmaori6**2-sigmaori6)*ri , 0.0_dp )
                     END IF
                 END IF

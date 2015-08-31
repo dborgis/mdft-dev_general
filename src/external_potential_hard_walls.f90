@@ -13,7 +13,6 @@ SUBROUTINE external_potential_hard_walls
     USE input              ,ONLY: input_line, input_int
     USE system             ,ONLY: nb_species, spaceGrid
     USE external_potential ,ONLY: Vext_total
-    USE quadrature         ,ONLY: angGrid, molRotGrid
     USE hardspheres        ,ONLY: hs
 
     IMPLICIT NONE
@@ -57,7 +56,7 @@ SUBROUTINE external_potential_hard_walls
 
 ! be sure Vext_total is allocated
     IF (.NOT. ALLOCATED(Vext_total)) THEN
-        ALLOCATE( Vext_total (nfft1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species) ,SOURCE=0._dp)
+        ALLOCATE( Vext_total (nfft1,nfft2,nfft3,spacegrid%no,nb_species) ,SOURCE=0._dp)
     END IF
 ! be sure radius(:) (solvent radius) is already computed
   !  IF(.NOT. ALLOCATED(hs)) STOP 'Molecular radius of solvent not allocated. critial stop in external_potential_hard_walls.f90'
@@ -68,12 +67,12 @@ SUBROUTINE external_potential_hard_walls
         OM = [ REAL(i-1,dp)*spaceGrid%dl(1) , REAL(j-1,dp)*spaceGrid%dl(2) , REAL(k-1,dp)*spaceGrid%dl(3) ]
         dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
         IF (.NOT. ALLOCATED(hs)) THEN
-          IF ( dplan <= 0.5_dp*thickness(w)  ) Vext_total(i,j,k,:,:,s) = HUGE(1.0_dp)
-            IF (i*j*k*s*w==1) THEN 
+          IF ( dplan <= 0.5_dp*thickness(w)  ) Vext_total(i,j,k,:,s) = HUGE(1.0_dp)
+            IF (i*j*k*s*w==1) THEN
              PRINT*, 'WARNING : Radius of Solvent is not allocated in external_potential_hard_wall, it is set to zero'
             END IF
           ELSE
-          IF ( dplan <= 0.5_dp*thickness(w) + hs(s)%R ) Vext_total(i,j,k,:,:,s) = HUGE(1.0_dp)
+          IF ( dplan <= 0.5_dp*thickness(w) + hs(s)%R ) Vext_total(i,j,k,:,s) = HUGE(1.0_dp)
         ENDIF
     END DO
 

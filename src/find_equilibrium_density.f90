@@ -57,11 +57,10 @@ subroutine find_equilibrium_density
 BLOCK
 
     ! ceci est un steepest descent de compet <= selon moi ^^
-    use quadrature, only: anggrid, molrotgrid
     use system, only: spacegrid, nb_species
-    real(dp) :: FFold, dFF, best_cg_vect_new(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3), anggrid%n_angles, molrotgrid%n_angles,nb_species), alpha,&
-        best_dF_new(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),anggrid%n_angles,molrotgrid%n_angles,nb_species), best_FF
-    real(dp), parameter :: hugedp=huge(1._dp)
+    real(dp) :: FFold, dFF, best_cg_vect_new(spacegrid%nx,spacegrid%ny,spacegrid%nz,spacegrid%no,nb_species), alpha,&
+                                 best_dF_new(spacegrid%nx,spacegrid%ny,spacegrid%nz,spacegrid%no,nb_species), best_FF
+    real(dp), parameter :: hugedp = huge(1._dp)
 
     dF_new = 0
     alpha = 10._dp
@@ -93,7 +92,7 @@ BLOCK
 !            print*,"alpha futur =",alpha
         end if
     end do
-    
+
     if( iter == maxeval+1 ) print*,"MAXIMUM ITERATION REACHED. CONVERGENCE NOT REACHED."
 
 END BLOCK
@@ -112,10 +111,10 @@ END BLOCK
 !  case(5)
 !    print*,"NLOPT success: Optimization stopped because maxeval (above) was reached."
 !  case(6)
-!    print*,"NLOPT success: Optimization stopped because maxtime (above) was reached." 
+!    print*,"NLOPT success: Optimization stopped because maxtime (above) was reached."
 !  case(-1)
 !    print*,"NLOPT failure: Generic failure code."
-!  case(-2) 
+!  case(-2)
 !    print*,"NLOPT failure: Invalid arguments (e.g. lower bounds are bigger than upper bounds, an unknown algorithm was specified, etcetera)."
 !  case(-3)
 !    print*,"NLOPT failure: Ran out of memory."

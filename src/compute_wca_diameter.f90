@@ -63,4 +63,3 @@ contains
   sig1_over_2sig0 = ( 1.0_dp + s1 * eta_w + s2 * eta_w ** 2 + s3 * eta_w ** 3 ) / ( 1.0_dp - eta_w ) ** 2
   end function sig1_over_2sig0
 END SUBROUTINE compute_wca_diameter
-	

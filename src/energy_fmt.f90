@@ -1,10 +1,8 @@
 SUBROUTINE energy_fmt (Ffmt)
 
-  USE precision_kinds  ,ONLY: dp , i2b
+  USE precision_kinds  ,ONLY: dp, i2b
   USE system           ,ONLY: thermocond, nb_species, mole_fraction, spaceGrid, solvent
-  USE quadrature       ,ONLY: molRotSymOrder, angGrid, molRotGrid
   USE minimizer        ,ONLY: cg_vect_new, dF_new
-  USE constants        ,ONLY: pi, fourPi, twopi, zeroC, zerodp, onedp, epsdp
   USE fft              ,ONLY: fftw3
   USE input            ,ONLY: input_char
   USE hardspheres      ,ONLY: hs, weight_functions
@@ -12,7 +10,7 @@ SUBROUTINE energy_fmt (Ffmt)
   IMPLICIT NONE
 
   real(dp), intent(out) :: Ffmt ! Internal part of free energy
-  integer(i2b) :: icg,i,j,k,o,p,s,nfft1,nfft2,nfft3,wdl,wdu
+  integer(i2b) :: icg,i,j,k,s,nfft1,nfft2,nfft3,wdl,wdu,io
   real(dp) :: local_density, psi, dV, nb_molecules(size(solvent)), time0, time1, kT
   real(dp)   , ALLOCATABLE, DIMENSION(:,:,:,:) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
   real(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: wd ! weighted density at node i,j,k, for index 0:3
@@ -20,11 +18,15 @@ SUBROUTINE energy_fmt (Ffmt)
   complex(dp), ALLOCATABLE , DIMENSION(:,:,:,:) :: dFHS_k
   real(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: dFex ! gradient in real space
   character(2) :: hs_functional ! hard sphere functional = PY for Percus-Yevick or CS for Carnahan-Starling
+  real(dp), parameter :: pi = acos(-1._dp)
+  real(dp), parameter :: twopi = 2._dp*pi, fourpi = 4._dp*pi
   real(dp), PARAMETER :: inv8pi  = 1.0_dp/(  8.0_dp * pi)
   real(dp), PARAMETER :: inv12pi = 1.0_dp/( 12.0_dp * pi)
   real(dp), PARAMETER :: inv18pi = 1.0_dp/( 18.0_dp * pi)
   real(dp), PARAMETER :: inv24pi = 1.0_dp/( 24.0_dp * pi)
   real(dp), PARAMETER :: inv36pi = 1.0_dp/( 36.0_dp * pi)
+  complex(dp), parameter :: zeroc = cmplx(0._dp,0._dp)
+  real(dp), parameter :: zerodp = 0._dp, onedp = 1._dp, epsdp = epsilon(1._dp)
 
   IF (nb_species/=1) STOP "I stop because FMT calculations are only possible with one solvent species."
 
@@ -49,16 +51,13 @@ SUBROUTINE energy_fmt (Ffmt)
       do j=1,nfft2
         do k=1,nfft3
           local_density=0
-          do o=1,angGrid%n_angles
-            do p=1,molRotGrid%n_angles
+          do io=1,spacegrid%no
               icg = icg + 1
-              local_density = local_density &
-                + cg_vect_new(i,j,k,o,p,s)**2 *molRotGrid%weight(p) *angGrid%weight(o)
-            end do
+              local_density = local_density + cg_vect_new(i,j,k,io,s)**2 * spacegrid%w(io)
           end do
           ! correct by *(8*pi²/n)**-1 as the integral over all orientations o and psi is 4pi and 2pi/n
           ! at the same time integrate rho in order to count the total number of implicit molecules.
-          rho(i,j,k,s) = local_density*molRotSymOrder/(fourpi*twopi) ! n/n0 at this stage
+          rho(i,j,k,s) = local_density*spacegrid%molRotSymOrder/(fourpi*twopi) ! n/n0 at this stage
         end do
       end do
     end do
@@ -179,13 +178,11 @@ SUBROUTINE energy_fmt (Ffmt)
     do i=1,nfft1
       do j=1,nfft2
         do k=1,nfft3
-          do o=1,angGrid%n_angles
-            do p=1,molRotGrid%n_angles
+          do io=1,spacegrid%no
               icg=icg+1
-              psi=cg_vect_new(i,j,k,o,p,s)
-              dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s)&
-                  + 2*psi*solvent(s)%rho0*dV*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*angGrid%weight(o)*molRotGrid%weight(p)
-            end do
+              psi=cg_vect_new(i,j,k,io,s)
+              dF_new(i,j,k,io,s) = dF_new(i,j,k,io,s) &
+                  + 2*psi*solvent(s)%rho0*dV*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*spacegrid%w(io)
           end do
         end do
       end do

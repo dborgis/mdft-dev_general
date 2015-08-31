@@ -8,23 +8,23 @@ SUBROUTINE compute_planar_density(array,filename)
     USE system          ,ONLY: spaceGrid, solute
 
     IMPLICIT NONE
-    
+
     CHARACTER(50), INTENT(IN)   :: filename
     REAL(dp), INTENT(IN)        :: array(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3))
     INTEGER(i2b)                :: plandir,ig,i,j,k
     REAL(dp)                    :: x_com(spaceGrid%n_nodes(1)), y_com(spaceGrid%n_nodes(2)), z_com(spaceGrid%n_nodes(3))
-    
+
     INTEGER(i2b) :: nfft1, nfft2, nfft3
     REAL(dp) :: lx, ly, lz
-    
+
     lx= spaceGrid%length(1)
     ly= spacegrid%length(2)
     lz= spaceGrid%length(3)
     nfft1= spaceGrid%n_nodes(1)
     nfft2= spaceGrid%n_nodes(2)
     nfft3= spaceGrid%n_nodes(3)
-    
-    
+
+
     ! For now that only planes perpendicular to x, y and z are  Identify the plan coordinate which is 0 (see restrictions to using this program for now)
     IF      (solute%site(1)%r(1)==solute%site(2)%r(1) .and. solute%site(1)%r(1)==solute%site(3)%r(1)) THEN
         plandir=1
@@ -52,7 +52,7 @@ SUBROUTINE compute_planar_density(array,filename)
     FORALL(i=1:nfft1) x_com(i)=REAL(i-1,dp)*Lx/REAL(nfft1,dp)
     FORALL(j=1:nfft2) y_com(j)=REAL(j-1,dp)*Ly/REAL(nfft2,dp)
     FORALL(k=1:nfft3) z_com(k)=REAL(k-1,dp)*Lz/REAL(nfft3,dp)
-    
+
     ! Print density in this plan
     OPEN(10,FILE=filename,FORM='formatted')
         100 FORMAT (3(F10.5))

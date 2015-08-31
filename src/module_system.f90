@@ -30,12 +30,12 @@ MODULE system
         real(dp), allocatable :: n(:,:,:)  ! number density
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
         real(dp), allocatable :: Dn(:,:,:) ! Dn = n - n0
-        real(dp), allocatable :: rho(:,:,:,:,:)! number density per orientation = n0/(8pi²/molrotsymorder)
+        real(dp), allocatable :: rho(:,:,:,:)! number density per orientation = n0/(8pi²/molrotsymorder)
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
-        real(dp), allocatable :: Drho(:,:,:,:,:) ! Drho = rho - rho0
-        complex(dp), allocatable :: sigma_k(:,:,:,:,:) ! charge factor
-        complex(dp), allocatable :: molec_polar_k(:,:,:,:,:,:) ! molecule polarization factor
-        type(vextType), allocatable :: vext(:,:,:,:,:) ! nfft1,nfft2,nfft3,om,psi
+        real(dp), allocatable :: Drho(:,:,:,:) ! Drho = rho - rho0
+        complex(dp), allocatable :: sigma_k(:,:,:,:) ! charge factor
+        complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! molecule polarization factor
+        type(vextType), allocatable :: vext(:,:,:,:) ! nfft1,nfft2,nfft3,orientation
     END TYPE
 
     TYPE (solventType), ALLOCATABLE :: solvent(:)
@@ -57,9 +57,17 @@ MODULE system
         real(dp) :: dx, dy, dz
         REAL(dp) :: dv ! elemental volume
         real(dp) :: v
-        real(dp) :: buffer_length ! length of free space between the extremam of the solute. 
+        real(dp) :: buffer_length ! length of free space between the extremam of the solute.
+        ! QUADRATURE ANGULAIRE
+        integer(i2b) :: molrotsymorder, mmax, ntheta, nphi, npsi, no
+        real(dp) :: dphi, dpsi
+        real(dp), allocatable :: theta(:), phi(:), psi(:), wtheta(:), wphi(:), wpsi(:), w(:)
+        integer(i2b), allocatable :: tio(:,:,:) ! table of index of orientations
+        real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
+        real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
     END TYPE spaceGridType
     TYPE( spaceGridType ), TARGET :: spaceGrid
+    TYPE( spacegridType ), pointer :: gr => spacegrid
 
     COMPLEX(dp),ALLOCATABLE, DIMENSION(:,:,:) :: Vk !>@var perturabtion in kspace
 

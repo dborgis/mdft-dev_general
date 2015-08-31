@@ -58,14 +58,17 @@ MODULE dcf
         END IF
 
         IF ( input_log("ck_angular") ) THEN
+            stop "ck_angular temporarly down"
             CALL read_ck_angular
             CALL c_local_to_global_coordinates
         END IF
         IF ( input_log("ck_debug") ) THEN
+            stop "ck_debug temporarly down"
             CALL readDensityDensityCorrelationFunction
             CALL readPolarizationPolarizationCorrelationFunction
         END IF
         IF ( input_log("ck_debug_extended") ) THEN
+            stop "ck_debug_extended temporarly down"
             CALL read_ck_projection
         END IF
 
@@ -80,168 +83,167 @@ MODULE dcf
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 
-    SUBROUTINE read_ck_angular
-
-        USE quadrature, ONLY: molRotSymOrder
-        IMPLICIT NONE
-
-        INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
-        LOGICAL :: exists
-
-        INQUIRE(FILE="input/ck_angular.in", EXIST=exists)
-        IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_angular.in is not found."
-        OPEN(39,FILE="input/ck_angular.in",FORM='UNFORMATTED')
-            READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm ! Note that psi is from 0 to pi for water, while no other symetry is taken into account
-            ALLOCATE(ck_angular(num_psi,num_psi,num_phi,num_cos,num_cos,nb_k))
-            REWIND(39)
-            READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm, ck_angular
-            IF (num_symm /= molRotSymOrder) THEN
-                PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', molRotSymOrder, ' being different with num_symm ',num_symm
-                STOP
-            END IF
-        CLOSE(39)
-
-    END SUBROUTINE read_ck_angular
-
-!-----------------------------------------------------------------------------------------------------------------------------------
-
-    SUBROUTINE read_ck_projection
-
-        USE quadrature, ONLY: molRotSymOrder
-        IMPLICIT NONE
-
-        INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
-        stop "maybe ck_debug does not work anymore since c_s c_delta and c_d have been improved a lot since dec 2014"
-        !
-        ! INQUIRE(FILE="input/ck_projection.in", EXIST=exists)
-        ! IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_projection.in is not found."
-        ! OPEN(39,FILE="input/ck_projection.in",FORM='UNFORMATTED')
-        !     READ(39) nb_k, delta_k_ck_angular
-        !     ALLOCATE(c_s(nb_k)); ALLOCATE(c_q(nb_k)); ALLOCATE(c_delta(nb_k)); ALLOCATE(c_d(nb_k));
-        !     REWIND(39)
-        !     READ(39) nb_k, delta_k_ck_angular, num_symm, c_s, c_q, c_delta, c_d
-        !     IF (num_symm /= molRotSymOrder) THEN
-        !         PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', molRotSymOrder, ' being different with num_symm ',num_symm
-        !         STOP
-        !     END IF
-        ! CLOSE(39)
-
-    END SUBROUTINE read_ck_projection
-
-!-----------------------------------------------------------------------------------------------------------------------------------
-
-    SUBROUTINE c_local_to_global_coordinates
-
-        USE fft,             ONLY: kx,ky,kz
-        USE constants,       ONLY: twopi
-        USE quadrature,      ONLY: AngGrid,MolRotGrid,Rotxx,Rotxy,Rotxz,Rotyx,Rotyy,Rotyz,Rotzx,Rotzy,Rotzz,molRotSymOrder
-        USE system,          ONLY: spaceGrid
-        USE precision_kinds, ONLY: dp
-
-        IMPLICIT NONE
-
-        INTEGER(i2b) :: l,m,n,o,p,nfft1,nfft2,nfft3
-        REAL(dp) :: costheta_k,sintheta_k,phi_k,cosphi_k,sinphi_k,cos_value,phi_value,psi_value
-        REAL(dp) :: u_kz,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
-        LOGICAL :: karim
-
-        nfft1 = spaceGrid%n_nodes(1)
-        nfft2 = spaceGrid%n_nodes(2)
-        nfft3 = spaceGrid%n_nodes(3)
-
-        karim = input_log("ck_angular_interpolation")
-        IF (karim) THEN
-            ALLOCATE(angleVal(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
-            angleVal%costheta = 0._dp
-            angleVal%phi      = 0._dp
-            angleVal%psi      = 0._dp
-        ELSE
-            ALLOCATE(angleInd(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
-            angleInd%costheta = 0
-            angleInd%phi      = 0._dp
-            angleInd%psi      = 0
-        END IF
-
-        DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
-
-        ! Definition of theta/phi for extreme cases
-            IF (kx(l)**2+ky(m)**2+kz(n)**2/=0._dp) THEN
-                costheta_k = kz(n)/(kx(l)**2+ky(m)**2+kz(n)**2)**0.5_dp
-                sintheta_k = (1._dp - costheta_k**2)**0.5_dp
-            ELSE
-                costheta_k = 1._dp
-                sintheta_k = 0._dp
-            END IF
-
-            IF(kx(l)**2+ky(m)**2/=0._dp) THEN
-                phi_k =  angle(kx(l),ky(m))
-                cosphi_k = COS(phi_k)
-                sinphi_k = SIN(phi_k)
-            ELSE
-                cosphi_k = 1._dp
-                sinphi_k = 0._dp
-            END IF
-
-        ! Open the loop Omega,Psi
-            DO CONCURRENT (o=1:angGrid%n_angles, p=1:molRotGrid%n_angles)
-
-            ! Calculate projections of solvent axes u,v,w on k-frame kx,ky,kz
-                w_kz =   Rotxz(o,p)*sintheta_k*cosphi_k &
-                       + Rotyz(o,p)*sintheta_k*sinphi_k &
-                       + Rotzz(o,p)*costheta_k
-                w_kx =   Rotxz(o,p)*costheta_k*cosphi_k &
-                       + Rotyz(o,p)*costheta_k*sinphi_k &
-                       - Rotzz(o,p)*sintheta_k
-                w_ky = - Rotxz(o,p)*sinphi_k &
-                       + Rotyz(o,p)*cosphi_k
-                u_kz =   Rotxx(o,p)*sintheta_k*cosphi_k &
-                       + Rotyx(o,p)*sintheta_k*sinphi_k &
-                       + Rotzx(o,p)*costheta_k
-            !   u_kx =   Rotxx(o,p)*costheta_k*cosphi_k &
-            !          + Rotyx(o,p)*costheta_k*sinphi_k &
-            !          - Rotzx(o,p)*sintheta_k
-            !   u_ky = - Rotxx(o,p)*sinphi_k &
-            !          + Rotyx(o,p)*cosphi_k
-                v_kz =   Rotxy(o,p)*sintheta_k*cosphi_k &
-                       + Rotyy(o,p)*sintheta_k*sinphi_k &
-                       + Rotzy(o,p)*costheta_k
-            !   v_kx =   Rotxy(o,p)*costheta_k*cosphi_k &
-            !          + Rotyy(o,p)*costheta_k*sinphi_k &
-            !          - Rotzy(o,p)*sintheta_k
-            !   v_ky = - Rotxy(o,p)*sinphi_k &
-            !          + Rotyy(o,p)*cosphi_k
-
-            ! Calculate angles omega
-                cos_value = w_kz
-                phi_value = angle(w_kx,w_ky)
-                psi_value = MODULO(angle(-u_kz,v_kz), twopi/molRotSymOrder)
-
-            ! Real omega values for interpolation
-                IF (karim) THEN
-                    angleVal(l,m,n,o,p)%costheta = cos_value
-                    angleVal(l,m,n,o,p)%phi      = phi_value
-                    angleVal(l,m,n,o,p)%psi      = psi_value
-
-            ! Index omega(k,Omega)
-                ELSE
-                    angleInd(l,m,n,o,p)%costheta = MIN(INT((1._dp + cos_value)*num_cos/2._dp) + 1, num_cos)
-                    angleInd(l,m,n,o,p)%phi      = phi_value
-                    angleInd(l,m,n,o,p)%psi      = MOD(INT(psi_value*num_psi*molRotSymOrder/twopi), num_psi) + 1
-                END IF
-            END DO
-        END DO
-
-    ! Check final nomega
-        IF ( .NOT. karim ) THEN
-            IF ( ANY(angleInd%costheta<=0) .OR. ANY(angleInd%psi<=0) ) THEN
-                STOP "Some AngleInd is negative or zero"
-            END IF
-            IF ( ANY(angleInd%costheta>num_cos) .OR. ANY(angleInd%psi>num_psi) ) THEN
-                STOP "Some AngleInd is > to its max authorized value"
-            END IF
-        END IF
-
-    END SUBROUTINE c_local_to_global_coordinates
+!     SUBROUTINE read_ck_angular
+!
+!         USE system, only: spacegrid
+!         IMPLICIT NONE
+!
+!         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
+!         LOGICAL :: exists
+!
+!         INQUIRE(FILE="input/ck_angular.in", EXIST=exists)
+!         IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_angular.in is not found."
+!         OPEN(39,FILE="input/ck_angular.in",FORM='UNFORMATTED')
+!             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm ! Note that psi is from 0 to pi for water, while no other symetry is taken into account
+!             ALLOCATE(ck_angular(num_psi,num_psi,num_phi,num_cos,num_cos,nb_k))
+!             REWIND(39)
+!             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm, ck_angular
+!             IF (num_symm /= spacegrid%molRotSymOrder) THEN
+!                 PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', spacegrid%molRotSymOrder, ' being different with num_symm ',num_symm
+!                 STOP
+!             END IF
+!         CLOSE(39)
+!
+!     END SUBROUTINE read_ck_angular
+!
+! !-----------------------------------------------------------------------------------------------------------------------------------
+!
+!     SUBROUTINE read_ck_projection
+!
+!         USE system, only: spacegrid
+!         IMPLICIT NONE
+!
+!         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
+!         stop "maybe ck_debug does not work anymore since c_s c_delta and c_d have been improved a lot since dec 2014"
+!         !
+!         ! INQUIRE(FILE="input/ck_projection.in", EXIST=exists)
+!         ! IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_projection.in is not found."
+!         ! OPEN(39,FILE="input/ck_projection.in",FORM='UNFORMATTED')
+!         !     READ(39) nb_k, delta_k_ck_angular
+!         !     ALLOCATE(c_s(nb_k)); ALLOCATE(c_q(nb_k)); ALLOCATE(c_delta(nb_k)); ALLOCATE(c_d(nb_k));
+!         !     REWIND(39)
+!         !     READ(39) nb_k, delta_k_ck_angular, num_symm, c_s, c_q, c_delta, c_d
+!         !     IF (num_symm /= molRotSymOrder) THEN
+!         !         PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', molRotSymOrder, ' being different with num_symm ',num_symm
+!         !         STOP
+!         !     END IF
+!         ! CLOSE(39)
+!
+!     END SUBROUTINE read_ck_projection
+!
+! !-----------------------------------------------------------------------------------------------------------------------------------
+!
+!     SUBROUTINE c_local_to_global_coordinates
+!
+!         USE fft,             ONLY: kx,ky,kz
+!         USE constants,       ONLY: twopi
+!         USE system,          ONLY: spaceGrid
+!         USE precision_kinds, ONLY: dp
+!
+!         IMPLICIT NONE
+!
+!         INTEGER(i2b) :: l,m,n,o,p,nfft1,nfft2,nfft3
+!         REAL(dp) :: costheta_k,sintheta_k,phi_k,cosphi_k,sinphi_k,cos_value,phi_value,psi_value
+!         REAL(dp) :: u_kz,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
+!         LOGICAL :: karim
+!
+!         nfft1 = spaceGrid%n_nodes(1)
+!         nfft2 = spaceGrid%n_nodes(2)
+!         nfft3 = spaceGrid%n_nodes(3)
+!
+!         karim = input_log("ck_angular_interpolation")
+!         IF (karim) THEN
+!             ALLOCATE(angleVal(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
+!             angleVal%costheta = 0._dp
+!             angleVal%phi      = 0._dp
+!             angleVal%psi      = 0._dp
+!         ELSE
+!             ALLOCATE(angleInd(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
+!             angleInd%costheta = 0
+!             angleInd%phi      = 0._dp
+!             angleInd%psi      = 0
+!         END IF
+!
+!         DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
+!
+!         ! Definition of theta/phi for extreme cases
+!             IF (kx(l)**2+ky(m)**2+kz(n)**2/=0._dp) THEN
+!                 costheta_k = kz(n)/(kx(l)**2+ky(m)**2+kz(n)**2)**0.5_dp
+!                 sintheta_k = (1._dp - costheta_k**2)**0.5_dp
+!             ELSE
+!                 costheta_k = 1._dp
+!                 sintheta_k = 0._dp
+!             END IF
+!
+!             IF(kx(l)**2+ky(m)**2/=0._dp) THEN
+!                 phi_k =  angle(kx(l),ky(m))
+!                 cosphi_k = COS(phi_k)
+!                 sinphi_k = SIN(phi_k)
+!             ELSE
+!                 cosphi_k = 1._dp
+!                 sinphi_k = 0._dp
+!             END IF
+!
+!         ! Open the loop Omega,Psi
+!             DO CONCURRENT (o=1:angGrid%n_angles, p=1:molRotGrid%n_angles)
+!
+!             ! Calculate projections of solvent axes u,v,w on k-frame kx,ky,kz
+!                 w_kz =   Rotxz(o,p)*sintheta_k*cosphi_k &
+!                        + Rotyz(o,p)*sintheta_k*sinphi_k &
+!                        + Rotzz(o,p)*costheta_k
+!                 w_kx =   Rotxz(o,p)*costheta_k*cosphi_k &
+!                        + Rotyz(o,p)*costheta_k*sinphi_k &
+!                        - Rotzz(o,p)*sintheta_k
+!                 w_ky = - Rotxz(o,p)*sinphi_k &
+!                        + Rotyz(o,p)*cosphi_k
+!                 u_kz =   Rotxx(o,p)*sintheta_k*cosphi_k &
+!                        + Rotyx(o,p)*sintheta_k*sinphi_k &
+!                        + Rotzx(o,p)*costheta_k
+!             !   u_kx =   Rotxx(o,p)*costheta_k*cosphi_k &
+!             !          + Rotyx(o,p)*costheta_k*sinphi_k &
+!             !          - Rotzx(o,p)*sintheta_k
+!             !   u_ky = - Rotxx(o,p)*sinphi_k &
+!             !          + Rotyx(o,p)*cosphi_k
+!                 v_kz =   Rotxy(o,p)*sintheta_k*cosphi_k &
+!                        + Rotyy(o,p)*sintheta_k*sinphi_k &
+!                        + Rotzy(o,p)*costheta_k
+!             !   v_kx =   Rotxy(o,p)*costheta_k*cosphi_k &
+!             !          + Rotyy(o,p)*costheta_k*sinphi_k &
+!             !          - Rotzy(o,p)*sintheta_k
+!             !   v_ky = - Rotxy(o,p)*sinphi_k &
+!             !          + Rotyy(o,p)*cosphi_k
+!
+!             ! Calculate angles omega
+!                 cos_value = w_kz
+!                 phi_value = angle(w_kx,w_ky)
+!                 psi_value = MODULO(angle(-u_kz,v_kz), twopi/molRotSymOrder)
+!
+!             ! Real omega values for interpolation
+!                 IF (karim) THEN
+!                     angleVal(l,m,n,o,p)%costheta = cos_value
+!                     angleVal(l,m,n,o,p)%phi      = phi_value
+!                     angleVal(l,m,n,o,p)%psi      = psi_value
+!
+!             ! Index omega(k,Omega)
+!                 ELSE
+!                     angleInd(l,m,n,o,p)%costheta = MIN(INT((1._dp + cos_value)*num_cos/2._dp) + 1, num_cos)
+!                     angleInd(l,m,n,o,p)%phi      = phi_value
+!                     angleInd(l,m,n,o,p)%psi      = MOD(INT(psi_value*num_psi*molRotSymOrder/twopi), num_psi) + 1
+!                 END IF
+!             END DO
+!         END DO
+!
+!     ! Check final nomega
+!         IF ( .NOT. karim ) THEN
+!             IF ( ANY(angleInd%costheta<=0) .OR. ANY(angleInd%psi<=0) ) THEN
+!                 STOP "Some AngleInd is negative or zero"
+!             END IF
+!             IF ( ANY(angleInd%costheta>num_cos) .OR. ANY(angleInd%psi>num_psi) ) THEN
+!                 STOP "Some AngleInd is > to its max authorized value"
+!             END IF
+!         END IF
+!
+!     END SUBROUTINE c_local_to_global_coordinates
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 

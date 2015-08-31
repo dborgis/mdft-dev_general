@@ -5,22 +5,13 @@ SUBROUTINE allocate_from_input
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3
     USE system              ,ONLY: thermoCond, nb_species, mole_fraction, gr=>spacegrid, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
-    USE quadrature          ,ONLY: molRotSymOrder
 
     IMPLICIT NONE
     INTEGER(i2b):: i, s
 
     verbose = input_log( 'verbose', defaultvalue=.false.)
 
-    molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
-
-    if (molRotSymOrder < 1) THEN
-      print*, 'order of main symetric axe cannot be less than 1. molRotSymOrder is declared as ',molRotSymOrder
-      stop    'CRITICAL STOP. CHANGE molRotSymOrder IN INPUT'
-    else if (molRotSymOrder > 2) then
-      print*, "I am surprised your molrotsymorder >2. Certainly a problem somewhere."
-      stop
-    end if
+    gr%molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
 
     gr%length = input_dp3( "lxlylz" , defaultvalue= gr%length )
     if (ANY( gr%length  <= 0._dp ) ) THEN
@@ -102,7 +93,7 @@ SUBROUTINE allocate_from_input
         end do
         stop
     end if
-    solvent%rho0 = solvent%n0 / (eightpiSQ/molrotsymorder)
+    solvent%rho0 = solvent%n0 / (eightpiSQ/gr%molrotsymorder)
 
     if (nb_species > 1) stop "molRotSymOrder must be solvent specific. See github issu #60"
 
