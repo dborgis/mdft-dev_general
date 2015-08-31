@@ -3,14 +3,14 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3
-    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, gr=>spacegrid, solvent, solute, nb_solute_sites
+    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, gr=>spacegrid, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     USE quadrature          ,ONLY: molRotSymOrder
 
     IMPLICIT NONE
     INTEGER(i2b):: i, s
 
-    verbose = input_log('verbose',defaultvalue=.false.)
+    verbose = input_log( 'verbose', defaultvalue=.false.)
 
     molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
 
@@ -39,11 +39,11 @@ SUBROUTINE allocate_from_input
         error stop
     end if
     gr%n = gr%n_nodes
-    gr%nx = gr%n_nodes(1)
-    gr%ny = gr%n_nodes(2)
-    gr%nz = gr%n_nodes(3)
+    gr%nx = gr%n(1)
+    gr%ny = gr%n(2)
+    gr%nz = gr%n(3)
 
-    gr%dl = gr%length / real(gr%n_nodes,dp)
+    gr%dl = gr%length / real(gr%n,dp) !
     gr%dx = gr%dl(1)
     gr%dy = gr%dl(2)
     gr%dz = gr%dl(3)
@@ -53,14 +53,15 @@ SUBROUTINE allocate_from_input
 
     ! We now have a full description of the space grid
     print*,
-    print*, "====GRID==========="
+    print*, "[GRID]====="
     print*, "Box Length :", gr%length
     print*, "nodes      :", gr%n_nodes
     print*, "dx, dy, dz :", gr%dl
-    print*, "====/GRID==========="
+    print*, "[/GRID]===="
     print*,
 
-
+    print*,
+    print*, "[Conditions]====="
     thermoCond%T = input_dp('temperature', defaultvalue=300._dp) ! look for temperature in input
     IF (thermoCond%T <= 0 ) THEN
         PRINT*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',thermoCond%T
@@ -68,6 +69,11 @@ SUBROUTINE allocate_from_input
     end if
     thermoCond%kbT = Boltz * Navo * thermoCond%T * 1.0e-3_dp
     thermoCond%beta = 1.0_dp / thermocond%kbT
+    print*, "Temperature (K)  :", thermocond%t
+    print*, "kT               :", thermocond%kbt
+    print*, "\beta = 1/(kT)   :", thermocond%beta
+    print*, "[/Conditions]====="
+    print*,
 
 
 
@@ -129,7 +135,7 @@ SUBROUTINE allocate_from_input
     end subroutine mv_solute_to_center
 
     subroutine assert_solute_inside
-        use system, only: gr=>spacegrid, solute
+        use system, only: gr=>spacegrid, solute, nb_solute_sites
         implicit none
         integer :: i
         ! check if some positions are out of the supercell
