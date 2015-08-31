@@ -2,61 +2,64 @@
 SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
-    USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose
-    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, spaceGrid, solvent, solute, nb_solute_sites
+    USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3
+    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, gr=>spacegrid, solvent, solute, nb_solute_sites
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     USE quadrature          ,ONLY: molRotSymOrder
 
     IMPLICIT NONE
     INTEGER(i2b):: i, s
 
-    verbose = input_log('verbose')
+    verbose = input_log('verbose',defaultvalue=.false.)
 
-    molRotSymOrder = input_int('molRotSymOrder',1) !Get the order of the main symmetry axis of the solvent
+    molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
 
     if (molRotSymOrder < 1) THEN
       print*, 'order of main symetric axe cannot be less than 1. molRotSymOrder is declared as ',molRotSymOrder
       stop    'CRITICAL STOP. CHANGE molRotSymOrder IN INPUT'
     else if (molRotSymOrder > 2) then
-      print*, "I am surprise your molrotsymorder >2. Certainly a problem somewhere."
+      print*, "I am surprised your molrotsymorder >2. Certainly a problem somewhere."
       stop
     end if
 
-    spaceGrid%length = [  input_dp('Lx', defaultvalue=spacegrid%length(1)),&
-                          input_dp('Ly', defaultvalue=spacegrid%length(2)),&
-                          input_dp('Lz', defaultvalue=spacegrid%length(3)) ]
-    IF (ANY( spaceGrid%length  <= 0._dp ) ) THEN
+    gr%length = input_dp3( "lxlylz" , defaultvalue= gr%length )
+    if (ANY( gr%length  <= 0._dp ) ) THEN
         PRINT*,'The supercell cannot have negative length.'
-        PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',spaceGrid%length
-        STOP 'CRITICAL STOP BECAUSE OF NON-PHYSICAL INPUT'
+        PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',gr%length
+        STOP
     end if
+    gr%l = gr%length
+    gr%lx = gr%length(1)
+    gr%ly = gr%length(2)
+    gr%lz = gr%length(3)
 
-!    spaceGrid%n_nodes = [ input_int('nfft1', defaultvalue=int(spacegrid%length(1)*3)+1 ), &
-!                          input_int('nfft2', defaultvalue=int(spacegrid%length(2)*3)+1), &
-!                          input_int('nfft3', defaultvalue=int(spacegrid%length(3)*3)+1) ] ! number of grid nodes in each direction
-    block
-        integer :: n1,n2,n3
-        real(dp) :: resox, resoy, resoz
-        resox = input_dp("resox", defaultvalue=0.33_dp )
-        resoy = input_dp("resoy", defaultvalue=0.33_dp )
-        resoz = input_dp("resoz", defaultvalue=0.33_dp )
-        n1 = int(resox * spacegrid%length(1))
-        n2 = int(resoy * spacegrid%length(2))
-        n3 = int(resoz * spacegrid%length(3))
-        spacegrid%n_nodes = [n1, n2, n3]
-    end block
-
-    print*, "Box Length  :", spacegrid%length
-    print*, "Space grid  :", spacegrid%n_nodes
-    print*, "Grid resol° :", spacegrid%length / real(spacegrid%n_nodes,dp)
-
-    IF (ANY( spaceGrid%n_nodes  <= 0) ) THEN
-        PRINT*,'The space is divided into grid nodes. For each direction, you ask', spaceGrid%n_nodes,'node.'
-        STOP 'This is unphysical.'
+    gr%n_nodes = input_int3( "nxnynz" , defaultvalue= nint(gr%length/0.3_dp) )
+    if ( any(gr%n_nodes <= 0) ) then
+        print*, 'The space is divided into grid nodes. For each direction, you ask', gr%n_nodes,'node.'
+        error stop
     end if
+    gr%n = gr%n_nodes
+    gr%nx = gr%n_nodes(1)
+    gr%ny = gr%n_nodes(2)
+    gr%nz = gr%n_nodes(3)
 
-    spaceGrid%dl = spaceGrid%length/REAL(spaceGrid%n_nodes,dp)
-    spaceGrid%dv = product(spaceGrid%dl)
+    gr%dl = gr%length / real(gr%n_nodes,dp)
+    gr%dx = gr%dl(1)
+    gr%dy = gr%dl(2)
+    gr%dz = gr%dl(3)
+
+    gr%v = product(gr%length)
+    gr%dv = product(gr%dl)
+
+    ! We now have a full description of the space grid
+    print*,
+    print*, "====GRID==========="
+    print*, "Box Length :", gr%length
+    print*, "nodes      :", gr%n_nodes
+    print*, "dx, dy, dz :", gr%dl
+    print*, "====/GRID==========="
+    print*,
+
 
     thermoCond%T = input_dp('temperature', defaultvalue=300._dp) ! look for temperature in input
     IF (thermoCond%T <= 0 ) THEN
@@ -65,6 +68,8 @@ SUBROUTINE allocate_from_input
     end if
     thermoCond%kbT = Boltz * Navo * thermoCond%T * 1.0e-3_dp
     thermoCond%beta = 1.0_dp / thermocond%kbT
+
+
 
     nb_species = input_int('nb_implicit_species',defaultvalue=1) ! get the number of implicit solvant species
     if (nb_species < 1) then
@@ -114,26 +119,26 @@ SUBROUTINE allocate_from_input
     ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
     subroutine mv_solute_to_center
         use input  ,only: input_log
-        use system ,only: spaceGrid, solute
+        use system ,only: gr=>spacegrid, solute
         implicit none
         if( input_log( 'translate_solute_to_center', defaultvalue=.true. )) then
-            solute%site%r(1) = solute%site%r(1) + spaceGrid%length(1)/2.0_dp
-            solute%site%r(2) = solute%site%r(2) + spaceGrid%length(2)/2.0_dp
-            solute%site%r(3) = solute%site%r(3) + spaceGrid%length(3)/2.0_dp
+            solute%site%r(1) = solute%site%r(1) + gr%length(1)/2.0_dp
+            solute%site%r(2) = solute%site%r(2) + gr%length(2)/2.0_dp
+            solute%site%r(3) = solute%site%r(3) + gr%length(3)/2.0_dp
         end if
     end subroutine mv_solute_to_center
 
     subroutine assert_solute_inside
-        use system, only: spaceGrid, solute
+        use system, only: gr=>spacegrid, solute
         implicit none
         integer :: i
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
         do concurrent( i=1:nb_solute_sites )
-            solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , spaceGrid%length(1) )
-            solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , spaceGrid%length(2) )
-            solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , spaceGrid%length(3) )
+            solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , gr%length(1) )
+            solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , gr%length(2) )
+            solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , gr%length(3) )
         end do
     end subroutine assert_solute_inside
 

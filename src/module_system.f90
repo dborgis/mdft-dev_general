@@ -49,10 +49,14 @@ MODULE system
     TYPE (thermoCondType) :: thermoCond ! everything related to the thermodynamic conditions
 
     TYPE :: spaceGridType
-        INTEGER(i2b), DIMENSION(3) :: n_nodes ! number of grid nodes in direction x, y and z
-        REAL(dp), DIMENSION(3) :: length ! total length in direction x, y and z
+        INTEGER(i2b), DIMENSION(3) :: n_nodes, n ! number of grid nodes in direction x, y and z
+        integer(i2b) :: nx, ny, nz
+        REAL(dp), DIMENSION(3) :: length, l ! total length in direction x, y and z
+        real(dp) :: lx, ly, lz
         REAL(dp), DIMENSION(3) :: dl ! elemental distance between two nodes in direction x, y and z
+        real(dp) :: dx, dy, dz
         REAL(dp) :: dv ! elemental volume
+        real(dp) :: v
         real(dp) :: buffer_length ! length of free space between the extremam of the solute. 
     END TYPE spaceGridType
     TYPE( spaceGridType ), TARGET :: spaceGrid

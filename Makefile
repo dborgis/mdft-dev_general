@@ -136,7 +136,7 @@ debug: $(EXE)
 	$(FC) $(FCFLAGS) $(MKFLAGS) -o $(EXE) $(FOBJ) $(LDFLAGS)
 
 clean:
-	-@ rm -vf gmon.out $(EXE) $(MODDIR)/* $(OBJDIR)/* >/dev/null 2>/dev/null
+	rm -vf gmon.out $(EXE) $(MODDIR)/* $(OBJDIR)/* >/dev/null 2>/dev/null
 
 dot:
 	dot -Tpdf tools/mdft.dot -o mdft.pdf && evince mdft.pdf &
@@ -144,7 +144,7 @@ dot:
 # ——————————————— Pattern rules ———————————————
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	@ $(FC) $(FCFLAGS) $(MKFLAGS) -c $< -o $@
+	$(FC) $(FCFLAGS) $(MKFLAGS) -c $< -o $@
 
 # For GNU make, *.f90 cannot be compiled automatically.
 
@@ -461,6 +461,7 @@ $(OBJDIR)/init_fftw3_plans.o:\
 
 $(OBJDIR)/init_simu.o:\
 	$(SRCDIR)/init_simu.f90\
+	$(OBJDIR)/grid_mod.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_fft.o\
