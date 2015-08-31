@@ -4,6 +4,7 @@ module quadrature
   use precision_kinds ,only: dp, i2b
   use constants       ,only: pi, twopi, fourpi, zero, epsdp
   use input           ,only: input_log, input_char, input_int
+  use system, only: gr
 
   implicit none
 
@@ -28,34 +29,131 @@ module quadrature
   end type
 
   type (integrationScheme), public :: intScheme
-  integer(i2b), public :: molRotSymOrder
+  integer(i2b), public :: molrotsymorder
 
   contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine init
     use mathematica, only: chop
+    use system, only: gr
     implicit none
-    integer :: N, P, i, j
+    integer :: N, P, i, j, no, itheta, iphi, ipsi
 
-    print*,"---- Angular Quadratures"
+    print*,
+    print*,"==="
+    print*,"grid pour quadrature angulaire"
+    gr%molrotsymorder = input_int("molrotsymorder", defaultvalue=1)
+    molrotsymorder = gr%molrotsymorder
+    gr%mmax = input_int("mmax", defaultvalue=4)
+    gr%ntheta = gr%mmax+1
+    gr%nphi = 2*gr%mmax+1
+    gr%npsi = 2*(gr%mmax/gr%molrotsymorder)+1
+    gr%no = gr%ntheta*gr%nphi*gr%npsi   ! nombez d'orientations dans la representation Euler
+    gr%dphi = twopi/real(gr%nphi,dp)
+    gr%dpsi = twopi/real(gr%npsi*gr%molrotsymorder,dp)
+    n = gr%no
+    allocate( gr%theta(n) , source=0._dp)
+    allocate( gr%phi(n) , source=0._dp)
+    allocate( gr%psi(n) , source=0._dp)
+    allocate( gr%wtheta(n) , source=0._dp)
+    allocate( gr%wphi(n) , source=0._dp)
+    allocate( gr%wpsi(n) , source=0._dp)
+    allocate( gr%w(n) , source=0._dp)
+    block
+        real(dp) :: thetaofitheta(gr%ntheta), wthetaofitheta(gr%ntheta)
+        integer :: err, io, itheta, iphi, ipsi
+        real(dp) :: phiofiphi(gr%nphi), psiofipsi(gr%npsi)
+        real(dp) :: wphiofiphi(gr%nphi)
+        real(dp) :: wpsiofipsi(gr%npsi)
+        wphiofiphi = 1._dp/gr%nphi
+        wpsiofipsi = 1._dp/gr%npsi
+        psiofipsi = [(   real(i-1,dp)*gr%dpsi   , i=1,gr%npsi )]
+        phiofiphi = [(   real(i-1,dp)*gr%dphi   , i=1,gr%nphi )]
+        call gauss_legendre( gr%ntheta, thetaofitheta, wthetaofitheta, err)
+        if (err /= 0) error stop "problem in gauss_legendre"
+        thetaofitheta = acos(thetaofitheta)
+        allocate( gr%tio(gr%ntheta,gr%nphi,gr%npsi), source=-huge(1) )
+        io = 0
+        do itheta = 1, gr%ntheta
+            do iphi = 1, gr%nphi
+                do ipsi = 1, gr%npsi
+                    io = io+1
+                    gr%theta(io) = thetaofitheta(itheta)
+                    gr%phi(io) = phiofiphi(iphi)
+                    gr%psi(io) = psiofipsi(ipsi)
+                    gr%tio(itheta,iphi,ipsi) = io
+                    gr%wtheta(io) = wthetaofitheta(itheta)
+                    gr%wphi(io) = wphiofiphi(iphi)
+                    gr%wpsi(io) = wpsiofipsi(ipsi)
+                    gr%w(io) = gr%wtheta(io) * gr%wphi(io) * gr%wpsi(io)
+                end do
+            end do
+        end do
+    end block
+    print*, "mmax =",gr%mmax
+    print*, "number of orientations",gr%no
+    print*, "number of theta =", gr%ntheta
+    print*, "number of phi=", gr%nphi
+    print*, "molrotsymorder =", gr%molrotsymorder
+    print*, "number of psi=", gr%npsi
+    print*, "sum of all weights =", sum(gr%w)
+    allocate( gr%rotxx(n) , gr%rotxy(n), gr%rotxz(n), source=0._dp)
+    allocate( gr%rotyx(n) , gr%rotyy(n), gr%rotyz(n), source=0._dp)
+    allocate( gr%rotzx(n) , gr%rotzy(n), gr%rotzz(n), source=0._dp)
+    allocate( gr%OMx(n), gr%OMy(n), gr%OMz(n) , source=0._dp)
+    select case (gr%no)
+    case (1)
+        gr%Rotxx = 1.0_dp ; gr%Rotxy = 0.0_dp ; gr%Rotxz = 0.0_dp
+        gr%Rotyx = 0.0_dp ; gr%Rotyy = 1.0_dp ; gr%Rotyz = 0.0_dp
+        gr%Rotzx = 0.0_dp ; gr%Rotzy = 0.0_dp ; gr%Rotzz = 1.0_dp
+        gr%OMx = 0._dp ; gr%OMy = 0._dp ; gr%OMz = 1._dp ! ATTENTION completely arbitrary. We decide to put it along z.
+    case default
+        block
+            integer :: itheta, io
+            real(dp) :: cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
+            do io = 1, gr%no
+                cos_theta = cos(gr%theta(io))
+                sin_theta = sin(gr%theta(io))
+                cos_phi = cos(gr%phi(io))
+                sin_phi = sin(gr%phi(io))
+                gr%OMx(io) = sin_theta * cos_phi
+                gr%OMy(io) = sin_theta * sin_phi
+                gr%OMz(io) = cos_theta
+                cos_psi = cos(gr%psi(io))
+                sin_psi = sin(gr%psi(io))
+                gr%rotxx(io) = cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
+                gr%rotxy(io) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
+                gr%rotxz(io) = sin_theta*cos_phi
+                gr%rotyx(io) = cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
+                gr%rotyy(io) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
+                gr%rotyz(io) = sin_theta*sin_phi
+                gr%rotzx(io) = -sin_theta*cos_psi
+                gr%rotzy(io) = sin_theta*sin_psi
+                gr%rotzz(io) = cos_theta
+            end do
+        end block
+    end select
+    print*,"=== /grid"
+    print*,
 
-    molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1)
-    if ( molRotSymOrder <= 0 ) then
-        print*,"in module_quadrature, molRotSymOrder, readen from input/dft.in, is unphysical. critical stop"
-        stop
-    end if
+
+    return
+
+
+
+
 
     ! quadrature for psi. For now a uniform grid over psi between 0 and 2pi.
     molRotGrid%n_angles = input_int('nb_psi', defaultvalue=4 ) ! number of nodes for the grid over psi
     N = molrotgrid%n_angles
     print*,"Quadrature for psi : uniform"
-    print*,"Number of nodes for psi :",N * molRotSymOrder
+    print*,"Number of nodes for psi :",N * molrotsymorder
     print*,"Thanks to symetries, we will only use this number of nodes for psi :",N
     if ( N < 1 ) stop "in module_quadrature, nb_psi, readen from input/dft.in is unphysical. critical stop."
     allocate( molRotGrid%root(N), source=0._dp)
     do concurrent (i=1:N) ! equidistant repartition between 0 and 2Pi
-      molRotGrid%root(i) = real(i-1,dp)*twopi/real(N*molRotSymOrder,dp)
+      molRotGrid%root(i) = real(i-1,dp)*twopi/real(N*molrotsymorder,dp)
     end do
     allocate( molrotgrid%weight(N) , source=  twopi/real(N*molrotsymorder ,dp)   ) ! homogeneous grid between 0 and 2pi. all weights equa l
 
@@ -254,15 +352,15 @@ module quadrature
       case (0)
         qsu2%x( 1) = 0._dp; qsu2%y(1)=0._dp; qsu2%z(1)=1._dp; qsu2%w(1)=1._dp
       case(1)
-        qsu2%x(1)=0._dp;  qsu2%y(1)= 0._dp ; qsu2%z(1)=   1._dp  ; qsu2%w(1)=  0.5_dp 
+        qsu2%x(1)=0._dp;  qsu2%y(1)= 0._dp ; qsu2%z(1)=   1._dp  ; qsu2%w(1)=  0.5_dp
         qsu2%x(2)=0._dp;  qsu2%y(2)= 0._dp ; qsu2%z(2)=  -1._dp  ; qsu2%w(2)=  0.5_dp
       case(2)
-        qsu2%x(1)= 0.57735026918962573_dp  ;qsu2%y(1)= 0.57735026918962573_dp ;qsu2%z(1)= 0.57735026918962573_dp  ; qsu2%w(1)=   0.25_dp 
+        qsu2%x(1)= 0.57735026918962573_dp  ;qsu2%y(1)= 0.57735026918962573_dp ;qsu2%z(1)= 0.57735026918962573_dp  ; qsu2%w(1)=   0.25_dp
         qsu2%x(2)=-0.57735026918962573_dp  ;qsu2%y(2)=-0.57735026918962573_dp ;qsu2%z(2)= 0.57735026918962573_dp  ; qsu2%w(2)=   0.25_dp
         qsu2%x(3)=-0.57735026918962573_dp  ;qsu2%y(3)= 0.57735026918962573_dp ;qsu2%z(3)=-0.57735026918962573_dp ; qsu2%w(3)=    0.25_dp
         qsu2%x(4)= 0.57735026918962573_dp  ;qsu2%y(4)=-0.57735026918962573_dp ;qsu2%z(4)=-0.57735026918962573_dp ; qsu2%w(4)=    0.25_dp
       case(3)
-        qsu2%x(1)= 1._dp  ;qsu2%y(1)=      0._dp  ;qsu2%z(1)=      0._dp ; qsu2%w(1)=0.166666666666666667_dp 
+        qsu2%x(1)= 1._dp  ;qsu2%y(1)=      0._dp  ;qsu2%z(1)=      0._dp ; qsu2%w(1)=0.166666666666666667_dp
         qsu2%x(2)= 0._dp  ;qsu2%y(2)=      1._dp  ;qsu2%z(2)=      0._dp ; qsu2%w(2)=0.166666666666666667_dp
         qsu2%x(3)= 0._dp  ;qsu2%y(3)=      0._dp  ;qsu2%z(3)=      1._dp ; qsu2%w(3)=0.166666666666666667_dp
         qsu2%x(4)=-1._dp ;qsu2%y(4)=      0._dp  ;qsu2%z(4)=      0._dp ; qsu2%w(4)=0.166666666666666667_dp
@@ -271,7 +369,7 @@ module quadrature
       case(4)
          qsu2%x(1)=0._dp  ;qsu2%y(1)= 0._dp ;qsu2%z(1)= 1._dp ;qsu2%w(1)=0.0833333333333333333_dp
          qsu2%x(2)=0._dp  ;qsu2%y(2)= 0._dp ;qsu2%z(2)=-1._dp ;qsu2%w(2)=0.0833333333333333333_dp
-         qsu2%x(3)=0.047060422787  ;qsu2%y(3)=  0.89318828732  ;qsu2%z(3)= 0.4472135955 ;qsu2%w(3)=      0.10416666666666667_dp 
+         qsu2%x(3)=0.047060422787  ;qsu2%y(3)=  0.89318828732  ;qsu2%z(3)= 0.4472135955 ;qsu2%w(3)=      0.10416666666666667_dp
          qsu2%x(4)=0.66485623892   ;qsu2%y(4)= 0.59830275076   ;qsu2%z(4)=-0.4472135955 ;qsu2%w(4)=      0.10416666666666667_dp
          qsu2%x(5)=-0.047060422787 ;qsu2%y(5)= -0.89318828732  ;qsu2%z(5)=0.4472135955  ;qsu2%w(5)=      0.10416666666666667_dp
          qsu2%x(6)=-0.66485623892  ;qsu2%y(6)= -0.59830275076  ;qsu2%z(6)= -0.4472135955;qsu2%w(6)=      0.10416666666666667_dp
@@ -355,7 +453,7 @@ module quadrature
         print*,"should be 2pi=",twopi
         print*,"the difference is",twopi - sum(molrotgrid%weight) *real(molrotsymorder,dp)
         print*,"epsilon machine=",epsdp
-        error stop 
+        error stop
     end if
 
     if( abs( fourpi -sum(qsu2%w) ) > 10*epsdp ) then
@@ -363,7 +461,7 @@ module quadrature
         print*,"should be 4pi=",fourpi
         print*,"the difference is",fourpi-sum(qsu2%w)
         print*,"epsilon machine=",epsdp
-        error stop 
+        error stop
     end if
 
     N = qsu2%n
@@ -377,5 +475,47 @@ module quadrature
 !    print*,"weights=",anggrid%weight
 !    error stop 'subroutine init module quadrature'
   end subroutine init
+
+  subroutine gauss_legendre( n, x, w, exitstatus) ! copy paste from Luc's subroutine Luc74p85
+      !
+      ! Returns the n roots (x) and associated weights(w) of a gauss legendre quadrature of order n
+      ! The roots are the Cos(theta) so that if you need theta, don't forget to acos(x)
+      !
+      implicit none
+      integer, intent(in) :: n
+      real(dp), intent(out) :: x(n), w(n)
+      integer, optional, intent(out) :: exitstatus
+      integer :: m, i, j
+      real(dp), PARAMETER :: pi=acos(-1._dp)
+      real(dp) :: xi, p1, p2, p3, pp, deltaxi
+      exitstatus = 0
+      if( n <= 0 ) then
+          exitstatus = -1
+          return
+      else
+          m = (n+1)/2
+          do i = 1,m          ! on s'interesse au ième zero du polynome pn(x) de legendre
+              xi = cos(pi*(i-0.25)/(n+0.5))     ! estimation de départ qu'on va raffiner par nr
+              deltaxi = 1
+              do while (abs(deltaxi)>1.d-13)
+                p1 = 1.
+                p2 = 0.
+                do j = 1,n
+                  p3 = p2
+                  p2 = p1
+                  p1 = ((2*j-1.)*xi*p2-(j-1.)*p3)/j         ! relation de récurrence entre les pj
+                end do
+                pp = n*(xi*p1-p2)/(xi**2-1.)                   ! donne pn' en fonction de pn et pn-1
+                deltaxi = -p1/pp                                  ! nr
+                xi = xi + deltaxi
+              end do
+              x(i) = xi
+              w(i) = 1./((1.-xi**2)*pp**2)                  ! poids normalise a 1
+              x(n+1-i) = -xi
+              w(n+1-i) = w(i)
+          end do
+      end if
+  end subroutine gauss_legendre
+
 
 end module quadrature
