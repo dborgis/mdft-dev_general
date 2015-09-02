@@ -5,7 +5,7 @@ SUBROUTINE init_simu
     use fft         ,ONLY: prepare_corefft_for_MDFT => init, prepare_fft_threads => init_threads
     use dcf         ,ONLY: init_dcf => init
     use module_input       ,ONLY: getinput
-    use module_minimizer   ,only: prepare_minimizer
+    use module_minimizer   ,only: init_minimizer => init
     use hardspheres ,only: compute_hard_spheres_parameters
     ! use grid_mod    ,only: grid
 
@@ -32,7 +32,7 @@ SUBROUTINE init_simu
     CALL read_solvent ! Read solvent atomic positions, charge and Lennard-Jones param
     CALL init_dcf
     IF (getinput%log('hard_sphere_fluid', defaultvalue=.false.)) CALL compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
-    CALL prepare_minimizer ! Prepare minimization ! allocate tables and computes precision and so on
+    CALL init_minimizer ! Prepare minimization ! allocate tables and computes precision and so on
     CALL init_external_potential
     CALL init_density
 

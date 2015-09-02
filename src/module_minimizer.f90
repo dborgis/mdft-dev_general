@@ -88,10 +88,9 @@ contains
     end subroutine deallocate_solvent_rho
 
     !===================================================================================================================================
-    subroutine prepare_minimizer
+    subroutine init
         ! this subroutine gets the informations in input file and then allocate, prepare, compute needed data
 
-        use precision_kinds, ONLY: dp
         use module_input, ONLY: getinput
         use system , ONLY: solvent
         use module_grid, only: grid
@@ -112,7 +111,6 @@ contains
         allocate(      df_new( nx, ny, nz, no, ns) ,source=0._dp)
 
         FF = 0._dp
-
-    END subroutine prepare_minimizer
+    END subroutine init
 
 end module module_minimizer
