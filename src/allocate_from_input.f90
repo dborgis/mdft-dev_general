@@ -2,7 +2,7 @@
 SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
-    USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3
+    USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3, getinput
     USE system              ,ONLY: thermoCond, mole_fraction, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     use module_grid, only: grid, init_grid
@@ -10,7 +10,7 @@ SUBROUTINE allocate_from_input
     IMPLICIT NONE
     integer:: i, s
 
-    verbose = input_log( 'verbose', defaultvalue=.false.)
+    verbose = getinput%log( "verbose", defaultvalue=.false.)
 
 
     print*,

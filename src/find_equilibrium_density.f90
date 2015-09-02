@@ -2,7 +2,7 @@
 ! We use the Low Memory BFGS algorithm, provided by the NLOpt library.
 subroutine find_equilibrium_density
 
-  use precision_kinds,only : i2b, dp
+  use precision_kinds, only : i2b, dp
   use input, only: input_dp, input_int, input_char
   use minimizer, only: ncg, cg_vect_new, FF, dF_new, minimizer_type, epsg, iter
 
