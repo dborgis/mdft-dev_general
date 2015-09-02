@@ -3,51 +3,52 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3
-    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, gr=>spacegrid, solvent
+    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
+    use module_grid, only: grid
 
     IMPLICIT NONE
     INTEGER(i2b):: i, s
 
     verbose = input_log( 'verbose', defaultvalue=.false.)
 
-    gr%molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
+    grid%molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
 
-    gr%length = input_dp3( "lxlylz" , defaultvalue= gr%length )
-    if (ANY( gr%length  <= 0._dp ) ) THEN
+    grid%length = input_dp3( "lxlylz" , defaultvalue= grid%length )
+    if (ANY( grid%length  <= 0._dp ) ) THEN
         PRINT*,'The supercell cannot have negative length.'
-        PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',gr%length
+        PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',grid%length
         STOP
     end if
-    gr%l = gr%length
-    gr%lx = gr%length(1)
-    gr%ly = gr%length(2)
-    gr%lz = gr%length(3)
+    grid%l = grid%length
+    grid%lx = grid%length(1)
+    grid%ly = grid%length(2)
+    grid%lz = grid%length(3)
 
-    gr%n_nodes = input_int3( "nxnynz" , defaultvalue= nint(gr%length/0.3_dp) )
-    if ( any(gr%n_nodes <= 0) ) then
-        print*, 'The space is divided into grid nodes. For each direction, you ask', gr%n_nodes,'node.'
+    grid%n_nodes = input_int3( "nxnynz" , defaultvalue= nint(grid%length/0.3_dp) )
+    if ( any(grid%n_nodes <= 0) ) then
+        print*, 'The space is divided into grid nodes. For each direction, you ask', grid%n_nodes,'node.'
         error stop
     end if
-    gr%n = gr%n_nodes
-    gr%nx = gr%n(1)
-    gr%ny = gr%n(2)
-    gr%nz = gr%n(3)
+    grid%n = grid%n_nodes
+    grid%nx = grid%n(1)
+    grid%ny = grid%n(2)
+    grid%nz = grid%n(3)
 
-    gr%dl = gr%length / real(gr%n,dp) !
-    gr%dx = gr%dl(1)
-    gr%dy = gr%dl(2)
-    gr%dz = gr%dl(3)
+    grid%dl = grid%length / real(grid%n,dp) !
+    grid%dx = grid%dl(1)
+    grid%dy = grid%dl(2)
+    grid%dz = grid%dl(3)
 
-    gr%v = product(gr%length)
-    gr%dv = product(gr%dl)
+    grid%v = product(grid%length)
+    grid%dv = product(grid%dl)
 
     ! We now have a full description of the space grid
     print*,
     print*, "[GRID]====="
-    print*, "Box Length :", gr%length
-    print*, "nodes      :", gr%n_nodes
-    print*, "dx, dy, dz :", gr%dl
+    print*, "Box Length :", grid%length
+    print*, "nodes      :", grid%n_nodes
+    print*, "dx, dy, dz :", grid%dl
     print*, "[/GRID]===="
     print*,
 
@@ -93,7 +94,7 @@ SUBROUTINE allocate_from_input
         end do
         stop
     end if
-    solvent%rho0 = solvent%n0 / (eightpiSQ/gr%molrotsymorder)
+    solvent%rho0 = solvent%n0 / (eightpiSQ/grid%molrotsymorder)
 
     if (nb_species > 1) stop "molRotSymOrder must be solvent specific. See github issu #60"
 
@@ -116,26 +117,28 @@ SUBROUTINE allocate_from_input
     ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
     subroutine mv_solute_to_center
         use input  ,only: input_log
-        use system ,only: gr=>spacegrid, solute
+        use system ,only: solute
+        use module_grid, only: grid
         implicit none
         if( input_log( 'translate_solute_to_center', defaultvalue=.true. )) then
-            solute%site%r(1) = solute%site%r(1) + gr%length(1)/2.0_dp
-            solute%site%r(2) = solute%site%r(2) + gr%length(2)/2.0_dp
-            solute%site%r(3) = solute%site%r(3) + gr%length(3)/2.0_dp
+            solute%site%r(1) = solute%site%r(1) + grid%length(1)/2.0_dp
+            solute%site%r(2) = solute%site%r(2) + grid%length(2)/2.0_dp
+            solute%site%r(3) = solute%site%r(3) + grid%length(3)/2.0_dp
         end if
     end subroutine mv_solute_to_center
 
     subroutine assert_solute_inside
-        use system, only: gr=>spacegrid, solute, nb_solute_sites
+        use system, only: solute, nb_solute_sites
+        use module_grid, only: grid
         implicit none
         integer :: i
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
         do concurrent( i=1:nb_solute_sites )
-            solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , gr%length(1) )
-            solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , gr%length(2) )
-            solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , gr%length(3) )
+            solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , grid%length(1) )
+            solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , grid%length(2) )
+            solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , grid%length(3) )
         end do
     end subroutine assert_solute_inside
 

@@ -20,7 +20,7 @@ program main
 !    type(functional) :: ff, fid
 !    type(external_potential) :: vext
 !
-!    call gr%build()
+!    call grid%build()
 !    call d%build(gr)
 !    call ff%build(gr)
 !    call fid%build(gr)

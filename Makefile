@@ -112,13 +112,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/output_g-r-theta.o\
 	$(OBJDIR)/output_gsitesite.o\
 	$(OBJDIR)/module_time.o\
-	$(OBJDIR)/energy_cs.o\
-	$(OBJDIR)/grid_mod.o\
-	$(OBJDIR)/functional_mod.o\
-	$(OBJDIR)/ideal_functional_mod.o\
-	$(OBJDIR)/density_mod.o\
-	$(OBJDIR)/external_potential_mod.o\
-	$(OBJDIR)/external_functional_mod.o
+	$(OBJDIR)/energy_cs.o
 
 # ——————————————— Global rules ———————————————
 
@@ -152,39 +146,13 @@ $(OBJDIR)/%.o : $(SRCDIR)/%.f90
 
 $(EXE): $(FOBJ)
 
-$(OBJDIR)/external_potential_mod.o:\
-	$(SRCDIR)/external_potential_mod.f90\
-	$(OBJDIR)/grid_mod.o
-
 $(OBJDIR)/module_grid.o:\
 	$(SRCDIR)/module_grid.f90\
 	$(OBJDIR)/module_precision_kinds.o
 
-$(OBJDIR)/external_functional_mod.o:\
-	$(SRCDIR)/external_functional_mod.f90\
-	$(OBJDIR)/grid_mod.o\
-	$(OBJDIR)/density_mod.o\
-	$(OBJDIR)/external_potential_mod.o
-
-$(OBJDIR)/density_mod.o:\
-	$(SRCDIR)/density_mod.f90\
-	$(OBJDIR)/grid_mod.o
-
-$(OBJDIR)/ideal_functional_mod.o:\
-	$(SRCDIR)/ideal_functional_mod.f90\
-	$(OBJDIR)/functional_mod.o\
-	$(OBJDIR)/grid_mod.o\
-	$(OBJDIR)/density_mod.o
-
-$(OBJDIR)/functional_mod.o:\
-	$(SRCDIR)/functional_mod.f90\
-	$(OBJDIR)/grid_mod.o
-
-$(OBJDIR)/grid_mod.o:\
-	$(SRCDIR)/grid_mod.f90
-
 $(OBJDIR)/allocate_from_input.o:\
 	$(SRCDIR)/allocate_from_input.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
@@ -437,12 +405,11 @@ $(OBJDIR)/init_external_potential.o:\
 
 $(OBJDIR)/init_fftw3_plans.o:\
 	$(SRCDIR)/init_fftw3_plans.f90\
-	$(OBJDIR)/module_system.o\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_fft.o
 
 $(OBJDIR)/init_simu.o:\
 	$(SRCDIR)/init_simu.f90\
-	$(OBJDIR)/grid_mod.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_fft.o\
@@ -460,11 +427,7 @@ $(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o:\
 
 $(OBJDIR)/main.o:\
 	$(SRCDIR)/main.f90\
-	$(OBJDIR)/external_potential_mod.o\
-	$(OBJDIR)/functional_mod.o\
-	$(OBJDIR)/grid_mod.o\
-	$(OBJDIR)/ideal_functional_mod.o\
-	$(OBJDIR)/density_mod.o
+	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/mean_over_orientations.o:\
 	$(SRCDIR)/mean_over_orientations.f90\

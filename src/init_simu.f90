@@ -12,11 +12,11 @@ SUBROUTINE init_simu
     IMPLICIT NONE
 
 !    type(grid) :: gr
-!    call gr%build
-!    print*, "dpsi and dphi =",gr%dpsi, gr%dphi
-!    print*, "mmax=",gr%mmax
-!    print*, "theta=",gr%theta
-!    print*, "weigth=",gr%wtheta
+!    call grid%build
+!    print*, "dpsi and dphi =",grid%dpsi, grid%dphi
+!    print*, "mmax=",grid%mmax
+!    print*, "theta=",grid%theta
+!    print*, "weigth=",grid%wtheta
 !    stop "ici et la"
 
     CALL print_header ! package name, day & time

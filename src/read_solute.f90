@@ -3,8 +3,9 @@
 subroutine read_solute
 
   use precision_kinds, ONLY: i2b,dp
-  use system,          ONLY: nb_solute_sites, solute, nb_species, spacegrid
+  use system,          ONLY: nb_solute_sites, solute, nb_species
   use input,           ONLY: input_line, input_log, input_dp
+  use module_grid, only: grid
 !  use periodic_table,  ONLY: init_periodic_table, ptable
 
   implicit none
@@ -45,10 +46,10 @@ subroutine read_solute
     solutediametery = sqrt((soluteymax-soluteymin)**2)
     solutediameterz = sqrt((solutezmax-solutezmin)**2)
 !    solutesigmaljmax = maxval(solute%site%sig)
-    spacegrid%buffer_length = input_dp("buffer_length", defaultvalue=15._dp)
-    spacegrid%length(1) = solutediameterx +2.*spacegrid%buffer_length !+2*solutesigmaljmax 
-    spacegrid%length(2) = solutediametery +2.*spacegrid%buffer_length !+2*solutesigmaljmax 
-    spacegrid%length(3) = solutediameterz +2.*spacegrid%buffer_length !+2*solutesigmaljmax 
+    GRID%buffer_length = input_dp("buffer_length", defaultvalue=15._dp)
+    GRID%length(1) = solutediameterx +2.*GRID%buffer_length !+2*solutesigmaljmax
+    GRID%length(2) = solutediametery +2.*GRID%buffer_length !+2*solutesigmaljmax
+    GRID%length(3) = solutediameterz +2.*GRID%buffer_length !+2*solutesigmaljmax
   end block
 
 end subroutine read_solute

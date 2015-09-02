@@ -4,7 +4,7 @@ module quadrature
   use precision_kinds ,only: dp, i2b
   use constants       ,only: pi, twopi, fourpi, zero, epsdp
   use input           ,only: input_log, input_char, input_int
-  use system, only: gr => spacegrid
+  use module_grid, only: grid
 
   implicit none
 
@@ -42,94 +42,94 @@ module quadrature
     print*,
     print*,"==="
     print*,"grid pour quadrature angulaire"
-    gr%molrotsymorder = input_int("molrotsymorder", defaultvalue=1)
-    molrotsymorder = gr%molrotsymorder
-    gr%mmax = input_int("mmax", defaultvalue=4)
-    gr%ntheta = gr%mmax+1
-    gr%nphi = 2*gr%mmax+1
-    gr%npsi = 2*(gr%mmax/gr%molrotsymorder)+1
-    gr%no = gr%ntheta*gr%nphi*gr%npsi   ! nombez d'orientations dans la representation Euler
-    gr%dphi = twopi/real(gr%nphi,dp)
-    gr%dpsi = twopi/real(gr%npsi*gr%molrotsymorder,dp)
-    n = gr%no
-    allocate( gr%theta(n) , source=0._dp)
-    allocate( gr%phi(n) , source=0._dp)
-    allocate( gr%psi(n) , source=0._dp)
-    allocate( gr%wtheta(n) , source=0._dp)
-    allocate( gr%wphi(n) , source=0._dp)
-    allocate( gr%wpsi(n) , source=0._dp)
-    allocate( gr%w(n) , source=0._dp)
+    grid%molrotsymorder = input_int("molrotsymorder", defaultvalue=1)
+    molrotsymorder = grid%molrotsymorder
+    grid%mmax = input_int("mmax", defaultvalue=4)
+    grid%ntheta = grid%mmax+1
+    grid%nphi = 2*grid%mmax+1
+    grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1
+    grid%no = grid%ntheta*grid%nphi*grid%npsi   ! nombez d'orientations dans la representation Euler
+    grid%dphi = twopi/real(grid%nphi,dp)
+    grid%dpsi = twopi/real(grid%npsi*grid%molrotsymorder,dp)
+    n = grid%no
+    allocate( grid%theta(n) , source=0._dp)
+    allocate( grid%phi(n) , source=0._dp)
+    allocate( grid%psi(n) , source=0._dp)
+    allocate( grid%wtheta(n) , source=0._dp)
+    allocate( grid%wphi(n) , source=0._dp)
+    allocate( grid%wpsi(n) , source=0._dp)
+    allocate( grid%w(n) , source=0._dp)
     block
-        real(dp) :: thetaofitheta(gr%ntheta), wthetaofitheta(gr%ntheta)
+        real(dp) :: thetaofitheta(grid%ntheta), wthetaofitheta(grid%ntheta)
         integer :: err, io, itheta, iphi, ipsi
-        real(dp) :: phiofiphi(gr%nphi), psiofipsi(gr%npsi)
-        real(dp) :: wphiofiphi(gr%nphi)
-        real(dp) :: wpsiofipsi(gr%npsi)
-        wphiofiphi = 1._dp/gr%nphi
-        wpsiofipsi = 1._dp/gr%npsi
-        psiofipsi = [(   real(i-1,dp)*gr%dpsi   , i=1,gr%npsi )]
-        phiofiphi = [(   real(i-1,dp)*gr%dphi   , i=1,gr%nphi )]
-        call gauss_legendre( gr%ntheta, thetaofitheta, wthetaofitheta, err)
+        real(dp) :: phiofiphi(grid%nphi), psiofipsi(grid%npsi)
+        real(dp) :: wphiofiphi(grid%nphi)
+        real(dp) :: wpsiofipsi(grid%npsi)
+        wphiofiphi = 1._dp/grid%nphi
+        wpsiofipsi = 1._dp/grid%npsi
+        psiofipsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
+        phiofiphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
+        call gauss_legendre( grid%ntheta, thetaofitheta, wthetaofitheta, err)
         if (err /= 0) error stop "problem in gauss_legendre"
         thetaofitheta = acos(thetaofitheta)
-        allocate( gr%tio(gr%ntheta,gr%nphi,gr%npsi), source=-huge(1) )
+        allocate( grid%tio(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
         io = 0
-        do itheta = 1, gr%ntheta
-            do iphi = 1, gr%nphi
-                do ipsi = 1, gr%npsi
+        do itheta = 1, grid%ntheta
+            do iphi = 1, grid%nphi
+                do ipsi = 1, grid%npsi
                     io = io+1
-                    gr%theta(io) = thetaofitheta(itheta)
-                    gr%phi(io) = phiofiphi(iphi)
-                    gr%psi(io) = psiofipsi(ipsi)
-                    gr%tio(itheta,iphi,ipsi) = io
-                    gr%wtheta(io) = wthetaofitheta(itheta)
-                    gr%wphi(io) = wphiofiphi(iphi)
-                    gr%wpsi(io) = wpsiofipsi(ipsi)
-                    gr%w(io) = gr%wtheta(io) * gr%wphi(io) * gr%wpsi(io)
+                    grid%theta(io) = thetaofitheta(itheta)
+                    grid%phi(io) = phiofiphi(iphi)
+                    grid%psi(io) = psiofipsi(ipsi)
+                    grid%tio(itheta,iphi,ipsi) = io
+                    grid%wtheta(io) = wthetaofitheta(itheta)
+                    grid%wphi(io) = wphiofiphi(iphi)
+                    grid%wpsi(io) = wpsiofipsi(ipsi)
+                    grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io)
                 end do
             end do
         end do
     end block
-    print*, "mmax =",gr%mmax
-    print*, "number of orientations",gr%no
-    print*, "number of theta =", gr%ntheta
-    print*, "number of phi=", gr%nphi
-    print*, "molrotsymorder =", gr%molrotsymorder
-    print*, "number of psi=", gr%npsi
-    print*, "sum of all weights =", sum(gr%w)
-    allocate( gr%rotxx(n) , gr%rotxy(n), gr%rotxz(n), source=0._dp)
-    allocate( gr%rotyx(n) , gr%rotyy(n), gr%rotyz(n), source=0._dp)
-    allocate( gr%rotzx(n) , gr%rotzy(n), gr%rotzz(n), source=0._dp)
-    allocate( gr%OMx(n), gr%OMy(n), gr%OMz(n) , source=0._dp)
-    select case (gr%no)
+    print*, "mmax =",grid%mmax
+    print*, "number of orientations",grid%no
+    print*, "number of theta =", grid%ntheta
+    print*, "number of phi=", grid%nphi
+    print*, "molrotsymorder =", grid%molrotsymorder
+    print*, "number of psi=", grid%npsi
+    print*, "sum of all weights =", sum(grid%w)
+    allocate( grid%rotxx(n) , grid%rotxy(n), grid%rotxz(n), source=0._dp)
+    allocate( grid%rotyx(n) , grid%rotyy(n), grid%rotyz(n), source=0._dp)
+    allocate( grid%rotzx(n) , grid%rotzy(n), grid%rotzz(n), source=0._dp)
+    allocate( grid%OMx(n), grid%OMy(n), grid%OMz(n) , source=0._dp)
+    select case (grid%no)
     case (1)
-        gr%Rotxx = 1.0_dp ; gr%Rotxy = 0.0_dp ; gr%Rotxz = 0.0_dp
-        gr%Rotyx = 0.0_dp ; gr%Rotyy = 1.0_dp ; gr%Rotyz = 0.0_dp
-        gr%Rotzx = 0.0_dp ; gr%Rotzy = 0.0_dp ; gr%Rotzz = 1.0_dp
-        gr%OMx = 0._dp ; gr%OMy = 0._dp ; gr%OMz = 1._dp ! ATTENTION completely arbitrary. We decide to put it along z.
+        grid%Rotxx = 1.0_dp ; grid%Rotxy = 0.0_dp ; grid%Rotxz = 0.0_dp
+        grid%Rotyx = 0.0_dp ; grid%Rotyy = 1.0_dp ; grid%Rotyz = 0.0_dp
+        grid%Rotzx = 0.0_dp ; grid%Rotzy = 0.0_dp ; grid%Rotzz = 1.0_dp
+        grid%OMx = 0._dp ; grid%OMy = 0._dp ; grid%OMz = 1._dp ! ATTENTION completely arbitrary. We decide to put it along z.
     case default
         block
             integer :: itheta, io
             real(dp) :: cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
-            do io = 1, gr%no
-                cos_theta = cos(gr%theta(io))
-                sin_theta = sin(gr%theta(io))
-                cos_phi = cos(gr%phi(io))
-                sin_phi = sin(gr%phi(io))
-                gr%OMx(io) = sin_theta * cos_phi
-                gr%OMy(io) = sin_theta * sin_phi
-                gr%OMz(io) = cos_theta
-                cos_psi = cos(gr%psi(io))
-                sin_psi = sin(gr%psi(io))
-                gr%rotxx(io) = cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
-                gr%rotxy(io) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
-                gr%rotxz(io) = sin_theta*cos_phi
-                gr%rotyx(io) = cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
-                gr%rotyy(io) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
-                gr%rotyz(io) = sin_theta*sin_phi
-                gr%rotzx(io) = -sin_theta*cos_psi
-                gr%rotzy(io) = sin_theta*sin_psi
-                gr%rotzz(io) = cos_theta
+            do io = 1, grid%no
+                cos_theta = cos(grid%theta(io))
+                sin_theta = sin(grid%theta(io))
+                cos_phi = cos(grid%phi(io))
+                sin_phi = sin(grid%phi(io))
+                grid%OMx(io) = sin_theta * cos_phi
+                grid%OMy(io) = sin_theta * sin_phi
+                grid%OMz(io) = cos_theta
+                cos_psi = cos(grid%psi(io))
+                sin_psi = sin(grid%psi(io))
+                grid%rotxx(io) = cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
+                grid%rotxy(io) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
+                grid%rotxz(io) = sin_theta*cos_phi
+                grid%rotyx(io) = cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
+                grid%rotyy(io) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
+                grid%rotyz(io) = sin_theta*sin_phi
+                grid%rotzx(io) = -sin_theta*cos_psi
+                grid%rotzy(io) = sin_theta*sin_psi
+                grid%rotzz(io) = cos_theta
             end do
         end block
     end select

@@ -6,10 +6,11 @@ SUBROUTINE init_external_potential
 
     USE precision_kinds     ,only: dp, i2b
     USE input               ,only: input_log, input_char
-    USE system              ,only: solute, spacegrid, nb_species, solvent
+    USE system              ,only: solute, nb_species, solvent
     USE external_potential  ,only: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,only: init_lennardjones => init
     USE fastPoissonSolver   ,only: start_fastPoissonSolver => init
+    use module_grid, only: grid
 
     IMPLICIT NONE
 
@@ -21,11 +22,11 @@ SUBROUTINE init_external_potential
     type (errType) :: er
     real(dp), parameter :: zerodp = 0._dp
 
-    nfft = spacegrid%n_nodes
-    i = spacegrid%n_nodes(1)
-    j = spacegrid%n_nodes(2)
-    k = spacegrid%n_nodes(3)
-    o = spacegrid%no
+    nfft = GRID%n_nodes
+    i = GRID%n_nodes(1)
+    j = GRID%n_nodes(2)
+    k = GRID%n_nodes(3)
+    o = GRID%no
     s = size(solvent)
 
     allocate ( Vext_total(i,j,k,o,s), SOURCE=zerodp ,STAT=er%i,ERRMSG=er%msg)
@@ -77,10 +78,10 @@ SUBROUTINE init_external_potential
             END IF
 
             ! ALLOCATE THE ELECTROSTATIC POTENTIAL
-            nx = spacegrid%nx
-            ny = spacegrid%ny
-            nz = spacegrid%nz
-            no = spacegrid%no
+            nx = GRID%nx
+            ny = GRID%ny
+            nz = GRID%nz
+            no = GRID%no
             ns = nb_species
             allocate ( vext_q (nx,ny,nz,no,ns) , SOURCE=zerodp ,STAT=i, ERRMSG=j)
             IF (i/=0) THEN
@@ -103,7 +104,8 @@ SUBROUTINE init_external_potential
 
         SUBROUTINE prevent_numerical_catastrophes
 
-            USE system    ,only: spacegrid, solvent
+            USE system    ,only: solvent
+            use module_grid, only: grid
             USE constants ,only: qfact
             IMPLICIT NONE
             INTEGER(i2b) :: i,j
@@ -126,7 +128,7 @@ SUBROUTINE init_external_potential
                     ! trouve le site répulsif de soluté le plus proche, sa distance (dnn), eps et sig lj (epsnn et signn)
                     DO j=1, SIZE(solute%site)
                         IF (j==i) CYCLE
-                        d= MODULO(    ABS(solute%site(i)%r(:) -solute%site(j)%r(:))    ,spacegrid%length(:)/2._dp)
+                        d= MODULO(    ABS(solute%site(i)%r(:) -solute%site(j)%r(:))    ,GRID%length(:)/2._dp)
                         IF (NORM2(d)<dnn(i)) THEN
                             dnn(i)= NORM2(d)
                             epsnn(i) = solute%site(j)%eps

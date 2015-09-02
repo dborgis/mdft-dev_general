@@ -57,9 +57,10 @@ subroutine find_equilibrium_density
 BLOCK
 
     ! ceci est un steepest descent de compet <= selon moi ^^
-    use system, only: spacegrid, nb_species
-    real(dp) :: FFold, dFF, best_cg_vect_new(spacegrid%nx,spacegrid%ny,spacegrid%nz,spacegrid%no,nb_species), alpha,&
-                                 best_dF_new(spacegrid%nx,spacegrid%ny,spacegrid%nz,spacegrid%no,nb_species), best_FF
+    use system, only: nb_species
+    use module_grid, only: grid
+    real(dp) :: FFold, dFF, best_cg_vect_new(GRID%nx,GRID%ny,GRID%nz,GRID%no,nb_species), alpha,&
+                                 best_dF_new(GRID%nx,GRID%ny,GRID%nz,GRID%no,nb_species), best_FF
     real(dp), parameter :: hugedp = huge(1._dp)
 
     dF_new = 0

@@ -15,8 +15,8 @@ contains
         type(grid), intent(in) :: gr
         integer :: err
         if (vxt%is_built) return
-        if (.not. gr%is_built) error stop "gr is not built in external_potential_mod"
-        allocate( vxt%tot(gr%no, gr%nx, gr%ny, gr%nz), stat=err, source=0._dp)
+        if (.not. grid%is_built) error stop "gr is not built in external_potential_mod"
+        allocate( vxt%tot(grid%no, grid%nx, grid%ny, grid%nz), stat=err, source=0._dp)
         if (err /= 0) print *, "vxt: Allocation request denied"
         call build_lj
         vxt%is_built = .true.

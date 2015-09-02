@@ -2,10 +2,11 @@
 !! Type vmd --xsf output/supercell.xsf to visualise it.
 SUBROUTINE print_supercell_xsf
     USE precision_kinds, ONLY: i2b
-    USE system, ONLY: spacegrid, solute
+    USE system, ONLY: solute
+    use module_grid, only: grid
     IMPLICIT NONE
     integer(i2b) :: i
-    
+
     open(5,file='output/supercell.xsf')
         100 format (xA)
         101 format (3(1xF10.5))
@@ -27,9 +28,9 @@ SUBROUTINE print_supercell_xsf
         write(5,100)'# pay attention to vectors as they are written in horizontal way which is quite unusual'
         write(5,100)'# for now only orthorhombic structures are allowed (free norms of lattice vectors, all angles are 90 degrees)'
         write(5,100)'PRIMVEC'
-        write(5,101) spacegrid%length(1), 0., 0.
-        write(5,101) 0., spacegrid%length(2), 0.
-        write(5,101) 0., 0., spacegrid%length(3)
+        write(5,101) GRID%length(1), 0., 0.
+        write(5,101) 0., GRID%length(2), 0.
+        write(5,101) 0., 0., GRID%length(3)
         write(5,*)
         write(5,100)'# Then one needs to specify the atoms belonging to the unit cell. '
         write(5,100)'# First number stands for number of atoms in the primitive cell (2 in this case).'

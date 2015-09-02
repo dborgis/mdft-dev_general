@@ -23,10 +23,10 @@ contains
         if (den%is_built) then
             return
         else
-            nx = gr%nx
-            ny = gr%ny
-            nz = gr%nz
-            no = gr%no
+            nx = grid%nx
+            ny = grid%ny
+            nz = grid%nz
+            no = grid%no
             den%bulk = input_dp("bulk_density", defaultvalue=0.0333_dp)
             allocate( den%rho(no,nx,ny,nz) ,source=den%bulk)
             den%is_built = .true.

@@ -1,6 +1,7 @@
 subroutine output_gOfRandCosTheta
+    use module_grid, only: grid
   ! use precision_kinds, only: dp
-  ! use system,          only: spacegrid, solute, solvent
+  ! use system,          only: solute, solvent
   ! use constants,       only: zerodp, pi
   ! use minimizer,       only: cg_vect_new
   ! use mathematica,     only: deduce_optimal_histogram_properties
@@ -12,17 +13,17 @@ subroutine output_gOfRandCosTheta
   ! real(dp), parameter :: epsdp=epsilon(1._dp)
   ! real(dp), allocatable :: g(:,:), gcount(:,:) ! g(r,theta)
   !
-  ! nx=spacegrid%nx
-  ! ny=spacegrid%ny
-  ! nz=spacegrid%nz
-  ! ntheta=spacegrid%ntheta
+  ! nx=GRID%nx
+  ! ny=GRID%ny
+  ! nz=GRID%nz
+  ! ntheta=GRID%ntheta
   ! allocate( rho(nx,ny,nz,ntheta) )
-  ! dx=spacegrid%dx
-  ! dy=spacegrid%dy
-  ! dz=spacegrid%dz
+  ! dx=GRID%dx
+  ! dy=GRID%dy
+  ! dz=GRID%dz
   !
   ! ! Get the density per spherical angle Omega (integrate over psi)
-  ! npsi = spacegrid%npsi
+  ! npsi = GRID%npsi
   ! do s=1,size(solvent)
   !   do i=1,nx
   !     do j=1,ny
@@ -45,7 +46,7 @@ subroutine output_gOfRandCosTheta
   ! end do
   !
   ! ! for the distance r between solute site and grid node:
-  ! maxrange   = minval(spacegrid%length)/2._dp
+  ! maxrange   = minval(GRID%length)/2._dp
   ! call deduce_optimal_histogram_properties( nx*ny*nz, maxrange, binrmax, dr)
   ! binthetamax = 10 ! this has to be decided, but we have a very large number of angles, even if the quadrature over omega is by 1 angle only in fixed frame
   ! ! theta is between 0 and pi

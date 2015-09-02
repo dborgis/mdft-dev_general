@@ -2,7 +2,8 @@
 SUBROUTINE energy_hydro (Fint)
     !
     USE precision_kinds     ,ONLY: dp, i2b
-    ! USE system              ,ONLY: thermocond, nb_species, spacegrid, solvent, nb_species
+    use module_grid, only: grid
+    ! USE system              ,ONLY: thermocond, nb_species, GRID, solvent, nb_species
     ! USE dcf                 ,ONLY: c_s, nb_k, delta_k, c_s_hs
     ! USE constants           ,ONLY: fourpi,i_complex,twopi,zerodp,zeroC
     ! USE minimizer           ,ONLY: cg_vect_new, FF, dF_new
@@ -47,9 +48,9 @@ SUBROUTINE energy_hydro (Fint)
     ! END IF
     !
     !
-    ! nfft1 = spacegrid%n_nodes(1)
-    ! nfft2 = spacegrid%n_nodes(2)
-    ! nfft3 = spacegrid%n_nodes(3)
+    ! nfft1 = GRID%n_nodes(1)
+    ! nfft2 = GRID%n_nodes(2)
+    ! nfft3 = GRID%n_nodes(3)
     !
     ! !In this routine we use the pair correlation function of a hard sphere fluid.
     ! IF (.NOT. ALLOCATED(c_s_hs%x)) THEN
@@ -81,8 +82,8 @@ SUBROUTINE energy_hydro (Fint)
     !
     ! ! total number of kpoints and volume per kpoint
     ! Nk = REAL(nfft1*nfft2*nfft3,dp)
-    ! DeltaVk = spacegrid%dV/Nk !twopi**3/(Lx*ly*Lz*Nk)!
-    ! fact_n = spacegrid%dV*solvent(1)%n0 ! integration factor
+    ! DeltaVk = GRID%dV/Nk !twopi**3/(Lx*ly*Lz*Nk)!
+    ! fact_n = GRID%dV*solvent(1)%n0 ! integration factor
     ! prefactor = -R_cg**2 / 2.0_dp ! dummy for later in the gaussian in k space g(k)=exp(prefactor*k2)
     !
     ! BLOCK
@@ -153,16 +154,16 @@ SUBROUTINE energy_hydro (Fint)
     ! sum_grad_delta_nbar_sq = sum_grad_delta_nbar_sq + (fftw3%out_backward/Nk)**2
     !
     ! ! large gradient part
-    ! S_cg = 0.5_dp*mm*spacegrid%dv*SUM(sum_grad_delta_nbar_sq)*solvent(1)%n0**2*thermocond%kBT
+    ! S_cg = 0.5_dp*mm*GRID%dv*SUM(sum_grad_delta_nbar_sq)*solvent(1)%n0**2*thermocond%kBT
     ! DEALLOCATE (sum_grad_delta_nbar_sq)
     !
     ! fftw3%in_backward = delta_nbark
     ! CALL dfftw_execute(fftw3%plan_backward)
     ! ALLOCATE ( delta_nbar(nfft1,nfft2,nfft3) ,SOURCE=fftw3%out_backward/Nk)
     !
-    ! F_cg = -0.5_dp*a*spacegrid%dv*SUM(delta_nbar**2)*solvent(1)%n0**2*thermocond%kBT&
-    !              +b1*spacegrid%dv*SUM(delta_nbar**3)*solvent(1)%n0**3*thermocond%kBT&
-    !              +b2*spacegrid%dv*SUM(delta_nbar**4)*solvent(1)%n0**4*thermocond%kBT
+    ! F_cg = -0.5_dp*a*GRID%dv*SUM(delta_nbar**2)*solvent(1)%n0**2*thermocond%kBT&
+    !              +b1*GRID%dv*SUM(delta_nbar**3)*solvent(1)%n0**3*thermocond%kBT&
+    !              +b2*GRID%dv*SUM(delta_nbar**4)*solvent(1)%n0**4*thermocond%kBT
     ! IF (verbose) THEN
     !     print *, 'F_CG =  ',F_cg
     !     print *, 'S_CG =  ',S_cg
@@ -205,7 +206,7 @@ SUBROUTINE energy_hydro (Fint)
     ! ALLOCATE ( dF_cg (nfft1,nfft2,nfft3) ,SOURCE=zerodp)
     ! dF_cg = (  delta_nbar    *(-a*solvent(1)%n0**2) &
     !          + delta_nbar**2 *(3._dp*b1*solvent(1)%n0**3) &
-    !          + delta_nbar**3 *(4._dp*b2*solvent(1)%n0**4) ) *thermocond%kbT*spacegrid%dv
+    !          + delta_nbar**3 *(4._dp*b2*solvent(1)%n0**4) ) *thermocond%kbT*GRID%dv
     ! DEALLOCATE (delta_nbar)
     !
     ! ! FFT (dF_cg) in order to work in kspace

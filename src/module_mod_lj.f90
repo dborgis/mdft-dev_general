@@ -5,7 +5,8 @@ MODULE mod_lj
 
     USE external_potential, ONly: Vext_lj
     USE precision_kinds,    ONly: dp, i2b
-    USE system,             ONly: nb_species, spacegrid, solute, solvent
+    USE system,             ONly: nb_species, solute, solvent
+    use module_grid, only: grid
     USE constants,          ONly: fourpi
     USE input,              ONly: input_line, verbose
 
@@ -17,13 +18,13 @@ MODULE mod_lj
 
         SUBROUTINE init
             IMPLICIT NONE
-            nx = spacegrid%nx
-            ny = spacegrid%ny
-            nz = spacegrid%nz
-            lx = spacegrid%lx
-            ly = spacegrid%ly
-            lz = spacegrid%lz
-            no = spacegrid%no
+            nx = GRID%nx
+            ny = GRID%ny
+            nz = GRID%nz
+            lx = GRID%lx
+            ly = GRID%ly
+            lz = GRID%lz
+            no = GRID%no
             ns = nb_species
             IF (.NOT. ALLOCATED(Vext_lj)) ALLOCATE( Vext_lj(nx,ny,nz,no,ns) ,SOURCE=0._dp)
             call calculate
@@ -62,9 +63,9 @@ MODULE mod_lj
                 IF ( solvent(1)%site(v)%eps==0._dp ) CYCLE ! if solvent site wear no LJ
 
                 DO CONCURRENT( i=1:nx, j=1:ny, k=1:nz, s=1:ns )
-                    x_grid=REAL(i-1,dp)*spacegrid%dl(1)
-                    y_grid=REAL(j-1,dp)*spacegrid%dl(2)
-                    z_grid=REAL(k-1,dp)*spacegrid%dl(3)
+                    x_grid=REAL(i-1,dp)*GRID%dl(1)
+                    y_grid=REAL(j-1,dp)*GRID%dl(2)
+                    z_grid=REAL(k-1,dp)*GRID%dl(3)
 
                     V_node=0.0_dp
                     soluteloop: DO u=1,SIZE(solute%site)

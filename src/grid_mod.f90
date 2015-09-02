@@ -24,83 +24,83 @@ contains
         real(dp) :: weight_of_each_phi, weight_of_each_psi
         real(dp), parameter :: twopi = acos(-1._dp)*2._dp
         real(dp), allocatable :: thetaofitheta(:), phiofiphi(:), psiofipsi(:), wthetaofitheta(:), wphiofiphi(:), wpsiofipsi(:)
-        if (gr%is_built) return
+        if (grid%is_built) return
         stop "I dont want to use this yet. PB IN RESOX INT HERE DP IN ALLOCATE_FROM_INPUT"
-        gr%ptperangx = input_int("resox", defaultvalue=3)
-        gr%ptperangy = input_int("resoy", defaultvalue=3)
-        gr%ptperangz = input_int("resoz", defaultvalue=3)
-        print*, "gr%ptperangx=",gr%ptperangx
-        print*, "gr%ptperangy=",gr%ptperangy
-        print*, "gr%ptperangz=",gr%ptperangz
+        grid%ptperangx = input_int("resox", defaultvalue=3)
+        grid%ptperangy = input_int("resoy", defaultvalue=3)
+        grid%ptperangz = input_int("resoz", defaultvalue=3)
+        print*, "grid%ptperangx=",grid%ptperangx
+        print*, "grid%ptperangy=",grid%ptperangy
+        print*, "grid%ptperangz=",grid%ptperangz
         stop "ptperang"
-        gr%lx = input_dp("Lx", defaultvalue=10._dp)
-        gr%ly = input_dp("Ly", defaultvalue=10._dp)
-        gr%lz = input_dp("Lz", defaultvalue=10._dp)
-        gr%nx = nint(gr%ptperangx * gr%lx)
-        gr%ny = nint(gr%ptperangy * gr%ly)
-        gr%nz = nint(gr%ptperangz * gr%lz)
-        gr%dx = gr%lx/real(gr%nx,dp)
-        gr%dy = gr%ly/real(gr%ny,dp)
-        gr%dz = gr%lz/real(gr%nz,dp)
-        gr%dv = gr%dx * gr%dy * gr%dz
-        gr%volume = gr%lx * gr%ly * gr%lz
-        allocate(gr%tx(gr%nx), source=[( (i-1)*gr%dx ,i=1,gr%nx )], stat=err)
-        if (err /= 0) error stop "gr%tx: Allocation request denied"
-        allocate(gr%ty(gr%ny), source=[( (i-1)*gr%dy ,i=1,gr%ny )], stat=err)
-        if (err /= 0) error stop "gr%ty: Allocation request denied"
-        allocate(gr%tz(gr%nz), source=[( (i-1)*gr%dz ,i=1,gr%nz )], stat=err)
-        if (err /= 0) error stop "gr%tz: Allocation request denied"
-        gr%molrotsymorder = input_int("molrotsymorder", defaultvalue=1)
-        gr%mmax = input_int("mmax", defaultvalue=4)
-        gr%ntheta = gr%mmax+1
-        gr%nphi = 2*gr%mmax+1
-        gr%npsi = 2*(gr%mmax/gr%molrotsymorder)+1
-        gr%no = gr%ntheta*gr%nphi*gr%npsi
-        ! gr%nproj = SUM( [( [( [( 1 ,mu=0,m,molrotsymorder)], mup=-m,m)], m=0,mmax)] )
-        ! allocate (gr%tproj(0:mmax,-mmax:mmax,0:mmax), source=-huge(kind(iproj)) ) ! alpha(m,mup,mu)
-        ! allocate (gr%tm(gr%nproj), source=-huge(1))
-        ! allocate (gr%tmup(gr%nproj), source=-huge(1))
-        ! allocate (gr%tmu(gr%nproj), source=-huge(1))
-        allocate (gr%w(gr%no), source=1._dp, stat=err)
-        if (err /= 0) error stop "gr%w: Allocation request denied"
+        grid%lx = input_dp("Lx", defaultvalue=10._dp)
+        grid%ly = input_dp("Ly", defaultvalue=10._dp)
+        grid%lz = input_dp("Lz", defaultvalue=10._dp)
+        grid%nx = nint(grid%ptperangx * grid%lx)
+        grid%ny = nint(grid%ptperangy * grid%ly)
+        grid%nz = nint(grid%ptperangz * grid%lz)
+        grid%dx = grid%lx/real(grid%nx,dp)
+        grid%dy = grid%ly/real(grid%ny,dp)
+        grid%dz = grid%lz/real(grid%nz,dp)
+        grid%dv = grid%dx * grid%dy * grid%dz
+        grid%volume = grid%lx * grid%ly * grid%lz
+        allocate(grid%tx(grid%nx), source=[( (i-1)*grid%dx ,i=1,grid%nx )], stat=err)
+        if (err /= 0) error stop "grid%tx: Allocation request denied"
+        allocate(grid%ty(grid%ny), source=[( (i-1)*grid%dy ,i=1,grid%ny )], stat=err)
+        if (err /= 0) error stop "grid%ty: Allocation request denied"
+        allocate(grid%tz(grid%nz), source=[( (i-1)*grid%dz ,i=1,grid%nz )], stat=err)
+        if (err /= 0) error stop "grid%tz: Allocation request denied"
+        grid%molrotsymorder = input_int("molrotsymorder", defaultvalue=1)
+        grid%mmax = input_int("mmax", defaultvalue=4)
+        grid%ntheta = grid%mmax+1
+        grid%nphi = 2*grid%mmax+1
+        grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1
+        grid%no = grid%ntheta*grid%nphi*grid%npsi
+        ! grid%nproj = SUM( [( [( [( 1 ,mu=0,m,molrotsymorder)], mup=-m,m)], m=0,mmax)] )
+        ! allocate (grid%tproj(0:mmax,-mmax:mmax,0:mmax), source=-huge(kind(iproj)) ) ! alpha(m,mup,mu)
+        ! allocate (grid%tm(grid%nproj), source=-huge(1))
+        ! allocate (grid%tmup(grid%nproj), source=-huge(1))
+        ! allocate (grid%tmu(grid%nproj), source=-huge(1))
+        allocate (grid%w(grid%no), source=1._dp, stat=err)
+        if (err /= 0) error stop "grid%w: Allocation request denied"
         !
         ! Build the Euler representation suitable for Gauss-Legendre quadrature
         !
-        gr%dphi = twopi/real(gr%nphi,dp)
-        gr%dpsi = twopi/real(gr%npsi*gr%molrotsymorder,dp)
-        allocate( thetaofitheta(gr%ntheta) ,source=huge(1._dp) )
-        allocate( phiofiphi(gr%nphi)   ,source=[(   real(i-1,dp)*gr%dphi   , i=1,gr%nphi )] )
-        allocate( psiofipsi(gr%npsi)   ,source=[(   real(i-1,dp)*gr%dpsi   , i=1,gr%npsi )] )
-        allocate( wthetaofitheta(gr%ntheta))
-        allocate( wphiofiphi(gr%nphi) ,source=1._dp/gr%nphi)
-        allocate( wpsiofipsi(gr%npsi) ,source=1._dp/gr%npsi)
-        allocate( gr%theta(gr%no) )
-        allocate( gr%phi(gr%no) )
-        allocate( gr%psi(gr%no) )
-        allocate( gr%wtheta(gr%no))
-        allocate( gr%wphi(gr%no))
-        allocate( gr%wpsi(gr%no))
-        call gauss_legendre( gr%ntheta, thetaofitheta, wthetaofitheta, err )
+        grid%dphi = twopi/real(grid%nphi,dp)
+        grid%dpsi = twopi/real(grid%npsi*grid%molrotsymorder,dp)
+        allocate( thetaofitheta(grid%ntheta) ,source=huge(1._dp) )
+        allocate( phiofiphi(grid%nphi)   ,source=[(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )] )
+        allocate( psiofipsi(grid%npsi)   ,source=[(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )] )
+        allocate( wthetaofitheta(grid%ntheta))
+        allocate( wphiofiphi(grid%nphi) ,source=1._dp/grid%nphi)
+        allocate( wpsiofipsi(grid%npsi) ,source=1._dp/grid%npsi)
+        allocate( grid%theta(grid%no) )
+        allocate( grid%phi(grid%no) )
+        allocate( grid%psi(grid%no) )
+        allocate( grid%wtheta(grid%no))
+        allocate( grid%wphi(grid%no))
+        allocate( grid%wpsi(grid%no))
+        call gauss_legendre( grid%ntheta, thetaofitheta, wthetaofitheta, err )
         if (err /= 0) error stop "problem in gauss_legendre"
         thetaofitheta = acos(thetaofitheta)
-        allocate( gr%tio(gr%ntheta,gr%nphi,gr%npsi), source=-huge(1) )
+        allocate( grid%tio(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
         io = 0
-        do itheta = 1, gr%ntheta
-            do iphi = 1, gr%nphi
-                do ipsi = 1, gr%npsi
+        do itheta = 1, grid%ntheta
+            do iphi = 1, grid%nphi
+                do ipsi = 1, grid%npsi
                     io = io+1
-                    gr%theta(io) = thetaofitheta(itheta)
-                    gr%phi(io) = phiofiphi(iphi)
-                    gr%psi(io) = psiofipsi(ipsi)
-                    gr%tio(itheta,iphi,ipsi) = io
-                    gr%wtheta(io) = wthetaofitheta(itheta)
-                    gr%wphi(io) = wphiofiphi(iphi)
-                    gr%wpsi(io) = wpsiofipsi(ipsi)
-                    gr%w(io) = gr%wtheta(io) * gr%wphi(io) * gr%wpsi(io)
+                    grid%theta(io) = thetaofitheta(itheta)
+                    grid%phi(io) = phiofiphi(iphi)
+                    grid%psi(io) = psiofipsi(ipsi)
+                    grid%tio(itheta,iphi,ipsi) = io
+                    grid%wtheta(io) = wthetaofitheta(itheta)
+                    grid%wphi(io) = wphiofiphi(iphi)
+                    grid%wpsi(io) = wpsiofipsi(ipsi)
+                    grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io)
                 end do
             end do
         end do
-        gr%is_built = .true.
+        grid%is_built = .true.
     end subroutine
     subroutine gauss_legendre( n, x, w, exitstatus) ! copy paste from Luc's subroutine Luc74p85
         !

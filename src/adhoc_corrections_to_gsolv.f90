@@ -2,16 +2,17 @@ subroutine adhoc_corrections_to_gsolv
 ! ... Here, we print all the adhoc corrections one should take into account before comparing MDFT results to MD and/or experiments.
 
     use precision_kinds, only: dp, sp, i2b
-    use system, only: solute, solvent, spacegrid, thermocond
+    use system, only: solute, solvent, thermocond
     use minimizer, only: FF , cg_vect_new
     use constants, only: zerodp
     use mathematica, only: chop
     use input, only: input_log
+    use module_grid, only: grid
     implicit none
 
     real(dp) :: correction,correction2, Pbulk
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
-    integer(i2b), pointer :: nfft1 => spacegrid%n_nodes(1), nfft2 => spacegrid%n_nodes(2), nfft3 => spacegrid%n_nodes(3)
+    integer(i2b), pointer :: nfft1 => GRID%n_nodes(1), nfft2 => GRID%n_nodes(2), nfft3 => GRID%n_nodes(3)
     integer :: s, ios
     type :: nmoleculetype
         real(dp) :: withsolute
@@ -59,14 +60,14 @@ subroutine adhoc_corrections_to_gsolv
   end do
   allocate (nmolecule(size(solvent)))
   do concurrent (s=1:size(solvent))
-      nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *spacegrid%dv ! number of solvent molecules inside the supercell containing the solute
+      nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *GRID%dv ! number of solvent molecules inside the supercell containing the solute
   end do
-  nmolecule%bulk = solvent%n0*product(spacegrid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
+  nmolecule%bulk = solvent%n0*product(GRID%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
   write(*,'(A,F12.2)') "Solvent molecules with solute   ", nmolecule%withsolute
   write(*,'(A,F12.2)') "Solvent molecules without solute", nmolecule%bulk
   write(*,'(A,F12.2)') "ΔN solvent", nmolecule(1)%bulk - nmolecule(1)%withsolute
   write(*,'(A,F12.7,A)') "Solvent density", solvent(1)%n0," molecule.Ang⁻³"
-  write(*,'(A,F12.5,A)') "Supercell volume", product(spacegrid%length)," Ang³"
+  write(*,'(A,F12.5,A)') "Supercell volume", product(GRID%length)," Ang³"
 
 
 
@@ -75,7 +76,7 @@ subroutine adhoc_corrections_to_gsolv
   cg_vect_new = zerodp ! set Density to 0
   FF = zerodp         ! set energy to 0
   call energy_and_gradient(-10) ! this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
-  Pbulk = FF/product(spacegrid%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
+  Pbulk = FF/product(GRID%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
   write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa*Pa_to_atm," atm"
   open(81,file="output/bulk-pressure"); write(81,*) Pbulk; close(81)
 

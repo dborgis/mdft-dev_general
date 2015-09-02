@@ -4,7 +4,8 @@
 SUBROUTINE vext_total_sum
 
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spacegrid
+    USE system,             ONLY: nb_species
+    use module_grid, only: grid
     USE external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
     USE input,              ONLY: verbose
 
@@ -15,10 +16,10 @@ SUBROUTINE vext_total_sum
     integer :: nx, ny, nz, no, ns
 
 
-    nx = spacegrid%nx
-    ny = spacegrid%ny
-    nz = spacegrid%nz
-    no = spacegrid%no
+    nx = GRID%nx
+    ny = GRID%ny
+    nz = GRID%nz
+    no = GRID%no
     ns = nb_species
 
 

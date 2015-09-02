@@ -18,14 +18,15 @@ contains
     !===========================================================================================================================
     subroutine from_cgvect_get_rho
 
-        use system      ,only: nb_species, spacegrid, solvent, nb_species
+        use system      ,only: nb_species, solvent, nb_species
+        use module_grid, only: grid
         implicit none
         integer(i2b) :: i, j, k, io, s, icg, nx, ny, nz, no
 
-        nx = spacegrid%nx
-        ny = spacegrid%ny
-        nz = spacegrid%nz
-        no = spacegrid%no
+        nx = GRID%nx
+        ny = GRID%ny
+        nz = GRID%nz
+        no = GRID%no
 
         do concurrent (s=1:nb_species)
         if (.not. allocated (solvent(s)%rho)) then
@@ -45,12 +46,13 @@ contains
     !===========================================================================================================================
     subroutine from_rho_get_n
 
-        use system      ,only: nb_species, spacegrid, solvent, nb_species
+        use system      ,only: nb_species, solvent, nb_species
+        use module_grid, only: grid
         implicit none
         integer(i2b) :: i,j,k,o,p,s,io
         integer(i2b) :: nfft(3)
 
-        nfft = spacegrid%n_nodes
+        nfft = GRID%n_nodes
 
         do concurrent (s=1:nb_species)
         if (.not. allocated(solvent(s)%n)) then
@@ -63,11 +65,11 @@ contains
         if (i /= 0) stop "ERROR in allocate solvent%n in from_rho_get_n"
 
         do s =1, nb_species
-            do i =1, spacegrid%n_nodes(1)
-                do j =1, spacegrid%n_nodes(2)
-                    do k =1, spacegrid%n_nodes(3)
-                        do io = 1, spacegrid%no
-                            solvent(s)%n(i,j,k) = solvent(s)%n(i,j,k) + solvent(s)%rho(i,j,k,io) * spacegrid%w(io)
+            do i =1, GRID%n_nodes(1)
+                do j =1, GRID%n_nodes(2)
+                    do k =1, GRID%n_nodes(3)
+                        do io = 1, GRID%no
+                            solvent(s)%n(i,j,k) = solvent(s)%n(i,j,k) + solvent(s)%rho(i,j,k,io) * GRID%w(io)
                         end do
                     end do
                 end do
@@ -91,16 +93,17 @@ contains
 
         USE precision_kinds, ONLY: dp
         USE input, ONLY: input_int, input_dp,input_char
-        USE system , ONLY: spacegrid, nb_species
+        USE system , ONLY: nb_species
+        use module_grid, only: grid
 
         IMPLICIT NONE
 
         integer :: nx, ny, nz, no, ns, io
 
-        nx = spacegrid%nx
-        ny = spacegrid%ny
-        nz = spacegrid%nz
-        no = spacegrid%no
+        nx = GRID%nx
+        ny = GRID%ny
+        nz = GRID%nz
+        no = GRID%no
         ns = nb_species
 
         ncg = nx*ny*nz*no*ns

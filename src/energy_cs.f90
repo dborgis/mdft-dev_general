@@ -6,30 +6,31 @@ contains
     subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
 
         use precision_kinds , only: i2b, dp
-        use system          , only: spacegrid, solvent, thermocond, nb_species
+        use system          , only: solvent, thermocond, nb_species
         use minimizer       , only: cg_vect_new, dF_new
         use fft             , only: fftw3, kx, ky, kz
         use dcf             , only: cfile
         use mathematica     , only: splint
+        use module_grid     , only: grid
 
         implicit none
-        integer :: nx, ny, nz, no, ns, i,j,k,s, icg, io 
+        integer :: nx, ny, nz, no, ns, i,j,k,s, icg, io
         real(dp), intent(out) :: Fexcnn ! what we want to compute in this routine
         real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint, k2max
         integer, intent(out) :: exitstatus
         type(cfile), intent(in) :: cs
         real(dp), intent(out) :: dFexcnn(:,:,:,:,:)
-        real(dp) :: n(spacegrid%nx,spacegrid%ny,spacegrid%nz), n_loc
+        real(dp) :: n(GRID%nx,GRID%ny,GRID%nz), n_loc
 
         exitstatus = 1 ! everything is fine
-        nx = spacegrid%nx
-        ny = spacegrid%ny
-        nz = spacegrid%nz
-        no = spacegrid%no
+        nx = GRID%nx
+        ny = GRID%ny
+        nz = GRID%nz
+        no = GRID%no
         ns = nb_species
         ! allocate( dFexcnn(nx,ny,nz,o,p,nb_species) ,source=0._dp)
         kT = thermocond%kbT
-        dV = spacegrid%dV
+        dV = GRID%dV
 
         if( size(solvent)/=1 ) then
             exitstatus=-1
@@ -43,7 +44,7 @@ contains
             do j = 1, ny
                 do i = 1, nx
                     do io = 1, no
-                        n(i,j,k) = n(i,j,k) + cg_vect_new(i,j,k,io,s)**2 * solvent(s)%rho0 * spacegrid%w(io)
+                        n(i,j,k) = n(i,j,k) + cg_vect_new(i,j,k,io,s)**2 * solvent(s)%rho0 * GRID%w(io)
                     end do
                 end do
             end do
@@ -78,7 +79,7 @@ contains
 
         ! gradient
         do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:no, s=1:nb_species )
-            dfexcnn(i,j,k,io,s) = 2*cg_vect_new(i,j,k,io,s) * spacegrid%w(io) * fftw3%out_backward(i,j,k) *(-kT*dV*solvent(s)%rho0)
+            dfexcnn(i,j,k,io,s) = 2*cg_vect_new(i,j,k,io,s) * GRID%w(io) * fftw3%out_backward(i,j,k) *(-kT*dV*solvent(s)%rho0)
         end do
 
     end subroutine energy_cs

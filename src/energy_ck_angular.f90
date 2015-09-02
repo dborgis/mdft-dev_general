@@ -1,7 +1,7 @@
 SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !
     USE precision_kinds, ONLY : i2b, dp
-!     USE system,          ONLY : thermocond, spacegrid, solvent
+!     USE system,          ONLY : thermocond, GRID, solvent
 !     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid, molRotSymOrder
 !     USE minimizer,       ONLY : cg_vect_new, FF, dF_new
 !     USE constants,       ONLY : twopi
@@ -30,10 +30,10 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !     COMPLEX(dp) :: Ck
 !
 ! ! Initialisation
-!     nfft1 = spacegrid%n_nodes(1); nfft2 = spacegrid%n_nodes(2); nfft3 = spacegrid%n_nodes(3)
+!     nfft1 = GRID%n_nodes(1); nfft2 = GRID%n_nodes(2); nfft3 = GRID%n_nodes(3)
 !     Nk = REAL(nfft1*nfft2*nfft3,dp) ! Total number of k grid points in real
 !     Fexc_ck_angular = 0.0_dp
-!     integrationFactor = spacegrid%dv * solvent(1)%rho0
+!     integrationFactor = GRID%dv * solvent(1)%rho0
 !     delta_phi = twopi / num_phi
 !     delta_psi = twopi / (num_psi * molRotSymOrder)
 !     delta_cos = 2._dp / num_cos

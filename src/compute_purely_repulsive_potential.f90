@@ -5,15 +5,15 @@ SUBROUTINE compute_purely_repulsive_potential
 !
 !     USE precision_kinds     ,ONLY: dp, i2b
 !     USE input               ,ONLY: input_dp, verbose
-!     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, spacegrid,&
-!                                    nb_species, solute, solvent
+!     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, nb_species, solute, solvent
 !     USE external_potential  ,ONLY: Vext_total
 !     USE constants           ,ONLY: zerodp=>zero
+    use module_grid, only: grid
 !
 !     IMPLICIT NONE
 !
 !     INTEGER(i2b):: i,j,k,o,p,m,n,s
-!     INTEGER(i2b), POINTER :: nfft1=>spacegrid%n_nodes(1), nfft2=>spacegrid%n_nodes(2), nfft3=>spacegrid%n_nodes(3)
+!     INTEGER(i2b), POINTER :: nfft1=>GRID%n_nodes(1), nfft2=>GRID%n_nodes(2), nfft3=>GRID%n_nodes(3)
 !     REAL(dp):: x_grid,y_grid,z_grid ! coordinates of grid nodes
 !     REAL(dp):: x_m,y_m,z_m ! solvent sites coordinates
 !     REAL(dp):: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
@@ -34,20 +34,20 @@ SUBROUTINE compute_purely_repulsive_potential
 !     radius_of_purely_repulsive_solute2 = radius_of_purely_repulsive_solute**2
 !
 !     ! tabulate coordinates of solvent sites for each omega and psi angles
-!     ALLOCATE ( xmod (nb_solvent_sites, spacegrid%no) ,SOURCE=zerodp)
-!     ALLOCATE ( ymod (nb_solvent_sites, spacegrid%no) ,SOURCE=zerodp)
-!     ALLOCATE ( zmod (nb_solvent_sites, spacegrid%no) ,SOURCE=zerodp)
+!     ALLOCATE ( xmod (nb_solvent_sites, GRID%no) ,SOURCE=zerodp)
+!     ALLOCATE ( ymod (nb_solvent_sites, GRID%no) ,SOURCE=zerodp)
+!     ALLOCATE ( zmod (nb_solvent_sites, GRID%no) ,SOURCE=zerodp)
 !
-!     DO CONCURRENT ( m=1:nb_solvent_sites, io=1:spacegrid%no )
-!         xmod (m,io) = DOT_PRODUCT( [gr%Rotxx(io), gr%Rotxy(io), gr%Rotxz(io)] , solvent(1)%site(m)%r )
-!         ymod (m,io) = DOT_PRODUCT( [gr%Rotyx(io), gr%Rotyy(io), gr%Rotyz(io)] , solvent(1)%site(m)%r )
-!         zmod (m,io) = DOT_PRODUCT( [gr%Rotzx(io), gr%Rotzy(io), gr%Rotzz(io)] , solvent(1)%site(m)%r )
+!     DO CONCURRENT ( m=1:nb_solvent_sites, io=1:GRID%no )
+!         xmod (m,io) = DOT_PRODUCT( [grid%Rotxx(io), grid%Rotxy(io), grid%Rotxz(io)] , solvent(1)%site(m)%r )
+!         ymod (m,io) = DOT_PRODUCT( [grid%Rotyx(io), grid%Rotyy(io), grid%Rotyz(io)] , solvent(1)%site(m)%r )
+!         zmod (m,io) = DOT_PRODUCT( [grid%Rotzx(io), grid%Rotzy(io), grid%Rotzz(io)] , solvent(1)%site(m)%r )
 !     END DO
 !
-!     dx=spacegrid%dl(1)
-!     dy=spacegrid%dl(2)
-!     dz=spacegrid%dl(3)
-!     ALLOCATE ( Vrep (nfft1,nfft2,nfft3,spacegrid%no) ,SOURCE=Vmax)
+!     dx=GRID%dl(1)
+!     dy=GRID%dl(2)
+!     dz=GRID%dl(3)
+!     ALLOCATE ( Vrep (nfft1,nfft2,nfft3,GRID%no) ,SOURCE=Vmax)
 !     DO s=1,nb_species
 !         DO k=1,nfft3
 !             z_grid = REAL(k-1,dp) * dz
@@ -55,7 +55,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !                 y_grid = REAL(j-1,dp) * dy
 !                 DO i=1,nfft1
 !                     x_grid = REAL(i-1,dp) * dx
-!                     do io=1,spacegrid%no
+!                     do io=1,GRID%no
 !                         V_psi = 0.0_dp
 !                    psiloop: DO m=1, 1 ! nb_solvent_sites => FOR DZUBIELLA HANSEN ONLY Oxygen atom is taken into account
 !                                 x_m = x_grid + xmod (m,io)

@@ -55,16 +55,17 @@ MODULE external_potential
     !===============================================================================================================================
     ! This subroutine adds a hard wall all around the supercell
         USE precision_kinds  ,ONLY: dp
-        USE system           ,ONLY: spacegrid, nb_species
+        USE system           ,ONLY: nb_species
+        use module_grid, only: grid
         IF (.NOT. ALLOCATED(vext_hard_core)) THEN
-            ALLOCATE ( vext_hard_core(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),nb_species) ,SOURCE=0._dp)
+            ALLOCATE ( vext_hard_core(GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3),nb_species) ,SOURCE=0._dp)
         END IF
         vext_hard_core(1,:,:,:) = HUGE(1.0_dp)
-        vext_hard_core(spacegrid%n_nodes(1),:,:,:) = HUGE(1.0_dp)
+        vext_hard_core(GRID%n_nodes(1),:,:,:) = HUGE(1.0_dp)
         vext_hard_core(:,1,:,:) = HUGE(1.0_dp)
-        vext_hard_core(:,spacegrid%n_nodes(2),:,:) = HUGE(1.0_dp)
+        vext_hard_core(:,GRID%n_nodes(2),:,:) = HUGE(1.0_dp)
         vext_hard_core(:,:,1,:) = HUGE(1.0_dp)
-        vext_hard_core(:,:,spacegrid%n_nodes(3),:) = HUGE(1.0_dp)
+        vext_hard_core(:,:,GRID%n_nodes(3),:) = HUGE(1.0_dp)
     END SUBROUTINE vextdef1
     !===============================================================================================================================
 
@@ -74,7 +75,8 @@ MODULE external_potential
     SUBROUTINE vextdef0
     !===============================================================================================================================
         USE precision_kinds ,ONLY: dp
-        USE system          ,ONLY: grd=>spacegrid, nb_species
+        USE system          ,ONLY: nb_species
+        use module_grid, only: grid
         IMPLICIT NONE
         REAL(dp), PARAMETER :: radius=1.0_dp
 
@@ -89,7 +91,7 @@ MODULE external_potential
             !=======================================================================================================================
                 USE constants, ONLY: zero
                 IF (.NOT. ALLOCATED(vext_hard_core)) THEN
-                    ALLOCATE(   vext_hard_core( grd%n_nodes(1),grd%n_nodes(2),grd%n_nodes(3),nb_species)  ,SOURCE=zero )
+                    ALLOCATE(   vext_hard_core( grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),nb_species)  ,SOURCE=zero )
                 END IF
             END SUBROUTINE allocate_vext_hard_core_if_necessary
             !=======================================================================================================================
@@ -100,8 +102,8 @@ MODULE external_potential
             !=======================================================================================================================
                 REAL(dp) :: d, coo(2), l(2)
                 INTEGER(i2b) :: i,j,n(2)
-                l(:) = grd%length(1:2)
-                n(:) = grd%n_nodes(1:2)
+                l(:) = grid%length(1:2)
+                n(:) = grid%n_nodes(1:2)
                 coo = l/REAL(n,dp) + [radius,l(2)/2.]
                 vext_hard_core(1,:,:,:) = HUGE(1.0_dp) ! line of wall at farther left
                 ! find all nodes that are inside a disk of radius RADIUS. The disk is at the center of the plane (Lx,Ly)
@@ -118,8 +120,8 @@ MODULE external_potential
             !=======================================================================================================================
                 REAL(dp) :: distNode2Center, coo(2), l(2)
                 INTEGER(i2b) :: i,j,n(2)
-                l(:) = grd%length(1:2)
-                n(:) = grd%n_nodes(1:2)
+                l(:) = grid%length(1:2)
+                n(:) = grid%n_nodes(1:2)
                 coo = l/2._dp! - [0,0]*l(1)/n(1) (if you want to translate it toward wall) ! The cylinder is at the center of the supercell plane {x,y}
                 ! find all nodes that are inside a disk of radius RADIUS. The disk is at the center of the plane (Lx,Ly)
                 DO i=1,n(1); DO j=1,n(2)!DO CONCURRENT (i=1:n(1),j=1:n(2))

@@ -11,8 +11,9 @@ subroutine energy_and_gradient (iter)
     use precision_kinds ,only: dp
     use input           ,only: input_log, input_char, input_dp
     use minimizer       ,only: FF, dF_new
-    use system          ,only: solute, nb_species, grid => spacegrid
+    use system          ,only: solute, nb_species
     use dcf             ,only: c_s!, c_s_hs
+    use module_grid     ,only: grid
 
     USE ENERGY, ONLY : energy_cs
 

@@ -40,14 +40,15 @@ end function packing_fraction
 subroutine weight_functions
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, zeroC, zerodp
-  use system          ,only: nb_species, spacegrid
+  use system          ,only: nb_species
+  use module_grid, only: grid
   use fft             ,only: norm_k
   implicit none
   real(dp)     :: kR, sinkR, coskR, norm_k_loc, R, k
   integer(i2b) :: l,m,n,s,nfft1,nfft2,nfft3
-  nfft1=spacegrid%n_nodes(1)
-  nfft2=spacegrid%n_nodes(2)
-  nfft3=spacegrid%n_nodes(3)
+  nfft1=GRID%n_nodes(1)
+  nfft2=GRID%n_nodes(2)
+  nfft3=GRID%n_nodes(3)
   do concurrent( s=1:nb_species ,.not.allocated(hs(1)%w_k) )
     allocate( hs(s)%w_k(nfft1/2+1,nfft2,nfft3,0:3) ,source=zerodp)
   end do
@@ -129,7 +130,8 @@ end subroutine compute_packing_fractions
 SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, pi
-  use system          ,only: thermoCond, spacegrid, solvent
+  use system          ,only: thermoCond, solvent
+  use module_grid, only: grid
   use input           ,only: verbose, input_char
   implicit none
   real(dp) :: n0, n1, n2, n3 ! weighted densities in the case of constant density = ref bulk density
@@ -179,7 +181,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
        ((1./(36*pi))*n2**3/n3**2-n0) *log(1-n3) + n1*n2/(1-n3) + (1./(36*pi))*n2**3/((1-n3)**2*n3)    )
     END IF
     ! integration factors
-    hs(s)%Fexc0 = (hs(s)%Fexc0 - hs(s)%excchempot * solvent(s)%n0) * PRODUCT(spacegrid%length)
+    hs(s)%Fexc0 = (hs(s)%Fexc0 - hs(s)%excchempot * solvent(s)%n0) * PRODUCT(GRID%length)
     if( verbose) then
       write(*,'(A,i1,A,f10.2)') 'Fexc0 ( ' , s , ' ) = ' , hs(s)%Fexc0
     end if

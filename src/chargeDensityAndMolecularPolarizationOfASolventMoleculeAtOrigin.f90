@@ -6,9 +6,10 @@
 subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
 
     use precision_kinds     ,ONLY: dp
-    use system              ,ONLY: solvent, grid => spacegrid, nb_species
+    use system              ,ONLY: solvent, nb_species
     use fft                 ,ONLY: kx, ky, kz, k2
     use mathematica         ,ONLY: factorial
+    use module_grid, only: grid
 
     implicit none
 

@@ -1,6 +1,7 @@
-module grid
+module module_grid
     use precision_kinds, only: dp
     implicit none
+    private
     type :: somegrid
         !
         ! Spatial grid
@@ -24,5 +25,5 @@ module grid
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
     end type somegrid
-    type(somegrid), target, public :: gr ! TODO remove target. Was used for retrocompatibility reason
-end module
+    type(somegrid), target, public :: grid ! TODO remove target. Was used for retrocompatibility reason
+end module module_grid

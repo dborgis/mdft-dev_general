@@ -1,11 +1,12 @@
 SUBROUTINE energy_fmt (Ffmt)
 
   USE precision_kinds  ,ONLY: dp, i2b
-  USE system           ,ONLY: thermocond, nb_species, mole_fraction, spacegrid, solvent
+  USE system           ,ONLY: thermocond, nb_species, mole_fraction, solvent
   USE minimizer        ,ONLY: cg_vect_new, dF_new
   USE fft              ,ONLY: fftw3
   USE input            ,ONLY: input_char
   USE hardspheres      ,ONLY: hs, weight_functions
+  use module_grid, only: grid
 
   IMPLICIT NONE
 
@@ -32,10 +33,10 @@ SUBROUTINE energy_fmt (Ffmt)
 
   CALL CPU_TIME ( time0 ) ! init timer
 
-  nfft1 = spacegrid%n_nodes(1)
-  nfft2 = spacegrid%n_nodes(2)
-  nfft3 = spacegrid%n_nodes(3)
-  dV = spacegrid%dv
+  nfft1 = GRID%n_nodes(1)
+  nfft2 = GRID%n_nodes(2)
+  nfft3 = GRID%n_nodes(3)
+  dV = GRID%dv
   kT = thermocond%kbT
 
   ! in case of empty supercell
@@ -51,13 +52,13 @@ SUBROUTINE energy_fmt (Ffmt)
       do j=1,nfft2
         do k=1,nfft3
           local_density=0
-          do io=1,spacegrid%no
+          do io=1,GRID%no
               icg = icg + 1
-              local_density = local_density + cg_vect_new(i,j,k,io,s)**2 * spacegrid%w(io)
+              local_density = local_density + cg_vect_new(i,j,k,io,s)**2 * GRID%w(io)
           end do
           ! correct by *(8*pi²/n)**-1 as the integral over all orientations o and psi is 4pi and 2pi/n
           ! at the same time integrate rho in order to count the total number of implicit molecules.
-          rho(i,j,k,s) = local_density*spacegrid%molRotSymOrder/(fourpi*twopi) ! n/n0 at this stage
+          rho(i,j,k,s) = local_density*GRID%molRotSymOrder/(fourpi*twopi) ! n/n0 at this stage
         end do
       end do
     end do
@@ -178,11 +179,11 @@ SUBROUTINE energy_fmt (Ffmt)
     do i=1,nfft1
       do j=1,nfft2
         do k=1,nfft3
-          do io=1,spacegrid%no
+          do io=1,GRID%no
               icg=icg+1
               psi=cg_vect_new(i,j,k,io,s)
               dF_new(i,j,k,io,s) = dF_new(i,j,k,io,s) &
-                  + 2*psi*solvent(s)%rho0*dV*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*spacegrid%w(io)
+                  + 2*psi*solvent(s)%rho0*dV*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*GRID%w(io)
           end do
         end do
       end do

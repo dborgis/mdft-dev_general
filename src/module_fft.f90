@@ -55,10 +55,10 @@ MODULE fft
     !===============================================================================================================================
     SUBROUTINE tabulate_kx_ky_kz
     !===============================================================================================================================
-        USE system , ONLY: spacegrid
+        use module_grid, only: grid
         INTEGER(i2b), DIMENSION(3) :: nfft
         INTEGER(i2b):: l
-        nfft = spacegrid%n_nodes
+        nfft = GRID%n_nodes
         ALLOCATE ( kx (nfft(1)/2+1), ky (nfft(2)), kz (nfft(3)), SOURCE=0._dp)
         DO CONCURRENT ( l=1:nfft(1)/2+1 )
             kx(l) = kproj(1,l)
@@ -99,16 +99,16 @@ MODULE fft
     ! note the special ordering for negative values. See
     ! http://www.fftw.org/doc/Real_002ddata-DFT-Array-Format.html#Real_002ddata-DFT-Array-Format
     ! http://www.fftw.org/doc/The-1d-Discrete-Fourier-Transform-_0028DFT_0029.html#The-1d-Discrete-Fourier-Transform-_0028DFT_0029
-        USE system, ONLY: spacegrid
+        use module_grid, only: grid
         INTEGER(i2b), INTENT(IN) :: dir, l ! dir is 1 for x, 2 for y, 3 for z
         REAL(dp) :: kproj
         INTEGER(i2b) :: m1
-        IF ( l <= spacegrid%n_nodes(dir)/2 ) THEN
+        IF ( l <= GRID%n_nodes(dir)/2 ) THEN
             m1 = l - 1
         ELSE
-            m1 = l - 1 - spacegrid%n_nodes(dir)
+            m1 = l - 1 - GRID%n_nodes(dir)
         END IF
-        kproj = twopi/spacegrid%length(dir)*REAL(m1,dp)
+        kproj = twopi/GRID%length(dir)*REAL(m1,dp)
     END FUNCTION
     !===============================================================================================================================
 

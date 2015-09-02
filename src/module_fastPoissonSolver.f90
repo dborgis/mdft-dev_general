@@ -2,7 +2,8 @@ module fastPoissonSolver
     ! This module contains everything related to the fast poisson solver(s) of MDFT.
 
     use precision_kinds     ,only: dp, i2b
-    use system              ,only: spacegrid, solute, solvent
+    use system              ,only: solute, solvent
+    use module_grid, only: grid
     use external_potential  ,only: vext_q
     use input               ,only: input_log
 
@@ -29,8 +30,8 @@ contains
             character(180) :: msg
         end type
         type (ertype) :: er
-        poissonSolverGrid%n = spacegrid%n_nodes
-        poissonSolverGrid%len  = spacegrid%length
+        poissonSolverGrid%n = GRID%n_nodes
+        poissonSolverGrid%len  = GRID%length
         allocate( soluteChargeDensity (poissonSolverGrid%n(1),poissonSolverGrid%n(2),poissonSolverGrid%n(3)) ,SOURCE=0._dp, &
         stat=er%i, errmsg=er%msg)
         if (er%i/=0) then
@@ -163,7 +164,7 @@ contains
             ! new construction
             ! get multipolar electrostatic potential in real space. It is already solvent dependent here
             do s=1,size(solvent)
-                do io = 1, spacegrid%no
+                do io = 1, GRID%no
                     fftw3InBackward = Vpoisson_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     call dfftw_execute (fpspb)
                     solvent(s)%vext(:,:,:,io)%q = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
@@ -203,7 +204,8 @@ END SUBROUTINE poissonSolver
 SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     use precision_kinds     ,ONLY: dp, i2b
-    use system              ,ONLY: nb_solvent_sites, nb_species, spacegrid, solute, solvent
+    use system              ,ONLY: nb_solvent_sites, nb_species, solute, solvent
+    use module_grid, only: grid
     use external_potential  ,ONLY: vext_q
     use constants           ,ONLY: qfact, zero
     use mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode, floorNode, ceilingNode,&
@@ -215,7 +217,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
     REAL(dp), INTENT(IN) :: gridlen(3)
     INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d, io, no, ns
-    real(dp), dimension(3,nb_species,nb_solvent_sites,spacegrid%no) :: xmod
+    real(dp), dimension(3,nb_species,nb_solvent_sites,GRID%no) :: xmod
     REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
     REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
     TYPE :: testtype
@@ -225,8 +227,8 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     END TYPE
     TYPE(testtype) :: err
 
-    nfft = spacegrid%n_nodes
-    dl = spacegrid%dl
+    nfft = GRID%n_nodes
+    dl = GRID%dl
 
     IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
     IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"
@@ -235,10 +237,10 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
     do concurrent (s=1:size(solvent))
-        DO CONCURRENT( io=1:spacegrid%no, m=1:size(solvent(s)%site) )
-            xmod(1,s,m,io) = DOT_PRODUCT( [spacegrid%Rotxx(io),spacegrid%Rotxy(io),spacegrid%Rotxz(io)] , solvent(s)%site(m)%r )
-            xmod(2,s,m,io) = DOT_PRODUCT( [spacegrid%Rotyx(io),spacegrid%Rotyy(io),spacegrid%Rotyz(io)] , solvent(s)%site(m)%r )
-            xmod(3,s,m,io) = DOT_PRODUCT( [spacegrid%Rotzx(io),spacegrid%Rotzy(io),spacegrid%Rotzz(io)] , solvent(s)%site(m)%r )
+        DO CONCURRENT( io=1:GRID%no, m=1:size(solvent(s)%site) )
+            xmod(1,s,m,io) = DOT_PRODUCT( [GRID%Rotxx(io),GRID%Rotxy(io),GRID%Rotxz(io)] , solvent(s)%site(m)%r )
+            xmod(2,s,m,io) = DOT_PRODUCT( [GRID%Rotyx(io),GRID%Rotyy(io),GRID%Rotyz(io)] , solvent(s)%site(m)%r )
+            xmod(3,s,m,io) = DOT_PRODUCT( [GRID%Rotzx(io),GRID%Rotzy(io),GRID%Rotzz(io)] , solvent(s)%site(m)%r )
         end do
     END DO
 
@@ -250,7 +252,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     err%pb=.FALSE. ! becomes TRUE if a problem is detected during execution.
 
 
-    DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:spacegrid%no )
+    DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:GRID%no )
         vext_q_of_r_and_omega = 0.0_dp
 
         DO CONCURRENT (m=1:nb_solvent_sites, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))

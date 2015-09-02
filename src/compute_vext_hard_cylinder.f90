@@ -1,9 +1,10 @@
 ! compute the external potential as created by a hard cylinder solute
 ! hard cylinder is along axe z=0, x=Lx/2, y=Ly/2
 SUBROUTINE compute_Vext_hard_cylinder
+    use module_grid, only: grid
 ! USE precision_kinds,only : i2b , dp
 ! use input,only : input_dp
-! use system,only : solute , nb_solute_sites , nb_species, spacegrid
+! use system,only : solute , nb_solute_sites , nb_species
 ! use external_potential,only : Vext_total
 ! use quadrature, only: angGrid, molRotGrid
 ! USE hardspheres ,ONLY: hs
@@ -17,12 +18,12 @@ SUBROUTINE compute_Vext_hard_cylinder
 !     INTEGER(i2b) :: nfft1, nfft2, nfft3
 !     REAL(dp) :: lx, ly, lz
 !
-!     lx= spacegrid%length(1)
-!     ly= spacegrid%length(2)
-!     lz= spacegrid%length(3)
-!     nfft1= spacegrid%n_nodes(1)
-!     nfft2= spacegrid%n_nodes(2)
-!     nfft3= spacegrid%n_nodes(3)
+!     lx= GRID%length(1)
+!     ly= GRID%length(2)
+!     lz= GRID%length(3)
+!     nfft1= GRID%n_nodes(1)
+!     nfft2= GRID%n_nodes(2)
+!     nfft3= GRID%n_nodes(3)
 ! ! init variables
 ! deltax = Lx / real ( nfft1 , dp )
 ! deltay = Ly / real ( nfft2 , dp )
