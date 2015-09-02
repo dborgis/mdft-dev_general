@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !
     USE precision_kinds, ONLY: i2b, dp
     use module_grid, only: grid
-!     USE system, ONLY: thermocond, nb_species, GRID, solvent
+!     USE system, ONLY: thermocond, solvent(1)%nspec, GRID, solvent
 !     USE dcf, ONLY: chi_l, chi_t, nb_k, delta_k
 !     USE quadrature,ONLY : angGrid, molRotGrid
 !     USE minimizer, ONLY: cg_vect_new, FF, dF_new
@@ -48,9 +48,9 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !							                                    !
 ! !            ====================================================
 !     ALLOCATE ( rho (GRID%n_nodes(1), GRID%n_nodes(2), GRID%n_nodes(3),&
-!                         angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=0._dp )
+!                         angGrid%n_angles, molRotGrid%n_angles, solvent(1)%nspec), SOURCE=0._dp )
 !     icg=0
-!     DO s=1, nb_species
+!     DO s=1, solvent(1)%nspec
 !         DO i=1, nfft1
 !             DO j=1, nfft2
 !                 DO k=1, nfft3
@@ -70,8 +70,8 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !            !			in Fourier Space		and total polarization!
 ! !===================================================================================================================================
 !     allocate (rho_k (nfft1/2+1, nfft2, nfft3), SOURCE=zeroC)
-!     allocate (Ptot_k (3,nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
-!     DO s = 1, nb_species
+!     allocate (Ptot_k (3,nfft1/2+1, nfft2, nfft3, solvent(1)%nspec), SOURCE=zeroC )
+!     DO s = 1, solvent(1)%nspec
 !         DO p = 1, molRotGrid%n_angles
 !             DO o = 1, angGrid%n_angles
 !                 fftw3%in_forward = rho(:,:,:,o,p,s)
@@ -96,8 +96,8 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !            !    	Compute 				!
 ! !            !	Transverse and longitudinal Polarization	!
 ! !            ====================================================
-!     allocate (Plong_k (3,nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC )
-!     do concurrent ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species )
+!     allocate (Plong_k (3,nfft1/2+1, nfft2, nfft3, solvent(1)%nspec), SOURCE=zeroC )
+!     do concurrent ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:solvent(1)%nspec )
 !         if (abs(k2(i,j,k))<=epsilon(1._dp)) THEN
 !             Plong_k(:,i,j,k,s) = zeroC
 !         else
@@ -106,15 +106,15 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !         end if
 !     end do
 !
-!     allocate (Ptrans_k (3,nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(Ptot_k - Plong_k) )
+!     allocate (Ptrans_k (3,nfft1/2+1, nfft2, nfft3, solvent(1)%nspec), SOURCE=(Ptot_k - Plong_k) )
 !
 ! !            ====================================================
 ! !            !    	Compute Free energy due to		!
 ! !            !	Transverse and longitudinal Polarization	!
 ! !            ====================================================
-!     ALLOCATE( dF_pol_tot_k (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species), source=zeroC)
+!     ALLOCATE( dF_pol_tot_k (nfft1/2+1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, solvent(1)%nspec), source=zeroC)
 !
-!     DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species )
+!     DO CONCURRENT ( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:solvent(1)%nspec )
 !
 !         IF (i>1 .AND. i<nfft1/2+1) THEN
 !             facsym=2.0_dp
@@ -171,8 +171,8 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !========================================================================================================================
 ! !						Get gradient in real space
 ! !========================================================================================================================
-!     ALLOCATE( dF_pol_tot (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species), source=0._dp)
-!     DO s=1,nb_species
+!     ALLOCATE( dF_pol_tot (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, solvent(1)%nspec), source=0._dp)
+!     DO s=1,solvent(1)%nspec
 !         DO p=1, molRotGrid%n_angles
 !             DO o=1,angGrid%n_angles
 !                 fftw3%in_backward= dF_pol_tot_k (:,:,:,o,p,s)
@@ -185,7 +185,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !						Allocate it for minimizing
 ! !========================================================================================================================
 !     icg = 0
-!     DO s=1, nb_species
+!     DO s=1, solvent(1)%nspec
 !         DO i=1, nfft1
 !             DO j=1, nfft2
 !                 DO k=1,nfft3

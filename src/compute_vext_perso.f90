@@ -4,7 +4,7 @@ SUBROUTINE compute_vext_perso
 !
 ! USE precision_kinds,only : i2b , dp
 ! use input,only : input_line,input_dp
-! use system,only : solute , nb_solute_sites, nb_species, GRID
+! use system,only : solute , nb_solute_sites
 ! use external_potential,only : Vext_total
 ! USE hardspheres ,ONLY: hs
 !
@@ -16,7 +16,7 @@ SUBROUTINE compute_vext_perso
 !     real(dp):: solute_radius ! radius of the hard sphere solute. tag in dft.in
 !     real(dp):: radius_sum_sq ! sum of solute and solvent radius
 !     real(dp):: deltax , deltay , deltaz ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
-!     integer(i2b):: species ! dummy for loops over species from 1 to nb_species
+!     integer(i2b):: species ! dummy for loops over species from 1 to solvent(1)%nspec
 !     INTEGER(i2b) :: nfft1, nfft2, nfft3
 !     REAL(dp) :: lx, ly, lz
 !
@@ -43,7 +43,7 @@ SUBROUTINE compute_vext_perso
 !   stop
 ! END IF
 ! ! compute the sum of solute and solvent radius
-! do species = 1 , nb_species
+! do species = 1 , solvent(1)%nspec
 ! radius_sum_sq = ( solute_radius + hs(species)%R ) ** 2
 ! do n = 1 , nb_solute_sites
 !   do i = 1 , nfft1

@@ -9,7 +9,7 @@ MODULE external_potential
     !real(dp), allocatable, dimension(:,:,:,:) :: Vext ! external potential of the whole solute on a position and angular grid
     !real(dp), allocatable, dimension(:,:,:,:) :: Vlj ! lennard jones potential of the whole solute on a position and angular grid
     !real(dp), allocatable, dimension(:,:,:,:) :: Vcoul ! electrostatic potential of the whole solute on a position and angular grid
-    ! we want the outer loop (slowest varying) to be over species, so nb_species is the last rank.
+    ! we want the outer loop (slowest varying) to be over species, so solvent(1)%nspec is the last rank.
     ! the arrays are thus defined as  array ( nfft1 , nfft2 , nfft3 , no )
     ! the most efficient loops are thus over
     ! species
@@ -19,7 +19,7 @@ MODULE external_potential
     !         nfft1
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_total ! external potential as the sum of all external potentials (LJ + charge + ... )
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_lj
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , angles , nb_species )
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , angles , solvent(1)%nspec )
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:)   :: Vext_hard ! hard potential
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:)     :: Vext_hard_core ! hard core potential
 
@@ -55,10 +55,10 @@ MODULE external_potential
     !===============================================================================================================================
     ! This subroutine adds a hard wall all around the supercell
         USE precision_kinds  ,ONLY: dp
-        USE system           ,ONLY: nb_species
+        USE system           ,ONLY: solvent
         use module_grid, only: grid
         IF (.NOT. ALLOCATED(vext_hard_core)) THEN
-            ALLOCATE ( vext_hard_core(GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3),nb_species) ,SOURCE=0._dp)
+            ALLOCATE ( vext_hard_core(GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3),solvent(1)%nspec) ,SOURCE=0._dp)
         END IF
         vext_hard_core(1,:,:,:) = HUGE(1.0_dp)
         vext_hard_core(GRID%n_nodes(1),:,:,:) = HUGE(1.0_dp)
@@ -75,7 +75,7 @@ MODULE external_potential
     SUBROUTINE vextdef0
     !===============================================================================================================================
         USE precision_kinds ,ONLY: dp
-        USE system          ,ONLY: nb_species
+        USE system          ,ONLY: solvent
         use module_grid, only: grid
         IMPLICIT NONE
         REAL(dp), PARAMETER :: radius=1.0_dp
@@ -91,7 +91,7 @@ MODULE external_potential
             !=======================================================================================================================
                 USE constants, ONLY: zero
                 IF (.NOT. ALLOCATED(vext_hard_core)) THEN
-                    ALLOCATE(   vext_hard_core( grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),nb_species)  ,SOURCE=zero )
+                    ALLOCATE(   vext_hard_core( grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),solvent(1)%nspec)  ,SOURCE=zero )
                 END IF
             END SUBROUTINE allocate_vext_hard_core_if_necessary
             !=======================================================================================================================

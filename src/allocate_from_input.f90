@@ -3,7 +3,7 @@ SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3
-    USE system              ,ONLY: thermoCond, nb_species, mole_fraction, solvent
+    USE system              ,ONLY: thermoCond, mole_fraction, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     use module_grid, only: grid, init_grid
 
@@ -34,14 +34,14 @@ SUBROUTINE allocate_from_input
     s = input_int('nb_implicit_species', defaultvalue=1, assert=">0") ! get the number of implicit solvant species
     allocate( solvent(s) )
     solvent(:)%nspec = s
-    nb_species = s
+    solvent(1)%nspec = s
 
 
 
     ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer
     do i = 1, size(input_line)
         if (input_line(i)(1:len('ref_bulk_density')) == 'ref_bulk_density') then
-            do s = 1, nb_species
+            do s = 1, solvent(1)%nspec
                 read (input_line(i+s),*) solvent(s)%n0
             end do
             exit
@@ -50,7 +50,7 @@ SUBROUTINE allocate_from_input
 
     if (any (solvent%n0 <= 0._dp) ) then
         print *,"You ask for negative densities!"
-        do s =1, nb_species
+        do s =1, solvent(1)%nspec
             print *,"For species",s,"you want density (molecule/Ang^3):",solvent(s)%n0
         end do
         stop
@@ -63,8 +63,8 @@ SUBROUTINE allocate_from_input
         write(*,*)'this was done, in a previous version of the program, in compute_hard_sphere_parameters.f90'
         STOP
     ELSE
-        ALLOCATE ( mole_fraction(nb_species)) ! molar fraction of each species.
-        call read_mole_fractions(nb_species, mole_fraction )
+        ALLOCATE ( mole_fraction(solvent(1)%nspec)) ! molar fraction of each species.
+        call read_mole_fractions(solvent(1)%nspec, mole_fraction )
     end if
 
 
@@ -109,21 +109,21 @@ SUBROUTINE allocate_from_input
     ! It then reads every line of input_line and looks for the tag "mole_fractions"
     ! Then, it reads, one line after the other, the mole fractions of every constituant.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    SUBROUTINE read_mole_fractions ( nb_species , mole_fraction )
+    SUBROUTINE read_mole_fractions ( nspec , mole_fraction )
         USE precision_kinds,only : dp , i2b
         use input,only : input_line
         IMPLICIT NONE
-        integer(i2b), intent(in) :: nb_species
-        real(dp), dimension ( nb_species ) , intent ( inout ) :: mole_fraction
+        integer(i2b), intent(in) :: nspec
+        real(dp), dimension ( nspec ) , intent ( inout ) :: mole_fraction
         integer(i2b):: i, j, s
-        select case (nb_species)
+        select case (nspec)
         case (1)
           mole_fraction = 1._dp
         case default
           do i = 1, size( input_line )
             j = len ( 'mole_fractions' )
             if ( input_line(i)(1:j) == 'mole_fractions' ) then
-              do s = 1, nb_species
+              do s = 1, nspec
                   read( input_line(i+s),*) mole_fraction(s)
               end do
               exit ! loop over i
@@ -141,23 +141,23 @@ SUBROUTINE allocate_from_input
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE check_error_in_mole_fraction ( mole_fraction )
         USE precision_kinds,only : i2b , dp
-        use system,only : nb_species
+        use system,only : solvent
         IMPLICIT NONE
-        real(dp), dimension ( nb_species ) , intent(in) :: mole_fraction
+        real(dp), dimension ( solvent(1)%nspec ) , intent(in) :: mole_fraction
         integer(i2b):: s
 
         ! sum of all mole fractions should be equal to 1
         if ( sum ( mole_fraction ) /= 1.0_dp ) THEN
             write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
             write (*,*) 'here are the number of the species and its associated mole fraction'
-            do s = 1 , nb_species
+            do s = 1 , solvent(1)%nspec
               print*, s , mole_fraction(s)
             end do
             write (*,*) 'STOP'
             stop
         end if
         ! a mole fraction should be between 0 and 1
-        do s = 1 , nb_species
+        do s = 1 , solvent(1)%nspec
           if ( mole_fraction ( s ) < 0.0_dp .or. mole_fraction ( s ) > 1.0_dp ) THEN
             write (*,*) 'Critical errror in ALLOCATE_from_input.f90. Mole fractions should be between 0 and 1'
             write (*,*) 'here are the number of the species and its associated mole fraction'

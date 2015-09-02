@@ -9,7 +9,7 @@ SUBROUTINE output_rdf (array,filename)
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
     USE precision_kinds ,ONLY: dp, i2b, sp
-    USE system          ,ONLY: nb_species, solute
+    USE system          ,ONLY: solvent, solute
     use mathematica     ,only: deduce_optimal_histogram_properties, akima_spline, chop
     use module_grid, only: grid
 
@@ -33,7 +33,7 @@ SUBROUTINE output_rdf (array,filename)
     WRITE (10,*) '# r  rdf'
 
     error%found = .FALSE.
-    IF (nb_species/=1) STOP "compute_rdf.f90 is written for 1 solvent species only."
+    IF (solvent(1)%nspec/=1) STOP "compute_rdf.f90 is written for 1 solvent species only."
 
     ALLOCATE (rdf (nbins) ,SOURCE=0._dp)
 

@@ -5,7 +5,7 @@
 subroutine init_density
 
   use precision_kinds, only : dp, i2b
-  use system, only: thermocond, nb_species
+  use system, only: thermocond, solvent
   use module_grid, only: grid
   use minimizer, only: cg_vect_new
   use external_potential, only: Vext_total, Vext_q
@@ -56,7 +56,7 @@ subroutine init_density
 ! only Vext_total is used in the functional. We may deallocate it now.
 !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
 
-do s = 1, nb_species
+do s = 1, solvent(1)%nspec
     do io = 1, GRID%no
         do k = 1, GRID%nz
             do j = 1, GRID%ny

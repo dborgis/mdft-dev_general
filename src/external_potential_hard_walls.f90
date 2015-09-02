@@ -11,7 +11,7 @@ SUBROUTINE external_potential_hard_walls
 
     USE precision_kinds    ,ONLY: i2b, dp
     USE input              ,ONLY: input_line, input_int
-    USE system             ,ONLY: nb_species
+    USE system             ,ONLY: solvent
     USE external_potential ,ONLY: Vext_total
     USE hardspheres        ,ONLY: hs
     use module_grid, only: grid
@@ -19,7 +19,7 @@ SUBROUTINE external_potential_hard_walls
     IMPLICIT NONE
 
     INTEGER(i2b) :: i,j,k,w,s,nfft1,nfft2,nfft3,iostatint
-    INTEGER(i2b) :: species ! dummy between 1 and nb_species
+    INTEGER(i2b) :: species ! dummy between 1 and solvent(1)%nspec
     INTEGER(i2b) :: nwall ! number of hard walls in the supercell
     REAL(dp) :: dplan ! local distance between point M (grid point) and plan defining wall
     REAL(dp), ALLOCATABLE, DIMENSION(:)   :: thickness ! thickness of each wall (thickness = 2radius. Don't mix them up)
@@ -57,14 +57,14 @@ SUBROUTINE external_potential_hard_walls
 
 ! be sure Vext_total is allocated
     IF (.NOT. ALLOCATED(Vext_total)) THEN
-        ALLOCATE( Vext_total (nfft1,nfft2,nfft3,GRID%no,nb_species) ,SOURCE=0._dp)
+        ALLOCATE( Vext_total (nfft1,nfft2,nfft3,GRID%no,solvent(1)%nspec) ,SOURCE=0._dp)
     END IF
 ! be sure radius(:) (solvent radius) is already computed
   !  IF(.NOT. ALLOCATED(hs)) STOP 'Molecular radius of solvent not allocated. critial stop in external_potential_hard_walls.f90'
 
 
     ! compute the potential potential
-    DO CONCURRENT ( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species, w=1:nwall)
+    DO CONCURRENT ( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:solvent(1)%nspec, w=1:nwall)
         OM = [ REAL(i-1,dp)*GRID%dl(1) , REAL(j-1,dp)*GRID%dl(2) , REAL(k-1,dp)*GRID%dl(3) ]
         dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
         IF (.NOT. ALLOCATED(hs)) THEN

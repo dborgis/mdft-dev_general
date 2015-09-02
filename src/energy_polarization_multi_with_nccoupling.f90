@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
     use module_grid, only: grid
-!     USE system,          ONLY: thermocond, nb_species, solvent
+!     USE system,          ONLY: thermocond, solvent(1)%nspec, solvent
 !     USE dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
 !     USE minimizer,       ONLY: cg_vect_new, FF, dF_new
 !     USE constants,       ONLY: twopi, fourpi, qfact
@@ -37,8 +37,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     !TODO HERE SHOULD BE A CHECK IF SOLVENT IS SPCE. IF NOT THEN INCONSISTENCY WITH MU_SPCE
 !
 !     ALLOCATE ( rho_n (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
-!     ALLOCATE ( rho (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=0.0_dp )
-!     DO s=1,nb_species
+!     ALLOCATE ( rho (nfft1, nfft2, nfft3, angGrid%n_angles, molRotGrid%n_angles, solvent(1)%nspec), SOURCE=0.0_dp )
+!     DO s=1,solvent(1)%nspec
 !         DO i=1,nfft1
 !             DO j=1,nfft2
 !                 DO k=1,nfft3
@@ -65,8 +65,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     !            !    		get Density 			!
 !     !            !			in Fourier Space		!
 !     !            ====================================================
-!     ALLOCATE( rho_k(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zeroC)
-!     DO s=1, nb_species
+!     ALLOCATE( rho_k(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,solvent(1)%nspec), SOURCE=zeroC)
+!     DO s=1, solvent(1)%nspec
 !         DO p=1, molRotGrid%n_angles
 !             DO o=1, angGrid%n_angles
 !                 fftw3%in_forward = rho(:,:,:,o,p,s)
@@ -102,7 +102,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !
 !     ! compute excess energy and its gradient
 !     Fint = 0.0_dp ! excess energy
-!     DO s = 1 , nb_species
+!     DO s = 1 , solvent(1)%nspec
 !         fact = GRID%dv * solvent(s)%rho0 ! facteur d'integration
 !         DO i = 1 , nfft1
 !             DO j = 1 , nfft2
@@ -127,10 +127,10 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     !            !		Total Polarization		                	!
 !     !            ====================================================
 !     !======================================================================================================
-!     allocate (P_tot_k (3,nfft1/2+1,nfft2,nfft3,nb_species), SOURCE=zeroC )
+!     allocate (P_tot_k (3,nfft1/2+1,nfft2,nfft3,solvent(1)%nspec), SOURCE=zeroC )
 !     BLOCK
 !         COMPLEX(dp) :: rho_k_tmp
-!         DO CONCURRENT( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
+!         DO CONCURRENT( i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:solvent(1)%nspec, o=1:angGrid%n_angles, p=1:molRotGrid%n_angles )
 !             rho_k_tmp = rho_k(i,j,k,o,p,s) * angGrid%weight(o) * molRotGrid%weight(p)
 !             P_tot_k (:,i,j,k,s) = P_tot_k (:,i,j,k,s) + rho_k_tmp * solvent(s)%molec_polar_k(:,i,j,k,o,p)
 !         END DO
@@ -141,8 +141,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     !!            !    	Compute 		                      	   	 !
 !     !!            !	Transverse and longitudinal Polarization    	 !
 !     !!            ====================================================
-!     allocate (P_long_k (3,nfft1/2+1, nfft2, nfft3, nb_species),  SOURCE=zeroC)
-!     DO s=1, nb_species
+!     allocate (P_long_k (3,nfft1/2+1, nfft2, nfft3, solvent(1)%nspec),  SOURCE=zeroC)
+!     DO s=1, solvent(1)%nspec
 !         DO k=1, nfft3
 !             DO j=1, nfft2
 !                 DO i=1, nfft1/2+1
@@ -157,12 +157,12 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !         END DO
 !     END DO
 !
-!     allocate (P_trans_k (3,nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=(P_tot_k-P_long_k))
+!     allocate (P_trans_k (3,nfft1/2+1, nfft2, nfft3, solvent(1)%nspec), SOURCE=(P_tot_k-P_long_k))
 !
 !     IF (verbose) THEN
 !         BLOCK
-!             REAL(dp), DIMENSION(3,nfft1,nfft2,nfft3,nb_species) :: P_tot, P_long
-!             DO s=1,nb_species
+!             REAL(dp), DIMENSION(3,nfft1,nfft2,nfft3,solvent(1)%nspec) :: P_tot, P_long
+!             DO s=1,solvent(1)%nspec
 !                 do d=1,3
 !                     fftw3%in_backward= P_long_k(d,:,:,:,s)
 !                     call dfftw_execute(fftw3%plan_backward)
@@ -195,8 +195,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !                 !    	Compute rho_c_k	in k space		            !
 !                 !						                         	!
 !     !            ====================================================
-!     IF (.NOT. ALLOCATED (rho_c_k_myway) ) ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3, nb_species), SOURCE=zeroC)
-!     DO s =1, nb_species
+!     IF (.NOT. ALLOCATED (rho_c_k_myway) ) ALLOCATE (rho_c_k_myway(nfft1/2+1, nfft2, nfft3, solvent(1)%nspec), SOURCE=zeroC)
+!     DO s =1, solvent(1)%nspec
 !         DO p =1, molRotGrid%n_angles
 !             DO o =1, angGrid%n_angles
 !                 DO k =1, nfft3
@@ -217,7 +217,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     !            !    	Compute Free energy due to		            !
 !     !            !	Transverse and longitudinal Polarization	    !
 !     !            ====================================================
-!     ALLOCATE (dF_pol_k(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=zeroC)
+!     ALLOCATE (dF_pol_k(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles,solvent(1)%nspec), SOURCE=zeroC)
 !     BLOCK
 !         COMPLEX(dp) :: k_tens_k_P(3), dF_pol_trans_k_tmp, dF_pol_long_k_tmp, dF_pol_tot_k_tmp
 !
@@ -225,7 +225,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !         F_pol_trans_k = zeroC
 !         F_pol_tot_k = zeroC
 !
-!         DO CONCURRENT (i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:nb_species)
+!         DO CONCURRENT (i=1:nfft1/2+1, j=1:nfft2, k=1:nfft3, s=1:solvent(1)%nspec)
 !             IF (i>1 .and. i<nfft1/2+1) THEN; facsym=2.0_dp; ELSE; facsym=1.0_dp; END IF
 !             k_index = MIN( INT( norm_k(i,j,k) / delta_k ) + 1, nb_k)
 !             kindex_in_c= MIN( INT( norm_k(i,j,k) / delta_k_in_C ) + 1, nb_k_in_c)
@@ -285,8 +285,8 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     !!========================================================================================================================
 !     !!						Get gradient in real space
 !     !!========================================================================================================================
-!     ALLOCATE( dF_pol(nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,nb_species), SOURCE=0._dp)
-!     DO s=1 , nb_species
+!     ALLOCATE( dF_pol(nfft1, nfft2, nfft3,angGrid%n_angles,molRotGrid%n_angles,solvent(1)%nspec), SOURCE=0._dp)
+!     DO s=1 , solvent(1)%nspec
 !         DO p=1, molRotGrid%n_angles
 !             DO o=1,angGrid%n_angles
 !                 fftw3%in_backward = dF_pol_k(:,:,:,o,p,s)

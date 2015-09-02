@@ -4,7 +4,7 @@ SUBROUTINE compute_Vext_hard_cylinder
     use module_grid, only: grid
 ! USE precision_kinds,only : i2b , dp
 ! use input,only : input_dp
-! use system,only : solute , nb_solute_sites , nb_species
+! use system,only : solute , nb_solute_sites
 ! use external_potential,only : Vext_total
 ! use quadrature, only: angGrid, molRotGrid
 ! USE hardspheres ,ONLY: hs
@@ -14,7 +14,7 @@ SUBROUTINE compute_Vext_hard_cylinder
 ! real(dp):: hard_cylinder_radius ! radius of the hard cylinder solute
 ! real(dp):: deltax , deltay ! == Lx / nfft1 , Ly / nfft2 , Lz / nfft3
 ! real(dp):: sum_rad2 ! sum of solute cylinder radius and radius of solvent hard sphere
-! integer(i2b):: species ! dummy between 1 and nb_species
+! integer(i2b):: species ! dummy between 1 and solvent(1)%nspec
 !     INTEGER(i2b) :: nfft1, nfft2, nfft3
 !     REAL(dp) :: lx, ly, lz
 !
@@ -29,7 +29,7 @@ SUBROUTINE compute_Vext_hard_cylinder
 ! deltay = Ly / real ( nfft2 , dp )
 ! ! be sure Vext_total is allocated
 ! if ( .not. allocated ( Vext_total ) ) then
-!   allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, nb_species ) )
+!   allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles, solvent(1)%nspec ) )
 !   Vext_total = 0.0_dp
 ! END IF
 ! ! tell user
@@ -42,7 +42,7 @@ SUBROUTINE compute_Vext_hard_cylinder
 ! ! compute if grid point is or not inside the hard cylinder
 ! ! hard cylinder is along axe x=Lx/2, y=Ly/2
 ! do n = 1 , nb_solute_sites
-!   do species = 1 , nb_species
+!   do species = 1 , solvent(1)%nspec
 !     sum_rad2 = ( hard_cylinder_radius + hs(species)%R ) ** 2
 !     do j = 1 , nfft2
 !       y_nm2 = ( real(j-1,dp) * deltay - solute%site(n)%r(2) )**2

@@ -40,7 +40,7 @@ end function packing_fraction
 subroutine weight_functions
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, zeroC, zerodp
-  use system          ,only: nb_species
+  use system          ,only: solvent
   use module_grid, only: grid
   use fft             ,only: norm_k
   implicit none
@@ -49,11 +49,11 @@ subroutine weight_functions
   nfft1=GRID%n_nodes(1)
   nfft2=GRID%n_nodes(2)
   nfft3=GRID%n_nodes(3)
-  do concurrent( s=1:nb_species ,.not.allocated(hs(1)%w_k) )
+  do concurrent( s=1:solvent(1)%nspec ,.not.allocated(hs(1)%w_k) )
     allocate( hs(s)%w_k(nfft1/2+1,nfft2,nfft3,0:3) ,source=zerodp)
   end do
   ! Weight functions of a fluid of hard spheres are known analyticaly.
-  do concurrent( s=1:nb_species, l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3 )
+  do concurrent( s=1:solvent(1)%nspec, l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3 )
     R=hs(s)%R
     k=norm_k(l,m,n)
     if( abs(k)>epsilon(1._dp) ) then ! k /= 0.0_dp
@@ -82,11 +82,11 @@ end subroutine weight_functions
 ! read the excess functional
 ! compute accordingly the chemical potential and the reference bulk density
 subroutine compute_hard_spheres_parameters
-  use system          ,only: nb_species, solvent
+  use system          ,only: solvent
   use input           ,only: input_char, input_log
   implicit none
   character(4) :: hs_functional
-  if(.not.allocated(hs)) allocate(hs(nb_species))
+  if(.not.allocated(hs)) allocate(hs(solvent(1)%nspec))
   hs_functional=input_char('hs_functional')
   if(hs_functional(1:2)/='PY' .and. hs_functional(1:2)/='CS') then
     stop "functional not implemented. See module_hardspheres:97"
@@ -103,11 +103,11 @@ end subroutine compute_hard_spheres_parameters
 ! they would be unphysical. 0.74 is the maximum packing of a solid crystal.
 subroutine compute_packing_fractions
   use precision_kinds ,only: dp,i2b
-  use system          ,only: nb_species, solvent
+  use system          ,only: solvent
   use input           ,only: verbose
   implicit none
   integer(i2b) :: s
-  do s=1,nb_species
+  do s=1,solvent(1)%nspec
     hs(s)%pf = packing_fraction( numberdensity=solvent(s)%n0, HSradius=hs(s)%R )
     if(verbose) write(*,'(A,i1,A,f5.3)') 'Packing fraction of species ',s,' is ',hs(s)%pf
     ! compute homogeneous fluid reference with Perkus Yevick
@@ -196,22 +196,22 @@ end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
 subroutine read_hard_sphere_radius
   use precision_kinds  ,only: dp, i2b
   use input            ,only: input_line
-  use system           ,only: thermocond, nb_species, solvent
+  use system           ,only: thermocond, solvent
   implicit none
   integer(i2b) :: i,j,s
   real(dp)     :: d_wca ! optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
   real(dp)     :: dmin
-  if(.not.allocated(hs)) allocate(hs(nb_species))
+  if(.not.allocated(hs)) allocate(hs(solvent(1)%nspec))
   ! Get hard sphere radius
   ! two possibilities : 1/ pure hard spheres : read radius in input/dft.in    2/ perturbated HS by a lennard jones
   ! next few lines is a test to know if we have
-  ! Algo : one looks for line containing 'hard_sphere_radius'. Next nb_species lines contain the radius of each hard sphere species.
+  ! Algo : one looks for line containing 'hard_sphere_radius'. Next solvent(1)%nspec lines contain the radius of each hard sphere species.
   ! If the radius is negative, the user means that the radius has to be calculated using the week chandler anderson model
-  ! by reading the lennard jones sigma and epsilon values accordingly to integer species between 1 and nb_species
+  ! by reading the lennard jones sigma and epsilon values accordingly to integer species between 1 and solvent(1)%nspec
   DO i= 1, SIZE(input_line)
     j = LEN( 'hard_sphere_radius' )
     IF ( input_line (i) (1:j) == 'hard_sphere_radius' ) THEN
-      DO s = 1 , nb_species
+      DO s = 1 , solvent(1)%nspec
         READ( input_line(i+s) ,*) hs(s)%R
         IF ( hs(s)%R <= 0.0_dp ) THEN ! check if one radius is negative, ie if one has to compute wca diameter
           print*, "You ask for a WCA calculation of hard sphere diameter"

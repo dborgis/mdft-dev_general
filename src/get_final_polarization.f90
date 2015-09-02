@@ -1,7 +1,7 @@
 SUBROUTINE get_final_polarization ( Px , Py , Pz )
 
     USE precision_kinds,    ONLY: dp,i2b
-    USE system,             ONLY: nb_species
+    USE system,             ONLY: solvent
     USE constants,          ONLY: fourpi,twopi
     USE minimizer,          ONLY: cg_vect_new
     USE input,              ONLY: input_int
@@ -10,14 +10,14 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
     IMPLICIT NONE
     INTEGER(i2b) :: i,j,k,io,icg,s,p, molRotSymOrder
     REAL(dp) :: rho_toto,local_Px,local_Py,local_Pz
-    REAL(dp), DIMENSION(GRID%nx,GRID%ny,GRID%nz,nb_species), INTENT(OUT) :: Px,Py,Pz ! equilibrium polarization(r)
+    REAL(dp), DIMENSION(GRID%nx,GRID%ny,GRID%nz,solvent(1)%nspec), INTENT(OUT) :: Px,Py,Pz ! equilibrium polarization(r)
     INTEGER(i2b) :: nx, ny, nz, no, ns
     real(dp), parameter :: zerodp = 0._dp
     nx= GRID%n_nodes(1)
     ny= GRID%n_nodes(2)
     nz= GRID%n_nodes(3)
     no = GRID%no
-    ns = nb_species
+    ns = solvent(1)%nspec
 
 
     Px = zerodp

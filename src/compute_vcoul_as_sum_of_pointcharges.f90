@@ -4,7 +4,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 ! Returns the direct sum of all qi*qj/rij
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: nb_species, solvent, solute, nb_solute_sites, nb_solvent_sites
+    USE system              ,ONLY: solvent, solute, nb_solute_sites, nb_solvent_sites
     USE constants           ,ONLY: qfact
     USE external_potential  ,ONLY: Vext_q
     use input               ,only: verbose
@@ -49,7 +49,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
     END DO
 
 
-    do s=1,nb_species
+    do s=1,solvent(1)%nspec
         do io=1,GRID%no
             do k=1,GRID%nz
                 do j=1,GRID%ny
@@ -84,7 +84,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
 
     !
-    ! DO CONCURRENT (s=1:nb_species, i=1:GRID%n_nodes(1), j=1:GRID%n_nodes(2), k=1:GRID%n_nodes(3), &
+    ! DO CONCURRENT (s=1:solvent(1)%nspec, i=1:GRID%n_nodes(1), j=1:GRID%n_nodes(2), k=1:GRID%n_nodes(3), &
     !                io=1:GRID%no)
     !
     !     xgrid = REAL([i,j,k]-1,dp)*GRID%dl

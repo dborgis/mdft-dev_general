@@ -4,7 +4,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 
   USE precision_kinds,only : dp , i2b
   use module_grid, only: grid
-!   use system,only : thermocond, nb_species, solvent, GRID
+!   use system,only : thermocond, solvent, GRID
 !   USE dcf, ONLY: c_s, nb_k ,delta_k
 !   use constants,only : fourpi , i_complex,twopi
 !   USE minimizer, ONLY: cg_vect_new, FF , dF_new
@@ -273,9 +273,9 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 !     stop
 !   END IF
 !
-!   ! this SUBROUTINE only works for nb_species = 1
-!   if ( nb_species /= 1 ) then
-!     print *, 'nb_species /= 1 and this is not implemented yet in cs_plus_hydro.f90'
+!   ! this SUBROUTINE only works for solvent(1)%nspec = 1
+!   if ( solvent(1)%nspec /= 1 ) then
+!     print *, 'solvent(1)%nspec /= 1 and this is not implemented yet in cs_plus_hydro.f90'
 !     stop
 !   END IF
 !   ! compute final FF and dF_new

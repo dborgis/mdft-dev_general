@@ -5,7 +5,6 @@ MODULE system
 
     IMPLICIT NONE
 
-    INTEGER(i2b) :: nb_species ! number of solvents in the species, e.g. 2 if the solvent is a mixture of water and acetone
     INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
 
     TYPE :: sites

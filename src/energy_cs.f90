@@ -6,7 +6,7 @@ contains
     subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
 
         use precision_kinds , only: i2b, dp
-        use system          , only: solvent, thermocond, nb_species
+        use system          , only: solvent, thermocond
         use minimizer       , only: cg_vect_new, dF_new
         use fft             , only: fftw3, kx, ky, kz
         use dcf             , only: cfile
@@ -27,8 +27,8 @@ contains
         ny = GRID%ny
         nz = GRID%nz
         no = GRID%no
-        ns = nb_species
-        ! allocate( dFexcnn(nx,ny,nz,o,p,nb_species) ,source=0._dp)
+        ns = solvent(1)%nspec
+        ! allocate( dFexcnn(nx,ny,nz,o,p,solvent(1)%nspec) ,source=0._dp)
         kT = thermocond%kbT
         dV = GRID%dV
 
@@ -78,7 +78,7 @@ contains
         Fexcnn = -kT/2 *sum( (n-solvent(1)%n0 )*fftw3%out_backward )*dV
 
         ! gradient
-        do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:no, s=1:nb_species )
+        do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:no, s=1:solvent(1)%nspec )
             dfexcnn(i,j,k,io,s) = 2*cg_vect_new(i,j,k,io,s) * GRID%w(io) * fftw3%out_backward(i,j,k) *(-kT*dV*solvent(s)%rho0)
         end do
 

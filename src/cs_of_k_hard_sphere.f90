@@ -2,7 +2,7 @@
 subroutine cs_of_k_hard_sphere
 
   use precision_kinds ,only: i2b, dp
-  use system          ,only: nb_species, solvent !@GUILLAUME c_s_hs should go into MODULE DCF
+  use system          ,only: solvent !@GUILLAUME c_s_hs should go into MODULE DCF
   use input           ,only: input_line, n_linesInFile, verbose
   use constants       ,only: fourpi, pi, zerodp
   use dcf             ,only: c_s, c_s_hs
@@ -21,12 +21,12 @@ subroutine cs_of_k_hard_sphere
 
   ! type HS should be allocated. It contains radius etc.
   if( .not. allocated(hs) ) then
-    allocate( hs(nb_species) )
+    allocate( hs(solvent(1)%nspec) )
     call read_hard_sphere_radius
   end if
 
   write(*,'(A,F12.4)') 'I will compute direct correlation function for hard sphere fluid with radius',hs(1)%R
-  if( nb_species/=1 ) then
+  if( solvent(1)%nspec/=1 ) then
     stop "cs_of_k_hard_sphere works only for 1 solvent species"
   end if
 

@@ -6,7 +6,7 @@ SUBROUTINE init_external_potential
 
     USE precision_kinds     ,only: dp, i2b
     USE input               ,only: input_log, input_char
-    USE system              ,only: solute, nb_species, solvent
+    USE system              ,only: solute, solvent
     USE external_potential  ,only: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,only: init_lennardjones => init
     USE fastPoissonSolver   ,only: start_fastPoissonSolver => init
@@ -82,7 +82,7 @@ SUBROUTINE init_external_potential
             ny = GRID%ny
             nz = GRID%nz
             no = GRID%no
-            ns = nb_species
+            ns = solvent(1)%nspec
             allocate ( vext_q (nx,ny,nz,no,ns) , SOURCE=zerodp ,STAT=i, ERRMSG=j)
             IF (i/=0) THEN
                 PRINT j

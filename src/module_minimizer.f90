@@ -18,7 +18,7 @@ contains
     !===========================================================================================================================
     subroutine from_cgvect_get_rho
 
-        use system      ,only: nb_species, solvent, nb_species
+        use system      ,only: solvent
         use module_grid, only: grid
         implicit none
         integer(i2b) :: i, j, k, io, s, icg, nx, ny, nz, no
@@ -28,7 +28,7 @@ contains
         nz = GRID%nz
         no = GRID%no
 
-        do concurrent (s=1:nb_species)
+        do concurrent (s=1:solvent(1)%nspec)
         if (.not. allocated (solvent(s)%rho)) then
             allocate (solvent(s)%rho(nx,ny,nz,no), source=0._dp ,stat=i)
         else
@@ -38,7 +38,7 @@ contains
         end do
         if (i /= 0) stop "ERROR in from_cgvect_get_rho"
 
-        do concurrent( s= 1: nb_species)
+        do concurrent( s= 1: solvent(1)%nspec)
             solvent(s)%rho = cg_vect_new(:,:,:,:,s)**2 * solvent(s)%rho0
         end do
     end subroutine from_cgvect_get_rho
@@ -46,7 +46,7 @@ contains
     !===========================================================================================================================
     subroutine from_rho_get_n
 
-        use system      ,only: nb_species, solvent, nb_species
+        use system      ,only: solvent
         use module_grid, only: grid
         implicit none
         integer(i2b) :: i,j,k,o,p,s,io
@@ -54,7 +54,7 @@ contains
 
         nfft = GRID%n_nodes
 
-        do concurrent (s=1:nb_species)
+        do concurrent (s=1:solvent(1)%nspec)
         if (.not. allocated(solvent(s)%n)) then
             allocate (solvent(s)%n(nfft(1),nfft(2),nfft(3)), source=0._dp ,stat=i)
         else
@@ -64,7 +64,7 @@ contains
         end do
         if (i /= 0) stop "ERROR in allocate solvent%n in from_rho_get_n"
 
-        do s =1, nb_species
+        do s =1, solvent(1)%nspec
             do i =1, GRID%n_nodes(1)
                 do j =1, GRID%n_nodes(2)
                     do k =1, GRID%n_nodes(3)
@@ -80,9 +80,9 @@ contains
 
     !===========================================================================================================================
     subroutine deallocate_solvent_rho
-        use system  ,only: solvent, nb_species
+        use system  ,only: solvent
         integer(i2b) :: s
-        do concurrent (s=1:nb_species)  ! solvent%rho is now useless
+        do concurrent (s=1:solvent(1)%nspec)  ! solvent%rho is now useless
         deallocate (solvent(s)%rho)
         end do
     end subroutine deallocate_solvent_rho
@@ -93,7 +93,7 @@ contains
 
         USE precision_kinds, ONLY: dp
         USE input, ONLY: input_int, input_dp,input_char
-        USE system , ONLY: nb_species
+        USE system , ONLY: solvent
         use module_grid, only: grid
 
         IMPLICIT NONE
@@ -104,7 +104,7 @@ contains
         ny = GRID%ny
         nz = GRID%nz
         no = GRID%no
-        ns = nb_species
+        ns = solvent(1)%nspec
 
         ncg = nx*ny*nz*no*ns
 

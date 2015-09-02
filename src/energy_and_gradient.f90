@@ -11,7 +11,7 @@ subroutine energy_and_gradient (iter)
     use precision_kinds ,only: dp
     use input           ,only: input_log, input_char, input_dp
     use minimizer       ,only: FF, dF_new
-    use system          ,only: solute, nb_species
+    use system          ,only: solute, solvent
     use dcf             ,only: c_s!, c_s_hs
     use module_grid     ,only: grid
 
@@ -21,7 +21,7 @@ subroutine energy_and_gradient (iter)
 
     INTEGER, INTENT(INOUT) :: iter
     REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
-    real(dp) :: df_loc (grid%nx, grid%ny, grid%nz, grid%no, nb_species)
+    real(dp) :: df_loc (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
     LOGICAL :: opn
     INTEGER :: i, exitstatus
 

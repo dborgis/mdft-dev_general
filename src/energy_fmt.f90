@@ -1,7 +1,7 @@
 SUBROUTINE energy_fmt (Ffmt)
 
   USE precision_kinds  ,ONLY: dp, i2b
-  USE system           ,ONLY: thermocond, nb_species, mole_fraction, solvent
+  USE system           ,ONLY: thermocond, mole_fraction, solvent
   USE minimizer        ,ONLY: cg_vect_new, dF_new
   USE fft              ,ONLY: fftw3
   USE input            ,ONLY: input_char
@@ -13,7 +13,7 @@ SUBROUTINE energy_fmt (Ffmt)
   real(dp), intent(out) :: Ffmt ! Internal part of free energy
   integer(i2b) :: icg,i,j,k,s,nfft1,nfft2,nfft3,wdl,wdu,io
   real(dp) :: local_density, psi, dV, nb_molecules(size(solvent)), time0, time1, kT
-  real(dp)   , ALLOCATABLE, DIMENSION(:,:,:,:) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z nb_species
+  real(dp)   , ALLOCATABLE, DIMENSION(:,:,:,:) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z solvent(1)%nspec
   real(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: wd ! weighted density at node i,j,k, for index 0:3
   real(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: dFHS
   complex(dp), ALLOCATABLE , DIMENSION(:,:,:,:) :: dFHS_k
@@ -29,7 +29,7 @@ SUBROUTINE energy_fmt (Ffmt)
   complex(dp), parameter :: zeroc = cmplx(0._dp,0._dp)
   real(dp), parameter :: zerodp = 0._dp, onedp = 1._dp, epsdp = epsilon(1._dp)
 
-  IF (nb_species/=1) STOP "I stop because FMT calculations are only possible with one solvent species."
+  IF (solvent(1)%nspec/=1) STOP "I stop because FMT calculations are only possible with one solvent species."
 
   CALL CPU_TIME ( time0 ) ! init timer
 
@@ -45,7 +45,7 @@ SUBROUTINE energy_fmt (Ffmt)
     return
   end if
 
-  allocate( rho (nfft1,nfft2,nfft3,nb_species) ,SOURCE=0._dp)
+  allocate( rho (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=0._dp)
   icg = 0
   do s=1,size(solvent)
     do i=1,nfft1
@@ -65,7 +65,7 @@ SUBROUTINE energy_fmt (Ffmt)
   end do
 
   ! total number of molecules of each species
-  do concurrent ( s=1:nb_species )
+  do concurrent ( s=1:solvent(1)%nspec )
     nb_molecules(s) = sum(rho(:,:,:,s))*dV *solvent(s)%n0 *mole_fraction(s)
   end do
 
@@ -82,7 +82,7 @@ SUBROUTINE energy_fmt (Ffmt)
   else
     allocate( wd (nfft1,nfft2,nfft3, 0:3) ,SOURCE=0._dp)
   end if
-  do s=1,nb_species
+  do s=1,solvent(1)%nspec
     fftw3%in_forward = rho(:,:,:,s)
     call dfftw_execute ( fftw3%plan_forward ) ! fourier transform the density and put it into fftw3%out_forward
     do i=0,3
@@ -158,8 +158,8 @@ SUBROUTINE energy_fmt (Ffmt)
   deallocate( dFHS )
 
   ! compute final gradient in k-space
-  allocate( dFex (nfft1,nfft2,nfft3,nb_species) ,source=zerodp)
-  do s=1,nb_species
+  allocate( dFex (nfft1,nfft2,nfft3,solvent(1)%nspec) ,source=zerodp)
+  do s=1,solvent(1)%nspec
     fftw3%in_backward= dFHS_k(:,:,:,0)*hs(s)%w_k(:,:,:,0) &
                       +dFHS_k(:,:,:,1)*hs(s)%w_k(:,:,:,1) &
                       +dFHS_k(:,:,:,2)*hs(s)%w_k(:,:,:,2) &
@@ -169,13 +169,13 @@ SUBROUTINE energy_fmt (Ffmt)
   end do
 
   deallocate( dFHS_k )
-  do s=1,nb_species
+  do s=1,solvent(1)%nspec
     deallocate( hs(s)%w_k )
   end do
 
   ! transfer in rank 1 vector dF
   icg=0
-  do s=1,nb_species
+  do s=1,solvent(1)%nspec
     do i=1,nfft1
       do j=1,nfft2
         do k=1,nfft3

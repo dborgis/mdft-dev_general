@@ -204,7 +204,7 @@ END SUBROUTINE poissonSolver
 SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     use precision_kinds     ,ONLY: dp, i2b
-    use system              ,ONLY: nb_solvent_sites, nb_species, solute, solvent
+    use system              ,ONLY: nb_solvent_sites, solute, solvent
     use module_grid, only: grid
     use external_potential  ,ONLY: vext_q
     use constants           ,ONLY: qfact, zero
@@ -217,7 +217,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
     REAL(dp), INTENT(IN) :: gridlen(3)
     INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d, io, no, ns
-    real(dp), dimension(3,nb_species,nb_solvent_sites,GRID%no) :: xmod
+    real(dp), dimension(3,solvent(1)%nspec,nb_solvent_sites,GRID%no) :: xmod
     REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
     REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
     TYPE :: testtype
@@ -252,7 +252,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     err%pb=.FALSE. ! becomes TRUE if a problem is detected during execution.
 
 
-    DO CONCURRENT( s=1:nb_species, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:GRID%no )
+    DO CONCURRENT( s=1:solvent(1)%nspec, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:GRID%no )
         vext_q_of_r_and_omega = 0.0_dp
 
         DO CONCURRENT (m=1:nb_solvent_sites, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))

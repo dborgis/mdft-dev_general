@@ -4,7 +4,7 @@
 SUBROUTINE vext_total_sum
 
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species
+    USE system,             ONLY: solvent
     use module_grid, only: grid
     USE external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
     USE input,              ONLY: verbose
@@ -20,7 +20,7 @@ SUBROUTINE vext_total_sum
     ny = GRID%ny
     nz = GRID%nz
     no = GRID%no
-    ns = nb_species
+    ns = solvent(1)%nspec
 
 
     IF ( .NOT. ALLOCATED ( Vext_total ) ) THEN ! be sure Vext_total is allocated

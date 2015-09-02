@@ -3,7 +3,7 @@ SUBROUTINE energy_hydro (Fint)
     !
     USE precision_kinds     ,ONLY: dp, i2b
     use module_grid, only: grid
-    ! USE system              ,ONLY: thermocond, nb_species, GRID, solvent, nb_species
+    ! USE system              ,ONLY: thermocond, solvent(1)%nspec, GRID, solvent, solvent(1)%nspec
     ! USE dcf                 ,ONLY: c_s, nb_k, delta_k, c_s_hs
     ! USE constants           ,ONLY: fourpi,i_complex,twopi,zerodp,zeroC
     ! USE minimizer           ,ONLY: cg_vect_new, FF, dF_new
@@ -70,9 +70,9 @@ SUBROUTINE energy_hydro (Fint)
     !     STOP
     ! END IF
     !
-    ! ! this SUBROUTINE only works for nb_species = 1
-    ! IF ( nb_species /= 1 ) THEN
-    !     PRINT*, 'nb_species /= 1 and this is not implemented yet in cs_plus_hydro.f90'
+    ! ! this SUBROUTINE only works for solvent(1)%nspec = 1
+    ! IF ( solvent(1)%nspec /= 1 ) THEN
+    !     PRINT*, 'solvent(1)%nspec /= 1 and this is not implemented yet in cs_plus_hydro.f90'
     !     STOP
     ! END IF
     !

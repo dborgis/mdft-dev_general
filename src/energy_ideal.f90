@@ -3,7 +3,7 @@ SUBROUTINE energy_ideal (Fideal)
 
     USE precision_kinds, ONLY: dp
     USE minimizer, ONLY: cg_vect_new, FF, dF_new
-    USE system, ONLY: thermocond, solvent, nb_species
+    USE system, ONLY: thermocond, solvent
     use module_grid, only: grid
 
     IMPLICIT NONE
@@ -22,7 +22,7 @@ SUBROUTINE energy_ideal (Fideal)
     CALL CPU_TIME (time0) ! init timer
 
     Fideal = 0.0_dp! init Fideal to zero and its gradient
-    do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:grid%no, s=1:nb_species )
+    do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:grid%no, s=1:solvent(1)%nspec )
       psi = cg_vect_new(i,j,k,io,s)
       rho = psi**2
       Fideal = Fideal + Fideal_local (io,s,rho)

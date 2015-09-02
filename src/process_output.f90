@@ -4,7 +4,7 @@ SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, solvent, thermocond
+    USE system,             ONLY: solvent, thermocond
     USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
@@ -24,12 +24,12 @@ SUBROUTINE process_output
 
     CALL print_cg_vect_new ! print output/density.bin that contains cg_vect_new
 
-    allocate ( neq (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
+    allocate ( neq (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
     do s=1,size(solvent)
         call get_final_density (neq,s)
     end do
 
-    DO s=1,nb_species
+    DO s=1,solvent(1)%nspec
       write(*,'(A,F12.2)') "Solvent molecules in supercell", SUM(neq)*GRID%dv *solvent(s)%n0
     END DO
 
@@ -38,9 +38,9 @@ SUBROUTINE process_output
         filename = 'output/density.cube'
         CALL write_to_cube_file (neq(:,:,:,1), filename) ! TODO for now only write for the first species
         IF (input_log('polarization').EQV. .TRUE.) THEN
-            ALLOCATE ( Px (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
-            ALLOCATE ( Py (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
-            ALLOCATE ( Pz (nfft1,nfft2,nfft3,nb_species) ,SOURCE=zerodp)
+            ALLOCATE ( Px (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
+            ALLOCATE ( Py (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
+            ALLOCATE ( Pz (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
             CALL get_final_polarization (Px,Py,Pz)
             filename='output/normP.cube' ; CALL write_to_cube_file ( (SQRT(Px(:,:,:,1)**2+Py(:,:,:,1)**2+Pz(:,:,:,1)**2)), filename) ! TODO for now only write for the first species
             filename='output/Px.cube' ; CALL write_to_cube_file(Px(:,:,:,1), filename)

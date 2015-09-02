@@ -4,7 +4,7 @@
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: v_perturbation_k, nb_species, solvent, solvent
+    USE system          ,ONLY: v_perturbation_k, solvent
     use module_grid, only: grid
     USE minimizer       ,ONLY: cg_vect_new, dF_new, FF
     USE constants       ,ONLY: fourpi,twopi,zeroC
@@ -32,7 +32,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     nfft2= GRID%n_nodes(2)
     nfft3= GRID%n_nodes(3)
 
-    IF (nb_species/=1) STOP "When dealing with LJ as perturbation in lennard_jones_..._spheres.f90, only nb_species=1 is ok."
+    IF (solvent(1)%nspec/=1) STOP "When dealing with LJ as perturbation in lennard_jones_..._spheres.f90, only solvent(1)%nspec=1 is ok."
 
     ! init
     CALL cpu_time ( time0 )

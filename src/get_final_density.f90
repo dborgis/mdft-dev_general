@@ -2,7 +2,7 @@
 PURE SUBROUTINE get_final_density ( neq , solventspecies)
 
     USE precision_kinds, ONLY: dp , i2b
-    USE system,          ONLY: nb_species
+    USE system,          ONLY: solvent
     USE minimizer,       ONLY: CG_vect_new
     USE fft,             ONLY: fftw3 , timesExpPrefactork2
     USE input,           ONLY: verbose
@@ -18,7 +18,7 @@ PURE SUBROUTINE get_final_density ( neq , solventspecies)
 
     neq = 0._dp
     icg = 0
-    DO s =1, nb_species
+    DO s =1, solvent(1)%nspec
         DO i =1, GRID%nx
             DO j =1, GRID%ny
                 DO k =1, GRID%nz

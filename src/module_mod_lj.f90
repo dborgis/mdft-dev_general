@@ -5,7 +5,7 @@ MODULE mod_lj
 
     USE external_potential, ONly: Vext_lj
     USE precision_kinds,    ONly: dp, i2b
-    USE system,             ONly: nb_species, solute, solvent
+    USE system,             ONly: solute, solvent
     use module_grid, only: grid
     USE constants,          ONly: fourpi
     USE input,              ONly: input_line, verbose
@@ -25,7 +25,7 @@ MODULE mod_lj
             ly = GRID%ly
             lz = GRID%lz
             no = GRID%no
-            ns = nb_species
+            ns = solvent(1)%nspec
             IF (.NOT. ALLOCATED(Vext_lj)) ALLOCATE( Vext_lj(nx,ny,nz,no,ns) ,SOURCE=0._dp)
             call calculate
         END SUBROUTINE

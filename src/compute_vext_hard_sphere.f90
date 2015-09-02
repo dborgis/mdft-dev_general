@@ -4,14 +4,14 @@ SUBROUTINE compute_Vext_hard_sphere
     use module_grid, only: grid
 ! USE precision_kinds,only : i2b , dp
 ! use input,only : input_line,input_dp
-! use system,only : solute , nb_solute_sites , nb_species, GRID
+! use system,only : solute , nb_solute_sites , GRID
 ! use external_potential,only : Vext_total , Vext_hard
 ! use quadrature, only: angGrid, molRotGrid
 ! USE hardspheres ,ONLY: hs
 !
 ! IMPLICIT NONE
 ! integer(i2b):: i , j , k !> @var dummy
-! integer(i2b):: species ! dummy between 1 and nb_species
+! integer(i2b):: species ! dummy between 1 and solvent(1)%nspec
 ! integer(i2b):: solute_site ! dummy between 1 and nb_solute_sites
 ! real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
 ! real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
@@ -37,7 +37,7 @@ SUBROUTINE compute_Vext_hard_sphere
 ! write (*,*) 'there are as many hard sphere solute as solutes in solute.in'
 ! ! be sure Vext_total is allocated
 ! if ( .not. allocated ( Vext_total ) ) then
-!   allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles , nb_species ) )
+!   allocate ( Vext_total ( nfft1 , nfft2 , nfft3 , angGrid%n_angles , molRotGrid%n_angles , solvent(1)%nspec ) )
 !   Vext_total = 0.0_dp
 ! END IF
 ! ! look for tag 'hard_sphere_solute_radius' which gives the radius of the sphere for the external potential
@@ -54,7 +54,7 @@ SUBROUTINE compute_Vext_hard_sphere
 ! END IF
 ! ! compute the sum of solute and solvent radius
 ! do solute_site = 1 , nb_solute_sites
-!   do species = 1 , nb_species
+!   do species = 1 , solvent(1)%nspec
 !     if ( .not. allocated ( hs ) ) then
 !         sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius)**2
 !     else

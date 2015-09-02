@@ -6,7 +6,7 @@
 subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
 
     use precision_kinds     ,ONLY: dp
-    use system              ,ONLY: solvent, nb_species
+    use system              ,ONLY: solvent
     use fft                 ,ONLY: kx, ky, kz, k2
     use mathematica         ,ONLY: factorial
     use module_grid, only: grid
@@ -29,7 +29,7 @@ subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
     ny = grid%ny
     nz = grid%nz
     no = grid%no
-    ns = nb_species
+    ns = solvent(1)%nspec
 
     ! sigma_k is the Fourier transformed charge density of a single solvent molecule in the reference frame defined by solvent.in
     ! molec_polar_k is the Fourier transformed molecular polarization

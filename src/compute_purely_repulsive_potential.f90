@@ -5,7 +5,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !
 !     USE precision_kinds     ,ONLY: dp, i2b
 !     USE input               ,ONLY: input_dp, verbose
-!     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, nb_species, solute, solvent
+!     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, solvent(1)%nspec, solute, solvent
 !     USE external_potential  ,ONLY: Vext_total
 !     USE constants           ,ONLY: zerodp=>zero
     use module_grid, only: grid
@@ -48,7 +48,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !     dy=GRID%dl(2)
 !     dz=GRID%dl(3)
 !     ALLOCATE ( Vrep (nfft1,nfft2,nfft3,GRID%no) ,SOURCE=Vmax)
-!     DO s=1,nb_species
+!     DO s=1,solvent(1)%nspec
 !         DO k=1,nfft3
 !             z_grid = REAL(k-1,dp) * dz
 !             DO j=1,nfft2
