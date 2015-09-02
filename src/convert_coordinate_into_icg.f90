@@ -1,6 +1,6 @@
 ! !This SUBROUTINE find the index icg in the minimizer for a vector ( s, i, j, k, o, p)
 ! integer (i2b) function convert_coordinate_into_icg ( s, i, j, k, io)
-!     USE precision_kinds,only : i2b , dp
+!     use precision_kinds,only : i2b , dp
 !     use quadrature, only: angGrid, molRotGrid
 !     use module_grid, only: grid
 !     IMPLICIT NONE

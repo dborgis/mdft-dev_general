@@ -1,6 +1,6 @@
 MODULE dcf
 
-    USE precision_kinds, ONLY: dp, i2b
+    use precision_kinds, ONLY: dp, i2b
     use module_input, ONLY: getinput, n_linesInFile, deltaAbscissa
     use mathematica, only: spline, splint
 
@@ -142,10 +142,10 @@ MODULE dcf
 !
 !     SUBROUTINE c_local_to_global_coordinates
 !
-!         USE fft,             ONLY: kx,ky,kz
-!         USE constants,       ONLY: twopi
+!         use fft,             ONLY: kx,ky,kz
+!         use constants,       ONLY: twopi
 !         use module_grid, only: grid
-!         USE precision_kinds, ONLY: dp
+!         use precision_kinds, ONLY: dp
 !
 !         IMPLICIT NONE
 !
@@ -258,8 +258,8 @@ MODULE dcf
     PURE FUNCTION angle(x,y)
 
 
-        USE precision_kinds,    ONLY: dp
-        USE constants,          ONLY: twopi
+        use precision_kinds,    ONLY: dp
+        use constants,          ONLY: twopi
         IMPLICIT NONE
 
         REAL(dp), INTENT(IN)    :: x,y

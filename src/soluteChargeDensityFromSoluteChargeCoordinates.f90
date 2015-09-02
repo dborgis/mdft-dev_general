@@ -3,10 +3,10 @@
 
 SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates (gridnode, gridlen, soluteChargeDensity)
     
-    USE precision_kinds, ONLY: i2b,dp
-    USE system,          ONLY: solute
+    use precision_kinds, ONLY: i2b,dp
+    use system,          ONLY: solute
     use module_input,           ONLY: verbose
-    USE mathematica     ,ONLY: distToFloorNode, floorNode, ceilingNode
+    use mathematica     ,ONLY: distToFloorNode, floorNode, ceilingNode
     
     IMPLICIT NONE
 

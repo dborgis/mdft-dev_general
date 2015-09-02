@@ -2,11 +2,11 @@
 SUBROUTINE compute_vext_perso
     use module_grid, only: grid
 !
-! USE precision_kinds,only : i2b , dp
+! use precision_kinds,only : i2b , dp
 ! use module_input,only : input_line,getinput%dp
 ! use system,only : solute , nb_solute_sites
 ! use external_potential,only : Vext_total
-! USE hardspheres ,ONLY: hs
+! use hardspheres ,ONLY: hs
 !
 ! IMPLICIT NONE
 !

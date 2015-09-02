@@ -1,13 +1,13 @@
 SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 
-    USE precision_kinds ,ONLY: i2b, dp
+    use precision_kinds ,ONLY: i2b, dp
     use module_grid, only: grid
 !     use module_input           ,ONLY: verbose, getinput%dp
-!     USE constants       ,ONLY: twopi,zeroC
-!     USE quadrature      ,ONLY: angGrid, molRotGrid
-!     USE system          ,ONLY: thermocond, grid, solute, solvent
-!     USE minimizer       ,ONLY: cg_vect_new, dF_new, FF
-!     USE fft             ,ONLY: fftw3, kproj
+!     use constants       ,ONLY: twopi,zeroC
+!     use quadrature      ,ONLY: angGrid, molRotGrid
+!     use system          ,ONLY: thermocond, grid, solute, solvent
+!     use minimizer       ,ONLY: cg_vect_new, dF_new, FF
+!     use fft             ,ONLY: fftw3, kproj
 !
     IMPLICIT NONE
     REAL(dp), INTENT(OUT)                       :: F3B1, F3B2, F3B_ww
@@ -406,7 +406,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !     ALLOCATE ( Hx  (nb_solute_sites) ,SOURCE=0._dp)
 !     ALLOCATE ( Hy  (nb_solute_sites) ,SOURCE=0._dp)
 !     ALLOCATE ( Hz  (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( H0  (nb_solute_sites) ,SOURCE=0._dp) ! USE ARRAY CONSTRUCTOR INSTEAD
+!     ALLOCATE ( H0  (nb_solute_sites) ,SOURCE=0._dp) ! use ARRAY CONSTRUCTOR INSTEAD
 !     DO CONCURRENT (n=1:nb_solute_sites)
 !         Hxx(n)= SUM(  DHxx(:,:,:,n)*rho )
 !         Hyy(n)= SUM(  DHyy(:,:,:,n)*rho )
@@ -516,7 +516,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     SUBROUTINE dothestuff (A,B,C)
-!         USE system  ,ONLY:  grid
+!         use system  ,ONLY:  grid
 !         REAL(dp), ALLOCATABLE, INTENT(INOUT)    :: A(:,:,:)
 !         COMPLEX(dp), Dimension(nfft1/2+1,nfft2,nfft3), INTENT(IN):: B(:,:,:), C(:,:,:)
 !         fftw3%in_backward=B*C
@@ -527,7 +527,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     PURE FUNCTION f_ww (r,rmin,rsw,rmax)
-!         USE precision_kinds, only: dp,i2b
+!         use precision_kinds, only: dp,i2b
 !         IMPLICIT NONE
 !         REAL(dp)             :: f_ww
 !         REAL(dp), INTENT(IN) :: r, rmin, rsw, rmax

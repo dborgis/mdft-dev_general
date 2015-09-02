@@ -1,10 +1,10 @@
 ! Gets the last density from the minimizer
 PURE SUBROUTINE get_final_density ( neq , solventspecies)
 
-    USE precision_kinds, ONLY: dp , i2b
-    USE system,          ONLY: solvent
-    USE minimizer,       ONLY: CG_vect_new
-    USE fft,             ONLY: fftw3 , timesExpPrefactork2
+    use precision_kinds, ONLY: dp , i2b
+    use system,          ONLY: solvent
+    use minimizer,       ONLY: CG_vect_new
+    use fft,             ONLY: fftw3 , timesExpPrefactork2
     use module_input,           ONLY: verbose
     use module_grid, only: grid
 

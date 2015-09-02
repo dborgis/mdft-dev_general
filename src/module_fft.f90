@@ -3,7 +3,7 @@ MODULE fft
 !===================================================================================================================================
 ! This module deals with everything related to the fast fourier transforms and all Fourier space related functions
 
-    USE precision_kinds ,ONLY : i2b, dp, i4b
+    use precision_kinds ,ONLY : i2b, dp, i4b
 
     IMPLICIT NONE
 

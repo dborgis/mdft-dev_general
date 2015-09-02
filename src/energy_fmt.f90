@@ -1,11 +1,11 @@
 SUBROUTINE energy_fmt (Ffmt)
 
-  USE precision_kinds  ,ONLY: dp, i2b
-  USE system           ,ONLY: thermocond, mole_fraction, solvent
-  USE minimizer        ,ONLY: cg_vect_new, dF_new
-  USE fft              ,ONLY: fftw3
+  use precision_kinds  ,ONLY: dp, i2b
+  use system           ,ONLY: thermocond, mole_fraction, solvent
+  use minimizer        ,ONLY: cg_vect_new, dF_new
+  use fft              ,ONLY: fftw3
   use module_input            ,ONLY: getinput
-  USE hardspheres      ,ONLY: hs, weight_functions
+  use hardspheres      ,ONLY: hs, weight_functions
   use module_grid, only: grid
 
   IMPLICIT NONE

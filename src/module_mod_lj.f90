@@ -3,11 +3,11 @@
 
 MODULE mod_lj
 
-    USE external_potential, ONly: Vext_lj
-    USE precision_kinds,    ONly: dp, i2b
-    USE system,             ONly: solute, solvent
+    use external_potential, ONly: Vext_lj
+    use precision_kinds,    ONly: dp, i2b
+    use system,             ONly: solute, solvent
     use module_grid, only: grid
-    USE constants,          ONly: fourpi
+    use constants,          ONly: fourpi
     use module_input,              ONly: input_line, verbose
 
     IMPLICIT NONE

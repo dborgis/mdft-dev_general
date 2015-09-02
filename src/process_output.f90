@@ -3,11 +3,11 @@
 SUBROUTINE process_output
 
     ! defines precision of reals and intergers
-    USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: solvent, thermocond
+    use precision_kinds,    ONLY: dp, i2b
+    use system,             ONLY: solvent, thermocond
     use module_input,              ONLY: verbose, getinput
-    USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
-    USE constants,          ONLY: zerodp
+    use solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
+    use constants,          ONLY: zerodp
     use hardspheres,        only: hs
     use module_grid, only: grid
 
@@ -116,7 +116,7 @@ SUBROUTINE process_output
     CONTAINS
 
         SUBROUTINE print_cg_vect_new
-            USE minimizer, ONLY: cg_vect_new
+            use minimizer, ONLY: cg_vect_new
             if ( .not. allocated ( cg_vect_new ) ) then
                 print *, 'cg_vect_new is not allocated in SUBROUTINE print_cg_vect_new in process_output.f90. STOP.'
                 stop

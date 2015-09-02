@@ -9,11 +9,11 @@ SUBROUTINE external_potential_hard_walls
 ! Step 3/ we read their thinkness (2*radius) in dft.in
 ! Step 4/ we compute the external potential created by the walls, which depends upon the fluid radius
 
-    USE precision_kinds    ,ONLY: i2b, dp
+    use precision_kinds    ,ONLY: i2b, dp
     use module_input              ,ONLY: input_line, getinput
-    USE system             ,ONLY: solvent
-    USE external_potential ,ONLY: Vext_total
-    USE hardspheres        ,ONLY: hs
+    use system             ,ONLY: solvent
+    use external_potential ,ONLY: Vext_total
+    use hardspheres        ,ONLY: hs
     use module_grid, only: grid
 
     IMPLICIT NONE

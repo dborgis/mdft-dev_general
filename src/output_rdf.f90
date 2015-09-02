@@ -8,8 +8,8 @@ SUBROUTINE output_rdf (array,filename)
 ! A much better (and more complicated) way of chosing this number would be to follow this publication:
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
-    USE precision_kinds ,ONLY: dp, i2b, sp
-    USE system          ,ONLY: solvent, solute
+    use precision_kinds ,ONLY: dp, i2b, sp
+    use system          ,ONLY: solvent, solute
     use mathematica     ,only: deduce_optimal_histogram_properties, akima_spline, chop
     use module_grid, only: grid
 

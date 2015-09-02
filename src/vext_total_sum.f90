@@ -3,10 +3,10 @@
 ! then it gives a upper value (100 kJ/mol) to vext_total.
 SUBROUTINE vext_total_sum
 
-    USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: solvent
+    use precision_kinds,    ONLY: dp, i2b
+    use system,             ONLY: solvent
     use module_grid, only: grid
-    USE external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
+    use external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
     use module_input,              ONLY: verbose
 
     IMPLICIT NONE

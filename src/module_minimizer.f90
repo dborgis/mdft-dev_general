@@ -1,7 +1,7 @@
 ! Defines everything around the minimizer
 module minimizer
 
-    USE precision_kinds, only: i2b , dp
+    use precision_kinds, only: i2b , dp
 
     IMPLICIT NONE
 
@@ -91,9 +91,9 @@ contains
     subroutine prepare_minimizer
         ! this subroutine gets the informations in input file and then allocate, prepare, compute needed data
 
-        USE precision_kinds, ONLY: dp
+        use precision_kinds, ONLY: dp
         use module_input, ONLY: getinput
-        USE system , ONLY: solvent
+        use system , ONLY: solvent
         use module_grid, only: grid
 
         IMPLICIT NONE

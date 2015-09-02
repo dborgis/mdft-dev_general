@@ -3,7 +3,7 @@ MODULE external_potential
 !===================================================================================================================================
 ! This module is dedicated to the external potential and its parts
 
-    USE precision_kinds, only: dp, i2b
+    use precision_kinds, only: dp, i2b
 
     IMPLICIT NONE
     !real(dp), allocatable, dimension(:,:,:,:) :: Vext ! external potential of the whole solute on a position and angular grid
@@ -54,8 +54,8 @@ MODULE external_potential
     SUBROUTINE vextdef1
     !===============================================================================================================================
     ! This subroutine adds a hard wall all around the supercell
-        USE precision_kinds  ,ONLY: dp
-        USE system           ,ONLY: solvent
+        use precision_kinds  ,ONLY: dp
+        use system           ,ONLY: solvent
         use module_grid, only: grid
         IF (.NOT. ALLOCATED(vext_hard_core)) THEN
             ALLOCATE ( vext_hard_core(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),solvent(1)%nspec) ,SOURCE=0._dp)
@@ -74,8 +74,8 @@ MODULE external_potential
     !===============================================================================================================================
     SUBROUTINE vextdef0
     !===============================================================================================================================
-        USE precision_kinds ,ONLY: dp
-        USE system          ,ONLY: solvent
+        use precision_kinds ,ONLY: dp
+        use system          ,ONLY: solvent
         use module_grid, only: grid
         IMPLICIT NONE
         REAL(dp), PARAMETER :: radius=1.0_dp
@@ -89,7 +89,7 @@ MODULE external_potential
             !=======================================================================================================================
             SUBROUTINE allocate_vext_hard_core_if_necessary
             !=======================================================================================================================
-                USE constants, ONLY: zero
+                use constants, ONLY: zero
                 IF (.NOT. ALLOCATED(vext_hard_core)) THEN
                     ALLOCATE(   vext_hard_core( grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),solvent(1)%nspec)  ,SOURCE=zero )
                 END IF

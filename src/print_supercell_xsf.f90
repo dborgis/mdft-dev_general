@@ -1,8 +1,8 @@
 !> Print an XSF file of the supercell for visualisation in VMD for instance.
 !! Type vmd --xsf output/supercell.xsf to visualise it.
 SUBROUTINE print_supercell_xsf
-    USE precision_kinds, ONLY: i2b
-    USE system, ONLY: solute
+    use precision_kinds, ONLY: i2b
+    use system, ONLY: solute
     use module_grid, only: grid
     IMPLICIT NONE
     integer(i2b) :: i

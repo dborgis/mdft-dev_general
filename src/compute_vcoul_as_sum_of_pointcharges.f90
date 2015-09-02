@@ -3,10 +3,10 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 !===================================================================================================================================
 ! Returns the direct sum of all qi*qj/rij
 
-    USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: solvent, solute, nb_solute_sites, nb_solvent_sites
-    USE constants           ,ONLY: qfact
-    USE external_potential  ,ONLY: Vext_q
+    use precision_kinds     ,ONLY: dp, i2b
+    use system              ,ONLY: solvent, solute, nb_solute_sites, nb_solvent_sites
+    use constants           ,ONLY: qfact
+    use external_potential  ,ONLY: Vext_q
     use module_input               ,only: verbose
     use module_grid, only: grid
 

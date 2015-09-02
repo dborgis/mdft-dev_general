@@ -1,12 +1,12 @@
 SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
-    USE precision_kinds, ONLY: i2b, dp
+    use precision_kinds, ONLY: i2b, dp
     use module_grid, only: grid
-!     USE system,          ONLY: thermocond, solvent(1)%nspec, solvent
-!     USE dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
-!     USE minimizer,       ONLY: cg_vect_new, FF, dF_new
-!     USE constants,       ONLY: twopi, fourpi, qfact
-!     USE fft,             ONLY: fftw3, kx, ky, kz, k2, norm_k
+!     use system,          ONLY: thermocond, solvent(1)%nspec, solvent
+!     use dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
+!     use minimizer,       ONLY: cg_vect_new, FF, dF_new
+!     use constants,       ONLY: twopi, fourpi, qfact
+!     use fft,             ONLY: fftw3, kx, ky, kz, k2, norm_k
 !     use module_input,           ONLY: verbose
 !
 !     IMPLICIT NONE

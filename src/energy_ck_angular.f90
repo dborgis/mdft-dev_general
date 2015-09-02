@@ -1,13 +1,13 @@
 SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !
-    USE precision_kinds, ONLY : i2b, dp
-!     USE system,          ONLY : thermocond, grid, solvent
-!     USE quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid, molRotSymOrder
-!     USE minimizer,       ONLY : cg_vect_new, FF, dF_new
-!     USE constants,       ONLY : twopi
-!     USE fft,             ONLY : fftw3, kx, ky, kz
+    use precision_kinds, ONLY : i2b, dp
+!     use system,          ONLY : thermocond, grid, solvent
+!     use quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid, molRotSymOrder
+!     use minimizer,       ONLY : cg_vect_new, FF, dF_new
+!     use constants,       ONLY : twopi
+!     use fft,             ONLY : fftw3, kx, ky, kz
 !     use module_input,           ONLY : getinput%log
-!     USE dcf,             ONLY : ck_angular, angleInd, angleVal, delta_k, delta_k_ck_angular, num_phi, num_cos, num_psi, &
+!     use dcf,             ONLY : ck_angular, angleInd, angleVal, delta_k, delta_k_ck_angular, num_phi, num_cos, num_psi, &
 !                                 c_s, c_d, c_delta, c_q, nb_k
 !
     IMPLICIT NONE

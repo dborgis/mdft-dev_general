@@ -2,12 +2,12 @@
 !> Solvation of a hard sphere in a hard sphere fluid
 SUBROUTINE compute_Vext_hard_sphere
     use module_grid, only: grid
-! USE precision_kinds,only : i2b , dp
+! use precision_kinds,only : i2b , dp
 ! use module_input,only : input_line,getinput%dp
 ! use system,only : solute , nb_solute_sites , grid
 ! use external_potential,only : Vext_total , Vext_hard
 ! use quadrature, only: angGrid, molRotGrid
-! USE hardspheres ,ONLY: hs
+! use hardspheres ,ONLY: hs
 !
 ! IMPLICIT NONE
 ! integer(i2b):: i , j , k !> @var dummy

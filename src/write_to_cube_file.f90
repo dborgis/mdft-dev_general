@@ -10,9 +10,9 @@
 ! 20110919  Maximilien Levesque, clean version for Virginie M.
 SUBROUTINE write_to_cube_file ( array , filename )
 
-    USE system, ONLY: solute
+    use system, ONLY: solute
     use module_grid, only: grid
-    USE precision_kinds, ONLY: i2b, dp
+    use precision_kinds, ONLY: i2b, dp
 
     IMPLICIT NONE
 

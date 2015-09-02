@@ -2,12 +2,12 @@
 ! TODO This SUBROUTINE should be merged in one way or another with cs_from_dcf
 SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 
-  USE precision_kinds,only : dp , i2b
+  use precision_kinds,only : dp , i2b
   use module_grid, only: grid
 !   use system,only : thermocond, solvent, grid
-!   USE dcf, ONLY: c_s, nb_k ,delta_k
+!   use dcf, ONLY: c_s, nb_k ,delta_k
 !   use constants,only : fourpi , i_complex,twopi
-!   USE minimizer, ONLY: cg_vect_new, FF , dF_new
+!   use minimizer, ONLY: cg_vect_new, FF , dF_new
 !   use quadrature, only: molRotSymOrder,angGrid, molRotGrid
 !   use fft,only : fftw3, norm_k, kx, ky, kz, k2, timesExpPrefactork2
 !   use module_input, only : getinput%log

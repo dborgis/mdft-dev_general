@@ -1,11 +1,11 @@
 SUBROUTINE energy_polarization_dipol (Fint)
 !
-    USE precision_kinds, ONLY : i2b, dp
+    use precision_kinds, ONLY : i2b, dp
     use module_grid, only: grid
-!     USE system,          ONLY : thermocond, grid, solvent
-!     USE minimizer,       ONLY : cg_vect_new , FF , dF_new
-!     USE constants,       ONLY : twopi, zeroC
-!     USE fft,             ONLY : fftw3, k2, kproj, norm_k
+!     use system,          ONLY : thermocond, grid, solvent
+!     use minimizer,       ONLY : cg_vect_new , FF , dF_new
+!     use constants,       ONLY : twopi, zeroC
+!     use fft,             ONLY : fftw3, k2, kproj, norm_k
 !     use module_input,           ONLY : verbose
 !     use mathematica,     only : splint
 !
@@ -142,7 +142,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !         SUBROUTINE build_excess_electric_field_in_Fourier_space
-!             USE dcf, ONLY : c_delta , c_d
+!             use dcf, ONLY : c_delta , c_d
 !             COMPLEX(dp) :: k_dot_P, pxt_k , pyt_k , pzt_k
 !             REAL(dp) :: c_delta_loc, c_d_loc, norm_k_loc
 !             ALLOCATE ( Ekx (nfft1/2+1, nfft2, nfft3) ,SOURCE=zeroC)

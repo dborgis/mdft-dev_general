@@ -1,9 +1,9 @@
 SUBROUTINE get_final_polarization ( Px , Py , Pz )
 
-    USE precision_kinds,    ONLY: dp,i2b
-    USE system,             ONLY: solvent
-    USE constants,          ONLY: fourpi,twopi
-    USE minimizer,          ONLY: cg_vect_new
+    use precision_kinds,    ONLY: dp,i2b
+    use system,             ONLY: solvent
+    use constants,          ONLY: fourpi,twopi
+    use minimizer,          ONLY: cg_vect_new
     use module_input,              ONLY: getinput
     use module_grid, only: grid
 

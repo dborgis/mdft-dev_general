@@ -1,10 +1,10 @@
 ! Here are allocated variables declared in modules
 SUBROUTINE allocate_from_input
 
-    USE precision_kinds     ,ONLY: i2b , dp
+    use precision_kinds     ,ONLY: i2b , dp
     use module_input        ,ONLY: input_line, getinput, verbose
-    USE system              ,ONLY: thermoCond, mole_fraction, solvent
-    USE constants           ,ONLY: eightpiSQ, boltz, navo
+    use system              ,ONLY: thermoCond, mole_fraction, solvent
+    use constants           ,ONLY: eightpiSQ, boltz, navo
     use module_grid, only: grid, init_grid
 
     IMPLICIT NONE
@@ -110,7 +110,7 @@ SUBROUTINE allocate_from_input
     ! Then, it reads, one line after the other, the mole fractions of every constituant.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE read_mole_fractions ( nspec , mole_fraction )
-        USE precision_kinds,only : dp , i2b
+        use precision_kinds,only : dp , i2b
         IMPLICIT NONE
         integer(i2b), intent(in) :: nspec
         real(dp), dimension ( nspec ) , intent ( inout ) :: mole_fraction
@@ -139,7 +139,7 @@ SUBROUTINE allocate_from_input
     ! It checks that the sum of all mole fractions is 1, and that every mole fractions are between 0 and 1.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE check_error_in_mole_fraction ( mole_fraction )
-        USE precision_kinds,only : i2b , dp
+        use precision_kinds,only : i2b , dp
         use system,only : solvent
         IMPLICIT NONE
         real(dp), dimension ( solvent(1)%nspec ) , intent(in) :: mole_fraction

@@ -2,12 +2,12 @@
 ! hard cylinder is along axe z=0, x=Lx/2, y=Ly/2
 SUBROUTINE compute_Vext_hard_cylinder
     use module_grid, only: grid
-! USE precision_kinds,only : i2b , dp
+! use precision_kinds,only : i2b , dp
 ! use module_input,only : getinput%dp
 ! use system,only : solute , nb_solute_sites
 ! use external_potential,only : Vext_total
 ! use quadrature, only: angGrid, molRotGrid
-! USE hardspheres ,ONLY: hs
+! use hardspheres ,ONLY: hs
 ! IMPLICIT NONE
 ! integer(i2b):: i , j , n ! dummy
 ! real(dp):: x_nm2 , y_nm2 , r_nm2 ! distance**2 between solute and grid point

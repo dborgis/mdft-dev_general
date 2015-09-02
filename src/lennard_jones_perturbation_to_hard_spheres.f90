@@ -3,12 +3,12 @@
 ! 201109151545 added the calculation of the perturbation potential
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
-    USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: v_perturbation_k, solvent
+    use precision_kinds ,ONLY: dp,i2b
+    use system          ,ONLY: v_perturbation_k, solvent
     use module_grid, only: grid
-    USE minimizer       ,ONLY: cg_vect_new, dF_new, FF
-    USE constants       ,ONLY: fourpi,twopi,zeroC
-    USE fft             ,ONLY: fftw3, norm_k
+    use minimizer       ,ONLY: cg_vect_new, dF_new, FF
+    use constants       ,ONLY: fourpi,twopi,zeroC
+    use fft             ,ONLY: fftw3, norm_k
 
     IMPLICIT NONE
 
@@ -145,8 +145,8 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
         FUNCTION vlj_wca_k ( k , sigma_lj , epsilon_lj )
         !===========================================================================================================================
 
-            USE precision_kinds ,ONLY: dp, i2b
-            USE constants       ,ONLY: fourpi, zeroC
+            use precision_kinds ,ONLY: dp, i2b
+            use constants       ,ONLY: fourpi, zeroC
 
             IMPLICIT NONE
 

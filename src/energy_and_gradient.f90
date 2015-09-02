@@ -15,7 +15,7 @@ subroutine energy_and_gradient (iter)
     use dcf             ,only: c_s!, c_s_hs
     use module_grid     ,only: grid
 
-    USE ENERGY, ONLY : energy_cs
+    use ENERGY, ONLY : energy_cs
 
     implicit none
 
@@ -69,7 +69,7 @@ subroutine energy_and_gradient (iter)
 
     ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
     IF (getinput%log('lennard_jones_perturbation_to_hard_spheres', defaultvalue=.false.) ) CALL lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
-    ! NOTE THAT THIS SHOULD USE THE NEW energy_cs.f90  instead of rewritting again and again the same things.
+    ! NOTE THAT THIS SHOULD use THE NEW energy_cs.f90  instead of rewritting again and again the same things.
 
     IF (getinput%log('readDensityDensityCorrelationFunction', defaultvalue=.true.)) THEN
         IF (getinput%log('hydrophobicity', defaultvalue=.false.)) THEN

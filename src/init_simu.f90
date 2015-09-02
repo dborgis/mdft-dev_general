@@ -1,9 +1,9 @@
 ! Subroutine to initiate simulation parameters
 SUBROUTINE init_simu
 
-    USE quadrature  ,ONLY: prepare_quadrature => init
-    USE fft         ,ONLY: prepare_corefft_for_MDFT => init, prepare_fft_threads => init_threads
-    USE dcf         ,ONLY: init_dcf => init
+    use quadrature  ,ONLY: prepare_quadrature => init
+    use fft         ,ONLY: prepare_corefft_for_MDFT => init, prepare_fft_threads => init_threads
+    use dcf         ,ONLY: init_dcf => init
     use module_input       ,ONLY: getinput
     use minimizer   ,only: prepare_minimizer
     use hardspheres ,only: compute_hard_spheres_parameters

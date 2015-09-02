@@ -1,6 +1,6 @@
 MODULE mathematica
 ! This module implements several usefull functions of Mathematica
-    USE precision_kinds     ,ONLY:dp,i2b
+    use precision_kinds     ,ONLY:dp,i2b
     IMPLICIT NONE
     PRIVATE
     PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, &

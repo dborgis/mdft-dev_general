@@ -4,8 +4,8 @@
 
 SUBROUTINE compute_planar_density(array,filename)
 
-    USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: solute
+    use precision_kinds ,ONLY: dp,i2b
+    use system          ,ONLY: solute
     use module_grid, only: grid
 
     IMPLICIT NONE

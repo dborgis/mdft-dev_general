@@ -1,9 +1,9 @@
 ! This SUBROUTINE computes the ideal part of the free energy functional.
 SUBROUTINE energy_ideal (Fideal)
 
-    USE precision_kinds, ONLY: dp
-    USE minimizer, ONLY: cg_vect_new, FF, dF_new
-    USE system, ONLY: thermocond, solvent
+    use precision_kinds, ONLY: dp
+    use minimizer, ONLY: cg_vect_new, FF, dF_new
+    use system, ONLY: thermocond, solvent
     use module_grid, only: grid
 
     IMPLICIT NONE

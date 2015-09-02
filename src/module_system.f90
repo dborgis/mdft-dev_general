@@ -1,7 +1,7 @@
 ! Variable relative to the system being studied
 MODULE system
 
-    USE precision_kinds , ONLY: i2b,dp
+    use precision_kinds , ONLY: i2b,dp
 
     IMPLICIT NONE
 

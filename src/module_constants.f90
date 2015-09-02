@@ -9,7 +9,7 @@
 
 MODULE constants ! fondamental_constants
 
-    USE precision_kinds ,ONLY : dp
+    use precision_kinds ,ONLY : dp
     IMPLICIT NONE
 
     REAL(dp)    ,PARAMETER :: ln2           = log ( 2.0_dp )

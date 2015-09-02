@@ -3,11 +3,11 @@
 !
 SUBROUTINE compute_purely_repulsive_potential
 !
-!     USE precision_kinds     ,ONLY: dp, i2b
+!     use precision_kinds     ,ONLY: dp, i2b
 !     use module_input               ,ONLY: getinput%dp, verbose
-!     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, solvent(1)%nspec, solute, solvent
-!     USE external_potential  ,ONLY: Vext_total
-!     USE constants           ,ONLY: zerodp=>zero
+!     use system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, solvent(1)%nspec, solute, solvent
+!     use external_potential  ,ONLY: Vext_total
+!     use constants           ,ONLY: zerodp=>zero
     use module_grid, only: grid
 !
 !     IMPLICIT NONE
@@ -92,7 +92,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !
 !     IF (verbose) THEN
 !         BLOCK
-!             USE constants, ONLY : fourpi
+!             use constants, ONLY : fourpi
 !             REAL(dp), ALLOCATABLE :: temparray(:,:,:)
 !             CHARACTER(50) :: filename
 !             ! warn user about vrep extrema for debugging

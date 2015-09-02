@@ -2,7 +2,7 @@
 ! it also allocates the input and output arrays of fftw3.
 
 SUBROUTINE init_fftw3_plans
-    USE fft, ONLY: fftw3
+    use fft, ONLY: fftw3
     use module_grid, only: grid
 
     IMPLICIT NONE
