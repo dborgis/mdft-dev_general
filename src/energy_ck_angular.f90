@@ -3,7 +3,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
     use precision_kinds, ONLY : i2b, dp
 !     use system,          ONLY : thermocond, grid, solvent
 !     use quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid, molRotSymOrder
-!     use minimizer,       ONLY : cg_vect_new, FF, dF_new
+!     use module_minimizer,       ONLY : cg_vect_new, FF, dF_new
 !     use constants,       ONLY : twopi
 !     use fft,             ONLY : fftw3, kx, ky, kz
 !     use module_input,           ONLY : getinput%log

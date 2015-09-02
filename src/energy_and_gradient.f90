@@ -10,7 +10,7 @@ subroutine energy_and_gradient (iter)
 
     use precision_kinds ,only: dp
     use module_input           ,only: getinput
-    use minimizer       ,only: FF, dF_new
+    use module_minimizer       ,only: FF, dF_new
     use system          ,only: solute, solvent
     use dcf             ,only: c_s!, c_s_hs
     use module_grid     ,only: grid

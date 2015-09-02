@@ -1,5 +1,5 @@
 ! Defines everything around the minimizer
-module minimizer
+module module_minimizer
 
     use precision_kinds, only: i2b , dp
 
@@ -115,4 +115,4 @@ contains
 
     END subroutine prepare_minimizer
 
-end module minimizer
+end module module_minimizer

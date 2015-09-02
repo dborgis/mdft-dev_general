@@ -7,7 +7,7 @@ contains
 
         use precision_kinds , only: i2b, dp
         use system          , only: solvent, thermocond
-        use minimizer       , only: cg_vect_new, dF_new
+        use module_minimizer       , only: cg_vect_new, dF_new
         use fft             , only: fftw3, kx, ky, kz
         use dcf             , only: cfile
         use mathematica     , only: splint

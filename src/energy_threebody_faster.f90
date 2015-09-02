@@ -6,7 +6,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !     use constants       ,ONLY: twopi,zeroC
 !     use quadrature      ,ONLY: angGrid, molRotGrid
 !     use system          ,ONLY: thermocond, grid, solute, solvent
-!     use minimizer       ,ONLY: cg_vect_new, dF_new, FF
+!     use module_minimizer       ,ONLY: cg_vect_new, dF_new, FF
 !     use fft             ,ONLY: fftw3, kproj
 !
     IMPLICIT NONE

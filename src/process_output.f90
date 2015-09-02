@@ -116,7 +116,7 @@ SUBROUTINE process_output
     CONTAINS
 
         SUBROUTINE print_cg_vect_new
-            use minimizer, ONLY: cg_vect_new
+            use module_minimizer, ONLY: cg_vect_new
             if ( .not. allocated ( cg_vect_new ) ) then
                 print *, 'cg_vect_new is not allocated in SUBROUTINE print_cg_vect_new in process_output.f90. STOP.'
                 stop

@@ -4,7 +4,7 @@ subroutine find_equilibrium_density
 
   use precision_kinds, only : i2b, dp
   use module_input, only: getinput
-  use minimizer, only: ncg, cg_vect_new, FF, dF_new, minimizer_type, epsg, iter
+  use module_minimizer, only: ncg, cg_vect_new, FF, dF_new, minimizer_type, epsg, iter
 
   implicit none
 
@@ -138,7 +138,7 @@ end subroutine find_equilibrium_density
 !subroutine myfunc(result, n, x, grad, need_gradient, f_data)
 !
 !  use precision_kinds, only: dp
-!  use minimizer      , only: cg_vect_new, iter, dF_new, FF
+!  use module_minimizer      , only: cg_vect_new, iter, dF_new, FF
 !
 !  implicit none
 !

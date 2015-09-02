@@ -5,7 +5,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !     use system, ONLY: thermocond, solvent(1)%nspec, grid, solvent
 !     use dcf, ONLY: chi_l, chi_t, nb_k, delta_k
 !     use quadrature,ONLY : angGrid, molRotGrid
-!     use minimizer, ONLY: cg_vect_new, FF, dF_new
+!     use module_minimizer, ONLY: cg_vect_new, FF, dF_new
 !     use constants, ONLY : twopi, fourpi, qfact, zeroC
 !     use fft, ONLY: fftw3, kx, ky, kz, k2, norm_k
 !     use module_input, ONLY: verbose

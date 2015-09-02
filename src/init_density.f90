@@ -7,7 +7,7 @@ subroutine init_density
   use precision_kinds, only : dp, i2b
   use system, only: thermocond, solvent
   use module_grid, only: grid
-  use minimizer, only: cg_vect_new
+  use module_minimizer, only: cg_vect_new
   use external_potential, only: Vext_total, Vext_q
   use module_input, only: getinput
   use mathematica, only: chop

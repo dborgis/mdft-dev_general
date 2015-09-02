@@ -6,7 +6,7 @@ SUBROUTINE energy_hydro (Fint)
     ! use system              ,ONLY: thermocond, solvent(1)%nspec, grid, solvent, solvent(1)%nspec
     ! use dcf                 ,ONLY: c_s, nb_k, delta_k, c_s_hs
     ! use constants           ,ONLY: fourpi,i_complex,twopi,zerodp,zeroC
-    ! use minimizer           ,ONLY: cg_vect_new, FF, dF_new
+    ! use module_minimizer           ,ONLY: cg_vect_new, FF, dF_new
     ! use quadrature          ,ONLY: molRotSymOrder, angGrid, molRotGrid
     ! use fft                 ,ONLY: fftw3,norm_k,kx,ky,kz,k2,timesExpPrefactork2
     ! use module_input               ,ONLY: getinput%log, verbose, getinput%dp

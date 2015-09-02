@@ -3,7 +3,7 @@ subroutine energy_external (Fext)
 
   use precision_kinds    ,only: dp, i2b
   use system             ,only: solvent
-  use minimizer          ,only: cg_vect_new, FF, dF_new
+  use module_minimizer          ,only: cg_vect_new, FF, dF_new
   use external_potential ,only: Vext_total
   use module_input              ,only: getinput
   use module_grid, only: grid

@@ -3,7 +3,7 @@ subroutine output_gOfRandCosTheta
   ! use precision_kinds, only: dp
   ! use system,          only: solute, solvent
   ! use constants,       only: zerodp, pi
-  ! use minimizer,       only: cg_vect_new
+  ! use module_minimizer,       only: cg_vect_new
   ! use mathematica,     only: deduce_optimal_histogram_properties
   !
   ! implicit none

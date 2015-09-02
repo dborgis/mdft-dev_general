@@ -2,7 +2,7 @@ subroutine output_gsitesite
   ! use precision_kinds, only: dp
   ! use system,          only: solute, solvent
     use module_grid, only: grid
-  ! use minimizer,       only: cg_vect_new
+  ! use module_minimizer,       only: cg_vect_new
   ! use mathematica,     only: deduce_optimal_histogram_properties
   !
   ! implicit none

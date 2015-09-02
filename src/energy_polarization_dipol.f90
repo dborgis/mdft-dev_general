@@ -3,7 +3,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
     use precision_kinds, ONLY : i2b, dp
     use module_grid, only: grid
 !     use system,          ONLY : thermocond, grid, solvent
-!     use minimizer,       ONLY : cg_vect_new , FF , dF_new
+!     use module_minimizer,       ONLY : cg_vect_new , FF , dF_new
 !     use constants,       ONLY : twopi, zeroC
 !     use fft,             ONLY : fftw3, k2, kproj, norm_k
 !     use module_input,           ONLY : verbose

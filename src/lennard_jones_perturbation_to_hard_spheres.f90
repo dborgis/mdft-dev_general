@@ -6,7 +6,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     use precision_kinds ,ONLY: dp,i2b
     use system          ,ONLY: v_perturbation_k, solvent
     use module_grid, only: grid
-    use minimizer       ,ONLY: cg_vect_new, dF_new, FF
+    use module_minimizer       ,ONLY: cg_vect_new, dF_new, FF
     use constants       ,ONLY: fourpi,twopi,zeroC
     use fft             ,ONLY: fftw3, norm_k
 

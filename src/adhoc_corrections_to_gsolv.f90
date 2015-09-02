@@ -3,7 +3,7 @@ subroutine adhoc_corrections_to_gsolv
 
     use precision_kinds, only: dp, sp, i2b
     use system, only: solute, solvent, thermocond
-    use minimizer, only: FF , cg_vect_new
+    use module_minimizer, only: FF , cg_vect_new
     use constants, only: zerodp
     use mathematica, only: chop
     use module_input, only: getinput
