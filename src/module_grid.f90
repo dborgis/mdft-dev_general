@@ -70,6 +70,5 @@ contains
         print*, "dx, dy, dz :", grid%dl
         print*, "[/grid]===="
         print*,
-
     end subroutine init_grid
 end module module_grid

@@ -22,7 +22,7 @@ SUBROUTINE init_simu
     CALL print_header ! package name, day & time
     call read_solute ! AWFUL TODO trick to default lx
     CALL allocate_from_input ! TODO this should be removed and done only when needed ! read dft.in, solute.in and solvent.in
-
+    CALL prepare_quadrature
 
 
     CALL prepare_fft_threads ! prepare le multithread de fftw3
@@ -30,7 +30,6 @@ SUBROUTINE init_simu
 
     CALL print_input_to_output_folder! Print input parameters found in input files to output folder
     CALL read_solvent ! Read solvent atomic positions, charge and Lennard-Jones param
-    CALL prepare_quadrature ! prepare numerical integration (for angles)
     CALL init_dcf
     IF (getinput%log('hard_sphere_fluid', defaultvalue=.false.)) CALL compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
     CALL prepare_minimizer ! Prepare minimization ! allocate tables and computes precision and so on

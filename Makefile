@@ -412,10 +412,10 @@ $(OBJDIR)/init_fftw3_plans.o:\
 
 $(OBJDIR)/init_simu.o:\
 	$(SRCDIR)/init_simu.f90\
+	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_quadrature.o\
 	$(OBJDIR)/module_minimizer.o\
 	$(OBJDIR)/module_hardspheres.o
 
@@ -498,6 +498,7 @@ $(OBJDIR)/module_precision_kinds.o:\
 
 $(OBJDIR)/module_quadrature.o:\
 	$(SRCDIR)/module_quadrature.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_input.o\

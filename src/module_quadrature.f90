@@ -37,7 +37,7 @@ module quadrature
   subroutine init
     use mathematica, only: chop
     implicit none
-    integer :: N, P, i, j, no, itheta, iphi, ipsi
+    integer :: n, p, i, j, no, itheta, iphi, ipsi
 
     print*,
     print*,"==="
