@@ -274,26 +274,26 @@ end function input_int
     i=0
     imax=SIZE(input_line)
     DO i=1,imax+1
-      IF (i==imax+1) exit
-      IF (input_line(i)(1:j)==tag .AND. input_line(i)(j+1:j+1)==' ') THEN
-        READ(input_line(i)(j+4:j+50),*,IOSTAT=iostatint) input_char
-        tag_is_found = .true.
-        IF (iostatint/=0) THEN
-          PRINT*,"I have a problem in reading input line:"
-          PRINT*,TRIM(ADJUSTL(input_line(i)))
-          IF (TRIM(ADJUSTL(input_line(i)(j+4:j+50)))=='') PRINT*,"I found nothing after sign ="
-          STOP
+        IF (i==imax+1) exit
+        IF (input_line(i)(1:j)==tag .AND. input_line(i)(j+1:j+1)==' ') THEN
+            READ(input_line(i)(j+4:j+50),*,IOSTAT=iostatint) input_char
+            tag_is_found = .true.
+            IF (iostatint/=0) THEN
+                PRINT*,"I have a problem in reading input line:"
+                PRINT*,TRIM(ADJUSTL(input_line(i)))
+                IF (TRIM(ADJUSTL(input_line(i)(j+4:j+50)))=='') PRINT*,"I found nothing after sign ="
+                STOP
+            END IF
+            EXIT
         END IF
-        EXIT
-      END IF
     END DO
     IF (input_char(1:1)==' ') THEN
-      PRINT*,"First character of ",tag," is a whitespace"
-      STOP
+        PRINT*,"First character of ",tag," is a whitespace"
+        STOP
     END IF
     IF (LEN(TRIM(ADJUSTL(input_char)))==0) THEN
-      PRINT*,"Tag after ",tag," is only whitespaces."
-      STOP
+        PRINT*,"Tag after ",tag," is only whitespaces."
+        STOP
     END IF
     if (.not. tag_is_found) then
         if (present(defaultvalue)) then
