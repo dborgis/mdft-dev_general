@@ -8,7 +8,7 @@ SUBROUTINE allocate_from_input
     use module_grid, only: grid, init_grid
 
     IMPLICIT NONE
-    INTEGER(i2b):: i, s
+    integer:: i, s
 
     verbose = input_log( 'verbose', defaultvalue=.false.)
 
@@ -30,13 +30,13 @@ SUBROUTINE allocate_from_input
 
     call init_grid
 
-    nb_species = input_int('nb_implicit_species',defaultvalue=1) ! get the number of implicit solvant species
-    if (nb_species < 1) then
-        print*,"STOP. nb_species =",nb_species,". The number of solvent species must be >0."
-        stop
-    end if
-    allocate (solvent(nb_species), stat=i)
-    if (i /= 0) stop "Problem during allocation of type solvent in allocate from input."
+
+    s = input_int('nb_implicit_species', defaultvalue=1, assert=">0") ! get the number of implicit solvant species
+    allocate( solvent(s) )
+    solvent(:)%nspec = s
+    nb_species = s
+
+
 
     ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer
     do i = 1, size(input_line)
@@ -57,15 +57,14 @@ SUBROUTINE allocate_from_input
     end if
     solvent%rho0 = solvent%n0 / (eightpiSQ/grid%molrotsymorder)
 
-    if (nb_species > 1) stop "molRotSymOrder must be solvent specific. See github issu #60"
 
     if (ALLOCATEd(mole_fraction)) THEN
         write(*,*)'something is not under control with respect to mole fraction reading and definition in ALLOCATE_from_input.f90'
         write(*,*)'this was done, in a previous version of the program, in compute_hard_sphere_parameters.f90'
         STOP
     ELSE
-        ALLOCATE ( mole_fraction ( nb_species ) ) ! molar fraction of each species.
-        call read_mole_fractions ( nb_species , mole_fraction )
+        ALLOCATE ( mole_fraction(nb_species)) ! molar fraction of each species.
+        call read_mole_fractions(nb_species, mole_fraction )
     end if
 
 
