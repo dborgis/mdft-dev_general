@@ -24,6 +24,7 @@ MODULE system
     end type vextType
 
     TYPE :: solventType
+        integer :: nspec ! number of solvent species
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         real(dp) :: diameter ! hard sphere diameter, for instance
         type (sites), allocatable :: site(:)
