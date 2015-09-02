@@ -27,10 +27,10 @@ module module_grid
     end type somegrid
     type(somegrid), public :: grid ! TODO remove target. Was used for retrocompatibility reason
 
-    public :: init
+    public :: init_grid
 
 contains
-    subroutine init
+    subroutine init_grid
         use input, only: input_int, input_int3, input_dp, input_dp3
         grid%molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
         grid%length = input_dp3( "lxlylz" , defaultvalue= grid%length )
@@ -71,5 +71,5 @@ contains
         print*, "[/GRID]===="
         print*,
 
-    end subroutine init
+    end subroutine init_grid
 end module module_grid

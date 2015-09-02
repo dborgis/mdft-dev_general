@@ -5,7 +5,7 @@ SUBROUTINE allocate_from_input
     USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3
     USE system              ,ONLY: thermoCond, nb_species, mole_fraction, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
-    use module_grid, only: grid, init_grid => init
+    use module_grid, only: grid, init_grid
 
     IMPLICIT NONE
     INTEGER(i2b):: i, s
