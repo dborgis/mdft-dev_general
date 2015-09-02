@@ -7,6 +7,7 @@ inputpourri = 0.1
 
 molRotSymOrder = 1
 mmax = 2
+nxnynz = 35 23 12
 
 
 ############################
@@ -18,9 +19,9 @@ mmax = 2
 
 ck_species = spce   # spc or spce or stock or perso
 readDensityDensityCorrelationFunction = T
-polarization = T
-polarization_order = dipol # multi or dipol
-include_nc_coupling = F
+#polarization = T
+#polarization_order = dipol # multi or dipol
+#include_nc_coupling = F
 
 ref_bulk_density
 0.0333

@@ -42,35 +42,42 @@ MODULE dcf
 !-----------------------------------------------------------------------------------------------------------------------------------
 
     SUBROUTINE init
+        character(180) :: polarization
+
         IF ( getinput%log('readDensityDensityCorrelationFunction') ) THEN
             CALL readDensityDensityCorrelationFunction
         END IF
 
-        IF ( getinput%log('polarization') ) THEN
-            IF ( getinput%char('polarization_order')=='dipol' ) THEN
-                CALL readPolarizationPolarizationCorrelationFunction
-            ELSE IF (( getinput%char('polarization_order')=='multi') .AND. (.NOT. getinput%log('include_nc_coupling'))) THEN
-                CALL readDielectricSusceptibilities
-            ELSE IF (( getinput%char('polarization_order')=='multi') .AND. (getinput%log('include_nc_coupling'))) THEN
-                CALL readDielectricSusceptibilities
-                CALL readTotalPolarizationCorrelationFunction
-            END IF
-        END IF
+        polarization = getinput%char("polarization", defaultvalue="no")
+        select case (polarization)
+        case("no","none")
+        case("dipolar")
+            call readPolarizationPolarizationCorrelationFunction
+        case("multipolar_without_coupling_to_density")
+            call readDielectricSusceptibilities
+        case("multipolar_with_coupling_to_density")
+            call readDielectricSusceptibilities
+            call readTotalPolarizationCorrelationFunction
+        case default
+            print*, "The tag 'polarization' in input reads ", polarization,". This is not correct"
+            stop
+        end select
 
-        IF ( getinput%log("ck_angular") ) THEN
-            stop "ck_angular temporarly down"
-            CALL read_ck_angular
-            CALL c_local_to_global_coordinates
-        END IF
-        IF ( getinput%log("ck_debug") ) THEN
-            stop "ck_debug temporarly down"
-            CALL readDensityDensityCorrelationFunction
-            CALL readPolarizationPolarizationCorrelationFunction
-        END IF
-        IF ( getinput%log("ck_debug_extended") ) THEN
-            stop "ck_debug_extended temporarly down"
-            CALL read_ck_projection
-        END IF
+
+        ! IF ( getinput%log("ck_angular") ) THEN
+        !     stop "ck_angular temporarly down"
+        !     CALL read_ck_angular
+        !     CALL c_local_to_global_coordinates
+        ! END IF
+        ! IF ( getinput%log("ck_debug") ) THEN
+        !     stop "ck_debug temporarly down"
+        !     CALL readDensityDensityCorrelationFunction
+        !     CALL readPolarizationPolarizationCorrelationFunction
+        ! END IF
+        ! IF ( getinput%log("ck_debug_extended") ) THEN
+        !     stop "ck_debug_extended temporarly down"
+        !     CALL read_ck_projection
+        ! END IF
 
         if( getinput%log('bridge_hard_sphere')) then
             if( getinput%log("ck_angular") .or. getinput%log('ck_debug') .or. getinput%log('ck_debug_extended') ) then

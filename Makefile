@@ -49,7 +49,6 @@ OPTIM = #-O3 -march=native -mpc64  -fno-exceptions -ffast-math -funroll-loops -f
 # ——————————————— Files to compile ———————————————
 
 FOBJ = $(OBJDIR)/allocate_from_input.o\
-	$(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o\
 	$(OBJDIR)/compute_planar_density.o\
 	$(OBJDIR)/compute_purely_repulsive_potential.o\
 	$(OBJDIR)/output_rdf.o\
@@ -157,14 +156,6 @@ $(OBJDIR)/allocate_from_input.o:\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_input.o\
-	$(OBJDIR)/module_precision_kinds.o
-
-$(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o:\
-	$(SRCDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.f90\
-	$(OBJDIR)/module_fft.o\
-	$(OBJDIR)/module_system.o\
-	$(OBJDIR)/module_constants.o\
-	$(OBJDIR)/module_mathematica.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/compute_planar_density.o:\
