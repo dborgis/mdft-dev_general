@@ -148,7 +148,8 @@ $(EXE): $(FOBJ)
 
 $(OBJDIR)/module_grid.o:\
 	$(SRCDIR)/module_grid.f90\
-	$(OBJDIR)/module_precision_kinds.o
+	$(OBJDIR)/module_precision_kinds.o\
+	$(OBJDIR)/module_input.o
 
 $(OBJDIR)/allocate_from_input.o:\
 	$(SRCDIR)/allocate_from_input.f90\
