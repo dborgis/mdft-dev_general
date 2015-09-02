@@ -5,7 +5,7 @@ module fastPoissonSolver
     use system              ,only: solute, solvent
     use module_grid, only: grid
     use external_potential  ,only: vext_q
-    use input               ,only: input_log
+    use input               ,only: getinput
 
     implicit none
 
@@ -51,7 +51,7 @@ contains
         ! and of solvent(s)%vext(i,j,k,o,p)%q, the new construction with multipole expansion of the solvent molecular charge density.
 
         ! Since vext_q is used later in the code, if one wants the newer construction, move solvent%vext%q to vext_q
-        if (input_log('better_poisson_solver')) then
+        if (getinput%log('better_poisson_solver')) then
             print*,"BETTER POISSON SOLVER [ON]"
             do concurrent (s = 1:size(solvent))
                 vext_q(:,:,:,:,s) = solvent(s)%vext%q
@@ -155,7 +155,7 @@ contains
 
 
         ! old construction
-        if (.not. input_log('better_poisson_solver')) then
+        if (.not. getinput%log('better_poisson_solver')) then
             ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
             fftw3InBackward = Vpoisson_k
             call dfftw_execute (fpspb)

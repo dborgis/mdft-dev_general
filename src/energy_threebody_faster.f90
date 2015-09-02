@@ -2,7 +2,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 
     USE precision_kinds ,ONLY: i2b, dp
     use module_grid, only: grid
-!     USE input           ,ONLY: verbose, input_dp
+!     USE input           ,ONLY: verbose, getinput%dp
 !     USE constants       ,ONLY: twopi,zeroC
 !     USE quadrature      ,ONLY: angGrid, molRotGrid
 !     USE system          ,ONLY: thermocond, grid, solute, solvent
@@ -36,7 +36,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
 !     nb_solute_sites = SIZE(solute%site)
 !     deltaVk=(twopi)**3/PRODUCT(grid%length)
-!     lambda_w=input_dp ('lambda_solvent')!/PRODUCT(grid%length)!5.0_dp
+!     lambda_w=getinput%dp ('lambda_solvent')!/PRODUCT(grid%length)!5.0_dp
 !     ! check if user wants to use this part of the functional
 !
 !     CALL CPU_TIME(time0)

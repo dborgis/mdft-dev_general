@@ -31,9 +31,9 @@ module module_grid
 
 contains
     subroutine init_grid
-        use input, only: input_int, input_int3, input_dp, input_dp3
-        grid%molRotSymOrder = input_int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
-        grid%length = input_dp3( "lxlylz" , defaultvalue= grid%length )
+        use input, only: getinput
+        grid%molRotSymOrder = getinput%int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
+        grid%length = getinput%dp3( "lxlylz" , defaultvalue= grid%length )
         if (ANY( grid%length  <= 0._dp ) ) THEN
             PRINT*,'The supercell cannot have negative length.'
             PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',grid%length
@@ -44,7 +44,7 @@ contains
         grid%ly = grid%length(2)
         grid%lz = grid%length(3)
 
-        grid%n_nodes = input_int3( "nxnynz" , defaultvalue= nint(grid%length/0.3_dp) )
+        grid%n_nodes = getinput%int3( "nxnynz" , defaultvalue= nint(grid%length/0.3_dp) )
         if ( any(grid%n_nodes <= 0) ) then
             print*, 'The space is divided into grid nodes. For each direction, you ask', grid%n_nodes,'node.'
             error stop

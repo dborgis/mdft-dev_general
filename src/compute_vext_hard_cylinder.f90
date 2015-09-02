@@ -3,7 +3,7 @@
 SUBROUTINE compute_Vext_hard_cylinder
     use module_grid, only: grid
 ! USE precision_kinds,only : i2b , dp
-! use input,only : input_dp
+! use input,only : getinput%dp
 ! use system,only : solute , nb_solute_sites
 ! use external_potential,only : Vext_total
 ! use quadrature, only: angGrid, molRotGrid
@@ -35,7 +35,7 @@ SUBROUTINE compute_Vext_hard_cylinder
 ! ! tell user
 ! write(*,*)'>>> Compute HS Vext Daniel for cylinder in z dir in hs fluid'
 ! ! look for tag 'hard_cylinder_radius' in dft.in
-! hard_cylinder_radius=input_dp('radius_of_hard_cylinder')
+! hard_cylinder_radius=getinput%dp('radius_of_hard_cylinder')
 ! write ( * , * ) 'the hard cylinder solute has a radius of ' , hard_cylinder_radius
 ! write ( * , * ) 'this cylinder is along Z. position in x and y are extracted from input/solute.in solute%site%r'
 ! write ( * , * ) 'there are ' , nb_solute_sites , ' cylinders in the system. They all have same radius'

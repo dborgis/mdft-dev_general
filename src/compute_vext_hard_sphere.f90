@@ -3,7 +3,7 @@
 SUBROUTINE compute_Vext_hard_sphere
     use module_grid, only: grid
 ! USE precision_kinds,only : i2b , dp
-! use input,only : input_line,input_dp
+! use input,only : input_line,getinput%dp
 ! use system,only : solute , nb_solute_sites , grid
 ! use external_potential,only : Vext_total , Vext_hard
 ! use quadrature, only: angGrid, molRotGrid
@@ -41,7 +41,7 @@ SUBROUTINE compute_Vext_hard_sphere
 !   Vext_total = 0.0_dp
 ! END IF
 ! ! look for tag 'hard_sphere_solute_radius' which gives the radius of the sphere for the external potential
-! hard_sphere_solute_radius=input_dp('radius_of_hard_sphere_solute')
+! hard_sphere_solute_radius=getinput%dp('radius_of_hard_sphere_solute')
 ! write (*,*) 'the radius of these solute hard spheres is defined as a constant for now and is ', hard_sphere_solute_radius
 !
 ! !check if radius is allocated. if not it may be because you wand an hard sphere solute but no hardsphere solvent, in that case

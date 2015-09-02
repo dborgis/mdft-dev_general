@@ -9,7 +9,7 @@ subroutine init_density
   use module_grid, only: grid
   use minimizer, only: cg_vect_new
   use external_potential, only: Vext_total, Vext_q
-  use input, only: input_log
+  use input, only: getinput
   use mathematica, only: chop
 
   implicit none
@@ -26,7 +26,7 @@ subroutine init_density
   nfft3 = grid%nz
 
   ! Read the density from a previous run
-  if (input_log('reuse_density')) then
+  if (getinput%log('reuse_density')) then
     INQUIRE (file='input/density.bin.in', EXIST=exists)
         IF ( .NOT. exists) STOP "input/density.bin.in not found"
     OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )

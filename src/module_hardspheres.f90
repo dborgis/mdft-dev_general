@@ -83,11 +83,11 @@ end subroutine weight_functions
 ! compute accordingly the chemical potential and the reference bulk density
 subroutine compute_hard_spheres_parameters
   use system          ,only: solvent
-  use input           ,only: input_char, input_log
+  use input           ,only: getinput
   implicit none
   character(4) :: hs_functional
   if(.not.allocated(hs)) allocate(hs(solvent(1)%nspec))
-  hs_functional=input_char('hs_functional')
+  hs_functional=getinput%char('hs_functional')
   if(hs_functional(1:2)/='PY' .and. hs_functional(1:2)/='CS') then
     stop "functional not implemented. See module_hardspheres:97"
   end if
@@ -132,7 +132,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   use constants       ,only: fourpi, pi
   use system          ,only: thermoCond, solvent
   use module_grid, only: grid
-  use input           ,only: verbose, input_char
+  use input           ,only: verbose, getinput
   implicit none
   real(dp) :: n0, n1, n2, n3 ! weighted densities in the case of constant density = ref bulk density
   real(dp) :: dphidn(0:3)    ! partial derivative of phi w.r.t. weighted densities
@@ -140,7 +140,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   real(dp) :: R,kT
   integer  :: s
   character(len=4) :: hs_functional
-  hs_functional=input_char('hs_functional')
+  hs_functional=getinput%char('hs_functional')
   kT=thermocond%kbT
   do s=1,size(solvent) ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
     ! weighted densities in the case of constant density = ref bulk density

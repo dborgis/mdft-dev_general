@@ -8,7 +8,7 @@ module ideal_functional_mod
     public :: get
 contains
     subroutine get(gr,den,fid)
-        use input, only: input_dp
+        use input, only: getinput%dp
         implicit none
         type(grid), intent(in) :: gr
         type(density), intent(in) :: den
@@ -18,7 +18,7 @@ contains
         real(dp), parameter :: eps = epsilon(1._dp)
         real(dp), parameter :: boltz = 1.3806488e-23_dp
         real(dp), parameter :: navo = 6.02214129e23_dp
-        kT = input_dp("temperature", defaultvalue=300._dp) * Boltz * Navo /1000._dp
+        kT = getinput%dp("temperature", defaultvalue=300._dp) * Boltz * Navo /1000._dp
         if (.not. fid%is_built) call fid%build(gr)
         fid%energy = 0._dp
         fid%grad = 0._dp

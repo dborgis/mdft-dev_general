@@ -1,7 +1,7 @@
 MODULE dcf
 
     USE precision_kinds, ONLY: dp, i2b
-    USE input, ONLY: input_log, input_char, n_linesInFile, deltaAbscissa
+    USE input, ONLY: getinput, n_linesInFile, deltaAbscissa
     use mathematica, only: spline, splint
 
 
@@ -42,38 +42,38 @@ MODULE dcf
 !-----------------------------------------------------------------------------------------------------------------------------------
 
     SUBROUTINE init
-        IF ( input_log('readDensityDensityCorrelationFunction') ) THEN
+        IF ( getinput%log('readDensityDensityCorrelationFunction') ) THEN
             CALL readDensityDensityCorrelationFunction
         END IF
 
-        IF ( input_log('polarization') ) THEN
-            IF ( input_char('polarization_order')=='dipol' ) THEN
+        IF ( getinput%log('polarization') ) THEN
+            IF ( getinput%char('polarization_order')=='dipol' ) THEN
                 CALL readPolarizationPolarizationCorrelationFunction
-            ELSE IF (( input_char('polarization_order')=='multi') .AND. (.NOT. input_log('include_nc_coupling'))) THEN
+            ELSE IF (( getinput%char('polarization_order')=='multi') .AND. (.NOT. getinput%log('include_nc_coupling'))) THEN
                 CALL readDielectricSusceptibilities
-            ELSE IF (( input_char('polarization_order')=='multi') .AND. (input_log('include_nc_coupling'))) THEN
+            ELSE IF (( getinput%char('polarization_order')=='multi') .AND. (getinput%log('include_nc_coupling'))) THEN
                 CALL readDielectricSusceptibilities
                 CALL readTotalPolarizationCorrelationFunction
             END IF
         END IF
 
-        IF ( input_log("ck_angular") ) THEN
+        IF ( getinput%log("ck_angular") ) THEN
             stop "ck_angular temporarly down"
             CALL read_ck_angular
             CALL c_local_to_global_coordinates
         END IF
-        IF ( input_log("ck_debug") ) THEN
+        IF ( getinput%log("ck_debug") ) THEN
             stop "ck_debug temporarly down"
             CALL readDensityDensityCorrelationFunction
             CALL readPolarizationPolarizationCorrelationFunction
         END IF
-        IF ( input_log("ck_debug_extended") ) THEN
+        IF ( getinput%log("ck_debug_extended") ) THEN
             stop "ck_debug_extended temporarly down"
             CALL read_ck_projection
         END IF
 
-        if( input_log('bridge_hard_sphere')) then
-            if( input_log("ck_angular") .or. input_log('ck_debug') .or. input_log('ck_debug_extended') ) then
+        if( getinput%log('bridge_hard_sphere')) then
+            if( getinput%log("ck_angular") .or. getinput%log('ck_debug') .or. getinput%log('ck_debug_extended') ) then
               stop 'not implemented yet'
             else
               call cs_of_k_hard_sphere! in case of bridge calculation, one also need the direct correlation function c2 of the hard sphere.
@@ -151,7 +151,7 @@ MODULE dcf
 !         nfft2 = grid%n_nodes(2)
 !         nfft3 = grid%n_nodes(3)
 !
-!         karim = input_log("ck_angular_interpolation")
+!         karim = getinput%log("ck_angular_interpolation")
 !         IF (karim) THEN
 !             ALLOCATE(angleVal(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
 !             angleVal%costheta = 0._dp
@@ -310,7 +310,7 @@ MODULE dcf
         END IF
         delta_k= delta_k_chi_t
 
-    If (.NOT. input_log('include_nc_coupling')) THEN
+    If (.NOT. getinput%log('include_nc_coupling')) THEN
         IF ( (delta_k_chi_t-delta_k_cs)/delta_k_cs >=1.E-10 ) THEN
             WRITE(*,*)"chi_l, chi_t and c_s shoud have same delta k. THIS COULD BE IMPLEMENTED. ASK GUILLAUME"
             WRITE(*,*)'delta( chi_l )=',delta_k_chi_l
@@ -430,7 +430,7 @@ MODULE dcf
         INTEGER(i2b) :: ios, nk, i
         CHARACTER(80) :: ck_species
 
-        ck_species = input_char('ck_species')
+        ck_species = getinput%char('ck_species')
 
         IF ( ck_species == 'spc  ' ) THEN
           c_delta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
@@ -517,7 +517,7 @@ MODULE dcf
         implicit none
         CHARACTER(80) :: ck_species
         INTEGER(i2b) :: ios, i
-        ck_species = input_char('ck_species')
+        ck_species = getinput%char('ck_species')
         IF ( ck_species == 'spc  ' ) THEN
           c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
         ELSE IF ( ck_species == 'stock' ) THEN

@@ -4,7 +4,7 @@ SUBROUTINE energy_fmt (Ffmt)
   USE system           ,ONLY: thermocond, mole_fraction, solvent
   USE minimizer        ,ONLY: cg_vect_new, dF_new
   USE fft              ,ONLY: fftw3
-  USE input            ,ONLY: input_char
+  USE input            ,ONLY: getinput
   USE hardspheres      ,ONLY: hs, weight_functions
   use module_grid, only: grid
 
@@ -95,7 +95,7 @@ SUBROUTINE energy_fmt (Ffmt)
 
   ! check if the hard sphere functional is Percus-Yevick or Carnahan-Starling
   ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
-  hs_functional=input_char('hs_functional')
+  hs_functional=getinput%char('hs_functional')
   if( hs_functional(1:2)=='PY') then
     if( any(wd(:,:,:,3)>=1) ) stop "problem in log(1-w3) in energy_fmt"
     Ffmt =  -sum(wd(:,:,:,0)*log(1-wd(:,:,:,3))) &

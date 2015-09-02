@@ -3,7 +3,7 @@
 subroutine find_equilibrium_density
 
   use precision_kinds, only : i2b, dp
-  use input, only: input_dp, input_int, input_char
+  use input, only: getinput
   use minimizer, only: ncg, cg_vect_new, FF, dF_new, minimizer_type, epsg, iter
 
   implicit none
@@ -20,8 +20,8 @@ subroutine find_equilibrium_density
 
   iter = 0
 
-  !minimizer_type = input_char("minimizer")
-!  minimizer_type = "bfgs" ! TODO input_char can't now deal with default values for characters
+  !minimizer_type = getinput%char("minimizer")
+!  minimizer_type = "bfgs" ! TODO getinput%char can't now deal with default values for characters
 !  select case (minimizer_type(1:3))
 !  case ("bfg")
 !    algorithm = NLOPT_LD_LBFGS
@@ -39,14 +39,14 @@ subroutine find_equilibrium_density
 !
 !  call nlo_set_min_objective( ires, opt, myfunc, 0)
 
-  epsg = input_dp("epsg", 0.001_dp ) ! in kJ/mol
+  epsg = getinput%dp("epsg", 0.001_dp ) ! in kJ/mol
 !  call nlo_set_ftol_abs( ires, opt, epsg)
 ! removethis  call nlo_set_ftol_rel( ires, opt, epsg)
 
 !  call nlo_set_lower_bounds1(ires, opt, -huge(1._dp))
 !  call nlo_set_upper_bounds1(ires, opt,  huge(1._dp))
 
-  maxeval = input_int("maximum_iteration_nbr", defaultValue=100)
+  maxeval = getinput%int("maximum_iteration_nbr", defaultValue=100)
 !  call nlo_set_maxeval( ires, opt, maxeval)
 
 !  M = 1 ! default 3

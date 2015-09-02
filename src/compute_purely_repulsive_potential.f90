@@ -4,7 +4,7 @@
 SUBROUTINE compute_purely_repulsive_potential
 !
 !     USE precision_kinds     ,ONLY: dp, i2b
-!     USE input               ,ONLY: input_dp, verbose
+!     USE input               ,ONLY: getinput%dp, verbose
 !     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, solvent(1)%nspec, solute, solvent
 !     USE external_potential  ,ONLY: Vext_total
 !     USE constants           ,ONLY: zerodp=>zero
@@ -30,7 +30,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !     ! get the radius of the purely repulsive solute
 !     ! the radius is defined such as in Dzubiella and Hansen, J Chem Phys 121 , 2011
 !     ! look for tag 'purely_repulsive_solute_radius' in dft.in for hard wall thickness
-!     radius_of_purely_repulsive_solute=input_dp('radius_of_purely_repulsive_solute')
+!     radius_of_purely_repulsive_solute=getinput%dp('radius_of_purely_repulsive_solute')
 !     radius_of_purely_repulsive_solute2 = radius_of_purely_repulsive_solute**2
 !
 !     ! tabulate coordinates of solvent sites for each omega and psi angles

@@ -3,7 +3,7 @@ module quadrature
 
   use precision_kinds ,only: dp, i2b
   use constants       ,only: pi, twopi, fourpi, zero, epsdp
-  use input           ,only: input_log, input_char, input_int
+  use input           ,only: getinput
   use module_grid, only: grid
 
   implicit none
@@ -42,9 +42,9 @@ module quadrature
     print*,
     print*,"==="
     print*,"grid pour quadrature angulaire"
-    grid%molrotsymorder = input_int("molrotsymorder", defaultvalue=1)
+    grid%molrotsymorder = getinput%int("molrotsymorder", defaultvalue=1)
     molrotsymorder = grid%molrotsymorder
-    grid%mmax = input_int("mmax", defaultvalue=4)
+    grid%mmax = getinput%int("mmax", defaultvalue=4)
     grid%ntheta = grid%mmax+1
     grid%nphi = 2*grid%mmax+1
     grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1
@@ -144,7 +144,7 @@ module quadrature
 
 
     ! quadrature for psi. For now a uniform grid over psi between 0 and 2pi.
-    molRotGrid%n_angles = input_int('nb_psi', defaultvalue=4 ) ! number of nodes for the grid over psi
+    molRotGrid%n_angles = getinput%int('nb_psi', defaultvalue=4 ) ! number of nodes for the grid over psi
     N = molrotgrid%n_angles
     print*,"Quadrature for psi : uniform"
     print*,"Number of nodes for psi :",N * molrotsymorder
@@ -158,9 +158,9 @@ module quadrature
 
     ! NOW SU2
     ! integration scheme
-    qsu2%o = input_int('order_of_quadrature', defaultvalue=3)
+    qsu2%o = getinput%int('order_of_quadrature', defaultvalue=3)
 
-    qsu2%name = trim(adjustl(   input_char('quadrature')   ))
+    qsu2%name = trim(adjustl(   getinput%char('quadrature')   ))
     select case (qsu2%name(1:2))
     case ('LE')
       print*,"Quadrature for SU2 : Lebedev"

@@ -4,7 +4,7 @@ subroutine read_solute
 
   use precision_kinds, ONLY: i2b,dp
   use system,          ONLY: nb_solute_sites, solute
-  use input,           ONLY: input_line, input_log, input_dp
+  use input,           ONLY: input_line, getinput
   use module_grid, only: grid
 !  use periodic_table,  ONLY: init_periodic_table, ptable
 
@@ -31,7 +31,7 @@ subroutine read_solute
               solute%site(n)%lambda1, solute%site(n)%lambda2, solute%site(n)%r, solute%site(n)%Z
     END DO
   CLOSE (5)
-  solute%site%q = solute%site%q * input_dp('solute_charges_scale_factor', defaultvalue=1._dp)
+  solute%site%q = solute%site%q * getinput%dp('solute_charges_scale_factor', defaultvalue=1._dp)
 
   block
     real(dp) :: solutexmin, solutexmax, soluteymin, soluteymax, solutezmin, solutezmax, &
@@ -46,7 +46,7 @@ subroutine read_solute
     solutediametery = sqrt((soluteymax-soluteymin)**2)
     solutediameterz = sqrt((solutezmax-solutezmin)**2)
 !    solutesigmaljmax = maxval(solute%site%sig)
-    grid%buffer_length = input_dp("buffer_length", defaultvalue=15._dp)
+    grid%buffer_length = getinput%dp("buffer_length", defaultvalue=15._dp)
     grid%length(1) = solutediameterx +2.*grid%buffer_length !+2*solutesigmaljmax
     grid%length(2) = solutediametery +2.*grid%buffer_length !+2*solutesigmaljmax
     grid%length(3) = solutediameterz +2.*grid%buffer_length !+2*solutesigmaljmax

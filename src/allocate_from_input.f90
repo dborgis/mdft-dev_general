@@ -2,7 +2,7 @@
 SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
-    USE input               ,ONLY: input_line, input_int, input_dp, input_log, verbose, input_dp3, input_int3, getinput
+    USE input               ,ONLY: input_line, getinput, verbose
     USE system              ,ONLY: thermoCond, mole_fraction, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     use module_grid, only: grid, init_grid
@@ -15,7 +15,7 @@ SUBROUTINE allocate_from_input
 
     print*,
     print*, "[Conditions]====="
-    thermoCond%T = input_dp('temperature', defaultvalue=300._dp) ! look for temperature in input
+    thermoCond%T = getinput%dp('temperature', defaultvalue=300._dp) ! look for temperature in input
     IF (thermoCond%T <= 0 ) THEN
         PRINT*,'CRITICAL STOP. NEGATIVE TEMPERATURE IN INPUT FILE tag temperature :',thermoCond%T
         STOP
@@ -31,7 +31,7 @@ SUBROUTINE allocate_from_input
     call init_grid
 
 
-    s = input_int('nb_implicit_species', defaultvalue=1, assert=">0") ! get the number of implicit solvant species
+    s = getinput%int('nb_implicit_species', defaultvalue=1, assert=">0") ! get the number of implicit solvant species
     allocate( solvent(s) )
     solvent(:)%nspec = s
     solvent(1)%nspec = s
@@ -76,11 +76,11 @@ SUBROUTINE allocate_from_input
 
     ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
     subroutine mv_solute_to_center
-        use input  ,only: input_log
+        use input  ,only: getinput
         use system ,only: solute
         use module_grid, only: grid
         implicit none
-        if( input_log( 'translate_solute_to_center', defaultvalue=.true. )) then
+        if( getinput%log( 'translate_solute_to_center', defaultvalue=.true. )) then
             solute%site%r(1) = solute%site%r(1) + grid%length(1)/2.0_dp
             solute%site%r(2) = solute%site%r(2) + grid%length(2)/2.0_dp
             solute%site%r(3) = solute%site%r(3) + grid%length(3)/2.0_dp
@@ -111,7 +111,6 @@ SUBROUTINE allocate_from_input
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE read_mole_fractions ( nspec , mole_fraction )
         USE precision_kinds,only : dp , i2b
-        use input,only : input_line
         IMPLICIT NONE
         integer(i2b), intent(in) :: nspec
         real(dp), dimension ( nspec ) , intent ( inout ) :: mole_fraction

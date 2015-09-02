@@ -6,7 +6,7 @@ subroutine adhoc_corrections_to_gsolv
     use minimizer, only: FF , cg_vect_new
     use constants, only: zerodp
     use mathematica, only: chop
-    use input, only: input_log
+    use input, only: getinput
     use module_grid, only: grid
     implicit none
 
@@ -42,7 +42,7 @@ subroutine adhoc_corrections_to_gsolv
     ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
     ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
     Pscheme_correction = 0._dp
-    if( input_log("poisson_solver") ) then
+    if( getinput%log("poisson_solver") ) then
       gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
       numberdensity = solvent(1)%n0
       solutecharge = sum(solute%site%q)

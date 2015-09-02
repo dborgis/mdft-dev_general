@@ -9,7 +9,7 @@ SUBROUTINE energy_hydro (Fint)
     ! USE minimizer           ,ONLY: cg_vect_new, FF, dF_new
     ! USE quadrature          ,ONLY: molRotSymOrder, angGrid, molRotGrid
     ! USE fft                 ,ONLY: fftw3,norm_k,kx,ky,kz,k2,timesExpPrefactork2
-    ! USE input               ,ONLY: input_log, verbose, input_dp
+    ! USE input               ,ONLY: getinput%log, verbose, getinput%dp
     ! use mathematica         ,only: splint
     !
     IMPLICIT NONE
@@ -58,7 +58,7 @@ SUBROUTINE energy_hydro (Fint)
     !     CALL cs_of_k_hard_sphere
     !     IF (ALL(c_s_hs%y==zerodp)) STOP "problem in the cs hard sphere generated from call from energy_hydro.f90"
     ! END IF
-    ! IF (.not. input_log('hard_sphere_fluid')) THEN
+    ! IF (.not. getinput%log('hard_sphere_fluid')) THEN
     !     PRINT*, 'energy_hydro MUST be used with hard sphere solvent correction  TAG of hard_sphere_solute in dft.in must be T'
     !     STOP
     ! END IF
@@ -78,7 +78,7 @@ SUBROUTINE energy_hydro (Fint)
     !
     ! ! macroscopic water parameters, from Chandler
     ! mu_0 = 7.16d-4*thermocond%kbT ! phenomenological potential
-    ! R_cg = input_dp("hydro_coarsegrainingradius") ! Gaussian radius for coarse graining
+    ! R_cg = getinput%dp("hydro_coarsegrainingradius") ! Gaussian radius for coarse graining
     !
     ! ! total number of kpoints and volume per kpoint
     ! Nk = REAL(nfft1*nfft2*nfft3,dp)

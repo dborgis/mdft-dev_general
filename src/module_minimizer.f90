@@ -92,7 +92,7 @@ contains
         ! this subroutine gets the informations in input file and then allocate, prepare, compute needed data
 
         USE precision_kinds, ONLY: dp
-        USE input, ONLY: input_int, input_dp,input_char
+        USE input, ONLY: getinput
         USE system , ONLY: solvent
         use module_grid, only: grid
 

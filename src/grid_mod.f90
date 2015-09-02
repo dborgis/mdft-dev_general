@@ -17,7 +17,7 @@ module grid_mod
     end type
 contains
     subroutine build( gr )
-        use input, only: input_dp, input_int
+        use input, only: getinput%dp, getinput%int
         implicit none
         class(grid), intent(inout) :: gr
         integer :: err, i, m, mup, mu, itheta, iphi, ipsi, io
@@ -26,16 +26,16 @@ contains
         real(dp), allocatable :: thetaofitheta(:), phiofiphi(:), psiofipsi(:), wthetaofitheta(:), wphiofiphi(:), wpsiofipsi(:)
         if (grid%is_built) return
         stop "I dont want to use this yet. PB IN RESOX INT HERE DP IN ALLOCATE_FROM_INPUT"
-        grid%ptperangx = input_int("resox", defaultvalue=3)
-        grid%ptperangy = input_int("resoy", defaultvalue=3)
-        grid%ptperangz = input_int("resoz", defaultvalue=3)
+        grid%ptperangx = getinput%int("resox", defaultvalue=3)
+        grid%ptperangy = getinput%int("resoy", defaultvalue=3)
+        grid%ptperangz = getinput%int("resoz", defaultvalue=3)
         print*, "grid%ptperangx=",grid%ptperangx
         print*, "grid%ptperangy=",grid%ptperangy
         print*, "grid%ptperangz=",grid%ptperangz
         stop "ptperang"
-        grid%lx = input_dp("Lx", defaultvalue=10._dp)
-        grid%ly = input_dp("Ly", defaultvalue=10._dp)
-        grid%lz = input_dp("Lz", defaultvalue=10._dp)
+        grid%lx = getinput%dp("Lx", defaultvalue=10._dp)
+        grid%ly = getinput%dp("Ly", defaultvalue=10._dp)
+        grid%lz = getinput%dp("Lz", defaultvalue=10._dp)
         grid%nx = nint(grid%ptperangx * grid%lx)
         grid%ny = nint(grid%ptperangy * grid%ly)
         grid%nz = nint(grid%ptperangz * grid%lz)
@@ -50,8 +50,8 @@ contains
         if (err /= 0) error stop "grid%ty: Allocation request denied"
         allocate(grid%tz(grid%nz), source=[( (i-1)*grid%dz ,i=1,grid%nz )], stat=err)
         if (err /= 0) error stop "grid%tz: Allocation request denied"
-        grid%molrotsymorder = input_int("molrotsymorder", defaultvalue=1)
-        grid%mmax = input_int("mmax", defaultvalue=4)
+        grid%molrotsymorder = getinput%int("molrotsymorder", defaultvalue=1)
+        grid%mmax = getinput%int("mmax", defaultvalue=4)
         grid%ntheta = grid%mmax+1
         grid%nphi = 2*grid%mmax+1
         grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1

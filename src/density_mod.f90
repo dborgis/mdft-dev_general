@@ -14,7 +14,7 @@ module density_mod
     end type
 contains
     subroutine build(den, gr)
-        use input, only: input_dp
+        use input, only: getinput%dp
         use grid_mod, only: grid
         implicit none
         class(density), intent(inout) :: den
@@ -27,7 +27,7 @@ contains
             ny = grid%ny
             nz = grid%nz
             no = grid%no
-            den%bulk = input_dp("bulk_density", defaultvalue=0.0333_dp)
+            den%bulk = getinput%dp("bulk_density", defaultvalue=0.0333_dp)
             allocate( den%rho(no,nx,ny,nz) ,source=den%bulk)
             den%is_built = .true.
         end if

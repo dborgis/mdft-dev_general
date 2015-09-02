@@ -4,7 +4,7 @@ SUBROUTINE init_simu
     USE quadrature  ,ONLY: prepare_quadrature => init
     USE fft         ,ONLY: prepare_corefft_for_MDFT => init, prepare_fft_threads => init_threads
     USE dcf         ,ONLY: init_dcf => init
-    USE input       ,ONLY: input_log, input_char
+    USE input       ,ONLY: getinput
     use minimizer   ,only: prepare_minimizer
     use hardspheres ,only: compute_hard_spheres_parameters
     ! use grid_mod    ,only: grid
@@ -32,7 +32,7 @@ SUBROUTINE init_simu
     CALL read_solvent ! Read solvent atomic positions, charge and Lennard-Jones param
     CALL prepare_quadrature ! prepare numerical integration (for angles)
     CALL init_dcf
-    IF (input_log('hard_sphere_fluid', defaultvalue=.false.)) CALL compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
+    IF (getinput%log('hard_sphere_fluid', defaultvalue=.false.)) CALL compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
     CALL prepare_minimizer ! Prepare minimization ! allocate tables and computes precision and so on
     CALL init_external_potential
     CALL init_density

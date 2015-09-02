@@ -9,7 +9,7 @@ subroutine energy_and_gradient (iter)
 ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
     use precision_kinds ,only: dp
-    use input           ,only: input_log, input_char, input_dp
+    use input           ,only: getinput
     use minimizer       ,only: FF, dF_new
     use system          ,only: solute, solvent
     use dcf             ,only: c_s!, c_s_hs
@@ -48,36 +48,36 @@ subroutine energy_and_gradient (iter)
     !
     ! ! compute Fexc_ck_angular
     ! i=0
-    ! IF( input_log( "ck_angular"        , defaultvalue=.false.) ) i=i+1
-    ! IF( input_log( "ck_debug"          , defaultvalue=.false.) ) i=i+1
-    ! IF( input_log( "ck_debug_extended" , defaultvalue=.false.) ) i=i+1
+    ! IF( getinput%log( "ck_angular"        , defaultvalue=.false.) ) i=i+1
+    ! IF( getinput%log( "ck_debug"          , defaultvalue=.false.) ) i=i+1
+    ! IF( getinput%log( "ck_debug_extended" , defaultvalue=.false.) ) i=i+1
     ! IF( i==1 ) THEN
-    !     IF( input_log("ck_en_harm_sph", defaultvalue=.false.) ) STOP 'The ck_angular methods and ck_en_harm_sph are exclusive.'
+    !     IF( getinput%log("ck_en_harm_sph", defaultvalue=.false.) ) STOP 'The ck_angular methods and ck_en_harm_sph are exclusive.'
     !     CALL energy_ck_angular (Fexc_ck_angular)
     ! ELSE IF (i>2) THEN
     !     STOP 'The ck methods - ck_angular, ck_debug, ck_debug_extended are exclusive.'
     ! END IF
     !
     ! ! compute Fexc_ck_angular en harmoniques spheres
-    ! IF (input_log("ck_en_harm_sph", defaultvalue=.false.) ) CALL energy_ck_en_harm_sph (Fexc_ck_angular)
+    ! IF (getinput%log("ck_en_harm_sph", defaultvalue=.false.) ) CALL energy_ck_en_harm_sph (Fexc_ck_angular)
 
     ! compute radial part of the excess free energy
-    if (input_log('hard_sphere_fluid', defaultvalue=.false.) ) then
+    if (getinput%log('hard_sphere_fluid', defaultvalue=.false.) ) then
       call energy_fmt (Ffmt) ! => pure hard sphere contribution
       FF=FF+Ffmt
     end if
 
     ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
-    IF (input_log('lennard_jones_perturbation_to_hard_spheres', defaultvalue=.false.) ) CALL lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
+    IF (getinput%log('lennard_jones_perturbation_to_hard_spheres', defaultvalue=.false.) ) CALL lennard_jones_perturbation_to_hard_spheres ! lennard jones perturbative contribution => Weeks-Chandler-Anderson
     ! NOTE THAT THIS SHOULD USE THE NEW energy_cs.f90  instead of rewritting again and again the same things.
 
-    IF (input_log('readDensityDensityCorrelationFunction', defaultvalue=.true.)) THEN
-        IF (input_log('hydrophobicity', defaultvalue=.false.)) THEN
+    IF (getinput%log('readDensityDensityCorrelationFunction', defaultvalue=.true.)) THEN
+        IF (getinput%log('hydrophobicity', defaultvalue=.false.)) THEN
 
-            IF (input_char('treatment_of_hydro')=='C')  THEN
+            IF (getinput%char('treatment_of_hydro')=='C')  THEN
                 CALL energy_nn_cs_plus_nbar (Fexcnn)
-            ELSE IF (input_char('treatment_of_hydro')=='VdW')  THEN
-                IF (input_log('bridge_hard_sphere', defaultvalue=.false.) ) THEN
+            ELSE IF (getinput%char('treatment_of_hydro')=='VdW')  THEN
+                IF (getinput%log('bridge_hard_sphere', defaultvalue=.false.) ) THEN
                     PRINT*, 'You are using HSB and VdW so you are withdrawing twice the HS second order term'
                     STOP
                 END IF
@@ -88,7 +88,7 @@ subroutine energy_and_gradient (iter)
 
         ELSE
 
-            if( .not. input_log('include_nc_coupling', defaultvalue=.false.) ) then
+            if( .not. getinput%log('include_nc_coupling', defaultvalue=.false.) ) then
               call energy_cs( c_s, Fexcnn, dF_loc, exitstatus)
               if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s, Fexcnn, dF_loc, exitstatus)"
               FF=FF+Fexcnn
@@ -99,10 +99,10 @@ subroutine energy_and_gradient (iter)
     END IF
 
     ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
-    IF (input_log('bridge_hard_sphere', defaultvalue=.false.) .AND. .NOT. input_log('hard_sphere_fluid',defaultvalue=.false.)) THEN
+    IF (getinput%log('bridge_hard_sphere', defaultvalue=.false.) .AND. .NOT. getinput%log('hard_sphere_fluid',defaultvalue=.false.)) THEN
         STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
     END IF
-    ! if (input_log('bridge_hard_sphere')) then
+    ! if (getinput%log('bridge_hard_sphere')) then
     !   call energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)
     !   if( exitstatus /= 1 ) stop "problem in subroutine energy_cs( c_s_hs, Ffmtcs, dF_loc, exitstatus)"
     !   FF=FF-Ffmtcs
@@ -110,12 +110,12 @@ subroutine energy_and_gradient (iter)
     ! end if
 
 
-    IF ( input_log('polarization', defaultvalue=.false.) ) THEN
-        IF ( input_char('polarization_order')=='dipol' ) THEN ! cs cdelta cd ( polarization_order = dipol )
+    IF ( getinput%log('polarization', defaultvalue=.false.) ) THEN
+        IF ( getinput%char('polarization_order')=='dipol' ) THEN ! cs cdelta cd ( polarization_order = dipol )
             CALL energy_polarization_dipol (FexcPol)
-        ELSE IF ( input_char('polarization_order')=='multi' .AND. (.NOT. input_log('include_nc_coupling',defaultvalue=.false.)) ) THEN ! ( polarization_order = multi )
+        ELSE IF ( getinput%char('polarization_order')=='multi' .AND. (.NOT. getinput%log('include_nc_coupling',defaultvalue=.false.)) ) THEN ! ( polarization_order = multi )
             CALL energy_polarization_multi (FexcPol)
-        ELSE IF ( input_char('polarization_order')=='multi' .AND. ( input_log('include_nc_coupling', defaultvalue=.false.)) ) THEN ! ( polarization_order = multi )
+        ELSE IF ( getinput%char('polarization_order')=='multi' .AND. ( getinput%log('include_nc_coupling', defaultvalue=.false.)) ) THEN ! ( polarization_order = multi )
             CALL energy_polarization_multi_with_nccoupling(FexcPol)
         ELSE
             ERROR STOP "You want to include polarization but the tag for polarization order is neither dipol nor multi"
@@ -123,8 +123,8 @@ subroutine energy_and_gradient (iter)
     END IF
 
 
-    IF ( input_log( 'threebody', defaultvalue=.false. ) ) THEN
-        IF (SUM(ABS(solute%site%lambda1)+ABS(solute%site%lambda1))/=0.0_dp .OR. input_dp('lambda_solvent')/=0.0_dp) THEN
+    IF ( getinput%log( 'threebody', defaultvalue=.false. ) ) THEN
+        IF (SUM(ABS(solute%site%lambda1)+ABS(solute%site%lambda1))/=0.0_dp .OR. getinput%dp('lambda_solvent')/=0.0_dp) THEN
             CALL energy_threebody_faster (F3B1, F3B2, F3B_ww)
         END IF
     END IF

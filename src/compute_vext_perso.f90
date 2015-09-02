@@ -3,7 +3,7 @@ SUBROUTINE compute_vext_perso
     use module_grid, only: grid
 !
 ! USE precision_kinds,only : i2b , dp
-! use input,only : input_line,input_dp
+! use input,only : input_line,getinput%dp
 ! use system,only : solute , nb_solute_sites
 ! use external_potential,only : Vext_total
 ! USE hardspheres ,ONLY: hs
@@ -31,7 +31,7 @@ SUBROUTINE compute_vext_perso
 ! write (*,*) '*************************'
 ! write (*,*) 'Compute personnal_vext'
 ! ! look for tag 'hard_sphere_solute_radius' which gives the radius of the sphere for the external potential
-! solute_radius=input_dp('hard_sphere_solute_radius')
+! solute_radius=getinput%dp('hard_sphere_solute_radius')
 ! write (*,*) 'the radius of these solute hard spheres is defined as a constant for now and is ', solute_radius
 ! ! compute vext hard sphere
 ! deltax = Lx / real ( nfft1 , dp )

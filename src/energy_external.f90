@@ -5,7 +5,7 @@ subroutine energy_external (Fext)
   use system             ,only: solvent
   use minimizer          ,only: cg_vect_new, FF, dF_new
   use external_potential ,only: Vext_total
-  use input              ,only: input_dp
+  use input              ,only: getinput
   use module_grid, only: grid
 
   implicit none
@@ -21,7 +21,7 @@ subroutine energy_external (Fext)
   ns = solvent(1)%nspec
 
   ! Impose a chemical potential
-  imposedChemPot = input_dp( 'imposed_chempot', defaultvalue=0._dp) ! 0 means that you don't impose any chemical potential (delta_chempot is built this way)
+  imposedChemPot = getinput%dp( 'imposed_chempot', defaultvalue=0._dp) ! 0 means that you don't impose any chemical potential (delta_chempot is built this way)
   if ( solvent(1)%nspec/=1 .AND. imposedChemPot/=0._dp) STOP "Imposing a chemical potential is valid only for single-species solvent"
 
   ! F_{ext}[\rho(\vec{r},\vec{\Omega})]=\int d \vec{r} d \vec{\Omega} V_{ext}(\vec{r},\vec{\Omega})\rho(\vec{r},\vec{\Omega})

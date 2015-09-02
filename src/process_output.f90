@@ -5,7 +5,7 @@ SUBROUTINE process_output
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: solvent, thermocond
-    USE input,              ONLY: verbose, input_log, input_char
+    USE input,              ONLY: verbose, getinput
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
     use hardspheres,        only: hs
@@ -37,7 +37,7 @@ SUBROUTINE process_output
     IF (verbose) THEN
         filename = 'output/density.cube'
         CALL write_to_cube_file (neq(:,:,:,1), filename) ! TODO for now only write for the first species
-        IF (input_log('polarization').EQV. .TRUE.) THEN
+        IF (getinput%log('polarization').EQV. .TRUE.) THEN
             ALLOCATE ( Px (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
             ALLOCATE ( Py (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
             ALLOCATE ( Pz (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
@@ -70,7 +70,7 @@ SUBROUTINE process_output
             CALL compute_planar_density ( neq (:,:,:,1) , filename ) ! TODO for now only write for the first species
         END IF
 
-        IF ( input_char('other_predefined_vext')=='vextdef0' ) THEN
+        IF ( getinput%char('other_predefined_vext')=='vextdef0' ) THEN
             filename = 'output/molecular_density_in_xy_plane.out'
             PRINT*,"I am writing file ",filename
             OPEN(378,FILE=filename)

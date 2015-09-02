@@ -4,7 +4,7 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
     USE system,             ONLY: solvent
     USE constants,          ONLY: fourpi,twopi
     USE minimizer,          ONLY: cg_vect_new
-    USE input,              ONLY: input_int
+    USE input,              ONLY: getinput
     use module_grid, only: grid
 
     IMPLICIT NONE

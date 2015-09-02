@@ -10,7 +10,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 !   USE minimizer, ONLY: cg_vect_new, FF , dF_new
 !   use quadrature, only: molRotSymOrder,angGrid, molRotGrid
 !   use fft,only : fftw3, norm_k, kx, ky, kz, k2, timesExpPrefactork2
-!   use input, only : input_log
+!   use input, only : getinput%log
 !   use mathematica, only: splint
 !
   IMPLICIT NONE
@@ -67,7 +67,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 !
 !
 !   call cpu_time(time0)
-!   if (input_log('bridge_hard_sphere')) then
+!   if (getinput%log('bridge_hard_sphere')) then
 !     print*,'Chandler Version of Hydrophobicity is not consistent with the use of hard sphere bridge, be aware of what you are doing'
 !   END IF
 !

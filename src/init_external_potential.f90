@@ -5,7 +5,7 @@
 SUBROUTINE init_external_potential
 
     USE precision_kinds     ,only: dp, i2b
-    USE input               ,only: input_log, input_char
+    USE input               ,only: getinput
     USE system              ,only: solute, solvent
     USE external_potential  ,only: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,only: init_lennardjones => init
@@ -49,12 +49,12 @@ SUBROUTINE init_external_potential
 
     CALL init_lennardjones ! LENNARD-JONES POTENTIAL
 
-    IF (input_log('purely_repulsive_solute')) CALL compute_purely_repulsive_potential ! r^-12 only
-    IF (input_log('hard_sphere_solute')) CALL compute_vext_hard_sphere     ! hard sphere
-    IF (input_log('hard_cylinder_solute')) CALL compute_vext_hard_cylinder ! hard cylinder
-    IF (input_log('personnal_vext')) CALL compute_vext_perso               ! personnal vext as implemented in personnal_vext.f90
-    IF (input_char('other_predefined_vext')=='vextdef0') CALL vextdef0
-    IF (input_char('other_predefined_vext')=='vextdef1') CALL vextdef1
+    IF (getinput%log('purely_repulsive_solute')) CALL compute_purely_repulsive_potential ! r^-12 only
+    IF (getinput%log('hard_sphere_solute')) CALL compute_vext_hard_sphere     ! hard sphere
+    IF (getinput%log('hard_cylinder_solute')) CALL compute_vext_hard_cylinder ! hard cylinder
+    IF (getinput%log('personnal_vext')) CALL compute_vext_perso               ! personnal vext as implemented in personnal_vext.f90
+    IF (getinput%char('other_predefined_vext')=='vextdef0') CALL vextdef0
+    IF (getinput%char('other_predefined_vext')=='vextdef1') CALL vextdef1
 
     CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
 
@@ -73,7 +73,7 @@ SUBROUTINE init_external_potential
             INTEGER(i2b) :: i, nx, ny, nz, no, ns
             CHARACTER(180) :: j
 
-            IF ( input_log('direct_sum') .AND. input_log('poisson_solver')) THEN
+            IF ( getinput%log('direct_sum') .AND. getinput%log('poisson_solver')) THEN
                 STOP 'You ask for two different methods for computing the electrostatic potential: direct_sum and poisson'
             END IF
 
@@ -90,12 +90,12 @@ SUBROUTINE init_external_potential
             END IF
 
             ! DIRECT SUMMATION, pot = sum of qq'/r
-            IF ( input_log('direct_sum') ) THEN
+            IF ( getinput%log('direct_sum') ) THEN
                 CALL compute_vcoul_as_sum_of_pointcharges
             END IF
 
             ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
-            IF (input_log('poisson_solver')) THEN
+            IF (getinput%log('poisson_solver')) THEN
                 CALL start_fastPoissonSolver
             END IF
         END SUBROUTINE

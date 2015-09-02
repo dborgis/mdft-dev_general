@@ -6,7 +6,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !     USE minimizer,       ONLY : cg_vect_new, FF, dF_new
 !     USE constants,       ONLY : twopi
 !     USE fft,             ONLY : fftw3, kx, ky, kz
-!     USE input,           ONLY : input_log
+!     USE input,           ONLY : getinput%log
 !     USE dcf,             ONLY : ck_angular, angleInd, angleVal, delta_k, delta_k_ck_angular, num_phi, num_cos, num_psi, &
 !                                 c_s, c_d, c_delta, c_q, nb_k
 !
@@ -55,10 +55,10 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !
 ! ! Logical for choice of method
 !     karim = 0
-!     IF (input_log("ck_angular"))        karim = 1
-!     IF (input_log("ck_debug")) THEN;    karim = 2; delta_k_ck_angular = delta_k; END IF
-!     IF (input_log("ck_debug_extended")) karim = 3
-!     IF (input_log("ck_angular") .AND. input_log("ck_angular_interpolation")) karim = 4
+!     IF (getinput%log("ck_angular"))        karim = 1
+!     IF (getinput%log("ck_debug")) THEN;    karim = 2; delta_k_ck_angular = delta_k; END IF
+!     IF (getinput%log("ck_debug_extended")) karim = 3
+!     IF (getinput%log("ck_angular") .AND. getinput%log("ck_angular_interpolation")) karim = 4
 !     IF (karim == 0) STOP 'FATAL ERROR: Karim est nul in energy_ck_angular 0_0'
 !
 ! ! Cauculation of gamma(r,Omega)
