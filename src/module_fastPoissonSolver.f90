@@ -5,7 +5,7 @@ module fastPoissonSolver
     use system              ,only: solute, solvent
     use module_grid, only: grid
     use external_potential  ,only: vext_q
-    use input               ,only: getinput
+    use module_input               ,only: getinput
 
     implicit none
 

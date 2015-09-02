@@ -8,7 +8,7 @@ module ideal_functional_mod
     public :: get
 contains
     subroutine get(gr,den,fid)
-        use input, only: getinput%dp
+        use module_input, only: getinput%dp
         implicit none
         type(grid), intent(in) :: gr
         type(density), intent(in) :: den

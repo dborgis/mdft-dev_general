@@ -1,7 +1,7 @@
 MODULE dcf
 
     USE precision_kinds, ONLY: dp, i2b
-    USE input, ONLY: getinput, n_linesInFile, deltaAbscissa
+    use module_input, ONLY: getinput, n_linesInFile, deltaAbscissa
     use mathematica, only: spline, splint
 
 

@@ -5,7 +5,7 @@ subroutine energy_external (Fext)
   use system             ,only: solvent
   use minimizer          ,only: cg_vect_new, FF, dF_new
   use external_potential ,only: Vext_total
-  use input              ,only: getinput
+  use module_input              ,only: getinput
   use module_grid, only: grid
 
   implicit none

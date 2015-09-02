@@ -7,7 +7,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     USE minimizer,       ONLY: cg_vect_new, FF, dF_new
 !     USE constants,       ONLY: twopi, fourpi, qfact
 !     USE fft,             ONLY: fftw3, kx, ky, kz, k2, norm_k
-!     USE input,           ONLY: verbose
+!     use module_input,           ONLY: verbose
 !
 !     IMPLICIT NONE
 !

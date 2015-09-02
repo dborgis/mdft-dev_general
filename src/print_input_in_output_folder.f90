@@ -3,7 +3,7 @@
 
 SUBROUTINE print_input_to_output_folder
 
-    USE input, ONLY: input_line
+    use module_input, ONLY: input_line
     USE precision_kinds, ONLY: i2b
     
     IMPLICIT NONE

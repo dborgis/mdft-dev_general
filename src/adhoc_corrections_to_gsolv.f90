@@ -6,7 +6,7 @@ subroutine adhoc_corrections_to_gsolv
     use minimizer, only: FF , cg_vect_new
     use constants, only: zerodp
     use mathematica, only: chop
-    use input, only: getinput
+    use module_input, only: getinput
     use module_grid, only: grid
     implicit none
 

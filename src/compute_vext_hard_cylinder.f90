@@ -3,7 +3,7 @@
 SUBROUTINE compute_Vext_hard_cylinder
     use module_grid, only: grid
 ! USE precision_kinds,only : i2b , dp
-! use input,only : getinput%dp
+! use module_input,only : getinput%dp
 ! use system,only : solute , nb_solute_sites
 ! use external_potential,only : Vext_total
 ! use quadrature, only: angGrid, molRotGrid

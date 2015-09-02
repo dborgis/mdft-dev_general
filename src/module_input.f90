@@ -1,7 +1,7 @@
 ! Module dedicated to reading the input file etc.
 ! It also contains the input parser.
 
-module input
+module module_input
 
     use iso_c_binding, only: dp => C_DOUBLE
     implicit none
@@ -447,4 +447,4 @@ subroutine put_input_in_character_array
 
 END SUBROUTINE put_input_in_character_array
 
-END MODULE
+end module module_input

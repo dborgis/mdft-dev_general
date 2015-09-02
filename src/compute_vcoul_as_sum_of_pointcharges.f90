@@ -7,7 +7,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
     USE system              ,ONLY: solvent, solute, nb_solute_sites, nb_solvent_sites
     USE constants           ,ONLY: qfact
     USE external_potential  ,ONLY: Vext_q
-    use input               ,only: verbose
+    use module_input               ,only: verbose
     use module_grid, only: grid
 
     IMPLICIT NONE

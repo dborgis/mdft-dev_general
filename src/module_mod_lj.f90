@@ -8,7 +8,7 @@ MODULE mod_lj
     USE system,             ONly: solute, solvent
     use module_grid, only: grid
     USE constants,          ONly: fourpi
-    USE input,              ONly: input_line, verbose
+    use module_input,              ONly: input_line, verbose
 
     IMPLICIT NONE
     INTEGER(i2b), PRIVATE :: nx, ny, nz, no, ns

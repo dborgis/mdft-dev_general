@@ -9,7 +9,7 @@ SUBROUTINE energy_hydro (Fint)
     ! USE minimizer           ,ONLY: cg_vect_new, FF, dF_new
     ! USE quadrature          ,ONLY: molRotSymOrder, angGrid, molRotGrid
     ! USE fft                 ,ONLY: fftw3,norm_k,kx,ky,kz,k2,timesExpPrefactork2
-    ! USE input               ,ONLY: getinput%log, verbose, getinput%dp
+    ! use module_input               ,ONLY: getinput%log, verbose, getinput%dp
     ! use mathematica         ,only: splint
     !
     IMPLICIT NONE

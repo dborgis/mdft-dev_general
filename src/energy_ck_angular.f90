@@ -6,7 +6,7 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !     USE minimizer,       ONLY : cg_vect_new, FF, dF_new
 !     USE constants,       ONLY : twopi
 !     USE fft,             ONLY : fftw3, kx, ky, kz
-!     USE input,           ONLY : getinput%log
+!     use module_input,           ONLY : getinput%log
 !     USE dcf,             ONLY : ck_angular, angleInd, angleVal, delta_k, delta_k_ck_angular, num_phi, num_cos, num_psi, &
 !                                 c_s, c_d, c_delta, c_q, nb_k
 !

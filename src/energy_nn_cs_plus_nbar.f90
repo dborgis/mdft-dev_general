@@ -10,7 +10,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 !   USE minimizer, ONLY: cg_vect_new, FF , dF_new
 !   use quadrature, only: molRotSymOrder,angGrid, molRotGrid
 !   use fft,only : fftw3, norm_k, kx, ky, kz, k2, timesExpPrefactork2
-!   use input, only : getinput%log
+!   use module_input, only : getinput%log
 !   use mathematica, only: splint
 !
   IMPLICIT NONE

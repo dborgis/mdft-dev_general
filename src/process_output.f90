@@ -5,7 +5,7 @@ SUBROUTINE process_output
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
     USE system,             ONLY: solvent, thermocond
-    USE input,              ONLY: verbose, getinput
+    use module_input,              ONLY: verbose, getinput
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
     use hardspheres,        only: hs

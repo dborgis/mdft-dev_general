@@ -3,7 +3,7 @@
 subroutine find_equilibrium_density
 
   use precision_kinds, only : i2b, dp
-  use input, only: getinput
+  use module_input, only: getinput
   use minimizer, only: ncg, cg_vect_new, FF, dF_new, minimizer_type, epsg, iter
 
   implicit none

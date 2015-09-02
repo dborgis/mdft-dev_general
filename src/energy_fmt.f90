@@ -4,7 +4,7 @@ SUBROUTINE energy_fmt (Ffmt)
   USE system           ,ONLY: thermocond, mole_fraction, solvent
   USE minimizer        ,ONLY: cg_vect_new, dF_new
   USE fft              ,ONLY: fftw3
-  USE input            ,ONLY: getinput
+  use module_input            ,ONLY: getinput
   USE hardspheres      ,ONLY: hs, weight_functions
   use module_grid, only: grid
 

@@ -3,7 +3,7 @@ subroutine cs_of_k_hard_sphere
 
   use precision_kinds ,only: i2b, dp
   use system          ,only: solvent !@GUILLAUME c_s_hs should go into MODULE DCF
-  use input           ,only: input_line, n_linesInFile, verbose
+  use module_input           ,only: input_line, n_linesInFile, verbose
   use constants       ,only: fourpi, pi, zerodp
   use dcf             ,only: c_s, c_s_hs
   use mathematica     ,only: spline, splint

@@ -6,7 +6,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !     USE minimizer,       ONLY : cg_vect_new , FF , dF_new
 !     USE constants,       ONLY : twopi, zeroC
 !     USE fft,             ONLY : fftw3, k2, kproj, norm_k
-!     USE input,           ONLY : verbose
+!     use module_input,           ONLY : verbose
 !     use mathematica,     only : splint
 !
 !     IMPLICIT NONE

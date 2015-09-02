@@ -4,7 +4,7 @@ SUBROUTINE compute_z_density (array, filename)
 ! Compute average density in the plane z {001}, that is the one perpendicular to plane (xy)
   use precision_kinds ,only: dp, i2b
   use mathematica     ,only: chop
-  use input           ,only: verbose
+  use module_input           ,only: verbose
   use module_grid, only: grid
   implicit none
   type xy

@@ -4,7 +4,7 @@
 SUBROUTINE compute_purely_repulsive_potential
 !
 !     USE precision_kinds     ,ONLY: dp, i2b
-!     USE input               ,ONLY: getinput%dp, verbose
+!     use module_input               ,ONLY: getinput%dp, verbose
 !     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, solvent(1)%nspec, solute, solvent
 !     USE external_potential  ,ONLY: Vext_total
 !     USE constants           ,ONLY: zerodp=>zero

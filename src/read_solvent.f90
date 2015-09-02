@@ -7,7 +7,7 @@ SUBROUTINE read_solvent
 use precision_kinds, only: i2b , dp, sp
 use system, only: nb_solvent_sites, solvent
 use mathematica, only: chop
-use input, only: getinput
+use module_input, only: getinput
 
 IMPLICIT NONE
 

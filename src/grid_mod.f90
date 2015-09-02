@@ -17,7 +17,7 @@ module grid_mod
     end type
 contains
     subroutine build( gr )
-        use input, only: getinput%dp, getinput%int
+        use module_input, only: getinput%dp, getinput%int
         implicit none
         class(grid), intent(inout) :: gr
         integer :: err, i, m, mup, mu, itheta, iphi, ipsi, io

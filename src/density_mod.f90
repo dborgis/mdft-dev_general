@@ -14,7 +14,7 @@ module density_mod
     end type
 contains
     subroutine build(den, gr)
-        use input, only: getinput%dp
+        use module_input, only: getinput%dp
         use grid_mod, only: grid
         implicit none
         class(density), intent(inout) :: den

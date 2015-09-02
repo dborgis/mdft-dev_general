@@ -5,7 +5,7 @@ PURE SUBROUTINE get_final_density ( neq , solventspecies)
     USE system,          ONLY: solvent
     USE minimizer,       ONLY: CG_vect_new
     USE fft,             ONLY: fftw3 , timesExpPrefactork2
-    USE input,           ONLY: verbose
+    use module_input,           ONLY: verbose
     use module_grid, only: grid
 
     IMPLICIT NONE

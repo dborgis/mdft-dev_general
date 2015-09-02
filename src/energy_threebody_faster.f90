@@ -2,7 +2,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 
     USE precision_kinds ,ONLY: i2b, dp
     use module_grid, only: grid
-!     USE input           ,ONLY: verbose, getinput%dp
+!     use module_input           ,ONLY: verbose, getinput%dp
 !     USE constants       ,ONLY: twopi,zeroC
 !     USE quadrature      ,ONLY: angGrid, molRotGrid
 !     USE system          ,ONLY: thermocond, grid, solute, solvent

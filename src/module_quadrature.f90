@@ -3,7 +3,7 @@ module quadrature
 
   use precision_kinds ,only: dp, i2b
   use constants       ,only: pi, twopi, fourpi, zero, epsdp
-  use input           ,only: getinput
+  use module_input           ,only: getinput
   use module_grid, only: grid
 
   implicit none

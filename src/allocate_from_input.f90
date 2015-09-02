@@ -2,7 +2,7 @@
 SUBROUTINE allocate_from_input
 
     USE precision_kinds     ,ONLY: i2b , dp
-    USE input               ,ONLY: input_line, getinput, verbose
+    use module_input        ,ONLY: input_line, getinput, verbose
     USE system              ,ONLY: thermoCond, mole_fraction, solvent
     USE constants           ,ONLY: eightpiSQ, boltz, navo
     use module_grid, only: grid, init_grid
@@ -76,7 +76,7 @@ SUBROUTINE allocate_from_input
 
     ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
     subroutine mv_solute_to_center
-        use input  ,only: getinput
+        use module_input  ,only: getinput
         use system ,only: solute
         use module_grid, only: grid
         implicit none

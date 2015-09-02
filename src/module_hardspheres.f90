@@ -83,7 +83,7 @@ end subroutine weight_functions
 ! compute accordingly the chemical potential and the reference bulk density
 subroutine compute_hard_spheres_parameters
   use system          ,only: solvent
-  use input           ,only: getinput
+  use module_input           ,only: getinput
   implicit none
   character(4) :: hs_functional
   if(.not.allocated(hs)) allocate(hs(solvent(1)%nspec))
@@ -104,7 +104,7 @@ end subroutine compute_hard_spheres_parameters
 subroutine compute_packing_fractions
   use precision_kinds ,only: dp,i2b
   use system          ,only: solvent
-  use input           ,only: verbose
+  use module_input           ,only: verbose
   implicit none
   integer(i2b) :: s
   do s=1,solvent(1)%nspec
@@ -132,7 +132,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   use constants       ,only: fourpi, pi
   use system          ,only: thermoCond, solvent
   use module_grid, only: grid
-  use input           ,only: verbose, getinput
+  use module_input           ,only: verbose, getinput
   implicit none
   real(dp) :: n0, n1, n2, n3 ! weighted densities in the case of constant density = ref bulk density
   real(dp) :: dphidn(0:3)    ! partial derivative of phi w.r.t. weighted densities
@@ -195,7 +195,7 @@ end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
 ! It then reads line after line the hard sphere radius of each constituant
 subroutine read_hard_sphere_radius
   use precision_kinds  ,only: dp, i2b
-  use input            ,only: input_line
+  use module_input            ,only: input_line
   use system           ,only: thermocond, solvent
   implicit none
   integer(i2b) :: i,j,s

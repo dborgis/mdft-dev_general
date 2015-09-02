@@ -10,7 +10,7 @@ SUBROUTINE external_potential_hard_walls
 ! Step 4/ we compute the external potential created by the walls, which depends upon the fluid radius
 
     USE precision_kinds    ,ONLY: i2b, dp
-    USE input              ,ONLY: input_line, getinput
+    use module_input              ,ONLY: input_line, getinput
     USE system             ,ONLY: solvent
     USE external_potential ,ONLY: Vext_total
     USE hardspheres        ,ONLY: hs

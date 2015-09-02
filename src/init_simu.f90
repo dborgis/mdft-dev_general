@@ -4,7 +4,7 @@ SUBROUTINE init_simu
     USE quadrature  ,ONLY: prepare_quadrature => init
     USE fft         ,ONLY: prepare_corefft_for_MDFT => init, prepare_fft_threads => init_threads
     USE dcf         ,ONLY: init_dcf => init
-    USE input       ,ONLY: getinput
+    use module_input       ,ONLY: getinput
     use minimizer   ,only: prepare_minimizer
     use hardspheres ,only: compute_hard_spheres_parameters
     ! use grid_mod    ,only: grid

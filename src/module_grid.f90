@@ -31,7 +31,7 @@ module module_grid
 
 contains
     subroutine init_grid
-        use input, only: getinput
+        use module_input, only: getinput
         grid%molRotSymOrder = getinput%int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
         grid%length = getinput%dp3( "lxlylz" , defaultvalue= grid%length )
         if (ANY( grid%length  <= 0._dp ) ) THEN

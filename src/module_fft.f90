@@ -20,7 +20,7 @@ MODULE fft
 
     !===============================================================================================================================
     subroutine init_threads
-        use input, only: getinput
+        use module_input, only: getinput
         implicit none
         integer :: n_threads, iRet
         n_threads = getinput%int('number_of_fftw3_threads',1)

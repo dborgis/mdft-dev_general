@@ -5,7 +5,7 @@
 SUBROUTINE init_external_potential
 
     USE precision_kinds     ,only: dp, i2b
-    USE input               ,only: getinput
+    use module_input               ,only: getinput
     USE system              ,only: solute, solvent
     USE external_potential  ,only: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,only: init_lennardjones => init

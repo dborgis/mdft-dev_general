@@ -9,7 +9,7 @@ subroutine init_density
   use module_grid, only: grid
   use minimizer, only: cg_vect_new
   use external_potential, only: Vext_total, Vext_q
-  use input, only: getinput
+  use module_input, only: getinput
   use mathematica, only: chop
 
   implicit none

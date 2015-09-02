@@ -7,7 +7,7 @@ SUBROUTINE vext_total_sum
     USE system,             ONLY: solvent
     use module_grid, only: grid
     USE external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
-    USE input,              ONLY: verbose
+    use module_input,              ONLY: verbose
 
     IMPLICIT NONE
 
