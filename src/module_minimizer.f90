@@ -91,7 +91,6 @@ contains
     subroutine init
         ! this subroutine gets the informations in input file and then allocate, prepare, compute needed data
 
-        use module_input, ONLY: getinput
         use system , ONLY: solvent
         use module_grid, only: grid
 
