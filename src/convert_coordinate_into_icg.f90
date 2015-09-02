@@ -6,9 +6,9 @@
 !     IMPLICIT NONE
 !     integer (i2b) , intent (in) :: i , j , k , io, s
 !     INTEGER(i2b) :: nx, ny, nz
-!     nx= GRID%n_nodes(1)
-!     ny= GRID%n_nodes(2)
-!     nz= GRID%n_nodes(3)
+!     nx= grid%n_nodes(1)
+!     ny= grid%n_nodes(2)
+!     nz= grid%n_nodes(3)
 !
 ! convert_coordinate_into_icg = (s-1)*nx*ny*nz*angGrid%n_angles*molRotGrid%n_angles &
 !     + ( i-1) *ny*nz*angGrid%n_angles*molRotGrid%n_angles+&

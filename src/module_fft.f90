@@ -58,7 +58,7 @@ MODULE fft
         use module_grid, only: grid
         INTEGER(i2b), DIMENSION(3) :: nfft
         INTEGER(i2b):: l
-        nfft = GRID%n_nodes
+        nfft = grid%n_nodes
         ALLOCATE ( kx (nfft(1)/2+1), ky (nfft(2)), kz (nfft(3)), SOURCE=0._dp)
         DO CONCURRENT ( l=1:nfft(1)/2+1 )
             kx(l) = kproj(1,l)
@@ -103,12 +103,12 @@ MODULE fft
         INTEGER(i2b), INTENT(IN) :: dir, l ! dir is 1 for x, 2 for y, 3 for z
         REAL(dp) :: kproj
         INTEGER(i2b) :: m1
-        IF ( l <= GRID%n_nodes(dir)/2 ) THEN
+        IF ( l <= grid%n_nodes(dir)/2 ) THEN
             m1 = l - 1
         ELSE
-            m1 = l - 1 - GRID%n_nodes(dir)
+            m1 = l - 1 - grid%n_nodes(dir)
         END IF
-        kproj = twopi/GRID%length(dir)*REAL(m1,dp)
+        kproj = twopi/grid%length(dir)*REAL(m1,dp)
     END FUNCTION
     !===============================================================================================================================
 

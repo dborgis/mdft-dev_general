@@ -23,10 +23,10 @@ contains
         implicit none
         integer(i2b) :: i, j, k, io, s, icg, nx, ny, nz, no
 
-        nx = GRID%nx
-        ny = GRID%ny
-        nz = GRID%nz
-        no = GRID%no
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
+        no = grid%no
 
         do concurrent (s=1:solvent(1)%nspec)
         if (.not. allocated (solvent(s)%rho)) then
@@ -52,7 +52,7 @@ contains
         integer(i2b) :: i,j,k,o,p,s,io
         integer(i2b) :: nfft(3)
 
-        nfft = GRID%n_nodes
+        nfft = grid%n_nodes
 
         do concurrent (s=1:solvent(1)%nspec)
         if (.not. allocated(solvent(s)%n)) then
@@ -65,11 +65,11 @@ contains
         if (i /= 0) stop "ERROR in allocate solvent%n in from_rho_get_n"
 
         do s =1, solvent(1)%nspec
-            do i =1, GRID%n_nodes(1)
-                do j =1, GRID%n_nodes(2)
-                    do k =1, GRID%n_nodes(3)
-                        do io = 1, GRID%no
-                            solvent(s)%n(i,j,k) = solvent(s)%n(i,j,k) + solvent(s)%rho(i,j,k,io) * GRID%w(io)
+            do i =1, grid%n_nodes(1)
+                do j =1, grid%n_nodes(2)
+                    do k =1, grid%n_nodes(3)
+                        do io = 1, grid%no
+                            solvent(s)%n(i,j,k) = solvent(s)%n(i,j,k) + solvent(s)%rho(i,j,k,io) * grid%w(io)
                         end do
                     end do
                 end do
@@ -100,10 +100,10 @@ contains
 
         integer :: nx, ny, nz, no, ns, io
 
-        nx = GRID%nx
-        ny = GRID%ny
-        nz = GRID%nz
-        no = GRID%no
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
+        no = grid%no
         ns = solvent(1)%nspec
 
         ncg = nx*ny*nz*no*ns

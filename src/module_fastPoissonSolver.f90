@@ -9,7 +9,7 @@ module fastPoissonSolver
 
     implicit none
 
-    real(dp), allocatable, dimension(:,:,:), private :: soluteChargeDensity, Vpoisson ! TODO THIS ON FINE GRID
+    real(dp), allocatable, dimension(:,:,:), private :: soluteChargeDensity, Vpoisson ! TODO THIS ON FINE grid
     type :: PoissonGridType
         integer(i2b) :: n(3)
         real(dp) :: len(3)
@@ -30,8 +30,8 @@ contains
             character(180) :: msg
         end type
         type (ertype) :: er
-        poissonSolverGrid%n = GRID%n_nodes
-        poissonSolverGrid%len  = GRID%length
+        poissonSolverGrid%n = grid%n_nodes
+        poissonSolverGrid%len  = grid%length
         allocate( soluteChargeDensity (poissonSolverGrid%n(1),poissonSolverGrid%n(2),poissonSolverGrid%n(3)) ,SOURCE=0._dp, &
         stat=er%i, errmsg=er%msg)
         if (er%i/=0) then
@@ -164,7 +164,7 @@ contains
             ! new construction
             ! get multipolar electrostatic potential in real space. It is already solvent dependent here
             do s=1,size(solvent)
-                do io = 1, GRID%no
+                do io = 1, grid%no
                     fftw3InBackward = Vpoisson_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     call dfftw_execute (fpspb)
                     solvent(s)%vext(:,:,:,io)%q = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
@@ -217,7 +217,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
     REAL(dp), INTENT(IN) :: gridlen(3)
     INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d, io, no, ns
-    real(dp), dimension(3,solvent(1)%nspec,nb_solvent_sites,GRID%no) :: xmod
+    real(dp), dimension(3,solvent(1)%nspec,nb_solvent_sites,grid%no) :: xmod
     REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
     REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
     TYPE :: testtype
@@ -227,8 +227,8 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     END TYPE
     TYPE(testtype) :: err
 
-    nfft = GRID%n_nodes
-    dl = GRID%dl
+    nfft = grid%n_nodes
+    dl = grid%dl
 
     IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
     IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"
@@ -237,10 +237,10 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
     do concurrent (s=1:size(solvent))
-        DO CONCURRENT( io=1:GRID%no, m=1:size(solvent(s)%site) )
-            xmod(1,s,m,io) = DOT_PRODUCT( [GRID%Rotxx(io),GRID%Rotxy(io),GRID%Rotxz(io)] , solvent(s)%site(m)%r )
-            xmod(2,s,m,io) = DOT_PRODUCT( [GRID%Rotyx(io),GRID%Rotyy(io),GRID%Rotyz(io)] , solvent(s)%site(m)%r )
-            xmod(3,s,m,io) = DOT_PRODUCT( [GRID%Rotzx(io),GRID%Rotzy(io),GRID%Rotzz(io)] , solvent(s)%site(m)%r )
+        DO CONCURRENT( io=1:grid%no, m=1:size(solvent(s)%site) )
+            xmod(1,s,m,io) = DOT_PRODUCT( [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)] , solvent(s)%site(m)%r )
+            xmod(2,s,m,io) = DOT_PRODUCT( [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)] , solvent(s)%site(m)%r )
+            xmod(3,s,m,io) = DOT_PRODUCT( [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)] , solvent(s)%site(m)%r )
         end do
     END DO
 
@@ -252,7 +252,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     err%pb=.FALSE. ! becomes TRUE if a problem is detected during execution.
 
 
-    DO CONCURRENT( s=1:solvent(1)%nspec, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:GRID%no )
+    DO CONCURRENT( s=1:solvent(1)%nspec, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:grid%no )
         vext_q_of_r_and_omega = 0.0_dp
 
         DO CONCURRENT (m=1:nb_solvent_sites, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))

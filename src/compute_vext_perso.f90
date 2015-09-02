@@ -20,12 +20,12 @@ SUBROUTINE compute_vext_perso
 !     INTEGER(i2b) :: nfft1, nfft2, nfft3
 !     REAL(dp) :: lx, ly, lz
 !
-!     lx= GRID%length(1)
-!     ly= GRID%length(2)
-!     lz= GRID%length(3)
-!     nfft1= GRID%n_nodes(1)
-!     nfft2= GRID%n_nodes(2)
-!     nfft3= GRID%n_nodes(3)
+!     lx= grid%length(1)
+!     ly= grid%length(2)
+!     lz= grid%length(3)
+!     nfft1= grid%n_nodes(1)
+!     nfft2= grid%n_nodes(2)
+!     nfft3= grid%n_nodes(3)
 !
 ! ! tell user
 ! write (*,*) '*************************'

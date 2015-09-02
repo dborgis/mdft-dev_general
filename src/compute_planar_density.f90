@@ -11,19 +11,19 @@ SUBROUTINE compute_planar_density(array,filename)
     IMPLICIT NONE
 
     CHARACTER(50), INTENT(IN)   :: filename
-    REAL(dp), INTENT(IN)        :: array(GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3))
+    REAL(dp), INTENT(IN)        :: array(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3))
     INTEGER(i2b)                :: plandir,ig,i,j,k
-    REAL(dp)                    :: x_com(GRID%n_nodes(1)), y_com(GRID%n_nodes(2)), z_com(GRID%n_nodes(3))
+    REAL(dp)                    :: x_com(grid%n_nodes(1)), y_com(grid%n_nodes(2)), z_com(grid%n_nodes(3))
 
     INTEGER(i2b) :: nfft1, nfft2, nfft3
     REAL(dp) :: lx, ly, lz
 
-    lx= GRID%length(1)
-    ly= GRID%length(2)
-    lz= GRID%length(3)
-    nfft1= GRID%n_nodes(1)
-    nfft2= GRID%n_nodes(2)
-    nfft3= GRID%n_nodes(3)
+    lx= grid%length(1)
+    ly= grid%length(2)
+    lz= grid%length(3)
+    nfft1= grid%n_nodes(1)
+    nfft2= grid%n_nodes(2)
+    nfft3= grid%n_nodes(3)
 
 
     ! For now that only planes perpendicular to x, y and z are  Identify the plan coordinate which is 0 (see restrictions to using this program for now)

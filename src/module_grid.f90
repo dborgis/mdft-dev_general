@@ -64,11 +64,11 @@ contains
 
         ! We now have a full description of the space grid
         print*,
-        print*, "[GRID]====="
+        print*, "[grid]====="
         print*, "Box Length :", grid%length
         print*, "nodes      :", grid%n_nodes
         print*, "dx, dy, dz :", grid%dl
-        print*, "[/GRID]===="
+        print*, "[/grid]===="
         print*,
 
     end subroutine init_grid

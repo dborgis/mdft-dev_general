@@ -98,8 +98,8 @@ MODULE dcf
 !             ALLOCATE(ck_angular(num_psi,num_psi,num_phi,num_cos,num_cos,nb_k))
 !             REWIND(39)
 !             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm, ck_angular
-!             IF (num_symm /= GRID%molRotSymOrder) THEN
-!                 PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', GRID%molRotSymOrder, ' being different with num_symm ',num_symm
+!             IF (num_symm /= grid%molRotSymOrder) THEN
+!                 PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', grid%molRotSymOrder, ' being different with num_symm ',num_symm
 !                 STOP
 !             END IF
 !         CLOSE(39)
@@ -147,9 +147,9 @@ MODULE dcf
 !         REAL(dp) :: u_kz,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
 !         LOGICAL :: karim
 !
-!         nfft1 = GRID%n_nodes(1)
-!         nfft2 = GRID%n_nodes(2)
-!         nfft3 = GRID%n_nodes(3)
+!         nfft1 = grid%n_nodes(1)
+!         nfft2 = grid%n_nodes(2)
+!         nfft3 = grid%n_nodes(3)
 !
 !         karim = input_log("ck_angular_interpolation")
 !         IF (karim) THEN

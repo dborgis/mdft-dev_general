@@ -12,15 +12,15 @@ subroutine output_gsitesite
   ! real(dp), parameter :: epsdp=epsilon(1._dp), zerodp = 0._dp, pi = acos(-1._dp)
   ! real(dp), allocatable :: g(:), gcount(:) ! g(r,theta)
   !
-  ! imax=GRID%n_nodes(1)
-  ! jmax=GRID%n_nodes(2)
-  ! kmax=GRID%n_nodes(3)
+  ! imax=grid%n_nodes(1)
+  ! jmax=grid%n_nodes(2)
+  ! kmax=grid%n_nodes(3)
   ! omax=anggrid%n_angles
   ! pmax=molrotgrid%n_angles
   ! allocate( rho(imax,jmax,kmax,omax,pmax) )
-  ! dx=GRID%dl(1)
-  ! dy=GRID%dl(2)
-  ! dz=GRID%dl(3)
+  ! dx=grid%dl(1)
+  ! dy=grid%dl(2)
+  ! dz=grid%dl(3)
   !
   ! ! Get the density per spherical angle Omega (integrate over psi)
   ! icg=0
@@ -39,7 +39,7 @@ subroutine output_gsitesite
   !   end do
   ! end do
   !
-  ! rmax = minval(GRID%length)/2._dp ! maximum range in angstroms of the radial distribution function g(r)
+  ! rmax = minval(grid%length)/2._dp ! maximum range in angstroms of the radial distribution function g(r)
   ! call deduce_optimal_histogram_properties( imax*jmax*kmax, rmax, binrmax, dr) ! deduce optimal number of bins in r (binrmax) and, thus, dr, the binwidth
   !
   ! allocate( g(binrmax) ,stat=allocatestatus) ! allocate the histogram g(r) accordingly

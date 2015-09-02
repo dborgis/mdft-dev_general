@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !
     USE precision_kinds, ONLY: i2b, dp
     use module_grid, only: grid
-!     USE system, ONLY: thermocond, solvent(1)%nspec, GRID, solvent
+!     USE system, ONLY: thermocond, solvent(1)%nspec, grid, solvent
 !     USE dcf, ONLY: chi_l, chi_t, nb_k, delta_k
 !     USE quadrature,ONLY : angGrid, molRotGrid
 !     USE minimizer, ONLY: cg_vect_new, FF, dF_new
@@ -22,7 +22,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !     INTEGER(i2b) :: icg, i, j, k, o, p, n, s, k_index, d
 !     COMPLEX(dp) :: k_tens_k_P(3), toto, temp, Ptrans_k_loc(3), Plong_k_loc(3), Ptot_k_loc(3), molec_polar_k_loc(3),&
 !                    dF_pol_long_k, dF_pol_trans_k
-!     integer(i2b), pointer :: nfft1 => GRID%n_nodes(1), nfft2 => GRID%n_nodes(2), nfft3 => GRID%n_nodes(3)
+!     integer(i2b), pointer :: nfft1 => grid%n_nodes(1), nfft2 => grid%n_nodes(2), nfft3 => grid%n_nodes(3)
 !
 !     if (size(solvent)/=1) STOP 'energy_polarization_multi.f90 not working for multisolvent species'
 !
@@ -36,7 +36,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !                	Initialization
 ! !
 ! !===================================================================================================================================
-!     deltaVkn = 1._dp/PRODUCT(GRID%length)
+!     deltaVkn = 1._dp/PRODUCT(grid%length)
 !     F_pol = 0.0_dp
 !     F_pol_long = 0.0_dp
 !     F_pol_trans = 0.0_dp
@@ -47,7 +47,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !       		            Fourier space		            	!
 ! !							                                    !
 ! !            ====================================================
-!     ALLOCATE ( rho (GRID%n_nodes(1), GRID%n_nodes(2), GRID%n_nodes(3),&
+!     ALLOCATE ( rho (grid%n_nodes(1), grid%n_nodes(2), grid%n_nodes(3),&
 !                         angGrid%n_angles, molRotGrid%n_angles, solvent(1)%nspec), SOURCE=0._dp )
 !     icg=0
 !     DO s=1, solvent(1)%nspec
@@ -76,7 +76,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !             DO o = 1, angGrid%n_angles
 !                 fftw3%in_forward = rho(:,:,:,o,p,s)
 !                 CALL dfftw_execute (fftw3%plan_forward)
-!                 rho_k = fftw3%out_forward *GRID%dv
+!                 rho_k = fftw3%out_forward *grid%dv
 !                 do concurrent (d=1:3)
 !                   Ptot_k(d,:,:,:,s) =  Ptot_k(d,:,:,:,s)+&
 !                     rho_k * angGrid%weight(o) * molRotGrid%weight(p) * solvent(s)%molec_polar_k(d,:,:,:,o,p)
@@ -192,7 +192,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !                     DO o=1,angGrid%n_angles
 !                         DO p=1, molRotGrid%n_angles
 !                             icg = icg + 1
-!                             dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dF_pol_tot (i,j,k,o,p,s) * cg_vect_new(i,j,k,o,p,s) * solvent(s)%rho0 * 2.0_dp * GRID%dv
+!                             dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dF_pol_tot (i,j,k,o,p,s) * cg_vect_new(i,j,k,o,p,s) * solvent(s)%rho0 * 2.0_dp * grid%dv
 !                         END DO
 !                     END DO
 !                 END DO

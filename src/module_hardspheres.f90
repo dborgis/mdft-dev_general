@@ -46,9 +46,9 @@ subroutine weight_functions
   implicit none
   real(dp)     :: kR, sinkR, coskR, norm_k_loc, R, k
   integer(i2b) :: l,m,n,s,nfft1,nfft2,nfft3
-  nfft1=GRID%n_nodes(1)
-  nfft2=GRID%n_nodes(2)
-  nfft3=GRID%n_nodes(3)
+  nfft1=grid%n_nodes(1)
+  nfft2=grid%n_nodes(2)
+  nfft3=grid%n_nodes(3)
   do concurrent( s=1:solvent(1)%nspec ,.not.allocated(hs(1)%w_k) )
     allocate( hs(s)%w_k(nfft1/2+1,nfft2,nfft3,0:3) ,source=zerodp)
   end do
@@ -181,7 +181,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
        ((1./(36*pi))*n2**3/n3**2-n0) *log(1-n3) + n1*n2/(1-n3) + (1./(36*pi))*n2**3/((1-n3)**2*n3)    )
     END IF
     ! integration factors
-    hs(s)%Fexc0 = (hs(s)%Fexc0 - hs(s)%excchempot * solvent(s)%n0) * PRODUCT(GRID%length)
+    hs(s)%Fexc0 = (hs(s)%Fexc0 - hs(s)%excchempot * solvent(s)%n0) * PRODUCT(grid%length)
     if( verbose) then
       write(*,'(A,i1,A,f10.2)') 'Fexc0 ( ' , s , ' ) = ' , hs(s)%Fexc0
     end if

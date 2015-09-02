@@ -10,13 +10,13 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
     IMPLICIT NONE
     INTEGER(i2b) :: i,j,k,io,icg,s,p, molRotSymOrder
     REAL(dp) :: rho_toto,local_Px,local_Py,local_Pz
-    REAL(dp), DIMENSION(GRID%nx,GRID%ny,GRID%nz,solvent(1)%nspec), INTENT(OUT) :: Px,Py,Pz ! equilibrium polarization(r)
+    REAL(dp), DIMENSION(grid%nx,grid%ny,grid%nz,solvent(1)%nspec), INTENT(OUT) :: Px,Py,Pz ! equilibrium polarization(r)
     INTEGER(i2b) :: nx, ny, nz, no, ns
     real(dp), parameter :: zerodp = 0._dp
-    nx= GRID%n_nodes(1)
-    ny= GRID%n_nodes(2)
-    nz= GRID%n_nodes(3)
-    no = GRID%no
+    nx= grid%n_nodes(1)
+    ny= grid%n_nodes(2)
+    nz= grid%n_nodes(3)
+    no = grid%no
     ns = solvent(1)%nspec
 
 
@@ -32,12 +32,12 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
                     local_Px = 0.0_dp
                     local_Py = 0.0_dp
                     local_Pz = 0.0_dp
-                    DO io =1,GRID%no
+                    DO io =1,grid%no
                         icg = icg+1
-                        rho_toto = cg_vect_new(i,j,k,io,s)**2 /(twopi*fourpi/GRID%molRotSymOrder)
-                        local_Px = local_Px + GRID%omx(io) * GRID%w(io) * rho_toto
-                        local_Py = local_Py + GRID%omy(io) * GRID%w(io) * rho_toto
-                        local_Pz = local_Pz + GRID%omz(io) * GRID%w(io) * rho_toto
+                        rho_toto = cg_vect_new(i,j,k,io,s)**2 /(twopi*fourpi/grid%molRotSymOrder)
+                        local_Px = local_Px + grid%omx(io) * grid%w(io) * rho_toto
+                        local_Py = local_Py + grid%omy(io) * grid%w(io) * rho_toto
+                        local_Pz = local_Pz + grid%omz(io) * grid%w(io) * rho_toto
                     END DO
                     Px(i,j,k,s) = local_Px
                     Py(i,j,k,s) = local_Py

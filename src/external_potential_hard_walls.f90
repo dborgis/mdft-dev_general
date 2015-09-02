@@ -29,9 +29,9 @@ SUBROUTINE external_potential_hard_walls
     REAL(dp), ALLOCATABLE, DIMENSION(:)   :: dot_product_normal_vec_OA ! dummy
     REAL(dp) :: OM(3) ! coordinates of grid points
 
-    nfft1 = GRID%n_nodes(1)
-    nfft2 = GRID%n_nodes(2)
-    nfft3 = GRID%n_nodes(3)
+    nfft1 = grid%n_nodes(1)
+    nfft2 = grid%n_nodes(2)
+    nfft3 = grid%n_nodes(3)
 
 ! read how many hard walls are wanted in the supercell
     DO i = 1, SIZE(input_line)
@@ -57,7 +57,7 @@ SUBROUTINE external_potential_hard_walls
 
 ! be sure Vext_total is allocated
     IF (.NOT. ALLOCATED(Vext_total)) THEN
-        ALLOCATE( Vext_total (nfft1,nfft2,nfft3,GRID%no,solvent(1)%nspec) ,SOURCE=0._dp)
+        ALLOCATE( Vext_total (nfft1,nfft2,nfft3,grid%no,solvent(1)%nspec) ,SOURCE=0._dp)
     END IF
 ! be sure radius(:) (solvent radius) is already computed
   !  IF(.NOT. ALLOCATED(hs)) STOP 'Molecular radius of solvent not allocated. critial stop in external_potential_hard_walls.f90'
@@ -65,7 +65,7 @@ SUBROUTINE external_potential_hard_walls
 
     ! compute the potential potential
     DO CONCURRENT ( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:solvent(1)%nspec, w=1:nwall)
-        OM = [ REAL(i-1,dp)*GRID%dl(1) , REAL(j-1,dp)*GRID%dl(2) , REAL(k-1,dp)*GRID%dl(3) ]
+        OM = [ REAL(i-1,dp)*grid%dl(1) , REAL(j-1,dp)*grid%dl(2) , REAL(k-1,dp)*grid%dl(3) ]
         dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
         IF (.NOT. ALLOCATED(hs)) THEN
           IF ( dplan <= 0.5_dp*thickness(w)  ) Vext_total(i,j,k,:,s) = HUGE(1.0_dp)

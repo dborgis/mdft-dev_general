@@ -16,10 +16,10 @@ SUBROUTINE vext_total_sum
     integer :: nx, ny, nz, no, ns
 
 
-    nx = GRID%nx
-    ny = GRID%ny
-    nz = GRID%nz
-    no = GRID%no
+    nx = grid%nx
+    ny = grid%ny
+    nz = grid%nz
+    no = grid%no
     ns = solvent(1)%nspec
 
 

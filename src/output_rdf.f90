@@ -15,7 +15,7 @@ SUBROUTINE output_rdf (array,filename)
 
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION(GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3)), INTENT(IN) :: array
+    REAL(dp), DIMENSION(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3)), INTENT(IN) :: array
     CHARACTER(50), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
@@ -26,8 +26,8 @@ SUBROUTINE output_rdf (array,filename)
     END TYPE
     TYPE (errortype) :: error
 
-    rdfmaxrange = minval(GRID%length)/2._dp
-    CALL deduce_optimal_histogram_properties( product(GRID%n_nodes), rdfmaxrange, nbins, dr )
+    rdfmaxrange = minval(grid%length)/2._dp
+    CALL deduce_optimal_histogram_properties( product(grid%n_nodes), rdfmaxrange, nbins, dr )
 
     OPEN (10, FILE=filename, FORM='formatted')
     WRITE (10,*) '# r  rdf'
@@ -90,7 +90,7 @@ SUBROUTINE output_rdf (array,filename)
         SUBROUTINE histogram_3d (array3D, origin, rdf)
         !===========================================================================================================================
             IMPLICIT NONE
-            REAL(dp), INTENT(IN) :: array3D(GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3))
+            REAL(dp), INTENT(IN) :: array3D(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3))
             REAL(dp), INTENT(OUT) :: rdf(nbins)
             real(dp), intent(in) :: origin(3)
             INTEGER(i2b), ALLOCATABLE :: recurrence_bin(:)
@@ -102,8 +102,8 @@ SUBROUTINE output_rdf (array,filename)
 
             ! Transform array(position) in rdf(radialdistance)
             ! counts the total number of appearence of a value in each bin
-            DO CONCURRENT (i=1:GRID%n_nodes(1), j=1:GRID%n_nodes(2), k=1:GRID%n_nodes(3))
-                r = NORM2(REAL([i,j,k]-1,dp)*GRID%dl - origin(:))
+            DO CONCURRENT (i=1:grid%n_nodes(1), j=1:grid%n_nodes(2), k=1:grid%n_nodes(3))
+                r = NORM2(REAL([i,j,k]-1,dp)*grid%dl - origin(:))
                 bin = INT(r/dr)+1
                 IF (bin>nbins) THEN
                     CYCLE
@@ -140,7 +140,7 @@ SUBROUTINE output_rdf (array,filename)
             REAL(dp), ALLOCATABLE :: rdfUT(:)
             real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
 
-            ALLOCATE (nullarray3D (GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3)) ,SOURCE=0._dp)
+            ALLOCATE (nullarray3D (grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3)) ,SOURCE=0._dp)
             ALLOCATE (rdfUT(nbins),source=0._dp)
 
             ! Test 1

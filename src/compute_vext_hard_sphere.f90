@@ -4,7 +4,7 @@ SUBROUTINE compute_Vext_hard_sphere
     use module_grid, only: grid
 ! USE precision_kinds,only : i2b , dp
 ! use input,only : input_line,input_dp
-! use system,only : solute , nb_solute_sites , GRID
+! use system,only : solute , nb_solute_sites , grid
 ! use external_potential,only : Vext_total , Vext_hard
 ! use quadrature, only: angGrid, molRotGrid
 ! USE hardspheres ,ONLY: hs
@@ -20,15 +20,15 @@ SUBROUTINE compute_Vext_hard_sphere
 ! INTEGER(i2b) :: nfft1, nfft2, nfft3
 ! REAL(dp) :: lx, ly, lz, deltax, deltay, deltaz
 !
-!     lx= GRID%length(1)
-!     ly= GRID%length(2)
-!     lz= GRID%length(3)
-!     deltax= GRID%dl(1)
-!     deltay= GRID%dl(2)
-!     deltaz= GRID%dl(3)
-!     nfft1= GRID%n_nodes(1)
-!     nfft2= GRID%n_nodes(2)
-!     nfft3= GRID%n_nodes(3)
+!     lx= grid%length(1)
+!     ly= grid%length(2)
+!     lz= grid%length(3)
+!     deltax= grid%dl(1)
+!     deltay= grid%dl(2)
+!     deltaz= grid%dl(3)
+!     nfft1= grid%n_nodes(1)
+!     nfft2= grid%n_nodes(2)
+!     nfft3= grid%n_nodes(3)
 !
 !
 ! ! tell user

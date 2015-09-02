@@ -22,11 +22,11 @@ SUBROUTINE init_external_potential
     type (errType) :: er
     real(dp), parameter :: zerodp = 0._dp
 
-    nfft = GRID%n_nodes
-    i = GRID%n_nodes(1)
-    j = GRID%n_nodes(2)
-    k = GRID%n_nodes(3)
-    o = GRID%no
+    nfft = grid%n_nodes
+    i = grid%n_nodes(1)
+    j = grid%n_nodes(2)
+    k = grid%n_nodes(3)
+    o = grid%no
     s = size(solvent)
 
     allocate ( Vext_total(i,j,k,o,s), SOURCE=zerodp ,STAT=er%i,ERRMSG=er%msg)
@@ -78,10 +78,10 @@ SUBROUTINE init_external_potential
             END IF
 
             ! ALLOCATE THE ELECTROSTATIC POTENTIAL
-            nx = GRID%nx
-            ny = GRID%ny
-            nz = GRID%nz
-            no = GRID%no
+            nx = grid%nx
+            ny = grid%ny
+            nz = grid%nz
+            no = grid%no
             ns = solvent(1)%nspec
             allocate ( vext_q (nx,ny,nz,no,ns) , SOURCE=zerodp ,STAT=i, ERRMSG=j)
             IF (i/=0) THEN
@@ -128,7 +128,7 @@ SUBROUTINE init_external_potential
                     ! trouve le site répulsif de soluté le plus proche, sa distance (dnn), eps et sig lj (epsnn et signn)
                     DO j=1, SIZE(solute%site)
                         IF (j==i) CYCLE
-                        d= MODULO(    ABS(solute%site(i)%r(:) -solute%site(j)%r(:))    ,GRID%length(:)/2._dp)
+                        d= MODULO(    ABS(solute%site(i)%r(:) -solute%site(j)%r(:))    ,grid%length(:)/2._dp)
                         IF (NORM2(d)<dnn(i)) THEN
                             dnn(i)= NORM2(d)
                             epsnn(i) = solute%site(j)%eps

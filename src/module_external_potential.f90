@@ -58,14 +58,14 @@ MODULE external_potential
         USE system           ,ONLY: solvent
         use module_grid, only: grid
         IF (.NOT. ALLOCATED(vext_hard_core)) THEN
-            ALLOCATE ( vext_hard_core(GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3),solvent(1)%nspec) ,SOURCE=0._dp)
+            ALLOCATE ( vext_hard_core(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),solvent(1)%nspec) ,SOURCE=0._dp)
         END IF
         vext_hard_core(1,:,:,:) = HUGE(1.0_dp)
-        vext_hard_core(GRID%n_nodes(1),:,:,:) = HUGE(1.0_dp)
+        vext_hard_core(grid%n_nodes(1),:,:,:) = HUGE(1.0_dp)
         vext_hard_core(:,1,:,:) = HUGE(1.0_dp)
-        vext_hard_core(:,GRID%n_nodes(2),:,:) = HUGE(1.0_dp)
+        vext_hard_core(:,grid%n_nodes(2),:,:) = HUGE(1.0_dp)
         vext_hard_core(:,:,1,:) = HUGE(1.0_dp)
-        vext_hard_core(:,:,GRID%n_nodes(3),:) = HUGE(1.0_dp)
+        vext_hard_core(:,:,grid%n_nodes(3),:) = HUGE(1.0_dp)
     END SUBROUTINE vextdef1
     !===============================================================================================================================
 

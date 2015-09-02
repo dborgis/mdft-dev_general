@@ -4,7 +4,7 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 
   USE precision_kinds,only : dp , i2b
   use module_grid, only: grid
-!   use system,only : thermocond, solvent, GRID
+!   use system,only : thermocond, solvent, grid
 !   USE dcf, ONLY: c_s, nb_k ,delta_k
 !   use constants,only : fourpi , i_complex,twopi
 !   USE minimizer, ONLY: cg_vect_new, FF , dF_new
@@ -57,13 +57,13 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 !     INTEGER(i2b) :: nfft1, nfft2, nfft3
 !     REAL(dp) :: lx, ly, lz, deltav
 !
-!     lx= GRID%length(1)
-!     ly= GRID%length(2)
-!     lz= GRID%length(3)
-!     nfft1= GRID%n_nodes(1)
-!     nfft2= GRID%n_nodes(2)
-!     nfft3= GRID%n_nodes(3)
-!     deltav= PRODUCT(GRID%dl)
+!     lx= grid%length(1)
+!     ly= grid%length(2)
+!     lz= grid%length(3)
+!     nfft1= grid%n_nodes(1)
+!     nfft2= grid%n_nodes(2)
+!     nfft3= grid%n_nodes(3)
+!     deltav= PRODUCT(grid%dl)
 !
 !
 !   call cpu_time(time0)

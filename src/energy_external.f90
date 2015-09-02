@@ -14,10 +14,10 @@ subroutine energy_external (Fext)
   integer(i2b) :: i, j, k, o, p, s, nx, ny, nz, no, ns, io
   real(dp) :: psi, wdfve, imposedChemPot
 
-  nx = GRID%nx
-  ny = GRID%ny
-  nz = GRID%nz
-  no = GRID%no
+  nx = grid%nx
+  ny = grid%ny
+  nz = grid%nz
+  no = grid%no
   ns = solvent(1)%nspec
 
   ! Impose a chemical potential
@@ -27,9 +27,9 @@ subroutine energy_external (Fext)
   ! F_{ext}[\rho(\vec{r},\vec{\Omega})]=\int d \vec{r} d \vec{\Omega} V_{ext}(\vec{r},\vec{\Omega})\rho(\vec{r},\vec{\Omega})
 
   Fext = 0._dp
-  do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:GRID%no, s=1:ns )
+  do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:grid%no, s=1:ns )
       psi = cg_vect_new(i,j,k,io,s)
-      wdfve = GRID%w(io) * GRID%dv * solvent(s)%rho0 * (Vext_total(i,j,k,io,s) - imposedChemPot)
+      wdfve = grid%w(io) * grid%dv * solvent(s)%rho0 * (Vext_total(i,j,k,io,s) - imposedChemPot)
       Fext  = Fext + psi**2 * wdfve
       dF_new(i,j,k,io,s) = dF_new(i,j,k,io,s) + 2.0_dp*psi*wdfve
   end do

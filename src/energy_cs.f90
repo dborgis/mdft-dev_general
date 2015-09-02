@@ -20,17 +20,17 @@ contains
         integer, intent(out) :: exitstatus
         type(cfile), intent(in) :: cs
         real(dp), intent(out) :: dFexcnn(:,:,:,:,:)
-        real(dp) :: n(GRID%nx,GRID%ny,GRID%nz), n_loc
+        real(dp) :: n(grid%nx,grid%ny,grid%nz), n_loc
 
         exitstatus = 1 ! everything is fine
-        nx = GRID%nx
-        ny = GRID%ny
-        nz = GRID%nz
-        no = GRID%no
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
+        no = grid%no
         ns = solvent(1)%nspec
         ! allocate( dFexcnn(nx,ny,nz,o,p,solvent(1)%nspec) ,source=0._dp)
         kT = thermocond%kbT
-        dV = GRID%dV
+        dV = grid%dV
 
         if( size(solvent)/=1 ) then
             exitstatus=-1
@@ -44,7 +44,7 @@ contains
             do j = 1, ny
                 do i = 1, nx
                     do io = 1, no
-                        n(i,j,k) = n(i,j,k) + cg_vect_new(i,j,k,io,s)**2 * solvent(s)%rho0 * GRID%w(io)
+                        n(i,j,k) = n(i,j,k) + cg_vect_new(i,j,k,io,s)**2 * solvent(s)%rho0 * grid%w(io)
                     end do
                 end do
             end do
@@ -79,7 +79,7 @@ contains
 
         ! gradient
         do concurrent( i=1:nx, j=1:ny, k=1:nz, io=1:no, s=1:solvent(1)%nspec )
-            dfexcnn(i,j,k,io,s) = 2*cg_vect_new(i,j,k,io,s) * GRID%w(io) * fftw3%out_backward(i,j,k) *(-kT*dV*solvent(s)%rho0)
+            dfexcnn(i,j,k,io,s) = 2*cg_vect_new(i,j,k,io,s) * grid%w(io) * fftw3%out_backward(i,j,k) *(-kT*dV*solvent(s)%rho0)
         end do
 
     end subroutine energy_cs

@@ -28,9 +28,9 @@ SUBROUTINE print_supercell_xsf
         write(5,100)'# pay attention to vectors as they are written in horizontal way which is quite unusual'
         write(5,100)'# for now only orthorhombic structures are allowed (free norms of lattice vectors, all angles are 90 degrees)'
         write(5,100)'PRIMVEC'
-        write(5,101) GRID%length(1), 0., 0.
-        write(5,101) 0., GRID%length(2), 0.
-        write(5,101) 0., 0., GRID%length(3)
+        write(5,101) grid%length(1), 0., 0.
+        write(5,101) 0., grid%length(2), 0.
+        write(5,101) 0., 0., grid%length(3)
         write(5,*)
         write(5,100)'# Then one needs to specify the atoms belonging to the unit cell. '
         write(5,100)'# First number stands for number of atoms in the primitive cell (2 in this case).'

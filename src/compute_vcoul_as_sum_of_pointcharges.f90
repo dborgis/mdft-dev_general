@@ -16,7 +16,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
     REAL(dp)        :: xgrid(3), xv(3), xuv(3), xuv2, V_psi
     REAL, PARAMETER :: hardShellRadiusSQ=1._dp ! charge pseudo radius **2   == Rc**2
     real, parameter :: epsdp = epsilon(1._dp)
-    REAL(dp), DIMENSION( SIZE(solvent(1)%site), GRID%no) :: xmod, ymod, zmod
+    REAL(dp), DIMENSION( SIZE(solvent(1)%site), grid%no) :: xmod, ymod, zmod
 
     IF (.NOT. ALLOCATED(Vext_q)) STOP "Vext_q should be allocated in SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
     IF ( ANY(Vext_q/=0.0_dp) ) STOP "Vext_q should be zero at the beginning of SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
@@ -42,20 +42,20 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
 
     ! precompute rot_ij(omega,psi)*k_solv(a) for speeding up
-    DO CONCURRENT ( m=1:nb_solvent_sites, io=1:GRID%no )
-        xmod (m,io) = DOT_PRODUCT( [GRID%rotxx(io), GRID%rotxy(io), GRID%rotxz(io)] , solvent(1)%site(m)%r )
-        ymod (m,io) = DOT_PRODUCT( [GRID%rotyx(io), GRID%rotyy(io), GRID%rotyz(io)] , solvent(1)%site(m)%r )
-        zmod (m,io) = DOT_PRODUCT( [GRID%rotzx(io), GRID%rotzy(io), GRID%rotzz(io)] , solvent(1)%site(m)%r )
+    DO CONCURRENT ( m=1:nb_solvent_sites, io=1:grid%no )
+        xmod (m,io) = DOT_PRODUCT( [grid%rotxx(io), grid%rotxy(io), grid%rotxz(io)] , solvent(1)%site(m)%r )
+        ymod (m,io) = DOT_PRODUCT( [grid%rotyx(io), grid%rotyy(io), grid%rotyz(io)] , solvent(1)%site(m)%r )
+        zmod (m,io) = DOT_PRODUCT( [grid%rotzx(io), grid%rotzy(io), grid%rotzz(io)] , solvent(1)%site(m)%r )
     END DO
 
 
     do s=1,solvent(1)%nspec
-        do io=1,GRID%no
-            do k=1,GRID%nz
-                do j=1,GRID%ny
-                    do i=1,GRID%nx
+        do io=1,grid%no
+            do k=1,grid%nz
+                do j=1,grid%ny
+                    do i=1,grid%nx
 
-                        xgrid = real([i,j,k]-1,dp)*GRID%dl
+                        xgrid = real([i,j,k]-1,dp)*grid%dl
                         v_psi = 0._dp
 
                         do m=1,nb_solvent_sites
@@ -84,10 +84,10 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
 
     !
-    ! DO CONCURRENT (s=1:solvent(1)%nspec, i=1:GRID%n_nodes(1), j=1:GRID%n_nodes(2), k=1:GRID%n_nodes(3), &
-    !                io=1:GRID%no)
+    ! DO CONCURRENT (s=1:solvent(1)%nspec, i=1:grid%n_nodes(1), j=1:grid%n_nodes(2), k=1:grid%n_nodes(3), &
+    !                io=1:grid%no)
     !
-    !     xgrid = REAL([i,j,k]-1,dp)*GRID%dl
+    !     xgrid = REAL([i,j,k]-1,dp)*grid%dl
     !     V_psi = 0._dp
     !
     !     DO CONCURRENT (m=1:SIZE(solvent(s)%site), n=1:SIZE(solute%site),&
@@ -114,7 +114,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
     !         CHARACTER(50) :: filename
     !         PRINT*,"minval and maxval of Vext_q :", MINVAL( Vext_q (:,:,:,:,:,:) ), MAXVAL( Vext_q (:,:,:,:,:,:) )
     !         ! Get the external potential over orientations and print it
-    !         ALLOCATE ( temparray ( GRID%n_nodes(1),GRID%n_nodes(2),GRID%n_nodes(3) ),SOURCE=0._dp)
+    !         ALLOCATE ( temparray ( grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3) ),SOURCE=0._dp)
     !         CALL mean_over_orientations ( Vext_q (:,:,:,:,:,1) , temparray )
     !         temparray = temparray/fourpi
     !         filename = 'output/Vcoul.cube'

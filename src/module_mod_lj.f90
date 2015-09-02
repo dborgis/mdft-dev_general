@@ -18,13 +18,13 @@ MODULE mod_lj
 
         SUBROUTINE init
             IMPLICIT NONE
-            nx = GRID%nx
-            ny = GRID%ny
-            nz = GRID%nz
-            lx = GRID%lx
-            ly = GRID%ly
-            lz = GRID%lz
-            no = GRID%no
+            nx = grid%nx
+            ny = grid%ny
+            nz = grid%nz
+            lx = grid%lx
+            ly = grid%ly
+            lz = grid%lz
+            no = grid%no
             ns = solvent(1)%nspec
             IF (.NOT. ALLOCATED(Vext_lj)) ALLOCATE( Vext_lj(nx,ny,nz,no,ns) ,SOURCE=0._dp)
             call calculate
@@ -63,9 +63,9 @@ MODULE mod_lj
                 IF ( solvent(1)%site(v)%eps==0._dp ) CYCLE ! if solvent site wear no LJ
 
                 DO CONCURRENT( i=1:nx, j=1:ny, k=1:nz, s=1:ns )
-                    x_grid=REAL(i-1,dp)*GRID%dl(1)
-                    y_grid=REAL(j-1,dp)*GRID%dl(2)
-                    z_grid=REAL(k-1,dp)*GRID%dl(3)
+                    x_grid=REAL(i-1,dp)*grid%dl(1)
+                    y_grid=REAL(j-1,dp)*grid%dl(2)
+                    z_grid=REAL(k-1,dp)*grid%dl(3)
 
                     V_node=0.0_dp
                     soluteloop: DO u=1,SIZE(solute%site)

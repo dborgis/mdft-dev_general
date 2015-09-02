@@ -57,10 +57,10 @@ subroutine init_density
 !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
 
 do s = 1, solvent(1)%nspec
-    do io = 1, GRID%no
-        do k = 1, GRID%nz
-            do j = 1, GRID%ny
-                do i = 1, GRID%nx
+    do io = 1, grid%no
+        do k = 1, grid%nz
+            do j = 1, grid%ny
+                do i = 1, grid%nx
 
                     Vext_total_local = Vext_total (i,j,k,io,s)
                     if ( allocated( Vext_q) ) then

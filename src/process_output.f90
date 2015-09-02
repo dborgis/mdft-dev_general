@@ -30,7 +30,7 @@ SUBROUTINE process_output
     end do
 
     DO s=1,solvent(1)%nspec
-      write(*,'(A,F12.2)') "Solvent molecules in supercell", SUM(neq)*GRID%dv *solvent(s)%n0
+      write(*,'(A,F12.2)') "Solvent molecules in supercell", SUM(neq)*grid%dv *solvent(s)%n0
     END DO
 
 
@@ -78,7 +78,7 @@ SUBROUTINE process_output
                     INTEGER(i2b) :: i,j
                     DO i=1,SIZE(neq,1)
                         DO j=1,SIZE(neq,2)
-                            WRITE(378,*)[i,j]*GRID%length(1:2)/GRID%n_nodes(1:2),neq(i,j,1,1)
+                            WRITE(378,*)[i,j]*grid%length(1:2)/grid%n_nodes(1:2),neq(i,j,1,1)
                         END DO
                         WRITE(378,*)
                     END DO

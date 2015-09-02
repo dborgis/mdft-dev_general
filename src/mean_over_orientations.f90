@@ -11,8 +11,8 @@ SUBROUTINE mean_over_orientations ( arrayin , arrayout )
     integer :: io
 
     arrayout = 0.0_dp
-    do io = 1, GRID%no
-        arrayout = arrayout + arrayin(:,:,:,io)*GRID%w(io)
+    do io = 1, grid%no
+        arrayout = arrayout + arrayin(:,:,:,io)*grid%w(io)
     end do
 
     ! arrayout = sum( arrayin * grid%w(:))

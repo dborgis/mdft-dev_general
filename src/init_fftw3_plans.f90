@@ -12,7 +12,7 @@ SUBROUTINE init_fftw3_plans
 
     ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
     ! or needed as input for inverse FFT (in_backward) etc.
-    nfft = GRID%n_nodes
+    nfft = grid%n_nodes
     ALLOCATE ( fftw3%in_forward   ( nfft(1)      , nfft(2) , nfft(3) ) )
     ALLOCATE ( fftw3%out_forward  ( nfft(1)/2 +1 , nfft(2) , nfft(3) ) )
     ALLOCATE ( fftw3%out_backward ( nfft(1)      , nfft(2) , nfft(3) ) )

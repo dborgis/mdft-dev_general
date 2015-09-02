@@ -29,9 +29,9 @@ subroutine adhoc_corrections_to_gsolv
 
     FFcorrected_final = FF
 
-    nfft1 = GRID%n_nodes(1)
-    nfft2 = GRID%n_nodes(2)
-    nfft3 = GRID%n_nodes(3)
+    nfft1 = grid%n_nodes(1)
+    nfft2 = grid%n_nodes(2)
+    nfft3 = grid%n_nodes(3)
 
     open(79,file="output/FF"); write(79,*) FF; close(79)
 
@@ -64,14 +64,14 @@ subroutine adhoc_corrections_to_gsolv
   end do
   allocate (nmolecule(size(solvent)))
   do concurrent (s=1:size(solvent))
-      nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *GRID%dv ! number of solvent molecules inside the supercell containing the solute
+      nmolecule%withsolute = sum(solvent(s)%n * solvent(s)%n0)  *grid%dv ! number of solvent molecules inside the supercell containing the solute
   end do
-  nmolecule%bulk = solvent%n0*product(GRID%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
+  nmolecule%bulk = solvent%n0*product(grid%length) ! number of solvent molecules inside the same supercell (same volume) without solute.
   write(*,'(A,F12.2)') "Solvent molecules with solute   ", nmolecule%withsolute
   write(*,'(A,F12.2)') "Solvent molecules without solute", nmolecule%bulk
   write(*,'(A,F12.2)') "ΔN solvent", nmolecule(1)%bulk - nmolecule(1)%withsolute
   write(*,'(A,F12.7,A)') "Solvent density", solvent(1)%n0," molecule.Ang⁻³"
-  write(*,'(A,F12.5,A)') "Supercell volume", product(GRID%length)," Ang³"
+  write(*,'(A,F12.5,A)') "Supercell volume", product(grid%length)," Ang³"
 
 
 
@@ -80,7 +80,7 @@ subroutine adhoc_corrections_to_gsolv
   cg_vect_new = zerodp ! set Density to 0
   FF = zerodp         ! set energy to 0
   call energy_and_gradient(-10) ! this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
-  Pbulk = FF/product(GRID%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
+  Pbulk = FF/product(grid%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
   write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa*Pa_to_atm," atm"
   open(81,file="output/bulk-pressure"); write(81,*) Pbulk; close(81)
 

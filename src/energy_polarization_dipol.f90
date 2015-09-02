@@ -2,7 +2,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !
     USE precision_kinds, ONLY : i2b, dp
     use module_grid, only: grid
-!     USE system,          ONLY : thermocond, GRID, solvent
+!     USE system,          ONLY : thermocond, grid, solvent
 !     USE minimizer,       ONLY : cg_vect_new , FF , dF_new
 !     USE constants,       ONLY : twopi, zeroC
 !     USE fft,             ONLY : fftw3, k2, kproj, norm_k
@@ -19,12 +19,12 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !     INTEGER(i2b):: i, j, k, l, m, n, o, p, nfft1, nfft2, nfft3
 !     integer(i2b), parameter :: s=1
 !
-!     nfft1 = GRID%n_nodes(1)
-!     nfft2 = GRID%n_nodes(2)
-!     nfft3 = GRID%n_nodes(3)
-!     Lx = GRID%length(1)
-!     Ly = GRID%length(2)
-!     Lz = GRID%length(3)
+!     nfft1 = grid%n_nodes(1)
+!     nfft2 = grid%n_nodes(2)
+!     nfft3 = grid%n_nodes(3)
+!     Lx = grid%length(1)
+!     Ly = grid%length(2)
+!     Lz = grid%length(3)
 !     Nk = REAL ( nfft1*nfft2*nfft3 , dp ) ! total number of k grid points
 !
 !
@@ -34,7 +34,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !     CALL build_excess_electric_field_from_inverse_Fourier_transform
 !
 !
-!     fact = GRID%dv * solvent(1)%rho0 ! integration factor
+!     fact = grid%dv * solvent(1)%rho0 ! integration factor
 !     Fint = 0.0_dp
 !     DO i = 1, nfft1
 !     DO j = 1, nfft2
@@ -54,7 +54,7 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !     END DO
 !     END DO
 !     END DO
-!     Fint = Fint * 0.5_dp * GRID%dv * solvent(1)%rho0
+!     Fint = Fint * 0.5_dp * grid%dv * solvent(1)%rho0
 !     FF = FF + Fint
 !
 !     DEALLOCATE ( Ex, Ey, Ez )
