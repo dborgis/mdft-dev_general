@@ -261,22 +261,23 @@ end function input_int
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION input_char (tag)
+  FUNCTION input_char (tag, defaultvalue)
     IMPLICIT NONE
     CHARACTER(50) :: input_char
     CHARACTER(*), INTENT(IN) :: tag
+    character(*), intent(in), optional :: defaultvalue
     INTEGER :: i,j,imax,iostatint
+    logical :: tag_is_found
+    tag_is_found = .false.
     if (.not. allocated(input_line) ) call put_input_in_character_array
     j=LEN(tag)
     i=0
     imax=SIZE(input_line)
     DO i=1,imax+1
-      IF (i==imax+1) THEN
-        PRINT*,"I didnt find keyword '",tag,"' in input/dft.in"
-        STOP
-      END IF
+      IF (i==imax+1) exit
       IF (input_line(i)(1:j)==tag .AND. input_line(i)(j+1:j+1)==' ') THEN
         READ(input_line(i)(j+4:j+50),*,IOSTAT=iostatint) input_char
+        tag_is_found = .true.
         IF (iostatint/=0) THEN
           PRINT*,"I have a problem in reading input line:"
           PRINT*,TRIM(ADJUSTL(input_line(i)))
@@ -294,6 +295,14 @@ end function input_int
       PRINT*,"Tag after ",tag," is only whitespaces."
       STOP
     END IF
+    if (.not. tag_is_found) then
+        if (present(defaultvalue)) then
+            input_char = defaultvalue
+        else
+            print*, "I did not find the keyword", tag
+            stop
+        end if
+    end if
   END FUNCTION input_char
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
