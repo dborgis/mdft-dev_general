@@ -35,143 +35,179 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_dp (tag, defaultValue)
+  function input_dp (tag, defaultvalue)
     IMPLICIT NONE
     REAL(DP) :: input_dp
     CHARACTER(*), INTENT(IN) :: tag
-    REAL(DP), optional, intent(in) :: defaultValue
+    REAL(DP), optional, intent(in) :: defaultvalue
     INTEGER :: i, j
-    logical :: ifoundtag
+    logical :: tag_is_found
     if (.not. allocated(input_line) ) call put_input_in_character_array
-    ifoundtag = .false.
+    tag_is_found = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
       IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
         READ(input_line(i)(j+4:j+50),*) input_dp
-        ifoundtag = .true.
+        tag_is_found = .true.
         exit
       end if
     END DO
-    if (ifoundtag .eqv. .false. .and. present(defaultValue)) input_dp = defaultValue
+    if (tag_is_found .eqv. .false. .and. present(defaultvalue)) input_dp = defaultvalue
   END FUNCTION input_dp
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_dp2 (tag, defaultValue)
+  function input_dp2 (tag, defaultvalue)
     IMPLICIT NONE
     REAL(DP) :: input_dp2(2)
     CHARACTER(*), INTENT(IN) :: tag
-    REAL(DP), optional, intent(in) :: defaultValue(2)
+    REAL(DP), optional, intent(in) :: defaultvalue(2)
     INTEGER :: i, j
-    logical :: ifoundtag
+    logical :: tag_is_found
     if (.not. allocated(input_line) ) call put_input_in_character_array
-    ifoundtag = .false.
+    tag_is_found = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
       IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
         READ(input_line(i)(j+4:j+50),*) input_dp2
-        ifoundtag = .true.
+        tag_is_found = .true.
         exit
       end if
     END DO
-    if (ifoundtag .eqv. .false. .and. present(defaultValue)) input_dp2 = defaultValue
+    if (tag_is_found .eqv. .false. .and. present(defaultvalue)) input_dp2 = defaultvalue
   END FUNCTION input_dp2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_dp3 (tag, defaultValue)
+  function input_dp3 (tag, defaultvalue)
     IMPLICIT NONE
     REAL(DP) :: input_dp3(3)
     CHARACTER(*), INTENT(IN) :: tag
-    REAL(DP), optional, intent(in) :: defaultValue(3)
+    REAL(DP), optional, intent(in) :: defaultvalue(3)
     INTEGER :: i, j
-    logical :: ifoundtag
+    logical :: tag_is_found
     if (.not. allocated(input_line) ) call put_input_in_character_array
-    ifoundtag = .false.
+    tag_is_found = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
       IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
         READ(input_line(i)(j+4:j+50),*) input_dp3
-        ifoundtag = .true.
+        tag_is_found = .true.
         exit
       end if
     END DO
-    if (ifoundtag .eqv. .false. .and. present(defaultValue)) input_dp3 = defaultValue
+    if (tag_is_found .eqv. .false. .and. present(defaultvalue)) input_dp3 = defaultvalue
   END FUNCTION input_dp3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_int (tag, defaultValue)
+    function input_int (tag, defaultvalue, assert)
     IMPLICIT NONE
     INTEGER :: input_int
     CHARACTER(*), INTENT(IN) :: tag
-    integer, optional, intent(in) :: defaultValue
+    integer, optional, intent(in) :: defaultvalue
+    character(*), optional, intent(in) :: assert
     INTEGER :: i, j
-    logical :: ifoundtag
+    logical :: tag_is_found
     if (.not. allocated(input_line) ) call put_input_in_character_array
-    ifoundtag = .false.
+    tag_is_found = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
       IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
         READ(input_line(i)(j+4:j+50),*) input_int
-        ifoundtag = .true.
+        tag_is_found = .true.
         exit
       end if
     END DO
-    if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int = defaultValue
-  END FUNCTION input_int
+    if (.not. tag_is_found) then
+        if (present(defaultvalue)) then
+            input_int = defaultvalue
+        else
+            print*, "looking for tag", tag, "but unable to find it."
+            stop
+        end if
+    end if
+
+    if (present(assert)) then
+        select case (assert)
+        case (">0")
+            if (input_int <= 0) then
+                print*, tag,"=",input_int,". Must be >0"
+                stop
+            end if
+        case (">=0")
+            if (input_int < 0) then
+                print*, tag,"=",input_int,". Must be >=0"
+                stop
+            end if
+        case ("<0")
+            if (input_int >= 0) then
+                print*, tag,"=",input_int,". Must be <0"
+                stop
+            end if
+        case ("<=0")
+            if (input_int > 0) then
+                print*, tag,"=",input_int,". Must be <=0"
+                stop
+            end if
+        case default
+            stop "assert not found"
+        end select
+    end if
+
+end function input_int
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_int2 (tag, defaultValue)
+  function input_int2 (tag, defaultvalue)
     IMPLICIT NONE
     INTEGER :: input_int2(2)
     CHARACTER(*), INTENT(IN) :: tag
-    integer, optional, intent(in) :: defaultValue(2)
+    integer, optional, intent(in) :: defaultvalue(2)
     INTEGER :: i, j
-    logical :: ifoundtag
+    logical :: tag_is_found
     if (.not. allocated(input_line) ) call put_input_in_character_array
-    ifoundtag = .false.
+    tag_is_found = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
       IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
         READ(input_line(i)(j+4:j+50),*) input_int2
-        ifoundtag = .true.
+        tag_is_found = .true.
         exit
       end if
     END DO
-    if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int2 = defaultValue
+    if (tag_is_found.eqv..false. .and. present(defaultvalue)) input_int2 = defaultvalue
   END FUNCTION input_int2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_int3 (tag, defaultValue)
+  function input_int3 (tag, defaultvalue)
     IMPLICIT NONE
     INTEGER :: input_int3(3)
     CHARACTER(*), INTENT(IN) :: tag
-    integer, optional, intent(in) :: defaultValue(3)
+    integer, optional, intent(in) :: defaultvalue(3)
     INTEGER :: i, j
-    logical :: ifoundtag
+    logical :: tag_is_found
     if (.not. allocated(input_line) ) call put_input_in_character_array
-    ifoundtag = .false.
+    tag_is_found = .false.
     j=LEN(tag)
     DO i = 1, SIZE( input_line)
       IF( input_line( i)( 1:j) == tag  .AND. input_line(i)(j+1:j+1)==' ' ) then
         READ(input_line(i)(j+4:j+50),*) input_int3
-        ifoundtag = .true.
+        tag_is_found = .true.
         exit
       end if
     END DO
-    if (ifoundtag.eqv..false. .and. present(defaultValue)) input_int3 = defaultValue
+    if (tag_is_found.eqv..false. .and. present(defaultvalue)) input_int3 = defaultvalue
   END FUNCTION input_int3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION input_log (tag, defaultValue)
+  FUNCTION input_log (tag, defaultvalue)
     IMPLICIT NONE
     logical :: input_log
     CHARACTER(*), INTENT(IN) :: tag
-    logical, intent(in), optional :: defaultValue
+    logical, intent(in), optional :: defaultvalue
     CHARACTER :: text
     INTEGER :: i, j, lentag
     logical :: found
@@ -188,8 +224,8 @@ contains
         exit
       end if
     END DO
-    if( .not.found .and. present(defaultValue) ) then
-      input_log = defaultValue
+    if( .not.found .and. present(defaultvalue) ) then
+      input_log = defaultvalue
       return
     else if( .not.found ) then
       print*, "I could not find keyword '", tag,"' in input/dft.in"
