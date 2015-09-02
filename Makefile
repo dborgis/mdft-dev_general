@@ -28,7 +28,7 @@ endif
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -fdiagnostics-color=auto -march=native -fimplicit-none -ffree-line-length-none #-ffpe-trap=invalid,zero,overflow# -Wall -fcheck=all -g3 -fbacktrace
+FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -fdiagnostics-color=auto -march=native -fimplicit-none -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fcheck=all -g3# -Wall -g3 -fbacktrace
 LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 
 
@@ -169,6 +169,7 @@ $(OBJDIR)/chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin.o:\
 
 $(OBJDIR)/compute_planar_density.o:\
 	$(SRCDIR)/compute_planar_density.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -432,6 +433,7 @@ $(OBJDIR)/main.o:\
 
 $(OBJDIR)/mean_over_orientations.o:\
 	$(SRCDIR)/mean_over_orientations.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -450,12 +452,14 @@ $(OBJDIR)/module_dcf.o:\
 
 $(OBJDIR)/module_external_potential.o:\
 	$(SRCDIR)/module_external_potential.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_constants.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/module_fft.o:\
 	$(SRCDIR)/module_fft.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_input.o
@@ -473,6 +477,7 @@ $(OBJDIR)/module_input.o:\
 
 $(OBJDIR)/module_minimizer.o:\
 	$(SRCDIR)/module_minimizer.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o\
 
@@ -518,6 +523,7 @@ $(OBJDIR)/print_input_in_output_folder.o:\
 
 $(OBJDIR)/print_supercell_xsf.o:\
 	$(SRCDIR)/print_supercell_xsf.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/module_precision_kinds.o
 
@@ -533,6 +539,7 @@ $(OBJDIR)/process_output.o:\
 
 $(OBJDIR)/read_solute.o:\
 	$(SRCDIR)/read_solute.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_periodic_table.o\
 	$(OBJDIR)/module_input.o\
 	$(OBJDIR)/module_system.o\
@@ -560,6 +567,7 @@ $(OBJDIR)/vext_total_sum.o:\
 
 $(OBJDIR)/write_to_cube_file.o:\
 	$(SRCDIR)/write_to_cube_file.f90\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o
 
