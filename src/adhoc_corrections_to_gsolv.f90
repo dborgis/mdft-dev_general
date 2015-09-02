@@ -75,7 +75,7 @@ subroutine adhoc_corrections_to_gsolv
   cg_vect_new = zerodp ! set Density to 0
   FF = zerodp         ! set energy to 0
   call energy_and_gradient(-10) ! this step is not a minimization step so we give a negative integeration number to avoid the printing of the not relevant obtained energies
-  Pbulk = FF/product(spaceGrid%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
+  Pbulk = FF/product(spacegrid%length) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
   write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa*Pa_to_atm," atm"
   open(81,file="output/bulk-pressure"); write(81,*) Pbulk; close(81)
 

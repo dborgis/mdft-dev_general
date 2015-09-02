@@ -9,12 +9,12 @@ SUBROUTINE output_rdf (array,filename)
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
     USE precision_kinds ,ONLY: dp, i2b, sp
-    USE system          ,ONLY: nb_species, spaceGrid, solute
+    USE system          ,ONLY: nb_species, spacegrid, solute
     use mathematica     ,only: deduce_optimal_histogram_properties, akima_spline, chop
 
     IMPLICIT NONE
 
-    REAL(dp), DIMENSION(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)), INTENT(IN) :: array
+    REAL(dp), DIMENSION(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3)), INTENT(IN) :: array
     CHARACTER(50), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
@@ -25,8 +25,8 @@ SUBROUTINE output_rdf (array,filename)
     END TYPE
     TYPE (errortype) :: error
 
-    rdfmaxrange = minval(spaceGrid%length)/2._dp
-    CALL deduce_optimal_histogram_properties( product(spaceGrid%n_nodes), rdfmaxrange, nbins, dr )
+    rdfmaxrange = minval(spacegrid%length)/2._dp
+    CALL deduce_optimal_histogram_properties( product(spacegrid%n_nodes), rdfmaxrange, nbins, dr )
 
     OPEN (10, FILE=filename, FORM='formatted')
     WRITE (10,*) '# r  rdf'
@@ -89,7 +89,7 @@ SUBROUTINE output_rdf (array,filename)
         SUBROUTINE histogram_3d (array3D, origin, rdf)
         !===========================================================================================================================
             IMPLICIT NONE
-            REAL(dp), INTENT(IN) :: array3D(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3))
+            REAL(dp), INTENT(IN) :: array3D(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3))
             REAL(dp), INTENT(OUT) :: rdf(nbins)
             real(dp), intent(in) :: origin(3)
             INTEGER(i2b), ALLOCATABLE :: recurrence_bin(:)
@@ -101,8 +101,8 @@ SUBROUTINE output_rdf (array,filename)
 
             ! Transform array(position) in rdf(radialdistance)
             ! counts the total number of appearence of a value in each bin
-            DO CONCURRENT (i=1:spaceGrid%n_nodes(1), j=1:spaceGrid%n_nodes(2), k=1:spaceGrid%n_nodes(3))
-                r = NORM2(REAL([i,j,k]-1,dp)*spaceGrid%dl - origin(:))
+            DO CONCURRENT (i=1:spacegrid%n_nodes(1), j=1:spacegrid%n_nodes(2), k=1:spacegrid%n_nodes(3))
+                r = NORM2(REAL([i,j,k]-1,dp)*spacegrid%dl - origin(:))
                 bin = INT(r/dr)+1
                 IF (bin>nbins) THEN
                     CYCLE
@@ -139,7 +139,7 @@ SUBROUTINE output_rdf (array,filename)
             REAL(dp), ALLOCATABLE :: rdfUT(:)
             real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
 
-            ALLOCATE (nullarray3D (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ,SOURCE=0._dp)
+            ALLOCATE (nullarray3D (spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3)) ,SOURCE=0._dp)
             ALLOCATE (rdfUT(nbins),source=0._dp)
 
             ! Test 1

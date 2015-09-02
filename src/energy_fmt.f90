@@ -1,7 +1,7 @@
 SUBROUTINE energy_fmt (Ffmt)
 
   USE precision_kinds  ,ONLY: dp, i2b
-  USE system           ,ONLY: thermocond, nb_species, mole_fraction, spaceGrid, solvent
+  USE system           ,ONLY: thermocond, nb_species, mole_fraction, spacegrid, solvent
   USE minimizer        ,ONLY: cg_vect_new, dF_new
   USE fft              ,ONLY: fftw3
   USE input            ,ONLY: input_char
@@ -32,10 +32,10 @@ SUBROUTINE energy_fmt (Ffmt)
 
   CALL CPU_TIME ( time0 ) ! init timer
 
-  nfft1 = spaceGrid%n_nodes(1)
-  nfft2 = spaceGrid%n_nodes(2)
-  nfft3 = spaceGrid%n_nodes(3)
-  dV = spaceGrid%dv
+  nfft1 = spacegrid%n_nodes(1)
+  nfft2 = spacegrid%n_nodes(2)
+  nfft3 = spacegrid%n_nodes(3)
+  dV = spacegrid%dv
   kT = thermocond%kbT
 
   ! in case of empty supercell

@@ -3,7 +3,7 @@
 SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 
   USE precision_kinds,only : dp , i2b
-!   use system,only : thermocond, nb_species, solvent, spaceGrid
+!   use system,only : thermocond, nb_species, solvent, spacegrid
 !   USE dcf, ONLY: c_s, nb_k ,delta_k
 !   use constants,only : fourpi , i_complex,twopi
 !   USE minimizer, ONLY: cg_vect_new, FF , dF_new
@@ -56,13 +56,13 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 !     INTEGER(i2b) :: nfft1, nfft2, nfft3
 !     REAL(dp) :: lx, ly, lz, deltav
 !
-!     lx= spaceGrid%length(1)
+!     lx= spacegrid%length(1)
 !     ly= spacegrid%length(2)
-!     lz= spaceGrid%length(3)
-!     nfft1= spaceGrid%n_nodes(1)
-!     nfft2= spaceGrid%n_nodes(2)
-!     nfft3= spaceGrid%n_nodes(3)
-!     deltav= PRODUCT(spaceGrid%dl)
+!     lz= spacegrid%length(3)
+!     nfft1= spacegrid%n_nodes(1)
+!     nfft2= spacegrid%n_nodes(2)
+!     nfft3= spacegrid%n_nodes(3)
+!     deltav= PRODUCT(spacegrid%dl)
 !
 !
 !   call cpu_time(time0)

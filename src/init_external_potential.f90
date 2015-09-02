@@ -6,7 +6,7 @@ SUBROUTINE init_external_potential
 
     USE precision_kinds     ,only: dp, i2b
     USE input               ,only: input_log, input_char
-    USE system              ,only: solute, spaceGrid, nb_species, solvent
+    USE system              ,only: solute, spacegrid, nb_species, solvent
     USE external_potential  ,only: Vext_total, Vext_q, vextdef0, vextdef1
     USE mod_lj              ,only: init_lennardjones => init
     USE fastPoissonSolver   ,only: start_fastPoissonSolver => init
@@ -21,7 +21,7 @@ SUBROUTINE init_external_potential
     type (errType) :: er
     real(dp), parameter :: zerodp = 0._dp
 
-    nfft = spaceGrid%n_nodes
+    nfft = spacegrid%n_nodes
     i = spacegrid%n_nodes(1)
     j = spacegrid%n_nodes(2)
     k = spacegrid%n_nodes(3)

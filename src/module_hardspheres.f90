@@ -40,7 +40,7 @@ end function packing_fraction
 subroutine weight_functions
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, zeroC, zerodp
-  use system          ,only: nb_species, spaceGrid
+  use system          ,only: nb_species, spacegrid
   use fft             ,only: norm_k
   implicit none
   real(dp)     :: kR, sinkR, coskR, norm_k_loc, R, k
@@ -129,7 +129,7 @@ end subroutine compute_packing_fractions
 SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, pi
-  use system          ,only: thermoCond, spaceGrid, solvent
+  use system          ,only: thermoCond, spacegrid, solvent
   use input           ,only: verbose, input_char
   implicit none
   real(dp) :: n0, n1, n2, n3 ! weighted densities in the case of constant density = ref bulk density
@@ -179,7 +179,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
        ((1./(36*pi))*n2**3/n3**2-n0) *log(1-n3) + n1*n2/(1-n3) + (1./(36*pi))*n2**3/((1-n3)**2*n3)    )
     END IF
     ! integration factors
-    hs(s)%Fexc0 = (hs(s)%Fexc0 - hs(s)%excchempot * solvent(s)%n0) * PRODUCT(spaceGrid%length)
+    hs(s)%Fexc0 = (hs(s)%Fexc0 - hs(s)%excchempot * solvent(s)%n0) * PRODUCT(spacegrid%length)
     if( verbose) then
       write(*,'(A,i1,A,f10.2)') 'Fexc0 ( ' , s , ' ) = ' , hs(s)%Fexc0
     end if

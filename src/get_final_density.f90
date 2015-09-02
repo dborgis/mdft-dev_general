@@ -2,7 +2,7 @@
 PURE SUBROUTINE get_final_density ( neq , solventspecies)
 
     USE precision_kinds, ONLY: dp , i2b
-    USE system,          ONLY: spaceGrid, nb_species
+    USE system,          ONLY: spacegrid, nb_species
     USE minimizer,       ONLY: CG_vect_new
     USE fft,             ONLY: fftw3 , timesExpPrefactork2
     USE input,           ONLY: verbose
@@ -11,7 +11,7 @@ PURE SUBROUTINE get_final_density ( neq , solventspecies)
 
     INTEGER(i2b) :: i,j,k,s,icg,io
     integer(i2b), intent(in) :: solventspecies ! the solvent species of which we want the number density
-    REAL(dp), INTENT(OUT) :: neq (spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ! equilibrium density(position)
+    REAL(dp), INTENT(OUT) :: neq (spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3)) ! equilibrium density(position)
     REAL(dp) :: rho,local_density
     real(dp), parameter :: twopi = 2._dp*acos(-1._dp), twopi2 = twopi**2
 

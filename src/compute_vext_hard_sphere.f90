@@ -3,7 +3,7 @@
 SUBROUTINE compute_Vext_hard_sphere
 ! USE precision_kinds,only : i2b , dp
 ! use input,only : input_line,input_dp
-! use system,only : solute , nb_solute_sites , nb_species, spaceGrid
+! use system,only : solute , nb_solute_sites , nb_species, spacegrid
 ! use external_potential,only : Vext_total , Vext_hard
 ! use quadrature, only: angGrid, molRotGrid
 ! USE hardspheres ,ONLY: hs
@@ -19,15 +19,15 @@ SUBROUTINE compute_Vext_hard_sphere
 ! INTEGER(i2b) :: nfft1, nfft2, nfft3
 ! REAL(dp) :: lx, ly, lz, deltax, deltay, deltaz
 !
-!     lx= spaceGrid%length(1)
+!     lx= spacegrid%length(1)
 !     ly= spacegrid%length(2)
-!     lz= spaceGrid%length(3)
-!     deltax= spaceGrid%dl(1)
-!     deltay= spaceGrid%dl(2)
-!     deltaz= spaceGrid%dl(3)
-!     nfft1= spaceGrid%n_nodes(1)
-!     nfft2= spaceGrid%n_nodes(2)
-!     nfft3= spaceGrid%n_nodes(3)
+!     lz= spacegrid%length(3)
+!     deltax= spacegrid%dl(1)
+!     deltay= spacegrid%dl(2)
+!     deltaz= spacegrid%dl(3)
+!     nfft1= spacegrid%n_nodes(1)
+!     nfft2= spacegrid%n_nodes(2)
+!     nfft3= spacegrid%n_nodes(3)
 !
 !
 ! ! tell user

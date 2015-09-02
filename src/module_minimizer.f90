@@ -91,7 +91,7 @@ contains
 
         USE precision_kinds, ONLY: dp
         USE input, ONLY: input_int, input_dp,input_char
-        USE system , ONLY: spaceGrid, nb_species
+        USE system , ONLY: spacegrid, nb_species
 
         IMPLICIT NONE
 

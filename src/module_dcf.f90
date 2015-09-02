@@ -137,7 +137,7 @@ MODULE dcf
 !
 !         USE fft,             ONLY: kx,ky,kz
 !         USE constants,       ONLY: twopi
-!         USE system,          ONLY: spaceGrid
+!         USE system,          ONLY: spacegrid
 !         USE precision_kinds, ONLY: dp
 !
 !         IMPLICIT NONE
@@ -147,9 +147,9 @@ MODULE dcf
 !         REAL(dp) :: u_kz,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
 !         LOGICAL :: karim
 !
-!         nfft1 = spaceGrid%n_nodes(1)
-!         nfft2 = spaceGrid%n_nodes(2)
-!         nfft3 = spaceGrid%n_nodes(3)
+!         nfft1 = spacegrid%n_nodes(1)
+!         nfft2 = spacegrid%n_nodes(2)
+!         nfft3 = spacegrid%n_nodes(3)
 !
 !         karim = input_log("ck_angular_interpolation")
 !         IF (karim) THEN

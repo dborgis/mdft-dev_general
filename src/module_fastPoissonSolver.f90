@@ -2,7 +2,7 @@ module fastPoissonSolver
     ! This module contains everything related to the fast poisson solver(s) of MDFT.
 
     use precision_kinds     ,only: dp, i2b
-    use system              ,only: spaceGrid, solute, solvent
+    use system              ,only: spacegrid, solute, solvent
     use external_potential  ,only: vext_q
     use input               ,only: input_log
 
@@ -29,8 +29,8 @@ contains
             character(180) :: msg
         end type
         type (ertype) :: er
-        poissonSolverGrid%n = spaceGrid%n_nodes
-        poissonSolverGrid%len  = spaceGrid%length
+        poissonSolverGrid%n = spacegrid%n_nodes
+        poissonSolverGrid%len  = spacegrid%length
         allocate( soluteChargeDensity (poissonSolverGrid%n(1),poissonSolverGrid%n(2),poissonSolverGrid%n(3)) ,SOURCE=0._dp, &
         stat=er%i, errmsg=er%msg)
         if (er%i/=0) then
@@ -203,7 +203,7 @@ END SUBROUTINE poissonSolver
 SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     use precision_kinds     ,ONLY: dp, i2b
-    use system              ,ONLY: nb_solvent_sites, nb_species, spaceGrid, solute, solvent
+    use system              ,ONLY: nb_solvent_sites, nb_species, spacegrid, solute, solvent
     use external_potential  ,ONLY: vext_q
     use constants           ,ONLY: qfact, zero
     use mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode, floorNode, ceilingNode,&
@@ -225,8 +225,8 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     END TYPE
     TYPE(testtype) :: err
 
-    nfft = spaceGrid%n_nodes
-    dl = spaceGrid%dl
+    nfft = spacegrid%n_nodes
+    dl = spacegrid%dl
 
     IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
     IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"

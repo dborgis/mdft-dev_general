@@ -4,7 +4,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !     USE input           ,ONLY: verbose, input_dp
 !     USE constants       ,ONLY: twopi,zeroC
 !     USE quadrature      ,ONLY: angGrid, molRotGrid
-!     USE system          ,ONLY: thermocond, spaceGrid, solute, solvent
+!     USE system          ,ONLY: thermocond, spacegrid, solute, solvent
 !     USE minimizer       ,ONLY: cg_vect_new, dF_new, FF
 !     USE fft             ,ONLY: fftw3, kproj
 !
@@ -34,20 +34,20 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 !     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
 !     nb_solute_sites = SIZE(solute%site)
-!     deltaVk=(twopi)**3/PRODUCT(spaceGrid%length)
-!     lambda_w=input_dp ('lambda_solvent')!/PRODUCT(spaceGrid%length)!5.0_dp
+!     deltaVk=(twopi)**3/PRODUCT(spacegrid%length)
+!     lambda_w=input_dp ('lambda_solvent')!/PRODUCT(spacegrid%length)!5.0_dp
 !     ! check if user wants to use this part of the functional
 !
 !     CALL CPU_TIME(time0)
 !     ! TODO : add test that no lambda2(n) zero if lambda1(n)==0
 !
-!     deltaV =spaceGrid%dV
-!     deltax =spaceGrid%dl(1)
-!     deltay =spaceGrid%dl(2)
-!     deltaz =spaceGrid%dl(3)
-!     nfft1 =spaceGrid%n_nodes(1)
-!     nfft2 =spaceGrid%n_nodes(2)
-!     nfft3 =spaceGrid%n_nodes(3)
+!     deltaV =spacegrid%dV
+!     deltax =spacegrid%dl(1)
+!     deltay =spacegrid%dl(2)
+!     deltaz =spacegrid%dl(3)
+!     nfft1 =spacegrid%n_nodes(1)
+!     nfft2 =spacegrid%n_nodes(2)
+!     nfft3 =spacegrid%n_nodes(3)
 !
 !     ALLOCATE(rho(nfft1,nfft2,nfft3), SOURCE=0._dp)
 !     icg=0
@@ -76,7 +76,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 ! !A0's definition. All Axx and Ax will be defined from A0.
 !     allocate ( A0 (nfft1,nfft2,nfft3) ,source=0._dp)
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         r = norm2(kvec)
 !         A0 (i,j,k) = f_ww(r,0.0_dp, 0.0_dp,rmax2)
 !     end do
@@ -94,7 +94,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Ax
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) / norm2(kvec)
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -108,7 +108,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Ay
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(2) / norm2(kvec)
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -122,7 +122,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Az
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(3) / norm2(kvec)
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -136,7 +136,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Axx
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) * kvec(1) / norm2(kvec)**2
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -150,7 +150,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Ayy
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(2) * kvec(2) / norm2(kvec)**2
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -164,7 +164,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Azz
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(3) * kvec(3) / norm2(kvec)**2
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -178,7 +178,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Axy
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) * kvec(2) / norm2(kvec)**2
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -192,7 +192,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Axz
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(1) * kvec(3) / norm2(kvec)**2
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -206,7 +206,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !Ayz
 !     do concurrent (i=1:nfft1, j=1:nfft2, k=1:nfft3, (i+j+k)>3)
-!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spaceGrid%length * spaceGrid%dl / twopi
+!         kvec = [kproj(1,i), kproj(2,j), kproj(3,k)] * spacegrid%length * spacegrid%dl / twopi
 !         fftw3%in_forward (i,j,k) = A0(i,j,k) * kvec(2) * kvec(3) / norm2(kvec)**2
 !     end do
 !     CALL dfftw_execute(fftw3%plan_forward)
@@ -515,12 +515,12 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     SUBROUTINE dothestuff (A,B,C)
-!         USE system  ,ONLY:  spaceGrid
+!         USE system  ,ONLY:  spacegrid
 !         REAL(dp), ALLOCATABLE, INTENT(INOUT)    :: A(:,:,:)
 !         COMPLEX(dp), Dimension(nfft1/2+1,nfft2,nfft3), INTENT(IN):: B(:,:,:), C(:,:,:)
 !         fftw3%in_backward=B*C
 !         CALL dfftw_execute ( fftw3%plan_backward )
-!         ALLOCATE( A(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) ,SOURCE=fftw3%out_backward*deltaVk/(twopi)**3 )
+!         ALLOCATE( A(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3)) ,SOURCE=fftw3%out_backward*deltaVk/(twopi)**3 )
 !     END SUBROUTINE
 !
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -1,7 +1,7 @@
 SUBROUTINE energy_polarization_multi (F_pol)
 !
     USE precision_kinds, ONLY: i2b, dp
-!     USE system, ONLY: thermocond, nb_species, spaceGrid, solvent
+!     USE system, ONLY: thermocond, nb_species, spacegrid, solvent
 !     USE dcf, ONLY: chi_l, chi_t, nb_k, delta_k
 !     USE quadrature,ONLY : angGrid, molRotGrid
 !     USE minimizer, ONLY: cg_vect_new, FF, dF_new
@@ -35,7 +35,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !                	Initialization
 ! !
 ! !===================================================================================================================================
-!     deltaVkn = 1._dp/PRODUCT(spaceGrid%length)
+!     deltaVkn = 1._dp/PRODUCT(spacegrid%length)
 !     F_pol = 0.0_dp
 !     F_pol_long = 0.0_dp
 !     F_pol_trans = 0.0_dp
@@ -46,7 +46,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 ! !       		            Fourier space		            	!
 ! !							                                    !
 ! !            ====================================================
-!     ALLOCATE ( rho (spaceGrid%n_nodes(1), spaceGrid%n_nodes(2), spaceGrid%n_nodes(3),&
+!     ALLOCATE ( rho (spacegrid%n_nodes(1), spacegrid%n_nodes(2), spacegrid%n_nodes(3),&
 !                         angGrid%n_angles, molRotGrid%n_angles, nb_species), SOURCE=0._dp )
 !     icg=0
 !     DO s=1, nb_species
@@ -191,7 +191,7 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !                     DO o=1,angGrid%n_angles
 !                         DO p=1, molRotGrid%n_angles
 !                             icg = icg + 1
-!                             dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dF_pol_tot (i,j,k,o,p,s) * cg_vect_new(i,j,k,o,p,s) * solvent(s)%rho0 * 2.0_dp * spaceGrid%dv
+!                             dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + dF_pol_tot (i,j,k,o,p,s) * cg_vect_new(i,j,k,o,p,s) * solvent(s)%rho0 * 2.0_dp * spacegrid%dv
 !                         END DO
 !                     END DO
 !                 END DO

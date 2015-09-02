@@ -10,14 +10,14 @@
 ! 20110919  Maximilien Levesque, clean version for Virginie M.
 SUBROUTINE write_to_cube_file ( array , filename )
     
-    USE system, ONLY: spaceGrid, solute
+    USE system, ONLY: spacegrid, solute
     USE precision_kinds, ONLY: i2b, dp
     
     IMPLICIT NONE
     
     INTEGER(i2b) :: i , j , k , n ! dummy variables
     CHARACTER(50), INTENT(IN) :: filename ! filename of .cube file. For example : "density.cube"
-    REAL(dp), INTENT(IN), DIMENSION(spaceGrid%n_nodes(1), spaceGrid%n_nodes(2),spaceGrid%n_nodes(3)) :: array
+    REAL(dp), INTENT(IN), DIMENSION(spacegrid%n_nodes(1), spacegrid%n_nodes(2),spacegrid%n_nodes(3)) :: array
     REAL(dp), PARAMETER :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
 
     ! define formats for writing to file
@@ -31,18 +31,18 @@ SUBROUTINE write_to_cube_file ( array , filename )
         ! write the total number of sites and a default text nobody knows it meaning
         write ( 10 , * ) SIZE(solute%site) ,' 0.0 0.0 0.0 '
         ! write primary vectors
-        write ( 10 , * ) spaceGrid%n_nodes(1),spaceGrid%dl(1)*angtobohr,' 0.0 0.0'
-        write ( 10 , * ) spaceGrid%n_nodes(2),' 0.0 ',spaceGrid%dl(2)*angtobohr, ' 0.0'
-        write ( 10 , * ) spaceGrid%n_nodes(3),' 0.0 0.0 ',spaceGrid%dl(3)*angtobohr
+        write ( 10 , * ) spacegrid%n_nodes(1),spacegrid%dl(1)*angtobohr,' 0.0 0.0'
+        write ( 10 , * ) spacegrid%n_nodes(2),' 0.0 ',spacegrid%dl(2)*angtobohr, ' 0.0'
+        write ( 10 , * ) spacegrid%n_nodes(3),' 0.0 0.0 ',spacegrid%dl(3)*angtobohr
         ! write the atoms and their coordinates in Bohr
         DO n = 1, SIZE(solute%site)! , dim = 1 )
             WRITE(10,104) solute%site(n)%Z, ' 0.0 ' , &
                     solute%site(n)%r(1)*angtobohr, solute%site(n)%r(2)*angtobohr, solute%site(n)%r(3)*angtobohr
         END DO
         ! write .cube file. One value per line. As said earlier, run over x then y then z. The one varying the most rapidly is z.
-        do i = 1 , spaceGrid%n_nodes(1)
-            do j = 1 , spaceGrid%n_nodes(2)
-                do k = 1 , spaceGrid%n_nodes(3)
+        do i = 1 , spacegrid%n_nodes(1)
+            do j = 1 , spacegrid%n_nodes(2)
+                do k = 1 , spacegrid%n_nodes(3)
                     WRITE(10,102) array(i,j,k)
                 end do
             end do

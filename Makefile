@@ -85,6 +85,7 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/main.o\
 	$(OBJDIR)/mean_over_orientations.o\
 	$(OBJDIR)/module_constants.o\
+	$(OBJDIR)/module_grid.o\
 	$(OBJDIR)/module_dcf.o\
 	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_fft.o\
@@ -154,6 +155,10 @@ $(EXE): $(FOBJ)
 $(OBJDIR)/external_potential_mod.o:\
 	$(SRCDIR)/external_potential_mod.f90\
 	$(OBJDIR)/grid_mod.o
+
+$(OBJDIR)/module_grid.o:\
+	$(SRCDIR)/module_grid.f90\
+	$(OBJDIR)/module_precision_kinds.o
 
 $(OBJDIR)/external_functional_mod.o:\
 	$(SRCDIR)/external_functional_mod.f90\
@@ -596,6 +601,7 @@ $(OBJDIR)/write_to_cube_file.o:\
 
 $(OBJDIR)/module_fastPoissonSolver.o:\
 	$(SRCDIR)/module_fastPoissonSolver.f90\
+	$(OBJDIR)/module_external_potential.o\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_system.o
 

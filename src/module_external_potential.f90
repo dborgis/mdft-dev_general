@@ -55,16 +55,16 @@ MODULE external_potential
     !===============================================================================================================================
     ! This subroutine adds a hard wall all around the supercell
         USE precision_kinds  ,ONLY: dp
-        USE system           ,ONLY: spaceGrid, nb_species
+        USE system           ,ONLY: spacegrid, nb_species
         IF (.NOT. ALLOCATED(vext_hard_core)) THEN
-            ALLOCATE ( vext_hard_core(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3),nb_species) ,SOURCE=0._dp)
+            ALLOCATE ( vext_hard_core(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3),nb_species) ,SOURCE=0._dp)
         END IF
         vext_hard_core(1,:,:,:) = HUGE(1.0_dp)
-        vext_hard_core(spaceGrid%n_nodes(1),:,:,:) = HUGE(1.0_dp)
+        vext_hard_core(spacegrid%n_nodes(1),:,:,:) = HUGE(1.0_dp)
         vext_hard_core(:,1,:,:) = HUGE(1.0_dp)
-        vext_hard_core(:,spaceGrid%n_nodes(2),:,:) = HUGE(1.0_dp)
+        vext_hard_core(:,spacegrid%n_nodes(2),:,:) = HUGE(1.0_dp)
         vext_hard_core(:,:,1,:) = HUGE(1.0_dp)
-        vext_hard_core(:,:,spaceGrid%n_nodes(3),:) = HUGE(1.0_dp)
+        vext_hard_core(:,:,spacegrid%n_nodes(3),:) = HUGE(1.0_dp)
     END SUBROUTINE vextdef1
     !===============================================================================================================================
 
@@ -74,7 +74,7 @@ MODULE external_potential
     SUBROUTINE vextdef0
     !===============================================================================================================================
         USE precision_kinds ,ONLY: dp
-        USE system          ,ONLY: grd=>spaceGrid, nb_species
+        USE system          ,ONLY: grd=>spacegrid, nb_species
         IMPLICIT NONE
         REAL(dp), PARAMETER :: radius=1.0_dp
 

@@ -11,7 +11,7 @@ SUBROUTINE external_potential_hard_walls
 
     USE precision_kinds    ,ONLY: i2b, dp
     USE input              ,ONLY: input_line, input_int
-    USE system             ,ONLY: nb_species, spaceGrid
+    USE system             ,ONLY: nb_species, spacegrid
     USE external_potential ,ONLY: Vext_total
     USE hardspheres        ,ONLY: hs
 
@@ -28,9 +28,9 @@ SUBROUTINE external_potential_hard_walls
     REAL(dp), ALLOCATABLE, DIMENSION(:)   :: dot_product_normal_vec_OA ! dummy
     REAL(dp) :: OM(3) ! coordinates of grid points
 
-    nfft1 = spaceGrid%n_nodes(1)
-    nfft2 = spaceGrid%n_nodes(2)
-    nfft3 = spaceGrid%n_nodes(3)
+    nfft1 = spacegrid%n_nodes(1)
+    nfft2 = spacegrid%n_nodes(2)
+    nfft3 = spacegrid%n_nodes(3)
 
 ! read how many hard walls are wanted in the supercell
     DO i = 1, SIZE(input_line)
@@ -64,7 +64,7 @@ SUBROUTINE external_potential_hard_walls
 
     ! compute the potential potential
     DO CONCURRENT ( i=1:nfft1, j=1:nfft2, k=1:nfft3, s=1:nb_species, w=1:nwall)
-        OM = [ REAL(i-1,dp)*spaceGrid%dl(1) , REAL(j-1,dp)*spaceGrid%dl(2) , REAL(k-1,dp)*spaceGrid%dl(3) ]
+        OM = [ REAL(i-1,dp)*spacegrid%dl(1) , REAL(j-1,dp)*spacegrid%dl(2) , REAL(k-1,dp)*spacegrid%dl(3) ]
         dplan = ABS( DOT_PRODUCT( normal_vec(:,w),OM ) + dot_product_normal_vec_OA(w) )/ norm2_normal_vec(w) ! compute distance between grid point and plan
         IF (.NOT. ALLOCATED(hs)) THEN
           IF ( dplan <= 0.5_dp*thickness(w)  ) Vext_total(i,j,k,:,s) = HUGE(1.0_dp)

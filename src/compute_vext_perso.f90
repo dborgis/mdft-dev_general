@@ -19,12 +19,12 @@ SUBROUTINE compute_vext_perso
 !     INTEGER(i2b) :: nfft1, nfft2, nfft3
 !     REAL(dp) :: lx, ly, lz
 !
-!     lx= spaceGrid%length(1)
+!     lx= spacegrid%length(1)
 !     ly= spacegrid%length(2)
-!     lz= spaceGrid%length(3)
-!     nfft1= spaceGrid%n_nodes(1)
-!     nfft2= spaceGrid%n_nodes(2)
-!     nfft3= spaceGrid%n_nodes(3)
+!     lz= spacegrid%length(3)
+!     nfft1= spacegrid%n_nodes(1)
+!     nfft2= spacegrid%n_nodes(2)
+!     nfft3= spacegrid%n_nodes(3)
 !
 ! ! tell user
 ! write (*,*) '*************************'

@@ -4,7 +4,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 ! Returns the direct sum of all qi*qj/rij
 
     USE precision_kinds     ,ONLY: dp, i2b
-    USE system              ,ONLY: spaceGrid, nb_species, solvent, solute, nb_solute_sites, nb_solvent_sites
+    USE system              ,ONLY: spacegrid, nb_species, solvent, solute, nb_solute_sites, nb_solvent_sites
     USE constants           ,ONLY: qfact
     USE external_potential  ,ONLY: Vext_q
     use input               ,only: verbose
@@ -54,7 +54,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
                 do j=1,spacegrid%ny
                     do i=1,spacegrid%nx
 
-                        xgrid = real([i,j,k]-1,dp)*spaceGrid%dl
+                        xgrid = real([i,j,k]-1,dp)*spacegrid%dl
                         v_psi = 0._dp
 
                         do m=1,nb_solvent_sites
@@ -83,10 +83,10 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
 
     !
-    ! DO CONCURRENT (s=1:nb_species, i=1:spaceGrid%n_nodes(1), j=1:spaceGrid%n_nodes(2), k=1:spaceGrid%n_nodes(3), &
+    ! DO CONCURRENT (s=1:nb_species, i=1:spacegrid%n_nodes(1), j=1:spacegrid%n_nodes(2), k=1:spacegrid%n_nodes(3), &
     !                io=1:spacegrid%no)
     !
-    !     xgrid = REAL([i,j,k]-1,dp)*spaceGrid%dl
+    !     xgrid = REAL([i,j,k]-1,dp)*spacegrid%dl
     !     V_psi = 0._dp
     !
     !     DO CONCURRENT (m=1:SIZE(solvent(s)%site), n=1:SIZE(solute%site),&
@@ -113,7 +113,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
     !         CHARACTER(50) :: filename
     !         PRINT*,"minval and maxval of Vext_q :", MINVAL( Vext_q (:,:,:,:,:,:) ), MAXVAL( Vext_q (:,:,:,:,:,:) )
     !         ! Get the external potential over orientations and print it
-    !         ALLOCATE ( temparray ( spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3) ),SOURCE=0._dp)
+    !         ALLOCATE ( temparray ( spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3) ),SOURCE=0._dp)
     !         CALL mean_over_orientations ( Vext_q (:,:,:,:,:,1) , temparray )
     !         temparray = temparray/fourpi
     !         filename = 'output/Vcoul.cube'

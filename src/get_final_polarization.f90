@@ -1,7 +1,7 @@
 SUBROUTINE get_final_polarization ( Px , Py , Pz )
 
     USE precision_kinds,    ONLY: dp,i2b
-    USE system,             ONLY: nb_species, spaceGrid
+    USE system,             ONLY: nb_species, spacegrid
     USE constants,          ONLY: fourpi,twopi
     USE minimizer,          ONLY: cg_vect_new
     USE input,              ONLY: input_int
@@ -12,9 +12,9 @@ SUBROUTINE get_final_polarization ( Px , Py , Pz )
     REAL(dp), DIMENSION(spacegrid%nx,spacegrid%ny,spacegrid%nz,nb_species), INTENT(OUT) :: Px,Py,Pz ! equilibrium polarization(r)
     INTEGER(i2b) :: nx, ny, nz, no, ns
     real(dp), parameter :: zerodp = 0._dp
-    nx= spaceGrid%n_nodes(1)
-    ny= spaceGrid%n_nodes(2)
-    nz= spaceGrid%n_nodes(3)
+    nx= spacegrid%n_nodes(1)
+    ny= spacegrid%n_nodes(2)
+    nz= spacegrid%n_nodes(3)
     no = spacegrid%no
     ns = nb_species
 

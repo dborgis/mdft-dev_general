@@ -5,7 +5,7 @@
 subroutine init_density
 
   use precision_kinds, only : dp, i2b
-  use system, only: thermocond, nb_species, spaceGrid
+  use system, only: thermocond, nb_species, spacegrid
   use minimizer, only: cg_vect_new
   use external_potential, only: Vext_total, Vext_q
   use input, only: input_log

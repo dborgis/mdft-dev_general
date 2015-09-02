@@ -5,7 +5,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !
 !     USE precision_kinds     ,ONLY: dp, i2b
 !     USE input               ,ONLY: input_dp, verbose
-!     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, spaceGrid,&
+!     USE system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, spacegrid,&
 !                                    nb_species, solute, solvent
 !     USE external_potential  ,ONLY: Vext_total
 !     USE constants           ,ONLY: zerodp=>zero
@@ -13,7 +13,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !     IMPLICIT NONE
 !
 !     INTEGER(i2b):: i,j,k,o,p,m,n,s
-!     INTEGER(i2b), POINTER :: nfft1=>spaceGrid%n_nodes(1), nfft2=>spaceGrid%n_nodes(2), nfft3=>spaceGrid%n_nodes(3)
+!     INTEGER(i2b), POINTER :: nfft1=>spacegrid%n_nodes(1), nfft2=>spacegrid%n_nodes(2), nfft3=>spacegrid%n_nodes(3)
 !     REAL(dp):: x_grid,y_grid,z_grid ! coordinates of grid nodes
 !     REAL(dp):: x_m,y_m,z_m ! solvent sites coordinates
 !     REAL(dp):: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
@@ -44,9 +44,9 @@ SUBROUTINE compute_purely_repulsive_potential
 !         zmod (m,io) = DOT_PRODUCT( [gr%Rotzx(io), gr%Rotzy(io), gr%Rotzz(io)] , solvent(1)%site(m)%r )
 !     END DO
 !
-!     dx=spaceGrid%dl(1)
-!     dy=spaceGrid%dl(2)
-!     dz=spaceGrid%dl(3)
+!     dx=spacegrid%dl(1)
+!     dy=spacegrid%dl(2)
+!     dz=spacegrid%dl(3)
 !     ALLOCATE ( Vrep (nfft1,nfft2,nfft3,spacegrid%no) ,SOURCE=Vmax)
 !     DO s=1,nb_species
 !         DO k=1,nfft3

@@ -1,7 +1,7 @@
 SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
     USE precision_kinds, ONLY: i2b, dp
-!     USE system,          ONLY: spaceGrid, thermocond, nb_species, solvent
+!     USE system,          ONLY: spacegrid, thermocond, nb_species, solvent
 !     USE dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
 !     USE quadrature,      ONLY: angGrid, molRotGrid, molRotSymOrder
 !     USE minimizer,       ONLY: cg_vect_new, FF, dF_new
@@ -13,11 +13,11 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !
     real(dp), intent(out) :: F_pol
 !     INTEGER(i2b) :: i,j,k,o,p,n,m,l,s,k_index,ios,kindex_in_C,d
-!     INTEGER(i2b), POINTER :: nfft1=>spaceGrid%n_nodes(1),&
-!                              nfft2=>spaceGrid%n_nodes(2),&
-!                              nfft3=>spaceGrid%n_nodes(3)
+!     INTEGER(i2b), POINTER :: nfft1=>spacegrid%n_nodes(1),&
+!                              nfft2=>spacegrid%n_nodes(2),&
+!                              nfft3=>spacegrid%n_nodes(3)
 !     REAL(dp) :: facsym,rhon,fact,psi,Vint,Fint,deltaVk,F_pol_long,F_pol_trans,F_pol_tot
-!     REAL(dp), POINTER :: Lx => spaceGrid%length(1), Ly => spaceGrid%length(2), Lz => spaceGrid%length(3)
+!     REAL(dp), POINTER :: Lx => spacegrid%length(1), Ly => spacegrid%length(2), Lz => spacegrid%length(3)
 !     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: rho_n, Vpair
 !     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: rho,dF_pol
 !     COMPLEX(dp) :: F_pol_long_k, F_pol_trans_k, F_pol_tot_k, molec_polar_k_local(3)
@@ -33,7 +33,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 ! !===================================================================================================================================
 ! !                	Initialization
 ! !===================================================================================================================================
-!     deltaVk =twopi**3/PRODUCT(spaceGrid%length)
+!     deltaVk =twopi**3/PRODUCT(spacegrid%length)
 !     !TODO HERE SHOULD BE A CHECK IF SOLVENT IS SPCE. IF NOT THEN INCONSISTENCY WITH MU_SPCE
 !
 !     ALLOCATE ( rho_n (nfft1,nfft2,nfft3), SOURCE=0.0_dp )
@@ -58,7 +58,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     fftw3%in_forward=rho_n
 !     DEALLOCATE (rho_n)
 !     CALL dfftw_execute (fftw3%plan_forward)
-!     ALLOCATE ( rho_n_k (nfft1/2+1, nfft2, nfft3), SOURCE=(fftw3%out_forward *spaceGrid%dv) )
+!     ALLOCATE ( rho_n_k (nfft1/2+1, nfft2, nfft3), SOURCE=(fftw3%out_forward *spacegrid%dv) )
 !
 !     !======================================================================================================
 !     !            ====================================================
@@ -71,7 +71,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !             DO o=1, angGrid%n_angles
 !                 fftw3%in_forward = rho(:,:,:,o,p,s)
 !                 CALL dfftw_execute (fftw3%plan_forward)
-!                 rho_k(:,:,:,o,p,s)=fftw3%out_forward*spaceGrid%dv
+!                 rho_k(:,:,:,o,p,s)=fftw3%out_forward*spacegrid%dv
 !             END DO
 !         END DO
 !     END DO
@@ -103,7 +103,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     ! compute excess energy and its gradient
 !     Fint = 0.0_dp ! excess energy
 !     DO s = 1 , nb_species
-!         fact = spaceGrid%dv * solvent(s)%rho0 ! facteur d'integration
+!         fact = spacegrid%dv * solvent(s)%rho0 ! facteur d'integration
 !         DO i = 1 , nfft1
 !             DO j = 1 , nfft2
 !                 DO k = 1 , nfft3
@@ -175,17 +175,17 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !             END DO
 !             OPEN (11, file='output/P_tot_x')
 !             DO i=1,nfft1
-!                 WRITE(11,*) (i-1)*spaceGrid%dl(1), P_tot(1,i,nfft2/2+1,nfft3/2+1,1), P_long(1,i,nfft2/2+1,nfft3/2+1,1)
+!                 WRITE(11,*) (i-1)*spacegrid%dl(1), P_tot(1,i,nfft2/2+1,nfft3/2+1,1), P_long(1,i,nfft2/2+1,nfft3/2+1,1)
 !             END DO
 !             close(11)
 !             OPEN (12, file='output/P_tot_y')
 !             do i=1,nfft2
-!                 WRITE(12,*) (i-1)*spaceGrid%dl(2), P_tot(2,nfft1/2+1,i,nfft3/2+1,1), P_long(2,nfft1/2+1,i,nfft3/2+1,1)
+!                 WRITE(12,*) (i-1)*spacegrid%dl(2), P_tot(2,nfft1/2+1,i,nfft3/2+1,1), P_long(2,nfft1/2+1,i,nfft3/2+1,1)
 !             end do
 !             close(12)
 !             OPEN (13, file='output/P_tot_z')
 !             do i=1,nfft3
-!                 WRITE(13,*) (i-1)*spaceGrid%dl(3), P_tot(3,nfft1/2+1,nfft2/2+1,i,1), P_long(3,nfft1/2+1,nfft1/2+1,i,1)
+!                 WRITE(13,*) (i-1)*spacegrid%dl(3), P_tot(3,nfft1/2+1,nfft2/2+1,i,1), P_long(3,nfft1/2+1,nfft1/2+1,i,1)
 !             end do
 !             CLOSE(13)
 !         END BLOCK

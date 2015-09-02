@@ -3,7 +3,7 @@ SUBROUTINE compute_z_density (array, filename)
 !===================================================================================================================================
 ! Compute average density in the plane z {001}, that is the one perpendicular to plane (xy)
   use precision_kinds ,only: dp, i2b
-  use system          ,only: spaceGrid
+  use system          ,only: spacegrid
   use mathematica     ,only: chop
   use input           ,only: verbose
   implicit none
@@ -12,7 +12,7 @@ SUBROUTINE compute_z_density (array, filename)
   end type
   type(xy)                  :: nz(spacegrid%n_nodes(3))
   real(dp)                  :: dx
-  real(dp), intent(in)      :: array(spaceGrid%n_nodes(1),spaceGrid%n_nodes(2),spaceGrid%n_nodes(3))
+  real(dp), intent(in)      :: array(spacegrid%n_nodes(1),spacegrid%n_nodes(2),spacegrid%n_nodes(3))
   integer(i2b)              :: k,kmax,nodesinxy
   character(50), intent(in) :: filename
   dx=spacegrid%dl(3)

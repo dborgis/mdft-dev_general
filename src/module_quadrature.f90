@@ -4,7 +4,7 @@ module quadrature
   use precision_kinds ,only: dp, i2b
   use constants       ,only: pi, twopi, fourpi, zero, epsdp
   use input           ,only: input_log, input_char, input_int
-  use system, only: gr
+  use system, only: gr => spacegrid
 
   implicit none
 
@@ -36,7 +36,6 @@ module quadrature
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine init
     use mathematica, only: chop
-    use system, only: gr
     implicit none
     integer :: N, P, i, j, no, itheta, iphi, ipsi
 

@@ -1,14 +1,14 @@
 ! !This SUBROUTINE find the index icg in the minimizer for a vector ( s, i, j, k, o, p)
 ! integer (i2b) function convert_coordinate_into_icg ( s, i, j, k, io)
 !     USE precision_kinds,only : i2b , dp
-!     use system,only : spaceGrid
+!     use system,only : spacegrid
 !     use quadrature, only: angGrid, molRotGrid
 !     IMPLICIT NONE
 !     integer (i2b) , intent (in) :: i , j , k , io, s
 !     INTEGER(i2b) :: nx, ny, nz
-!     nx= spaceGrid%n_nodes(1)
-!     ny= spaceGrid%n_nodes(2)
-!     nz= spaceGrid%n_nodes(3)
+!     nx= spacegrid%n_nodes(1)
+!     ny= spacegrid%n_nodes(2)
+!     nz= spacegrid%n_nodes(3)
 !
 ! convert_coordinate_into_icg = (s-1)*nx*ny*nz*angGrid%n_angles*molRotGrid%n_angles &
 !     + ( i-1) *ny*nz*angGrid%n_angles*molRotGrid%n_angles+&

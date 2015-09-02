@@ -4,7 +4,7 @@ SUBROUTINE process_output
 
     ! defines precision of reals and intergers
     USE precision_kinds,    ONLY: dp, i2b
-    USE system,             ONLY: nb_species, spaceGrid, solvent, thermocond
+    USE system,             ONLY: nb_species, spacegrid, solvent, thermocond
     USE input,              ONLY: verbose, input_log, input_char
     USE solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
     USE constants,          ONLY: zerodp
@@ -14,7 +14,7 @@ SUBROUTINE process_output
 
     CHARACTER(50):: filename
     REAL(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: neq, Px, Py, Pz ! equilibrium density, ie rho(r), and Pi polarization(r)
-    INTEGER(i2b) ,POINTER :: nfft1=>spaceGrid%n_nodes(1), nfft2=>spaceGrid%n_nodes(2), nfft3=>spaceGrid%n_nodes(3)
+    INTEGER(i2b) ,POINTER :: nfft1=>spacegrid%n_nodes(1), nfft2=>spacegrid%n_nodes(2), nfft3=>spacegrid%n_nodes(3)
     INTEGER(i2b) :: s
 
     CALL print_cg_vect_new ! print output/density.bin that contains cg_vect_new
@@ -25,7 +25,7 @@ SUBROUTINE process_output
     end do
 
     DO s=1,nb_species
-      write(*,'(A,F12.2)') "Solvent molecules in supercell", SUM(neq)*spaceGrid%dv *solvent(s)%n0
+      write(*,'(A,F12.2)') "Solvent molecules in supercell", SUM(neq)*spacegrid%dv *solvent(s)%n0
     END DO
 
 
@@ -73,7 +73,7 @@ SUBROUTINE process_output
                     INTEGER(i2b) :: i,j
                     DO i=1,SIZE(neq,1)
                         DO j=1,SIZE(neq,2)
-                            WRITE(378,*)[i,j]*spaceGrid%length(1:2)/spaceGrid%n_nodes(1:2),neq(i,j,1,1)
+                            WRITE(378,*)[i,j]*spacegrid%length(1:2)/spacegrid%n_nodes(1:2),neq(i,j,1,1)
                         END DO
                         WRITE(378,*)
                     END DO

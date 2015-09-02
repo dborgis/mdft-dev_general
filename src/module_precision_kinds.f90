@@ -3,10 +3,10 @@
 module precision_kinds
   use iso_c_binding, only: C_DOUBLE, C_FLOAT
   implicit none
-  integer( KIND=KIND(1) ), parameter :: i2b = KIND(1) ! usual integer 
-  integer(i2b), parameter :: dp = C_DOUBLE         ! usual double precision float
-  integer(i2b), parameter :: sp = C_FLOAT           ! usual simple precision float
-  integer(i2b), parameter :: i4b = 2_i2b * i2b        ! usual double precision integer
+  integer, parameter :: i2b = KIND(1) ! usual integer
+  integer, parameter :: dp = C_DOUBLE         ! usual double precision float
+  integer, parameter :: sp = C_FLOAT           ! usual simple precision float
+  integer, parameter :: i4b = 2_i2b * i2b        ! usual double precision integer
 end module precision_kinds
 ! defining the precision kind this way we say to the computer : use the default single precision and double precision.
 ! remember that this default value may change depending on the architecture of your CPU.

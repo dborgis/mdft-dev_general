@@ -4,7 +4,7 @@
 SUBROUTINE lennard_jones_perturbation_to_hard_spheres
 
     USE precision_kinds ,ONLY: dp,i2b
-    USE system          ,ONLY: v_perturbation_k,spaceGrid,nb_species, solvent, solvent, spaceGrid
+    USE system          ,ONLY: v_perturbation_k,spacegrid,nb_species, solvent, solvent, spacegrid
     USE minimizer       ,ONLY: cg_vect_new, dF_new, FF
     USE constants       ,ONLY: fourpi,twopi,zeroC
     USE fft             ,ONLY: fftw3, norm_k
@@ -27,9 +27,9 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
     REAL(dp) :: nb_molecule ! total number of hard spheres ie integral of density over all space
     INTEGER(i2b) :: nfft1, nfft2, nfft3, p, io
     integer(i2b), parameter :: s=1
-    nfft1= spaceGrid%n_nodes(1)
-    nfft2= spaceGrid%n_nodes(2)
-    nfft3= spaceGrid%n_nodes(3)
+    nfft1= spacegrid%n_nodes(1)
+    nfft2= spacegrid%n_nodes(2)
+    nfft3= spacegrid%n_nodes(3)
 
     IF (nb_species/=1) STOP "When dealing with LJ as perturbation in lennard_jones_..._spheres.f90, only nb_species=1 is ok."
 
@@ -54,7 +54,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
                 local_density = local_density / fourpi ! correct by fourpi as the integral over all orientations o is 4pi
                 ! at the same time integrate rho_n in order to count the total number of implicit molecules. here we forget the integration factor = n_0 * deltav
                 rho_n(i,j,k) = local_density
-                nb_molecule = nb_molecule + local_density * solvent(1)%n0 * spaceGrid%dv
+                nb_molecule = nb_molecule + local_density * solvent(1)%n0 * spacegrid%dv
             END DO
         END DO
     END DO
@@ -106,7 +106,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
             END DO
         END DO
     END DO
-    Fperturbation = Fperturbation * 0.5_dp * spaceGrid%dv ! normalization
+    Fperturbation = Fperturbation * 0.5_dp * spacegrid%dv ! normalization
     DEALLOCATE( rho_n )
 
     ! add perturbation energy to total energy
@@ -124,7 +124,7 @@ SUBROUTINE lennard_jones_perturbation_to_hard_spheres
             DO k = 1 , nfft3
                 DO io = 1 , spacegrid%no
                     icg = icg + 1
-                    dF_new(i,j,k,io,s) = dF_new(i,j,k,io,s) + 2*cg_vect_new(i,j,k,io,s) * spaceGrid%dv * v_perturbation_r(i,j,k)
+                    dF_new(i,j,k,io,s) = dF_new(i,j,k,io,s) + 2*cg_vect_new(i,j,k,io,s) * spacegrid%dv * v_perturbation_r(i,j,k)
                 END DO
             END DO
         END DO
