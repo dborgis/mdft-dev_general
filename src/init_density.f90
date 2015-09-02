@@ -19,7 +19,11 @@ subroutine init_density
   real(dp) :: Vext_total_local , Vext_total_local_min_Vext_q ! dummy
   integer(i2b) :: species, ios, s
   logical :: exists
-  integer(i2b), pointer :: nfft1 => GRID%n_nodes(1), nfft2 => GRID%n_nodes(2), nfft3 => GRID%n_nodes(3)
+  integer :: nfft1, nfft2, nfft3
+
+  nfft1 = grid%nx
+  nfft2 = grid%ny
+  nfft3 = grid%nz
 
   ! Read the density from a previous run
   if (input_log('reuse_density')) then

@@ -15,8 +15,12 @@ SUBROUTINE process_output
 
     CHARACTER(50):: filename
     REAL(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: neq, Px, Py, Pz ! equilibrium density, ie rho(r), and Pi polarization(r)
-    INTEGER(i2b) ,POINTER :: nfft1=>GRID%n_nodes(1), nfft2=>GRID%n_nodes(2), nfft3=>GRID%n_nodes(3)
+    INTEGER(i2b) :: nfft1, nfft2, nfft3
     INTEGER(i2b) :: s
+
+    nfft1 = grid%nx
+    nfft2 = grid%ny
+    nfft3 = grid%nz
 
     CALL print_cg_vect_new ! print output/density.bin that contains cg_vect_new
 

@@ -12,7 +12,7 @@ subroutine adhoc_corrections_to_gsolv
 
     real(dp) :: correction,correction2, Pbulk
     real(dp), allocatable :: neq(:,:,:,:) ! equilibrium density
-    integer(i2b), pointer :: nfft1 => GRID%n_nodes(1), nfft2 => GRID%n_nodes(2), nfft3 => GRID%n_nodes(3)
+    integer :: nfft1, nfft2, nfft3
     integer :: s, ios
     type :: nmoleculetype
         real(dp) :: withsolute
@@ -28,6 +28,10 @@ subroutine adhoc_corrections_to_gsolv
     real(dp) :: FFcorrected_final, deltaN, Pscheme_correction
 
     FFcorrected_final = FF
+
+    nfft1 = GRID%n_nodes(1)
+    nfft2 = GRID%n_nodes(2)
+    nfft3 = GRID%n_nodes(3)
 
     open(79,file="output/FF"); write(79,*) FF; close(79)
 
