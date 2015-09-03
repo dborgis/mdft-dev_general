@@ -25,6 +25,8 @@ subroutine energy_and_gradient (iter)
     LOGICAL :: opn
     INTEGER :: i, exitstatus
 
+STOP "I AM NOW IN ENERGY AND GRADIENT. I STOP HERE BECAUSE WE ARE TESTING THE INITIALIZATION"
+
     F3B_ww=0.0_dp
     Fext = 0._dp
     Fid = 0._dp
