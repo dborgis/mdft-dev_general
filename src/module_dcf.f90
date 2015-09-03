@@ -3,6 +3,7 @@ MODULE dcf
     use precision_kinds, ONLY: dp, i2b
     use module_input, ONLY: getinput, n_linesInFile, deltaAbscissa
     use mathematica, only: spline, splint
+    use system, only: solvent
 
 
     IMPLICIT NONE
@@ -44,7 +45,7 @@ MODULE dcf
     SUBROUTINE init
         character(180) :: polarization
 
-        IF ( getinput%log('readDensityDensityCorrelationFunction') ) THEN
+        IF ( getinput%log('readDensityDensityCorrelationFunction', defaultvalue=.true.) ) THEN
             CALL readDensityDensityCorrelationFunction
         END IF
 
@@ -435,23 +436,25 @@ MODULE dcf
 
     SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
         INTEGER(i2b) :: ios, nk, i
-        CHARACTER(80) :: ck_species
 
-        ck_species = getinput%char('ck_species')
+        select case (solvent(1)%name)
+        case ("spce")
+            c_delta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
+            c_d%filename='input/direct_correlation_functions/water/SPCE/cd.in'
+        case ("spc")
+            c_delta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
+            c_d%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
+        case ("stockmayer")
+            c_delta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
+            c_d%filename='input/direct_correlation_functions/stockmayer/cd.in'
+        case ("perso")
+            c_delta%filename='input/cdelta.in'
+            c_d%filename='input/cd.in'
+        case default
+            print*, "solvent seems to be, from solvent.in", solvent(1)%name
+            stop "this is not understood by module_dcf"
+        end select
 
-        IF ( ck_species == 'spc  ' ) THEN
-          c_delta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
-          c_d%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
-        ELSE IF ( ck_species == 'stock' ) THEN
-          c_delta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
-          c_d%filename='input/direct_correlation_functions/stockmayer/cd.in'
-        ELSE IF ( ck_species == 'perso' ) THEN
-          c_delta%filename='input/cdelta.in'
-          c_d%filename='input/cd.in'
-        ELSE IF ( ck_species == 'spce' ) then
-          c_delta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
-          c_d%filename='input/direct_correlation_functions/water/SPCE/cd.in'
-        END IF
 
         nk = n_linesInFile(c_delta%filename)
         allocate( c_delta%x(nk), source=0._dp)
@@ -522,18 +525,22 @@ MODULE dcf
       use mathematica, only: spline, splint
       use constants  , only: onedp, zerodp
         implicit none
-        CHARACTER(80) :: ck_species
         INTEGER(i2b) :: ios, i
-        ck_species = getinput%char('ck_species')
-        IF ( ck_species == 'spc  ' ) THEN
-          c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
-        ELSE IF ( ck_species == 'stock' ) THEN
-          c_s%filename = 'input/direct_correlation_functions/stockmayer/cs.in'
-        ELSE IF ( ck_species == 'perso' ) THEN
-          c_s%filename = 'input/cs.in'
-        ELSE IF ( ck_species == 'spce' ) then
-          c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
-        END IF
+
+        select case (solvent(1)%name)
+        case ("spce")
+            c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
+        case ("spc")
+            c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
+        case ("stockmayer")
+            c_s%filename = 'input/direct_correlation_functions/stockmayer/cs.in'
+        case ("perso")
+            c_s%filename = 'input/cs.in'
+        case default
+            print*, "solvent seems to be, from solvent.in", solvent(1)%name
+            stop "this is not understood by module_dcf"
+        end select
+
         nb_k = n_linesInFile(c_s%filename)
         allocate( c_s%x(nb_k) , source=zerodp)
         allocate( c_s%y(nb_k) , source=zerodp)
