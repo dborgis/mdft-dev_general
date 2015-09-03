@@ -37,7 +37,7 @@ SUBROUTINE process_output
     IF (verbose) THEN
         filename = 'output/density.cube'
         CALL write_to_cube_file (neq(:,:,:,1), filename) ! TODO for now only write for the first species
-        IF (getinput%log('polarization').EQV. .TRUE.) THEN
+        IF ( getinput%char("polarization", defaultvalue="no") /= "no" ) THEN
             ALLOCATE ( Px (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
             ALLOCATE ( Py (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
             ALLOCATE ( Pz (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)

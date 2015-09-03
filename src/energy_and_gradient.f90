@@ -110,17 +110,25 @@ subroutine energy_and_gradient (iter)
     ! end if
 
 
-    IF ( getinput%log('polarization', defaultvalue=.false.) ) THEN
-        IF ( getinput%char('polarization_order')=='dipol' ) THEN ! cs cdelta cd ( polarization_order = dipol )
-            CALL energy_polarization_dipol (FexcPol)
-        ELSE IF ( getinput%char('polarization_order')=='multi' .AND. (.NOT. getinput%log('include_nc_coupling',defaultvalue=.false.)) ) THEN ! ( polarization_order = multi )
-            CALL energy_polarization_multi (FexcPol)
-        ELSE IF ( getinput%char('polarization_order')=='multi' .AND. ( getinput%log('include_nc_coupling', defaultvalue=.false.)) ) THEN ! ( polarization_order = multi )
-            CALL energy_polarization_multi_with_nccoupling(FexcPol)
-        ELSE
-            ERROR STOP "You want to include polarization but the tag for polarization order is neither dipol nor multi"
-        END IF
-    END IF
+    block
+        character(180) :: polarization
+        polarization = getinput%char("polarization", defaultvalue="no")
+        select case (polarization)
+        case("no","none")
+        case("dipolar")
+            call energy_polarization_dipol (FexcPol)
+        case("multipolar_without_coupling_to_density")
+            call energy_polarization_multi (FexcPol)
+        case("multipolar_with_coupling_to_density")
+            call energy_polarization_multi_with_nccoupling (FexcPol)
+        case default
+            print*, "The tag 'polarization' in input reads ", polarization,". This is not correct"
+            stop "in energy_and_gradient"
+        end select
+    end block
+
+
+
 
 
     IF ( getinput%log( 'threebody', defaultvalue=.false. ) ) THEN
