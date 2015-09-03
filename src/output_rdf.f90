@@ -133,38 +133,38 @@ SUBROUTINE output_rdf (array,filename)
         !===========================================================================================================================
 
         !===========================================================================================================================
-        SUBROUTINE UTest_histogram_3D
-            use constants, only: zerodp
-            IMPLICIT NONE
-            REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:)
-            REAL(dp), ALLOCATABLE :: rdfUT(:)
-            real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
-
-            ALLOCATE (nullarray3D (grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3)) ,SOURCE=0._dp)
-            ALLOCATE (rdfUT(nbins),source=0._dp)
-
-            ! Test 1
-            nullarray3D = 0._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(rdfUT/=0._dp)) STOP "Test 1 in UTest_histogram_3D not passed."
-
-            ! Test 2
-            nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(rdfUT<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
-
-            ! Test 3
-            nullarray3D = -1._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(rdfUT>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
-
-            ! Test 4
-            nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(rdfUT>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
-
-            DEALLOCATE (nullarray3D, rdfUT)
-        END SUBROUTINE UTest_histogram_3D
+        ! SUBROUTINE UTest_histogram_3D
+        !     use constants, only: zerodp
+        !     IMPLICIT NONE
+        !     REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:)
+        !     REAL(dp), ALLOCATABLE :: rdfUT(:)
+        !     real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
+        !
+        !     ALLOCATE (nullarray3D (grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3)) ,SOURCE=0._dp)
+        !     ALLOCATE (rdfUT(nbins),source=0._dp)
+        !
+        !     ! Test 1
+        !     nullarray3D = 0._dp
+        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+        !     IF (ANY(rdfUT/=0._dp)) STOP "Test 1 in UTest_histogram_3D not passed."
+        !
+        !     ! Test 2
+        !     nullarray3D = 100._dp
+        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+        !     IF (ANY(rdfUT<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
+        !
+        !     ! Test 3
+        !     nullarray3D = -1._dp
+        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+        !     IF (ANY(rdfUT>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
+        !
+        !     ! Test 4
+        !     nullarray3D = 100._dp
+        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+        !     IF (ANY(rdfUT>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
+        !
+        !     DEALLOCATE (nullarray3D, rdfUT)
+        ! END SUBROUTINE UTest_histogram_3D
         !===========================================================================================================================
 
 END SUBROUTINE output_rdf
