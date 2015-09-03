@@ -4,7 +4,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 ! Returns the direct sum of all qi*qj/rij
 
     use precision_kinds     ,ONLY: dp, i2b
-    use system              ,ONLY: solvent, solute, nb_solute_sites, nb_solvent_sites
+    use system              ,ONLY: solvent, solute
     use constants           ,ONLY: qfact
     use external_potential  ,ONLY: Vext_q
     use module_input               ,only: verbose
@@ -42,7 +42,7 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
 
     ! precompute rot_ij(omega,psi)*k_solv(a) for speeding up
-    DO CONCURRENT ( m=1:nb_solvent_sites, io=1:grid%no )
+    DO CONCURRENT ( m=1:solvent(1)%nsite, io=1:grid%no )
         xmod (m,io) = DOT_PRODUCT( [grid%rotxx(io), grid%rotxy(io), grid%rotxz(io)] , solvent(1)%site(m)%r )
         ymod (m,io) = DOT_PRODUCT( [grid%rotyx(io), grid%rotyy(io), grid%rotyz(io)] , solvent(1)%site(m)%r )
         zmod (m,io) = DOT_PRODUCT( [grid%rotzx(io), grid%rotzy(io), grid%rotzz(io)] , solvent(1)%site(m)%r )
@@ -58,9 +58,9 @@ SUBROUTINE compute_vcoul_as_sum_of_pointcharges
                         xgrid = real([i,j,k]-1,dp)*grid%dl
                         v_psi = 0._dp
 
-                        do m=1,nb_solvent_sites
+                        do m=1,solvent(1)%nsite
                             if ( abs(solvent(s)%site(m)%q) < epsdp ) cycle
-                            do n=1,nb_solute_sites
+                            do n=1,solute%nsite
                                 if( abs(solute%site(n)%q) < epsdp ) cycle
                                 xv = xgrid + [xmod(m,io), ymod(m,io), zmod(m,io)]
                                 xuv = xv - solute%site(n)%r

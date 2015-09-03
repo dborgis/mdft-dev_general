@@ -5,8 +5,6 @@ MODULE system
 
     IMPLICIT NONE
 
-    INTEGER(i2b) :: nb_solute_sites, nb_solvent_sites  ! nombre de site pour le solute et pour le solvent
-
     TYPE :: sites
         CHARACTER(100) :: name
         INTEGER(i2b) :: type, n_sites

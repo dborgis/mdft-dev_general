@@ -204,7 +204,7 @@ END SUBROUTINE poissonSolver
 SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     use precision_kinds     ,ONLY: dp, i2b
-    use system              ,ONLY: nb_solvent_sites, solute, solvent
+    use system              ,ONLY: solute, solvent
     use module_grid, only: grid
     use external_potential  ,ONLY: vext_q
     use constants           ,ONLY: qfact, zero
@@ -217,7 +217,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
     REAL(dp), INTENT(IN) :: gridlen(3)
     INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d, io, no, ns
-    real(dp), dimension(3,solvent(1)%nspec,nb_solvent_sites,grid%no) :: xmod
+    real(dp), dimension(3,solvent(1)%nspec,solvent(1)%nsite,grid%no) :: xmod
     REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
     REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
     TYPE :: testtype
@@ -255,7 +255,7 @@ SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
     DO CONCURRENT( s=1:solvent(1)%nspec, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:grid%no )
         vext_q_of_r_and_omega = 0.0_dp
 
-        DO CONCURRENT (m=1:nb_solvent_sites, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))
+        DO CONCURRENT (m=1:solvent(1)%nsite, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))
 
             x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(1,s,m,io),xmod(2,s,m,io),xmod(3,s,m,io)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
             x(1)=chop(x(1))

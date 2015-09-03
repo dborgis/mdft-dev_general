@@ -12,7 +12,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
     IMPLICIT NONE
     REAL(dp), INTENT(OUT)                       :: F3B1, F3B2, F3B_ww
 !     REAL(dp), PARAMETER                         :: rmin1=1.5_dp, rsw1=2.0_dp, rmin2=2.25_dp, rsw2=2.5_dp, rmax2=5.0_dp, d_w=1.9_dp
-!     INTEGER(i2b)                                :: icg,i,j,k,o,p,n,i1,j1,k1,nfft1,nfft2,nfft3,nb_solute_sites
+!     INTEGER(i2b)                                :: icg,i,j,k,o,p,n,i1,j1,k1,nfft1,nfft2,nfft3
 !     integer, parameter :: s=1
 !     REAL(dp)                                    :: rk2,xk2,yk2,zk2,r,x,y,z,deltaVk,rb,fw,deltaV,time0,time1,deltax,deltay,deltaz
 !     REAL(dp)                                    :: fk1,rmax1,fk2,rho_temp,psi, opweight, kvec(3), r2
@@ -34,7 +34,6 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !     REAL(dp)    ,ALLOCATABLE, DIMENSION(:,:,:)  :: FAxx,FAyy,FAzz,FAxy,FAyz,FAxz,FAx,FAy,FAz,FA0
 !
 !     !integer(kind=i2B) ::nmax_wx, nmax_wy, nmax_wz ! nmax for water water interactions along x y z
-!     nb_solute_sites = SIZE(solute%site)
 !     deltaVk=(twopi)**3/PRODUCT(grid%length)
 !     lambda_w=getinput%dp ('lambda_solvent')!/PRODUCT(grid%length)!5.0_dp
 !     ! check if user wants to use this part of the functional
@@ -224,18 +223,18 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !
 ! !!!!!!!!!
 !
-!     ALLOCATE ( DHxx (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHyy (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHzz (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHxy (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHxz (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHyz (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHx  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHy  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DHz  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( DH0  (nfft1,nfft2,nfft3,nb_solute_sites) ,SOURCE=0._dp)
+!     ALLOCATE ( DHxx (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHyy (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHzz (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHxy (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHxz (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHyz (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHx  (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHy  (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DHz  (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( DH0  (nfft1,nfft2,nfft3,solute%nsite) ,SOURCE=0._dp)
 !
-!     DO CONCURRENT (n=1:nb_solute_sites, abs(solute%site(n)%lambda1)>epsilon(1._dp))
+!     DO CONCURRENT (n=1:solute%nsite, abs(solute%site(n)%lambda1)>epsilon(1._dp))
 !
 !         rmax1=0.5_dp*(solute%site(n)%sig + solvent(1)%site(1)%sig) + d_w
 !         nmax1x = int(rmax1/deltax)
@@ -284,7 +283,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !     ALLOCATE( G0(nfft1,nfft2,nfft3), SOURCE=0.0_dp)
 !
 !
-!     DO CONCURRENT ( n=1:nb_solute_sites , abs(solute%site(n)%lambda2)>epsilon(1.0_dp))
+!     DO CONCURRENT ( n=1:solute%nsite , abs(solute%site(n)%lambda2)>epsilon(1.0_dp))
 !         nmax2x = int(rmax1/deltax)
 !         nmax2y = int(rmax1/deltay)
 !         nmax2z = int(rmax1/deltaz)
@@ -397,17 +396,17 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !     DEALLOCATE(A0_k)
 !
 !
-!     ALLOCATE ( Hxx (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hyy (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hzz (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hxy (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hxz (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hyz (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hx  (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hy  (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( Hz  (nb_solute_sites) ,SOURCE=0._dp)
-!     ALLOCATE ( H0  (nb_solute_sites) ,SOURCE=0._dp) ! use ARRAY CONSTRUCTOR INSTEAD
-!     DO CONCURRENT (n=1:nb_solute_sites)
+!     ALLOCATE ( Hxx (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hyy (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hzz (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hxy (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hxz (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hyz (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hx  (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hy  (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( Hz  (solute%nsite) ,SOURCE=0._dp)
+!     ALLOCATE ( H0  (solute%nsite) ,SOURCE=0._dp) ! use ARRAY CONSTRUCTOR INSTEAD
+!     DO CONCURRENT (n=1:solute%nsite)
 !         Hxx(n)= SUM(  DHxx(:,:,:,n)*rho )
 !         Hyy(n)= SUM(  DHyy(:,:,:,n)*rho )
 !         Hzz(n)= SUM(  DHzz(:,:,:,n)*rho )
@@ -468,7 +467,7 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !                             -2.0_dp*costheta0*(Hx(:)*DHx(i,j,k,:)+Hy(:)*DHy(i,j,k,:)+Hz(:)*DHz(i,j,k,:))&
 !                             +costheta0**2*H0(:)*DH0(i,j,k,:)))
 !
-! !~                         DO n=1,nb_solute_sites
+! !~                         DO n=1,solute%nsite
 ! !~                             dF_new(i,j,k,o,p,s)=dF_new(i,j,k,o,p,s)+solute%site(n)%lambda1*thermocond%kbT*psi*opweight*((Hxx(n)*DHxx(i,j,k,n)+Hyy(n)*DHyy(i,j,k,n)+&
 ! !~                                 Hzz(n)*DHzz(i,j,k,n)&
 ! !~                                 +2.0_dp*Hxy(n)*DHxy(i,j,k,n)+2.0_dp*Hxz(n)*DHxz(i,j,k,n)+2.0_dp*Hyz(n)*DHyz(i,j,k,n))&

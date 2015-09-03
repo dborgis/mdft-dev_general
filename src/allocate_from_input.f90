@@ -88,14 +88,14 @@ SUBROUTINE allocate_from_input
     end subroutine mv_solute_to_center
 
     subroutine assert_solute_inside
-        use system, only: solute, nb_solute_sites
+        use system, only: solute
         use module_grid, only: grid
         implicit none
         integer :: i
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
-        do concurrent( i=1:nb_solute_sites )
+        do concurrent( i=1:solute%nsite )
             solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , grid%length(1) )
             solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , grid%length(2) )
             solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , grid%length(3) )

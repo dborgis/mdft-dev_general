@@ -3,8 +3,8 @@
 subroutine read_solute
 
   use precision_kinds, ONLY: i2b,dp
-  use system,          ONLY: nb_solute_sites, solute
-  use module_input,           ONLY: input_line, getinput
+  use system,          ONLY: solute
+  use module_input,    ONLY: input_line, getinput
   use module_grid, only: grid
 !  use periodic_table,  ONLY: init_periodic_table, ptable
 
@@ -23,10 +23,10 @@ subroutine read_solute
   END IF
 
   READ (5,*) ! comment line
-  READ (5,*) nb_solute_sites ! total number of atom sites of the solute
-  ALLOCATE(solute%site(nb_solute_sites))
+  READ (5,*) solute%nsite ! total number of atom sites of the solute
+  ALLOCATE(solute%site(solute%nsite))
   READ (5,*)
-  DO n = 1, nb_solute_sites
+  DO n = 1, solute%nsite
     READ(5,*) i, solute%site(n)%q, solute%site(n)%sig, solute%site(n)%eps, &
               solute%site(n)%lambda1, solute%site(n)%lambda2, solute%site(n)%r, solute%site(n)%Z
     END DO

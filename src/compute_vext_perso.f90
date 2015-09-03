@@ -4,7 +4,7 @@ SUBROUTINE compute_vext_perso
 !
 ! use precision_kinds,only : i2b , dp
 ! use module_input,only : input_line,getinput%dp
-! use system,only : solute , nb_solute_sites
+! use system,only : solute
 ! use external_potential,only : Vext_total
 ! use hardspheres ,ONLY: hs
 !
@@ -45,7 +45,7 @@ SUBROUTINE compute_vext_perso
 ! ! compute the sum of solute and solvent radius
 ! do species = 1 , solvent(1)%nspec
 ! radius_sum_sq = ( solute_radius + hs(species)%R ) ** 2
-! do n = 1 , nb_solute_sites
+! do n = 1 , solute%nsite
 !   do i = 1 , nfft1
 !     x_grid = real ( i - 1 , dp) * deltax
 !     x_nm2 = ( x_grid - solute%site(n)%r(1) )**2

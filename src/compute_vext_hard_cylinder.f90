@@ -4,7 +4,7 @@ SUBROUTINE compute_Vext_hard_cylinder
     use module_grid, only: grid
 ! use precision_kinds,only : i2b , dp
 ! use module_input,only : getinput%dp
-! use system,only : solute , nb_solute_sites
+! use system,only : solute
 ! use external_potential,only : Vext_total
 ! use quadrature, only: angGrid, molRotGrid
 ! use hardspheres ,ONLY: hs
@@ -38,10 +38,10 @@ SUBROUTINE compute_Vext_hard_cylinder
 ! hard_cylinder_radius=getinput%dp('radius_of_hard_cylinder')
 ! write ( * , * ) 'the hard cylinder solute has a radius of ' , hard_cylinder_radius
 ! write ( * , * ) 'this cylinder is along Z. position in x and y are extracted from input/solute.in solute%site%r'
-! write ( * , * ) 'there are ' , nb_solute_sites , ' cylinders in the system. They all have same radius'
+! write ( * , * ) 'there are ' , solute%nsite , ' cylinders in the system. They all have same radius'
 ! ! compute if grid point is or not inside the hard cylinder
 ! ! hard cylinder is along axe x=Lx/2, y=Ly/2
-! do n = 1 , nb_solute_sites
+! do n = 1 , solute%nsite
 !   do species = 1 , solvent(1)%nspec
 !     sum_rad2 = ( hard_cylinder_radius + hs(species)%R ) ** 2
 !     do j = 1 , nfft2

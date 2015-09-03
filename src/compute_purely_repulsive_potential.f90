@@ -5,7 +5,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !
 !     use precision_kinds     ,ONLY: dp, i2b
 !     use module_input               ,ONLY: getinput%dp, verbose
-!     use system              ,ONLY: thermoCond, nb_solute_sites, nb_solvent_sites, solvent(1)%nspec, solute, solvent
+!     use system              ,ONLY: thermoCond, solute, solvent
 !     use external_potential  ,ONLY: Vext_total
 !     use constants           ,ONLY: zerodp=>zero
     use module_grid, only: grid
@@ -34,11 +34,11 @@ SUBROUTINE compute_purely_repulsive_potential
 !     radius_of_purely_repulsive_solute2 = radius_of_purely_repulsive_solute**2
 !
 !     ! tabulate coordinates of solvent sites for each omega and psi angles
-!     ALLOCATE ( xmod (nb_solvent_sites, grid%no) ,SOURCE=zerodp)
-!     ALLOCATE ( ymod (nb_solvent_sites, grid%no) ,SOURCE=zerodp)
-!     ALLOCATE ( zmod (nb_solvent_sites, grid%no) ,SOURCE=zerodp)
+!     ALLOCATE ( xmod (solvent(1)%nsite, grid%no) ,SOURCE=zerodp)
+!     ALLOCATE ( ymod (solvent(1)%nsite, grid%no) ,SOURCE=zerodp)
+!     ALLOCATE ( zmod (solvent(1)%nsite, grid%no) ,SOURCE=zerodp)
 !
-!     DO CONCURRENT ( m=1:nb_solvent_sites, io=1:grid%no )
+!     DO CONCURRENT ( m=1:solvent(1)%nsite, io=1:grid%no )
 !         xmod (m,io) = DOT_PRODUCT( [grid%Rotxx(io), grid%Rotxy(io), grid%Rotxz(io)] , solvent(1)%site(m)%r )
 !         ymod (m,io) = DOT_PRODUCT( [grid%Rotyx(io), grid%Rotyy(io), grid%Rotyz(io)] , solvent(1)%site(m)%r )
 !         zmod (m,io) = DOT_PRODUCT( [grid%Rotzx(io), grid%Rotzy(io), grid%Rotzz(io)] , solvent(1)%site(m)%r )
@@ -61,7 +61,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !                                 x_m = x_grid + xmod (m,io)
 !                                 y_m = y_grid + ymod (m,io)
 !                                 z_m = z_grid + zmod (m,io)
-!                                 DO n=1, nb_solute_sites
+!                                 DO n=1, solute%nsite
 !                                     x_nm = x_m - solute%site(n)%r(1)
 !                                     y_nm = y_m - solute%site(n)%r(2)
 !                                     z_nm = z_m - solute%site(n)%r(3)

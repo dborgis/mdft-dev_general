@@ -387,7 +387,7 @@ end function input_int
 !
 subroutine put_input_in_character_array
     implicit none
-    integer :: i, j, k, n, n_lines, linelen ! dummy
+    integer :: i, j, k, n, n_lines!, linelen
     character(len=100) :: text ! temporary input line
     character(len=100), allocatable, dimension(:) :: arraytemp  ! Temporary array to stock data for resizing input_line
 

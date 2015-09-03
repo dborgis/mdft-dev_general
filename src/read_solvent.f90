@@ -5,7 +5,7 @@ SUBROUTINE read_solvent
 ! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
 
 use precision_kinds, only: i2b , dp, sp
-use system, only: nb_solvent_sites, solvent
+use system, only: solvent
 use mathematica, only: chop
 use module_input, only: getinput
 
@@ -17,8 +17,8 @@ OPEN(5, FILE= 'input/solvent.in', STATUS= 'old', IOSTAT= ios )! open input/solve
     IF ( ios/=0 ) STOP 'ERROR: solvent.in can not be opened.'
     READ (5,*) solvent(1)%name
     READ (5,*) solvent(1)%nsite!, solvent(1)%molrotsymorder
-    nb_solvent_sites = solvent(1)%nsite
-    allocate (solvent(1)%site(nb_solvent_sites), stat=ios)
+    i = solvent(1)%nsite
+    allocate (solvent(1)%site(i), stat=ios)
     if (ios /= 0) stop "ERROR: wrong allocate of solvent%site in read_solvent.f90"
     READ(5,*) ! comment line
     DO n = 1 , size(solvent(1)%site)

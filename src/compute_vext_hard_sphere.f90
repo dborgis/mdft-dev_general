@@ -4,7 +4,7 @@ SUBROUTINE compute_Vext_hard_sphere
     use module_grid, only: grid
 ! use precision_kinds,only : i2b , dp
 ! use module_input,only : input_line,getinput%dp
-! use system,only : solute , nb_solute_sites , grid
+! use system,only : solute, grid
 ! use external_potential,only : Vext_total , Vext_hard
 ! use quadrature, only: angGrid, molRotGrid
 ! use hardspheres ,ONLY: hs
@@ -12,7 +12,7 @@ SUBROUTINE compute_Vext_hard_sphere
 ! IMPLICIT NONE
 ! integer(i2b):: i , j , k !> @var dummy
 ! integer(i2b):: species ! dummy between 1 and solvent(1)%nspec
-! integer(i2b):: solute_site ! dummy between 1 and nb_solute_sites
+! integer(i2b):: solute_site ! dummy between 1 and
 ! real(dp):: x_grid , y_grid , z_grid !> @var coordinates of grid mesh nodes
 ! real(dp):: x_nm2 , y_nm2 , z_nm2 , r_nm2  ! distance between solute and grid point
 ! real(dp):: hard_sphere_solute_radius ! radius of the hard sphere solute. tag in dft.in
@@ -53,7 +53,7 @@ SUBROUTINE compute_Vext_hard_sphere
 !     print*,'!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!WARNING!!'
 ! END IF
 ! ! compute the sum of solute and solvent radius
-! do solute_site = 1 , nb_solute_sites
+! do solute_site = 1 , solute%nsite
 !   do species = 1 , solvent(1)%nspec
 !     if ( .not. allocated ( hs ) ) then
 !         sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius)**2
