@@ -12,6 +12,14 @@ module module_minimizer
     real(dp):: epsg
     integer(i2b) :: iter ! iteration number of the minimizer. Goes from 1 to itermax during execution.
     integer(i2b) :: itermax ! maximum number of iterations
+    type :: mdftopt_type
+        integer :: ncg ! number of variables to optimize
+        integer :: itermax ! number of iterations after which abord
+        integer :: iter
+        character(180) :: method
+        real(dp) :: epsg
+    end type
+    type(mdftopt_type) :: mdftopt
 
 contains
 
@@ -93,6 +101,7 @@ contains
 
         use system , ONLY: solvent
         use module_grid, only: grid
+        use module_input, only: getinput
 
         IMPLICIT NONE
 
@@ -105,6 +114,16 @@ contains
         ns = solvent(1)%nspec
 
         ncg = nx*ny*nz*no*ns
+        mdftopt%ncg = ncg
+        mdftopt%method = getinput%char("optimization_method", defaultvalue="lbfgs")
+        select case (mdftopt%method)
+        case("lbfgs")
+        case default
+            print*, "Optimization method ", mdftopt%method," is not implemented"
+            stop
+        end select
+        mdftopt%itermax = getinput%int("maximum_iteration_nbr", defaultvalue=100, assert=">0")
+        mdftopt%epsg = getinput%dp("epsg", defaultvalue=0.001_dp ) ! in kJ/mol
 
         allocate( cg_vect_new( nx, ny, nz, no, ns) ,source=0._dp)
         allocate(      df_new( nx, ny, nz, no, ns) ,source=0._dp)
