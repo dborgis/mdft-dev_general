@@ -9,7 +9,7 @@ SUBROUTINE output_rdf (array,filename)
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
     use precision_kinds ,ONLY: dp, i2b, sp
-    use system          ,ONLY: solute
+    use module_solute          ,ONLY: solute
     use module_solvent, only: solvent
     use mathematica     ,only: deduce_optimal_histogram_properties, akima_spline, chop
     use module_grid, only: grid

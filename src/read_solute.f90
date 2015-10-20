@@ -3,7 +3,7 @@
 subroutine read_solute
 
   use precision_kinds, ONLY: i2b,dp
-  use system,          ONLY: solute
+  use module_solute,          ONLY: solute
   use module_input,    ONLY: input_line, getinput
   use module_grid, only: grid
 !  use periodic_table,  ONLY: init_periodic_table, ptable

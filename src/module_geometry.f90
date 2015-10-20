@@ -1,6 +1,6 @@
-module solute_geometry
+module module_geometry
     use precision_kinds
-    use system, only: solute ! TODO should be generalized. solute%nsite is useless as it is the dimension of x_mol. isLinear and isPlanar could be usefull for any coordinates, not only the ones of the solute. the coordinates should thus be intent(in) of the functions.
+    use module_solute, only: solute ! TODO should be generalized. solute%nsite is useless as it is the dimension of x_mol. isLinear and isPlanar could be usefull for any coordinates, not only the ones of the solute. the coordinates should thus be intent(in) of the functions.
     IMPLICIT NONE
     private
     public :: isLinear, isPlanar
@@ -56,4 +56,4 @@ module solute_geometry
             END IF
         end function
 
-end module
+end module module_geometry

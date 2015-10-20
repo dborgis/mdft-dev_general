@@ -4,7 +4,7 @@ SUBROUTINE compute_vext_perso
 !
 ! use precision_kinds,only : i2b , dp
 ! use module_input,only : input_line,getinput%dp
-! use system,only : solute
+! use module_solute, only : solute
 ! use external_potential,only : Vext_total
 ! use hardspheres ,ONLY: hs
 !

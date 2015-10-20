@@ -20,17 +20,6 @@ MODULE system
         real(dp) :: h
     end type vextType
 
-    type :: solute_type
-        character(130) :: name
-        integer :: molrotsymorder
-        integer :: nsite ! number of site of the solvent molecule
-        integer :: nspec ! number of solvent species
-        real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
-        real(dp) :: diameter ! hard sphere diameter, for instance
-        type (site_type), allocatable :: site(:)
-    end type
-
-    type (solute_type) :: solute
 
     type :: thermoCondType
         REAL(dp) :: T ! temperature

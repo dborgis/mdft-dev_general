@@ -1,6 +1,6 @@
 subroutine output_gsitesite
   ! use precision_kinds, only: dp
-  ! use system,          only: solute
+  ! use module_solute,          only: solute
   ! use module_solvent, only: solvent
     use module_grid, only: grid
   ! use module_minimizer,       only: cg_vect_new

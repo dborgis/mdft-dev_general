@@ -13,8 +13,6 @@ OBJDIR = obj
 
 FFTW_INCLUDES  = -I${HOME}/usr/include
 FFTW_LIBRARIES = -lfftw3 -lfftw3_threads -L${HOME}/usr/lib   -Wl,-rpath=${HOME}/usr/lib
-NLOPT_INCLUDES = -I${HOME}/usr/include
-NLOPT_LIBRARIES = -lnlopt -lm -L${HOME}/usr/lib  -Wl,-rpath=${HOME}/usr/lib
 
 # ——————————————— Fortran compiler ———————————————
 
@@ -28,8 +26,8 @@ endif
 
 # ——————————————— Compiling options ———————————————
 
-FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) $(NLOPT_INCLUDES) -fdiagnostics-color=auto -march=native -fimplicit-none -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fcheck=all -g3# -Wall -g3 -fbacktrace
-LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
+FCFLAGS = -J$(MODDIR) -I$(MODDIR) $(FFTW_INCLUDES) -fdiagnostics-color=auto -march=native -fimplicit-none -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fcheck=all -g3# -Wall -g3 -fbacktrace
+LDFLAGS = $(FFTW_LIBRARIES)
 
 
 # For POINCARE:

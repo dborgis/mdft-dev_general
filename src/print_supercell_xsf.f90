@@ -2,7 +2,7 @@
 !! Type vmd --xsf output/supercell.xsf to visualise it.
 SUBROUTINE print_supercell_xsf
     use precision_kinds, ONLY: i2b
-    use system, ONLY: solute
+    use module_solute, ONLY: solute
     use module_grid, only: grid
     IMPLICIT NONE
     integer(i2b) :: i

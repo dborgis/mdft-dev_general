@@ -1,18 +1,18 @@
 module fastPoissonSolver
     ! This module contains everything related to the fast poisson solver(s) of MDFT.
 
-    use precision_kinds     ,only: dp, i2b
-    use system              ,only: solute
+    use precision_kinds, only: dp
+    use module_solute, only: solute, soluteChargeDensityFromSoluteChargeCoordinates
     use module_solvent, only: solvent
     use module_grid, only: grid
-    use external_potential  ,only: vext_q
-    use module_input               ,only: getinput
+    use external_potential, only: vext_q
+    use module_input, only: getinput
 
     implicit none
 
     real(dp), allocatable, dimension(:,:,:), private :: soluteChargeDensity, Vpoisson ! TODO THIS ON FINE grid
     type :: PoissonGridType
-        integer(i2b) :: n(3)
+        integer :: n(3)
         real(dp) :: len(3)
     end type PoissonGridType
     type (PoissonGridType), private :: poissonSolverGrid
@@ -25,7 +25,7 @@ contains
 
     subroutine init
         implicit none
-        integer(i2b) :: i,j,k,o,p,s,n1,n2,n3
+        integer :: i,j,k,o,p,s,n1,n2,n3
         type :: ertype
             integer :: i
             character(180) :: msg
@@ -82,7 +82,7 @@ contains
 
     SUBROUTINE poissonSolver (gridnode, gridlength, soluteChargeDensity, Vpoisson)
 
-        use precision_kinds,    only: dp, i2b, i4b
+        use precision_kinds,    only: dp, i4b
         use constants,          only: fourpi , zeroC, twopi, qfact
         use module_solvent, only: solvent
 
@@ -90,12 +90,12 @@ contains
 
         IMPLICIT NONE
 
-        INTEGER(i2b), INTENT(IN) :: gridnode(3)
+        INTEGER, INTENT(IN) :: gridnode(3)
         REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: soluteChargeDensity
         REAL(dp), INTENT(IN) :: gridlength(3)
         REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(OUT) :: Vpoisson
         COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: soluteChargeDensity_k, Vpoisson_k
-        INTEGER (i2b) :: i,j,k,m1,m2,m3,s,o,p,io
+        INTEGER  :: i,j,k,m1,m2,m3,s,o,p,io
         REAL(dp) :: k2
         REAL(dp), ALLOCATABLE :: fftw3InForward(:,:,:), fftw3OutBackward(:,:,:)
         COMPLEX(dp), ALLOCATABLE :: fftw3OutForward(:,:,:), fftw3InBackward(:,:,:)
@@ -174,154 +174,154 @@ contains
             end do
         end if
 
-    deallocate( soluteChargeDensity_k, Vpoisson_k, fftw3InForward, fftw3OutForward, fftw3OutBackward, fftw3InBackward)
+        deallocate( soluteChargeDensity_k, Vpoisson_k, fftw3InForward, fftw3OutForward, fftw3OutBackward, fftw3InBackward)
 
-CONTAINS
+    CONTAINS
+
+        !===================================================================================================================================
+
+        SUBROUTINE prepare_fftw3_for_poissongrid
+            implicit none
+            ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
+            ! or needed as input for inverse FFT (in_backward) etc.
+            ALLOCATE ( fftw3InForward   ( gridnode(1)      , gridnode(2) , gridnode(3) ) )
+            ALLOCATE ( fftw3OutForward  ( gridnode(1)/2 +1 , gridnode(2) , gridnode(3) ) )
+            ALLOCATE ( fftw3OutBackward ( gridnode(1)      , gridnode(2) , gridnode(3) ) )
+            ALLOCATE ( fftw3InBackward  ( gridnode(1)/2 +1 , gridnode(2) , gridnode(3) ) )
+            ! prepare plans needed by fftw3
+            CALL dfftw_plan_dft_r2c_3d &
+            ( fpspf, gridnode(1), gridnode(2), gridnode(3), fftw3InForward, fftw3OutForward, FFTW_ESTIMATE )
+            CALL dfftw_plan_dft_c2r_3d &
+            ( fpspb, gridnode(1), gridnode(2), gridnode(3), fftw3InBackward, fftw3OutBackward, FFTW_ESTIMATE )
+            ! Note that since the fast Poisson solver implies only 1 FFT in each direction, it is useless to use FFTW_MEASURE or even
+            ! more rigorous planning-flags. See http://www.fftw.org/doc/Planner-Flags.html
+        END SUBROUTINE prepare_fftw3_for_poissongrid
+
+        !===================================================================================================================================
+
+    END SUBROUTINE poissonSolver
 
     !===================================================================================================================================
 
-    SUBROUTINE prepare_fftw3_for_poissongrid
-        implicit none
-        ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
-        ! or needed as input for inverse FFT (in_backward) etc.
-        ALLOCATE ( fftw3InForward   ( gridnode(1)      , gridnode(2) , gridnode(3) ) )
-        ALLOCATE ( fftw3OutForward  ( gridnode(1)/2 +1 , gridnode(2) , gridnode(3) ) )
-        ALLOCATE ( fftw3OutBackward ( gridnode(1)      , gridnode(2) , gridnode(3) ) )
-        ALLOCATE ( fftw3InBackward  ( gridnode(1)/2 +1 , gridnode(2) , gridnode(3) ) )
-        ! prepare plans needed by fftw3
-        CALL dfftw_plan_dft_r2c_3d &
-        ( fpspf, gridnode(1), gridnode(2), gridnode(3), fftw3InForward, fftw3OutForward, FFTW_ESTIMATE )
-        CALL dfftw_plan_dft_c2r_3d &
-        ( fpspb, gridnode(1), gridnode(2), gridnode(3), fftw3InBackward, fftw3OutBackward, FFTW_ESTIMATE )
-        ! Note that since the fast Poisson solver implies only 1 FFT in each direction, it is useless to use FFTW_MEASURE or even
-        ! more rigorous planning-flags. See http://www.fftw.org/doc/Planner-Flags.html
-    END SUBROUTINE prepare_fftw3_for_poissongrid
+    SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
-    !===================================================================================================================================
+        use precision_kinds     ,ONLY: dp
+        use module_solute              ,ONLY: solute
+        use module_solvent, only: solvent
+        use module_grid, only: grid
+        use external_potential  ,ONLY: vext_q
+        use constants           ,ONLY: qfact, zero
+        use mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode, floorNode, ceilingNode,&
+        UTest_ceilingNode, UTest_distToFloorNode, distToFloorNode, chop
 
-END SUBROUTINE poissonSolver
+        IMPLICIT NONE
 
-!===================================================================================================================================
+        INTEGER, INTENT(IN) :: gridnode(3)
+        REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
+        REAL(dp), INTENT(IN) :: gridlen(3)
+        INTEGER :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d, io, no, ns
+        real(dp), dimension(3,solvent(1)%nspec,solvent(1)%nsite,grid%no) :: xmod
+        REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
+        REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
+        TYPE :: testtype
+            LOGICAL :: pb
+            CHARACTER(180) :: msg
+            real(dp) :: l(3),u(3),r(3),x(3)
+        END TYPE
+        TYPE(testtype) :: err
 
-SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
+        nfft = grid%n_nodes
+        dl = grid%dl
 
-    use precision_kinds     ,ONLY: dp, i2b
-    use system              ,ONLY: solute
-    use module_solvent, only: solvent
-    use module_grid, only: grid
-    use external_potential  ,ONLY: vext_q
-    use constants           ,ONLY: qfact, zero
-    use mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode, floorNode, ceilingNode,&
-    UTest_ceilingNode, UTest_distToFloorNode, distToFloorNode, chop
+        IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
+        IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"
 
-    IMPLICIT NONE
+        IF ( ALL(solute%site%q == zero) .OR. ALL(solvent(1)%site%q == zero) ) RETURN
 
-    INTEGER(i2b), INTENT(IN) :: gridnode(3)
-    REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: Vpoisson
-    REAL(dp), INTENT(IN) :: gridlen(3)
-    INTEGER(i2b) :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d, io, no, ns
-    real(dp), dimension(3,solvent(1)%nspec,solvent(1)%nsite,grid%no) :: xmod
-    REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
-    REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)
-    TYPE :: testtype
-        LOGICAL :: pb
-        CHARACTER(180) :: msg
-        real(dp) :: l(3),u(3),r(3),x(3)
-    END TYPE
-    TYPE(testtype) :: err
+        ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
+        do concurrent (s=1:size(solvent))
+            DO CONCURRENT( io=1:grid%no, m=1:size(solvent(s)%site) )
+                xmod(1,s,m,io) = DOT_PRODUCT( [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)] , solvent(s)%site(m)%r )
+                xmod(2,s,m,io) = DOT_PRODUCT( [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)] , solvent(s)%site(m)%r )
+                xmod(3,s,m,io) = DOT_PRODUCT( [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)] , solvent(s)%site(m)%r )
+            end do
+        END DO
 
-    nfft = grid%n_nodes
-    dl = grid%dl
+        CALL UTest_floorNode
+        CALL UTest_ceilingNode
+        CALL UTest_TrilinearInterpolation
+        CALL UTest_distToFloorNode
+        ! Compute external potential for each combination of solvent side and grid node and orientation
+        err%pb=.FALSE. ! becomes TRUE if a problem is detected during execution.
 
-    IF(.NOT. ALLOCATED(vext_q)) STOP "vext_q should already be allocated in vext_q_from_v_c.f90"
-    IF( ANY(vext_q/=0._dp) ) STOP "vext_q should be zero everywhere in vext_q_from_v_c.f90"
 
-    IF ( ALL(solute%site%q == zero) .OR. ALL(solvent(1)%site%q == zero) ) RETURN
+        DO CONCURRENT( s=1:solvent(1)%nspec, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:grid%no )
+            vext_q_of_r_and_omega = 0.0_dp
 
-    ! Tabulate the cartesian coordinates of all solvent sites, for all molecular orientations, centered on any MDFT's grid node.
-    do concurrent (s=1:size(solvent))
-        DO CONCURRENT( io=1:grid%no, m=1:size(solvent(s)%site) )
-            xmod(1,s,m,io) = DOT_PRODUCT( [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)] , solvent(s)%site(m)%r )
-            xmod(2,s,m,io) = DOT_PRODUCT( [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)] , solvent(s)%site(m)%r )
-            xmod(3,s,m,io) = DOT_PRODUCT( [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)] , solvent(s)%site(m)%r )
+            DO CONCURRENT (m=1:solvent(1)%nsite, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))
+
+                x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(1,s,m,io),xmod(2,s,m,io),xmod(3,s,m,io)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
+                x(1)=chop(x(1))
+                x(2)=chop(x(2))
+                x(3)=chop(x(3))
+
+                l = floorNode(gridnode,gridlen,x,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
+                u = ceilingNode(gridnode,gridlen,x,.TRUE.)
+                r = distToFloorNode(gridnode,gridlen,x,.TRUE.) ! 0 <= distToFloorNode < 1
+
+                if ( ANY(r<0._dp) .or. ANY(r>1._dp) ) THEN
+                    err%pb=.TRUE.
+                    err%msg="Problem with r in vext_q_from_v_c.f90"
+                    err%l = l
+                    err%u = u
+                    err%r = r
+                    err%x = x
+                end if
+
+                if ( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) ) THEN
+                    err%pb=.TRUE.
+                    err%msg="Problem with l in vext_q_from_v_c.f90"
+                    err%l = l
+                    err%u = u
+                    err%r = r
+                    err%x = x
+                END IF
+
+                if ( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) ) THEN
+                    err%pb=.TRUE.
+                    err%msg="Problem with u in vext_q_from_v_c.f90"
+                    err%l = l
+                    err%u = u
+                    err%r = r
+                    err%x = x
+                end if
+
+                cube(0,0,0) = Vpoisson (l(1),l(2),l(3))
+                cube(1,0,0) = Vpoisson (u(1),l(2),l(3))
+                cube(0,1,0) = Vpoisson (l(1),u(2),l(3))
+                cube(0,0,1) = Vpoisson (l(1),l(2),u(3))
+                cube(1,1,0) = Vpoisson (u(1),u(2),l(3))
+                cube(1,0,1) = Vpoisson (u(1),l(2),u(3))
+                cube(0,1,1) = Vpoisson (l(1),u(2),u(3))
+                cube(1,1,1) = Vpoisson (u(1),u(2),u(3))
+
+                vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(s)%site(m)%q * TriLinearInterpolation(cube,r)
+            end do
+            Vext_q(i,j,k,io,s) = vext_q_of_r_and_omega
+
         end do
-    END DO
+        if (err%pb) then
+            print*,"msg:",err%msg
+            print*,"Lxyz:",gridlen
+            print*,"x:",err%x
+            print*,"l/u min:",1,1,1
+            print*,"l/u max:",gridnode
+            print*,"l:",err%l
+            print*,"u:",err%u
+            print*,"r:",err%r
+            stop
+        end if
 
-    CALL UTest_floorNode
-    CALL UTest_ceilingNode
-    CALL UTest_TrilinearInterpolation
-    CALL UTest_distToFloorNode
-    ! Compute external potential for each combination of solvent side and grid node and orientation
-    err%pb=.FALSE. ! becomes TRUE if a problem is detected during execution.
-
-
-    DO CONCURRENT( s=1:solvent(1)%nspec, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:grid%no )
-        vext_q_of_r_and_omega = 0.0_dp
-
-        DO CONCURRENT (m=1:solvent(1)%nsite, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))
-
-            x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(1,s,m,io),xmod(2,s,m,io),xmod(3,s,m,io)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
-            x(1)=chop(x(1))
-            x(2)=chop(x(2))
-            x(3)=chop(x(3))
-
-            l = floorNode(gridnode,gridlen,x,.TRUE.) ! r should be in full cartesian coordinates between -infty and +infty
-            u = ceilingNode(gridnode,gridlen,x,.TRUE.)
-            r = distToFloorNode(gridnode,gridlen,x,.TRUE.) ! 0 <= distToFloorNode < 1
-
-            if ( ANY(r<0._dp) .or. ANY(r>1._dp) ) THEN
-                err%pb=.TRUE.
-                err%msg="Problem with r in vext_q_from_v_c.f90"
-                err%l = l
-                err%u = u
-                err%r = r
-                err%x = x
-            end if
-
-            if ( ANY(l<LBOUND(Vpoisson)) .or. ANY(l>UBOUND(Vpoisson)) ) THEN
-                err%pb=.TRUE.
-                err%msg="Problem with l in vext_q_from_v_c.f90"
-                err%l = l
-                err%u = u
-                err%r = r
-                err%x = x
-            END IF
-
-            if ( ANY(u<LBOUND(Vpoisson)) .or. ANY(u>UBOUND(Vpoisson)) ) THEN
-                err%pb=.TRUE.
-                err%msg="Problem with u in vext_q_from_v_c.f90"
-                err%l = l
-                err%u = u
-                err%r = r
-                err%x = x
-            end if
-
-            cube(0,0,0) = Vpoisson (l(1),l(2),l(3))
-            cube(1,0,0) = Vpoisson (u(1),l(2),l(3))
-            cube(0,1,0) = Vpoisson (l(1),u(2),l(3))
-            cube(0,0,1) = Vpoisson (l(1),l(2),u(3))
-            cube(1,1,0) = Vpoisson (u(1),u(2),l(3))
-            cube(1,0,1) = Vpoisson (u(1),l(2),u(3))
-            cube(0,1,1) = Vpoisson (l(1),u(2),u(3))
-            cube(1,1,1) = Vpoisson (u(1),u(2),u(3))
-
-            vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(s)%site(m)%q * TriLinearInterpolation(cube,r)
-        end do
-        Vext_q(i,j,k,io,s) = vext_q_of_r_and_omega
-
-    end do
-    if (err%pb) then
-        print*,"msg:",err%msg
-        print*,"Lxyz:",gridlen
-        print*,"x:",err%x
-        print*,"l/u min:",1,1,1
-        print*,"l/u max:",gridnode
-        print*,"l:",err%l
-        print*,"u:",err%u
-        print*,"r:",err%r
-        stop
-    end if
-
-end subroutine vext_q_from_v_c
+    end subroutine vext_q_from_v_c
 
 end module fastPoissonSolver

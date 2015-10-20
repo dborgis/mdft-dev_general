@@ -3,13 +3,13 @@
 
 MODULE module_lennardjones
 
-    use external_potential, ONly: Vext_lj
-    use precision_kinds,    ONly: dp, i2b
-    use system,             ONly: solute
+    use external_potential, only: Vext_lj
+    use precision_kinds,    only: dp, i2b
+    use module_solute, only: solute
     use module_solvent, only: solvent
     use module_grid, only: grid
-    use constants,          ONly: fourpi
-    use module_input,              ONly: input_line, verbose
+    use constants,          only: fourpi
+    use module_input,              only: input_line, verbose
 
     IMPLICIT NONE
     private
@@ -41,7 +41,7 @@ MODULE module_lennardjones
             LOGICAL :: fullpbc
 
             ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species )
-            ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER ONly TODO
+            ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER only TODO
             ! test if this simplification is true and stop if not
             ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
             ! only if they're all zero but for first site
