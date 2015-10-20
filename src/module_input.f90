@@ -434,6 +434,17 @@ subroutine put_input_in_character_array
   allocate ( input_line (n), SOURCE= arraytemp )
   deallocate (arraytemp)
 
+  ! print what has been considered as input by the parser, that is what is contained by input_line(), to output dir.
+  call execute_command_line("mkdir -p output", WAIT=.TRUE.)  ! just create folder. If it already exists, nothing happens.
+  open(10, FILE='output/dft.in.out' )
+  block
+      integer :: i
+      do i = 1 , SIZE( input_line ) ! print each line of input_line()
+          write(10,*) input_line (i)
+      end do
+  end block
+  close(10)
+
   ! now look for script information {}
   !block
   !character(100) :: txtstart

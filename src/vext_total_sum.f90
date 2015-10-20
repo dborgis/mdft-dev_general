@@ -3,11 +3,11 @@
 ! then it gives a upper value (100 kJ/mol) to vext_total.
 SUBROUTINE vext_total_sum
 
-    use precision_kinds,    ONLY: dp, i2b
-    use system,             ONLY: solvent
+    use precision_kinds,    ONLY: dp
+    use module_solvent, only: solvent
     use module_grid, only: grid
     use external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
-    use module_input,              ONLY: verbose
+    use module_input, only: verbose
 
     IMPLICIT NONE
 
@@ -24,6 +24,7 @@ SUBROUTINE vext_total_sum
 
 
     IF ( .NOT. ALLOCATED ( Vext_total ) ) THEN ! be sure Vext_total is allocated
+        print*, "In vext_total_sum.f90, I am allocating vext_total(nx,ny,nz,no,ns)"
         ALLOCATE ( Vext_total (nx,ny,nz,no,ns), SOURCE=zero )
     END IF
 
@@ -66,5 +67,15 @@ SUBROUTINE vext_total_sum
     !         CALL compute_z_density ( temparray , filename )
     !     END BLOCK
     ! END IF
+
+    ! move the external potential to the solvent type which is used in energy_external (see energy_external_mod)
+    do s = 1, solvent(1)%nspec
+        solvent(s)%vext(:,:,:,:) = vext_total(:,:,:,:,s)
+    end do
+
+    deallocate (vext_lj)
+    deallocate (vext_hard_core)
+    deallocate (vext_total)
+    deallocate (vext_q)
 
 END SUBROUTINE vext_total_sum

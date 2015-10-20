@@ -4,12 +4,13 @@
 
 SUBROUTINE init_external_potential
 
-    use precision_kinds     ,only: dp, i2b
-    use module_input               ,only: getinput
-    use system              ,only: solute, solvent
-    use external_potential  ,only: Vext_total, Vext_q, vextdef0, vextdef1
-    use mod_lj              ,only: init_lennardjones => init
-    use fastPoissonSolver   ,only: start_fastPoissonSolver => init
+    use precision_kinds, only: dp, i2b
+    use module_input, only: getinput
+    use system, only: solute
+    use module_solvent, only: solvent
+    use external_potential, only: Vext_total, Vext_q, vextdef0, vextdef1
+    use module_lennardjones, only: init_lennardjones => init
+    use fastPoissonSolver, only: start_fastPoissonSolver => init
     use module_grid, only: grid
 
     IMPLICIT NONE
@@ -104,7 +105,7 @@ SUBROUTINE init_external_potential
 
         SUBROUTINE prevent_numerical_catastrophes
 
-            use system    ,only: solvent
+            use module_solvent, only: solvent
             use module_grid, only: grid
             use constants ,only: qfact
             IMPLICIT NONE

@@ -2,7 +2,8 @@ module fastPoissonSolver
     ! This module contains everything related to the fast poisson solver(s) of MDFT.
 
     use precision_kinds     ,only: dp, i2b
-    use system              ,only: solute, solvent
+    use system              ,only: solute
+    use module_solvent, only: solvent
     use module_grid, only: grid
     use external_potential  ,only: vext_q
     use module_input               ,only: getinput
@@ -83,7 +84,8 @@ contains
 
         use precision_kinds,    only: dp, i2b, i4b
         use constants,          only: fourpi , zeroC, twopi, qfact
-        use system,             only: solvent
+        use module_solvent, only: solvent
+
         ! Vpoisson = electrostatic potential from charge density and poisson equation
 
         IMPLICIT NONE
@@ -204,7 +206,8 @@ END SUBROUTINE poissonSolver
 SUBROUTINE vext_q_from_v_c (gridnode, gridlen, Vpoisson)
 
     use precision_kinds     ,ONLY: dp, i2b
-    use system              ,ONLY: solute, solvent
+    use system              ,ONLY: solute
+    use module_solvent, only: solvent
     use module_grid, only: grid
     use external_potential  ,ONLY: vext_q
     use constants           ,ONLY: qfact, zero

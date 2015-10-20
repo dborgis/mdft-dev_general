@@ -15,6 +15,7 @@ module module_grid
         real(dp) :: dv ! elemental volume
         real(dp) :: v
         real(dp) :: buffer_length ! length of free space between the extremam of the solute.
+        real(dp), allocatable, dimension(:) :: kx, ky, kz
         !
         ! Angular grid .. angular quadrature
         !
@@ -27,9 +28,10 @@ module module_grid
     end type somegrid
     type(somegrid), public :: grid ! TODO remove target. Was used for retrocompatibility reason
 
-    public :: init_grid
+    public :: init_grid, norm_k, timesExpPrefactork2, k2
 
 contains
+
     subroutine init_grid
         use module_input, only: getinput
         grid%molRotSymOrder = getinput%int('molRotSymOrder', defaultvalue=1) !Get the order of the main symmetry axis of the solvent
@@ -70,5 +72,81 @@ contains
         print*, "dx, dy, dz :", grid%dl
         print*, "[/grid]===="
         print*,
+
+        call tabulate_kx_ky_kz
     end subroutine init_grid
+
+
+    SUBROUTINE tabulate_kx_ky_kz
+        integer :: l
+        integer :: nx, ny, nz
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
+        allocate ( grid%kx(nx/2+1), source=0._dp)
+        allocate ( grid%ky(ny)    , source=0._dp)
+        allocate ( grid%kz(nz)    , source=0._dp)
+        do concurrent ( l=1:nx/2+1 )
+            grid%kx(l) = kproj(1,l)
+        end do
+        do concurrent ( l=1:ny )
+            grid%ky(l) = kproj(2,l)
+        end do
+        do concurrent ( l=1:nz )
+            grid%kz(l) = kproj(3,l)
+        end do
+    END SUBROUTINE
+
+
+    PURE FUNCTION k2 (l,m,n) ! UTILE ????
+        integer, INTENT(IN) :: l,m,n
+        REAL(dp) :: k2
+        k2 = grid%kx(l)**2 + grid%ky(m)**2 + grid%kz(n)**2
+    END FUNCTION k2
+
+
+    PURE FUNCTION norm_k (l,m,n)
+        integer, intent(in) :: l,m,n
+        real(dp) :: norm_k
+        norm_k = sqrt(k2(l,m,n))
+    END FUNCTION norm_k
+
+
+    PURE FUNCTION kproj (dir,l)
+        ! note the special ordering for negative values. See FFTW (FFTW3) documentation
+        ! http://www.fftw.org/doc/Real_002ddata-DFT-Array-Format.html#Real_002ddata-DFT-Array-Format
+        ! http://www.fftw.org/doc/The-1d-Discrete-Fourier-Transform-_0028DFT_0029.html#The-1d-Discrete-Fourier-Transform-_0028DFT_0029
+        integer, INTENT(IN) :: dir, l ! dir is 1 for x, 2 for y, 3 for z
+        REAL(dp) :: kproj
+        integer :: m1
+        real(dp), parameter :: twopi=2._dp*acos(-1._dp)
+        IF ( l <= grid%n_nodes(dir)/2 ) THEN
+            m1 = l - 1
+        ELSE
+            m1 = l - 1 - grid%n_nodes(dir)
+        END IF
+        kproj = twopi/grid%length(dir)*REAL(m1,dp)
+    END FUNCTION
+
+
+    PURE FUNCTION kvec (l,m,n)
+        integer, INTENT(IN) :: l,m,n
+        REAL(dp), DIMENSION(3) :: kvec
+        kvec(1:3) = [ kproj(1,l), kproj(2,l), kproj(3,l) ]
+    END FUNCTION kvec
+
+
+    PURE FUNCTION timesExpPrefactork2 (array3D, prefactor)
+        COMPLEX(dp), DIMENSION(:,:,:), INTENT(IN) :: array3D
+        COMPLEX(dp), DIMENSION(SIZE(array3D,1),SIZE(array3D,2),SIZE(array3D,3)) :: timesExpPrefactork2
+        REAL(dp), INTENT(IN) :: prefactor
+        integer :: i,j,k,imax,jmax,kmax
+        imax = SIZE(array3D,1)
+        jmax = SIZE(array3D,2)
+        kmax = SIZE(array3D,3)
+        DO CONCURRENT ( i=1:imax, j=1:jmax, k=1:kmax )
+            timesExpPrefactork2 (i,j,k) = array3D (i,j,k) * EXP( prefactor* k2 (i,j,k) )
+        END DO
+    END FUNCTION
+
 end module module_grid

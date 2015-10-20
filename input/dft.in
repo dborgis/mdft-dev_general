@@ -17,8 +17,8 @@ nxnynz = 35 23 12
 #mole_fractions
 #1.0
 
-ck_species = spce   # spc or spce or stock or perso
-readDensityDensityCorrelationFunction = T
+#ck_species = spce   # spc or spce or stock or perso
+#readDensityDensityCorrelationFunction = T
 #polarization = T
 #polarization_order = dipol # multi or dipol
 #include_nc_coupling = F
@@ -42,7 +42,7 @@ ck_en_harm_sph = F
 ############################
 # SOLVER
 ############################
-#minimizer = bfgs
+#optimization_method = lbfgs
 #maximum_iteration_nbr = 5
 #epsg =  0.0001  # default 0.0001
 

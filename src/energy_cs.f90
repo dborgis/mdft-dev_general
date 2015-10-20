@@ -6,9 +6,10 @@ contains
     subroutine energy_cs (cs, Fexcnn, dFexcnn, exitstatus)
 
         use precision_kinds , only: i2b, dp
-        use system          , only: solvent, thermocond
+        use system          , only: thermocond
+        use module_solvent, only: solvent
         use module_minimizer       , only: cg_vect_new, dF_new
-        use fft             , only: fftw3, kx, ky, kz
+        use fft             , only: fftw3
         use dcf             , only: cfile
         use mathematica     , only: splint
         use module_grid     , only: grid
@@ -55,11 +56,11 @@ contains
 
         k2max=maxval(cs%x)
         do k=1,nz
-            kz2 = kz(k)**2
+            kz2 = grid%kz(k)**2
             do j=1,ny
-                kz2_ky2=kz2+ky(j)**2
+                kz2_ky2=kz2+grid%ky(j)**2
                 do i=1,nx/2+1
-                    k2 = sqrt(kz2_ky2+kx(i)**2)
+                    k2 = sqrt(kz2_ky2+grid%kx(i)**2)
                     if( k2<k2max ) then
                         call splint( xa=cs%x, ya=cs%y, y2a=cs%y2, n=size(cs%y), x=k2, y=c_loc)
                     else

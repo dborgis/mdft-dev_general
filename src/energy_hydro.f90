@@ -3,7 +3,9 @@ SUBROUTINE energy_hydro (Fint)
     !
     use precision_kinds     ,ONLY: dp, i2b
     use module_grid, only: grid
-    ! use system              ,ONLY: thermocond, solvent(1)%nspec, grid, solvent, solvent(1)%nspec
+    use module_solvent, only: solvent
+    ! use system              ,ONLY: thermocond, grid
+    !use module_solvent, only: solvent
     ! use dcf                 ,ONLY: c_s, nb_k, delta_k, c_s_hs
     ! use constants           ,ONLY: fourpi,i_complex,twopi,zerodp,zeroC
     ! use module_minimizer           ,ONLY: cg_vect_new, FF, dF_new

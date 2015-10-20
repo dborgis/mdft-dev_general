@@ -3,7 +3,7 @@ MODULE dcf
     use precision_kinds, ONLY: dp, i2b
     use module_input, ONLY: getinput, n_linesInFile, deltaAbscissa
     use mathematica, only: spline, splint
-    use system, only: solvent
+    use module_solvent, only: solvent
 
 
     IMPLICIT NONE

@@ -36,7 +36,7 @@ LDFLAGS = $(FFTW_LIBRARIES) $(NLOPT_LIBRARIES)
 # FCFLAGS = -J $(MODDIR) -I $(MODDIR) -I $(FFTW_INC_DIR) -Wfatal-errors # -fdiagnostics-color=auto
 # LDFLAGS = -L $(FFTW_LIB_DIR) -lfftw3_threads -lfftw3
 
-DEBUG = -Og -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall
+DEBUG = -Og -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -Wno-unused-variable -Wno-conversion -Wno-character-truncation
 # -g turns on debugging
 # -p turns on profiling
 # -Wextra turns on extra warning. It is extremely verbose.
@@ -78,7 +78,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/get_final_polarization.o\
 	$(OBJDIR)/init_density.o\
 	$(OBJDIR)/init_external_potential.o\
-	$(OBJDIR)/init_fftw3_plans.o\
 	$(OBJDIR)/init_simu.o\
 	$(OBJDIR)/lennard_jones_perturbation_to_hard_spheres.o\
 	$(OBJDIR)/main.o\
@@ -100,7 +99,6 @@ FOBJ = $(OBJDIR)/allocate_from_input.o\
 	$(OBJDIR)/module_solute_geometry.o\
 	$(OBJDIR)/module_system.o\
 	$(OBJDIR)/print_header.o\
-	$(OBJDIR)/print_input_in_output_folder.o\
 	$(OBJDIR)/print_supercell_xsf.o\
 	$(OBJDIR)/process_output.o\
 	$(OBJDIR)/read_solute.o\
@@ -396,11 +394,6 @@ $(OBJDIR)/init_external_potential.o:\
 	$(OBJDIR)/module_precision_kinds.o\
 	$(OBJDIR)/module_fastPoissonSolver.o
 
-$(OBJDIR)/init_fftw3_plans.o:\
-	$(SRCDIR)/init_fftw3_plans.f90\
-	$(OBJDIR)/module_grid.o\
-	$(OBJDIR)/module_fft.o
-
 $(OBJDIR)/init_simu.o:\
 	$(SRCDIR)/init_simu.f90\
 	$(OBJDIR)/module_quadrature.o\
@@ -507,11 +500,6 @@ $(OBJDIR)/module_system.o:\
 
 $(OBJDIR)/print_header.o:\
 	$(SRCDIR)/print_header.f90
-
-$(OBJDIR)/print_input_in_output_folder.o:\
-	$(SRCDIR)/print_input_in_output_folder.f90\
-	$(OBJDIR)/module_precision_kinds.o\
-	$(OBJDIR)/module_input.o
 
 $(OBJDIR)/print_supercell_xsf.o:\
 	$(SRCDIR)/print_supercell_xsf.f90\

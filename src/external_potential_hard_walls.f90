@@ -11,7 +11,7 @@ SUBROUTINE external_potential_hard_walls
 
     use precision_kinds    ,ONLY: i2b, dp
     use module_input              ,ONLY: input_line, getinput
-    use system             ,ONLY: solvent
+    use module_solvent, only: solvent
     use external_potential ,ONLY: Vext_total
     use hardspheres        ,ONLY: hs
     use module_grid, only: grid

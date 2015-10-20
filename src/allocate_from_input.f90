@@ -3,7 +3,8 @@ SUBROUTINE allocate_from_input
 
     use precision_kinds     ,ONLY: i2b , dp
     use module_input        ,ONLY: input_line, getinput, verbose
-    use system              ,ONLY: thermoCond, mole_fraction, solvent
+    use system              ,ONLY: thermoCond, mole_fraction
+    use module_solvent, only: solvent
     use constants           ,ONLY: eightpiSQ, boltz, navo
     use module_grid, only: grid, init_grid
 
@@ -11,7 +12,6 @@ SUBROUTINE allocate_from_input
     integer:: i, s
 
     verbose = getinput%log( "verbose", defaultvalue=.false.)
-
 
     print*,
     print*, "[Conditions]====="
@@ -139,8 +139,8 @@ SUBROUTINE allocate_from_input
     ! It checks that the sum of all mole fractions is 1, and that every mole fractions are between 0 and 1.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SUBROUTINE check_error_in_mole_fraction ( mole_fraction )
-        use precision_kinds,only : i2b , dp
-        use system,only : solvent
+        use precision_kinds, only: i2b , dp
+        use module_solvent, only: solvent
         IMPLICIT NONE
         real(dp), dimension ( solvent(1)%nspec ) , intent(in) :: mole_fraction
         integer(i2b):: s

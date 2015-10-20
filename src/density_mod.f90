@@ -32,10 +32,7 @@ contains
             den%is_built = .true.
         end if
     end subroutine
-    subroutine reshapeto1d
-    end subroutine
-    subroutine reshapeto4d
-    end subroutine
+
     function is_negative_somewhere(den)
         class(density), intent(in) :: den
         logical :: is_negative_somewhere

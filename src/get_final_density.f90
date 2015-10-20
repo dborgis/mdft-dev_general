@@ -2,11 +2,11 @@
 PURE SUBROUTINE get_final_density ( neq , solventspecies)
 
     use precision_kinds, ONLY: dp , i2b
-    use system,          ONLY: solvent
+    use module_solvent, only: solvent
     use module_minimizer,       ONLY: CG_vect_new
-    use fft,             ONLY: fftw3 , timesExpPrefactork2
+    use fft,             ONLY: fftw3
     use module_input,           ONLY: verbose
-    use module_grid, only: grid
+    use module_grid, only: grid, timesExpPrefactork2
 
     IMPLICIT NONE
 

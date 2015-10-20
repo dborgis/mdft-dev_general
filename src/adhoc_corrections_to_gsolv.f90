@@ -2,7 +2,8 @@ subroutine adhoc_corrections_to_gsolv
 ! ... Here, we print all the adhoc corrections one should take into account before comparing MDFT results to MD and/or experiments.
 
     use precision_kinds, only: dp, sp, i2b
-    use system, only: solute, solvent, thermocond
+    use system, only: solute, thermocond
+    use module_solvent, only: solvent
     use module_minimizer, only: FF , cg_vect_new
     use constants, only: zerodp
     use mathematica, only: chop

@@ -3,7 +3,8 @@ SUBROUTINE energy_ideal (Fideal)
 
     use precision_kinds, ONLY: dp
     use module_minimizer, ONLY: cg_vect_new, FF, dF_new
-    use system, ONLY: thermocond, solvent
+    use system, ONLY: thermocond
+    use module_solvent, only: solvent
     use module_grid, only: grid
 
     IMPLICIT NONE

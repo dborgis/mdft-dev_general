@@ -42,9 +42,9 @@ module quadrature
     print*,
     print*,"==="
     print*,"grid pour quadrature angulaire"
-    grid%molrotsymorder = getinput%int("molrotsymorder", defaultvalue=1)
+    grid%molrotsymorder = getinput%int("molrotsymorder", defaultvalue=1, assert=">0")
     molrotsymorder = grid%molrotsymorder
-    grid%mmax = getinput%int("mmax", defaultvalue=4)
+    grid%mmax = getinput%int("mmax", defaultvalue=1, assert=">0")
     grid%ntheta = grid%mmax+1
     grid%nphi = 2*grid%mmax+1
     grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1

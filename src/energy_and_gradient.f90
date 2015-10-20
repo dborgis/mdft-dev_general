@@ -1,5 +1,5 @@
 !===================================================================================================================================
-subroutine energy_and_gradient (iter)
+subroutine energy_and_gradient (iter, f, df)
 
 ! In this SUBROUTINE one calls the different parts of the total energy
 ! first is computed the radial_part, then ... blabla.
@@ -8,43 +8,72 @@ subroutine energy_and_gradient (iter)
 ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
 ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
-    use precision_kinds ,only: dp
-    use module_input           ,only: getinput
-    use module_minimizer       ,only: FF, dF_new
-    use system          ,only: solute, solvent
-    use dcf             ,only: c_s!, c_s_hs
-    use module_grid     ,only: grid
-
-    use ENERGY, ONLY : energy_cs
+    use precision_kinds, only: dp
+    use module_input, only: getinput
+    use system, only: solute
+    use module_solvent, only: solvent
+    use dcf, only: c_s!, c_s_hs
+    use module_grid, only: grid
+    use energy, only : energy_cs
 
     implicit none
 
-    INTEGER, INTENT(INOUT) :: iter
-    REAL(dp) :: Fext,Fid,Fexcnn,FexcPol,F3B1,F3B2,F3B_ww,Ffmt,Ffmtcs,Fexc_ck_angular
-    real(dp) :: df_loc (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
-    LOGICAL :: opn
-    INTEGER :: i, exitstatus
+    real(dp), intent(out) :: f
+    real(dp), intent(out) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
+    real(dp) :: df_bis (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
+    integer, intent(in) :: iter
+    logical :: opn
+    integer :: i, exitstatus
+    type exc_type
+        real(dp) :: cs, pol, 3b1, 3b2, 3bww, ck_angular, wca, fmt
+        logical :: do_cs, do_pol, do_3b1, do_3b2, do_3bww, do_ck_angular, do_wca, do_fmt
+    end type
+    type ff_type
+        real(dp) :: id, ext
+        logical :: do_id, do_ext
+        type(exc_type) :: exc
+    end type
+    type (ff_type) :: ff
+
+
+
+
 
 STOP "I AM NOW IN ENERGY AND GRADIENT. I STOP HERE BECAUSE WE ARE TESTING THE INITIALIZATION"
 
-    F3B_ww=0.0_dp
-    Fext = 0._dp
-    Fid = 0._dp
-    Ffmt = 0._dp
-    Ffmtcs = 0._dp
-    Fexcnn = 0._dp
-    FexcPol = 0._dp
-    F3B1 = 0._dp
-    F3B2 = 0._dp
-    Fexc_ck_angular = 0._dp
 
-    FF=0
-    dF_new=0
+
+    !   First I prepare the tree of calculations to be done
+    ff%do_id = .true.
+    ff%do_ext = .true.
+    ff%do_fmt = .false.
+    ff%do_fmtcs = .false.
+    ff%do_excnn = .false.
+    ff%do_excpol = .false.
+    ff%do_3b1 = .false.
+    ff%do_3b2 = .false.
+
+
+    f=0._dp
+    df=0
 
     IF (iter==1) PRINT*,
 
-    CALL energy_ideal (Fid)
-    CALL energy_external (Fext)
+
+    !   We always compute ideal and external contributions
+    ff%do_id = .true.
+    ff%do_ext = .true.
+    ff%exc%do_fmt = getinput%log ('hard_sphere_fluid', defaultvalue=.false.)
+    ff%exc%do_wca = getinput%log ('wca', defaultvalue=.false.)
+    ff%exc%do_3b = getinput%log ('threebody', defaultvalue=.false. )
+
+
+
+    if (ff%do_id) call energy_ideal (ff%id)
+    if (ff%do_ext) call energy_external (ff%ext)
+    if (ff%do_fmt) call energy_fmt (ff%exc%fmt, df)
+    if (ff%exc%do_wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc%wca)
+
 
 
     !
@@ -65,8 +94,7 @@ STOP "I AM NOW IN ENERGY AND GRADIENT. I STOP HERE BECAUSE WE ARE TESTING THE IN
 
     ! compute radial part of the excess free energy
     if (getinput%log('hard_sphere_fluid', defaultvalue=.false.) ) then
-      call energy_fmt (Ffmt) ! => pure hard sphere contribution
-      FF=FF+Ffmt
+        call energy_fmt (f, df) !   pure hard sphere contribution
     end if
 
     ! test if there is a LJ perturbation to hard spheres ! WCA model etc. to implement more intelligently
@@ -83,7 +111,7 @@ STOP "I AM NOW IN ENERGY AND GRADIENT. I STOP HERE BECAUSE WE ARE TESTING THE IN
                     PRINT*, 'You are using HSB and VdW so you are withdrawing twice the HS second order term'
                     STOP
                 END IF
-                CALL energy_hydro (Fexcnn)
+                CALL energy_hydro (fexcnn)
             ELSE
                 STOP "Hydrophobicity TRUE can only be associated to treatment_of_hydro == C or VdW"
             END IF
@@ -145,16 +173,16 @@ IF (iter /= -10) THEN  !!!Do not write it for the step that is used to compute a
     write(*,'(A)')"======================================"
     write(*,'(A,I3)')    "iteration       :",iter
     write(*,'(A,F16.8)') "FF              =",FF
-    write(*,'(A,F16.8)') "norm2(dF_new)   =",norm2(dF_new)
-    write(*,'(A,F16.8)') "Fext            =",Fext
-    write(*,'(A,F16.8)') "Fid             =",Fid
-    write(*,'(A,F16.8)') "Fexcnn          =",Fexcnn
-    write(*,'(A,F16.8)') "FexcPol         =",FexcPol
-    write(*,'(A,F16.8)') "F3B1            =",F3B1
-    write(*,'(A,F16.8)') "F3B2            =",F3B2
-    write(*,'(A,F16.8)') "F3B_solvent     =",F3B_ww
-    write(*,'(A,F16.8)') "Ffmt            =",Ffmt
-    ! write(*,'(A,F16.8)') "Ffmtcs          =",Ffmtcs
+    write(*,'(A,F16.8)') "norm2(dF_new)   =",norm2(dF)
+    write(*,'(A,F16.8)') "Fext            =",ff%ext
+    write(*,'(A,F16.8)') "Fid             =",ff%id
+    write(*,'(A,F16.8)') "Fexcnn          =",ff%excnn
+    write(*,'(A,F16.8)') "FexcPol         =",ff%excPol
+    write(*,'(A,F16.8)') "F3B1            =",ff%3B1
+    write(*,'(A,F16.8)') "F3B2            =",ff%3B2
+    write(*,'(A,F16.8)') "F3B_solvent     =",ff%3B_ww
+    write(*,'(A,F16.8)') "Ffmt            =",ff%fmt
+    write(*,'(A,F16.8)') "Ffmtcs          =",ff%fmtcs
     write(*,'(A,F16.8)') "Fexc_ck_angular =",Fexc_ck_angular
     write(*,'(A)')
 END IF

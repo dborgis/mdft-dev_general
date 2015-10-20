@@ -5,7 +5,8 @@ SUBROUTINE compute_purely_repulsive_potential
 !
 !     use precision_kinds     ,ONLY: dp, i2b
 !     use module_input               ,ONLY: getinput%dp, verbose
-!     use system              ,ONLY: thermoCond, solute, solvent
+!     use system              ,ONLY: thermoCond, solute
+!     use module_solvent, only: solvent
 !     use external_potential  ,ONLY: Vext_total
 !     use constants           ,ONLY: zerodp=>zero
     use module_grid, only: grid

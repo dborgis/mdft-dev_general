@@ -5,13 +5,13 @@ MODULE system
 
     IMPLICIT NONE
 
-    TYPE :: sites
+    type :: site_type
         CHARACTER(100) :: name
         INTEGER(i2b) :: type, n_sites
         REAL(dp), DIMENSION(3) :: r
         REAL(dp) :: q, sig, eps, lambda1, lambda2
         INTEGER(i2b) :: Z ! atomic number
-    END TYPE sites
+    end type site_type
 
     type :: vextType
         real(dp) :: tot
@@ -20,29 +20,19 @@ MODULE system
         real(dp) :: h
     end type vextType
 
-    TYPE :: solventType
+    type :: solute_type
         character(130) :: name
         integer :: molrotsymorder
         integer :: nsite ! number of site of the solvent molecule
         integer :: nspec ! number of solvent species
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         real(dp) :: diameter ! hard sphere diameter, for instance
-        type (sites), allocatable :: site(:)
-        real(dp), allocatable :: n(:,:,:)  ! number density
-        real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
-        real(dp), allocatable :: Dn(:,:,:) ! Dn = n - n0
-        real(dp), allocatable :: rho(:,:,:,:)! number density per orientation = n0/(8pi²/molrotsymorder)
-        real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
-        real(dp), allocatable :: Drho(:,:,:,:) ! Drho = rho - rho0
-        complex(dp), allocatable :: sigma_k(:,:,:,:) ! charge factor
-        complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! molecule polarization factor
-        type(vextType), allocatable :: vext(:,:,:,:) ! nfft1,nfft2,nfft3,orientation
-    END TYPE
+        type (site_type), allocatable :: site(:)
+    end type
 
-    TYPE (solventType), ALLOCATABLE :: solvent(:)
-    TYPE (solventType) :: solute
+    type (solute_type) :: solute
 
-    TYPE :: thermoCondType
+    type :: thermoCondType
         REAL(dp) :: T ! temperature
         REAL(dp) :: kbT ! temperature energy unit
         REAL(dp) :: beta ! 1/kbT

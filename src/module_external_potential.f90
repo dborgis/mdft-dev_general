@@ -20,7 +20,6 @@ MODULE external_potential
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_total ! external potential as the sum of all external potentials (LJ + charge + ... )
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_lj
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: Vext_q ! ( nfft1 , nfft2 , nfft3 , angles , solvent(1)%nspec )
-    REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:)   :: Vext_hard ! hard potential
     REAL(dp), ALLOCATABLE, DIMENSION(:,:,:,:)     :: Vext_hard_core ! hard core potential
 
     !Calculation of charge density
@@ -55,7 +54,7 @@ MODULE external_potential
     !===============================================================================================================================
     ! This subroutine adds a hard wall all around the supercell
         use precision_kinds  ,ONLY: dp
-        use system           ,ONLY: solvent
+        use module_solvent, only: solvent
         use module_grid, only: grid
         IF (.NOT. ALLOCATED(vext_hard_core)) THEN
             ALLOCATE ( vext_hard_core(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),solvent(1)%nspec) ,SOURCE=0._dp)
@@ -75,7 +74,7 @@ MODULE external_potential
     SUBROUTINE vextdef0
     !===============================================================================================================================
         use precision_kinds ,ONLY: dp
-        use system          ,ONLY: solvent
+        use module_solvent          ,ONLY: solvent
         use module_grid, only: grid
         IMPLICIT NONE
         REAL(dp), PARAMETER :: radius=1.0_dp
