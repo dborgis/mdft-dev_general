@@ -53,7 +53,7 @@ MODULE external_potential
     SUBROUTINE vextdef1
     !===============================================================================================================================
     ! This subroutine adds a hard wall all around the supercell
-        use precision_kinds  ,ONLY: dp
+        use precision_kinds, ONLY: dp
         use module_solvent, only: solvent
         use module_grid, only: grid
         IF (.NOT. ALLOCATED(vext_hard_core)) THEN

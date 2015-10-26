@@ -1,10 +1,7 @@
 ! Variable relative to the system being studied
 MODULE system
-
     use precision_kinds , ONLY: i2b,dp
-
-    IMPLICIT NONE
-
+    implicit none
     type :: site_type
         CHARACTER(100) :: name
         INTEGER(i2b) :: type, n_sites
@@ -12,21 +9,20 @@ MODULE system
         REAL(dp) :: q, sig, eps, lambda1, lambda2
         INTEGER(i2b) :: Z ! atomic number
     end type site_type
-
     type :: vextType
         real(dp) :: tot
         real(dp) :: lj
         real(dp) :: q, qold
         real(dp) :: h
     end type vextType
-
-
     type :: thermoCondType
         REAL(dp) :: T ! temperature
         REAL(dp) :: kbT ! temperature energy unit
         REAL(dp) :: beta ! 1/kbT
     END TYPE
-    TYPE (thermoCondType) :: thermoCond ! everything related to the thermodynamic conditions
+    type (thermoCondType) :: thermoCond ! everything related to the thermodynamic conditions
+    private
+    public :: site_type, thermocond, mole_fraction
 
 
     ! type :: somegrid
@@ -63,9 +59,9 @@ MODULE system
     REAL(dp), ALLOCATABLE , DIMENSION (:) :: mole_fraction ! mole fraction of each species "x_i"
     !> for xsf printing
 
-    type :: enertype
-        real(dp) :: tot, ext, id, fmt, fmtcs, excnn, excpol, b31, b32, exc_ck_angular
-    end type enertype
-    type (enertype) :: FF
+    ! type :: enertype
+    !     real(dp) :: tot, ext, id, fmt, fmtcs, excnn, excpol, b31, b32, exc_ck_angular
+    ! end type enertype
+    ! type (enertype) :: FF
 
 END MODULE system

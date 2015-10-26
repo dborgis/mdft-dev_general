@@ -48,13 +48,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_dp (tag, defaultvalue)
+  function input_dp (tag, defaultvalue, assert)
     IMPLICIT NONE
     REAL(DP) :: input_dp
     CHARACTER(*), INTENT(IN) :: tag
     REAL(DP), optional, intent(in) :: defaultvalue
     INTEGER :: i, j
     logical :: tag_is_found
+    character(*), optional, intent(in) :: assert
     if (.not. allocated(input_line) ) call put_input_in_character_array
     tag_is_found = .false.
     j=LEN(tag)
@@ -66,14 +67,44 @@ contains
       end if
     END DO
     if (tag_is_found .eqv. .false. .and. present(defaultvalue)) input_dp = defaultvalue
+    if (present(assert)) then
+        select case (assert)
+        case (">0")
+            if (input_dp <= 0) then
+                print*, tag,"=",input_dp,". Must be >0"
+                stop
+            end if
+        case (">=0")
+            if (input_dp < 0) then
+                print*, tag,"=",input_dp,". Must be >=0"
+                stop
+            end if
+        case ("<0")
+            if (input_dp >= 0) then
+                print*, tag,"=",input_dp,". Must be <0"
+                stop
+            end if
+        case ("<=0")
+            if (input_dp > 0) then
+                print*, tag,"=",input_dp,". Must be <=0"
+                stop
+            end if
+        case default
+            print*, 'I dont understand your assert for tag:', tag
+            print*, 'defaultvalue', defaultvalue
+            print*, 'assert=', assert
+            stop
+        end select
+    end if
   END FUNCTION input_dp
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_dp2 (tag, defaultvalue)
+  function input_dp2 (tag, defaultvalue, assert)
     IMPLICIT NONE
     REAL(DP) :: input_dp2(2)
     CHARACTER(*), INTENT(IN) :: tag
+    character(*), optional, intent(in) :: assert
     REAL(DP), optional, intent(in) :: defaultvalue(2)
     INTEGER :: i, j
     logical :: tag_is_found
@@ -88,13 +119,43 @@ contains
       end if
     END DO
     if (tag_is_found .eqv. .false. .and. present(defaultvalue)) input_dp2 = defaultvalue
+    if (present(assert)) then
+        select case (assert)
+        case (">0")
+            if (any(input_dp2 <= 0)) then
+                print*, tag,"=",input_dp2,". Must be >0"
+                stop
+            end if
+        case (">=0")
+            if (any(input_dp2 < 0)) then
+                print*, tag,"=",input_dp2,". Must be >=0"
+                stop
+            end if
+        case ("<0")
+            if (any(input_dp2 >= 0)) then
+                print*, tag,"=",input_dp2,". Must be <0"
+                stop
+            end if
+        case ("<=0")
+            if (any(input_dp2 > 0)) then
+                print*, tag,"=",input_dp2,". Must be <=0"
+                stop
+            end if
+        case default
+            print*, 'I dont understand your assert for tag:', tag
+            print*, 'defaultvalue', defaultvalue
+            print*, 'assert=', assert
+            stop
+        end select
+    end if
   END FUNCTION input_dp2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_dp3 (tag, defaultvalue)
+  function input_dp3 (tag, defaultvalue, assert)
     IMPLICIT NONE
     REAL(DP) :: input_dp3(3)
+    character(*), optional, intent(in) :: assert
     CHARACTER(*), INTENT(IN) :: tag
     REAL(DP), optional, intent(in) :: defaultvalue(3)
     INTEGER :: i, j
@@ -110,6 +171,35 @@ contains
       end if
     END DO
     if (tag_is_found .eqv. .false. .and. present(defaultvalue)) input_dp3 = defaultvalue
+    if (present(assert)) then
+        select case (assert)
+        case (">0")
+            if (any(input_dp3 <= 0)) then
+                print*, tag,"=",input_dp3,". Must be >0"
+                stop
+            end if
+        case (">=0")
+            if (any(input_dp3 < 0)) then
+                print*, tag,"=",input_dp3,". Must be >=0"
+                stop
+            end if
+        case ("<0")
+            if (any(input_dp3 >= 0)) then
+                print*, tag,"=",input_dp3,". Must be <0"
+                stop
+            end if
+        case ("<=0")
+            if (any(input_dp3 > 0)) then
+                print*, tag,"=",input_dp3,". Must be <=0"
+                stop
+            end if
+        case default
+            print*, 'I dont understand your assert for tag:', tag
+            print*, 'defaultvalue', defaultvalue
+            print*, 'assert=', assert
+            stop
+        end select
+    end if
   END FUNCTION input_dp3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -164,7 +254,10 @@ contains
                 stop
             end if
         case default
-            stop "assert not found"
+            print*, 'I dont understand your assert for tag:', tag
+            print*, 'defaultvalue', defaultvalue
+            print*, 'assert=', assert
+            stop
         end select
     end if
 
@@ -172,10 +265,11 @@ end function input_int
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_int2 (tag, defaultvalue)
+  function input_int2 (tag, defaultvalue, assert)
     IMPLICIT NONE
     INTEGER :: input_int2(2)
     CHARACTER(*), INTENT(IN) :: tag
+    character(*), optional, intent(in) :: assert
     integer, optional, intent(in) :: defaultvalue(2)
     INTEGER :: i, j
     logical :: tag_is_found
@@ -190,13 +284,44 @@ end function input_int
       end if
     END DO
     if (tag_is_found.eqv..false. .and. present(defaultvalue)) input_int2 = defaultvalue
+    if (present(assert)) then
+        select case (assert)
+        case (">0")
+            if (any(input_int2 <= 0)) then
+                print*, tag,"=",input_int2,". Must be >0"
+                stop
+            end if
+        case (">=0")
+            if (any(input_int2 < 0)) then
+                print*, tag,"=",input_int2,". Must be >=0"
+                stop
+            end if
+        case ("<0")
+            if (any(input_int2 >= 0)) then
+                print*, tag,"=",input_int2,". Must be <0"
+                stop
+            end if
+        case ("<=0")
+            if (any(input_int2 > 0)) then
+                print*, tag,"=",input_int2,". Must be <=0"
+                stop
+            end if
+        case default
+            print*, 'I dont understand your assert for tag:', tag
+            print*, 'defaultvalue', defaultvalue
+            print*, 'assert=', assert
+            stop
+        end select
+    end if
+
   END FUNCTION input_int2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  function input_int3 (tag, defaultvalue)
+  function input_int3 (tag, defaultvalue, assert)
     IMPLICIT NONE
     INTEGER :: input_int3(3)
+    character(*), optional, intent(in) :: assert
     CHARACTER(*), INTENT(IN) :: tag
     integer, optional, intent(in) :: defaultvalue(3)
     INTEGER :: i, j
@@ -212,6 +337,36 @@ end function input_int
       end if
     END DO
     if (tag_is_found.eqv..false. .and. present(defaultvalue)) input_int3 = defaultvalue
+    if (present(assert)) then
+        select case (assert)
+        case (">0")
+            if (any(input_int3 <= 0)) then
+                print*, tag,"=",input_int3,". Must be >0"
+                stop
+            end if
+        case (">=0")
+            if (any(input_int3 < 0)) then
+                print*, tag,"=",input_int3,". Must be >=0"
+                stop
+            end if
+        case ("<0")
+            if (any(input_int3 >= 0)) then
+                print*, tag,"=",input_int3,". Must be <0"
+                stop
+            end if
+        case ("<=0")
+            if (any(input_int3 > 0)) then
+                print*, tag,"=",input_int3,". Must be <=0"
+                stop
+            end if
+        case default
+            print*, 'I dont understand your assert for tag:', tag
+            print*, 'defaultvalue', defaultvalue
+            print*, 'assert=', assert
+            stop
+        end select
+    end if
+
   END FUNCTION input_int3
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -464,6 +619,10 @@ subroutine put_input_in_character_array
   !  end do
   !end do
   !end block
+
+
+  ! check verbosity level. That's not the best place to read this, but certainly better than in module_init>allocate_from_input.
+  verbose = getinput%log( "verbose", defaultvalue=.false.)
 
 END SUBROUTINE put_input_in_character_array
 

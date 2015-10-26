@@ -8,12 +8,13 @@ SUBROUTINE vext_total_sum
     use module_grid, only: grid
     use external_potential, ONLY: Vext_total, Vext_lj, Vext_q, vext_hard_core
     use module_input, only: verbose
+    ! use module_quadrature, only: mean_over_orientations
 
     IMPLICIT NONE
 
     real(dp), parameter :: vmax = HUGE(1.0_dp)
     real(dp), parameter :: fourpi=4._dp*acos(-1._dp), zero=0._dp
-    integer :: nx, ny, nz, no, ns
+    integer :: nx, ny, nz, no, ns, s
 
 
     nx = grid%nx

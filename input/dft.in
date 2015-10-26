@@ -2,12 +2,14 @@
 # SUPERCELL DISCRETIZATION
 ############################
 
+boxlen = 20. 20. 20. 
+boxnod = 64 64 64
+
 inputpourri = 0.1
 
 
 molRotSymOrder = 1
 mmax = 2
-nxnynz = 35 23 12
 
 
 ############################

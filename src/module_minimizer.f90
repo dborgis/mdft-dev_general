@@ -43,7 +43,7 @@ contains
 
         IMPLICIT NONE
 
-        integer :: i ! dummy
+        integer :: i, icg, is, io, iz, iy, ix, itermax ! dummy
 
         itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
 
@@ -62,26 +62,23 @@ contains
         end do
 
         !   init vector x (the densities)
-        block
-            integer :: icg, is, io, iz, iy, ix
-            icg=0
-            do is=1,species(1)%nspec
-                do io=1,grid%no
-                    do iz=1,grid%nz
-                        do iy=1,grid%ny
-                            do ix=1,grid%nx
-                                icg=icg+1
-                                lbfgsb%x(icg) = solvent(is)%density(ix,iy,iz,io)
-                            end do
+        icg=0
+        do is=1,solvent(1)%nspec
+            do io=1,grid%no
+                do iz=1,grid%nz
+                    do iy=1,grid%ny
+                        do ix=1,grid%nx
+                            icg=icg+1
+                            lbfgsb%x(icg) = solvent(is)%density(ix,iy,iz,io)
                         end do
                     end do
                 end do
             end do
-            if (icg /= lbfgsb%n) then
-                print*, "icg should be == lbfgsb%n in init of module_minimizer.f90 (l.174)"
-                stop
-            end if
-        end block
+        end do
+        if (icg /= lbfgsb%n) then
+            print*, "icg should be == lbfgsb%n in init of module_minimizer.f90 (l.174)"
+            stop
+        end if
 
     end subroutine init
 

@@ -7,8 +7,8 @@ contains
 
         use precision_kinds , only: i2b, dp
         use system          , only: thermocond
-        use module_solvent, only: solvent
-        use module_minimizer       , only: cg_vect_new, dF_new
+        use module_solvent  , only: solvent
+        use module_minimizer, only: cg_vect_new, dF_new
         use fft             , only: fftw3
         use dcf             , only: cfile
         use mathematica     , only: splint
@@ -18,7 +18,7 @@ contains
         integer :: nx, ny, nz, no, ns, i,j,k,s, icg, io
         real(dp), intent(out) :: Fexcnn ! what we want to compute in this routine
         real(dp) :: kT, dV, kz2, kz2_ky2, k2, c_loc, psi, fact, Vint, k2max
-        integer, intent(out) :: exitstatus
+        integer, intent(out), optional :: exitstatus
         type(cfile), intent(in) :: cs
         real(dp), intent(out) :: dFexcnn(:,:,:,:,:)
         real(dp) :: n(grid%nx,grid%ny,grid%nz), n_loc

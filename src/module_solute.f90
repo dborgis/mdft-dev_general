@@ -1,4 +1,6 @@
 module module_solute
+    use precision_kinds, only: dp
+    use system, only: site_type
     implicit none
     type :: solute_type
         character(130) :: name
@@ -14,7 +16,7 @@ module module_solute
     public :: solute_type, solute, read_solute, soluteChargeDensityFromSoluteChargeCoordinates
 
 contains
-    
+
     !> read solute atomic positions, charge, and lennard jones values in solute.in
     !! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
     subroutine read_solute
@@ -62,11 +64,15 @@ contains
         solutediametery = sqrt((soluteymax-soluteymin)**2)
         solutediameterz = sqrt((solutezmax-solutezmin)**2)
     !    solutesigmaljmax = maxval(solute%site%sig)
-        grid%buffer_length = getinput%dp("buffer_length", defaultvalue=15._dp)
-        grid%length(1) = solutediameterx +2.*grid%buffer_length !+2*solutesigmaljmax
-        grid%length(2) = solutediametery +2.*grid%buffer_length !+2*solutesigmaljmax
-        grid%length(3) = solutediameterz +2.*grid%buffer_length !+2*solutesigmaljmax
+        ! grid%buffer_length = getinput%dp("buffer_length", defaultvalue=15._dp)
+        ! grid%length(1) = solutediameterx +2.*grid%buffer_length !+2*solutesigmaljmax
+        ! grid%length(2) = solutediametery +2.*grid%buffer_length !+2*solutesigmaljmax
+        ! grid%length(3) = solutediameterz +2.*grid%buffer_length !+2*solutesigmaljmax
       end block
+
+      CALL mv_solute_to_center ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
+      CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
+
 
     end subroutine read_solute
 
@@ -75,17 +81,16 @@ contains
         use module_input  ,only: getinput
         use module_grid, only: grid
         implicit none
+        integer :: i
+        if (.not.grid%isinitiated) then
+            print*, "The derived type grid is not allocated in mv_solute_to_center (in module_solute). It should"
+            stop "in module_solute, line 87"
+        end if
         if( getinput%log( 'translate_solute_to_center', defaultvalue=.true. )) then
             solute%site%r(1) = solute%site%r(1) + grid%length(1)/2.0_dp
             solute%site%r(2) = solute%site%r(2) + grid%length(2)/2.0_dp
             solute%site%r(3) = solute%site%r(3) + grid%length(3)/2.0_dp
         end if
-    end subroutine mv_solute_to_center
-
-    subroutine assert_solute_inside
-        use module_grid, only: grid
-        implicit none
-        integer :: i
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
@@ -94,7 +99,8 @@ contains
             solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , grid%length(2) )
             solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , grid%length(3) )
         end do
-    end subroutine assert_solute_inside
+    end subroutine mv_solute_to_center
+
 
     ! This subroutine uses the positions of the charges of the solute to extrapolate them on the grid nodes in order to
     ! get the solute charge density soluteChargeDensity (i,j,k).
@@ -143,7 +149,6 @@ contains
         volumElem = PRODUCT(gridlen/REAL(gridnode,dp))
         soluteChargeDensity = soluteChargeDensity / volumElem ! charge density is in charge per unit volume
 
-
         IF (verbose) THEN
             BLOCK
                 CHARACTER(50) :: filename
@@ -153,5 +158,55 @@ contains
         END IF
 
     END SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates
+
+
+
+
+
+    !> Print an XSF file of the supercell for visualisation in VMD for instance.
+    !! Type vmd --xsf output/supercell.xsf to visualise it.
+    SUBROUTINE print_supercell_xsf
+        use precision_kinds, ONLY: i2b
+        use module_grid, only: grid
+        IMPLICIT NONE
+        integer(i2b) :: i
+
+        open(5,file='output/supercell.xsf')
+            100 format (xA)
+            101 format (3(1xF10.5))
+            102 format (1xI5,1xI1)
+            103 format (1xI3,3(1xxF10.5))
+            write(5,100)'# this is the specification file of the supercell'
+            write(5,100)'# lines beginning with # are commented. There cannot be comment lines within the sections'
+            write(5,100)'# XSF format specifications can be found on the XCrySDen website http://www.xcrysden.org/doc/XSF.html'
+            write(5,100)'# I strongly recommends to read this documentation.'
+            write(5,*)
+            write(5,100)'# for periodic structures one has to begin with word CRYSTAL'
+            write(5,100)'CRYSTAL'
+            write(5,100)
+            write(5,100)'# Then one needs to specify the lattice vectors'
+            write(5,100)'# specification of PRIMVEC (in ANGSTROMS) like:'
+            write(5,100)'#         ax, ay, az    (first lattice vector)'
+            write(5,100)'#         bx, by, bz    (second lattice vector)'
+            write(5,100)'#         cx, cy, cz    (third lattice vector)'
+            write(5,100)'# pay attention to vectors as they are written in horizontal way which is quite unusual'
+            write(5,100)'# for now only orthorhombic structures are allowed (free norms of lattice vectors, all angles are 90 degrees)'
+            write(5,100)'PRIMVEC'
+            write(5,101) grid%length(1), 0., 0.
+            write(5,101) 0., grid%length(2), 0.
+            write(5,101) 0., 0., grid%length(3)
+            write(5,*)
+            write(5,100)'# Then one needs to specify the atoms belonging to the unit cell. '
+            write(5,100)'# First number stands for number of atoms in the primitive cell (2 in this case).'
+            write(5,100)'# The second number is always 1 for PRIMCOORD coordinates.'
+            write(5,100)'# in angstroms and cartesian coordinates'
+            write(5,100)'PRIMCOORD'
+            write(5,102) SIZE(solute%site), 1
+            do i = 1, SIZE(solute%site)
+                write(5,103) solute%site(i)%Z, solute%site(i)%r
+            END DO
+        close(5)
+    END SUBROUTINE print_supercell_xsf
+
 
 end module module_solute

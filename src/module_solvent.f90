@@ -1,13 +1,26 @@
 module module_solvent
 
+    use precision_kinds, only: dp
     use system, only: site_type
-    use mathematica, only: chop
     use module_input, only: getinput
     use module_grid, only: grid
 
     implicit none
     private
     public :: solvent, read_solvent
+
+    type :: do_type
+        logical ::  id_and_ext = .false.,&
+        exc_cs = .false.,&
+        exc_fmt = .false.,&
+        exc_wca = .false.,&
+        exc_3b = .false.,&
+        exc_dipolar = .false.,&
+        exc_multipolar_without_coupling_to_density = .false.,&
+        exc_multipolar_with_coupling_to_density = .false.,&
+        exc_hydro = .false.,&
+        exc_nn_cs_plus_nbar = .false.
+    end type
 
     type :: solvent_type
         character(130) :: name
@@ -18,28 +31,105 @@ module module_solvent
         real(dp) :: diameter ! hard sphere diameter, for instance
         real(dp), allocatable :: density(:,:,:,:) ! ix, iy, iz, io
         type (site_type), allocatable :: site(:)
-        real(dp), allocatable :: n(:,:,:)  ! number density
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
-        real(dp), allocatable :: Dn(:,:,:) ! Dn = n - n0
-        real(dp), allocatable :: rho(:,:,:,:)! number density per orientation = n0/(8pi²/molrotsymorder)
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
-        real(dp), allocatable :: Drho(:,:,:,:) ! Drho = rho - rho0
         complex(dp), allocatable :: sigma_k(:,:,:,:) ! charge factor
         complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! molecule polarization factor
-        real(dp), allocatable :: vext(:,:,:,:)
-        ! type(vextType), allocatable :: vext(:,:,:,:) ! nfft1,nfft2,nfft3,orientation
+        real(dp), allocatable :: vext(:,:,:,:), vextq(:,:,:,:)
+        type(do_type) :: do
+        real(dp) :: mole_fraction = 1._dp
     end type
     type (solvent_type), allocatable :: solvent(:)
 
 contains
+
+
+    subroutine functional_decision_tree
+        use module_input, only: getinput
+        implicit none
+        integer :: s
+        !
+        !   Later, we can imagine having different "functional trees" for each solvent.
+        !   That makes sense for instance in water + ions, with HNC for water and MSA for ions.
+        !   For now all species have the same functional.
+        !
+        do s=1,solvent(1)%nspec
+            solvent(s)%do%id_and_ext = .true.
+            solvent(s)%do%exc_fmt = getinput%log ('hard_sphere_fluid', defaultvalue=.false.)
+            solvent(s)%do%exc_wca = getinput%log ('wca', defaultvalue=.false.)
+            solvent(s)%do%exc_3b = getinput%log ('threebody', defaultvalue=.false. )
+
+            select case (getinput%char("polarization", defaultvalue="no"))
+            case("no","none")
+            case("dipolar")
+                solvent(s)%do%exc_dipolar = .true.
+            case("multipolar_without_coupling_to_density")
+                solvent(s)%do%exc_multipolar_without_coupling_to_density = .true.
+            case("multipolar_with_coupling_to_density")
+                solvent(s)%do%exc_multipolar_with_coupling_to_density = .true.
+            case default
+                print*, "The tag 'polarization' in input reads ", getinput%char("polarization", defaultvalue="no")&
+                ,". This is not correct"
+                stop "in energy_and_gradient"
+            end select
+
+
+            if (getinput%log('readDensityDensityCorrelationFunction', defaultvalue=.true.)) THEN
+                if (getinput%log('hydrophobicity', defaultvalue=.false.)) THEN
+                    select case (getinput%char('treatment_of_hydro'))
+                    case ('C')
+                        solvent(s)%do%exc_nn_cs_plus_nbar = .true.
+                    case ('VdW')
+                        if (getinput%log('bridge_hard_sphere', defaultvalue=.false.) ) THEN
+                            print*, 'You are using HSB and VdW so you are withdrawing twice the HS second order term'
+                            stop
+                        end if
+                        solvent(s)%do%exc_hydro = .true.
+                    case default
+                        stop "Hydrophobicity TRUE can only be associated to treatment_of_hydro == C or VdW"
+                    end select
+                else
+                    if( .not. getinput%log('include_nc_coupling', defaultvalue=.false.) ) then
+                        solvent(s)%do%exc_cs = .true.
+                    end if
+                end if
+            end if
+
+        end do
+
+        !
+        ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
+        !
+        IF (getinput%log('bridge_hard_sphere', defaultvalue=.false.) .AND. .NOT. getinput%log('hard_sphere_fluid',defaultvalue=.false.)) THEN
+            STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
+        END IF
+
+    end subroutine functional_decision_tree
+
+
     !===================================================================================================================================
     subroutine read_solvent
         !===================================================================================================================================
         ! Read solvent atomic positions, charge, and lennard jones values in solvent.in
         ! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
+        use mathematica, only: chop
+        use module_input, only: input_line, getinput
         implicit none
         integer :: n, ios, i, j, k, l, s, d
         character(180) :: polarization
+
+        if (allocated(solvent)) then
+            print*, "bug dans read_solvent. Le 21 octobre 2015, j'ai transféré l'allocation de allocate_from_input a read_solvent"
+            print*, "ca a bcp plus de sens de le mettre dans read_solvent que dans le fourre-tout"
+            print*, "cependant il est alloue alors qu'il ne devrait pas l'etre"
+            stop "dans module_solvent/read_solvent"
+        end if
+        
+        s = getinput%int('nb_implicit_species', defaultvalue=1, assert=">0") ! get the number of implicit solvant species
+        allocate( solvent(s) )
+        solvent(:)%nspec = s
+        solvent(1)%nspec = s
+
 
         OPEN(5, FILE= 'input/solvent.in', STATUS= 'old', IOSTAT= ios )! open input/solvent.in and check if it is readable
         IF ( ios/=0 ) STOP 'ERROR: solvent.in can not be opened.'
@@ -57,6 +147,8 @@ contains
             end if
         END DO
         CLOSE(5)
+
+        call read_mole_fractions
 
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
@@ -97,6 +189,30 @@ contains
             print*, "The tag 'polarization' in input reads ", polarization,". This is not correct"
             stop "in read_solvent.f90"
         end select
+
+
+        ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer
+        do i = 1, size(input_line)
+            if (input_line(i)(1:len('ref_bulk_density')) == 'ref_bulk_density') then
+                do s = 1, solvent(1)%nspec
+                    read (input_line(i+s),*) solvent(s)%n0
+                end do
+                exit
+            end if
+        end do
+
+        if (any (solvent%n0 <= 0._dp) ) then
+            print *,"You ask for negative densities!"
+            do s =1, solvent(1)%nspec
+                print *,"For species",s,"you want density (molecule/Ang^3):",solvent(s)%n0
+            end do
+            stop
+        end if
+
+        solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/grid%molrotsymorder)
+
+        call read_mole_fractions
+
     end subroutine read_solvent
 
     !This routine compute : -The solvent molecular charge density, which can be used into Vcoul_from_solvent_charge_density.f90 to
@@ -107,7 +223,7 @@ contains
     subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
         implicit none
         integer :: nx, ny, nz, no, ns
-        integer :: i, j, k, n, s, io
+        integer :: i, j, k, n, s, io, d
         real(dp)     :: r(3), kr, kvec(3)
         complex(dp)  :: fac, X
         complex(dp), parameter :: zeroc = cmplx(0._dp,0._dp), ic = cmplx(0._dp,1._dp)
@@ -134,8 +250,7 @@ contains
         do concurrent ( i=1:nx/2+1, j=1:ny, k=1:nz, s=1:ns  , sum(abs(solvent(s)%site%q))>epsdp) ! mask elimitates solvent molecules without point charges)
 
             kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
-            ksq = sum( kvec**2 )
-            smoother%factor =  exp(-smoother%radius**2 * ksq/2._dp)
+            smoother%factor =  exp(-smoother%radius**2 * sum( kvec**2 )/2._dp)
 
             do concurrent ( io=1:grid%no, n=1:SIZE(solvent(s)%site), abs(solvent(s)%site(n)%q)>epsdp )
                 r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(s)%site(n)%r  )
@@ -163,5 +278,47 @@ contains
             -sum( solvent(s)%molec_polar_k(d,i,j,k,:) ) /real(grid%no,dp)
         end do
     end subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
+
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Subroutine to read the mole fractions in dft.in.
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! This SUBROUTINE open the array input_line which contains every line of input/dft.in
+    ! It then reads every line of input_line and looks for the tag "mole_fractions"
+    ! Then, it reads, one line after the other, the mole fractions of every constituant.
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    SUBROUTINE read_mole_fractions
+        use precision_kinds, only: dp
+        use module_input, only: input_line
+        implicit none
+        integer :: i, j, s
+        if (.not.allocated(solvent)) stop "in read_mole_fractions, solvent is not allocated"
+        select case (solvent(1)%nspec)
+        case (1)
+            solvent(1)%mole_fraction = 1._dp
+            return
+        case default
+            do i = 1, size( input_line )
+                j = len ( 'mole_fractions' )
+                if ( input_line(i)(1:j) == 'mole_fractions' ) then
+                    do s = 1, solvent(1)%nspec
+                        read( input_line(i+s),*) solvent(s)%mole_fraction
+                    end do
+                    exit ! loop over i
+                end if
+            end do
+        end select
+        if (sum(solvent(:)%mole_fraction)/=1._dp) then
+            write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
+            write (*,*) 'here are the number of the species and its associated mole fraction'
+        end if
+        if ( any(solvent(:)%mole_fraction<0._dp) .or. any(solvent(:)%mole_fraction>1._dp) ) THEN
+            write (*,*) 'Critical errror in ALLOCATE_from_input.f90. Mole fractions should be between 0 and 1'
+            write (*,*) 'here are the number of the species and its associated mole fraction'
+            write (*,*) 'STOP'
+            stop
+        end if
+    END SUBROUTINE read_mole_fractions
+
 
 end module module_solvent

@@ -55,7 +55,7 @@ contains
         if (getinput%log('better_poisson_solver')) then
             print*,"BETTER POISSON SOLVER [ON]"
             do concurrent (s = 1:size(solvent))
-                vext_q(:,:,:,:,s) = solvent(s)%vext%q
+                vext_q(:,:,:,:,s) = solvent(s)%vextq
             end do
         else ! this should be removed soon once we're used to this new construction
             print*,"BETTER POISSON SOLVER [OFF]"
@@ -169,7 +169,7 @@ contains
                 do io = 1, grid%no
                     fftw3InBackward = Vpoisson_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     call dfftw_execute (fpspb)
-                    solvent(s)%vext(:,:,:,io)%q = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
+                    solvent(s)%vextq(:,:,:,io) = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
                 end do
             end do
         end if

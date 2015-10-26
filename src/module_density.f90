@@ -1,4 +1,5 @@
 module module_density
+    use iso_c_binding, only: c_double, c_float
     use precision_kinds, only: dp
     use module_solvent, only: solvent
     implicit none
@@ -37,25 +38,26 @@ contains
 
         ! Read the density from a previous run
         if (getinput%log('reuse_density', defaultvalue=.false.)) then
-            INQUIRE (file='input/density.bin.in', EXIST=exists)
-            IF ( .NOT. exists) STOP "input/density.bin.in not found"
-            OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
-            IF ( ios /= 0 ) then
-                print *, 'problem while opening input/density.bin.in. bug at init_density.f90'
-                stop
-            END IF
-            READ ( 10, iostat=ios ) cg_vect_new
-            IF ( ios<0 ) THEN
-                STOP "input/density.bin.in is empty"
-            ELSE IF ( ios>0 ) THEN
-                STOP "problem while trying to read cg_vect_new in input/density.bin.in"
-            END IF
-            PRINT*, '*** RESTART ***'
-            CLOSE (10)
-            OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
-            WRITE ( 10 ) cg_vect_new
-            CLOSE (10)
-            RETURN
+            stop "LOOK AT MODULE_DENSITY"
+            ! INQUIRE (file='input/density.bin.in', EXIST=exists)
+            ! IF ( .NOT. exists) STOP "input/density.bin.in not found"
+            ! OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
+            ! IF ( ios /= 0 ) then
+            !     print *, 'problem while opening input/density.bin.in. bug at init_density.f90'
+            !     stop
+            ! END IF
+            ! READ ( 10, iostat=ios ) cg_vect_new
+            ! IF ( ios<0 ) THEN
+            !     STOP "input/density.bin.in is empty"
+            ! ELSE IF ( ios>0 ) THEN
+            !     STOP "problem while trying to read cg_vect_new in input/density.bin.in"
+            ! END IF
+            ! PRINT*, '*** RESTART ***'
+            ! CLOSE (10)
+            ! OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
+            ! WRITE ( 10 ) cg_vect_new
+            ! CLOSE (10)
+            ! RETURN
         end if
 
 
@@ -63,7 +65,15 @@ contains
         !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
 
         is_vext_q_allocated = allocated (vext_q)
-        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax()
+        select case (dp)
+        case (c_double)
+            threeshold_in_betav = 36.04_dp
+        case (c_float)
+            threeshold_in_betav = 15.9_dp
+        case default
+            stop "In module_density I expect dp to be c_double or c_float. This is not the case."
+        end select
+!        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
 
         do s = 1, solvent(1)%nspec
             do io = 1, grid%no
@@ -72,7 +82,7 @@ contains
                         do i = 1, grid%nx
 
                             if ( is_vext_q_allocated ) then
-                                v = max( Vext_total(i,j,k,io,s) - Vext_q (i,j,k,io,s) )
+                                v = max( Vext_total(i,j,k,io,s), Vext_total(i,j,k,io,s) - Vext_q (i,j,k,io,s) ) ! A VERIFIER
                             else
                                 v = Vext_total(i,j,k,io,s)
                             end if
@@ -106,4 +116,4 @@ contains
         end do
     end function vmax_before_underflow_in_exp_minus_vmax
 
-end module density_mod
+end module module_density

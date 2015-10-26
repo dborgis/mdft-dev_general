@@ -1,7 +1,7 @@
 !> double is the module defining precision variables.
 !! This allows architecture independant programming.
 module precision_kinds
-  use iso_c_binding, only: dp=>C_DOUBLE&
+  use iso_c_binding, only: dp=>C_DOUBLE,&
                            sp=>C_FLOAT
   implicit none
   integer, parameter :: i2b = KIND(1) ! usual integer

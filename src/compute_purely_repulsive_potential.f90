@@ -11,6 +11,7 @@ SUBROUTINE compute_purely_repulsive_potential
 !     use external_potential  ,ONLY: Vext_total
 !     use constants           ,ONLY: zerodp=>zero
     use module_grid, only: grid
+    ! use module_quadrature, only: mean_over_orientations
 !
 !     IMPLICIT NONE
 !
