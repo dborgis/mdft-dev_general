@@ -2,7 +2,7 @@
 subroutine energy_ideal_and_external (fid, fext, df)
 
     use precision_kinds, only: dp
-    use system, ONLY: thermocond
+    use module_thermo, ONLY: thermo
     use module_solvent, only: solvent
     use module_grid, only: grid
     use module_input, only: getinput
@@ -17,7 +17,7 @@ subroutine energy_ideal_and_external (fid, fext, df)
 
 
     ns = solvent(1)%nspec
-    kT = thermocond%kbT
+    kT = thermo%kbT
     dv = grid%dv
     volume = grid%v ! volume
     mu = getinput%dp( 'imposed_chempot', defaultvalue=0._dp)
@@ -59,7 +59,7 @@ subroutine energy_ideal_and_external (fid, fext, df)
 !       dF_new(i,j,k,io,s) = dF_new(i,j,k,io,s) + dFideal_local (io,s,psi)
 !     end do
 !
-!     Fideal = Fideal * thermocond%kbT * grid%dv ! integration factor
+!     Fideal = Fideal * thermo%kbT * grid%dv ! integration factor
 !     FF = FF + Fideal
 !
 !
@@ -72,7 +72,7 @@ subroutine energy_ideal_and_external (fid, fext, df)
 !         real(dp), INTENT(IN) :: psi
 !         real(dp) :: dFideal_local
 !         IF (abs(psi) > epsilon(1._dp)) THEN
-!             dFideal_local = 2.0_dp * psi * prefactor(io,s) * grid%dv * ( thermocond%kbT*LOG(psi**2) )
+!             dFideal_local = 2.0_dp * psi * prefactor(io,s) * grid%dv * ( thermo%kbT*LOG(psi**2) )
 !         ELSE
 !             dFideal_local = 0._dp
 !         END IF

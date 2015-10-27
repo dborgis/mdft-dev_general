@@ -7,9 +7,9 @@ module fft
         INTEGER(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
         REAL(dp), allocatable, dimension(:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
         COMPLEX(dp), allocatable, dimension(:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT
+        integer :: nthread
     end type
     type(fftw3type), public :: fftw3
-    real(dp), private, parameter :: twopi = 2._dp*ACOS(-1._dp)
     public :: init
 
 contains
@@ -17,15 +17,15 @@ contains
     subroutine init_threads
         use module_input, only: getinput
         implicit none
-        integer :: n_threads, iRet
-        n_threads = getinput%int('number_of_fftw3_threads',defaultvalue=1,assert=">0")
-        print*,"Number of threads for FFTW3:", n_threads
+        integer :: iRet
+        fftw3%nthread = getinput%int('number_of_fftw3_threads',defaultvalue=1,assert=">0")
+        print*,"Number of threads for FFTW3:", fftw3%nthread
         call dfftw_init_threads(iRet)
         if (iRet/=1) then
             print*, "Problem in dfftw_init_threads(), returned value is ",iRet
             stop
         end if
-        call dfftw_plan_with_nthreads (n_threads)
+        call dfftw_plan_with_nthreads (fftw3%nthread)
     end subroutine
 
 

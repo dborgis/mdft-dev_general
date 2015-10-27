@@ -29,15 +29,19 @@ module module_grid
     contains
         procedure, nopass :: init
     end type somegrid
-    type(somegrid), public :: grid
+    type(somegrid), protected :: grid
 
-    public :: norm_k, timesExpPrefactork2, k2!,init_grid
+    public :: norm_k, timesExpPrefactork2, k2, mean_over_orientations, grid
+
 
 contains
 
     subroutine init
         use module_input, only: getinput
         implicit none
+        real(dp), parameter :: twopi=2._dp*acos(-1._dp)
+        integer :: io
+
         if (grid%isinitiated) then
             print*, "Dans init_grid, c'est bizarre. On veut initialiser le type derivé grid mais il semble deja initialisé"
             stop "dans module_grid/init_grid "
@@ -74,71 +78,119 @@ contains
 
         ! We now have a full description of the space grid
         print*,
-        print*, "[grid]====="
+        print*, "===== Grid ====="
         print*, "Box Length :", grid%length
         print*, "nodes      :", grid%n_nodes
         print*, "dx, dy, dz :", grid%dl
-        print*, "[/grid]===="
-        print*,
+
+
+
+        grid%mmax = getinput%int("mmax", defaultvalue=1, assert=">0")
+        grid%ntheta = grid%mmax+1
+        grid%nphi = 2*grid%mmax+1
+        grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1
+        grid%no = grid%ntheta*grid%nphi*grid%npsi   ! nombez d'orientations dans la representation Euler
+        grid%dphi = twopi/real(grid%nphi,dp)
+        grid%dpsi = twopi/real(grid%npsi*grid%molrotsymorder,dp)
+        allocate( grid%theta(grid%no) , source=0._dp)
+        allocate( grid%phi(grid%no) , source=0._dp)
+        allocate( grid%psi(grid%no) , source=0._dp)
+        allocate( grid%wtheta(grid%no) , source=0._dp)
+        allocate( grid%wphi(grid%no) , source=0._dp)
+        allocate( grid%wpsi(grid%no) , source=0._dp)
+        allocate( grid%w(grid%no) , source=0._dp)
+        block
+            real(dp) :: thetaofitheta(grid%ntheta), wthetaofitheta(grid%ntheta)
+            integer :: err, io, i, itheta, iphi, ipsi
+            real(dp) :: phiofiphi(grid%nphi), psiofipsi(grid%npsi)
+            real(dp) :: wphiofiphi(grid%nphi)
+            real(dp) :: wpsiofipsi(grid%npsi)
+            wphiofiphi = 1._dp/grid%nphi
+            wpsiofipsi = 1._dp/grid%npsi
+            psiofipsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
+            phiofiphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
+            call gauss_legendre( grid%ntheta, thetaofitheta, wthetaofitheta, err)
+            if (err /= 0) error stop "problem in gauss_legendre"
+            print*, thetaofitheta
+            thetaofitheta = acos(thetaofitheta)
+            print*, thetaofitheta
+            allocate( grid%tio(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
+            io = 0
+            do itheta = 1, grid%ntheta
+                do iphi = 1, grid%nphi
+                    do ipsi = 1, grid%npsi
+                        io = io+1
+                        grid%theta(io) = thetaofitheta(itheta)
+                        grid%phi(io) = phiofiphi(iphi)
+                        grid%psi(io) = psiofipsi(ipsi)
+                        grid%tio(itheta,iphi,ipsi) = io
+                        grid%wtheta(io) = wthetaofitheta(itheta)
+                        grid%wphi(io) = wphiofiphi(iphi)
+                        grid%wpsi(io) = wpsiofipsi(ipsi)
+                        grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io)
+                    end do
+                end do
+            end do
+        end block
+        print*, "ntheta=",grid%ntheta
+
+        open(56, file="output/su3-roots-weights.dat")
+        write(56,*) "theta, weight_theta, phi, weight_phi, psi, weight_psi, weight_total_of_theta_phi_psi"
+        do io=1,grid%no
+            write(56,*) grid%theta(io), grid%wtheta(io), grid%phi(io), grid%wphi(io), grid%psi(io), grid%wpsi(io), grid%w(io)
+        end do
+        close(56)
+
+        print*, "mmax =",grid%mmax
+        print*, "number of orientations",grid%no
+        print*, "number of theta =", grid%ntheta
+        print*, "number of phi=", grid%nphi
+        print*, "molrotsymorder =", grid%molrotsymorder
+        print*, "number of psi=", grid%npsi
+        print*, "sum of all weights =", sum(grid%w)
+        allocate( grid%rotxx(grid%no) , grid%rotxy(grid%no), grid%rotxz(grid%no), source=0._dp)
+        allocate( grid%rotyx(grid%no) , grid%rotyy(grid%no), grid%rotyz(grid%no), source=0._dp)
+        allocate( grid%rotzx(grid%no) , grid%rotzy(grid%no), grid%rotzz(grid%no), source=0._dp)
+        allocate( grid%OMx(grid%no), grid%OMy(grid%no), grid%OMz(grid%no) , source=0._dp)
+
+        select case (grid%no)
+        case (1)
+            grid%Rotxx = 1.0_dp ; grid%Rotxy = 0.0_dp ; grid%Rotxz = 0.0_dp
+            grid%Rotyx = 0.0_dp ; grid%Rotyy = 1.0_dp ; grid%Rotyz = 0.0_dp
+            grid%Rotzx = 0.0_dp ; grid%Rotzy = 0.0_dp ; grid%Rotzz = 1.0_dp
+            grid%OMx = 0._dp ; grid%OMy = 0._dp ; grid%OMz = 1._dp ! ATTENTION completely arbitrary. We decide to put it along z.
+        case default
+            block
+                integer :: itheta, io
+                real(dp) :: cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
+                do io = 1, grid%no
+                    cos_theta = cos(grid%theta(io))
+                    sin_theta = sin(grid%theta(io))
+                    cos_phi = cos(grid%phi(io))
+                    sin_phi = sin(grid%phi(io))
+                    grid%OMx(io) = sin_theta * cos_phi
+                    grid%OMy(io) = sin_theta * sin_phi
+                    grid%OMz(io) = cos_theta
+                    cos_psi = cos(grid%psi(io))
+                    sin_psi = sin(grid%psi(io))
+                    grid%rotxx(io) = cos_theta*cos_phi*cos_psi-sin_phi*sin_psi
+                    grid%rotxy(io) = -cos_theta*cos_phi*sin_psi-sin_phi*cos_psi
+                    grid%rotxz(io) = sin_theta*cos_phi
+                    grid%rotyx(io) = cos_theta*sin_phi*cos_psi+cos_phi*sin_psi
+                    grid%rotyy(io) = -cos_theta*sin_phi*sin_psi+cos_phi*cos_psi
+                    grid%rotyz(io) = sin_theta*sin_phi
+                    grid%rotzx(io) = -sin_theta*cos_psi
+                    grid%rotzy(io) = sin_theta*sin_psi
+                    grid%rotzz(io) = cos_theta
+                end do
+            end block
+        end select
+
+        print*, "===== Grid ====="
 
         call tabulate_kx_ky_kz
         grid%isinitiated = .true.
-
     end subroutine init
-
-    ! subroutine init_grid
-    !     use module_input, only: getinput
-    !     use module_quadrature, only: prepare_quadrature => init
-    !     implicit none
-    !     if (grid%isinitiated) then
-    !         print*, "Dans init_grid, c'est bizarre. On veut initialiser le type derivé grid mais il semble deja initialisé"
-    !         stop "dans module_grid/init_grid "
-    !     end if
-    !     grid%molRotSymOrder = getinput%int('molRotSymOrder', defaultvalue=1, assert=">0") !Get the order of the main symmetry axis of the solvent
-    !     grid%length = getinput%dp3( "lxlylz" , defaultvalue= grid%length )
-    !     if (ANY( grid%length  <= 0._dp ) ) THEN
-    !         PRINT*,'The supercell cannot have negative length.'
-    !         PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',grid%length
-    !         STOP "in module_grid> init_grid"
-    !     end if
-    !     grid%l(1:3) = grid%length(1:3)
-    !     grid%lx = grid%length(1)
-    !     grid%ly = grid%length(2)
-    !     grid%lz = grid%length(3)
-    !
-    !     grid%n_nodes = getinput%int3( "nxnynz" , defaultvalue= nint(grid%length/0.3_dp) )
-    !     if ( any(grid%n_nodes <= 0) ) then
-    !         print*, 'The space is divided into grid nodes. For each direction, you ask', grid%n_nodes,'node.'
-    !         error stop
-    !     end if
-    !     grid%n = grid%n_nodes
-    !     grid%nx = grid%n(1)
-    !     grid%ny = grid%n(2)
-    !     grid%nz = grid%n(3)
-    !
-    !     grid%dl = grid%length / real(grid%n,dp) !
-    !     grid%dx = grid%dl(1)
-    !     grid%dy = grid%dl(2)
-    !     grid%dz = grid%dl(3)
-    !
-    !     grid%v = product(grid%length)
-    !     grid%dv = product(grid%dl)
-    !
-    !     ! We now have a full description of the space grid
-    !     print*,
-    !     print*, "[grid]====="
-    !     print*, "Box Length :", grid%length
-    !     print*, "nodes      :", grid%n_nodes
-    !     print*, "dx, dy, dz :", grid%dl
-    !     print*, "[/grid]===="
-    !     print*,
-    !
-    !     call prepare_quadrature
-    !     call tabulate_kx_ky_kz
-    !     grid%isinitiated = .true.
-    !
-    ! end subroutine init_grid
-
 
     SUBROUTINE tabulate_kx_ky_kz
         integer :: l
@@ -158,7 +210,73 @@ contains
         do concurrent ( l=1:nz )
             grid%kz(l) = kproj(3,l)
         end do
-    END SUBROUTINE
+    END SUBROUTINE tabulate_kx_ky_kz
+
+    !> This SUBROUTINE do the legendre integration over all orientations of any array (density, vext, ...)
+    SUBROUTINE mean_over_orientations ( arrayin , arrayout )
+        use precision_kinds, only: dp
+        implicit none
+        real(dp), intent(in) :: arrayin(:,:,:,:)  ! x, y, z, orientation
+        real(dp), intent(out) :: arrayout(:,:,:)   ! <x, y, z>_orientations
+        ! real(dp), dimension(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3),angGrid%n_angles,molRotGrid%n_angles),&
+        !         intent(in) :: arrayin ! input array
+        ! real(dp), dimension(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3)), intent(out) :: arrayout ! output array
+        integer :: io
+
+        arrayout = 0.0_dp
+        do io = 1, grid%no
+            arrayout = arrayout + arrayin(:,:,:,io)*grid%w(io)
+        end do
+
+        ! arrayout = sum( arrayin * grid%w(:))
+        ! do n=1,angGrid%n_angles
+        !     do p=1,molRotGrid%n_angles
+        !         arrayout(:,:,:)=arrayout(:,:,:)+arrayin(:,:,:,n,p)*angGrid%weight(n)*molRotGrid%weight(p)
+        !     END DO
+        ! END DO
+
+    END SUBROUTINE mean_over_orientations
+
+    subroutine gauss_legendre( n, x, w, exitstatus) ! copy paste from Luc's subroutine Luc74p85
+        !
+        ! Returns the n roots (x) and associated weights(w) of a gauss legendre quadrature of order n
+        ! The roots are the Cos(theta) so that if you need theta, don't forget to acos(x)
+        !
+        implicit none
+        integer, intent(in) :: n
+        real(dp), intent(out) :: x(n), w(n)
+        integer, optional, intent(out) :: exitstatus
+        integer :: m, i, j
+        real(dp), PARAMETER :: pi=acos(-1._dp)
+        real(dp) :: xi, p1, p2, p3, pp, deltaxi
+        exitstatus = 0
+        if( n <= 0 ) then
+            exitstatus = -1
+            return
+        else
+            m = (n+1)/2
+            do i = 1,m          ! on s'interesse au ième zero du polynome pn(x) de legendre
+                xi = cos(pi*(i-0.25)/(n+0.5))     ! estimation de départ qu'on va raffiner par nr
+                deltaxi = 1
+                do while (abs(deltaxi)>1.d-13)
+                  p1 = 1.
+                  p2 = 0.
+                  do j = 1,n
+                    p3 = p2
+                    p2 = p1
+                    p1 = ((2*j-1.)*xi*p2-(j-1.)*p3)/j         ! relation de récurrence entre les pj
+                  end do
+                  pp = n*(xi*p1-p2)/(xi**2-1.)                   ! donne pn' en fonction de pn et pn-1
+                  deltaxi = -p1/pp                                  ! nr
+                  xi = xi + deltaxi
+                end do
+                x(i) = xi
+                w(i) = 1./((1.-xi**2)*pp**2)                  ! poids normalise a 1
+                x(n+1-i) = -xi
+                w(n+1-i) = w(i)
+            end do
+        end if
+    end subroutine gauss_legendre
 
 
     PURE FUNCTION k2 (l,m,n) ! UTILE ????
@@ -189,7 +307,7 @@ contains
             m1 = l - 1 - grid%n_nodes(dir)
         END IF
         kproj = twopi/grid%length(dir)*REAL(m1,dp)
-    END FUNCTION
+    END FUNCTION kproj
 
 
     PURE FUNCTION kvec (l,m,n)
@@ -210,6 +328,6 @@ contains
         DO CONCURRENT ( i=1:imax, j=1:jmax, k=1:kmax )
             timesExpPrefactork2 (i,j,k) = array3D (i,j,k) * EXP( prefactor* k2 (i,j,k) )
         END DO
-    END FUNCTION
+    END FUNCTION timesExpPrefactork2
 
 end module module_grid

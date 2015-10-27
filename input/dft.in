@@ -2,14 +2,15 @@
 # SUPERCELL DISCRETIZATION
 ############################
 
+
+inputpourri = 0.1
 boxlen = 20. 20. 20. 
 boxnod = 64 64 64
 
-inputpourri = 0.1
 
 
 molRotSymOrder = 1
-mmax = 2
+mmax = 1
 
 
 ############################
@@ -61,9 +62,9 @@ if_Linearize_entropy = 1 #if you decide to linearize the entropy, is it on n(r):
 # ELECTROSTATIC POTENTIAL
 ############################
 #solute_charges_scale_factor = 1.0 # scales the charges of the solute. 1: does not change anything. 0: turn off all charges. 0.5: divide all charges by 2.
-poisson_solver = T # use Fourier space to get electrostatic part of external free energy
-better_poisson_solver = T # use the multipole expansion of the solvent molecular charge density
-direct_sum = F
+#poisson_solver = T # use Fourier space to get electrostatic part of external free energy
+#better_poisson_solver = T # use the multipole expansion of the solvent molecular charge density
+#direct_sum = F
 
 
 reuse_density = F

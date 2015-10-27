@@ -129,7 +129,7 @@ end subroutine compute_packing_fractions
 SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, pi
-  use system          ,only: thermoCond
+  use module_thermo, only: thermo
   use module_solvent, only: solvent
   use module_grid, only: grid
   use module_input           ,only: verbose, getinput
@@ -141,7 +141,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   integer  :: s
   character(len=4) :: hs_functional
   hs_functional=getinput%char('hs_functional')
-  kT=thermocond%kbT
+  kT=thermo%kbT
   do s=1,size(solvent) ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
     ! weighted densities in the case of constant density = ref bulk density
     R=hs(s)%R
@@ -196,7 +196,7 @@ end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
 subroutine read_hard_sphere_radius
   use precision_kinds  ,only: dp, i2b
   use module_input            ,only: input_line
-  use system           ,only: thermocond
+  use module_thermo ,only: thermo
   use module_solvent, only: solvent
   implicit none
   integer(i2b) :: i,j,s
@@ -216,7 +216,7 @@ subroutine read_hard_sphere_radius
         READ( input_line(i+s) ,*) hs(s)%R
         IF ( hs(s)%R <= 0.0_dp ) THEN ! check if one radius is negative, ie if one has to compute wca diameter
           print*, "You ask for a WCA calculation of hard sphere diameter"
-          CALL compute_wca_diameter (solvent(s)%n0 , thermocond%T, solvent(s)%site(1)%sig , solvent(s)%site(1)%eps, d_wca)
+          CALL compute_wca_diameter (solvent(s)%n0 , thermo%T, solvent(s)%site(1)%sig , solvent(s)%site(1)%eps, d_wca)
           hs(s)%R = d_wca / 2.0_dp
         END IF
       END DO

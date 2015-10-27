@@ -156,22 +156,6 @@ mdft-dev/fast:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/build
 .PHONY : mdft-dev/fast
 
-src/compute_purely_repulsive_potential.o: src/compute_purely_repulsive_potential.f90.o
-.PHONY : src/compute_purely_repulsive_potential.o
-
-# target to build an object file
-src/compute_purely_repulsive_potential.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/compute_purely_repulsive_potential.f90.o
-.PHONY : src/compute_purely_repulsive_potential.f90.o
-
-src/compute_vcoul_as_sum_of_pointcharges.o: src/compute_vcoul_as_sum_of_pointcharges.f90.o
-.PHONY : src/compute_vcoul_as_sum_of_pointcharges.o
-
-# target to build an object file
-src/compute_vcoul_as_sum_of_pointcharges.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/compute_vcoul_as_sum_of_pointcharges.f90.o
-.PHONY : src/compute_vcoul_as_sum_of_pointcharges.f90.o
-
 src/compute_vext_hard_cylinder.o: src/compute_vext_hard_cylinder.f90.o
 .PHONY : src/compute_vext_hard_cylinder.o
 
@@ -187,14 +171,6 @@ src/compute_vext_hard_sphere.o: src/compute_vext_hard_sphere.f90.o
 src/compute_vext_hard_sphere.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/compute_vext_hard_sphere.f90.o
 .PHONY : src/compute_vext_hard_sphere.f90.o
-
-src/compute_vext_perso.o: src/compute_vext_perso.f90.o
-.PHONY : src/compute_vext_perso.o
-
-# target to build an object file
-src/compute_vext_perso.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/compute_vext_perso.f90.o
-.PHONY : src/compute_vext_perso.f90.o
 
 src/compute_wca_diameter.o: src/compute_wca_diameter.f90.o
 .PHONY : src/compute_wca_diameter.o
@@ -308,14 +284,6 @@ src/energy_threebody_faster.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/energy_threebody_faster.f90.o
 .PHONY : src/energy_threebody_faster.f90.o
 
-src/external_potential_hard_walls.o: src/external_potential_hard_walls.f90.o
-.PHONY : src/external_potential_hard_walls.o
-
-# target to build an object file
-src/external_potential_hard_walls.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/external_potential_hard_walls.f90.o
-.PHONY : src/external_potential_hard_walls.f90.o
-
 src/get_final_polarization.o: src/get_final_polarization.f90.o
 .PHONY : src/get_final_polarization.o
 
@@ -323,14 +291,6 @@ src/get_final_polarization.o: src/get_final_polarization.f90.o
 src/get_final_polarization.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/get_final_polarization.f90.o
 .PHONY : src/get_final_polarization.f90.o
-
-src/init_external_potential.o: src/init_external_potential.f90.o
-.PHONY : src/init_external_potential.o
-
-# target to build an object file
-src/init_external_potential.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/init_external_potential.f90.o
-.PHONY : src/init_external_potential.f90.o
 
 src/main.o: src/main.f90.o
 .PHONY : src/main.o
@@ -356,6 +316,14 @@ src/module_dcf.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_dcf.f90.o
 .PHONY : src/module_dcf.f90.o
 
+src/module_debug.o: src/module_debug.f90.o
+.PHONY : src/module_debug.o
+
+# target to build an object file
+src/module_debug.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_debug.f90.o
+.PHONY : src/module_debug.f90.o
+
 src/module_density.o: src/module_density.f90.o
 .PHONY : src/module_density.o
 
@@ -364,21 +332,13 @@ src/module_density.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_density.f90.o
 .PHONY : src/module_density.f90.o
 
-src/module_external_potential.o: src/module_external_potential.f90.o
-.PHONY : src/module_external_potential.o
+src/module_fastpoissonsolver.o: src/module_fastpoissonsolver.f90.o
+.PHONY : src/module_fastpoissonsolver.o
 
 # target to build an object file
-src/module_external_potential.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_external_potential.f90.o
-.PHONY : src/module_external_potential.f90.o
-
-src/module_fastPoissonSolver.o: src/module_fastPoissonSolver.f90.o
-.PHONY : src/module_fastPoissonSolver.o
-
-# target to build an object file
-src/module_fastPoissonSolver.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_fastPoissonSolver.f90.o
-.PHONY : src/module_fastPoissonSolver.f90.o
+src/module_fastpoissonsolver.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_fastpoissonsolver.f90.o
+.PHONY : src/module_fastpoissonsolver.f90.o
 
 src/module_fft.o: src/module_fft.f90.o
 .PHONY : src/module_fft.o
@@ -428,14 +388,6 @@ src/module_input.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_input.f90.o
 .PHONY : src/module_input.f90.o
 
-src/module_lennardjones.o: src/module_lennardjones.f90.o
-.PHONY : src/module_lennardjones.o
-
-# target to build an object file
-src/module_lennardjones.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_lennardjones.f90.o
-.PHONY : src/module_lennardjones.f90.o
-
 src/module_mathematica.o: src/module_mathematica.f90.o
 .PHONY : src/module_mathematica.o
 
@@ -476,14 +428,6 @@ src/module_precision_kinds.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_precision_kinds.f90.o
 .PHONY : src/module_precision_kinds.f90.o
 
-src/module_quadrature.o: src/module_quadrature.f90.o
-.PHONY : src/module_quadrature.o
-
-# target to build an object file
-src/module_quadrature.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_quadrature.f90.o
-.PHONY : src/module_quadrature.f90.o
-
 src/module_solute.o: src/module_solute.f90.o
 .PHONY : src/module_solute.o
 
@@ -508,6 +452,14 @@ src/module_system.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_system.f90.o
 .PHONY : src/module_system.f90.o
 
+src/module_thermo.o: src/module_thermo.f90.o
+.PHONY : src/module_thermo.o
+
+# target to build an object file
+src/module_thermo.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_thermo.f90.o
+.PHONY : src/module_thermo.f90.o
+
 src/module_time.o: src/module_time.f90.o
 .PHONY : src/module_time.o
 
@@ -515,6 +467,14 @@ src/module_time.o: src/module_time.f90.o
 src/module_time.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_time.f90.o
 .PHONY : src/module_time.f90.o
+
+src/module_vext.o: src/module_vext.f90.o
+.PHONY : src/module_vext.o
+
+# target to build an object file
+src/module_vext.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_vext.f90.o
+.PHONY : src/module_vext.f90.o
 
 src/mylbfgsb.o: src/mylbfgsb.f.o
 .PHONY : src/mylbfgsb.o
@@ -548,14 +508,6 @@ src/output_rdf.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/output_rdf.f90.o
 .PHONY : src/output_rdf.f90.o
 
-src/vext_total_sum.o: src/vext_total_sum.f90.o
-.PHONY : src/vext_total_sum.o
-
-# target to build an object file
-src/vext_total_sum.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/vext_total_sum.f90.o
-.PHONY : src/vext_total_sum.f90.o
-
 src/write_to_cube_file.o: src/write_to_cube_file.f90.o
 .PHONY : src/write_to_cube_file.o
 
@@ -577,11 +529,8 @@ help:
 	@echo "... list_install_components"
 	@echo "... mdft-dev"
 	@echo "... rebuild_cache"
-	@echo "... src/compute_purely_repulsive_potential.o"
-	@echo "... src/compute_vcoul_as_sum_of_pointcharges.o"
 	@echo "... src/compute_vext_hard_cylinder.o"
 	@echo "... src/compute_vext_hard_sphere.o"
-	@echo "... src/compute_vext_perso.o"
 	@echo "... src/compute_wca_diameter.o"
 	@echo "... src/compute_z_density.o"
 	@echo "... src/convert_coordinate_into_icg.o"
@@ -596,37 +545,34 @@ help:
 	@echo "... src/energy_polarization_multi.o"
 	@echo "... src/energy_polarization_multi_with_nccoupling.o"
 	@echo "... src/energy_threebody_faster.o"
-	@echo "... src/external_potential_hard_walls.o"
 	@echo "... src/get_final_polarization.o"
-	@echo "... src/init_external_potential.o"
 	@echo "... src/main.o"
 	@echo "... src/module_constants.o"
 	@echo "... src/module_dcf.o"
+	@echo "... src/module_debug.o"
 	@echo "... src/module_density.o"
-	@echo "... src/module_external_potential.o"
-	@echo "... src/module_fastPoissonSolver.o"
+	@echo "... src/module_fastpoissonsolver.o"
 	@echo "... src/module_fft.o"
 	@echo "... src/module_geometry.o"
 	@echo "... src/module_grid.o"
 	@echo "... src/module_hardspheres.o"
 	@echo "... src/module_init_simu.o"
 	@echo "... src/module_input.o"
-	@echo "... src/module_lennardjones.o"
 	@echo "... src/module_mathematica.o"
 	@echo "... src/module_minimizer.o"
 	@echo "... src/module_periodic_table.o"
 	@echo "... src/module_postprocessing.o"
 	@echo "... src/module_precision_kinds.o"
-	@echo "... src/module_quadrature.o"
 	@echo "... src/module_solute.o"
 	@echo "... src/module_solvent.o"
 	@echo "... src/module_system.o"
+	@echo "... src/module_thermo.o"
 	@echo "... src/module_time.o"
+	@echo "... src/module_vext.o"
 	@echo "... src/mylbfgsb.o"
 	@echo "... src/output_g-r-theta.o"
 	@echo "... src/output_gsitesite.o"
 	@echo "... src/output_rdf.o"
-	@echo "... src/vext_total_sum.o"
 	@echo "... src/write_to_cube_file.o"
 .PHONY : help
 

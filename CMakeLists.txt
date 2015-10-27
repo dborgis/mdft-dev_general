@@ -71,11 +71,10 @@ endif()
 
 # set source files list
 set(mdft_SRCS
-  src/compute_purely_repulsive_potential.f90
-  src/compute_vcoul_as_sum_of_pointcharges.f90
+  src/module_thermo.f90
+  src/module_debug.f90
   src/compute_vext_hard_cylinder.f90
   src/compute_vext_hard_sphere.f90
-  src/compute_vext_perso.f90
   src/compute_wca_diameter.f90
   src/compute_z_density.f90
   src/convert_coordinate_into_icg.f90
@@ -92,29 +91,24 @@ set(mdft_SRCS
   src/energy_polarization_multi.f90
   src/energy_polarization_multi_with_nccoupling.f90
   src/energy_threebody_faster.f90
-  src/external_potential_hard_walls.f90
   src/get_final_polarization.f90
-  src/init_external_potential.f90
-#  src/lennard_jones_perturbation_to_hard_spheres.f90
   src/main.f90
   src/module_constants.f90
   src/module_dcf.f90
   src/module_density.f90
-  src/module_external_potential.f90
-  src/module_fastPoissonSolver.f90
+  src/module_vext.f90
+  src/module_fastpoissonsolver.f90
   src/module_fft.f90
   src/module_geometry.f90
   src/module_grid.f90
   src/module_hardspheres.f90
   src/module_init_simu.f90
   src/module_input.f90
-  src/module_lennardjones.f90
   src/module_mathematica.f90
   src/module_minimizer.f90
   src/module_periodic_table.f90
   src/module_postprocessing.f90
   src/module_precision_kinds.f90
-  src/module_quadrature.f90
   src/module_solute.f90
   src/module_solvent.f90
   src/module_system.f90
@@ -123,7 +117,6 @@ set(mdft_SRCS
   src/output_g-r-theta.f90
   src/output_gsitesite.f90
   src/output_rdf.f90
-  src/vext_total_sum.f90
   src/write_to_cube_file.f90
 )
 

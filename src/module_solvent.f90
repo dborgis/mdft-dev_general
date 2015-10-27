@@ -22,7 +22,13 @@ module module_solvent
         exc_nn_cs_plus_nbar = .false.
     end type
 
+    type :: correlationfunction_type
+        character(150) :: filename
+        real(dp), allocatable :: x(:), y(:)
+    end type
+
     type :: solvent_type
+        logical :: is_initiated=.false.
         character(130) :: name
         integer :: molrotsymorder
         integer :: nsite ! number of site of the solvent molecule
@@ -38,6 +44,9 @@ module module_solvent
         real(dp), allocatable :: vext(:,:,:,:), vextq(:,:,:,:)
         type(do_type) :: do
         real(dp) :: mole_fraction = 1._dp
+        type(correlationfunction_type) :: cs
+    ! contains
+    !     procedure, nopass :: init => read_solvent
     end type
     type (solvent_type), allocatable :: solvent(:)
 
@@ -124,11 +133,11 @@ contains
             print*, "cependant il est alloue alors qu'il ne devrait pas l'etre"
             stop "dans module_solvent/read_solvent"
         end if
-        
+
+
         s = getinput%int('nb_implicit_species', defaultvalue=1, assert=">0") ! get the number of implicit solvant species
         allocate( solvent(s) )
         solvent(:)%nspec = s
-        solvent(1)%nspec = s
 
 
         OPEN(5, FILE= 'input/solvent.in', STATUS= 'old', IOSTAT= ios )! open input/solvent.in and check if it is readable
@@ -212,7 +221,9 @@ contains
         solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/grid%molrotsymorder)
 
         call read_mole_fractions
+        call functional_decision_tree
 
+        solvent%is_initiated = .true.
     end subroutine read_solvent
 
     !This routine compute : -The solvent molecular charge density, which can be used into Vcoul_from_solvent_charge_density.f90 to

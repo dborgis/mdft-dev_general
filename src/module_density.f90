@@ -8,22 +8,32 @@ module module_density
 contains
 
     ! Init the density of each species as a function of position and orientation
-    ! it should be initiated to exp(-beta*Vext_total) but
-    ! Vext_q is the electrostatic part of Vext_total, and is pathologic (it sometimes diverges)
-    ! we thus init the density not using vext, but Vext_total - Vext_q
+    ! it should be initiated to exp(-beta*vext) but
+    ! vextq is the electrostatic part of vext, and is pathologic (it sometimes diverges)
+    ! we thus init the density not using vext, but vext - vextq
     subroutine init_density
 
-        use system, only: thermocond
+        use module_thermo, only: thermo
         use module_solvent, only: solvent
         use module_grid, only: grid
-        use external_potential, only: Vext_total, Vext_q
         use module_input, only: getinput
 
         implicit none
 
         integer :: i, j, k, io, s, ios
-        logical :: exists, is_vext_q_allocated
+        logical :: exists, vextq_is_allocated
         real(dp) :: v, threeshold_in_betav, betav
+
+        ! Be sure the solvent is already initiated
+        if (.not. allocated(solvent)) then
+            print*, "Dans module_density, solvent n'est pas allocated"
+            print*, "buggy. bisous"
+            error stop
+        end if
+        if (.not. grid%isinitiated) then
+            print*, "Dans module_density, grid is not allocated"
+            error stop
+        end if
 
         ! allocate the solvent density field for each solvent species
         do s=1,solvent(1)%nspec
@@ -61,33 +71,30 @@ contains
         end if
 
 
-        ! only Vext_total is used in the functional. We may deallocate it now.
-        !if ( allocated ( Vext_q ) ) deallocate ( Vext_q )
-
-        is_vext_q_allocated = allocated (vext_q)
         select case (dp)
         case (c_double)
             threeshold_in_betav = 36.04_dp
         case (c_float)
             threeshold_in_betav = 15.9_dp
         case default
-            stop "In module_density I expect dp to be c_double or c_float. This is not the case."
+            stop "In module_density the threeshold in the exponential before underflow is not given for the KIND of real you use"
         end select
 !        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
 
         do s = 1, solvent(1)%nspec
+            vextq_is_allocated = allocated (solvent(s)%vextq)
             do io = 1, grid%no
                 do k = 1, grid%nz
                     do j = 1, grid%ny
                         do i = 1, grid%nx
 
-                            if ( is_vext_q_allocated ) then
-                                v = max( Vext_total(i,j,k,io,s), Vext_total(i,j,k,io,s) - Vext_q (i,j,k,io,s) ) ! A VERIFIER
+                            if (vextq_is_allocated) then
+                                v = max( solvent(s)%vext(i,j,k,io), solvent(s)%vext(i,j,k,io) - solvent(s)%vextq(i,j,k,io) ) ! A VERIFIER
                             else
-                                v = Vext_total(i,j,k,io,s)
+                                v = solvent(s)%vext(i,j,k,io)
                             end if
 
-                            betav = thermocond%beta * v
+                            betav = thermo%beta * v
 
                             if ( betav >= threeshold_in_betav ) then
                                 solvent(s)%density(i,j,k,io) = 0.0_dp

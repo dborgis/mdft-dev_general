@@ -17,30 +17,35 @@ MODULE dcf
 
     REAL(dp) :: delta_k_cs, delta_k_cd, delta_k_cdelta, delta_k_chi_l, delta_k_chi_t, delta_k_Cnn, delta_k_Cnc, delta_k_Ccc
 
-    type cfile
-      real(dp), allocatable :: x(:), y(:), y2(:)
-      character(150) :: filename
-    end type
-    type(cfile) :: c_s, c_delta, c_d, c_s_hs
+    type cfile_type
+        real(dp), allocatable :: x(:), y(:), y2(:)
+        character(150) :: filename
+    end type cfile_type
+    type(cfile_type) :: c_s, c_delta, c_d, c_s_hs
 
 
-! parameters for branch ck_angular ONLY
+    ! parameters for branch ck_angular ONLY
     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: ck_angular ! angular dcf in the molecular frame
-    REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_q ! dipole-charge correlation function
+    REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_q ! dipole-charge correlation f°
+
     REAL(dp) :: delta_k_ck_angular
+
     TYPE TYP_angleInd
-      INTEGER :: costheta, psi
-      REAL(dp) :: phi
+        INTEGER :: costheta, psi
+        REAL(dp) :: phi
     END TYPE
+
     TYPE(TYP_angleInd), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleInd ! integer table of correspondence omega(k,Omega)
+
     TYPE TYP_angleVal
-      REAL(dp) :: costheta,phi,psi
+        REAL(dp) :: costheta,phi,psi
     END TYPE
+
     TYPE(TYP_angleVal), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleVal ! real omega values for interpolation in energy_ck_angular
     INTEGER(i2b) :: num_phi, num_cos, num_psi ! global variables for ck_angular, used in energy_ck_angular for reproducing angles
 
-    CONTAINS
-!-----------------------------------------------------------------------------------------------------------------------------------
+CONTAINS
+    !-----------------------------------------------------------------------------------------------------------------------------------
 
     SUBROUTINE init
         character(180) :: polarization
@@ -82,178 +87,178 @@ MODULE dcf
 
         if( getinput%log('bridge_hard_sphere')) then
             if( getinput%log("ck_angular") .or. getinput%log('ck_debug') .or. getinput%log('ck_debug_extended') ) then
-              stop 'not implemented yet'
+                stop 'not implemented yet'
             else
-              call cs_of_k_hard_sphere! in case of bridge calculation, one also need the direct correlation function c2 of the hard sphere.
+                call cs_of_k_hard_sphere! in case of bridge calculation, one also need the direct correlation function c2 of the hard sphere.
             end if
         end if
     end subroutine init
 
-!-----------------------------------------------------------------------------------------------------------------------------------
+    !-----------------------------------------------------------------------------------------------------------------------------------
 
-!     SUBROUTINE read_ck_angular
-!
-!         use module_grid, only: grid
-!         IMPLICIT NONE
-!
-!         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
-!         LOGICAL :: exists
-!
-!         INQUIRE(FILE="input/ck_angular.in", EXIST=exists)
-!         IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_angular.in is not found."
-!         OPEN(39,FILE="input/ck_angular.in",FORM='UNFORMATTED')
-!             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm ! Note that psi is from 0 to pi for water, while no other symetry is taken into account
-!             ALLOCATE(ck_angular(num_psi,num_psi,num_phi,num_cos,num_cos,nb_k))
-!             REWIND(39)
-!             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm, ck_angular
-!             IF (num_symm /= grid%molRotSymOrder) THEN
-!                 PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', grid%molRotSymOrder, ' being different with num_symm ',num_symm
-!                 STOP
-!             END IF
-!         CLOSE(39)
-!
-!     END SUBROUTINE read_ck_angular
-!
-! !-----------------------------------------------------------------------------------------------------------------------------------
-!
-!     SUBROUTINE read_ck_projection
-!
-!         use module_grid, only: grid
-!         IMPLICIT NONE
-!
-!         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
-!         stop "maybe ck_debug does not work anymore since c_s c_delta and c_d have been improved a lot since dec 2014"
-!         !
-!         ! INQUIRE(FILE="input/ck_projection.in", EXIST=exists)
-!         ! IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_projection.in is not found."
-!         ! OPEN(39,FILE="input/ck_projection.in",FORM='UNFORMATTED')
-!         !     READ(39) nb_k, delta_k_ck_angular
-!         !     ALLOCATE(c_s(nb_k)); ALLOCATE(c_q(nb_k)); ALLOCATE(c_delta(nb_k)); ALLOCATE(c_d(nb_k));
-!         !     REWIND(39)
-!         !     READ(39) nb_k, delta_k_ck_angular, num_symm, c_s, c_q, c_delta, c_d
-!         !     IF (num_symm /= molRotSymOrder) THEN
-!         !         PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', molRotSymOrder, ' being different with num_symm ',num_symm
-!         !         STOP
-!         !     END IF
-!         ! CLOSE(39)
-!
-!     END SUBROUTINE read_ck_projection
-!
-! !-----------------------------------------------------------------------------------------------------------------------------------
-!
-!     SUBROUTINE c_local_to_global_coordinates
-!
-!         use fft,             ONLY: kx,ky,kz
-!         use constants,       ONLY: twopi
-!         use module_grid, only: grid
-!         use precision_kinds, ONLY: dp
-!
-!         IMPLICIT NONE
-!
-!         INTEGER(i2b) :: l,m,n,o,p,nfft1,nfft2,nfft3
-!         REAL(dp) :: costheta_k,sintheta_k,phi_k,cosphi_k,sinphi_k,cos_value,phi_value,psi_value
-!         REAL(dp) :: u_kz,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
-!         LOGICAL :: karim
-!
-!         nfft1 = grid%n_nodes(1)
-!         nfft2 = grid%n_nodes(2)
-!         nfft3 = grid%n_nodes(3)
-!
-!         karim = getinput%log("ck_angular_interpolation")
-!         IF (karim) THEN
-!             ALLOCATE(angleVal(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
-!             angleVal%costheta = 0._dp
-!             angleVal%phi      = 0._dp
-!             angleVal%psi      = 0._dp
-!         ELSE
-!             ALLOCATE(angleInd(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
-!             angleInd%costheta = 0
-!             angleInd%phi      = 0._dp
-!             angleInd%psi      = 0
-!         END IF
-!
-!         DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
-!
-!         ! Definition of theta/phi for extreme cases
-!             IF (kx(l)**2+ky(m)**2+kz(n)**2/=0._dp) THEN
-!                 costheta_k = kz(n)/(kx(l)**2+ky(m)**2+kz(n)**2)**0.5_dp
-!                 sintheta_k = (1._dp - costheta_k**2)**0.5_dp
-!             ELSE
-!                 costheta_k = 1._dp
-!                 sintheta_k = 0._dp
-!             END IF
-!
-!             IF(kx(l)**2+ky(m)**2/=0._dp) THEN
-!                 phi_k =  angle(kx(l),ky(m))
-!                 cosphi_k = COS(phi_k)
-!                 sinphi_k = SIN(phi_k)
-!             ELSE
-!                 cosphi_k = 1._dp
-!                 sinphi_k = 0._dp
-!             END IF
-!
-!         ! Open the loop Omega,Psi
-!             DO CONCURRENT (o=1:angGrid%n_angles, p=1:molRotGrid%n_angles)
-!
-!             ! Calculate projections of solvent axes u,v,w on k-frame kx,ky,kz
-!                 w_kz =   Rotxz(o,p)*sintheta_k*cosphi_k &
-!                        + Rotyz(o,p)*sintheta_k*sinphi_k &
-!                        + Rotzz(o,p)*costheta_k
-!                 w_kx =   Rotxz(o,p)*costheta_k*cosphi_k &
-!                        + Rotyz(o,p)*costheta_k*sinphi_k &
-!                        - Rotzz(o,p)*sintheta_k
-!                 w_ky = - Rotxz(o,p)*sinphi_k &
-!                        + Rotyz(o,p)*cosphi_k
-!                 u_kz =   Rotxx(o,p)*sintheta_k*cosphi_k &
-!                        + Rotyx(o,p)*sintheta_k*sinphi_k &
-!                        + Rotzx(o,p)*costheta_k
-!             !   u_kx =   Rotxx(o,p)*costheta_k*cosphi_k &
-!             !          + Rotyx(o,p)*costheta_k*sinphi_k &
-!             !          - Rotzx(o,p)*sintheta_k
-!             !   u_ky = - Rotxx(o,p)*sinphi_k &
-!             !          + Rotyx(o,p)*cosphi_k
-!                 v_kz =   Rotxy(o,p)*sintheta_k*cosphi_k &
-!                        + Rotyy(o,p)*sintheta_k*sinphi_k &
-!                        + Rotzy(o,p)*costheta_k
-!             !   v_kx =   Rotxy(o,p)*costheta_k*cosphi_k &
-!             !          + Rotyy(o,p)*costheta_k*sinphi_k &
-!             !          - Rotzy(o,p)*sintheta_k
-!             !   v_ky = - Rotxy(o,p)*sinphi_k &
-!             !          + Rotyy(o,p)*cosphi_k
-!
-!             ! Calculate angles omega
-!                 cos_value = w_kz
-!                 phi_value = angle(w_kx,w_ky)
-!                 psi_value = MODULO(angle(-u_kz,v_kz), twopi/molRotSymOrder)
-!
-!             ! Real omega values for interpolation
-!                 IF (karim) THEN
-!                     angleVal(l,m,n,o,p)%costheta = cos_value
-!                     angleVal(l,m,n,o,p)%phi      = phi_value
-!                     angleVal(l,m,n,o,p)%psi      = psi_value
-!
-!             ! Index omega(k,Omega)
-!                 ELSE
-!                     angleInd(l,m,n,o,p)%costheta = MIN(INT((1._dp + cos_value)*num_cos/2._dp) + 1, num_cos)
-!                     angleInd(l,m,n,o,p)%phi      = phi_value
-!                     angleInd(l,m,n,o,p)%psi      = MOD(INT(psi_value*num_psi*molRotSymOrder/twopi), num_psi) + 1
-!                 END IF
-!             END DO
-!         END DO
-!
-!     ! Check final nomega
-!         IF ( .NOT. karim ) THEN
-!             IF ( ANY(angleInd%costheta<=0) .OR. ANY(angleInd%psi<=0) ) THEN
-!                 STOP "Some AngleInd is negative or zero"
-!             END IF
-!             IF ( ANY(angleInd%costheta>num_cos) .OR. ANY(angleInd%psi>num_psi) ) THEN
-!                 STOP "Some AngleInd is > to its max authorized value"
-!             END IF
-!         END IF
-!
-!     END SUBROUTINE c_local_to_global_coordinates
+    !     SUBROUTINE read_ck_angular
+    !
+    !         use module_grid, only: grid
+    !         IMPLICIT NONE
+    !
+    !         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
+    !         LOGICAL :: exists
+    !
+    !         INQUIRE(FILE="input/ck_angular.in", EXIST=exists)
+    !         IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_angular.in is not found."
+    !         OPEN(39,FILE="input/ck_angular.in",FORM='UNFORMATTED')
+    !             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm ! Note that psi is from 0 to pi for water, while no other symetry is taken into account
+    !             ALLOCATE(ck_angular(num_psi,num_psi,num_phi,num_cos,num_cos,nb_k))
+    !             REWIND(39)
+    !             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm, ck_angular
+    !             IF (num_symm /= grid%molRotSymOrder) THEN
+    !                 PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', grid%molRotSymOrder, ' being different with num_symm ',num_symm
+    !                 STOP
+    !             END IF
+    !         CLOSE(39)
+    !
+    !     END SUBROUTINE read_ck_angular
+    !
+    ! !-----------------------------------------------------------------------------------------------------------------------------------
+    !
+    !     SUBROUTINE read_ck_projection
+    !
+    !         use module_grid, only: grid
+    !         IMPLICIT NONE
+    !
+    !         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
+    !         stop "maybe ck_debug does not work anymore since c_s c_delta and c_d have been improved a lot since dec 2014"
+    !         !
+    !         ! INQUIRE(FILE="input/ck_projection.in", EXIST=exists)
+    !         ! IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_projection.in is not found."
+    !         ! OPEN(39,FILE="input/ck_projection.in",FORM='UNFORMATTED')
+    !         !     READ(39) nb_k, delta_k_ck_angular
+    !         !     ALLOCATE(c_s(nb_k)); ALLOCATE(c_q(nb_k)); ALLOCATE(c_delta(nb_k)); ALLOCATE(c_d(nb_k));
+    !         !     REWIND(39)
+    !         !     READ(39) nb_k, delta_k_ck_angular, num_symm, c_s, c_q, c_delta, c_d
+    !         !     IF (num_symm /= molRotSymOrder) THEN
+    !         !         PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', molRotSymOrder, ' being different with num_symm ',num_symm
+    !         !         STOP
+    !         !     END IF
+    !         ! CLOSE(39)
+    !
+    !     END SUBROUTINE read_ck_projection
+    !
+    ! !-----------------------------------------------------------------------------------------------------------------------------------
+    !
+    !     SUBROUTINE c_local_to_global_coordinates
+    !
+    !         use fft,             ONLY: kx,ky,kz
+    !         use constants,       ONLY: twopi
+    !         use module_grid, only: grid
+    !         use precision_kinds, ONLY: dp
+    !
+    !         IMPLICIT NONE
+    !
+    !         INTEGER(i2b) :: l,m,n,o,p,nfft1,nfft2,nfft3
+    !         REAL(dp) :: costheta_k,sintheta_k,phi_k,cosphi_k,sinphi_k,cos_value,phi_value,psi_value
+    !         REAL(dp) :: u_kz,v_kz,w_kx,w_ky,w_kz ! Projections of solvent axes u,v,w on k-frame kx,ky,kz
+    !         LOGICAL :: karim
+    !
+    !         nfft1 = grid%n_nodes(1)
+    !         nfft2 = grid%n_nodes(2)
+    !         nfft3 = grid%n_nodes(3)
+    !
+    !         karim = getinput%log("ck_angular_interpolation")
+    !         IF (karim) THEN
+    !             ALLOCATE(angleVal(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
+    !             angleVal%costheta = 0._dp
+    !             angleVal%phi      = 0._dp
+    !             angleVal%psi      = 0._dp
+    !         ELSE
+    !             ALLOCATE(angleInd(nfft1/2+1,nfft2,nfft3,angGrid%n_angles,molRotGrid%n_angles))
+    !             angleInd%costheta = 0
+    !             angleInd%phi      = 0._dp
+    !             angleInd%psi      = 0
+    !         END IF
+    !
+    !         DO CONCURRENT (l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3)
+    !
+    !         ! Definition of theta/phi for extreme cases
+    !             IF (kx(l)**2+ky(m)**2+kz(n)**2/=0._dp) THEN
+    !                 costheta_k = kz(n)/(kx(l)**2+ky(m)**2+kz(n)**2)**0.5_dp
+    !                 sintheta_k = (1._dp - costheta_k**2)**0.5_dp
+    !             ELSE
+    !                 costheta_k = 1._dp
+    !                 sintheta_k = 0._dp
+    !             END IF
+    !
+    !             IF(kx(l)**2+ky(m)**2/=0._dp) THEN
+    !                 phi_k =  angle(kx(l),ky(m))
+    !                 cosphi_k = COS(phi_k)
+    !                 sinphi_k = SIN(phi_k)
+    !             ELSE
+    !                 cosphi_k = 1._dp
+    !                 sinphi_k = 0._dp
+    !             END IF
+    !
+    !         ! Open the loop Omega,Psi
+    !             DO CONCURRENT (o=1:angGrid%n_angles, p=1:molRotGrid%n_angles)
+    !
+    !             ! Calculate projections of solvent axes u,v,w on k-frame kx,ky,kz
+    !                 w_kz =   Rotxz(o,p)*sintheta_k*cosphi_k &
+    !                        + Rotyz(o,p)*sintheta_k*sinphi_k &
+    !                        + Rotzz(o,p)*costheta_k
+    !                 w_kx =   Rotxz(o,p)*costheta_k*cosphi_k &
+    !                        + Rotyz(o,p)*costheta_k*sinphi_k &
+    !                        - Rotzz(o,p)*sintheta_k
+    !                 w_ky = - Rotxz(o,p)*sinphi_k &
+    !                        + Rotyz(o,p)*cosphi_k
+    !                 u_kz =   Rotxx(o,p)*sintheta_k*cosphi_k &
+    !                        + Rotyx(o,p)*sintheta_k*sinphi_k &
+    !                        + Rotzx(o,p)*costheta_k
+    !             !   u_kx =   Rotxx(o,p)*costheta_k*cosphi_k &
+    !             !          + Rotyx(o,p)*costheta_k*sinphi_k &
+    !             !          - Rotzx(o,p)*sintheta_k
+    !             !   u_ky = - Rotxx(o,p)*sinphi_k &
+    !             !          + Rotyx(o,p)*cosphi_k
+    !                 v_kz =   Rotxy(o,p)*sintheta_k*cosphi_k &
+    !                        + Rotyy(o,p)*sintheta_k*sinphi_k &
+    !                        + Rotzy(o,p)*costheta_k
+    !             !   v_kx =   Rotxy(o,p)*costheta_k*cosphi_k &
+    !             !          + Rotyy(o,p)*costheta_k*sinphi_k &
+    !             !          - Rotzy(o,p)*sintheta_k
+    !             !   v_ky = - Rotxy(o,p)*sinphi_k &
+    !             !          + Rotyy(o,p)*cosphi_k
+    !
+    !             ! Calculate angles omega
+    !                 cos_value = w_kz
+    !                 phi_value = angle(w_kx,w_ky)
+    !                 psi_value = MODULO(angle(-u_kz,v_kz), twopi/molRotSymOrder)
+    !
+    !             ! Real omega values for interpolation
+    !                 IF (karim) THEN
+    !                     angleVal(l,m,n,o,p)%costheta = cos_value
+    !                     angleVal(l,m,n,o,p)%phi      = phi_value
+    !                     angleVal(l,m,n,o,p)%psi      = psi_value
+    !
+    !             ! Index omega(k,Omega)
+    !                 ELSE
+    !                     angleInd(l,m,n,o,p)%costheta = MIN(INT((1._dp + cos_value)*num_cos/2._dp) + 1, num_cos)
+    !                     angleInd(l,m,n,o,p)%phi      = phi_value
+    !                     angleInd(l,m,n,o,p)%psi      = MOD(INT(psi_value*num_psi*molRotSymOrder/twopi), num_psi) + 1
+    !                 END IF
+    !             END DO
+    !         END DO
+    !
+    !     ! Check final nomega
+    !         IF ( .NOT. karim ) THEN
+    !             IF ( ANY(angleInd%costheta<=0) .OR. ANY(angleInd%psi<=0) ) THEN
+    !                 STOP "Some AngleInd is negative or zero"
+    !             END IF
+    !             IF ( ANY(angleInd%costheta>num_cos) .OR. ANY(angleInd%psi>num_psi) ) THEN
+    !                 STOP "Some AngleInd is > to its max authorized value"
+    !             END IF
+    !         END IF
+    !
+    !     END SUBROUTINE c_local_to_global_coordinates
 
-!-----------------------------------------------------------------------------------------------------------------------------------
+    !-----------------------------------------------------------------------------------------------------------------------------------
 
     ! Compute the angle between (0,x) and (x,y).
     PURE FUNCTION angle(x,y)
@@ -280,7 +285,7 @@ MODULE dcf
 
     END FUNCTION angle
 
-!-----------------------------------------------------------------------------------------------------------------------------------
+    !-----------------------------------------------------------------------------------------------------------------------------------
 
     SUBROUTINE readDielectricSusceptibilities ! chi_l, chi_t
 
@@ -295,15 +300,15 @@ MODULE dcf
         file_l = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in'
         file_t = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in'
         INQUIRE (FILE=file_l, EXIST=exists )
-            IF (.NOT. exists) THEN
-                WRITE(*,*) "chi_l not found in ", file_l
-                STOP
-            END IF
+        IF (.NOT. exists) THEN
+            WRITE(*,*) "chi_l not found in ", file_l
+            STOP
+        END IF
         INQUIRE (FILE=file_t, EXIST=exists )
-            IF (.NOT. exists) THEN
-                WRITE(*,*) "chi_t not found in ", file_t
-                STOP
-            END IF
+        IF (.NOT. exists) THEN
+            WRITE(*,*) "chi_t not found in ", file_t
+            STOP
+        END IF
 
         n_k = MIN( n_linesInFile(file_l), n_linesInFile(file_t) )
 
@@ -318,33 +323,33 @@ MODULE dcf
         END IF
         delta_k= delta_k_chi_t
 
-    If (.NOT. getinput%log('include_nc_coupling')) THEN
-        IF ( (delta_k_chi_t-delta_k_cs)/delta_k_cs >=1.E-10 ) THEN
-            WRITE(*,*)"chi_l, chi_t and c_s shoud have same delta k. THIS COULD BE IMPLEMENTED. ASK GUILLAUME"
-            WRITE(*,*)'delta( chi_l )=',delta_k_chi_l
-            WRITE(*,*)'delta( chi_t )=',delta_k_chi_t
-            WRITE(*,*)'delta( cs )=',delta_k_cs
-            STOP
+        If (.NOT. getinput%log('include_nc_coupling')) THEN
+            IF ( (delta_k_chi_t-delta_k_cs)/delta_k_cs >=1.E-10 ) THEN
+                WRITE(*,*)"chi_l, chi_t and c_s shoud have same delta k. THIS COULD BE IMPLEMENTED. ASK GUILLAUME"
+                WRITE(*,*)'delta( chi_l )=',delta_k_chi_l
+                WRITE(*,*)'delta( chi_t )=',delta_k_chi_t
+                WRITE(*,*)'delta( cs )=',delta_k_cs
+                STOP
+            END IF
         END IF
-   END IF
 
         OPEN (10, FILE=file_l, iostat=ios)
-            DO i = 1, SIZE(chi_l)
-                READ (10,*,IOSTAT=ios) norm_k, chi_l(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',file_l, 'in readDensityDensityCorrelationFunction (c_d)'
-                        STOP
-                    END IF
-            END DO
+        DO i = 1, SIZE(chi_l)
+            READ (10,*,IOSTAT=ios) norm_k, chi_l(i)
+            IF (ios>0 .OR. ios<0) THEN
+                WRITE(*,*)'Error while reading ',file_l, 'in readDensityDensityCorrelationFunction (c_d)'
+                STOP
+            END IF
+        END DO
         CLOSE (10)
         OPEN (10, FILE=file_t, iostat=ios)
-            DO i = 1, SIZE(chi_t)
-                READ (10,*,IOSTAT=ios) norm_k, chi_t(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',file_t, 'in readDensityDensityCorrelationFunction (c_d)'
-                        STOP
-                    END IF
-            END DO
+        DO i = 1, SIZE(chi_t)
+            READ (10,*,IOSTAT=ios) norm_k, chi_t(i)
+            IF (ios>0 .OR. ios<0) THEN
+                WRITE(*,*)'Error while reading ',file_t, 'in readDensityDensityCorrelationFunction (c_d)'
+                STOP
+            END IF
+        END DO
         CLOSE (10)
 
         nb_k=n_k
@@ -367,20 +372,20 @@ MODULE dcf
         file_cc = 'input/direct_correlation_functions/water/Ccc.dat'
 
         INQUIRE (FILE=file_nn, EXIST=exists )
-            IF (.NOT. exists) THEN
-                WRITE(*,*) "Cnn not found in ", file_nn
-                STOP
-            END IF
+        IF (.NOT. exists) THEN
+            WRITE(*,*) "Cnn not found in ", file_nn
+            STOP
+        END IF
         INQUIRE (FILE=file_nc, EXIST=exists )
-            IF (.NOT. exists) THEN
-                WRITE(*,*) "Cnc not found in ", file_nc
-                STOP
-            END IF
+        IF (.NOT. exists) THEN
+            WRITE(*,*) "Cnc not found in ", file_nc
+            STOP
+        END IF
         INQUIRE (FILE=file_cc, EXIST=exists )
-            IF (.NOT. exists) THEN
-                WRITE(*,*) "Ccc not found in ", file_cc
-                STOP
-            END IF
+        IF (.NOT. exists) THEN
+            WRITE(*,*) "Ccc not found in ", file_cc
+            STOP
+        END IF
 
         nb_k_in_c = MIN( n_linesInFile(file_nn), n_linesInFile(file_nc), n_linesInFile(file_cc) )
 
@@ -403,36 +408,36 @@ MODULE dcf
         delta_k_in_C = delta_k_Cnn
 
         OPEN (10, FILE=file_nn, iostat=ios)
-            DO i = 1, SIZE(Cnn)
-                READ (10,*,IOSTAT=ios) norm_k, Cnn(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',Cnn, 'in readTotalPolarizationCorrelationFunction (Cnn)'
-                        STOP
-                    END IF
-            END DO
+        DO i = 1, SIZE(Cnn)
+            READ (10,*,IOSTAT=ios) norm_k, Cnn(i)
+            IF (ios>0 .OR. ios<0) THEN
+                WRITE(*,*)'Error while reading ',Cnn, 'in readTotalPolarizationCorrelationFunction (Cnn)'
+                STOP
+            END IF
+        END DO
         CLOSE (10)
         OPEN (10, FILE=file_nc, iostat=ios)
-            DO i = 1, SIZE(Cnc)
-                READ (10,*,IOSTAT=ios) norm_k, Cnc(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',Cnc, 'in readTotalPolarizationCorrelationFunction (Cnc)'
-                        STOP
-                    END IF
-            END DO
+        DO i = 1, SIZE(Cnc)
+            READ (10,*,IOSTAT=ios) norm_k, Cnc(i)
+            IF (ios>0 .OR. ios<0) THEN
+                WRITE(*,*)'Error while reading ',Cnc, 'in readTotalPolarizationCorrelationFunction (Cnc)'
+                STOP
+            END IF
+        END DO
         CLOSE (10)
         OPEN (10, FILE=file_cc, iostat=ios)
-            DO i = 1, SIZE(Ccc)
-                READ (10,*,IOSTAT=ios) norm_k, Ccc(i)
-                    IF (ios>0 .OR. ios<0) THEN
-                        WRITE(*,*)'Error while reading ',Ccc, 'in readTotalPolarizationCorrelationFunction (Ccc)'
-                        STOP
-                    END IF
-            END DO
+        DO i = 1, SIZE(Ccc)
+            READ (10,*,IOSTAT=ios) norm_k, Ccc(i)
+            IF (ios>0 .OR. ios<0) THEN
+                WRITE(*,*)'Error while reading ',Ccc, 'in readTotalPolarizationCorrelationFunction (Ccc)'
+                STOP
+            END IF
+        END DO
         CLOSE (10)
 
     END SUBROUTINE readTotalPolarizationCorrelationFunction
 
-!===================================================================================================================================
+    !===================================================================================================================================
 
     SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
         INTEGER(i2b) :: ios, nk, i
@@ -457,6 +462,7 @@ MODULE dcf
 
 
         nk = n_linesInFile(c_delta%filename)
+        print*, nk;stop "nk"
         allocate( c_delta%x(nk), source=0._dp)
         allocate( c_delta%y(nk), source=0._dp)
         allocate( c_delta%y2(nk), source=0._dp)
@@ -467,34 +473,34 @@ MODULE dcf
 
         OPEN (13, FILE=c_delta%filename, IOSTAT=ios)
         IF (ios/=0) THEN
-          WRITE(*,*)'Cant open file ',c_delta%filename,' in readPolarizationPolarizationCorrelationFunction'
-          STOP
+            WRITE(*,*)'Cant open file ',c_delta%filename,' in readPolarizationPolarizationCorrelationFunction'
+            STOP
         END IF
         open( 30, file="./output/cdelta.in")
         DO i = 1, size(c_delta%x)
-          READ (13,*,IOSTAT=ios) c_delta%x(i), c_delta%y(i)
-          IF (ios/=0) THEN
-            WRITE(*,*)'Error while reading ',c_delta%filename, 'in readDensityDensityCorrelationFunction (c_delta)'
-            STOP
-          END IF
-          write(30,*) c_delta%x(i) , c_delta%y(i)
+            READ (13,*,IOSTAT=ios) c_delta%x(i), c_delta%y(i)
+            IF (ios/=0) THEN
+                WRITE(*,*)'Error while reading ',c_delta%filename, 'in readPolarizationPolarizationCorrelationFunction (c_delta)'
+                STOP
+            END IF
+            write(30,*) c_delta%x(i) , c_delta%y(i)
         END DO
         CLOSE (13)
         close (30)
 
         OPEN (13, FILE=c_d%filename, IOSTAT=ios)
         IF (ios/=0) THEN
-          WRITE(*,*)'Cant open file ',c_d%filename,' in readPolarizationPolarizationCorrelationFunction'
-          STOP
+            WRITE(*,*)'Cant open file ',c_d%filename,' in readPolarizationPolarizationCorrelationFunction'
+            STOP
         END IF
         open (30, file="./output/cd.in")
         DO i = 1, size(c_d%x)
-          READ (13,*,IOSTAT=ios) c_d%x(i), c_d%y(i)
-          IF (ios/=0) THEN
-            WRITE(*,*)'Error while reading ',c_d%filename, 'in readDensityDensityCorrelationFunction (c_d)'
-            STOP
-          END IF
-          write(30,*) c_d%x(i) , c_d%y(i)
+            READ (13,*,IOSTAT=ios) c_d%x(i), c_d%y(i)
+            IF (ios/=0) THEN
+                WRITE(*,*)'Error while reading ',c_d%filename, 'in readPolarizationPolarizationCorrelationFunction (c_d)'
+                STOP
+            END IF
+            write(30,*) c_d%x(i) , c_d%y(i)
         END DO
         CLOSE (13)
         close (30)
@@ -505,14 +511,14 @@ MODULE dcf
         open(14,file="output/cd_spline.dat")
         open(15,file="output/cdelta_spline.dat")
         block
-          real(dp) :: x_loc, y_loc
-          do i=0,2000
-            x_loc = i*0.1
-            call splint( xa=c_d%x, ya=c_d%y, y2a=c_d%y2, n=size(c_d%x), x=x_loc, y=y_loc)
-            write(14,*) x_loc, y_loc
-            call splint( xa=c_delta%x, ya=c_delta%y, y2a=c_delta%y2, n=size(c_delta%x), x=x_loc, y=y_loc)
-            write(15,*) x_loc, y_loc
-          end do
+            real(dp) :: x_loc, y_loc
+            do i=0,2000
+                x_loc = i*0.1
+                call splint( xa=c_d%x, ya=c_d%y, y2a=c_d%y2, n=size(c_d%x), x=x_loc, y=y_loc)
+                write(14,*) x_loc, y_loc
+                call splint( xa=c_delta%x, ya=c_delta%y, y2a=c_delta%y2, n=size(c_delta%x), x=x_loc, y=y_loc)
+                write(15,*) x_loc, y_loc
+            end do
         end block
         close(14)
         close(15)
@@ -520,69 +526,111 @@ MODULE dcf
 
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
 
-!===================================================================================================================================
+    !===================================================================================================================================
     SUBROUTINE readDensityDensityCorrelationFunction ! c(k)
-      use mathematica, only: spline, splint
-      use constants  , only: onedp, zerodp
+        use mathematica, only: spline, splint
+        use constants  , only: onedp, zerodp
         implicit none
-        INTEGER(i2b) :: ios, i
+        INTEGER(i2b) :: ios, i, is, s
 
-        select case (solvent(1)%name)
-        case ("spce")
-            c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
-        case ("spc")
-            c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
-        case ("stockmayer")
-            c_s%filename = 'input/direct_correlation_functions/stockmayer/cs.in'
-        case ("perso")
-            c_s%filename = 'input/cs.in'
-        case default
-            print*, "solvent seems to be, from solvent.in", solvent(1)%name
-            stop "this is not understood by module_dcf"
-        end select
-
-        nb_k = n_linesInFile(c_s%filename)
-        allocate( c_s%x(nb_k) , source=zerodp)
-        allocate( c_s%y(nb_k) , source=zerodp)
-        allocate( c_s%y2(nb_k), source=zerodp)
-        ! read c(k) as given by user and print to output folder
-        OPEN (13, FILE=c_s%filename, IOSTAT=ios)
-        IF (ios/=0) THEN
-          WRITE(*,*)'Cant open file ',c_s%filename,' in readDensityDensityCorrelationFunction (c_s)'
-          STOP
-        END IF
-        open (14, file='output/cs.in', iostat=ios)
-        if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction (c_s)'
-        do i=1,nb_k
-          READ (13,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
-          IF (ios/=0) THEN
-            WRITE(*,*)'Error while reading line',i,"of",c_s%filename, 'in readDensityDensityCorrelationFunction(c_s)'
-            STOP
-          END IF
-          WRITE(14,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
-          if (ios/=0) then
-            print*,'Something is wrong while writing c_s%x and c_s%y in readDensityDensityCorrelationFunction'
-            print*,'for i=',i
-            print*,'c_s%x(i)=',c_s%x(i)
-            print*,'and c_s%y(i)=',c_s%y(i)
+        if (.not. allocated(solvent)) then
+            print*, "In readDensityDensityCorrelationFunction, solvent(:)% is not allocated"
+            print*, "It should be initiated before!"
             stop
-          end if
-        END DO
-        CLOSE(13)
-        close(14)
+        end if
 
-        call spline( x=c_s%x, y=c_s%y, n=nb_k, yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
+        ! if (any(solvent%is_initiated.eq..false.))  then
+        !     print*, "In readDensityDensityCorrelationFunction, solvent has already been initiated"
+        !     print*, "This is a bug"
+        !     stop
+        ! end if
+        do s=1,solvent(1)%nspec
+            if (.not.solvent(s)%is_initiated) then
+                print*, "In readDensityDensityCorrelationFunction, solvent has already been initiated"
+                print*, "this is a bug"
+                stop
+            end if
+        end do
 
-        open(14,file="output/cs_spline.dat")
-        block
-          real(dp) :: x_loc, y_loc
-          do i=0,2000
-            x_loc = i*0.1
-            call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=nb_k, x=x_loc, y=y_loc)
-            write(14,*) x_loc, y_loc
-          end do
-        end block
-        close(14)
+        if (solvent(1)%nspec/=1) then
+            print*, "I am in readDensityDensityCorrelationFunction"
+            print*, "This subroutine is valid for 1 solvent species at most"
+            print*, "You have ",solvent(1)%nspec,"species"
+            stop
+        end if
+
+        do is=1, solvent(1)%nspec
+            select case (solvent(is)%name)
+            case ("spce")
+                c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
+            case ("spc")
+                c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
+            case ("stockmayer")
+                c_s%filename = 'input/direct_correlation_functions/stockmayer/cs.in'
+            case ("perso")
+                c_s%filename = 'input/cs.in'
+            case default
+                print*, "solvent seems to be, from solvent.in", solvent(1)%name
+                stop "this is not understood by module_dcf"
+            end select
+
+            nb_k = n_linesInFile(c_s%filename)
+
+            allocate( c_s%x(nb_k) , source=zerodp)
+            allocate( c_s%y(nb_k) , source=zerodp)
+            allocate( c_s%y2(nb_k), source=zerodp)
+
+
+            ! read c(k) as given by user and print to output folder
+            OPEN (13, FILE=c_s%filename, IOSTAT=ios)
+            if (ios/=0) then
+                write(*,*) 'Cant open file ',c_s%filename,' in readDensityDensityCorrelationFunction(c_s)'
+                error stop
+            end if
+            open (14, file='output/cs.in', iostat=ios)
+            if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction(c_s)'
+            do i=1,nb_k
+                READ (13,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
+                IF (ios/=0) THEN
+                    WRITE(*,*)'Error while reading line',i,"of",c_s%filename, 'in readDensityDensityCorrelationFunction(c_s)'
+                    STOP
+                END IF
+                WRITE(14,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
+                if (ios/=0) then
+                    print*,'Something is wrong while writing c_s%x and c_s%y in readDensityDensityCorrelationFunction'
+                    print*,'for i=',i
+                    print*,'c_s%x(i)=',c_s%x(i)
+                    print*,'and c_s%y(i)=',c_s%y(i)
+                    stop
+                end if
+            END DO
+            CLOSE(13)
+            close(14)
+
+            ! call spline( x=c_s%x, y=c_s%y, n=nb_k, yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
+
+            ! open(14,file="output/cs_spline.dat")
+            ! block
+            !     real(dp) :: x_loc, y_loc
+            !     do i=0,2000
+            !         x_loc = i*0.1
+            !         ! call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=nb_k, x=x_loc, y=y_loc)
+            !         write(14,*) x_loc, y_loc
+            !     end do
+            ! end block
+            ! close(14)
+            
+            solvent(is)%cs%filename = c_s%filename
+            allocate (solvent(is)%cs%x(nb_k) ,source=c_s%x)
+            allocate (solvent(is)%cs%y(nb_k) ,source=c_s%y)
+            ! allocate (solvent(is)%cs%y2(nb_k) ,source=c_s%y2)
+
+            deallocate(c_s%x)
+            deallocate(c_s%y)
+            deallocate(c_s%y2)
+
+        end do ! the loop over all solvent species
+
     END SUBROUTINE readDensityDensityCorrelationFunction
 
 END MODULE dcf

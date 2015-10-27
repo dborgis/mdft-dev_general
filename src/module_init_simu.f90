@@ -1,13 +1,5 @@
 module module_init_simu
 
-    use fft, only: init_fft => init
-    use dcf, only: init_dcf => init
-    use module_input, only: getinput
-    use hardspheres, only: compute_hard_spheres_parameters
-    use module_density, only: init_density
-    use module_solvent, only: init_solvent => read_solvent
-    use module_solute, only: read_solute
-
     implicit none
 
     private
@@ -20,19 +12,27 @@ contains
     !
     subroutine init_simu
         use module_grid, only: grid
-        use module_quadrature, only: init_quadrature => init
+        use module_solute, only: read_solute
+        use module_solvent, only: init_solvent => read_solvent
+        use module_density, only: init_density
+        use hardspheres, only: compute_hard_spheres_parameters
+        use module_input, only: getinput
+        use dcf, only: init_dcf => init
+        use fft, only: init_fft => init
+        use module_vext, only: init_vext
+        use module_debug, only: init_debug
+        use module_thermo, only: init_thermo
         implicit none
-
-        call print_header ! package name, day & time
+        call print_header
+        call init_debug
         call grid%init
-        call init_quadrature
         call read_solute
         call init_thermo
         call init_solvent
         call init_dcf
         if (getinput%log('hard_sphere_fluid', defaultvalue=.false.)) call compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
         call init_fft
-        call init_external_potential
+        call init_vext
         call init_density
     end subroutine init_simu
 
@@ -51,25 +51,6 @@ contains
         print*,' ******************************************************************'
         print*,' ******************************************************************'
     end subroutine print_header
-
-    ! Here are allocated variables declared in modules
-    subroutine init_thermo
-        use precision_kinds     ,only: dp
-        use module_input        ,only: getinput
-        use system              ,only: thermoCond
-        use constants           ,only: boltz, navo
-        implicit none
-        print*,
-        print*, "[Thermodynamics]====="
-        thermoCond%T = getinput%dp('temperature', defaultvalue=300._dp, assert=">0") ! look for temperature in input
-        thermoCond%kbT = Boltz * Navo * thermoCond%T * 1.0e-3_dp
-        thermoCond%beta = 1.0_dp / thermocond%kbT
-        print*, "Temperature (K)  :", thermocond%t
-        print*, "kT               :", thermocond%kbt
-        print*, "\beta = 1/(kT)   :", thermocond%beta
-        print*, "[/Thermodynamics]====="
-        print*,
-    end subroutine init_thermo
 
 
 end module module_init_simu

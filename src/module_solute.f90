@@ -11,7 +11,7 @@ module module_solute
         real(dp) :: diameter ! hard sphere diameter, for instance
         type (site_type), allocatable :: site(:)
     end type
-    type (solute_type) :: solute
+    type (solute_type), protected :: solute
     private
     public :: solute_type, solute, read_solute, soluteChargeDensityFromSoluteChargeCoordinates
 
@@ -71,7 +71,7 @@ contains
       end block
 
       CALL mv_solute_to_center ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
-      CALL print_supercell_xsf ! Print periodic XSF file to be read by VMD or equivalent
+      CALL print_solute_xsf ! Print periodic XSF file to be read by VMD or equivalent
 
 
     end subroutine read_solute
@@ -120,14 +120,12 @@ contains
         REAL(dp)      :: volumElem ! elementary volume in Poisson Grid space
         REAL(dp)      :: r(3) ! coordinates of the charge in indicial coordinates
         REAL(dp)      :: wm(3), wp(3) ! weight associated to each index
+        real(dp), parameter :: epsdp = epsilon(1._dp)
 
         soluteChargeDensity = 0._dp
 
         ! extrapolate each solute point charge to grid nodes
-        DO s = 1 , SIZE(solute%site)
-
-            IF ( solute%site(s)%q == 0.0_dp ) CYCLE ! if the solute does not have charge, go to next solute
-
+        do concurrent (s=1:size(solute%site), abs(solute%site(s)%q) > epsdp)
             r = distToFloorNode (gridnode,gridlen,solute%site(s)%r,.TRUE.)
             m = floorNode       (gridnode,gridlen,solute%site(s)%r,.TRUE.)
             p = ceilingNode     (gridnode,gridlen,solute%site(s)%r,.TRUE.)
@@ -144,7 +142,7 @@ contains
             soluteChargeDensity (p(1),m(2),p(3)) = soluteChargeDensity (p(1),m(2),p(3)) + solute%site(s)%q * wp(1) * wm(2) * wp(3)
             soluteChargeDensity (m(1),p(2),p(3)) = soluteChargeDensity (m(1),p(2),p(3)) + solute%site(s)%q * wm(1) * wp(2) * wp(3)
             soluteChargeDensity (p(1),p(2),p(3)) = soluteChargeDensity (p(1),p(2),p(3)) + solute%site(s)%q * wp(1) * wp(2) * wp(3)
-        END DO
+        end do
 
         volumElem = PRODUCT(gridlen/REAL(gridnode,dp))
         soluteChargeDensity = soluteChargeDensity / volumElem ! charge density is in charge per unit volume
@@ -164,14 +162,14 @@ contains
 
 
     !> Print an XSF file of the supercell for visualisation in VMD for instance.
-    !! Type vmd --xsf output/supercell.xsf to visualise it.
-    SUBROUTINE print_supercell_xsf
+    !! Type vmd --xsf output/solute.xsf to visualise it.
+    SUBROUTINE print_solute_xsf
         use precision_kinds, ONLY: i2b
         use module_grid, only: grid
         IMPLICIT NONE
         integer(i2b) :: i
 
-        open(5,file='output/supercell.xsf')
+        open(5,file='output/solute.xsf')
             100 format (xA)
             101 format (3(1xF10.5))
             102 format (1xI5,1xI1)
@@ -206,7 +204,7 @@ contains
                 write(5,103) solute%site(i)%Z, solute%site(i)%r
             END DO
         close(5)
-    END SUBROUTINE print_supercell_xsf
+    END SUBROUTINE print_solute_xsf
 
 
 end module module_solute
