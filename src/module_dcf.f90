@@ -1,4 +1,4 @@
-MODULE dcf
+module module_dcf
 
     use precision_kinds, ONLY: dp, i2b
     use module_input, ONLY: getinput, n_linesInFile, deltaAbscissa
@@ -7,6 +7,8 @@ MODULE dcf
 
 
     IMPLICIT NONE
+
+    private
 
     REAL(dp) :: delta_k , delta_k_in_C! distance between two k points in cs.in, cdelta.in, cd.in
     INTEGER(i2b) :: nb_k, nb_k_in_c ! nb of k points in cs.in, cdelta.in, cd.in
@@ -44,15 +46,30 @@ MODULE dcf
     TYPE(TYP_angleVal), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleVal ! real omega values for interpolation in energy_ck_angular
     INTEGER(i2b) :: num_phi, num_cos, num_psi ! global variables for ck_angular, used in energy_ck_angular for reproducing angles
 
+    public :: init_dcf
+
 CONTAINS
     !-----------------------------------------------------------------------------------------------------------------------------------
 
-    SUBROUTINE init
+    SUBROUTINE init_dcf (tag)
+        implicit none
+        character(*), optional :: tag
         character(180) :: polarization
-
-        IF ( getinput%log('readDensityDensityCorrelationFunction', defaultvalue=.true.) ) THEN
-            CALL readDensityDensityCorrelationFunction
-        END IF
+        if (present(tag)) then
+            select case (tag)
+            case ("cs")
+                call read_cs
+            case default
+                print*, "in module_dcf > init_dcf, you ask for tag ",tag
+                print*, "it is not implemented yet"
+                print*, "bisous"
+                error stop
+            end select
+        end if
+        !
+        ! IF ( getinput%log('read_cs', defaultvalue=.true.) ) THEN
+        !     CALL read_cs
+        ! END IF
 
         polarization = getinput%char("polarization", defaultvalue="no")
         select case (polarization)
@@ -77,7 +94,7 @@ CONTAINS
         ! END IF
         ! IF ( getinput%log("ck_debug") ) THEN
         !     stop "ck_debug temporarly down"
-        !     CALL readDensityDensityCorrelationFunction
+        !     CALL read_cs
         !     CALL readPolarizationPolarizationCorrelationFunction
         ! END IF
         ! IF ( getinput%log("ck_debug_extended") ) THEN
@@ -85,14 +102,16 @@ CONTAINS
         !     CALL read_ck_projection
         ! END IF
 
-        if( getinput%log('bridge_hard_sphere')) then
-            if( getinput%log("ck_angular") .or. getinput%log('ck_debug') .or. getinput%log('ck_debug_extended') ) then
+        if( getinput%log('bridge_hard_sphere', defaultvalue=.false.)) then
+            if( getinput%log("ck_angular", defaultvalue=.false.)&
+            .or. getinput%log('ck_debug', defaultvalue=.false.)&
+            .or. getinput%log('ck_debug_extended', defaultvalue=.false.) ) then
                 stop 'not implemented yet'
             else
                 call cs_of_k_hard_sphere! in case of bridge calculation, one also need the direct correlation function c2 of the hard sphere.
             end if
         end if
-    end subroutine init
+    end subroutine init_dcf
 
     !-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -337,7 +356,7 @@ CONTAINS
         DO i = 1, SIZE(chi_l)
             READ (10,*,IOSTAT=ios) norm_k, chi_l(i)
             IF (ios>0 .OR. ios<0) THEN
-                WRITE(*,*)'Error while reading ',file_l, 'in readDensityDensityCorrelationFunction (c_d)'
+                WRITE(*,*)'Error while reading ',file_l, 'in read_cs (c_d)'
                 STOP
             END IF
         END DO
@@ -346,7 +365,7 @@ CONTAINS
         DO i = 1, SIZE(chi_t)
             READ (10,*,IOSTAT=ios) norm_k, chi_t(i)
             IF (ios>0 .OR. ios<0) THEN
-                WRITE(*,*)'Error while reading ',file_t, 'in readDensityDensityCorrelationFunction (c_d)'
+                WRITE(*,*)'Error while reading ',file_t, 'in read_cs (c_d)'
                 STOP
             END IF
         END DO
@@ -527,33 +546,41 @@ CONTAINS
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
 
     !===================================================================================================================================
-    SUBROUTINE readDensityDensityCorrelationFunction ! c(k)
+    SUBROUTINE read_cs ! c(k)
         use mathematica, only: spline, splint
         use constants  , only: onedp, zerodp
         implicit none
         INTEGER(i2b) :: ios, i, is, s
 
         if (.not. allocated(solvent)) then
-            print*, "In readDensityDensityCorrelationFunction, solvent(:)% is not allocated"
+            print*, "In read_cs, solvent(:)% is not allocated"
             print*, "It should be initiated before!"
             stop
         end if
 
+        do is=1,solvent(1)%nspec
+            if (solvent(1)%cs%isok) then
+                print*, "I am here in module_dcf > read_cs to read cs(k)"
+                print*, "but solvent(",s,")%cs%isok is already .true."
+                error stop
+            end if
+        end do
+
         ! if (any(solvent%is_initiated.eq..false.))  then
-        !     print*, "In readDensityDensityCorrelationFunction, solvent has already been initiated"
+        !     print*, "In read_cs, solvent has already been initiated"
         !     print*, "This is a bug"
         !     stop
         ! end if
         do s=1,solvent(1)%nspec
             if (.not.solvent(s)%is_initiated) then
-                print*, "In readDensityDensityCorrelationFunction, solvent has already been initiated"
+                print*, "In read_cs, solvent has already been initiated"
                 print*, "this is a bug"
                 stop
             end if
         end do
 
         if (solvent(1)%nspec/=1) then
-            print*, "I am in readDensityDensityCorrelationFunction"
+            print*, "I am in read_cs"
             print*, "This subroutine is valid for 1 solvent species at most"
             print*, "You have ",solvent(1)%nspec,"species"
             stop
@@ -584,20 +611,20 @@ CONTAINS
             ! read c(k) as given by user and print to output folder
             OPEN (13, FILE=c_s%filename, IOSTAT=ios)
             if (ios/=0) then
-                write(*,*) 'Cant open file ',c_s%filename,' in readDensityDensityCorrelationFunction(c_s)'
+                write(*,*) 'Cant open file ',c_s%filename,' in read_cs(c_s)'
                 error stop
             end if
             open (14, file='output/cs.in', iostat=ios)
-            if (ios/=0) stop 'Cant open file output/cs.in in readDensityDensityCorrelationFunction(c_s)'
+            if (ios/=0) stop 'Cant open file output/cs.in in read_cs(c_s)'
             do i=1,nb_k
                 READ (13,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
                 IF (ios/=0) THEN
-                    WRITE(*,*)'Error while reading line',i,"of",c_s%filename, 'in readDensityDensityCorrelationFunction(c_s)'
+                    WRITE(*,*)'Error while reading line',i,"of",c_s%filename, 'in read_cs(c_s)'
                     STOP
                 END IF
                 WRITE(14,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
                 if (ios/=0) then
-                    print*,'Something is wrong while writing c_s%x and c_s%y in readDensityDensityCorrelationFunction'
+                    print*,'Something is wrong while writing c_s%x and c_s%y in read_cs'
                     print*,'for i=',i
                     print*,'c_s%x(i)=',c_s%x(i)
                     print*,'and c_s%y(i)=',c_s%y(i)
@@ -619,10 +646,11 @@ CONTAINS
             !     end do
             ! end block
             ! close(14)
-            
+
             solvent(is)%cs%filename = c_s%filename
             allocate (solvent(is)%cs%x(nb_k) ,source=c_s%x)
             allocate (solvent(is)%cs%y(nb_k) ,source=c_s%y)
+            solvent(is)%cs%isok = .true.
             ! allocate (solvent(is)%cs%y2(nb_k) ,source=c_s%y2)
 
             deallocate(c_s%x)
@@ -631,6 +659,6 @@ CONTAINS
 
         end do ! the loop over all solvent species
 
-    END SUBROUTINE readDensityDensityCorrelationFunction
+    END SUBROUTINE read_cs
 
-END MODULE dcf
+END MODULE module_dcf

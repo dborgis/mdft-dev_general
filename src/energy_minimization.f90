@@ -1,11 +1,11 @@
 subroutine energy_minimization
 
-    use precision_kinds, only : i2b, dp
+    use precision_kinds, only : dp
     use module_input, only: getinput
-    use module_minimizer, only: lbfgsb
+    use module_minimizer, only: lbfgsb, init_lbfgsb
     use module_grid, only: grid
     use module_solvent, only: solvent
-    use module_minimizer, only: init_minimizer => init
+    use module_energy_and_gradient, only: energy_and_gradient
 
     implicit none
 
@@ -13,11 +13,12 @@ subroutine energy_minimization
     real(dp) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec )
     integer :: is, io, ix, iy, iz, i
 
-    !     Init minimization process. From allocations to optimizer parameters to guess solution
-    call init_minimizer
-    !     We start the iteration by initializing task.
-    lbfgsb%task = 'START'
-    !     The beginning of the loop
+    print*,
+    print*,
+    print*, "===== Energy minimization ====="
+
+    ! Init minimization process. From allocations to optimizer parameters to guess solution
+    call init_lbfgsb
 
     do while(lbfgsb%task(1:2).eq.'FG'.or.lbfgsb%task.eq.'NEW_X'.or.lbfgsb%task.eq.'START')
         !
@@ -31,6 +32,7 @@ subroutine energy_minimization
             !
             ! lbfgs propose un nouveau vecteur colonne à tester, lbfgsb%x(:), qui correspond à un reshape de notre solvent(:)%density(:,:,:,:)
             ! Passons ce x dnas solvent%density qui va ensuite servir de base à un nouveau calcul de f et df
+            ! Note pour plus tard : on pourrait utiliser la fonction RESHAPE de fortran
             !
             i=0
             do is=1,solvent(1)%nspec
@@ -50,6 +52,8 @@ subroutine energy_minimization
 
             !   Energy_and_gradient does not change solvent%density but updates df
             !   Passons df au format lbfgs%g one-column
+            !   Note pour plus tard : on pourrait utiliser la fonction PACK de fortran
+
             i=0
             do is=1,solvent(1)%nspec
                 do io=1,grid%no
@@ -57,7 +61,7 @@ subroutine energy_minimization
                         do iy=1,grid%ny
                             do ix=1,grid%nx
                                 i=i+1
-                                lbfgsb%g(i)=df(ix,iy,iz,io,is)
+                                lbfgsb%g(i) = df(ix,iy,iz,io,is)
                             end do
                         end do
                     end do
@@ -68,6 +72,10 @@ subroutine energy_minimization
     end do
 
     print*,
-    write(*,'(A,F12.2,A)') "optimal value found by L-BFGS-B =", f," kJ/mol"
+    print*,
+    print*, "solvent(1)%density(1,1,1,1) =", solvent(1)%density(1,1,1,1)
+    print*, "===== Energy minimization ====="
+    print*,
+    print*,
 
 end subroutine energy_minimization

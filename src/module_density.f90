@@ -38,7 +38,7 @@ contains
         ! allocate the solvent density field for each solvent species
         do s=1,solvent(1)%nspec
             if (.not. allocated( solvent(s)%density) ) then
-                allocate(solvent(s)%density(grid%nx,grid%ny,grid%nz,grid%no), source=0._dp, stat=ios)
+                allocate(solvent(s)%density(grid%nx,grid%ny,grid%nz,grid%no), source=1._dp, stat=ios)
                 if (ios /= 0) then
                     print*, "solvent(s)%density(grid%nx,grid%ny,grid%nz,grid%no), source=0._dp: Allocation request denied"
                     print*, "for s =", s
@@ -81,7 +81,7 @@ contains
         end select
 !        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
 
-        do s = 1, solvent(1)%nspec
+        do concurrent (s=1: solvent(1)%nspec)
             vextq_is_allocated = allocated (solvent(s)%vextq)
             do io = 1, grid%no
                 do k = 1, grid%nz
@@ -107,6 +107,7 @@ contains
                 end do
             end do
         end do
+
     end subroutine init_density
 
 

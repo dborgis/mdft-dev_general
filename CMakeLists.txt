@@ -79,12 +79,12 @@ set(mdft_SRCS
   src/compute_z_density.f90
   src/convert_coordinate_into_icg.f90
   src/cs_of_k_hard_sphere.f90
-  src/energy_and_gradient.f90
+  src/module_energy_and_gradient.f90
   src/energy_ck_angular.f90
-#  src/energy_cs.f90
+  src/module_energy_cs.f90
 #  src/energy_fmt.f90
   src/energy_hydro.f90
-  src/energy_ideal_and_external.f90
+  src/module_energy_ideal_and_external.f90
   src/energy_minimization.f90
   src/energy_nn_cs_plus_nbar.f90
   src/energy_polarization_dipol.f90

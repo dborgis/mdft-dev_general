@@ -7,7 +7,6 @@ module module_solvent
 
     implicit none
     private
-    public :: solvent, read_solvent
 
     type :: do_type
         logical ::  id_and_ext = .false.,&
@@ -25,6 +24,7 @@ module module_solvent
     type :: correlationfunction_type
         character(150) :: filename
         real(dp), allocatable :: x(:), y(:)
+        logical :: isok = .false.
     end type
 
     type :: solvent_type
@@ -42,16 +42,26 @@ module module_solvent
         complex(dp), allocatable :: sigma_k(:,:,:,:) ! charge factor
         complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! molecule polarization factor
         real(dp), allocatable :: vext(:,:,:,:), vextq(:,:,:,:)
+        real(dp) :: vext_threeshold = 36.04_dp ! 36.something is the maximum value of v so that exp(-beta.v) does not return underflow at 300 K
         type(do_type) :: do
         real(dp) :: mole_fraction = 1._dp
         type(correlationfunction_type) :: cs
-    ! contains
-    !     procedure, nopass :: init => read_solvent
+    contains
+        procedure, nopass :: init => read_solvent
     end type
     type (solvent_type), allocatable :: solvent(:)
 
+    public :: solvent, read_solvent, print_solvent_not_allocated
+
 contains
 
+    subroutine print_solvent_not_allocated (message)
+        implicit none
+        character(*), intent(in) :: message
+        print*, "solvent% is not allocated where it should"
+        print*, message
+        error stop
+    end subroutine
 
     subroutine functional_decision_tree
         use module_input, only: getinput

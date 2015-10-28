@@ -17,7 +17,6 @@ contains
         use module_density, only: init_density
         use hardspheres, only: compute_hard_spheres_parameters
         use module_input, only: getinput
-        use dcf, only: init_dcf => init
         use fft, only: init_fft => init
         use module_vext, only: init_vext
         use module_debug, only: init_debug
@@ -29,7 +28,6 @@ contains
         call read_solute
         call init_thermo
         call init_solvent
-        call init_dcf
         if (getinput%log('hard_sphere_fluid', defaultvalue=.false.)) call compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
         call init_fft
         call init_vext

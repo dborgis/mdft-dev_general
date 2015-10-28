@@ -4,7 +4,7 @@
 program main
 
     use precision_kinds, only: dp
-    use module_postprocessing, only: postprocessing => process_output
+    use module_postprocessing, only: init_postprocessing
     use module_init_simu, only: init_simu
 
     implicit none
@@ -18,20 +18,20 @@ program main
 
     call init_simu
     call energy_minimization
-    call postprocessing
+    call init_postprocessing
 
 
 
-    write(*,'(A)')"=="
+    write(*,'(A)')"===== Finished ====="
 
     call system_clock (count1)
     mdft_wholetime = (count1-count0)/real(count_rate)
     if( mdft_wholetime < 5*60 ) then ! less than 5 minutes
-        write(*,'(A,F12.2,A)')"MDFT finished with status OK. CPU time",mdft_wholetime," sec."
+        write(*,'(A,F12.2,A)') "MDFT finished with status OK. CPU time",mdft_wholetime," sec."
     else if( mdft_wholetime < 5*60*60 ) then ! less than 5 h
-        write(*,'(A,F12.2,A)')"MDFT finished with status OK. CPU time",mdft_wholetime/60.," min."
+        write(*,'(A,F12.2,A)') "MDFT finished with status OK. CPU time",mdft_wholetime/60.," min."
     else
-        write(*,'(A,F12.2,A)')"MDFT finished with status OK. CPU time",mdft_wholetime/60./60.," hours."
+        write(*,'(A,F12.2,A)') "MDFT finished with status OK. CPU time",mdft_wholetime/60./60.," hours."
     end if
 
 end program

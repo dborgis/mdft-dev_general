@@ -204,14 +204,6 @@ src/cs_of_k_hard_sphere.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/cs_of_k_hard_sphere.f90.o
 .PHONY : src/cs_of_k_hard_sphere.f90.o
 
-src/energy_and_gradient.o: src/energy_and_gradient.f90.o
-.PHONY : src/energy_and_gradient.o
-
-# target to build an object file
-src/energy_and_gradient.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/energy_and_gradient.f90.o
-.PHONY : src/energy_and_gradient.f90.o
-
 src/energy_ck_angular.o: src/energy_ck_angular.f90.o
 .PHONY : src/energy_ck_angular.o
 
@@ -227,14 +219,6 @@ src/energy_hydro.o: src/energy_hydro.f90.o
 src/energy_hydro.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/energy_hydro.f90.o
 .PHONY : src/energy_hydro.f90.o
-
-src/energy_ideal_and_external.o: src/energy_ideal_and_external.f90.o
-.PHONY : src/energy_ideal_and_external.o
-
-# target to build an object file
-src/energy_ideal_and_external.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/energy_ideal_and_external.f90.o
-.PHONY : src/energy_ideal_and_external.f90.o
 
 src/energy_minimization.o: src/energy_minimization.f90.o
 .PHONY : src/energy_minimization.o
@@ -331,6 +315,30 @@ src/module_density.o: src/module_density.f90.o
 src/module_density.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_density.f90.o
 .PHONY : src/module_density.f90.o
+
+src/module_energy_and_gradient.o: src/module_energy_and_gradient.f90.o
+.PHONY : src/module_energy_and_gradient.o
+
+# target to build an object file
+src/module_energy_and_gradient.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_energy_and_gradient.f90.o
+.PHONY : src/module_energy_and_gradient.f90.o
+
+src/module_energy_cs.o: src/module_energy_cs.f90.o
+.PHONY : src/module_energy_cs.o
+
+# target to build an object file
+src/module_energy_cs.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_energy_cs.f90.o
+.PHONY : src/module_energy_cs.f90.o
+
+src/module_energy_ideal_and_external.o: src/module_energy_ideal_and_external.f90.o
+.PHONY : src/module_energy_ideal_and_external.o
+
+# target to build an object file
+src/module_energy_ideal_and_external.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_energy_ideal_and_external.f90.o
+.PHONY : src/module_energy_ideal_and_external.f90.o
 
 src/module_fastpoissonsolver.o: src/module_fastpoissonsolver.f90.o
 .PHONY : src/module_fastpoissonsolver.o
@@ -535,10 +543,8 @@ help:
 	@echo "... src/compute_z_density.o"
 	@echo "... src/convert_coordinate_into_icg.o"
 	@echo "... src/cs_of_k_hard_sphere.o"
-	@echo "... src/energy_and_gradient.o"
 	@echo "... src/energy_ck_angular.o"
 	@echo "... src/energy_hydro.o"
-	@echo "... src/energy_ideal_and_external.o"
 	@echo "... src/energy_minimization.o"
 	@echo "... src/energy_nn_cs_plus_nbar.o"
 	@echo "... src/energy_polarization_dipol.o"
@@ -551,6 +557,9 @@ help:
 	@echo "... src/module_dcf.o"
 	@echo "... src/module_debug.o"
 	@echo "... src/module_density.o"
+	@echo "... src/module_energy_and_gradient.o"
+	@echo "... src/module_energy_cs.o"
+	@echo "... src/module_energy_ideal_and_external.o"
 	@echo "... src/module_fastpoissonsolver.o"
 	@echo "... src/module_fft.o"
 	@echo "... src/module_geometry.o"

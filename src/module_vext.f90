@@ -21,7 +21,7 @@ contains
 
         IMPLICIT NONE
 
-        integer :: nx, ny, nz, no, nfft(3), i,j,k,o,s, ns
+        integer :: nx, ny, nz, no, ns, s
         type errType
             integer :: i
             character(180) :: msg
@@ -29,11 +29,13 @@ contains
         type (errType) :: er
         real(dp), parameter :: zerodp = 0._dp
 
-        nfft = grid%n_nodes
-        i = grid%nx
-        j = grid%ny
-        k = grid%nz
-        o = grid%no
+        print*,
+        print*,"===== INIT VEXT ====="
+
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
+        no = grid%no
         ns = solvent(1)%nspec
 
         if (.not. allocated(solvent)) then
@@ -46,21 +48,16 @@ contains
         end if
 
         do s=1,ns
-            allocate ( solvent(s)%vext(nx,ny,nz,no), stat=er%i, errmsg=er%msg )
+            allocate ( solvent(s)%vext(nx,ny,nz,no), source=0._dp, stat=er%i, errmsg=er%msg )
             if (er%i/=0) then
                 print*,"Reported error is:", er%msg
                 stop "I can't allocate solvent(:)%vext in init_external_potential.f90:init_external_potential"
             end if
         end do
 
-        if (getinput%int('vext_hard_walls', defaultvalue=0, assert=">=0") /= 0) then
-            do s=1,ns
-                call vext_hard_walls
-            end do
-        end if
+        if (getinput%int('vext_hard_walls', defaultvalue=0, assert=">=0") > 0) call vext_hard_walls
 
         CALL init_electrostatic_potential ! ELECTROSTATIC POTENTIAL
-        stop "The problem is in init_electrostatic_potential"
 
         CALL vext_lennardjones ! LENNARD-JONES POTENTIAL
 
@@ -70,8 +67,24 @@ contains
         ! IF (getinput%char('other_predefined_vext')=='vextdef0') CALL vextdef0
 
         CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
+        print*, "after vext_total_sum"
+
         CALL prevent_numerical_catastrophes
+
+        if (allocated(solvent(1)%vextq)) then
+            print*,"    minval(vextq) =",minval(solvent(1)%vextq)
+            print*,"    maxval(vextq) =",maxval(solvent(1)%vextq)
+        else
+            print*,"    no electrostatic potential"
+        end if
+        print*,"    minval(vext) =",minval(solvent(1)%vext)
+        print*,"    maxval(vext) =",maxval(solvent(1)%vext)
+        print*,"===== VEXT ====="
+
     end subroutine init_vext
+
+
+
 
     subroutine init_electrostatic_potential
         use precision_kinds, only: dp
@@ -79,10 +92,12 @@ contains
         use module_solvent, only: solvent
         use module_grid, only: grid
         use module_fastpoissonsolver, only: init_fastpoissonsolver
+        use module_solute, only: solute
         implicit none
         integer :: s, i, nx, ny, nz, no, ns
         character(180) :: myerrormsg
-        logical :: is_direct, is_poisson
+        logical :: is_direct, is_poisson, i_want_vextq
+        real(dp), parameter :: epsdp=epsilon(1._dp)
         is_direct = getinput%log('direct_sum', defaultvalue=.false.)
         is_poisson = getinput%log('poisson_solver', defaultvalue=.true.)
 
@@ -92,7 +107,7 @@ contains
 
         if (.not.allocated(solvent)) then
             print*, "solvent% is not allocated in module_vext init_electrostatic_potential"
-            print*, "wierd idea"
+            print*, "weird idea"
             error stop
         end if
 
@@ -108,12 +123,17 @@ contains
                 print*, "That should not be the case."
                 error stop
             end if
-            allocate (solvent(s)%vextq(grid%nx,grid%ny,grid%nz,grid%no) ,source=0._dp, stat=i, errmsg=myerrormsg)
-            if (i/=0) then
-                print*, myerrormsg
-                error stop "in init_electrostatic_potential"
+            if ( any(abs(solute%site%q)>epsdp)  ) then
+                i_want_vextq = .true.
+                allocate (solvent(s)%vextq(grid%nx,grid%ny,grid%nz,grid%no) ,source=0._dp, stat=i, errmsg=myerrormsg)
+                if (i/=0) then
+                    print*, myerrormsg
+                    error stop "in init_electrostatic_potential"
+                end if
             end if
         end do
+
+        if (.not. i_want_vextq) return
 
         !
         ! Chose the Coulomb solver you want
@@ -125,7 +145,6 @@ contains
 
         ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
         IF (getinput%log('fastpoissonsolver', defaultvalue=.true.)) call init_fastpoissonsolver
-stop "apres l'appel à init_poisson_solver dans module_vext"
     end subroutine init_electrostatic_potential
 
     subroutine prevent_numerical_catastrophes
@@ -146,7 +165,7 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
         ALLOCATE (epsnn(i),signn(i),qnn(i),rblock(i,j) ,source=0._dp)
 
         ! liste tous les sites de soluté qui ont une charge mais pas de potentiel répulsif dessus:
-        PRINT*,"===== Prevent numerical catastrophe ====="
+        PRINT*,"    > Preventing numerical catastrophe"
         DO i=1, SIZE(solute%site)
             IF( solute%site(i)%q/=0. .and. (solute%site(i)%eps==0. .or. solute%site(i)%sig==0.) ) THEN
                 iFoundTheNN=.false.
@@ -283,6 +302,7 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
         use module_solvent, only: solvent
         use module_grid, only: grid
         use module_input, only: input_line, verbose
+        use module_debug, only: debugmode
         implicit none
         INTEGER :: nx, ny, nz, no, ns
         REAL(dp) :: lx, ly, lz
@@ -327,7 +347,6 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
         end do
 
 
-
         ! Test if the supercell is big enough considering the LJ range (given by sigma).
         ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
         ! It would have no sense to have a box dimension < 2.5 sigma
@@ -339,7 +358,7 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
             fullpbc=.FALSE. ! much faster
         END IF
 
-        if (solvent(1)%nspec /= 1) then
+        if (ns /= 1) then
             print*, "Dans vext_lennardjones, je n'ai pas encore implemente le multi especes"
             error stop
         end if
@@ -347,8 +366,9 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
         !
         ! For each solvent species, I want the index of the (unique) Lennard jones site
         !
-        allocate (index_of_lj_site_in_solvent(solvent(1)%nspec), source=0)
-        do s=1,solvent(1)%nspec
+
+        allocate (index_of_lj_site_in_solvent(ns), source=0)
+        do s=1,ns
             do t=1,size(solvent(1)%site)
                 if (solvent(1)%site(t)%eps > epsdp) then
                     index_of_lj_site_in_solvent(s) = t
@@ -359,6 +379,15 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
         if (any(index_of_lj_site_in_solvent<=0)) then
             print*, "In module_vext, some site index is negative. Bisous"
             error stop
+        end if
+
+
+        if (debugmode) then
+            if ( abs(vlj(3._dp,5._dp,2._dp)-45752929.6875_dp) > 1._dp/10000._dp ) then
+                print*, "function vlj is incorrect in module_vext"
+                print*, "what did you do?"
+                error stop
+            end if
         end if
 
         !
@@ -376,8 +405,6 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
             end if
         end do
 
-
-
         nsolutesite = size(solute%site)
         allocate (siguv(nsolutesite), source=0._dp)
         allocate (epsuv(nsolutesite), source=0._dp)
@@ -385,17 +412,23 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
         ! pour tous les sites de soluté, tabule les eps et sig LJ avec l'unique site LJ du solvent
         siguv(1:nsolutesite) = [((solvent(1)%site(v)%sig + solute%site(u)%sig)/2._dp , u=1,nsolutesite)]
         epsuv(1:nsolutesite) = [(sqrt( solvent(1)%site(v)%eps * solute%site(u)%eps ) , u=1,nsolutesite)]
-        ! do u=1,nsolutesite
-        !     siguv(u) = (solvent(1)%site(v)%sig + solute%site(u)%sig )/2._dp
-        !     epsuv(u) = sqrt( solvent(1)%site(v)%eps * solute%site(u)%eps )
-        ! end do
+        if (any(siguv<0._dp)) then
+            print*, "le sigma_ij de l'une des interactions lennard jones est negatif."
+            print*, "voici la liste des sigma_ij"
+            print*, siguv
+        end if
+        if (any(epsuv<0._dp)) then
+            print*, "le eps_ij de l'une des interactions lennard jones est negatif."
+            print*, "voici la liste des sigma_ij"
+            print*, epsuv
+        end if
 
-        x(1:nx) = [(real(i-1,dp)*grid%dx ,i=1,nx)]
-        y(1:ny) = [(real(j-1,dp)*grid%dy ,j=1,ny)]
-        z(1:nz) = [(real(k-1,dp)*grid%dz, k=1,nz)]
+        allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
+        allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
+        allocate( z(nz) ,source= [(real(k-1,dp)*grid%dz, k=1,nz)] )
 
-        do concurrent (s=1:ns)
-            do concurrent (i=1:nx, j=1:ny, k=1:nz)
+        do concurrent (s=1:ns) ! solvent species
+            do concurrent (i=1:nx, j=1:ny, k=1:nz) ! grid node
                 v_node=0._dp
                 soluteloop: do u=1,nsolutesite
                     IF (abs(solute%site(u)%eps) <= epsdp) CYCLE
@@ -405,8 +438,8 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
                             dy =y(j)-solute%site(u)%r(2)+b*ly
                             dz =z(k)-solute%site(u)%r(3)+c*lz
                             V_node =V_node + vlj( epsuv(u), siguv(u), dx**2+dy**2+dz**2)
-                            IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
-                                V_node = 100.0_dp
+                            IF (V_node >= solvent(s)%vext_threeshold) THEN ! limit maximum value of Vlj to 100 TODO magic number
+                                V_node = solvent(s)%vext_threeshold
                                 EXIT soluteloop
                             END IF
                         END DO; END DO; END DO
@@ -415,14 +448,14 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
                         dy =ABS(y(j)-solute%site(u)%r(2)); DO WHILE (dy>ly/2._dp); dy =ABS(dy-ly); END DO
                         dz =ABS(z(k)-solute%site(u)%r(3)); DO WHILE (dz>lz/2._dp); dz =ABS(dz-lz); END DO
                         V_node =V_node + vlj( epsuv(u), siguv(u), dx**2+dy**2+dz**2 )
-                        IF (V_node >= 100.0_dp) THEN ! limit maximum value of Vlj to 100 TODO magic number
-                            V_node = 100.0_dp
+                        IF (V_node >= solvent(s)%vext_threeshold) THEN ! limit maximum value of Vlj to 100 TODO magic number
+                            V_node = solvent(s)%vext_threeshold
                             EXIT soluteloop
                         END IF
                     END IF
                 end do soluteloop
                 solvent(s)%vext(i,j,k,:) = solvent(s)%vext(i,j,k,:) + V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
-            end do ! z
+            end do ! x,y,z
         end do ! solvent species
     contains
         pure function vlj(eps,sig,rsq) ! I hope this function is inlined by the compiler
@@ -694,7 +727,7 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
     ! then it gives a upper value (100 kJ/mol) to vext_total.
     SUBROUTINE vext_total_sum
 
-        use precision_kinds,    only: dp
+        use precision_kinds, only: dp
         use module_solvent, only: solvent
         use module_grid, only: grid
         use module_input, only: verbose
@@ -702,7 +735,6 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
 
         implicit none
 
-        real(dp), parameter :: vmax = huge(1.0_dp)
         real(dp), parameter :: fourpi=4._dp*acos(-1._dp)
         real(dp), parameter :: zero=0._dp
         real(dp), parameter :: epsdp=epsilon(1._dp)
@@ -717,21 +749,34 @@ stop "apres l'appel à init_poisson_solver dans module_vext"
         ! vext_total = 0.0_dp
         ! vext is the sum over all external potentials
         ! note that purely repulsive and hard potentials are already included in vext
-        where (solvent(1)%vext<vmax)
-            solvent(1)%vext = solvent(1)%vext + solvent(1)%vextq
-        end where
+        do s=1,ns
+            if (allocated(solvent(s)%vextq)) then
+                where (solvent(s)%vext<solvent(s)%vext_threeshold)
+                    solvent(s)%vext = solvent(s)%vext + solvent(s)%vextq ! OMG HERE COMES THE PROBLEM WHEN VEXTQ DIVERGES TOWARD MINUX INFTY
+                end where
+            end if
+        end do
 
-        if (all(abs(solvent(1)%vext)<=epsdp)) then
-            print*, "WARNING: the external potential, vext, is uniform = 0 everywhere. OK?"
-        end if
+        do s=1,ns
+            if (all(abs(solvent(s)%vext)<=epsdp)) then
+                print*, "WARNING: the external potential, vext, is uniform = 0 everywhere for solvent",s
+            end if
+        end do
 
-        ! caught nan and inf
-        if ( any(solvent(1)%vext/=solvent(1)%vext) ) stop "there is a nan somewhere in vext_total."
-        if ( any(abs(solvent(1)%vext)>huge(1.0_dp)) ) stop "there is an infinity somewhere in vext_total."
+        ! catch NaN and Inf
+        do s=1,ns
+            if ( any(solvent(s)%vext/=solvent(s)%vext) ) stop "there is a nan somewhere in vext_total"
+            if ( any(solvent(s)%vext> huge(1._dp)) ) stop "there is a Inf somewhere in solvent(s)%vext"
+            if ( any(solvent(s)%vext<-huge(1._dp)) ) stop "there is a -Inf somewhere in solvent(s)%vext"
+        end do
 
-        where (solvent(1)%vext >vmax)
-            solvent(1)%vext = vmax
-        end where
+        ! passe haut filter
+        do s=1,ns
+            where (solvent(s)%vext > solvent(s)%vext_threeshold)
+                solvent(s)%vext = solvent(s)%vext_threeshold
+            end where
+        end do
+
 
         ! IF (verbose) THEN
         !     BLOCK

@@ -8,15 +8,15 @@ SUBROUTINE output_rdf (array,filename)
 ! A much better (and more complicated) way of chosing this number would be to follow this publication:
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
-    use precision_kinds ,ONLY: dp, i2b, sp
-    use module_solute          ,ONLY: solute
+    use precision_kinds, only: dp, i2b, sp
+    use module_solute, only: solute
     use module_solvent, only: solvent
-    use mathematica     ,only: deduce_optimal_histogram_properties, akima_spline, chop
+    use mathematica, only: deduce_optimal_histogram_properties, chop
     use module_grid, only: grid
 
-    IMPLICIT NONE
+    implicit none
 
-    REAL(dp), DIMENSION(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3)), INTENT(IN) :: array
+    REAL(dp), DIMENSION(grid%nx,grid%ny,grid%nz), INTENT(IN) :: array
     CHARACTER(50), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
@@ -26,146 +26,141 @@ SUBROUTINE output_rdf (array,filename)
         CHARACTER(180) :: msg
     END TYPE
     TYPE (errortype) :: error
+    real(sp) :: xbin
+    ! integer, parameter :: sxs = 1000
+    ! real(dp) :: xs(sxs) , rdfs(sxs), lastx
+
+    if (.not. allocated(solvent)) then
+        print*, "In output_rdf.f90, solvent derived type is not allocated"
+        error stop
+    end if
+    if (solvent(1)%nspec/=1) error stop "compute_rdf.f90 is written for 1 solvent species only."
 
     rdfmaxrange = minval(grid%length)/2._dp
     CALL deduce_optimal_histogram_properties( product(grid%n_nodes), rdfmaxrange, nbins, dr )
 
-    OPEN (10, FILE=filename, FORM='formatted')
-    WRITE (10,*) '# r  rdf'
+    allocate (rdf(nbins), source=0._dp)
+    call UTest_histogram_3D
+    !
+    ! lastx = (real(nbins,dp)-0.5_dp)*dr
+    ! do i = 1, sxs
+    !     xs(i) = real(i-1)/sxs * lastx
+    ! end do
 
-    error%found = .FALSE.
-    IF (solvent(1)%nspec/=1) STOP "compute_rdf.f90 is written for 1 solvent species only."
-
-    ALLOCATE (rdf (nbins) ,SOURCE=0._dp)
-
-!    CALL UTest_histogram_3D
-    block
-
-    integer, parameter :: sxs = 1000
-    real(dp) :: x(nbins), xs(sxs) , rdfs(sxs), lastx
-    lastx = (real(nbins,dp)-0.5)*dr
-
-    do i = 1, sxs
-        xs(i) = real(i-1)/sxs * lastx
-    end do
-
-    open( 12, file=trim(adjustl(filename))//"-spline")
-
-    do n = 1, size( solute%site) ! loop over all sites of the solute
-
+    open (10, file=filename)
+    open (12, file=trim(adjustl(filename))//"-spline")
+    !
+    ! Compute and print histogram (the rdf) for each solute site
+    !
+    do n=1, size(solute%site) ! loop over all sites of the solute
         call histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
 
-        if (error%found) then
-            print*, error%msg
-            error stop
-        end if
-
-        ! Write to output/rdf.out
-        WRITE(10,*)'# solute site', n
-        WRITE(10,*) 0._dp,0._dp ! we impose
-        DO bin =1,nbins
-            x(bin) = (real(bin,dp)-0.5_dp)*dr
-            WRITE(10,*) x(bin), rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
-        END DO
-        WRITE(10,*)
-
-        call akima_spline( nbins, x, rdf, size(xs), xs, rdfs )
-
-        write(12,*) "#solute site", n
-        do i = 1, size(xs)
-            write(12,*) xs(i), chop( rdfs(i) )
+        ! write to output/rdf.out
+        write(10,*)'# solute site', n
+        write(10,*) 0., 0. ! we impose
+        do bin=1,nbins
+            xbin = (bin-0.5_dp)*dr ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
+            write(10,*) xbin, real(chop(rdf(bin)))! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
         end do
-        write(12,*)
+        write(10,*)
 
+        ! call akima_spline( nbins, x, rdf, size(xs), xs, rdfs )
+        !
+        ! write(12,*) "#solute site", n
+        ! do i = 1, size(xs)
+        !     write(12,*) real([ xs(i), chop(rdfs(i))  ])
+        ! end do
+        ! write(12,*)
     end do
-
     close(10)
-    close(12)
-    deallocate( rdf)
-    end block
+    ! close(12)
 
-    CONTAINS
+contains
 
 
         !===========================================================================================================================
-        SUBROUTINE histogram_3d (array3D, origin, rdf)
+        SUBROUTINE histogram_3d (data, origin, rdf)
         !===========================================================================================================================
-            IMPLICIT NONE
-            REAL(dp), INTENT(IN) :: array3D(grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3))
-            REAL(dp), INTENT(OUT) :: rdf(nbins)
+            implicit none
+            REAL(dp), intent(in) :: data(grid%nx,grid%ny,grid%nz)
+            REAL(dp), intent(out) :: rdf(nbins)
             real(dp), intent(in) :: origin(3)
-            INTEGER(i2b), ALLOCATABLE :: recurrence_bin(:)
-            REAL(dp) :: r
-            INTEGER(i2b) :: bin, i, j, k
+            INTEGER(i2b), allocatable :: occurrence(:)
+            REAL(dp) :: r,rsq,xisq,yisq,zisq
+            INTEGER(i2b) :: ibin, ix, iy, iz
 
-            ALLOCATE( recurrence_bin (nbins) ,SOURCE=0)
+            allocate( occurrence (nbins) ,source=0)
             rdf = 0._dp
 
             ! Transform array(position) in rdf(radialdistance)
             ! counts the total number of appearence of a value in each bin
-            DO CONCURRENT (i=1:grid%n_nodes(1), j=1:grid%n_nodes(2), k=1:grid%n_nodes(3))
-                r = NORM2(REAL([i,j,k]-1,dp)*grid%dl - origin(:))
-                bin = INT(r/dr)+1
-                IF (bin>nbins) THEN
-                    CYCLE
-                ELSE IF (bin<=0) THEN
-                    error%found = .TRUE.
-                    error%msg = "I found a null or negative bin index in compute_rdf.f90.\\ STOP"
-                END IF
-                recurrence_bin(bin) =recurrence_bin(bin) +1
-                rdf           (bin) =rdf(bin) +array3D(i,j,k)
-            END DO
+            do ix=1,grid%nx
+                xisq=((ix-1)*grid%dx-origin(1))**2
+                do iy=1,grid%ny
+                    yisq=((iy-1)*grid%dy-origin(2))**2
+                    do iz=1,grid%nz
+                        zisq=((iz-1)*grid%dz-origin(3))**2
+                        rsq=xisq+yisq+zisq
+                        r=sqrt(rsq)
+                        ibin=int(r/dr) +1
+                        if (ibin>nbins) then
+                            cycle
+                        else if (ibin<=0) then
+                            error stop "I have a negative or null index for the bin in output_rdf.f90"
+                        else
+                            occurrence(ibin)=occurrence(ibin) +1
+                            rdf(ibin) =rdf(ibin) +data(ix,iy,iz)
+                        end if
+                    end do
+                end do
+            end do
 
-            ! test if a problem found
-            IF (error%found) THEN
-                PRINT*, error%msg
-                STOP
-            END IF
+            if (all(occurrence==0)) then
+                print*, "In output_rdf, the histogram is completely empty. all bins have zero occurence"
+                error stop
+            end if
 
             ! normalize the rdf
-            WHERE (recurrence_bin/=0)
-                rdf = rdf/REAL(recurrence_bin,dp)
-            ELSEWHERE
+            where (occurrence/=0)
+                rdf = rdf/REAL(occurrence,dp)
+            elsewhere
                 rdf = 0.0_dp
-            END WHERE
+            end where
 
-            DEALLOCATE (recurrence_bin)
-        END SUBROUTINE histogram_3d
-        !===========================================================================================================================
+        end subroutine histogram_3d
 
-        !===========================================================================================================================
-        ! SUBROUTINE UTest_histogram_3D
-        !     use constants, only: zerodp
-        !     IMPLICIT NONE
-        !     REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:)
-        !     REAL(dp), ALLOCATABLE :: rdfUT(:)
-        !     real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
-        !
-        !     ALLOCATE (nullarray3D (grid%n_nodes(1),grid%n_nodes(2),grid%n_nodes(3)) ,SOURCE=0._dp)
-        !     ALLOCATE (rdfUT(nbins),source=0._dp)
-        !
-        !     ! Test 1
-        !     nullarray3D = 0._dp
-        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-        !     IF (ANY(rdfUT/=0._dp)) STOP "Test 1 in UTest_histogram_3D not passed."
-        !
-        !     ! Test 2
-        !     nullarray3D = 100._dp
-        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-        !     IF (ANY(rdfUT<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
-        !
-        !     ! Test 3
-        !     nullarray3D = -1._dp
-        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-        !     IF (ANY(rdfUT>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
-        !
-        !     ! Test 4
-        !     nullarray3D = 100._dp
-        !     CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-        !     IF (ANY(rdfUT>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
-        !
-        !     DEALLOCATE (nullarray3D, rdfUT)
-        ! END SUBROUTINE UTest_histogram_3D
-        !===========================================================================================================================
+        SUBROUTINE UTest_histogram_3D
+            IMPLICIT NONE
+            REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:)
+            REAL(dp), ALLOCATABLE :: rdfUT(:)
+            real(dp), parameter :: zerodp=0._dp
+            real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
+            real(dp), parameter :: epsdp=epsilon(1._dp)
+
+            ALLOCATE (nullarray3D (grid%nx,grid%ny,grid%nz) ,SOURCE=0._dp)
+            ALLOCATE (rdfUT(nbins),source=0._dp)
+
+            ! Test 1
+            nullarray3D = 0._dp
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+            IF (ANY(abs(rdfUT)>epsdp)) error stop "Test 1 in UTest_histogram_3D not passed."
+
+            ! Test 2
+            nullarray3D = 100._dp
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+            IF (ANY(rdfUT<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
+
+            ! Test 3
+            nullarray3D = -1._dp
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+            IF (ANY(rdfUT>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
+
+            ! Test 4
+            nullarray3D = 100._dp
+            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
+            IF (ANY(rdfUT>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
+
+            DEALLOCATE (nullarray3D, rdfUT)
+        END SUBROUTINE UTest_histogram_3D
 
 END SUBROUTINE output_rdf

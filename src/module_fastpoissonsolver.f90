@@ -62,7 +62,6 @@ contains
         ! Check that a solute with no charge induces zero potential
         !
         if (debugmode) then
-            PRINT*,"DEBUGUUUUUUUUUGGGGGGGGMOOOOOOOOOOOOOOOOOOOOOOOODE"
             sourcedistrib = 0._dp
             call poissonsolver (psgrid%n, psgrid%len, sourcedistrib, phi)
             if (any(abs(phi)>epsdp)) then

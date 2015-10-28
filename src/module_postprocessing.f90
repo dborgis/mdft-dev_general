@@ -1,16 +1,23 @@
 module module_postprocessing
-    use precision_kinds, only: dp
     implicit none
     private
-    public :: process_output
+    public :: init_postprocessing
 contains
 !
 !     !
 !     !   Post-processing of MDFT, following user's requirements
 !     !
-    SUBROUTINE process_output
-!
-!         ! defines precision of reals and intergers
+    subroutine init_postprocessing
+        use module_solvent, only: solvent
+        implicit none
+        character(len=80) :: filename
+
+        !
+        ! print density
+        !
+        filename = "output/density.cube"
+        call write_to_cube_file (solvent(1)%density(:,:,:,1) ,filename)
+
 !         use system,             ONLY: thermocond
 !         use module_solvent, only: solvent
 !         use module_input,              ONLY: verbose, getinput
@@ -96,10 +103,10 @@ contains
 !         END IF
 !
 !
-!         filename = 'output/rdf.out'
-!         CALL output_rdf ( neq(:,:,:,1) , filename ) ! Get radial distribution functions
-!         call output_gsitesite
-!         call output_gOfRandCosTheta
+        filename = 'output/rdf.out'
+        call output_rdf ( solvent(1)%density(:,:,:,1)/solvent(1)%n0 , filename ) ! Get radial distribution functions
+        call output_gsitesite
+        call output_gOfRandCosTheta
 !
 !         CALL adhoc_corrections_to_gsolv
 !
@@ -120,7 +127,7 @@ contains
 !           end block
 !         end if
 !
-    END SUBROUTINE process_output
+    end subroutine init_postprocessing
 !
 !     SUBROUTINE print_cg_vect_new
 !         use module_minimizer, ONLY: cg_vect_new

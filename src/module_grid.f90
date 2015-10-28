@@ -79,13 +79,13 @@ contains
         ! We now have a full description of the space grid
         print*,
         print*, "===== Grid ====="
-        print*, "Box Length :", grid%length
-        print*, "nodes      :", grid%n_nodes
-        print*, "dx, dy, dz :", grid%dl
+        print*, "lx, ly, lz :", real(grid%length)
+        print*, "nx, ny, nz :", grid%n_nodes
+        print*, "dx, dy, dz :", real(grid%dl)
 
 
 
-        grid%mmax = getinput%int("mmax", defaultvalue=1, assert=">0")
+        grid%mmax = getinput%int("mmax", defaultvalue=0, assert=">=0")
         grid%ntheta = grid%mmax+1
         grid%nphi = 2*grid%mmax+1
         grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1
@@ -111,9 +111,7 @@ contains
             phiofiphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
             call gauss_legendre( grid%ntheta, thetaofitheta, wthetaofitheta, err)
             if (err /= 0) error stop "problem in gauss_legendre"
-            print*, thetaofitheta
             thetaofitheta = acos(thetaofitheta)
-            print*, thetaofitheta
             allocate( grid%tio(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
             io = 0
             do itheta = 1, grid%ntheta
@@ -132,7 +130,11 @@ contains
                 end do
             end do
         end block
-        print*, "ntheta=",grid%ntheta
+
+        if (abs(sum(grid%w)-1._dp)>epsilon(1._dp)) then
+            print*, "The sum of all quadrature weights is", sum(grid%w)
+            error stop "It must be 1."
+        end if
 
         open(56, file="output/su3-roots-weights.dat")
         write(56,*) "theta, weight_theta, phi, weight_phi, psi, weight_psi, weight_total_of_theta_phi_psi"
@@ -142,12 +144,13 @@ contains
         close(56)
 
         print*, "mmax =",grid%mmax
-        print*, "number of orientations",grid%no
-        print*, "number of theta =", grid%ntheta
-        print*, "number of phi=", grid%nphi
-        print*, "molrotsymorder =", grid%molrotsymorder
-        print*, "number of psi=", grid%npsi
-        print*, "sum of all weights =", sum(grid%w)
+        print*, grid%no,"orientations"
+        print*, grid%ntheta,"θ"
+        print*, grid%nphi,"φ"
+        print*, "molrotsymorder", grid%molrotsymorder
+        print*, grid%npsi,"ψ"
+        print*, "===== Grid ====="
+
         allocate( grid%rotxx(grid%no) , grid%rotxy(grid%no), grid%rotxz(grid%no), source=0._dp)
         allocate( grid%rotyx(grid%no) , grid%rotyy(grid%no), grid%rotyz(grid%no), source=0._dp)
         allocate( grid%rotzx(grid%no) , grid%rotzy(grid%no), grid%rotzz(grid%no), source=0._dp)
@@ -185,8 +188,6 @@ contains
                 end do
             end block
         end select
-
-        print*, "===== Grid ====="
 
         call tabulate_kx_ky_kz
         grid%isinitiated = .true.
