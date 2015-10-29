@@ -79,9 +79,9 @@ contains
         ! We now have a full description of the space grid
         print*,
         print*, "===== Grid ====="
-        print*, "lx, ly, lz :", real(grid%length)
-        print*, "nx, ny, nz :", grid%n_nodes
-        print*, "dx, dy, dz :", real(grid%dl)
+        print*, "   lx, ly, lz :", real(grid%length)
+        print*, "   nx, ny, nz :", grid%n_nodes
+        print*, "   dx, dy, dz :", real(grid%dl)
 
 
 
@@ -143,12 +143,8 @@ contains
         end do
         close(56)
 
-        print*, "mmax =",grid%mmax
-        print*, grid%no,"orientations"
-        print*, grid%ntheta,"θ"
-        print*, grid%nphi,"φ"
-        print*, "molrotsymorder", grid%molrotsymorder
-        print*, grid%npsi,"ψ"
+        print*, "   mmax =",int(grid%mmax,1),"and molrotsymorder =",int(grid%molrotsymorder,1),"=>",int(grid%no,1),"orientations"
+        print*, "   θ φ ψ:",int([grid%ntheta,grid%nphi,grid%npsi],1)
         print*, "===== Grid ====="
 
         allocate( grid%rotxx(grid%no) , grid%rotxy(grid%no), grid%rotxz(grid%no), source=0._dp)

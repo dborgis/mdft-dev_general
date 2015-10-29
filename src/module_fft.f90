@@ -19,7 +19,9 @@ contains
         implicit none
         integer :: iRet
         fftw3%nthread = getinput%int('number_of_fftw3_threads',defaultvalue=1,assert=">0")
-        print*,"Number of threads for FFTW3:", fftw3%nthread
+        if (fftw3%nthread/=1) then
+            print*,"Number of threads for FFTW3:", fftw3%nthread
+        end if
         call dfftw_init_threads(iRet)
         if (iRet/=1) then
             print*, "Problem in dfftw_init_threads(), returned value is ",iRet
