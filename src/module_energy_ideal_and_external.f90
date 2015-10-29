@@ -29,6 +29,7 @@ contains
         dv = grid%dv
         volume = grid%v ! volume
         mu = getinput%dp( 'imposed_chempot', defaultvalue=0._dp)
+        if ( mu/=0._dp) stop "mu /=0 in module_energy_ideal_and_external. That's implemented but for now shutitoff"
         if ( ns/=1 .AND. mu/=0._dp) STOP "Imposing a chemical potential is valid only for single-species solvent"
         !
         ! fid = integrate over whole space of   x.log(x/x0)-x+x0 = Int[x.(log(x/x0)-1)] + Int[x0]
@@ -49,11 +50,11 @@ contains
                             ! if (x<1e-10 .and. vext<36._dp) then
                             !     print*, x, vext
                             ! end if
-                            if (x/x0>epsdp) then
+                            if (x>epsdp) then
                                 fid = fid + kT*dv*w*(x*log(x/x0)-x+x0)
                                 dfid = kT*dv*w*log(x/x0)
-                            else if (x/x0<=epsdp) then
-                                fid = fid + kT*dv*w*x0
+                            else if (x<=epsdp) then
+                                fid = fid + kT*dv*w*x0 ! par continuite. Plot x*log(x/x0)-x+x0 dans Mathematica pour un x non nul mais arbitrairement petit pour t'en convaincre.
                                 dfid = 0._dp
                             end if
                             fext = fext + dv*w*vext*x

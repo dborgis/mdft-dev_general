@@ -7,9 +7,9 @@ contains
 
         use precision_kinds, only: dp
         use module_thermo, only: thermo
-        use module_solvent  , only: solvent, print_solvent_not_allocated
-        use fft             , only: fftw3
-        use module_grid     , only: grid
+        use module_solvent, only: solvent, print_solvent_not_allocated
+        use fft, only: fftw3
+        use module_grid, only: grid
         use module_dcf, only: init_dcf
 
         implicit none
@@ -37,8 +37,12 @@ contains
         ! fill array fftw3 with deltan = n(x,y,z)-n0
         ! with n(x,y,z) built quadrature over orientational
         !
-        do concurrent(ix=1:nx, iy=1:ny, iz=1:nz)
-            fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%density(ix,iy,iz,:) * grid%w(:)) - solvent(1)%n0
+        do iz=1,nz
+            do iy=1,ny
+                do ix=1,nx
+                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%density(ix,iy,iz,:) * grid%w(:)) - solvent(1)%n0
+                end do
+            end do
         end do
 
         !
@@ -94,15 +98,14 @@ contains
         ! in_forward still contains deltan(x)=n(x)-n0
         ! out_forward contains gamma(x) = convolution of cs(x) and deltan(x)
         ! we want the integral of deltan(x)*gamma(x)
-        a = -kT/2._dp * dv
-        Fexc = a *sum (fftw3%in_forward*fftw3%out_backward)
+        Fexc = -kT/2._dp*dv*sum (fftw3%in_forward*fftw3%out_backward)
 
         do is=1,ns
             do io=1,no
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
-                            df(ix,iy,iz,io,is) = df(ix,iy,iz,io,is) + a*grid%w(io)*fftw3%out_backward(ix,iy,iz)
+                            df(ix,iy,iz,io,is) = df(ix,iy,iz,io,is) -kT*dv*grid%w(io)*fftw3%out_backward(ix,iy,iz)
                         end do
                     end do
                 end do
