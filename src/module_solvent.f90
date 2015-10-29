@@ -14,11 +14,11 @@ module module_solvent
         exc_fmt = .false.,&
         exc_wca = .false.,&
         exc_3b = .false.,&
-        exc_dipolar = .false.,&
         exc_multipolar_without_coupling_to_density = .false.,&
         exc_multipolar_with_coupling_to_density = .false.,&
         exc_hydro = .false.,&
-        exc_nn_cs_plus_nbar = .false.
+        exc_nn_cs_plus_nbar = .false.,&
+        exc_cdeltacd = .false.
     end type
 
     type :: correlationfunction_type
@@ -46,6 +46,8 @@ module module_solvent
         type(do_type) :: do
         real(dp) :: mole_fraction = 1._dp
         type(correlationfunction_type) :: cs
+        type(correlationfunction_type) :: cdelta
+        type(correlationfunction_type) :: cd
     contains
         procedure, nopass :: init => read_solvent
     end type
@@ -81,7 +83,7 @@ contains
             select case (getinput%char("polarization", defaultvalue="no"))
             case("no","none")
             case("dipolar")
-                solvent(s)%do%exc_dipolar = .true.
+                solvent(s)%do%exc_cdeltacd = .true.
             case("multipolar_without_coupling_to_density")
                 solvent(s)%do%exc_multipolar_without_coupling_to_density = .true.
             case("multipolar_with_coupling_to_density")
@@ -209,16 +211,18 @@ contains
             stop "in read_solvent.f90"
         end select
 
-
         ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer
-        do i = 1, size(input_line)
-            if (input_line(i)(1:len('ref_bulk_density')) == 'ref_bulk_density') then
-                do s = 1, solvent(1)%nspec
-                    read (input_line(i+s),*) solvent(s)%n0
-                end do
-                exit
-            end if
-        end do
+        select case (solvent(1)%nspec)
+        case (1)
+            solvent(1)%n0= getinput%dp("bulk_density", assert=">0")
+        case (2)
+            solvent(1:2)%n0= getinput%dp2("bulk_density", assert=">0")
+        case (3)
+            solvent(1:3)%n0= getinput%dp3("bulk_density", assert=">0")
+        case default
+            print*, "In module solvent you are looking for the bulk density for nspec>3. Not implemented yet"
+            error stop
+        end select
 
         if (any (solvent%n0 <= 0._dp) ) then
             print *,"You ask for negative densities!"
