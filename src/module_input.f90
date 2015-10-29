@@ -3,7 +3,7 @@
 
 module module_input
 
-    use iso_c_binding, only: dp => C_DOUBLE
+    use precision_kinds, only: dp
     implicit none
     private
 
@@ -37,6 +37,7 @@ module module_input
 contains
 
     function file_line_count(file) result (line_count)
+        implicit none
         class (file_type), intent(in) :: file
         integer :: line_count
         if (file%nline < 0) then
@@ -555,18 +556,27 @@ contains
 
                 n_lines = n_linesInFile('input/dft.in')
                 allocate( input_line(n_lines), stat=i)
-                if (i /= 0) print *, "input_line: Allocation request denied"
+                if (i /= 0) then
+                    print *, "input_line: Allocation request denied"
+                    error stop
+                end if
 
                 open(unit=11, file="input/dft.in", iostat=i, status="old", action="read")
-                if ( i /= 0 ) stop "Error opening file input/dft.in"
+                if ( i /= 0 ) then
+                    print*, "Error opening file input/dft.in"
+                    error stop
+                end if
 
                 DO i=1, n_lines
-                    READ(11,'(a)') text
+                    read(11,'(a)') text
                     input_line (i) = trim(adjustl(text))
                 end do
 
                 close(unit=11, iostat=i)
-                if ( i /= 0 ) stop "Error closing file input/dft.in"
+                if ( i /= 0 ) then
+                    print*, "In module_input > put_input_in_character_array: Error closing file input/dft.in"
+                    error stop
+                end if
 
                 !  clean up comments in the lines (for instance, "option = 3 # blabla" should become "option = 3")
                 DO i = 1, n_lines
@@ -591,9 +601,12 @@ contains
                 end do
 
                 !Resize input_line to the smallest size by using a temporary array
-                allocate ( arraytemp(n) , SOURCE= input_line(1:n) )
-                deallocate ( input_line )
-                allocate ( input_line (n), SOURCE= arraytemp )
+                allocate (arraytemp(n))
+                do i=1,n
+                    arraytemp(i)(:) = input_line(i)(:)
+                end do
+                deallocate (input_line)
+                allocate (input_line(n), source= arraytemp )
                 deallocate (arraytemp)
 
                 ! print what has been considered as input by the parser, that is what is contained by input_line(), to output dir.
