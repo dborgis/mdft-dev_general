@@ -30,7 +30,7 @@ contains
         real(dp), parameter :: zerodp = 0._dp
 
         print*,
-        print*,"===== INIT VEXT ====="
+        print*,"===== External Potential ====="
 
         nx = grid%nx
         ny = grid%ny
@@ -67,9 +67,10 @@ contains
         ! IF (getinput%char('other_predefined_vext')=='vextdef0') CALL vextdef0
 
         CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
-        print*, "after vext_total_sum"
 
-        CALL prevent_numerical_catastrophes
+        if (any(solvent(1)%vext <= -solvent(1)%vext_threeshold)) then
+            call prevent_numerical_catastrophes
+        end if
 
         if (allocated(solvent(1)%vextq)) then
             print*,"    minval(vextq) =",minval(solvent(1)%vextq)
@@ -79,7 +80,7 @@ contains
         end if
         print*,"    minval(vext) =",minval(solvent(1)%vext)
         print*,"    maxval(vext) =",maxval(solvent(1)%vext)
-        print*,"===== VEXT ====="
+        print*,"===== External Potential ====="
 
     end subroutine init_vext
 

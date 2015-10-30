@@ -10,7 +10,7 @@ module module_fastpoissonsolver
         integer :: n(3)
         real(dp) :: len(3)
     end type psgrid_type
-    type (psgrid_type) :: psgrid
+    type (psgrid_type), protected :: psgrid
 
     public :: init_fastpoissonsolver
 
@@ -31,8 +31,6 @@ contains
         end type
         type (myerror_type) :: er
         real(dp), parameter :: epsdp=epsilon(1._dp)
-
-        print*, "===== Poisson solver ===="
 
         !
         ! Check allocations and initializations
@@ -77,7 +75,6 @@ contains
 
         if (all(abs(sourcedistrib)<=epsdp)) then
             phi = 0._dp
-            return
         end if
 
         call poissonSolver (psgrid%n, psgrid%len, sourcedistrib, phi)

@@ -236,14 +236,6 @@ src/energy_nn_cs_plus_nbar.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/energy_nn_cs_plus_nbar.f90.o
 .PHONY : src/energy_nn_cs_plus_nbar.f90.o
 
-src/energy_polarization_dipol.o: src/energy_polarization_dipol.f90.o
-.PHONY : src/energy_polarization_dipol.o
-
-# target to build an object file
-src/energy_polarization_dipol.f90.o:
-	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/energy_polarization_dipol.f90.o
-.PHONY : src/energy_polarization_dipol.f90.o
-
 src/energy_polarization_multi.o: src/energy_polarization_multi.f90.o
 .PHONY : src/energy_polarization_multi.o
 
@@ -323,6 +315,14 @@ src/module_energy_and_gradient.o: src/module_energy_and_gradient.f90.o
 src/module_energy_and_gradient.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_energy_and_gradient.f90.o
 .PHONY : src/module_energy_and_gradient.f90.o
+
+src/module_energy_cdeltacd.o: src/module_energy_cdeltacd.f90.o
+.PHONY : src/module_energy_cdeltacd.o
+
+# target to build an object file
+src/module_energy_cdeltacd.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_energy_cdeltacd.f90.o
+.PHONY : src/module_energy_cdeltacd.f90.o
 
 src/module_energy_cs.o: src/module_energy_cs.f90.o
 .PHONY : src/module_energy_cs.o
@@ -547,7 +547,6 @@ help:
 	@echo "... src/energy_hydro.o"
 	@echo "... src/energy_minimization.o"
 	@echo "... src/energy_nn_cs_plus_nbar.o"
-	@echo "... src/energy_polarization_dipol.o"
 	@echo "... src/energy_polarization_multi.o"
 	@echo "... src/energy_polarization_multi_with_nccoupling.o"
 	@echo "... src/energy_threebody_faster.o"
@@ -558,6 +557,7 @@ help:
 	@echo "... src/module_debug.o"
 	@echo "... src/module_density.o"
 	@echo "... src/module_energy_and_gradient.o"
+	@echo "... src/module_energy_cdeltacd.o"
 	@echo "... src/module_energy_cs.o"
 	@echo "... src/module_energy_ideal_and_external.o"
 	@echo "... src/module_fastpoissonsolver.o"

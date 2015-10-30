@@ -6,7 +6,7 @@ module module_minimizer
     type lbfgsb_type
         !     Declare variables and parameters needed by mylbfgsb.f90>setulb
 
-        integer                :: n, m=5, iprint=99
+        integer                :: n, m=5, iprint=1
         real(dp)               :: factr  = 1.0d+12, pgtol  = 1.0d-5
         character(len=60)      :: task, csave
         logical                :: lsave(4)
@@ -39,8 +39,6 @@ contains
         itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
 
         lbfgsb%n = grid%nx * grid%ny * grid%nz * grid%no * solvent(1)%nspec
-        lbfgsb%m = 5
-        lbfgsb%iprint = 1
         allocate ( lbfgsb%nbd(lbfgsb%n), lbfgsb%x(lbfgsb%n), lbfgsb%l(lbfgsb%n), lbfgsb%u(lbfgsb%n), lbfgsb%g(lbfgsb%n) )
         allocate ( lbfgsb%iwa(3*lbfgsb%n) )
         allocate ( lbfgsb%wa(2*lbfgsb%m*lbfgsb%n + 5*lbfgsb%n + 11*lbfgsb%m*lbfgsb%m + 8*lbfgsb%m) )
@@ -78,7 +76,7 @@ contains
                                 !     error stop
                                 ! end if
                                 lbfgsb%x(icg) = solvent(is)%density(ix,iy,iz,io)
-                                lbfgsb%nbd(icg) = 1 ! lower and upper bounded
+                                lbfgsb%nbd(icg) = 2 ! lower and upper bounded
                                 lbfgsb%l(icg) = 0._dp!solvent(is)%density(ix,iy,iz,io)
                                 lbfgsb%u(icg) = 0._dp!solvent(is)%density(ix,iy,iz,io) ! lower and upper bounds the same, I hope lbfgsb understands this means don't touch to this?
                             end if

@@ -5,9 +5,7 @@ module module_dcf
     use mathematica, only: spline, splint
     use module_solvent, only: solvent
 
-
-    IMPLICIT NONE
-
+    implicit none
     private
 
     REAL(dp) :: delta_k , delta_k_in_C! distance between two k points in cs.in, cdelta.in, cd.in
@@ -59,6 +57,8 @@ CONTAINS
             select case (tag)
             case ("cs")
                 call read_cs
+            case ("cdeltacd")
+                call read_cdeltacd
             case default
                 print*, "in module_dcf > init_dcf, you ask for tag ",tag
                 print*, "it is not implemented yet"
@@ -67,24 +67,20 @@ CONTAINS
             end select
         end if
         !
-        ! IF ( getinput%log('read_cs', defaultvalue=.true.) ) THEN
-        !     CALL read_cs
-        ! END IF
-
-        polarization = getinput%char("polarization", defaultvalue="no")
-        select case (polarization)
-        case("no","none")
-        case("dipolar")
-            call readPolarizationPolarizationCorrelationFunction
-        case("multipolar_without_coupling_to_density")
-            call readDielectricSusceptibilities
-        case("multipolar_with_coupling_to_density")
-            call readDielectricSusceptibilities
-            call readTotalPolarizationCorrelationFunction
-        case default
-            print*, "The tag 'polarization' in input reads ", polarization,". This is not correct"
-            stop
-        end select
+        ! polarization = getinput%char("polarization", defaultvalue="no")
+        ! select case (polarization)
+        ! case("no","none")
+        ! case("dipolar")
+        !     call readPolarizationPolarizationCorrelationFunction
+        ! case("multipolar_without_coupling_to_density")
+        !     call readDielectricSusceptibilities
+        ! case("multipolar_with_coupling_to_density")
+        !     call readDielectricSusceptibilities
+        !     call readTotalPolarizationCorrelationFunction
+        ! case default
+        !     print*, "The tag 'polarization' in input reads ", polarization,". This is not correct"
+        !     stop
+        ! end select
 
 
         ! IF ( getinput%log("ck_angular") ) THEN
@@ -458,9 +454,94 @@ CONTAINS
 
     !===================================================================================================================================
 
-    SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
-        INTEGER(i2b) :: ios, nk, i
+    subroutine read_cdeltacd
+        use precision_kinds, only: dp
+        use module_solvent, only: solvent
+        use module_input, only: n_linesInFile
+        implicit none
+        integer :: nk, i, ios
+        if (solvent(1)%nspec/=1) then
+            print*, "In read_cdeltacd, nspec>1 not implemented"
+            error stop
+        end if
+        if (solvent(1)%cd%isok .or. solvent(1)%cdelta%isok) then
+            print*, "In read_cdeltacd, cd and cdelta seem to be already ok solvent%cd%isok and solvent%cdelta%isok"
+            error stop
+        end if
+        select case (solvent(1)%name)
+        case ("spce")
+            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
+            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPCE/cd.in'
+        case ("spc")
+            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
+            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
+        case ("stockmayer")
+            solvent(1)%cdelta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
+            solvent(1)%cd%filename='input/direct_correlation_functions/stockmayer/cd.in'
+        case ("perso")
+            solvent(1)%cdelta%filename='input/cdelta.in'
+            solvent(1)%cd%filename='input/cd.in'
+        case default
+            print*, "In read_cdeltacd, solvent(1)%name=", solvent(1)%name
+            print*, "I don't know how to get cdelta(k) and cd(k) for this name"
+            error stop
+        end select
+        nk = n_linesInFile(solvent(1)%cdelta%filename)
+        if (nk /= n_linesInFile(solvent(1)%cd%filename)) then
+            print*, "In read_cdeltacd, these two files don't have the same number of points"
+            print*, solvent(1)%cdelta%filename, solvent(1)%cd%filename
+        end if
+        allocate (solvent(1)%cd%x(nk), solvent(1)%cd%y(nk), solvent(1)%cdelta%x(nk), solvent(1)%cdelta%y(nk), source=0._dp)
 
+        open (13, file=solvent(1)%cdelta%filename, iostat=ios)
+        IF (ios/=0) THEN
+            WRITE(*,*)'Cant open file ',solvent(1)%cdelta%filename,' in read_cdeltacd'
+            STOP
+        END IF
+        open( 30, file="./output/cdelta.in")
+        DO i = 1, size(solvent(1)%cdelta%x)
+            READ (13,*,IOSTAT=ios) solvent(1)%cdelta%x(i), solvent(1)%cdelta%y(i)
+            IF (ios/=0) THEN
+                WRITE(*,*)'Error while reading ',solvent(1)%cdelta%filename, 'in read_cdeltacd'
+                STOP
+            END IF
+            write(30,*) solvent(1)%cdelta%x(i) , solvent(1)%cdelta%y(i)
+        END DO
+        close (13)
+        close (30)
+
+        OPEN (13, FILE=solvent(1)%cd%filename, IOSTAT=ios)
+        IF (ios/=0) THEN
+            WRITE(*,*)'Cant open file ',solvent(1)%cd%filename,' in readPolarizationPolarizationCorrelationFunction'
+            STOP
+        END IF
+        open (30, file="./output/cd.in")
+        DO i = 1, size(solvent(1)%cd%x)
+            READ (13,*,IOSTAT=ios) solvent(1)%cd%x(i), solvent(1)%cd%y(i)
+            IF (ios/=0) THEN
+                WRITE(*,*)'Error while reading ',solvent(1)%cd%filename, 'in readPolarizationPolarizationCorrelationFunction (c_d)'
+                STOP
+            END IF
+            write(30,*) solvent(1)%cd%x(i) , solvent(1)%cd%y(i)
+        END DO
+        close (13)
+        close (30)
+
+        if (solvent(1)%cd%x(2)-solvent(1)%cd%x(1) /= solvent(1)%cdelta%x(2)-solvent(1)%cdelta%x(1)) then
+            print*, "In read_cdeltacd, the distance between two k points is not the same in files"
+            print*, solvent(1)%cd%filename, solvent(1)%cdelta%filename
+            print*, "It is:", solvent(1)%cd%x(2)-solvent(1)%cd%x(1), solvent(1)%cdelta%x(2)-solvent(1)%cdelta%x(1)
+            error stop
+        end if
+
+        solvent(1)%cdelta%isok = .true.
+        solvent(1)%cd%isok = .true.
+
+    end subroutine read_cdeltacd
+
+    SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
+        implicit none
+        integer :: ios, nk, i
         select case (solvent(1)%name)
         case ("spce")
             c_delta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'

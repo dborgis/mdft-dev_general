@@ -71,6 +71,7 @@ endif()
 
 # set source files list
 set(mdft_SRCS
+  src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90
   src/compute_vext_hard_cylinder.f90
@@ -87,7 +88,6 @@ set(mdft_SRCS
   src/module_energy_ideal_and_external.f90
   src/energy_minimization.f90
   src/energy_nn_cs_plus_nbar.f90
-  src/energy_polarization_dipol.f90
   src/energy_polarization_multi.f90
   src/energy_polarization_multi_with_nccoupling.f90
   src/energy_threebody_faster.f90
