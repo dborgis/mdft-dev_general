@@ -27,9 +27,11 @@ module module_grid
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
     contains
-        procedure, nopass :: init
+        procedure, nopass :: init, integrate_over_orientations
     end type somegrid
     type(somegrid), protected :: grid
+    real(dp), parameter, private :: eightpisq=8._dp*acos(-1._dp)**2
+    real(dp), parameter, private :: quadrature_norm=eightpisq
 
     public :: norm_k, timesExpPrefactork2, k2, mean_over_orientations, grid
 
@@ -83,8 +85,6 @@ contains
         print*, "   nx, ny, nz :", grid%n_nodes
         print*, "   dx, dy, dz :", real(grid%dl)
 
-
-
         grid%mmax = getinput%int("mmax", defaultvalue=0, assert=">=0")
         grid%ntheta = grid%mmax+1
         grid%nphi = 2*grid%mmax+1
@@ -105,8 +105,8 @@ contains
             real(dp) :: phiofiphi(grid%nphi), psiofipsi(grid%npsi)
             real(dp) :: wphiofiphi(grid%nphi)
             real(dp) :: wpsiofipsi(grid%npsi)
-            wphiofiphi = 1._dp/grid%nphi
-            wpsiofipsi = 1._dp/grid%npsi
+            wphiofiphi = 1._dp/real(grid%nphi,dp)
+            wpsiofipsi = 1._dp/real(grid%npsi,dp)
             psiofipsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
             phiofiphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
             call gauss_legendre( grid%ntheta, thetaofitheta, wthetaofitheta, err)
@@ -125,15 +125,19 @@ contains
                         grid%wtheta(io) = wthetaofitheta(itheta)
                         grid%wphi(io) = wphiofiphi(iphi)
                         grid%wpsi(io) = wpsiofipsi(ipsi)
-                        grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io)
+                        grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io) *quadrature_norm
                     end do
                 end do
             end do
         end block
 
-        if (abs(sum(grid%w)-1._dp)>epsilon(1._dp)) then
+        if (abs(sum(grid%w)-quadrature_norm)>1000*epsilon(1._dp)) then
+            print*, "In module_grid.f90, I am checking the normalization of the angular quadrature"
             print*, "The sum of all quadrature weights is", sum(grid%w)
-            error stop "It must be 1."
+            print*, "It should be ", quadrature_norm
+            print*, "deviation to reference value is", abs(sum(grid%w)-quadrature_norm)
+            print*, "I fixed the error acceptance to", 1000*epsilon(1._dp)
+            error stop
         end if
 
         open(56, file="output/su3-roots-weights.dat")
@@ -244,7 +248,7 @@ contains
         real(dp), intent(out) :: x(n), w(n)
         integer, optional, intent(out) :: exitstatus
         integer :: m, i, j
-        real(dp), PARAMETER :: pi=acos(-1._dp)
+        real(dp), parameter :: pi=acos(-1._dp)
         real(dp) :: xi, p1, p2, p3, pp, deltaxi
         exitstatus = 0
         if( n <= 0 ) then
@@ -253,27 +257,28 @@ contains
         else
             m = (n+1)/2
             do i = 1,m          ! on s'interesse au ième zero du polynome pn(x) de legendre
-                xi = cos(pi*(i-0.25)/(n+0.5))     ! estimation de départ qu'on va raffiner par nr
-                deltaxi = 1
-                do while (abs(deltaxi)>1.d-13)
-                  p1 = 1.
-                  p2 = 0.
+                xi = cos(pi*(i-0.25_dp)/(n+0.5_dp))     ! estimation de départ qu'on va raffiner par nr
+                deltaxi = 1._dp
+                do while (abs(deltaxi)>epsilon(1._dp))!1.d-15)
+                  p1 = 1._dp
+                  p2 = 0._dp
                   do j = 1,n
                     p3 = p2
                     p2 = p1
-                    p1 = ((2*j-1.)*xi*p2-(j-1.)*p3)/j         ! relation de récurrence entre les pj
+                    p1 = (real(2*j-1,dp)*xi*p2-real(j-1,dp)*p3)/real(j,dp)         ! relation de récurrence entre les pj
                   end do
-                  pp = n*(xi*p1-p2)/(xi**2-1.)                   ! donne pn' en fonction de pn et pn-1
+                  pp = n*(xi*p1-p2)/(xi**2-1._dp)                   ! donne pn' en fonction de pn et pn-1
                   deltaxi = -p1/pp                                  ! nr
                   xi = xi + deltaxi
                 end do
                 x(i) = xi
-                w(i) = 1./((1.-xi**2)*pp**2)                  ! poids normalise a 1
+                w(i) = 1._dp/((1._dp-xi**2)*pp**2)                  ! poids normalise a 1
                 x(n+1-i) = -xi
                 w(n+1-i) = w(i)
             end do
         end if
     end subroutine gauss_legendre
+
 
 
     PURE FUNCTION k2 (l,m,n) ! UTILE ????
@@ -326,5 +331,42 @@ contains
             timesExpPrefactork2 (i,j,k) = array3D (i,j,k) * EXP( prefactor* k2 (i,j,k) )
         END DO
     END FUNCTION timesExpPrefactork2
+
+    subroutine integrate_over_orientations (array, integrated_array)
+        use precision_kinds, only: dp
+        implicit none
+        real(dp), intent(in) :: array(:,:,:,:)
+        real(dp), allocatable, intent(out) :: integrated_array(:,:,:)
+        integer :: i, il, iu, j, jl, ju, k, kl, ku
+        if (size(array,4)/=size(grid%w)) then
+            print*, "In module_grid > integrate_over_orientations"
+            print*, "You want to integrate an array(:,:,:,:) whose last dimension is not the same as grid%w(:)"
+            error stop
+        end if
+        il=lbound(array,1)
+        iu=ubound(array,1)
+        jl=lbound(array,2)
+        ju=ubound(array,2)
+        kl=lbound(array,3)
+        ku=ubound(array,3)
+        if (.not. allocated(integrated_array)) then
+            allocate (integrated_array(il:iu,jl:ju,kl:ku))
+        end if
+        if (lbound(integrated_array,1)/=il) stop "pb of bounds in integrate_over_orientations"
+        if (ubound(integrated_array,1)/=iu) stop "pb of bounds in integrate_over_orientations"
+        if (lbound(integrated_array,2)/=jl) stop "pb of bounds in integrate_over_orientations"
+        if (ubound(integrated_array,2)/=ju) stop "pb of bounds in integrate_over_orientations"
+        if (lbound(integrated_array,3)/=kl) stop "pb of bounds in integrate_over_orientations"
+        if (ubound(integrated_array,3)/=ku) stop "pb of bounds in integrate_over_orientations"
+
+        integrated_array=0._dp
+        do k=lbound(array,3),ubound(array,3)
+            do j=lbound(array,2),ubound(array,2)
+                do i=lbound(array,1),ubound(array,1)
+                    integrated_array(i,j,k)=sum(array(i,j,k,:)*grid%w(:))
+                end do
+            end do
+        end do
+    end subroutine integrate_over_orientations
 
 end module module_grid

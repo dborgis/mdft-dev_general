@@ -82,7 +82,7 @@ contains
 
             select case (getinput%char("polarization", defaultvalue="no"))
             case("no","none")
-            case("dipolar")
+            case("cdeltacd")
                 solvent(s)%do%exc_cdeltacd = .true.
             case("multipolar_without_coupling_to_density")
                 solvent(s)%do%exc_multipolar_without_coupling_to_density = .true.
@@ -204,11 +204,8 @@ contains
         polarization = getinput%char("polarization", defaultvalue="no")
         select case (polarization)
         case("no","none")
-        case("dipolar", "multipolar_without_coupling_to_density", "multipolar_with_coupling_to_density")
-            call chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
         case default
-            print*, "The tag 'polarization' in input reads ", polarization,". This is not correct"
-            stop "in read_solvent.f90"
+            call chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
         end select
 
         ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer

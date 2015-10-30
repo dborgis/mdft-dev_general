@@ -1,7 +1,7 @@
-boxnod = 64 64 64   
+boxnod = 64 64 64
 boxlen = 25. 25. 25.
 mmax = 1
-polarization = dipolar
+polarization = cdeltacd
 
 
 #############################

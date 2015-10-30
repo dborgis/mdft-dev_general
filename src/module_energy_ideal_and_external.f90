@@ -39,7 +39,7 @@ contains
         fid = zerodp
         fext = zerodp
         do is=1,ns
-            x0 = solvent(is)%n0 ! bulk density
+            x0 = solvent(is)%rho0 ! bulk density
             do io=1,grid%no
                 w = grid%w(io) ! weight of the orientation
                 do iz=1,grid%nz

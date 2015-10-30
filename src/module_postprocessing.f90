@@ -8,15 +8,26 @@ contains
 !     !   Post-processing of MDFT, following user's requirements
 !     !
     subroutine init_postprocessing
+        use precision_kinds, only: dp
         use module_solvent, only: solvent
+        use module_grid, only: grid
         implicit none
         character(len=80) :: filename
+        real(dp), allocatable :: density(:,:,:)
+        integer :: nx, ny, nz, ix, iy, iz
+
+        nx=grid%nx
+        ny=grid%ny
+        nz=grid%nz
+
 
         !
         ! print density
         !
+        allocate (density(nx,ny,nz))
+        call grid%integrate_over_orientations( solvent(1)%density, density)
         filename = "output/density.cube"
-        call write_to_cube_file (solvent(1)%density(:,:,:,1) ,filename)
+        call write_to_cube_file (density ,filename)
 
 !         use system,             ONLY: thermocond
 !         use module_solvent, only: solvent
@@ -104,9 +115,10 @@ contains
 !
 !
         filename = 'output/rdf.out'
-        call output_rdf ( solvent(1)%density(:,:,:,1)/solvent(1)%n0 , filename ) ! Get radial distribution functions
+        call output_rdf ( density/solvent(1)%n0 , filename ) ! Get radial distribution functions
         call output_gsitesite
         call output_gOfRandCosTheta
+        deallocate (density)
 !
 !         CALL adhoc_corrections_to_gsolv
 !

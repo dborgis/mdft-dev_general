@@ -19,9 +19,6 @@ contains
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
         real(dp), intent(inout) :: dF(:,:,:,:,:)
 
-print*,solvent(1)%density(1,1,1,1), solvent(1)%n0, solvent(1)%rho0
-print*,sum(solvent(1)%density(1,1,1,:)*grid%w(:))
-stop "module_energy_cs"
 
         if (.not.allocated(solvent)) call print_solvent_not_allocated ("Dans module_energy_cs")
         if (solvent(1)%nspec >1) then

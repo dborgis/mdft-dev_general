@@ -12,9 +12,9 @@ contains
         use module_dcf, only: init_dcf
 
         implicit none
-        integer :: nx, ny, nz, no, ns, ix, iy, iz, is, io, ik
+        integer :: nx, ny, nz, no, ns, ix, iy, iz, is, io, ik, ikmax
         real(dp), intent(out) :: Fexc
-        real(dp) :: kT, dv, ksq, kP, k, dk, vexc, kmax
+        real(dp) :: kT, dv, ksq, kP, k, dk, vexc, kmax, rho, rho0
         real(dp) :: kx(grid%nx/2+1), ky(grid%ny), kz(grid%nz)
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
         real(dp), intent(inout) :: dF(:,:,:,:,:)
@@ -33,6 +33,7 @@ contains
         kT=thermo%kbT
 
         if (.not.allocated(solvent)) call print_solvent_not_allocated("Dans module_energy_cdeltacd")
+        rho0=solvent(1)%rho0
 
         !
         ! Now we should take care of cdelta(k) and cd(k). Do we already loaded them?
@@ -51,12 +52,13 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*(solvent(1)%density(ix,iy,iz,:)-solvent(1)%rho0))
-                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*(solvent(1)%density(ix,iy,iz,:)-solvent(1)%rho0))
-                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*(solvent(1)%density(ix,iy,iz,:)-solvent(1)%rho0))
+                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*solvent(1)%density(ix,iy,iz,:))!/rho0
+                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*solvent(1)%density(ix,iy,iz,:))!/rho0
+                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*solvent(1)%density(ix,iy,iz,:))!/rho0
                 end do
             end do
         end do
+
 
         !
         ! Fourier transform the polarization vector field
@@ -99,11 +101,16 @@ contains
             print*, "In module_energy_cs, dk dans cdelta(k) <= eps machine"
             error stop
         end if
-        kmax=  solvent(1)%cdelta%x( size(solvent(1)%cdelta%x) )
+        ikmax =size(solvent(1)%cdelta%x)
+        kmax =solvent(1)%cdelta%x(ikmax)
 
-        if (maxval(kx)+maxval(ky)+maxval(kz)>kmax) then
-            print*, "We have more larger k values due to the fine grid than available in cdelta(k) and cd(k) I have as input"
-            error stop "in energy_cdeltacd"
+        if (sqrt(maxval(kx)**2+maxval(ky)**2+maxval(kz)**2)>kmax) then
+            print*, "In module_energy_cdeltacs"
+            print*, "because of our grid",nx,ny,nz,"and deltax:",grid%dx,grid%dy,grid%dz
+            print*, "|k| will be as high as:",sqrt(maxval(kx)**2+maxval(ky)**2+maxval(kz)**2)
+            print*, "that is higher than what we have tabulated :",kmax
+            print*, "instead of this kmax, we use the last value we have in the file :",kmax
+            error stop
         end if
 
         do iz=1,nz
@@ -143,20 +150,17 @@ contains
         allocate (Ez(nx,ny,nz), source=fftw3%out_backward/real(nx*ny*nz,dp))
 
 
+        rho0=solvent(1)%rho0
         fexc=0._dp
         is=1
         do ix=1,nx
             do iy=1,ny
                 do iz=1,nz
                     do io=1,no
-                        vexc=-kT*(grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))/eightpisq
-                        fexc=fexc +grid%w(io)*vexc*dv*0.5_dp*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)
-                        df(ix,iy,iz,io,is)=df(ix,iy,iz,io,is)+grid%w(io)*vexc*dv
-                        ! fexc=fexc-kT/2._dp*grid%w(io)*dv*&
-                        !     (grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))&
-                        !     *(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)
-                        ! df(ix,iy,iz,io,is)=df(ix,iy,iz,io,is) &
-                        !     -kT*dv*grid%w(io)*(grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))
+                        rho=solvent(1)%density(ix,iy,iz,io)
+                        vexc=-kT*grid%w(io)*(grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))
+                        fexc=fexc+(rho-rho0)*0.5_dp*vexc*dv
+                        df(ix,iy,iz,io,is)=df(ix,iy,iz,io,is)+vexc*dv
                     end do
                 end do
             end do
