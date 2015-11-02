@@ -20,10 +20,10 @@ module module_grid
         !
         ! Angular grid .. angular quadrature
         !
-        integer :: molrotsymorder, mmax, ntheta, nphi, npsi, no
+        integer :: molrotsymorder, mmax, ntheta, nphi, npsi, no, np
         real(dp) :: dphi, dpsi
-        real(dp), allocatable :: theta(:), phi(:), psi(:), wtheta(:), wphi(:), wpsi(:), w(:)
-        integer, allocatable :: tio(:,:,:) ! table of index of orientations
+        real(dp), allocatable :: theta(:), phi(:), psi(:), wtheta(:), wphi(:), wpsi(:), w(:), thetaofitheta(:)
+        integer, allocatable :: indo(:,:,:) ! table of index of orientations
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
     contains
@@ -42,7 +42,7 @@ contains
         use module_input, only: getinput
         implicit none
         real(dp), parameter :: twopi=2._dp*acos(-1._dp)
-        integer :: io
+        integer :: io, m, mup, mu
 
         if (grid%isinitiated) then
             print*, "Dans init_grid, c'est bizarre. On veut initialiser le type derivé grid mais il semble deja initialisé"
@@ -92,13 +92,15 @@ contains
         grid%no = grid%ntheta*grid%nphi*grid%npsi   ! nombez d'orientations dans la representation Euler
         grid%dphi = twopi/real(grid%nphi,dp)
         grid%dpsi = twopi/real(grid%npsi*grid%molrotsymorder,dp)
-        allocate( grid%theta(grid%no) , source=0._dp)
+        grid%np=sum( [( [( [( 1 ,mu=0,m,grid%molrotsymorder)], mup=-m,m)], m=0,grid%mmax)] ) ! number of projections
+        allocate( grid%theta(grid%no) , source=0._dp) ! io => theta
         allocate( grid%phi(grid%no) , source=0._dp)
         allocate( grid%psi(grid%no) , source=0._dp)
         allocate( grid%wtheta(grid%no) , source=0._dp)
         allocate( grid%wphi(grid%no) , source=0._dp)
         allocate( grid%wpsi(grid%no) , source=0._dp)
         allocate( grid%w(grid%no) , source=0._dp)
+        allocate( grid%thetaofitheta(grid%ntheta), source=0._dp) ! itheta => theta
         block
             real(dp) :: thetaofitheta(grid%ntheta), wthetaofitheta(grid%ntheta)
             integer :: err, io, i, itheta, iphi, ipsi
@@ -112,16 +114,17 @@ contains
             call gauss_legendre( grid%ntheta, thetaofitheta, wthetaofitheta, err)
             if (err /= 0) error stop "problem in gauss_legendre"
             thetaofitheta = acos(thetaofitheta)
-            allocate( grid%tio(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
+            allocate( grid%indo(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
             io = 0
             do itheta = 1, grid%ntheta
+                grid%thetaofitheta(itheta) = thetaofitheta(itheta)
                 do iphi = 1, grid%nphi
                     do ipsi = 1, grid%npsi
                         io = io+1
                         grid%theta(io) = thetaofitheta(itheta)
                         grid%phi(io) = phiofiphi(iphi)
                         grid%psi(io) = psiofipsi(ipsi)
-                        grid%tio(itheta,iphi,ipsi) = io
+                        grid%indo(itheta,iphi,ipsi) = io
                         grid%wtheta(io) = wthetaofitheta(itheta)
                         grid%wphi(io) = wphiofiphi(iphi)
                         grid%wpsi(io) = wpsiofipsi(ipsi)
@@ -130,6 +133,7 @@ contains
                 end do
             end do
         end block
+
 
         if (abs(sum(grid%w)-quadrature_norm)>1000*epsilon(1._dp)) then
             print*, "In module_grid.f90, I am checking the normalization of the angular quadrature"
@@ -147,7 +151,8 @@ contains
         end do
         close(56)
 
-        print*, "   mmax =",int(grid%mmax,1),"and molrotsymorder =",int(grid%molrotsymorder,1),"=>",int(grid%no,1),"orientations"
+        print*, "   mmax =",int(grid%mmax,1),"and molrotsymorder =",int(grid%molrotsymorder,1)
+        print*, "=>",grid%no,"orientations and",grid%np,"projections of the density"
         print*, "   θ φ ψ:",int([grid%ntheta,grid%nphi,grid%npsi],1)
         print*, "===== Grid ====="
 

@@ -17,7 +17,7 @@ contains
         use module_density, only: init_density
         use hardspheres, only: compute_hard_spheres_parameters
         use module_input, only: getinput
-        use fft, only: init_fft => init
+        use module_fft, only: init_fft => init
         use module_vext, only: init_vext
         use module_debug, only: init_debug
         use module_thermo, only: init_thermo

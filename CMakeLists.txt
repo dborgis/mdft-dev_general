@@ -71,6 +71,7 @@ endif()
 
 # set source files list
 set(mdft_SRCS
+  src/module_energy_cproj.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90

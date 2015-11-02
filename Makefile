@@ -324,6 +324,14 @@ src/module_energy_cdeltacd.f90.o:
 	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_energy_cdeltacd.f90.o
 .PHONY : src/module_energy_cdeltacd.f90.o
 
+src/module_energy_cproj.o: src/module_energy_cproj.f90.o
+.PHONY : src/module_energy_cproj.o
+
+# target to build an object file
+src/module_energy_cproj.f90.o:
+	$(MAKE) -f CMakeFiles/mdft-dev.dir/build.make CMakeFiles/mdft-dev.dir/src/module_energy_cproj.f90.o
+.PHONY : src/module_energy_cproj.f90.o
+
 src/module_energy_cs.o: src/module_energy_cs.f90.o
 .PHONY : src/module_energy_cs.o
 
@@ -558,6 +566,7 @@ help:
 	@echo "... src/module_density.o"
 	@echo "... src/module_energy_and_gradient.o"
 	@echo "... src/module_energy_cdeltacd.o"
+	@echo "... src/module_energy_cproj.o"
 	@echo "... src/module_energy_cs.o"
 	@echo "... src/module_energy_ideal_and_external.o"
 	@echo "... src/module_fastpoissonsolver.o"

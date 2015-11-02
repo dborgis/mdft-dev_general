@@ -7,6 +7,7 @@ module module_energy_and_gradient
         ext = 0._dp,&
         exc_cs = 0._dp,&
         exc_cdeltacd = 0._dp,&
+        exc_cproj = 0._dp,&
         exc_fmt = 0._dp,&
         exc_wca = 0._dp,&
         exc_3b = 0._dp,&
@@ -35,6 +36,7 @@ contains
         use module_energy_ideal_and_external, only: energy_ideal_and_external
         use module_energy_cs, only: energy_cs
         use module_energy_cdeltacd, only: energy_cdeltacd
+        use module_energy_cproj, only: energy_cproj
 
         implicit none
 
@@ -70,6 +72,12 @@ contains
                 call energy_cdeltacd (ff%exc_cdeltacd, df)
                 print*, "ff%exc_cdeltacd =", ff%exc_cdeltacd
                 f=f+ff%exc_cdeltacd
+            end if
+            solvent(s)%do%exc_cproj = .true.
+            if (solvent(s)%do%exc_cproj) then
+                call energy_cproj (ff%exc_cproj, df)
+                print*, "ff%exc_cproj =", ff%exc_cproj
+                f=f+ff%exc_cproj
             end if
             ! if (solvent(s)%do%exc_fmt) call energy_fmt (ff%exc_fmt, df)
             ! if (solvent(s)%do%wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc_wca, df)

@@ -1,18 +1,60 @@
-module fft
+module module_fft
     ! This module deals with everything related to the fast fourier transforms and all Fourier space related functions
     use precision_kinds, only: i2b, dp, i4b
     implicit none
     private
-    type :: fftw3type
-        INTEGER(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
-        REAL(dp), allocatable, dimension(:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
-        COMPLEX(dp), allocatable, dimension(:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT
-        integer :: nthread
+
+    type :: fftw3_type3d_r2c2r
+        integer(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
+        real(dp), allocatable, dimension(:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
+        complex(dp), allocatable, dimension(:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT
+        integer :: nthread = 1
     end type
-    type(fftw3type), public :: fftw3
-    public :: init
+
+
+    type :: fftw3_type2d_r2c2r
+        integer(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
+        real(dp), allocatable, dimension(:,:) :: in_forward, out_backward    ! input of FFT and output (result) of inverse FFT
+        complex(dp), allocatable, dimension(:,:) :: in_backward, out_forward ! output (result) of FFT and input of inverse FFT
+        integer :: nthread = 1
+        logical :: isok=.false.
+    contains
+        procedure, nopass :: init => init_fft2d
+    end type
+
+    type(fftw3_type3d_r2c2r) :: fftw3
+    type(fftw3_type2d_r2c2r) :: fft2d
+
+    public :: init, fft2d, fftw3
 
 contains
+
+    subroutine init_fft2d
+        use precision_kinds, only: dp
+        use module_grid, only: grid
+        implicit none
+        integer :: npsi, nphi
+        include "fftw3.f"
+        if (fft2d%isok) then
+            print*, "in init_fft2d, fft2d%isok is already ok"
+            print*, "but still, i have received a call to fft2d%init"
+            error stop "in module_fft > init_fft2d = fft2d%init"
+        end if
+        ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
+        ! or needed as input for inverse FFT (in_backward) etc.
+        npsi = grid%npsi
+        nphi = grid%nphi
+        allocate (fft2d%in_forward  (npsi,nphi), source=0._dp)
+        allocate (fft2d%out_backward(npsi,nphi), source=0._dp)
+        allocate (fft2d%in_backward (npsi/2+1,nphi), source=(0._dp,0._dp))
+        allocate (fft2d%out_forward (npsi/2+1,nphi), source=(0._dp,0._dp))
+        ! prepare plans needed by fftw3
+        call dfftw_plan_dft_r2c_2d (fft2d%plan_forward, npsi, nphi, fft2d%in_forward, fft2d%out_forward, FFTW_EXHAUSTIVE)
+        call dfftw_plan_dft_c2r_2d (fft2d%plan_backward, npsi, nphi, fft2d%in_backward, fft2d%out_backward, FFTW_EXHAUSTIVE)
+        ! in case of using energy_cproj, we will do a HUGE number of these fft2d.
+        ! It is worth doing FFTW_EXHAUSTIVE
+        fft2d%isok=.true.
+    end subroutine init_fft2d
 
     subroutine init_threads
         use module_input, only: getinput
@@ -76,4 +118,4 @@ contains
         CALL dfftw_destroy_plan ( fftw3%plan_backward ) ! destroy FFTW3 plans
     END SUBROUTINE deallocate_everything_fft
 
-END MODULE fft
+end module module_fft

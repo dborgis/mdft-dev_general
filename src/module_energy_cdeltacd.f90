@@ -1,4 +1,7 @@
 module module_energy_cdeltacd
+    !
+    ! See Borgis et al., doi:10.1103/PhysRevE.66.031206
+    !
     implicit none
     private
     public :: energy_cdeltacd
@@ -7,7 +10,7 @@ contains
         use precision_kinds, only: dp
         use module_thermo, only: thermo
         use module_solvent, only: solvent, print_solvent_not_allocated
-        use fft, only: fftw3
+        use module_fft, only: fftw3
         use module_grid, only: grid
         use module_dcf, only: init_dcf
 
@@ -165,6 +168,8 @@ contains
                 end do
             end do
         end do
+
+        deallocate (Ex,Ey,Ez)
 
     end subroutine energy_cdeltacd
 end module module_energy_cdeltacd

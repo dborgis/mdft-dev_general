@@ -8,7 +8,7 @@ contains
         use precision_kinds, only: dp
         use module_thermo, only: thermo
         use module_solvent, only: solvent, print_solvent_not_allocated
-        use fft, only: fftw3
+        use module_fft, only: fftw3
         use module_grid, only: grid
         use module_dcf, only: init_dcf
 
