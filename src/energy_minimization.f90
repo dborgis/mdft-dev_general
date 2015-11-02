@@ -1,7 +1,6 @@
 subroutine energy_minimization
 
     use precision_kinds, only : dp
-    use module_input, only: getinput
     use module_minimizer, only: lbfgsb, init_lbfgsb
     use module_grid, only: grid
     use module_solvent, only: solvent

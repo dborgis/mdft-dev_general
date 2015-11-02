@@ -24,3 +24,5 @@ src/useless_for_now/
 MDFT.log.*
 CMake*
 cmake_install.cmake
+gmon.out
+a.out

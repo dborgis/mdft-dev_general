@@ -22,9 +22,7 @@ contains
     subroutine read_solute
 
       use precision_kinds, ONLY: i2b,dp
-      use module_input,    ONLY: input_line, getinput
-      use module_grid, only: grid
-    !  use periodic_table,  ONLY: init_periodic_table, ptable
+      use module_input,    ONLY: getinput
 
       implicit none
 
@@ -53,7 +51,7 @@ contains
 
       block
         real(dp) :: solutexmin, solutexmax, soluteymin, soluteymax, solutezmin, solutezmax, &
-                    solutediameterx, solutediametery, solutediameterz, solutesigmaljmax
+                    solutediameterx, solutediametery, solutediameterz!, solutesigmaljmax
         solutexmin = minval(solute%site%r(1))
         soluteymin = minval(solute%site%r(2))
         solutezmin = minval(solute%site%r(3))
@@ -170,39 +168,35 @@ contains
         integer(i2b) :: i
 
         open(5,file='output/solute.xsf')
-            100 format (xA)
-            101 format (3(1xF10.5))
-            102 format (1xI5,1xI1)
-            103 format (1xI3,3(1xxF10.5))
-            write(5,100)'# this is the specification file of the supercell'
-            write(5,100)'# lines beginning with # are commented. There cannot be comment lines within the sections'
-            write(5,100)'# XSF format specifications can be found on the XCrySDen website http://www.xcrysden.org/doc/XSF.html'
-            write(5,100)'# I strongly recommends to read this documentation.'
-            write(5,*)
-            write(5,100)'# for periodic structures one has to begin with word CRYSTAL'
-            write(5,100)'CRYSTAL'
-            write(5,100)
-            write(5,100)'# Then one needs to specify the lattice vectors'
-            write(5,100)'# specification of PRIMVEC (in ANGSTROMS) like:'
-            write(5,100)'#         ax, ay, az    (first lattice vector)'
-            write(5,100)'#         bx, by, bz    (second lattice vector)'
-            write(5,100)'#         cx, cy, cz    (third lattice vector)'
-            write(5,100)'# pay attention to vectors as they are written in horizontal way which is quite unusual'
-            write(5,100)'# for now only orthorhombic structures are allowed (free norms of lattice vectors, all angles are 90 degrees)'
-            write(5,100)'PRIMVEC'
-            write(5,101) grid%length(1), 0., 0.
-            write(5,101) 0., grid%length(2), 0.
-            write(5,101) 0., 0., grid%length(3)
-            write(5,*)
-            write(5,100)'# Then one needs to specify the atoms belonging to the unit cell. '
-            write(5,100)'# First number stands for number of atoms in the primitive cell (2 in this case).'
-            write(5,100)'# The second number is always 1 for PRIMCOORD coordinates.'
-            write(5,100)'# in angstroms and cartesian coordinates'
-            write(5,100)'PRIMCOORD'
-            write(5,102) SIZE(solute%site), 1
-            do i = 1, SIZE(solute%site)
-                write(5,103) solute%site(i)%Z, solute%site(i)%r
-            END DO
+        write(5,*)"# this is the specification file of the supercell"
+        write(5,*)"# lines beginning with # are commented. There cannot be comment lines within the sections"
+        write(5,*)"# XSF format specifications can be found on the XCrySDen website http://www.xcrysden.org/doc/XSF.html"
+        write(5,*)"# I strongly recommends to read this documentation."
+        write(5,*)
+        write(5,*)"# for periodic structures one has to begin with word CRYSTAL"
+        write(5,*)"CRYSTAL"
+        write(5,*)
+        write(5,*)"# Then one needs to specify the lattice vectors"
+        write(5,*)"# specification of PRIMVEC (in ANGSTROMS) like:"
+        write(5,*)"#         ax, ay, az    (first lattice vector)"
+        write(5,*)"#         bx, by, bz    (second lattice vector)"
+        write(5,*)"#         cx, cy, cz    (third lattice vector)"
+        write(5,*)"# pay attention to vectors as they are written in horizontal way which is quite unusual"
+        write(5,*)"# for now only orthorhombic structures are allowed (free norms of lattice vectors, all angles are 90 degrees)"
+        write(5,*)"PRIMVEC"
+        write(5,*) grid%length(1), 0., 0.
+        write(5,*) 0., grid%length(2), 0.
+        write(5,*) 0., 0., grid%length(3)
+        write(5,*)
+        write(5,*)"# Then one needs to specify the atoms belonging to the unit cell. "
+        write(5,*)"# First number stands for number of atoms in the primitive cell (2 in this case)."
+        write(5,*)"# The second number is always 1 for PRIMCOORD coordinates."
+        write(5,*)"# in angstroms and cartesian coordinates"
+        write(5,*)"PRIMCOORD"
+        write(5,*) SIZE(solute%site), 1
+        do i = 1, SIZE(solute%site)
+            write(5,*) solute%site(i)%Z, solute%site(i)%r
+        end do
         close(5)
     END SUBROUTINE print_solute_xsf
 

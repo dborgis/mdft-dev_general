@@ -17,7 +17,8 @@ contains
         implicit none
         integer :: nx, ny, nz, no, ns, ix, iy, iz, is, io, ik, ikmax
         real(dp), intent(out) :: Fexc
-        real(dp) :: kT, dv, ksq, kP, k, dk, vexc, kmax, rho, rho0
+        real(dp) :: kT, dv, ksq, k, dk, vexc, kmax, rho, rho0
+        complex(dp) :: kP
         real(dp) :: kx(grid%nx/2+1), ky(grid%ny), kz(grid%nz)
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
         real(dp), intent(inout) :: dF(:,:,:,:,:)
@@ -123,7 +124,7 @@ contains
                     if (ksq>epsdp) then
                         kP=(kx(ix)*Px_k(ix,iy,iz)+ky(iy)*Py_k(ix,iy,iz)+kz(iz)*Pz_k(ix,iy,iz))/ksq
                     else
-                        kP=cmplx(0._dp,0._dp)
+                        kP=complex(0._dp,0._dp)
                     end if
                     k=sqrt(ksq)
                     ik=int(k/dk)+1

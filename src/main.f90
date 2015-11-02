@@ -25,7 +25,7 @@ program main
     write(*,'(A)')"===== Finished ====="
 
     call system_clock (count1)
-    mdft_wholetime = (count1-count0)/real(count_rate)
+    mdft_wholetime = real(count1-count0)/real(count_rate)
     if( mdft_wholetime < 5*60 ) then ! less than 5 minutes
         write(*,'(A,F12.2,A)') "MDFT finished with status OK. CPU time",mdft_wholetime," sec."
     else if( mdft_wholetime < 5*60*60 ) then ! less than 5 h

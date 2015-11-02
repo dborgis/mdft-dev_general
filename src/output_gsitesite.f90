@@ -1,23 +1,23 @@
 subroutine output_gsitesite
-    use precision_kinds, only: dp
-    use module_solute, only: solute
-    use module_solvent, only: solvent
-    use module_grid, only: grid
-    use mathematica, only: deduce_optimal_histogram_properties
-
-    implicit none
-    integer  :: icg,n,i,j,k,o,p,s,omax,pmax,imax,jmax,kmax,binthetamax,bintheta,binrmax,binr,allocatestatus,ss
-    real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, rmax, xss, yss, zss
-    real(dp), allocatable :: rho(:,:,:,:,:)
-    real(dp), parameter :: epsdp=epsilon(1._dp), zerodp = 0._dp, pi = acos(-1._dp)
-    real(dp), allocatable :: g(:), gcount(:) ! g(r,theta)
-    integer :: nx, ny, nz, no, ns
-
-    nx = grid%nx
-    ny = grid%ny
-    nz = grid%nz
-    no = grid%no
-    ns = solvent(1)%nspec
+    ! use precision_kinds, only: dp
+    ! use module_solute, only: solute
+    ! use module_solvent, only: solvent
+    ! use module_grid, only: grid
+    ! use mathematica, only: deduce_optimal_histogram_properties
+    !
+    ! implicit none
+    ! integer  :: icg,n,i,j,k,o,p,s,omax,pmax,imax,jmax,kmax,binthetamax,bintheta,binrmax,binr,allocatestatus,ss
+    ! real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, rmax, xss, yss, zss
+    ! real(dp), allocatable :: rho(:,:,:,:,:)
+    ! real(dp), parameter :: epsdp=epsilon(1._dp), zerodp = 0._dp, pi = acos(-1._dp)
+    ! real(dp), allocatable :: g(:), gcount(:) ! g(r,theta)
+    ! integer :: nx, ny, nz, no, ns
+    !
+    ! nx = grid%nx
+    ! ny = grid%ny
+    ! nz = grid%nz
+    ! no = grid%no
+    ! ns = solvent(1)%nspec
 
     !
     ! imax=grid%n_nodes(1)

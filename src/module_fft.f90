@@ -73,9 +73,9 @@ contains
     end subroutine
 
 
-    subroutine finalize_fftw
-        call dfftw_cleanup_threads()
-    end subroutine finalize_fftw
+    ! subroutine finalize_fftw
+    !     call dfftw_cleanup_threads()
+    ! end subroutine finalize_fftw
 
 
     SUBROUTINE init
@@ -113,9 +113,9 @@ contains
     END SUBROUTINE init_fftw3_plans
 
 
-    SUBROUTINE deallocate_everything_fft
-        CALL dfftw_destroy_plan ( fftw3%plan_forward ) ! destroy FFTW3 plans
-        CALL dfftw_destroy_plan ( fftw3%plan_backward ) ! destroy FFTW3 plans
-    END SUBROUTINE deallocate_everything_fft
+    ! SUBROUTINE deallocate_everything_fft
+    !     CALL dfftw_destroy_plan ( fftw3%plan_forward ) ! destroy FFTW3 plans
+    !     CALL dfftw_destroy_plan ( fftw3%plan_backward ) ! destroy FFTW3 plans
+    ! END SUBROUTINE deallocate_everything_fft
 
 end module module_fft

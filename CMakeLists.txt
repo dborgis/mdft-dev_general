@@ -27,7 +27,7 @@ enable_language(Fortran)
 # - DEBUG   (with debug flags)
 # make sure that the default is RELEASE
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
+  set (CMAKE_BUILD_TYPE DEBUG CACHE STRING
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -55,6 +55,7 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # GNU fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffast-math -funroll-all-loops -fimplicit-none -ffree-line-length-none -O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall")
+                # -Wno-unused-value -Wno-unused-variable"
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # INTEL fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")

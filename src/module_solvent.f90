@@ -118,13 +118,13 @@ contains
             end if
 
         end do
-
         !
-        ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
-        !
-        IF (getinput%log('bridge_hard_sphere', defaultvalue=.false.) .AND. .NOT. getinput%log('hard_sphere_fluid',defaultvalue=.false.)) THEN
-            STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
-        END IF
+        ! !
+        ! ! bridge calculation: F(FMT)-F(c2hs)+F(c2H2O)
+        ! !
+        ! IF (getinput%log('bridge_hard_sphere', defaultvalue=.false.) .AND. .NOT. getinput%log('hard_sphere_fluid',defaultvalue=.false.)) THEN
+        !     STOP 'bridge_hard_sphere and hard_sphere_fluid should be both turned TRUE for a calculation with bridge'
+        ! END IF
 
     end subroutine functional_decision_tree
 
@@ -135,9 +135,9 @@ contains
         ! Read solvent atomic positions, charge, and lennard jones values in solvent.in
         ! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
         use mathematica, only: chop
-        use module_input, only: input_line, getinput
+        use module_input, only: getinput
         implicit none
-        integer :: n, ios, i, j, k, l, s, d
+        integer :: n, ios, i, j, k, l, s
         character(180) :: polarization
 
         if (allocated(solvent)) then
@@ -249,7 +249,7 @@ contains
         integer :: i, j, k, n, s, io, d
         real(dp)     :: r(3), kr, kvec(3)
         complex(dp)  :: fac, X
-        complex(dp), parameter :: zeroc = cmplx(0._dp,0._dp), ic = cmplx(0._dp,1._dp)
+        complex(dp), parameter :: zeroc = complex(0._dp,0._dp), ic = complex(0._dp,1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
         type :: smoother_type
             real(dp) :: radius = 0.5_dp ! dramaticaly important

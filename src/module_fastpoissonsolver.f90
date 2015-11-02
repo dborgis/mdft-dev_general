@@ -133,7 +133,7 @@ contains
         real(dp), allocatable :: fftw3inforward(:,:,:), fftw3outbackward(:,:,:)
         complex(dp), allocatable :: fftw3outforward(:,:,:), fftw3inbackward(:,:,:)
         integer(i4b) :: fpspf, fpspb ! fast poisson solver plan forward or backward
-        complex(dp), parameter :: zeroc=cmplx(0._dp,0._dp)
+        complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
         real(dp), parameter :: twopi  =2._dp*acos(-1._dp)
         real(dp), parameter :: fourpi =2._dp*twopi
         real(dp), parameter :: espdp=epsilon(1._dp)
@@ -203,7 +203,7 @@ contains
                     IF ( abs(k2) > epsilon(1._dp) ) THEN
                         phi_k(i,j,k) = sourcedistrib_k(i,j,k) * fourpi/k2 ! in electrostatic units : V=-4pi rho
                     ELSE
-                        phi_k(i,j,k) = cmplx(0._dp,0._dp)
+                        phi_k(i,j,k) = complex(0._dp,0._dp)
                     END IF
 
                 END DO
@@ -245,8 +245,8 @@ contains
         use module_solvent, only: solvent
         use module_grid, only: grid
         use constants           ,ONLY: qfact, zero
-        use mathematica         ,ONLY: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode, floorNode, ceilingNode,&
-        UTest_ceilingNode, UTest_distToFloorNode, distToFloorNode, chop
+        use mathematica, only: TriLinearInterpolation, UTest_TrilinearInterpolation, UTest_floorNode,&
+        floorNode, ceilingNode, UTest_ceilingNode, UTest_distToFloorNode, distToFloorNode, chop
 
         IMPLICIT NONE
 

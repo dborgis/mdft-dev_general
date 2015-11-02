@@ -337,7 +337,7 @@ pure subroutine deduce_optimal_histogram_properties( n, maxrange, nbins, binwidt
     integer, intent(out)  :: nbins ! number of bins
     real(dp), intent(out) :: binwidth ! width of a bin
     nbins    = ceiling( 2*real(n)**(1._dp/3._dp) ) ! Rice Rule, see http://en.wikipedia.org/wiki/Histogram
-    nbins    = nbins/2. ! @Max sans lien avec la Rice Rule mais pragmatique. Mon nombre de bins est trop grand.
+    nbins    = nbins/2 ! @Max sans lien avec la Rice Rule mais pragmatique. Mon nombre de bins est trop grand.
     binwidth = maxrange/real(nbins,dp) ! Width of each bin of the histogram
 end subroutine deduce_optimal_histogram_properties
 

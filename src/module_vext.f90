@@ -270,7 +270,9 @@ contains
                 allocate ( dot_product_normal_vec_oa (nwall) ,source=0._dp) ! dummy
                 do w = 1 , nwall
                     read ( input_line(i+w),*,iostat=iostatint) thickness(w) , normal_vec(1:3,w) , oa (1:3,w) ! for each wall, read thickness, normal vector coordinates and point in plan
-                    if(iostatint/=0) stop "i could not read line containing thickness of the hard wall, its normal vector and position"
+                    if(iostatint/=0) then
+                        stop "i could not read line containing thickness of the hard wall, its normal vector and position"
+                    end if
                     norm2_normal_vec ( w ) = norm2(normal_vec(:,w)) ! pretabulate norm of normal vec
                     if (norm2_normal_vec(w)==0._dp) stop "your hard wall is defined by a strange normal vector"
                     dot_product_normal_vec_oa ( w ) = dot_product(-normal_vec(:,w) , oa(:,w))
@@ -613,8 +615,12 @@ contains
         real, parameter :: epsdp = epsilon(1._dp)
         REAL(dp), DIMENSION( SIZE(solvent(1)%site), grid%no) :: xmod, ymod, zmod
 
-        IF (.NOT. ALLOCATED(solvent(1)%vextq)) STOP "Vext_q should be allocated in SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
-        IF ( ANY(solvent(1)%vextq/=0.0_dp) ) STOP "Vext_q should be zero at the beginning of SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
+        if (.NOT. ALLOCATED(solvent(1)%vextq)) then
+            error stop "Vext_q should be allocated in SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
+        end if
+        if ( ANY(solvent(1)%vextq/=0.0_dp) ) then
+            error stop "Vext_q should be zero at the beginning of SUBROUTINE compute_vcoul_as_sum_of_pointcharges"
+        end if
 
         if (size(solvent)/=1) stop "CRITICAL. Compute_vcoul_as_pointcharges implemented for one solvent species only"
 
@@ -630,7 +636,6 @@ contains
             end do
             if ( ishouldreturn ) then
                 if (verbose) print*, "The electrostatic potential is zero because no solvent site wear partial charges"
-                print*,"haaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 return
             end if
         end block

@@ -20,7 +20,7 @@ SUBROUTINE output_rdf (array,filename)
     CHARACTER(50), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
-    INTEGER(i2b):: n,bin,nbins, i, j
+    INTEGER(i2b):: n,bin,nbins
     TYPE :: errortype
         LOGICAL :: found
         CHARACTER(180) :: msg
@@ -59,7 +59,7 @@ SUBROUTINE output_rdf (array,filename)
         write(10,*)'# solute site', n
         write(10,*) 0., 0. ! we impose
         do bin=1,nbins
-            xbin = (bin-0.5_dp)*dr ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
+            xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
             write(10,*) xbin, real(chop(rdf(bin)))! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
         end do
         write(10,*)

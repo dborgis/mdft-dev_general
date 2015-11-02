@@ -22,7 +22,7 @@ module module_grid
         !
         integer :: molrotsymorder, mmax, ntheta, nphi, npsi, no, np
         real(dp) :: dphi, dpsi
-        real(dp), allocatable :: theta(:), phi(:), psi(:), wtheta(:), wphi(:), wpsi(:), w(:), thetaofitheta(:)
+        real(dp), allocatable :: theta(:), phi(:), psi(:), wtheta(:), wphi(:), wpsi(:), w(:), thetaofitheta(:), wthetaofitheta(:)
         integer, allocatable :: indo(:,:,:) ! table of index of orientations
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
@@ -99,10 +99,10 @@ contains
         allocate( grid%wtheta(grid%no) , source=0._dp)
         allocate( grid%wphi(grid%no) , source=0._dp)
         allocate( grid%wpsi(grid%no) , source=0._dp)
+        allocate( grid%wthetaofitheta(grid%ntheta), source=0._dp)
         allocate( grid%w(grid%no) , source=0._dp)
         allocate( grid%thetaofitheta(grid%ntheta), source=0._dp) ! itheta => theta
         block
-            real(dp) :: thetaofitheta(grid%ntheta), wthetaofitheta(grid%ntheta)
             integer :: err, io, i, itheta, iphi, ipsi
             real(dp) :: phiofiphi(grid%nphi), psiofipsi(grid%npsi)
             real(dp) :: wphiofiphi(grid%nphi)
@@ -111,21 +111,20 @@ contains
             wpsiofipsi = 1._dp/real(grid%npsi,dp)
             psiofipsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
             phiofiphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
-            call gauss_legendre( grid%ntheta, thetaofitheta, wthetaofitheta, err)
+            call gauss_legendre( grid%ntheta, grid%thetaofitheta, grid%wthetaofitheta, err)
             if (err /= 0) error stop "problem in gauss_legendre"
-            thetaofitheta = acos(thetaofitheta)
+            grid%thetaofitheta = acos(grid%thetaofitheta)
             allocate( grid%indo(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
             io = 0
             do itheta = 1, grid%ntheta
-                grid%thetaofitheta(itheta) = thetaofitheta(itheta)
                 do iphi = 1, grid%nphi
                     do ipsi = 1, grid%npsi
                         io = io+1
-                        grid%theta(io) = thetaofitheta(itheta)
+                        grid%theta(io) = grid%thetaofitheta(itheta)
                         grid%phi(io) = phiofiphi(iphi)
                         grid%psi(io) = psiofipsi(ipsi)
                         grid%indo(itheta,iphi,ipsi) = io
-                        grid%wtheta(io) = wthetaofitheta(itheta)
+                        grid%wtheta(io) = grid%wthetaofitheta(itheta)
                         grid%wphi(io) = wphiofiphi(iphi)
                         grid%wpsi(io) = wpsiofipsi(ipsi)
                         grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io) *quadrature_norm
@@ -135,12 +134,12 @@ contains
         end block
 
 
-        if (abs(sum(grid%w)-quadrature_norm)>1000*epsilon(1._dp)) then
+        if (abs(sum(grid%w)-quadrature_norm)>1.e-10) then
             print*, "In module_grid.f90, I am checking the normalization of the angular quadrature"
             print*, "The sum of all quadrature weights is", sum(grid%w)
             print*, "It should be ", quadrature_norm
             print*, "deviation to reference value is", abs(sum(grid%w)-quadrature_norm)
-            print*, "I fixed the error acceptance to", 1000*epsilon(1._dp)
+            print*, "I fixed the error acceptance to", 1.e-10
             error stop
         end if
 
@@ -169,7 +168,7 @@ contains
             grid%OMx = 0._dp ; grid%OMy = 0._dp ; grid%OMz = 1._dp ! ATTENTION "completely" arbitrary decision to put OMEGA along z.
         case default
             block
-                integer :: itheta, io
+                integer :: io
                 real(dp) :: cos_theta, sin_theta, cos_phi, sin_phi, cos_psi, sin_psi
                 do io = 1, grid%no
                     cos_theta = cos(grid%theta(io))
@@ -320,7 +319,7 @@ contains
     PURE FUNCTION kvec (l,m,n)
         integer, INTENT(IN) :: l,m,n
         REAL(dp), DIMENSION(3) :: kvec
-        kvec(1:3) = [ kproj(1,l), kproj(2,l), kproj(3,l) ]
+        kvec(1:3) = [ kproj(1,l), kproj(2,m), kproj(3,n) ]
     END FUNCTION kvec
 
 

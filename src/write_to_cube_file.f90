@@ -22,8 +22,6 @@ SUBROUTINE write_to_cube_file ( array , filename )
     REAL(dp), PARAMETER :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
 
     ! define formats for writing to file
-    104 FORMAT ( xI3 , xA , 3(xxF10.5) )
-    102 FORMAT ( 1(xF10.5) )
 
     ! first open the file you want to print array in. It's a formatted file.
     open ( 10 , file = filename , form = 'formatted' )
@@ -37,14 +35,14 @@ SUBROUTINE write_to_cube_file ( array , filename )
         write ( 10 , * ) grid%n_nodes(3),' 0.0 0.0 ',grid%dl(3)*angtobohr
         ! write the atoms and their coordinates in Bohr
         DO n = 1, SIZE(solute%site)! , dim = 1 )
-            WRITE(10,104) solute%site(n)%Z, ' 0.0 ' , &
+            WRITE(10,*) solute%site(n)%Z, ' 0.0 ' , &
                     solute%site(n)%r(1)*angtobohr, solute%site(n)%r(2)*angtobohr, solute%site(n)%r(3)*angtobohr
         END DO
         ! write .cube file. One value per line. As said earlier, run over x then y then z. The one varying the most rapidly is z.
         do i = 1 , grid%n_nodes(1)
             do j = 1 , grid%n_nodes(2)
                 do k = 1 , grid%n_nodes(3)
-                    WRITE(10,102) array(i,j,k)
+                    WRITE(10,*) real(array(i,j,k))
                 end do
             end do
         end do

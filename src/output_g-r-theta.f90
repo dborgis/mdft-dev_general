@@ -1,5 +1,5 @@
 subroutine output_gOfRandCosTheta
-    use module_grid, only: grid
+    ! use module_grid, only: grid
   ! use precision_kinds, only: dp
   ! use module_solute,          only: solute
   ! use module_solvent, only: solvent
