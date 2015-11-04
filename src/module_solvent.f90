@@ -81,41 +81,53 @@ contains
             solvent(s)%do%exc_wca = getinput%log ('wca', defaultvalue=.false.)
             solvent(s)%do%exc_3b = getinput%log ('threebody', defaultvalue=.false. )
 
-            select case (getinput%char("polarization", defaultvalue="no"))
-            case("no","none")
-            case("cdeltacd")
-                solvent(s)%do%exc_cdeltacd = .true.
-            case("multipolar_without_coupling_to_density")
-                solvent(s)%do%exc_multipolar_without_coupling_to_density = .true.
-            case("multipolar_with_coupling_to_density")
-                solvent(s)%do%exc_multipolar_with_coupling_to_density = .true.
+            select case (grid%mmax)
+            case (0)
+                solvent(s)%do%exc_cs=.true.
+            case (1)
+                solvent(s)%do%exc_cs=.true.
+                solvent(s)%do%exc_cdeltacd=.true.
             case default
-                print*, "The tag 'polarization' in input reads ", getinput%char("polarization", defaultvalue="no")&
-                ,". This is not correct"
-                stop "in energy_and_gradient"
+                print*, "see module_solvent > functional decision tree"
+                print*, "mmax is trop grand"
+                error stop
             end select
-
-
-            if (getinput%log('readDensityDensityCorrelationFunction', defaultvalue=.true.)) THEN
-                if (getinput%log('hydrophobicity', defaultvalue=.false.)) THEN
-                    select case (getinput%char('treatment_of_hydro'))
-                    case ('C')
-                        solvent(s)%do%exc_nn_cs_plus_nbar = .true.
-                    case ('VdW')
-                        if (getinput%log('bridge_hard_sphere', defaultvalue=.false.) ) THEN
-                            print*, 'You are using HSB and VdW so you are withdrawing twice the HS second order term'
-                            stop
-                        end if
-                        solvent(s)%do%exc_hydro = .true.
-                    case default
-                        stop "Hydrophobicity TRUE can only be associated to treatment_of_hydro == C or VdW"
-                    end select
-                else
-                    if( .not. getinput%log('include_nc_coupling', defaultvalue=.false.) ) then
-                        solvent(s)%do%exc_cs = .true.
-                    end if
-                end if
-            end if
+            !
+            ! select case (getinput%char("polarization", defaultvalue="no"))
+            ! case("no","none")
+            ! case("cdeltacd")
+            !     solvent(s)%do%exc_cdeltacd = .true.
+            ! case("multipolar_without_coupling_to_density")
+            !     solvent(s)%do%exc_multipolar_without_coupling_to_density = .true.
+            ! case("multipolar_with_coupling_to_density")
+            !     solvent(s)%do%exc_multipolar_with_coupling_to_density = .true.
+            ! case default
+            !     print*, "The tag 'polarization' in input reads ", getinput%char("polarization", defaultvalue="no")&
+            !     ,". This is not correct"
+            !     stop "in energy_and_gradient"
+            ! end select
+            !
+            !
+            ! if (getinput%log('readDensityDensityCorrelationFunction', defaultvalue=.true.)) THEN
+            !     if (getinput%log('hydrophobicity', defaultvalue=.false.)) THEN
+            !         select case (getinput%char('treatment_of_hydro'))
+            !         case ('C')
+            !             solvent(s)%do%exc_nn_cs_plus_nbar = .true.
+            !         case ('VdW')
+            !             if (getinput%log('bridge_hard_sphere', defaultvalue=.false.) ) THEN
+            !                 print*, 'You are using HSB and VdW so you are withdrawing twice the HS second order term'
+            !                 stop
+            !             end if
+            !             solvent(s)%do%exc_hydro = .true.
+            !         case default
+            !             stop "Hydrophobicity TRUE can only be associated to treatment_of_hydro == C or VdW"
+            !         end select
+            !     else
+            !         if( .not. getinput%log('include_nc_coupling', defaultvalue=.false.) ) then
+            !             solvent(s)%do%exc_cs = .true.
+            !         end if
+            !     end if
+            ! end if
 
         end do
         !

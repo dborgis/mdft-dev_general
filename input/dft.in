@@ -1,7 +1,6 @@
-boxnod = 2 2 2   
-boxlen = 100. 100. 100.
-mmax = 0
-polarization = cdeltacd
+boxnod = 96 96 96
+boxlen = 30. 30. 30.
+mmax = 1
 
 
 #############################
