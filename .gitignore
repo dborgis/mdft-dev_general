@@ -22,7 +22,7 @@ input/density.bin.in
 input/density.bin.out
 src/useless_for_now/
 MDFT.log.*
-CMake*
 cmake_install.cmake
+Makefile
 gmon.out
 a.out
