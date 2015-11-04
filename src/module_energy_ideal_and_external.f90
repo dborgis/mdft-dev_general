@@ -17,7 +17,7 @@ contains
 
         real(dp), intent(out) :: fid, fext
         real(dp), intent(inout) :: df(:,:,:,:,:)
-        integer :: is, nx, ny, nz, io, ns, ix, iy, iz
+        integer :: is, io, ns, ix, iy, iz
         real(dp) :: x, x0, vext, volume, dv, kT, mu, w, dfid
         real(dp), parameter :: zerodp = 0._dp
         real(dp), parameter :: epsdp = epsilon(0._dp)
@@ -43,7 +43,7 @@ contains
             do io=1,grid%no
                 w = grid%w(io) ! weight of the orientation
                 do iz=1,grid%nz
-                    do iy=1,grid%nz
+                    do iy=1,grid%ny
                         do ix=1,grid%nx
                             x = solvent(is)%density(ix,iy,iz,io)
                             vext = solvent(is)%vext(ix,iy,iz,io) - mu
