@@ -13,9 +13,9 @@ contains
         use module_dcf, only: init_dcf
 
         implicit none
-        integer :: nx, ny, nz, no, ns, ix, iy, iz, is, io, ik
+        integer :: nx, ny, nz, no, ns, ix, iy, iz, is, io, ik, ikmax_incsin
         real(dp), intent(out) :: Fexc
-        real(dp) :: kT, dV, ksqmax, ksq, c_loc, a, k, dk
+        real(dp) :: kT, dV, ksqmax, ksq, k, dk
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
         real(dp), intent(inout) :: dF(:,:,:,:,:)
 
@@ -69,24 +69,30 @@ contains
         ! multiply c_s(k) by deltan(k) and fill in_backward of fft by it
         !
         ksqmax = maxval(solvent(1)%cs%x)**2
+        ikmax_incsin = size(solvent(1)%cs%x)
         kxsq(1:nx/2+1) = [( grid%kx(ix)**2  ,ix=1,nx/2+1)]
         kysq(1:ny)     = [( grid%ky(iy)**2  ,iy=1,ny)]
         kzsq(1:nz)     = [( grid%kz(iz)**2  ,iz=1,nz)]
 
-        if (maxval(kxsq) + maxval(kysq) + maxval(kzsq) > ksqmax) then
-            print*, "Dans module_energy_cs > energy_cs, on a tellement de points k que le plus grand |k| est plus grand"
-            print*, "que celui du fichier c(|k|) en input"
-            error stop
-        end if
+        ! if (maxval(kxsq) + maxval(kysq) + maxval(kzsq) > ksqmax) then
+        !     print*, "Dans module_energy_cs > energy_cs, on a tellement de points k que le plus grand |k| est plus grand"
+        !     print*, "que celui du fichier c(|k|) en input"
+        !     print*, "maxof(k²)=",sqrt(maxval(kxsq) + maxval(kysq) + maxval(kzsq))
+        !     print*, "max k² in cs.in", sqrt(ksqmax)
+        !     print*, "I will consider that cs(k>kmax)=0"
+        ! end if
 
-        fftw3%in_backward(:,:,:) = cmplx(0._dp,0._dp)
+        fftw3%in_backward(:,:,:) = complex(0._dp,0._dp)
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx/2+1
-                    ksq = kxsq(ix) + kysq(iy) + kzsq(iz)
-                    k = sqrt(ksq)
+                    k = sqrt(kxsq(ix) + kysq(iy) + kzsq(iz))
                     ik = int(k/dk) +1
-                    fftw3%in_backward(ix,iy,iz) = fftw3%out_forward(ix,iy,iz) * solvent(1)%cs%y(ik)
+                    if (ik <= ikmax_incsin) then
+                        fftw3%in_backward(ix,iy,iz) = fftw3%out_forward(ix,iy,iz) * solvent(1)%cs%y(ik)
+                    else ! cs(k)=0 and thus:
+                        fftw3%in_backward(ix,iy,iz) = complex(0._dp,0._dp)
+                    end if
                 end do
             end do
         end do
@@ -100,6 +106,10 @@ contains
         ! out_forward contains gamma(x) = convolution of cs(x) and deltan(x)
         ! we want the integral of deltan(x)*gamma(x)
         Fexc = -kT/2._dp*dv*sum (fftw3%in_forward*fftw3%out_backward)
+        ! block
+        !     Fexc_k = -kT/2._dp*dv*sum(fftw3%in_backward*fftw3%out_forward)
+        ! print*, "       Fexc_cs in real space, vs Fexc_cs in k space:",Fexc, -kT/2._dp*dv*sum(fftw3%in_backward*fftw3%out_forward)
+
 
         do is=1,ns
             do io=1,no
