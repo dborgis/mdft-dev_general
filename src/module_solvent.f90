@@ -84,9 +84,11 @@ contains
             select case (grid%mmax)
             case (0)
                 solvent(s)%do%exc_cs=.true.
+                solvent(s)%do%exc_cproj=.true.
             case (1)
                 solvent(s)%do%exc_cs=.true.
                 solvent(s)%do%exc_cdeltacd=.true.
+                solvent(s)%do%exc_cproj=.true.
             case default
                 print*, "see module_solvent > functional decision tree"
                 print*, "mmax is trop grand"

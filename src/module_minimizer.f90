@@ -33,15 +33,17 @@ contains
 
         implicit none
 
-        integer :: i, icg, is, io, iz, iy, ix, itermax
+        integer :: icg, is, io, iz, iy, ix, itermax, n, m
         real(dp), parameter :: epsdp=epsilon(1._dp)
 
         itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
 
         lbfgsb%n = grid%nx * grid%ny * grid%nz * grid%no * solvent(1)%nspec
-        allocate ( lbfgsb%nbd(lbfgsb%n), lbfgsb%x(lbfgsb%n), lbfgsb%l(lbfgsb%n), lbfgsb%u(lbfgsb%n), lbfgsb%g(lbfgsb%n) )
-        allocate ( lbfgsb%iwa(3*lbfgsb%n) )
-        allocate ( lbfgsb%wa(2*lbfgsb%m*lbfgsb%n + 5*lbfgsb%n + 11*lbfgsb%m*lbfgsb%m + 8*lbfgsb%m) )
+        n=lbfgsb%n
+        m=lbfgsb%m
+        allocate ( lbfgsb%nbd(n), lbfgsb%x(n), lbfgsb%l(n), lbfgsb%u(n), lbfgsb%g(n) )
+        allocate ( lbfgsb%iwa(3*n) )
+        allocate ( lbfgsb%wa(2*m*n + 5*n + 11*m*m + 8*m) )
 
         if (.not. allocated(solvent)) then
             print*, "probleme dans module_minimizer > init_lbfgsb"
