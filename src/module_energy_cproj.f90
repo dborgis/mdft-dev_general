@@ -16,8 +16,8 @@ module module_energy_cproj
     !
     LOGICAL, PARAMETER :: debug=.true.
     integer, PARAMETER :: mmax=0
-    integer, PARAMETER :: nx=128, ny=128, nz=128
-    real(dp), parameter :: lx=40._dp, ly=lx, lz=lx ! size of the supercell in angstrom
+    integer, PARAMETER :: nx=64, ny=nx, nz=nx
+    real(dp), parameter :: lx=25._dp, ly=lx, lz=lx ! size of the supercell in angstrom
     integer, PARAMETER :: molrotsymorder=1
 
 
@@ -30,7 +30,7 @@ module module_energy_cproj
     ! Arrays to translate index of vector to tuple of projections, and inverse
     ! alpha(m,mup,mu), m(alpha), mup(alpha), mu(alpha)
     !
-    INTEGER ::  iproj(0:mmax,-mmax:mmax,0:mmax) ! alpha(m,mup,mu)
+    INTEGER ::  indp(0:mmax,-mmax:mmax,0:mmax) ! alpha(m,mup,mu)
     INTEGER ::  im(nproj)                       ! m(alpha)
     INTEGER ::  imup(nproj)                    ! mup(alpha)
     INTEGER ::  imu(nproj)                        ! mu(alpha)
@@ -57,12 +57,6 @@ module module_energy_cproj
     real(dp), parameter :: wpsi(npsi) = 1./npsi
     real(dp) :: theta(ntheta), wtheta(ntheta)
 
-    type density
-        real(dp) :: e(nx,ny,nz,ntheta,nphi,npsi)
-        complex(dp) :: p(nproj,nx,ny,nz)
-        character(80) :: frame
-    end type
-    type(density) :: rho, gamma
     integer :: exitstatus
     real(dp), parameter :: fm(0:mmax) = [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )]
     type :: fft2d_type
@@ -85,13 +79,13 @@ module module_energy_cproj
     real(dp) :: tharm_sph(ntheta,nproj), t0, t1, t2, t3, t4, t5, ta, tb, tc, t6, t7, t8
     real(dp) :: q(3), tqx(nx), tqy(ny), tqz(nz) ! vector q and its components tabulated
     integer :: tqxi(nx), tqyi(ny), tqzi(nz)
-    complex(dp) :: data_labframe   (0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: data_labframe_mq(0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: data_molframe   (0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: data_molframe_mq(0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: projections_rho(1:nproj), projections_rho_mq(1:nproj)
-    complex(dp) :: projections_gamma(1:nproj), projections_gamma_mq(1:nproj)
-    complex(dp) :: gamma_loc, gamma_loc_mq
+    complex(dp) :: deltarho_m_mup_mu_q   (0:mmax,-mmax:mmax,-mmax:mmax)
+    complex(dp) :: deltarho_m_mup_mu_mq(0:mmax,-mmax:mmax,-mmax:mmax)
+    complex(dp) :: xxx_temp_array_of_m_khi_mu_q   (0:mmax,-mmax:mmax,-mmax:mmax)
+    complex(dp) :: xxx_temp_array_of_m_khi_mu_mq(0:mmax,-mmax:mmax,-mmax:mmax)
+    complex(dp) :: deltarho_p_q(1:nproj), deltarho_p_mq(1:nproj)
+    complex(dp) :: gamma_p_q(1:nproj), gamma_p_mq(1:nproj)
+    complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
     integer(1), parameter :: errorgenerator=-1
 
     public :: energy_cproj
@@ -99,16 +93,49 @@ module module_energy_cproj
 contains
 
     subroutine energy_cproj (ff,df)
+        use precision_kinds, only: dp
         use module_grid, only: grid
         use module_thermo, only: thermo
         implicit none
+        real(dp), parameter :: zero=0._dp
+        complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
         real(dp), intent(out) :: ff
         real(dp), intent(inout) :: df(:,:,:,:,:)
-        real(dp) :: dv, dq
+        real(dp) :: dv, dq, kT
         complex(dp) :: ffc
+        logical :: q_eq_mq
+        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+        real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
+        complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
+        complex(dp), allocatable :: deltarho_m_mup_mu_q(:,:,:), deltarho_m_mup_mu_mq(:,:,:)
 
+
+        kT=thermo%kbT
         dv=grid%dv
         no=grid%no
+
+        allocate (deltarho(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
+        allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
+        allocate (gamma_o(nx,ny,nz,no) ,source=zero)
+
+        allocate (gamma_p(nproj,nx,ny,nz) ,source=zeroc)
+        allocate (deltarho_p(nproj,nx,ny,nz) ,source=zeroc)
+        allocate (deltarho_p_q(nproj) ,source=zeroc)
+        allocate (deltarho_p_mq(nproj) ,source=zeroc)
+        allocate (deltarho_m_mup_mu_q(m,mup,mu) ,source=zeroc)
+        allocate (deltarho_m_mup_mu_mq(m,mup,mu) ,source=zeroc)
+
+
+        ! 1/ get deltarho = rho-rho0
+        ! 2/ project deltarho => deltarho_p (use FFT2D-R2C)
+        ! 3/ FFT3D-C2C deltarho_p(x) => deltarho_p(q)
+        ! 4/ rotate to q frame
+        ! 5/ OZ: deltarho_p(q) => gamma_p(q)
+        ! 6/ rotate back to fixed frame
+        ! 7/ FFT3D-C2D gamma_p(q) => gamma_p(r)
+        ! 8/ gather projections: gamma_p(r) => gamma(r)
+
+
 
         ! PRINT*,"========"
         ! print*,"mmax              =", mmax
@@ -136,11 +163,11 @@ contains
 
         !
         ! Toutes les projections sont stockées dans un meme vecteur de taille nproj
-        ! iproj(m,mup,mu) lie le triplet (m,mup,mu) a l'unique indice de projection
+        ! indp(m,mup,mu) lie le triplet (m,mup,mu) a l'unique indice de projection ip
         ! im(p) donne inversement le m correspondant à l'indice p dans le tableau des projections
-        ! On a donc iproj(im(p),imup(p),imu(p)) == p
+        ! On a donc indp(im(p),imup(p),imu(p)) == p
         !
-        iproj = -huge(1)
+        indp = -huge(1)
         im    = -huge(1)
         imup  = -huge(1)
         imu   = -huge(1)
@@ -148,16 +175,16 @@ contains
         do m=0,mmax
             do mup=-m,m
                 !
-                ! We chose to have iproj and imu to contain the true value of mu, not mu/molrotsymorder.
+                ! We chose to have indp and imu to contain the true value of mu, not mu/molrotsymorder.
                 ! Thus, we loop over mu with steps of molrotsymorder
-                ! Thus, we have holes in iproj, but all calls to iproj and imu should be done with this true mu
-                ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to iproj(m,mup,mu) with mu=1 will return -999
+                ! Thus, we have holes in indp, but all calls to indp and imu should be done with this true mu
+                ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to indp(m,mup,mu) with mu=1 will return -999
                 ! Also, the array imu only contains even values (des valeurs paires)
                 !
                 do mu=0,m,molrotsymorder
                     p=p+1
                     IF (p > nproj) ERROR STOP "p > nproj at line 166"
-                    iproj(m,mup,mu) = p
+                    indp(m,mup,mu) = p
                     im(p) = m
                     imup(p) = mup
                     imu(p) = mu
@@ -198,6 +225,35 @@ contains
             theta = acos(costheta)
         end block
 
+
+                !
+                ! Tabulate generalized spherical harmonics in array tharm_sph(theta,proj)
+                ! where theta can be any of the GaussLegendre integration roots for theta
+                ! where proj is an index related to a tuple {m,mup,mu}
+                ! Blum's notation :
+                ! m is related to theta
+                ! mup is related to phi
+                ! mu is related to psi
+                ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
+                !
+                tharm_sph = 0._dp
+                do ip=1,nproj
+                    m = im(ip)
+                    mup = imup(ip)
+                    mu = imu(ip)
+                    do itheta=1,ntheta
+                        tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
+                    end do
+                end do
+                if (mmax==0) then
+                    if (size(tharm_sph,1) /= size(tharm_sph,2) .or. tharm_sph(1,1)/=1._dp) then
+                        print*, "in energy_cproj, pour mmax==0, tharm_sph ne vaut pas 1."
+                        print*, "tharm_sph(itheta=1,ip=1) =", tharm_sph(1,1)
+                        error stop
+                    end if
+                end if
+
+
         !
         ! Init la densite en representation MDFT, c'est à dire en REAL space, angles d'Euler
         !
@@ -208,40 +264,14 @@ contains
                     do iz=1,nz
                         do iy=1,ny
                             do ix=1,nx
-        rho%e(ix,iy,iz,itheta,iphi,ipsi)=solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0
+                                deltarho(ix,iy,iz,itheta,iphi,ipsi)= &
+                                    solvent(1)%density(ix,iy,iz,io) - solvent(1)%rho0
                             end do
                         end do
                     end do
                 end do
             end do
         end do
-
-        !
-        ! Tabulate generalized spherical harmonics in array tharm_sph(theta,proj)
-        ! where theta can be any of the GaussLegendre integration roots for theta
-        ! where proj is an index related to a tuple {m,mup,mu}
-        ! Blum's notation :
-        ! m is related to theta
-        ! mup is related to phi
-        ! mu is related to psi
-        ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
-        !
-        tharm_sph = 0._dp
-        do ip=1,nproj
-            m = im(ip)
-            mup = imup(ip)
-            mu = imu(ip)
-            do itheta=1,ntheta
-                tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
-            end do
-        end do
-        if (mmax==0) then
-            if (size(tharm_sph,1) /= size(tharm_sph,2) .or. tharm_sph(1,1)/=1._dp) then
-                print*, "in energy_cproj, pour mmax==0, tharm_sph ne vaut pas 1."
-                print*, "tharm_sph(itheta=1,ip=1) =", tharm_sph(1,1)
-                error stop
-            end if
-        end if
 
         !
         ! On passe tout de suite en projection, dans le repère cartesien
@@ -253,25 +283,29 @@ contains
         call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE )
         call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
 
+
+
         DO iz=1,nz
             DO iy=1,ny
                 DO ix=1,nx
-                    rho%p(1:nproj,ix,iy,iz) = euler2proj( rho%e(ix,iy,iz,1:ntheta,1:nphi,1:npsi) )
+                    deltarho_p(1:nproj,ix,iy,iz) = euler2proj( deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) )
                     !
                     ! Test if result contains NaN or Inf
                     !
-                    if (debug .and. any(rho%p(1:nproj,ix,iy,iz) /= rho%p(1:nproj,ix,iy,iz)) ) then
+                    if (debug .and. any(deltarho_p(1:nproj,ix,iy,iz) /= deltarho_p(1:nproj,ix,iy,iz)) ) then
                         print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
-                        print*, "rho%e(ix,iy,iz,1:ntheta,1:nphi,1:npsi) =", rho%e(ix,iy,iz,1:ntheta,1:nphi,1:npsi)
-                        print*, "rho%p(1:nproj,ix,iy,iz) = ",rho%p(1:nproj,ix,iy,iz)
+                        print*, "deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) =", deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi)
+                        print*, "deltarho_p(1:nproj,ix,iy,iz) = ",deltarho_p(1:nproj,ix,iy,iz)
                         error stop "Bug found in euler2proj. NaN or Inf is hiding somewhere."
                     end if
                 END DO
             END DO
         END DO
         if (mmax==0) then
-            if (complex(rho%e(1,1,1,1,1,1),0._dp) /= rho%p(1,1,1,1)) then
-                print*, "in energy_cproj, rho%e /= rho%p"
+            if (complex(deltarho(1,1,1,1,1,1),0._dp) /= deltarho_p(1,1,1,1)) then
+                print*, "in energy_cproj et mmax==0, deltarho /= deltarho_p avant meme la FFT3D"
+                print*, "deltarho(1,1,1,1,1,1),0._dp) =", complex(deltarho(1,1,1,1,1,1),0._dp)
+                print*, "deltarho_p(1,1,1,1)", deltarho_p(1,1,1,1)
                 error stop
             end if
         end if
@@ -283,15 +317,23 @@ contains
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        call cpu_time(ta)
         call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_FORWARD, FFTW_ESTIMATE ) ! in-place
-        call cpu_time(t0)
-        do ip= 1, nproj
-            fft3d%in = rho%p(ip,1:nx,1:ny,1:nz)
+        do ip=1,nproj
+            ! deltarho_p in real space (is a complex number)
+            fft3d%in = deltarho_p(ip,1:nx,1:ny,1:nz)
             call dfftw_execute( fft3d%plan )
-            rho%p(ip,:,:,:) = fft3d%in
+            deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
+            ! now deltarhop in fourier space
         end do
-        call cpu_time(t1)
+        if (mmax==0) then
+            if (complex(deltarho(1,1,1,1,1,1),0._dp) /= deltarho_p(1,1,1,1)) then
+                print*, "in energy_cproj et mmax=0, deltarho /= deltarho_p apres la FFT3D"
+                print*, "deltarho(1,1,1,1,1,1),0._dp) =", complex(deltarho(1,1,1,1,1,1),0._dp)
+                print*, "deltarho_p(1,1,1,1)", deltarho_p(1,1,1,1)
+                error stop
+            end if
+        end if
+
 
         !
         ! We now want this projections in Fourier space and lab frame to the molecular frame
@@ -325,17 +367,18 @@ contains
         !call read_ck_nmax (ck, normq)
         !call read_ck_toutes_nmax( ck, normq)
         call read_ck_nonzero( ck, normq )
-        dq=normq(2)-normq(1)
+        dq=normq(2)
+
         !
         ! For all vectors q and -q handled simultaneously
         !
-        do ix=1,nx/2+1
-            do iy=1,ny
-                do iz=1,nz
+        do ix_q=1,nx ! /2+1 IS SUFFICIENT. THIS IS A TEST
+            do iy_q=1,ny
+                do iz_q=1,nz
                     !
                     ! cartesian coordinates of vector q in lab frame
                     !
-                    q = [tqx(ix), tqy(iy), tqz(iz)]
+                    q = [tqx(ix_q), tqy(iy_q), tqz(iz_q)]
 
                     ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
                     ! block
@@ -368,54 +411,59 @@ contains
                     ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
                     !
-                    ! Find iix,iiy,iiz so that q(iix,iiy,iiz)= -q(ix,iy,iz)
+                    ! Find ix_mq,iy_mq,iz_mq so that q(ix_mq,iy_mq,iz_mq)= -q(ix_q,iy_q,iz_q)
                     !
-                    iix = tqxi(ix)
-                    iiy = tqyi(iy)
-                    iiz = tqzi(iz)
-                    !
-                    ! On peut vérifier que
-                    ! q=[grid%kx(ix), grid%ky(iy), grid%kz(iz)]
-                    ! q=-[grid%kx(iix), grid%ky(iiy), grid%kz(iiz)]
+                    ix_mq = tqxi(ix_q)
+                    iy_mq = tqyi(iy_q)
+                    iz_mq = tqzi(iz_q)
+
+                    if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then
+                        q_eq_mq=.true.
+                    else
+                        q_eq_mq=.false.
+                    end if
 
                     !
+                    ! On peut vérifier que
+                    ! q=[grid%kx(ix_q), grid%ky(iy), grid%kz(iz)]
+                    ! q=-[grid%kx(iix_q), grid%ky(iiy), grid%kz(iiz)] ! but for ix_q>nx/2+1 where kx is not allocated
                     !
-                    ! Move all projections to a smaller temporary array: projections_rho (for q) and projections_rho_mq (for -q)
                     !
-                    projections_rho   (1:nproj) = rho%p(1:nproj,ix,iy,iz)
-                    projections_rho_mq(1:nproj) = rho%p(1:nproj,iix,iiy,iiz)
+                    ! Move all projections to a smaller temporary array: deltarho_p_q (for q) and deltarho_p_mq (for -q)
+                    !
+                    deltarho_p_q (1:nproj) = deltarho_p(1:nproj,ix_q,iy_q,iz_q)
+                    deltarho_p_mq(1:nproj) = deltarho_p(1:nproj,ix_mq,iy_mq,iz_mq)
 
 
                     !
                     ! Rotate projections from laboratory frame to molecular frame
                     ! If q=0 then chose the rotation you want: the identity is the simplest option.
                     !
-                    IF( ix==nx/2+1 .AND. iy==ny .AND. iz==nz ) call cpu_time(t2) ! timer
-                    IF( ix/=1 .OR. iy/=1 .OR. iz/=1 ) THEN  ! case 1,1,1 corresponds to |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
-                        data_labframe    = zeroc
-                        data_labframe_mq = zeroc
-                        data_molframe    = zeroc
-                        data_molframe_mq = zeroc
-
+                    if ( any([ix_q, iy_q, iz_q]/=1) ) then  ! case 1,1,1 corresponds to |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
+                        deltarho_m_mup_mu_q  = zeroc
+                        deltarho_m_mup_mu_mq = zeroc
                         DO ip=1,nproj
                             m = im(ip)
                             mup = imup(ip)
                             mu = imu(ip)
-                            data_labframe   (m,mup,mu) = projections_rho   (ip)
-                            data_labframe_mq(m,mup,mu) = projections_rho_mq(ip)
+                            deltarho_m_mup_mu_q(m,mup,mu) = deltarho_p_q(ip)
+                            deltarho_m_mup_mu_mq(m,mup,mu) = deltarho_p_mq(ip)
                         END DO
-
-                        data_molframe    = lab2molframe( data_labframe, q )
-                        data_molframe_mq = lab2molframe( data_labframe_mq, -q)
+                        xxx_temp_array_of_m_khi_mu_q = zeroc
+                        xxx_temp_array_of_m_khi_mu_mq = zeroc
+                        xxx_temp_array_of_m_khi_mu_q = lab2molframe  (deltarho_m_mup_mu_q, q)
+                        xxx_temp_array_of_m_khi_mu_mq = lab2molframe (deltarho_m_mup_mu_mq, -q)
 
                         DO ip=1,nproj
                             m = im(ip)
                             khi = imup(ip)
                             mu = imu(ip)
-                            projections_rho   (ip) = data_molframe   (m,khi,mu)
-                            projections_rho_mq(ip) = data_molframe_mq(m,khi,mu)
+                            deltarho_p_q(ip) = xxx_temp_array_of_m_khi_mu_q(m,khi,mu)
+                            deltarho_p_mq(ip) = xxx_temp_array_of_m_khi_mu_mq(m,khi,mu)
                         END DO
+                        ! now deltarho_p_q and deltarho_p_mq are in the molecular frame
                     END IF
+
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for 200 values of |q|.
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
@@ -428,48 +476,56 @@ contains
                         print*, "in energy_cproj, ik <=0"
                         error stop
                     end if
+
                     !
                     ! Put ck(all projections,iq) to a smaller temp array, ck_q
+                    ! c(p,q) => c_local(p)
                     !
-                    ck_q(:) = ck(:,iq)/0.0333
+                    ck_q(:) = ck(:,iq)
 
                     !
                     ! Ornstein-Zernike in the molecular frame
                     !
-                    IF( ix==nx/2+1 .AND. iy==ny .AND. iz==nz ) call cpu_time(t3)
 
-                    projections_gamma   (1:nproj) = zeroc
-                    projections_gamma_mq(1:nproj) = zeroc
+                    gamma_p_q(1:nproj) = zeroc
+                    gamma_p_mq(1:nproj) = zeroc
 
                     DO khi=-mmax,mmax
                         DO m=ABS(khi),mmax
                             DO mu=0,m,molrotsymorder ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
                                 if (mod(mu,molrotsymorder) /= 0) cycle
-                                gamma_loc    = zeroc
-                                gamma_loc_mq = zeroc
-                                DO n=ABS(khi),mmax
-                                    DO nu=0,n,molrotsymorder
-                                        if (mod(nu,molrotsymorder) /=0) cycle
-                                        ip = iproj(n,khi,nu)
+
+
+
+
+
+
+
+                                gamma_m_khi_mu_q= zeroc
+                                gamma_m_khi_mu_mq = zeroc
+                                do n=abs(khi),mmax
+                                    do nu=-n,n,molrotsymorder
+                                        if (mod(nu,molrotsymorder) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
+                                        print*, "m, n, mu, nu, khi", m, n, mu, nu, khi
+
                                         ia = ialpha(m,n,mu,nu,khi)
                                         if (ia==errorgenerator) stop "ia = errorgenerator omg"
                                         if (ia==0) stop "ia=0 in energy_cproj"
-                                        gamma_loc    = gamma_loc    + (-1)**(n+khi+nu) * ck_q(ia) * CONJG(projections_rho_mq(ip))
-                                        gamma_loc_mq = gamma_loc_mq + (-1)**(n+khi+nu) * ck_q(ia) * CONJG(projections_rho   (ip))
-                                    END DO
-                                    IF( n/=0 ) THEN ! avoid "do nu=0,-1"
-                                        DO nu=-n,-1
-                                            ip = iproj(n,khi,-nu)
-                                            ia = ialpha(m,n,mu,nu,khi)
-                                            !ck_q_loc = deduce_ck (m, n, mu, nu, khi)
-                                            gamma_loc    = gamma_loc    + ck_q(ia)*projections_rho   (ip)
-                                            gamma_loc_mq = gamma_loc_mq + ck_q(ia)*projections_rho_mq(ip)
-                                        END DO
-                                    END IF
-                                END DO
-                                ip = iproj(m,khi,mu)
-                                projections_gamma   (ip) = gamma_loc
-                                projections_gamma_mq(ip) = gamma_loc_mq
+                                        if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
+                                            ip = indp(n,khi,-nu)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck_q(ia) *deltarho_p_q(ip)
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck_q(ia) *deltarho_p_mq(ip)
+                                        else ! transform delta rho (n, khi, -nu)(q) into conjg( deltarho(n,khi,nu)(-q) )
+                                            ip = indp(n,khi,nu)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(n) *ck_q(ia) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(n) *ck_q(ia) *conjg(deltarho_p_q(ip))
+                                        end if
+                                    end do
+                                end do
+
+                                ip=indp(m,khi,mu)
+                                gamma_p_q(ip) = gamma_m_khi_mu_q
+                                gamma_p_mq(ip) = gamma_m_khi_mu_mq
 
 
                             END DO
@@ -479,36 +535,38 @@ contains
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
                     !
-                    IF( ix==nx/2+1 .AND. iy==ny .AND. iz==nz ) call cpu_time(t4)
-
-                    IF( ix/=1 .OR. iy/=1 .OR. iz/=1 ) THEN
-                        data_molframe    = CMPLX(0_dp,0_dp)
-                        data_molframe_mq = CMPLX(0_dp,0_dp)
+                    IF ( any([ix_q, iy_q, iz_q]/=1) ) then
+                        xxx_temp_array_of_m_khi_mu_q=zeroc
+                        xxx_temp_array_of_m_khi_mu_mq=zeroc
 
                         DO ip=1,nproj
                             m=im(ip)
                             khi=imup(ip)
                             mu=imu(ip)
-                            data_molframe   (m,khi,mu) = projections_gamma   (ip)
-                            data_molframe_mq(m,khi,mu) = projections_gamma_mq(ip)
+                            xxx_temp_array_of_m_khi_mu_q(m,khi,mu) = gamma_p_q(ip)
+                            xxx_temp_array_of_m_khi_mu_mq(m,khi,mu) = gamma_p_mq(ip)
                         END DO
 
-                        data_labframe = mol2labframe   ( data_molframe   ,  q )
-                        data_labframe_mq = mol2labframe( data_molframe_mq, -q )
+                        deltarho_m_mup_mu_q = mol2labframe (xxx_temp_array_of_m_khi_mu_q, q)
+                        deltarho_m_mup_mu_mq = mol2labframe (xxx_temp_array_of_m_khi_mu_mq, -q)
 
                         DO ip=1,nproj
                             m = im(ip)
                             mup = imup(ip)
                             mu = imu(ip)
-                            projections_gamma   (ip) = data_labframe   (m,mup,mu)
-                            projections_gamma_mq(ip) = data_labframe_mq(m,mup,mu)
+                            gamma_p_q(ip) = deltarho_m_mup_mu_q(m,mup,mu)
+                            gamma_p_mq(ip) = deltarho_m_mup_mu_mq(m,mup,mu)
                         END DO
                     END IF
 
-                    IF( ix==nx/2+1 .AND. iy==ny .AND. iz==nz ) call cpu_time(t5)
+                    gamma_p(1:nproj, ix_q,  iy_q,  iz_q) = gamma_p_q(1:nproj)
+                    gamma_p(1:nproj, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:nproj)
 
-                    gamma%p(1:nproj, ix, iy, iz) = projections_gamma   (1:nproj)
-                    gamma%p(1:nproj,iix,iiy,iiz) = projections_gamma_mq(1:nproj)
+                    if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq)) then
+                        print*, "gamma_p_q", gamma_p_q
+                        print*, "gamma_p_mq", gamma_p_mq
+                        stop
+                    end if
 
                 end do
             end do
@@ -522,37 +580,36 @@ contains
         !
         call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_BACKWARD, FFTW_MEASURE )
         DO ip= 1, nproj
-            fft3d%in = gamma%p(ip,1:nx,1:ny,1:nz)
+            fft3d%in = gamma_p(ip,1:nx,1:ny,1:nz)
             call dfftw_execute( fft3d%plan )
-            gamma%p(ip,:,:,:) = fft3d%in/real(grid%nx*grid%ny*grid%nz)
+            gamma_p(ip,:,:,:) = fft3d%in/real(nx*ny*nz,dp)
         END DO
 
-        ffc=sum(gamma%p(1:nproj,1:nx,1:ny,1:nz)*rho%p(1:nproj,1:nx,1:ny,1:nz))/real(nx*ny*nz,dp)
-        if (aimag(ffc)/=0._dp) then
+        ffc=sum(gamma_p(1:nproj,1:nx,1:ny,1:nz)*deltarho_p(1:nproj,1:nx,1:ny,1:nz))/real(nx*ny*nz,dp)
+        ! ffc should be real (have no imaginary part)
+        if (abs(aimag(ffc))>epsilon(1._dp)) then
             print*, "aimag(ffc)/=0 in energy_cproj"
-            ! error stop
+            print*, "ffc =", ffc
+            error stop
         end if
         ff=-thermo%kbT/2._dp*dv*real(ffc,dp)
-        print*, "ff_cproj=",ff
+        print*, "ff from aimag=", ff
 
 
         !
         ! Gather projections
         !
-        call cpu_time(t7)
         call dfftw_plan_dft_c2r_2d(ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE)
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    gamma%e(ix,iy,iz,1:ntheta,1:nphi,1:npsi) = proj2euler( gamma%p(1:nproj,ix,iy,iz) )
+                    gamma(ix,iy,iz,1:ntheta,1:nphi,1:npsi) = proj2euler( gamma_p(1:nproj,ix,iy,iz) )
                 end do
             end do
         end do
 
-        call cpu_time(t8)
 
-        block
-            real(dp) :: gamma_o(nx,ny,nz,no)
+ff=0._dp
             do ix=1,nx
                 do iy=1,ny
                     do iz=1,nz
@@ -560,15 +617,14 @@ contains
                             do iphi=1,nphi
                                 do ipsi=1,npsi
                                     io=grid%indo(itheta,iphi,ipsi)
-                                    gamma_o(ix,iy,iz,io)=gamma%e(ix,iy,iz,itheta,iphi,ipsi)
+                                    gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
+    ff=ff-kT/2._dp*dv*gamma_o(ix,iy,iz,io)*solvent(1)%density(ix,iy,iz,io)*grid%w(io)
                                 end do
                             end do
                         end do
                     end do
                 end do
             enddo
-
-        end block
 
 
 
@@ -1050,17 +1106,18 @@ contains
             myck%isok=.true.
 
             close(ufile)
+        end subroutine read_ck_nonzero
 
-        END SUBROUTINE read_ck_nonzero
-        !
+
         FUNCTION euler2proj (eulerangles) RESULT (projections)
             IMPLICIT NONE
             REAL(dp), INTENT(IN) :: eulerangles(1:ntheta,1:nphi,1:npsi)
             COMPLEX(dp) :: proj_theta(1:ntheta,0:mmax/molrotsymorder,-mmax:mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
             COMPLEX(dp) :: projections(1:nproj)
             INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip
-            projections = (0,0)
-            proj_theta = (0,0)
+            complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
+            projections = zeroc
+            proj_theta = zeroc
             DO itheta=1,ntheta
                 DO iphi=1,nphi
                     DO ipsi=1,npsi
@@ -1074,7 +1131,7 @@ contains
             DO m=0,mmax
                 DO mup=-m,m
                     DO mu=0,m,molrotsymorder
-                        ip = iproj( m,mup,mu )
+                        ip = indp( m,mup,mu )
                         projections(ip)= SUM(proj_theta(:,mu,mup)*tharm_sph(:,ip)*wtheta(:))*fm(m)
                     END DO
                 END DO
@@ -1092,7 +1149,7 @@ contains
                 DO mup=-mmax,mmax
                     DO mu=0,mmax/molrotsymorder
                         DO m= MAX(ABS(mup),ABS(mu)), mmax
-                            ip=iproj(m,mup,mu)
+                            ip=indp(m,mup,mu)
                             proj_theta(itheta,mu,mup) = proj_theta(itheta,mu,mup)&
                             +projections(ip)*tharm_sph(itheta,ip)*fm(m)
                         END DO
@@ -1110,7 +1167,7 @@ contains
                 END DO
             END DO
         END FUNCTION proj2euler
-        !
+
         FUNCTION lab2molframe (datalabframe, q) RESULT (datamolframe)
             IMPLICIT NONE
             COMPLEX(dp), INTENT(IN) :: datalabframe(0:mmax,-mmax:mmax,-mmax:mmax)
@@ -1211,7 +1268,7 @@ end module module_energy_cproj
 !     DO m=0,mmax
 !         DO mup=-m,m
 !             DO mu=0,m,molrotsymorder
-!                 ip=iproj(m,mup,mu)
+!                 ip=indp(m,mup,mu)
 !                 data1c(ip)=data3c(m,mup,mu)
 !             END DO
 !         END DO
