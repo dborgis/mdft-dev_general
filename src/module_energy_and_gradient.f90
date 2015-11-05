@@ -76,7 +76,7 @@ contains
             if (solvent(s)%do%exc_cproj) then
                 call energy_cproj (ff%exc_cproj, df)
                 print*, "ff%exc_cproj =", ff%exc_cproj
-                f=f+ff%exc_cproj
+                ! f=f+ff%exc_cproj
             end if
             ! if (solvent(s)%do%exc_fmt) call energy_fmt (ff%exc_fmt, df)
             ! if (solvent(s)%do%wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc_wca, df)
