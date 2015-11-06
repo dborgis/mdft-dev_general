@@ -11,22 +11,21 @@ module module_energy_cproj
     complex(dp), parameter :: imag=(0_dp,1_dp), zeroc=complex(0._dp,0._dp)
     real(dp), parameter :: eightpisq=8._dp*acos(-1._dp)**2
 
-    integer :: m,n,mup,mu,nu,khi,i,ix,iy,iz,iix,iiy,iiz,p,itheta,ip,iq,ia,iphi,ipsi,io,no
+    ! integer :: m,n,mup,mu,nu,khi,i,ix,iy,iz,iix,iiy,iiz,p,itheta,ip,iq,ia,iphi,ipsi,io,no
 
     !
     ! Main physical parameters
     !
     LOGICAL, PARAMETER :: debug=.true.
-    integer, PARAMETER :: mmax=0
-    integer, PARAMETER :: nx=64, ny=nx, nz=nx
-    real(dp), parameter :: lx=25._dp, ly=lx, lz=lx ! size of the supercell in angstrom
-    integer, PARAMETER :: molrotsymorder=1
 
-
-    integer, parameter :: np = SUM( [( [( [( 1 ,mu=0,m,molrotsymorder)], mup=-m,m)], m=0,mmax)] )
-    integer, parameter :: ntheta =   mmax+1
-    integer, parameter :: nphi   = 2*mmax+1
-    integer, parameter :: npsi   = 2*(mmax/molrotsymorder)+1
+    ! real(dp) :: lx, ly, lz
+    ! integer :: nx, ny, nz
+    ! integer :: mmax
+    ! integer :: molrotsymorder
+    ! integer :: np
+    ! integer :: ntheta
+    ! integer :: nphi
+    ! integer :: npsi
 
     !
     ! Arrays to translate index of vector to tuple of projections, and inverse
@@ -54,38 +53,15 @@ module module_energy_cproj
     complex(dp), allocatable :: ck(:,:)
 
     real(dp), parameter :: pi=acos(-1._dp), twopi=2._dp*pi
-    real(dp), parameter :: dphi = twopi/real(nphi,dp)
-    real(dp), parameter :: phi(nphi) = [(   (i-1)*dphi   , i=1,nphi )]
-    real(dp), parameter :: wphi(nphi) = 1./nphi
-    real(dp), parameter :: dpsi = twopi/real(npsi*molrotsymorder,dp)
-    real(dp), parameter :: psi(npsi) = [(   (i-1)*dpsi   , i=1,npsi )]
-    real(dp), parameter :: wpsi(npsi) = 1./npsi
-    real(dp) :: theta(ntheta), wtheta(ntheta)
+    ! real(dp), parameter :: phi(nphi) = [(   (i-1)*dphi   , i=1,nphi )]
+    ! real(dp), parameter :: wphi(nphi) = 1./nphi
+    ! real(dp), parameter :: dpsi = twopi/real(npsi*molrotsymorder,dp)
+    ! real(dp), parameter :: psi(npsi) = [(   (i-1)*dpsi   , i=1,npsi )]
+    ! real(dp), parameter :: wpsi(npsi) = 1./npsi
 
     integer :: exitstatus
-    real(dp), parameter :: fm(0:mmax) = [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )]
-    type :: fft2d_type
-        type(c_ptr) :: plan
-        real(dp)    :: in(npsi,nphi)
-        complex(dp) :: out(npsi/2+1,nphi)
-        logical :: isalreadyplanned
-    end type
-    type :: ifft2d_type
-        type(c_ptr) :: plan
-        complex(dp) :: in(npsi/2+1,nphi)
-        real(dp)    :: out(npsi,nphi)
-        logical :: isalreadyplanned
-    end type
-    type :: fft3d_type
-        type(c_ptr) :: plan
-        complex(dp) :: in(nx,ny,nz)
-    end type
-    type(  fft2d_type ), save ::  fft2d
-    type( ifft2d_type ), save :: ifft2d
-    type( fft3d_type ) :: fft3d
-    real(dp) :: tharm_sph(ntheta,np), t0, t6
-    real(dp) :: q(3), qx(nx), qy(ny), qz(nz) ! vector q and its components tabulated
-    integer :: mqx(nx), mqy(ny), mqz(nz)
+    real(dp), allocatable :: fm(:)
+    ! real(dp), parameter :: fm(0:mmax) = [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )]
     integer, parameter :: errorgenerator=-1
 
     public :: energy_cproj
@@ -108,13 +84,48 @@ contains
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
         complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
         complex(dp), allocatable :: deltarho_m_mup_mu_q(:,:,:), deltarho_m_mup_mu_mq(:,:,:)
-        integer :: nx, ny, nz, np, no, ntheta, nphi, npsi, mmax, na, nq
+        integer :: nx, ny, nz, np, no, ntheta, nphi, npsi, mmax, na, nq, m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq
         complex(dp), allocatable :: xxx_temp_array_of_m_khi_mu_q(:,:,:), xxx_temp_array_of_m_khi_mu_mq(:,:,:)
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
+        real(dp) :: tharm_sph(grid%ntheta,grid%np)
+        real(dp) :: q(3), qx(grid%nx), qy(grid%ny), qz(grid%nz) ! vector q and its components tabulated
+        integer :: mqx(grid%nx), mqy(grid%ny), mqz(grid%nz)
+        type :: fft2d_type
+            type(c_ptr) :: plan
+            real(dp), allocatable    :: in(:,:)
+            complex(dp), allocatable :: out(:,:)
+            logical :: isalreadyplanned
+        end type
+        type :: ifft2d_type
+            type(c_ptr) :: plan
+            complex(dp), allocatable :: in(:,:)
+            real(dp), allocatable    :: out(:,:)
+            logical :: isalreadyplanned
+        end type
+        type :: fft3d_type
+            type(c_ptr) :: plan
+            complex(dp), allocatable :: in(:,:,:)
+        end type
+        type(  fft2d_type ), save ::  fft2d
+        type( ifft2d_type ), save :: ifft2d
+        type( fft3d_type ) :: fft3d
+        real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
+        real(dp) :: lx, ly, lz
+        integer :: molrotsymorder
 
-PRINT*, "============= IN MODULE C_PROJ =============="
+        if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
+        if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
+        if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(grid%npsi/2+1,grid%nphi))
+        if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(grid%npsi,grid%nphi))
+        if (.not.allocated(fft3d%in)) allocate (fft3d%in(grid%nx,grid%ny,grid%nz))
+
+
+        lx=grid%lx
+        ly=grid%ly
+        lz=grid%lz
         mmax=grid%mmax
+        molrotsymorder=grid%molrotsymorder
         kT=thermo%kbT
         dv=grid%dv
         nx=grid%nx
@@ -127,6 +138,13 @@ PRINT*, "============= IN MODULE C_PROJ =============="
         ntheta=grid%ntheta
         nphi=grid%nphi
         npsi=grid%npsi
+
+        if (np/=SUM( [( [( [( 1 ,mu=0,m,molrotsymorder)], mup=-m,m)], m=0,mmax)] )) then
+            print*,"problem in np in module_energy_cproj"
+            error stop
+        end if
+
+        if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
         allocate (deltarho(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
         allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
@@ -153,20 +171,6 @@ PRINT*, "============= IN MODULE C_PROJ =============="
         ! 7/ FFT3D-C2D gamma_p(q) => gamma_p(r)
         ! 8/ gather projections: gamma_p(r) => gamma(r)
 
-
-
-        ! PRINT*,"========"
-        ! print*,"mmax              =", mmax
-        ! print*,"molrotsymorder    =", molrotsymorder
-        ! print*,"np for density =", np
-        ! print*,"np for c(q)    =", nalpha
-        ! print*,"ntheta            =", ntheta
-        ! print*,"nphi              =", nphi
-        ! print*,"npsi              =", npsi
-        ! print*,"nx,ny,nz          =", [nx,ny,nz]
-        ! PRINT*,"lx,ly,lz          =", [lx,ly,lz]
-        ! PRINT*,"========"
-        ! PRINT*,
 
         if(mmax/=grid%mmax) stop "mmax pas bon"
         if(nx/=grid%nx) stop "nx pas bon"
@@ -297,12 +301,10 @@ PRINT*, "============= IN MODULE C_PROJ =============="
         ! On choisit les mu>=0 (cf doc de Luc)
         !
         if (.not. fft2d%isalreadyplanned) then
-            print*, "planning fft2d"
             call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
             fft2d%isalreadyplanned =.true.
         end if
         if (.not. ifft2d%isalreadyplanned) then
-            print*, "planning ifft2d"
             call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
             ifft2d%isalreadyplanned =.true.
         end if
@@ -582,7 +584,6 @@ PRINT*, "============= IN MODULE C_PROJ =============="
         end do
 
 
-        call cpu_time(t6)
 
         !
         ! FFT3D from Fourier space to real space
@@ -640,29 +641,7 @@ PRINT*, "============= IN MODULE C_PROJ =============="
         print*,"norm2@df_cproj=",norm2(df_cproj)
         end block
 
-
-
-        !
-        ! Timings
-        !
-        ! PRINT*,"============"
-        ! PRINT*,"TIMINGS (sec)"
-        ! PRINT*,"============"
-        ! PRINT*,"Initialization               =",tb-tc
-        ! PRINT*,"Projection                   =",ta-tb
-        ! PRINT*,"Plan the FFT3D               =",t0-ta
-        ! PRINT*,"FFT3D                        =",t1-t0
-        ! PRINT*,"Rotate from lab to mol frame =",t3-t2
-        ! PRINT*,"OZ                           =",t4-t3
-        ! PRINT*,"Rotate from mol to lab frame =",t5-t4
-        ! PRINT*,"All lab->mol + OZ + mol->lab =",t6-t1
-        ! PRINT*,"FFT3D inverse                =",t7-t6
-        ! PRINT*,"Gather projections           =",t8-t7
-        ! PRINT*,"============"
-        ! PRINT*,"TOTAL TIME                   =",t8-tc
-        ! PRINT*,"============"
         df=df
-PRINT*, "============= FIN MODULE C_PROJ =============="
 
 
         !=============================================================================================
