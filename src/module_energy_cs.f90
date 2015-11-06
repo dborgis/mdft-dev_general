@@ -121,5 +121,24 @@ contains
             end do
         end do
 
+
+        block
+        real(dp) :: df_cs(nx,ny,nz,no,ns)
+        df_cs=0._dp
+        do is=1,ns
+            do io=1,no
+                do iz=1,nz
+                    do iy=1,ny
+                        do ix=1,nx
+                            df_cs(ix,iy,iz,io,is) = df_cs(ix,iy,iz,io,is) -kT*dv*grid%w(io)*fftw3%out_backward(ix,iy,iz)
+                        end do
+                    end do
+                end do
+            end do
+        end do
+        print*,"norm2@df_cs=",norm2(df_cs)
+        end block
+
+
     end subroutine energy_cs
 end module module_energy_cs

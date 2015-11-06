@@ -617,6 +617,9 @@ PRINT*, "============= IN MODULE C_PROJ =============="
             end do
         end do
 
+        block
+            real(dp) :: df_cproj(nx,ny,nz,no)
+            df_cproj=0._dp
         ff=0._dp
         do ix=1,nx
             do iy=1,ny
@@ -625,14 +628,17 @@ PRINT*, "============= IN MODULE C_PROJ =============="
                         do iphi=1,nphi
                             do ipsi=1,npsi
                                 io=grid%indo(itheta,iphi,ipsi)
-                                gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
-                ff=ff-kT/2._dp*dv*gamma_o(ix,iy,iz,io)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2
+        gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
+        ff=ff-kT/2._dp*dv*gamma_o(ix,iy,iz,io)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2
+        df_cproj(ix,iy,iz,io)=-kT*dv*gamma_o(ix,iy,iz,io)/0.0333*grid%w(io)**2
                             end do
                         end do
                     end do
                 end do
             end do
-        enddo
+        end do
+        print*,"norm2@df_cproj=",norm2(df_cproj)
+        end block
 
 
 
@@ -656,9 +662,7 @@ PRINT*, "============= IN MODULE C_PROJ =============="
         ! PRINT*,"TOTAL TIME                   =",t8-tc
         ! PRINT*,"============"
         df=df
-print*, "ff_exc_cpro=",ff
 PRINT*, "============= FIN MODULE C_PROJ =============="
-stop "fin de module_cproj"
 
 
         !=============================================================================================
