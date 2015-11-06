@@ -82,6 +82,7 @@ contains
         end select
 !        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
 
+
         do concurrent (s=1: solvent(1)%nspec)
             vextq_is_allocated = allocated (solvent(s)%vextq)
             do io = 1, grid%no
@@ -108,7 +109,6 @@ contains
                 end do
             end do
         end do
-
     end subroutine init_density
 
 

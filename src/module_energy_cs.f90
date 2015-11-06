@@ -19,7 +19,6 @@ contains
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
         real(dp), intent(inout) :: dF(:,:,:,:,:)
 
-
         if (.not.allocated(solvent)) call print_solvent_not_allocated ("Dans module_energy_cs")
         if (solvent(1)%nspec >1) then
             print*, "in energy_cs, you want several species but that's not implemented"
@@ -41,7 +40,7 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%density(ix,iy,iz,:) * grid%w(:)) - solvent(1)%n0
+                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%density(ix,iy,iz,:) * grid%w(:)) - solvent(1)%n0 ! =n(r)-n0=
                 end do
             end do
         end do
@@ -50,7 +49,6 @@ contains
         ! FFT(deltan(x)) => deltan(k)
         !
         call dfftw_execute( fftw3%plan_forward )
-
         !
         ! Now we should take care of cs(k). Do we already loaded it?
         !

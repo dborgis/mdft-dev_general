@@ -16,7 +16,6 @@ contains
         use module_input, only: getinput
         use module_solute, only: solute
         use module_solvent, only: solvent
-        ! use external_potential, only: Vext_total, Vext_q, vextdef0
         use module_grid, only: grid
 
         IMPLICIT NONE
@@ -782,7 +781,6 @@ contains
                 solvent(s)%vext = solvent(s)%vext_threeshold
             end where
         end do
-
 
         ! IF (verbose) THEN
         !     BLOCK

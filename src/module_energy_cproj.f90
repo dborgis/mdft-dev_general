@@ -1,13 +1,15 @@
 module module_energy_cproj
     use iso_c_binding
+    use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
     use mathematica, only: fact
     implicit none
     private
-    include 'fftw3.f03'                 ! Needed by FFTW3
-    integer, parameter :: dp=C_DOUBLE   ! Corresponds to double precision in usual architectures
+    include 'fftw3.f03' ! Needed by FFTW3. Needs iso_c_binding
+
     complex(dp), parameter :: imag=(0_dp,1_dp), zeroc=complex(0._dp,0._dp)
+    real(dp), parameter :: eightpisq=8._dp*acos(-1._dp)**2
 
     integer :: m,n,mup,mu,nu,khi,i,ix,iy,iz,iix,iiy,iiz,p,itheta,ip,iq,ia,iphi,ipsi,io,no
 
@@ -21,7 +23,7 @@ module module_energy_cproj
     integer, PARAMETER :: molrotsymorder=1
 
 
-    integer, parameter :: nproj = SUM( [( [( [( 1 ,mu=0,m,molrotsymorder)], mup=-m,m)], m=0,mmax)] )
+    integer, parameter :: np = SUM( [( [( [( 1 ,mu=0,m,molrotsymorder)], mup=-m,m)], m=0,mmax)] )
     integer, parameter :: ntheta =   mmax+1
     integer, parameter :: nphi   = 2*mmax+1
     integer, parameter :: npsi   = 2*(mmax/molrotsymorder)+1
@@ -30,23 +32,26 @@ module module_energy_cproj
     ! Arrays to translate index of vector to tuple of projections, and inverse
     ! alpha(m,mup,mu), m(alpha), mup(alpha), mu(alpha)
     !
-    INTEGER ::  indp(0:mmax,-mmax:mmax,0:mmax) ! alpha(m,mup,mu)
-    INTEGER ::  im(nproj)                       ! m(alpha)
-    INTEGER ::  imup(nproj)                    ! mup(alpha)
-    INTEGER ::  imu(nproj)                        ! mu(alpha)
+    integer, allocatable :: indp(:,:,:) ! index of the projection corresponding to m, mup, mu
+    integer, allocatable :: im(:) ! m for projection 1 to np
+    integer, allocatable :: imup(:) ! mup for projection 1 to np. mup corresponds to phi
+    integer, allocatable :: imu(:) ! mu for projection 1 to np. mu corresponds to psi
 
     !
     ! Direct correlation functions from Luc
     !
     integer, parameter :: nq=200 ! nombre de valeurs de |q| dans le fichier de c(q) de luc
-    integer, parameter :: nalpha=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 ! number of projections in file c(q)
-    integer :: ialpha(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
     type :: ck_type
         logical :: isok = .false.
+        real(dp) :: q
+        integer :: na ! number of projections for the direct correlation function
+        integer :: nq=200 ! number of q points in c(q)
+        integer, allocatable :: inda(:,:,:,:,:) ! inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
+        real(dp) :: dq
+        real(dp), allocatable :: normq(:)
     end type
     type (ck_type) :: myck
-    complex(dp) :: ck(nalpha,nq), ck_q(nalpha)
-    real(dp) :: normq(nq) ! contient pour chaque indice de c(iq) la norme de q associée
+    complex(dp), allocatable :: ck(:,:)
 
     real(dp), parameter :: pi=acos(-1._dp), twopi=2._dp*pi
     real(dp), parameter :: dphi = twopi/real(nphi,dp)
@@ -63,30 +68,25 @@ module module_energy_cproj
         type(c_ptr) :: plan
         real(dp)    :: in(npsi,nphi)
         complex(dp) :: out(npsi/2+1,nphi)
+        logical :: isalreadyplanned
     end type
     type :: ifft2d_type
         type(c_ptr) :: plan
         complex(dp) :: in(npsi/2+1,nphi)
         real(dp)    :: out(npsi,nphi)
+        logical :: isalreadyplanned
     end type
     type :: fft3d_type
         type(c_ptr) :: plan
         complex(dp) :: in(nx,ny,nz)
     end type
-    type(  fft2d_type ) ::  fft2d
-    type( ifft2d_type ) :: ifft2d
+    type(  fft2d_type ), save ::  fft2d
+    type( ifft2d_type ), save :: ifft2d
     type( fft3d_type ) :: fft3d
-    real(dp) :: tharm_sph(ntheta,nproj), t0, t1, t2, t3, t4, t5, ta, tb, tc, t6, t7, t8
-    real(dp) :: q(3), tqx(nx), tqy(ny), tqz(nz) ! vector q and its components tabulated
-    integer :: tqxi(nx), tqyi(ny), tqzi(nz)
-    complex(dp) :: deltarho_m_mup_mu_q   (0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: deltarho_m_mup_mu_mq(0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: xxx_temp_array_of_m_khi_mu_q   (0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: xxx_temp_array_of_m_khi_mu_mq(0:mmax,-mmax:mmax,-mmax:mmax)
-    complex(dp) :: deltarho_p_q(1:nproj), deltarho_p_mq(1:nproj)
-    complex(dp) :: gamma_p_q(1:nproj), gamma_p_mq(1:nproj)
-    complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
-    integer(1), parameter :: errorgenerator=-1
+    real(dp) :: tharm_sph(ntheta,np), t0, t6
+    real(dp) :: q(3), qx(nx), qy(ny), qz(nz) ! vector q and its components tabulated
+    integer :: mqx(nx), mqy(ny), mqz(nz)
+    integer, parameter :: errorgenerator=-1
 
     public :: energy_cproj
 
@@ -101,29 +101,47 @@ contains
         complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
         real(dp), intent(out) :: ff
         real(dp), intent(inout) :: df(:,:,:,:,:)
-        real(dp) :: dv, dq, kT
+        real(dp) :: dv, kT
         complex(dp) :: ffc
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
         complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
         complex(dp), allocatable :: deltarho_m_mup_mu_q(:,:,:), deltarho_m_mup_mu_mq(:,:,:)
+        integer :: nx, ny, nz, np, no, ntheta, nphi, npsi, mmax, na, nq
+        complex(dp), allocatable :: xxx_temp_array_of_m_khi_mu_q(:,:,:), xxx_temp_array_of_m_khi_mu_mq(:,:,:)
+        complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
+        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
 
-
+PRINT*, "============= IN MODULE C_PROJ =============="
+        mmax=grid%mmax
         kT=thermo%kbT
         dv=grid%dv
+        nx=grid%nx
+        ny=grid%ny
+        nz=grid%nz
+        np=grid%np
         no=grid%no
+        na=myck%na
+        nq=myck%nq
+        ntheta=grid%ntheta
+        nphi=grid%nphi
+        npsi=grid%npsi
 
         allocate (deltarho(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
         allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
         allocate (gamma_o(nx,ny,nz,no) ,source=zero)
 
-        allocate (gamma_p(nproj,nx,ny,nz) ,source=zeroc)
-        allocate (deltarho_p(nproj,nx,ny,nz) ,source=zeroc)
-        allocate (deltarho_p_q(nproj) ,source=zeroc)
-        allocate (deltarho_p_mq(nproj) ,source=zeroc)
-        allocate (deltarho_m_mup_mu_q(m,mup,mu) ,source=zeroc)
-        allocate (deltarho_m_mup_mu_mq(m,mup,mu) ,source=zeroc)
+        allocate (gamma_p_q(np), source=zeroc)
+        allocate (gamma_p_mq(np), source=zeroc)
+        allocate (gamma_p(np,nx,ny,nz) ,source=zeroc)
+        allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
+        allocate (deltarho_p_q(np) ,source=zeroc)
+        allocate (deltarho_p_mq(np) ,source=zeroc)
+        allocate (deltarho_m_mup_mu_q(0:mmax,-mmax:mmax, -mmax:mmax) ,source=zeroc)   ! TODO should be 0:mmax, -mmax:mmax, 0:mmax, isnt it ?
+        allocate (deltarho_m_mup_mu_mq(0:mmax,-mmax:mmax, -mmax:mmax) ,source=zeroc)  ! TODO should be 0:mmax, -mmax:mmax, 0:mmax, isnt it ?
+        allocate (xxx_temp_array_of_m_khi_mu_q(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
+        allocate (xxx_temp_array_of_m_khi_mu_mq(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
 
 
         ! 1/ get deltarho = rho-rho0
@@ -140,8 +158,8 @@ contains
         ! PRINT*,"========"
         ! print*,"mmax              =", mmax
         ! print*,"molrotsymorder    =", molrotsymorder
-        ! print*,"nproj for density =", nproj
-        ! print*,"nproj for c(q)    =", nalpha
+        ! print*,"np for density =", np
+        ! print*,"np for c(q)    =", nalpha
         ! print*,"ntheta            =", ntheta
         ! print*,"nphi              =", nphi
         ! print*,"npsi              =", npsi
@@ -159,19 +177,17 @@ contains
         if(lz/=grid%lz) stop "lz pas bon"
         if(molrotsymorder/=grid%molrotsymorder) stop "molrotsymorder pas bon"
 
-        call cpu_time(tc)
-
         !
-        ! Toutes les projections sont stockées dans un meme vecteur de taille nproj
+        ! Toutes les projections sont stockées dans un meme vecteur de taille np
         ! indp(m,mup,mu) lie le triplet (m,mup,mu) a l'unique indice de projection ip
         ! im(p) donne inversement le m correspondant à l'indice p dans le tableau des projections
         ! On a donc indp(im(p),imup(p),imu(p)) == p
         !
-        indp = -huge(1)
-        im    = -huge(1)
-        imup  = -huge(1)
-        imu   = -huge(1)
-        p=0
+        if (.not.allocated(indp)) allocate ( indp(0:mmax,-mmax:mmax, 0:mmax) ,source=-huge(1))
+        if (.not.allocated(im))   allocate ( im(np) ,source=-huge(1))
+        if (.not.allocated(imup)) allocate ( imup(np) ,source=-huge(1))
+        if (.not.allocated(imu))  allocate ( imu(np) ,source=-huge(1))
+        ip=0
         do m=0,mmax
             do mup=-m,m
                 !
@@ -182,18 +198,18 @@ contains
                 ! Also, the array imu only contains even values (des valeurs paires)
                 !
                 do mu=0,m,molrotsymorder
-                    p=p+1
-                    IF (p > nproj) ERROR STOP "p > nproj at line 166"
-                    indp(m,mup,mu) = p
-                    im(p) = m
-                    imup(p) = mup
-                    imu(p) = mu
+                    ip=ip+1
+                    IF (ip > np) ERROR STOP "p > np at line 166"
+                    indp(m,mup,mu) = ip
+                    im(ip) = m
+                    imup(ip) = mup
+                    imu(ip) = mu
                 end do
             end do
         end do
 
         if (debug) then
-            if (p /= nproj) error stop "p /= nproj in energy_cproj"
+            if (ip /= np) error stop "ip /= np in energy_cproj"
             if ( any(abs(im)>mmax) .or. any(abs(imup)>mmax) .or. any(abs(imu)>mmax) ) then
                 print*, "tabulated m, mup or mu have incorrect values"
                 error stop
@@ -208,8 +224,8 @@ contains
             write(11,*)"Non-zero projections:"
             write(11,*)"        index         m          mup          mu"
             write(11,*)"        -----        ---         ---          --"
-            do p=1,nproj
-                write(11,*) p, im(p), imup(p), imu(p)
+            do ip=1,np
+                write(11,*) ip, im(ip), imup(ip), imu(ip)
             end do
             close(11)
         end if
@@ -226,32 +242,32 @@ contains
         end block
 
 
-                !
-                ! Tabulate generalized spherical harmonics in array tharm_sph(theta,proj)
-                ! where theta can be any of the GaussLegendre integration roots for theta
-                ! where proj is an index related to a tuple {m,mup,mu}
-                ! Blum's notation :
-                ! m is related to theta
-                ! mup is related to phi
-                ! mu is related to psi
-                ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
-                !
-                tharm_sph = 0._dp
-                do ip=1,nproj
-                    m = im(ip)
-                    mup = imup(ip)
-                    mu = imu(ip)
-                    do itheta=1,ntheta
-                        tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
-                    end do
-                end do
-                if (mmax==0) then
-                    if (size(tharm_sph,1) /= size(tharm_sph,2) .or. tharm_sph(1,1)/=1._dp) then
-                        print*, "in energy_cproj, pour mmax==0, tharm_sph ne vaut pas 1."
-                        print*, "tharm_sph(itheta=1,ip=1) =", tharm_sph(1,1)
-                        error stop
-                    end if
-                end if
+        !
+        ! Tabulate generalized spherical harmonics in array tharm_sph(theta,proj)
+        ! where theta can be any of the GaussLegendre integration roots for theta
+        ! where proj is an index related to a tuple {m,mup,mu}
+        ! Blum's notation :
+        ! m is related to theta
+        ! mup is related to phi
+        ! mu is related to psi
+        ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
+        !
+        tharm_sph = 0._dp
+        do ip=1,np
+            m = im(ip)
+            mup = imup(ip)
+            mu = imu(ip)
+            do itheta=1,ntheta
+                tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
+            end do
+        end do
+        if (mmax==0) then
+            if (size(tharm_sph,1) /= size(tharm_sph,2) .or. tharm_sph(1,1)/=1._dp) then
+                print*, "in energy_cproj, pour mmax==0, tharm_sph ne vaut pas 1."
+                print*, "tharm_sph(itheta=1,ip=1) =", tharm_sph(1,1)
+                error stop
+            end if
+        end if
 
 
         !
@@ -273,34 +289,40 @@ contains
             end do
         end do
 
+
         !
         ! On passe tout de suite en projection, dans le repère cartesien
         ! ces projections sont complexes, mais la symetrie hermitienne
         ! permet de ne garder que les mup>=0 ou les mu>=0.
         ! On choisit les mu>=0 (cf doc de Luc)
         !
-        call cpu_time(tb)
-        call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE )
-        call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+        if (.not. fft2d%isalreadyplanned) then
+            print*, "planning fft2d"
+            call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
+            fft2d%isalreadyplanned =.true.
+        end if
+        if (.not. ifft2d%isalreadyplanned) then
+            print*, "planning ifft2d"
+            call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+            ifft2d%isalreadyplanned =.true.
+        end if
 
-
-
-        DO iz=1,nz
-            DO iy=1,ny
-                DO ix=1,nx
-                    deltarho_p(1:nproj,ix,iy,iz) = euler2proj( deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) )
+        do iz=1,nz
+            do iy=1,ny
+                do ix=1,nx
+                    deltarho_p(1:np,ix,iy,iz) = euler2proj( deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) )
                     !
                     ! Test if result contains NaN or Inf
                     !
-                    if (debug .and. any(deltarho_p(1:nproj,ix,iy,iz) /= deltarho_p(1:nproj,ix,iy,iz)) ) then
+                    if (debug .and. any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
                         print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
                         print*, "deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) =", deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi)
-                        print*, "deltarho_p(1:nproj,ix,iy,iz) = ",deltarho_p(1:nproj,ix,iy,iz)
+                        print*, "deltarho_p(1:np,ix,iy,iz) = ",deltarho_p(1:np,ix,iy,iz)
                         error stop "Bug found in euler2proj. NaN or Inf is hiding somewhere."
                     end if
-                END DO
-            END DO
-        END DO
+                end do
+            end do
+        end do
         if (mmax==0) then
             if (complex(deltarho(1,1,1,1,1,1),0._dp) /= deltarho_p(1,1,1,1)) then
                 print*, "in energy_cproj et mmax==0, deltarho /= deltarho_p avant meme la FFT3D"
@@ -310,22 +332,21 @@ contains
             end if
         end if
 
-
         !
         ! On a les projections sur la grille cartesienne
         ! On veut passer dans l'espace de Fourier pour calculer les convolutions spatiales
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_FORWARD, FFTW_ESTIMATE ) ! in-place
-        do ip=1,nproj
+        call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_BACKWARD, FFTW_ESTIMATE ) ! in-place. BACKWARD means exp(iqr)
+        do ip=1,np
             ! deltarho_p in real space (is a complex number)
             fft3d%in = deltarho_p(ip,1:nx,1:ny,1:nz)
             call dfftw_execute( fft3d%plan )
             deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
             ! now deltarhop in fourier space
         end do
-        if (mmax==0) then
+        if (mmax==0 .and. nx==1 .and. ny==1 .and. nz==1) then
             if (complex(deltarho(1,1,1,1,1,1),0._dp) /= deltarho_p(1,1,1,1)) then
                 print*, "in energy_cproj et mmax=0, deltarho /= deltarho_p apres la FFT3D"
                 print*, "deltarho(1,1,1,1,1,1),0._dp) =", complex(deltarho(1,1,1,1,1,1),0._dp)
@@ -351,12 +372,12 @@ contains
         ! And the inverse index that gives vector -q
         ! See function qproj_inv
         !
-        tqx = [( qproj(ix,nx,lx), ix=1,nx )]
-        tqy = [( qproj(iy,ny,ly), iy=1,ny )]
-        tqz = [( qproj(iz,nz,lz), iz=1,nz )]
-        tqxi = [( qproj_inv(-tqx(ix),nx,lx)  ,  ix=1,nx  )]
-        tqyi = [( qproj_inv(-tqy(iy),ny,ly)  ,  iy=1,ny  )]
-        tqzi = [( qproj_inv(-tqz(iz),nz,lz)  ,  iz=1,nz  )]
+        qx = [( qproj(ix,nx,lx), ix=1,nx )]
+        qy = [( qproj(iy,ny,ly), iy=1,ny )]
+        qz = [( qproj(iz,nz,lz), iz=1,nz )]
+        mqx = [( qproj_inv(-qx(ix),nx,lx),  ix=1,nx  )]
+        mqy = [( qproj_inv(-qy(iy),ny,ly),  iy=1,ny  )]
+        mqz = [( qproj_inv(-qz(iz),nz,lz),  iz=1,nz  )]
 
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
@@ -366,8 +387,7 @@ contains
         !
         !call read_ck_nmax (ck, normq)
         !call read_ck_toutes_nmax( ck, normq)
-        call read_ck_nonzero( ck, normq )
-        dq=normq(2)
+        if (.not.myck%isok) call read_ck_nonzero
 
         !
         ! For all vectors q and -q handled simultaneously
@@ -378,7 +398,7 @@ contains
                     !
                     ! cartesian coordinates of vector q in lab frame
                     !
-                    q = [tqx(ix_q), tqy(iy_q), tqz(iz_q)]
+                    q = [qx(ix_q), qy(iy_q), qz(iz_q)]
 
                     ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
                     ! block
@@ -413,11 +433,11 @@ contains
                     !
                     ! Find ix_mq,iy_mq,iz_mq so that q(ix_mq,iy_mq,iz_mq)= -q(ix_q,iy_q,iz_q)
                     !
-                    ix_mq = tqxi(ix_q)
-                    iy_mq = tqyi(iy_q)
-                    iz_mq = tqzi(iz_q)
+                    ix_mq = mqx(ix_q)
+                    iy_mq = mqy(iy_q)
+                    iz_mq = mqz(iz_q)
 
-                    if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then
+                    if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then ! this should only happen for ix=1 and ix=nx/2
                         q_eq_mq=.true.
                     else
                         q_eq_mq=.false.
@@ -431,9 +451,8 @@ contains
                     !
                     ! Move all projections to a smaller temporary array: deltarho_p_q (for q) and deltarho_p_mq (for -q)
                     !
-                    deltarho_p_q (1:nproj) = deltarho_p(1:nproj,ix_q,iy_q,iz_q)
-                    deltarho_p_mq(1:nproj) = deltarho_p(1:nproj,ix_mq,iy_mq,iz_mq)
-
+                    deltarho_p_q (1:np) = deltarho_p(1:np,ix_q,iy_q,iz_q)
+                    deltarho_p_mq(1:np) = deltarho_p(1:np,ix_mq,iy_mq,iz_mq)
 
                     !
                     ! Rotate projections from laboratory frame to molecular frame
@@ -442,25 +461,25 @@ contains
                     if ( any([ix_q, iy_q, iz_q]/=1) ) then  ! case 1,1,1 corresponds to |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
                         deltarho_m_mup_mu_q  = zeroc
                         deltarho_m_mup_mu_mq = zeroc
-                        DO ip=1,nproj
+                        DO ip=1,np
                             m = im(ip)
                             mup = imup(ip)
                             mu = imu(ip)
                             deltarho_m_mup_mu_q(m,mup,mu) = deltarho_p_q(ip)
                             deltarho_m_mup_mu_mq(m,mup,mu) = deltarho_p_mq(ip)
-                        END DO
+                        end do
                         xxx_temp_array_of_m_khi_mu_q = zeroc
                         xxx_temp_array_of_m_khi_mu_mq = zeroc
                         xxx_temp_array_of_m_khi_mu_q = lab2molframe  (deltarho_m_mup_mu_q, q)
                         xxx_temp_array_of_m_khi_mu_mq = lab2molframe (deltarho_m_mup_mu_mq, -q)
 
-                        DO ip=1,nproj
+                        DO ip=1,np
                             m = im(ip)
                             khi = imup(ip)
                             mu = imu(ip)
                             deltarho_p_q(ip) = xxx_temp_array_of_m_khi_mu_q(m,khi,mu)
                             deltarho_p_mq(ip) = xxx_temp_array_of_m_khi_mu_mq(m,khi,mu)
-                        END DO
+                        end do
                         ! now deltarho_p_q and deltarho_p_mq are in the molecular frame
                     END IF
 
@@ -469,56 +488,46 @@ contains
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = min( int(norm2(q)/dq)+1 ,size(normq))
-                    if (iq>size(normq)) then
-                        iq=size(normq)
+                    iq = int(norm2(q)/myck%dq)+1
+                    if (iq>nq) then
+                        iq=nq
                     else if (iq<=0) then
                         print*, "in energy_cproj, ik <=0"
                         error stop
                     end if
 
                     !
-                    ! Put ck(all projections,iq) to a smaller temp array, ck_q
-                    ! c(p,q) => c_local(p)
-                    !
-                    ck_q(:) = ck(:,iq)
-
-                    !
                     ! Ornstein-Zernike in the molecular frame
                     !
-
-                    gamma_p_q(1:nproj) = zeroc
-                    gamma_p_mq(1:nproj) = zeroc
+                    gamma_p_q(1:np) = zeroc
+                    gamma_p_mq(1:np) = zeroc
 
                     DO khi=-mmax,mmax
                         DO m=ABS(khi),mmax
                             DO mu=0,m,molrotsymorder ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
                                 if (mod(mu,molrotsymorder) /= 0) cycle
 
-
-
-
-
-
-
                                 gamma_m_khi_mu_q= zeroc
                                 gamma_m_khi_mu_mq = zeroc
                                 do n=abs(khi),mmax
                                     do nu=-n,n,molrotsymorder
                                         if (mod(nu,molrotsymorder) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
-                                        print*, "m, n, mu, nu, khi", m, n, mu, nu, khi
 
-                                        ia = ialpha(m,n,mu,nu,khi)
-                                        if (ia==errorgenerator) stop "ia = errorgenerator omg"
-                                        if (ia==0) stop "ia=0 in energy_cproj"
+                                        ia = myck%inda(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
+                                        if (ia<=0) then
+                                            error stop "ia<=0"
+                                        else if (ia>myck%na) then
+                                            error stop "ia>na"
+                                        end if
+
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
                                             ip = indp(n,khi,-nu)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck_q(ia) *deltarho_p_q(ip)
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck_q(ia) *deltarho_p_mq(ip)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
                                         else ! transform delta rho (n, khi, -nu)(q) into conjg( deltarho(n,khi,nu)(-q) )
                                             ip = indp(n,khi,nu)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(n) *ck_q(ia) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(n) *ck_q(ia) *conjg(deltarho_p_q(ip))
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
                                         end if
                                     end do
                                 end do
@@ -528,9 +537,9 @@ contains
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
 
 
-                            END DO
-                        END DO
-                    END DO
+                            end do
+                        end do
+                    end do
 
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
@@ -539,28 +548,28 @@ contains
                         xxx_temp_array_of_m_khi_mu_q=zeroc
                         xxx_temp_array_of_m_khi_mu_mq=zeroc
 
-                        DO ip=1,nproj
+                        DO ip=1,np
                             m=im(ip)
                             khi=imup(ip)
                             mu=imu(ip)
                             xxx_temp_array_of_m_khi_mu_q(m,khi,mu) = gamma_p_q(ip)
                             xxx_temp_array_of_m_khi_mu_mq(m,khi,mu) = gamma_p_mq(ip)
-                        END DO
+                        end do
 
                         deltarho_m_mup_mu_q = mol2labframe (xxx_temp_array_of_m_khi_mu_q, q)
                         deltarho_m_mup_mu_mq = mol2labframe (xxx_temp_array_of_m_khi_mu_mq, -q)
 
-                        DO ip=1,nproj
+                        DO ip=1,np
                             m = im(ip)
                             mup = imup(ip)
                             mu = imu(ip)
                             gamma_p_q(ip) = deltarho_m_mup_mu_q(m,mup,mu)
                             gamma_p_mq(ip) = deltarho_m_mup_mu_mq(m,mup,mu)
-                        END DO
+                        end do
                     END IF
 
-                    gamma_p(1:nproj, ix_q,  iy_q,  iz_q) = gamma_p_q(1:nproj)
-                    gamma_p(1:nproj, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:nproj)
+                    gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
+                    gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
 
                     if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq)) then
                         print*, "gamma_p_q", gamma_p_q
@@ -578,22 +587,22 @@ contains
         !
         ! FFT3D from Fourier space to real space
         !
-        call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_BACKWARD, FFTW_MEASURE )
-        DO ip= 1, nproj
+        call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_FORWARD, FFTW_MEASURE )
+        DO ip=1,np
             fft3d%in = gamma_p(ip,1:nx,1:ny,1:nz)
             call dfftw_execute( fft3d%plan )
             gamma_p(ip,:,:,:) = fft3d%in/real(nx*ny*nz,dp)
-        END DO
+        end do
 
-        ffc=sum(gamma_p(1:nproj,1:nx,1:ny,1:nz)*deltarho_p(1:nproj,1:nx,1:ny,1:nz))/real(nx*ny*nz,dp)
-        ! ffc should be real (have no imaginary part)
-        if (abs(aimag(ffc))>epsilon(1._dp)) then
-            print*, "aimag(ffc)/=0 in energy_cproj"
-            print*, "ffc =", ffc
-            error stop
-        end if
-        ff=-thermo%kbT/2._dp*dv*real(ffc,dp)
-        print*, "ff from aimag=", ff
+        ffc=sum(gamma_p(1:np,1:nx,1:ny,1:nz)*deltarho_p(1:np,1:nx,1:ny,1:nz))/real(nx*ny*nz,dp)
+        ! ! ffc should be real (have no imaginary part)
+        ! if (abs(aimag(ffc))>epsilon(1._dp)) then
+        !     print*, "aimag(ffc)/=0 in energy_cproj"
+        !     print*, "ffc =", ffc
+        !     error stop
+        ! end if
+        ! ff=-thermo%kbT/2._dp*dv*real(ffc,dp)*eightpisq**2/0.033
+        ! print*, "ff from aimag=", ff
 
 
         !
@@ -603,28 +612,27 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    gamma(ix,iy,iz,1:ntheta,1:nphi,1:npsi) = proj2euler( gamma_p(1:nproj,ix,iy,iz) )
+                    gamma(ix,iy,iz,1:ntheta,1:nphi,1:npsi) = proj2euler( gamma_p(1:np,ix,iy,iz) )
                 end do
             end do
         end do
 
-
-ff=0._dp
-            do ix=1,nx
-                do iy=1,ny
-                    do iz=1,nz
-                        do itheta=1,ntheta
-                            do iphi=1,nphi
-                                do ipsi=1,npsi
-                                    io=grid%indo(itheta,iphi,ipsi)
-                                    gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
-    ff=ff-kT/2._dp*dv*gamma_o(ix,iy,iz,io)*solvent(1)%density(ix,iy,iz,io)*grid%w(io)
-                                end do
+        ff=0._dp
+        do ix=1,nx
+            do iy=1,ny
+                do iz=1,nz
+                    do itheta=1,ntheta
+                        do iphi=1,nphi
+                            do ipsi=1,npsi
+                                io=grid%indo(itheta,iphi,ipsi)
+                                gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
+                ff=ff-kT/2._dp*dv*gamma_o(ix,iy,iz,io)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2
                             end do
                         end do
                     end do
                 end do
-            enddo
+            end do
+        enddo
 
 
 
@@ -648,7 +656,9 @@ ff=0._dp
         ! PRINT*,"TOTAL TIME                   =",t8-tc
         ! PRINT*,"============"
         df=df
-
+print*, "ff_exc_cpro=",ff
+PRINT*, "============= FIN MODULE C_PROJ =============="
+stop "fin de module_cproj"
 
 
         !=============================================================================================
@@ -883,7 +893,7 @@ ff=0._dp
                 tsqrt(2)=tsqrt2
                 DO l=3,2*lmax+1
                     tsqrt(l) = SQRT(REAL(l,dp))
-                END DO
+                end do
                 !
                 ! Coefficients needed for the recursion
                 ! see eq 6.1 to 6.5 of Choi et al.
@@ -900,13 +910,13 @@ ff=0._dp
                             adenom = 1/(tsqrt(l+m1)*tsqrt(l-m1))
                             a(l,m,m1)=anumerator*adenom
                             b(l,m,m1)=bnumerator*adenom/tsqrt2
-                        END DO
+                        end do
                         m1=l
                         cdenom=1/(tsqrt(l+m1)*tsqrt(l+m1-1))
                         c(l,m,m1)=tsqrt2*anumerator*cdenom
                         d(l,m,m1)=       bnumerator*cdenom
-                    END DO
-                END DO
+                    end do
+                end do
             END IF
             !
             ! l > 1    Use recursion
@@ -933,7 +943,7 @@ ff=0._dp
                         end if
                         fi(l,-m,-m1)=(-1)**(m+m1)*fi(l,m,m1)
                         gi(l,-m,-m1)=-(-1)**(m+m1)*gi(l,m,m1)
-                    END DO
+                    end do
                     m1=l
                     if( m==-l) then
                         fi(l,m,m1)=d(l,-m,m1)*(fi(1,-1,+1)*fi(l1,m+1,m1-1)-gi(1,-1,+1)*gi(l1,m+1,m1-1))
@@ -951,8 +961,8 @@ ff=0._dp
                     end if
                     fi(l,-m,-m1)=(-1)**(m+m1)*fi(l,m,m1)
                     gi(l,-m,-m1)=-(-1)**(m+m1)*gi(l,m,m1)
-                END DO
-            END DO
+                end do
+            end do
             !
             ! fi and gi are the REAL and imaginary part of our rotation matrix
             !
@@ -988,7 +998,8 @@ ff=0._dp
                 qproj = twopi*REAL(i-1-imax,dp)/length
             END IF
         END FUNCTION qproj
-        !
+
+
         PURE FUNCTION qproj_inv( qi, imax, length)
             !
             ! You know the length of vector q in one direction, and you want to know what index in the table it comes from
@@ -1007,56 +1018,72 @@ ff=0._dp
             END IF
         END FUNCTION qproj_inv
 
-        SUBROUTINE read_ck_nonzero ( ck, normq )
+        subroutine read_ck_nonzero
             implicit none
-            integer :: i, nproj_max, iq, m, n, mu, nu, khi, ia
-            INTEGER, PARAMETER :: nalpha=SUM(  [([([([([(1,nu=-n,n)],mu=-m,m)],&
-            n=abs(khi),mmax)],m=abs(khi),mmax)],khi=-mmax,mmax)]  )
-            !INTEGER, PARAMETER :: nalpha=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 ! number of projections for c^{m n}_{mu nu,khi}(q)
-            complex(dp), allocatable, dimension(:,:) :: ck_max
-            real(dp), intent(out) :: normq(nq)
-            complex(dp), intent(out) :: ck(nalpha,nq)
+            integer :: i, na, iq, m, n, mu, nu, khi, ia, nq
             character(3) :: somechar
-            integer :: ufile, ios
-            integer, allocatable, dimension(:) :: alp_max ,m_max, n_max, mu_max, nu_max, khi_max
+            integer :: ufile, ios, mmax
+            integer, allocatable, dimension(:) :: m_ck, n_ck, mu_ck, nu_ck, khi_ck
+
             if (myck%isok) return
+            nq=myck%nq
+            if (.not.allocated(myck%normq)) allocate(myck%normq(nq), source=0._dp)
+            mmax=grid%mmax
+
             select case (mmax)
             case (0)
-                nproj_max=1
+                na = 1
                 open(newunit=ufile, file="ck_nonzero_nmax0_ml", iostat=ios, status="old", action="read")
                 if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax0_ml"
             case (1)
-                nproj_max = 6
+                na = 6
                 open(newunit=ufile, file="ck_nonzero_nmax1_ml", iostat=ios, status="old", action="read")
                 if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax1_ml"
             case (2)
-                nproj_max = 75
+                na = 75
                 open(newunit=ufile, file="ck_nonzero_nmax2_ml", iostat=ios, status="old", action="read")
                 if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax2_ml"
             case (3)
-                nproj_max = 252
+                na = 252
                 open(newunit=ufile, file="ck_nonzero_nmax3_ml", iostat=ios, status="old", action="read")
                 if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax3_ml"
             case (4)
-                nproj_max = 877
+                na = 877
                 open(newunit=ufile, file="ck_nonzero_nmax4_ml", iostat=ios, status="old", action="read")
                 if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax4_ml"
             case (5)
-                nproj_max = 2002
+                na = 2002
                 open(newunit=ufile, file="ck_nonzero_nmax5_ml", iostat=ios, status="old", action="read")
                 if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax5_ml"
             case default
                 error stop "In energy_cproj, read_ck_nonzero valid only for mmax=0 to 5"
             end select
 
+            i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
+            if (na/=i) then
+                print*, "in read ck na /= nalpha"
+                print*, "na=",na
+                print*, "bruteforce=",i
+                error stop
+            end if
+            i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
+            if (na/=i) then
+                print*, "in read_ck_cproj nalpha est bizarre"
+                print*, "na=",na
+                print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
+                error stop
+            end if
 
-            allocate( ck_max(nproj_max,nq) ,source=zeroc)
-            allocate( alp_max(nproj_max) )
-            allocate( m_max(nproj_max) )
-            allocate( n_max(nproj_max) )
-            allocate( mu_max(nproj_max) )
-            allocate( nu_max(nproj_max) )
-            allocate( khi_max(nproj_max) )
+            if (allocated(ck) .and. .not.myck%isok) then
+                print*, "ck is already allocated but .not. myck%isok"
+                error stop
+            end if
+
+            if (.not.allocated( m_ck)) allocate( m_ck(na) )
+            if (.not.allocated( n_ck)) allocate( n_ck(na) )
+            if (.not.allocated( mu_ck)) allocate( mu_ck(na) )
+            if (.not.allocated( nu_ck)) allocate( nu_ck(na) )
+            if (.not.allocated( khi_ck)) allocate( khi_ck(na) )
             !
             ! Skip 10 lines of comments
             !
@@ -1064,86 +1091,78 @@ ff=0._dp
                 read(ufile,*)
             end do
 
-            read(ufile,*) somechar, alp_max
-            read(ufile,*) somechar, m_max
-            read(ufile,*) somechar, n_max
-            read(ufile,*) somechar, mu_max
-            read(ufile,*) somechar, nu_max
-            read(ufile,*) somechar, khi_max
+            read(ufile,*) somechar
+            read(ufile,*) somechar, m_ck
+            read(ufile,*) somechar, n_ck
+            read(ufile,*) somechar, mu_ck
+            read(ufile,*) somechar, nu_ck
+            read(ufile,*) somechar, khi_ck
             read(ufile,*)
 
+            allocate (myck%inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi
+            myck%inda = -huge(1)
+            do ia=1,na
+                m = m_ck(ia)
+                n = n_ck(ia)
+                mu = mu_ck(ia)
+                nu = nu_ck(ia)
+                khi = khi_ck(ia)
+                myck%inda(m,n,mu,nu,khi) = ia
+            end do
+
+            allocate( ck(na,nq), source=zeroc)
             do iq=1,nq
-                read(ufile,*) normq(iq), ck_max(:,iq)
+                read(ufile,*) myck%normq(iq), ck(:,iq)
             end do
-
-            ck = (0,0)
-            do i=1,nproj_max
-                m = m_max(i)
-                n = n_max(i)
-                mu = mu_max(i)
-                nu = nu_max(i)
-                khi = khi_max(i)
-                ia = alp_max(i)
-                ialpha(m,n,mu,nu,khi) = ia
-                ck(ia,1:nq) = ck_max(i,1:nq)
-            end do
-
-            if (allocated(ck_max)) deallocate(ck_max, stat=ios)
-            if (ios /= 0) print *, "ck_max: Deallocation request denied"
-            if (allocated(m_max)) deallocate(m_max, stat=ios)
-            if (ios /= 0) print *, "m_max: Deallocation request denied"
-            if (allocated(n_max)) deallocate(n_max, stat=ios)
-            if (ios /= 0) print *, "n_max: Deallocation request denied"
-            if (allocated(mu_max)) deallocate(mu_max, stat=ios)
-            if (ios /= 0) print *, "mu_max: Deallocation request denied"
-            if (allocated(nu_max)) deallocate(nu_max, stat=ios)
-            if (ios /= 0) print *, "nu_max: Deallocation request denied"
-            if (allocated(khi_max)) deallocate(khi_max, stat=ios)
-            if (ios /= 0) print *, "khi_max: Deallocation request denied"
-            if (allocated(alp_max)) deallocate(alp_max, stat=ios)
-            if (ios /= 0) print *, "alp_max: Deallocation request denied"
-
-            myck%isok=.true.
-
             close(ufile)
+            myck%dq = myck%normq(2)
+
+            deallocate (m_ck, n_ck, mu_ck, nu_ck, khi_ck)
+            myck%isok=.true.
+            myck%na=na
+            myck%nq=nq
         end subroutine read_ck_nonzero
 
 
         FUNCTION euler2proj (eulerangles) RESULT (projections)
             IMPLICIT NONE
-            REAL(dp), INTENT(IN) :: eulerangles(1:ntheta,1:nphi,1:npsi)
-            COMPLEX(dp) :: proj_theta(1:ntheta,0:mmax/molrotsymorder,-mmax:mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
-            COMPLEX(dp) :: projections(1:nproj)
-            INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip
+            REAL(dp), INTENT(IN) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
+            COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
+            COMPLEX(dp) :: projections(1:grid%np)
+            INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
             complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
+            mmax=grid%mmax
+            molrotsymorder=grid%molrotsymorder
             projections = zeroc
             proj_theta = zeroc
             DO itheta=1,ntheta
                 DO iphi=1,nphi
                     DO ipsi=1,npsi
                         fft2d%in(ipsi,iphi) = eulerangles(itheta,iphi,ipsi)
-                    END DO
-                END DO
+                    end do
+                end do
                 call dfftw_execute( fft2d%plan )
                 proj_theta(itheta,0:mmax/molrotsymorder,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
                 proj_theta(itheta,0:mmax/molrotsymorder,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
-            END DO
+            end do
             DO m=0,mmax
                 DO mup=-m,m
                     DO mu=0,m,molrotsymorder
                         ip = indp( m,mup,mu )
                         projections(ip)= SUM(proj_theta(:,mu,mup)*tharm_sph(:,ip)*wtheta(:))*fm(m)
-                    END DO
-                END DO
-            END DO
+                    end do
+                end do
+            end do
         END FUNCTION euler2proj
         !
         FUNCTION proj2euler (projections) RESULT (eulerangles)
             IMPLICIT NONE
-            REAL(dp) :: eulerangles(1:ntheta,1:nphi,1:npsi)
-            COMPLEX(dp), INTENT(IN) :: projections(1:nproj)
-            COMPLEX(dp) :: proj_theta(1:ntheta,0:mmax/molrotsymorder,-mmax:mmax)
-            INTEGER :: m, mup, mu, ip, itheta, iphi, ipsi
+            REAL(dp) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
+            COMPLEX(dp), INTENT(IN) :: projections(1:grid%np)
+            COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax)
+            INTEGER :: m, mup, mu, ip, itheta, iphi, ipsi, mmax, molrotsymorder
+            mmax=grid%mmax
+            molrotsymorder=grid%molrotsymorder
             proj_theta = CMPLX(0,0)
             DO itheta=1,ntheta
                 DO mup=-mmax,mmax
@@ -1152,10 +1171,10 @@ ff=0._dp
                             ip=indp(m,mup,mu)
                             proj_theta(itheta,mu,mup) = proj_theta(itheta,mu,mup)&
                             +projections(ip)*tharm_sph(itheta,ip)*fm(m)
-                        END DO
-                    END DO
-                END DO
-            END DO
+                        end do
+                    end do
+                end do
+            end do
             DO itheta=1,ntheta
                 ifft2d%in(:,1:mmax+1) = CONJG( proj_theta(itheta,:,0:mmax)   )
                 ifft2d%in(:,mmax+2:)  = CONJG( proj_theta(itheta,:,-mmax:-1) )
@@ -1163,19 +1182,19 @@ ff=0._dp
                 DO iphi=1,nphi
                     DO ipsi=1,npsi
                         eulerangles(itheta,iphi,ipsi) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
-                    END DO
-                END DO
-            END DO
+                    end do
+                end do
+            end do
         END FUNCTION proj2euler
 
         FUNCTION lab2molframe (datalabframe, q) RESULT (datamolframe)
             IMPLICIT NONE
-            COMPLEX(dp), INTENT(IN) :: datalabframe(0:mmax,-mmax:mmax,-mmax:mmax)
-            COMPLEX(dp) :: datamolframe(0:mmax,-mmax:mmax,-mmax:mmax)
+            COMPLEX(dp), INTENT(IN) :: datalabframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
+            COMPLEX(dp) :: datamolframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
             REAL(dp), INTENT(IN) :: q(1:3)
             INTEGER :: m, mup, mu, khi
-            COMPLEX(dp) :: GSHRot(0:mmax,-mmax:mmax,-mmax:mmax)
-            GSHRot = rotation_matrix_between_complex_spherical_harmonics(q,mmax)
+            COMPLEX(dp) :: GSHRot(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
+            GSHRot = rotation_matrix_between_complex_spherical_harmonics(q,grid%mmax)
             datamolframe = CMPLX(0,0)
             DO m=0,mmax
                 DO khi=-m,m
@@ -1184,21 +1203,21 @@ ff=0._dp
                         DO mup=-m,m
                             datamolframe(m,khi,mu) = datamolframe(m,khi,mu)&
                             + datalabframe(m,mup,mu) *GSHRot(m,mup,khi)
-                        END DO
+                        end do
                         !
-                    END DO
-                END DO
-            END DO
+                    end do
+                end do
+            end do
         END FUNCTION
         !
         FUNCTION mol2labframe (datamolframe, q) RESULT (datalabframe)
             IMPLICIT NONE
-            COMPLEX(dp) :: GSHRot(0:mmax,-mmax:mmax,-mmax:mmax)
-            COMPLEX(dp) :: datalabframe(0:mmax,-mmax:mmax,-mmax:mmax)
-            COMPLEX(dp), INTENT(IN) :: datamolframe(0:mmax,-mmax:mmax,-mmax:mmax)
+            COMPLEX(dp) :: GSHRot(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
+            COMPLEX(dp) :: datalabframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
+            COMPLEX(dp), INTENT(IN) :: datamolframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
             REAL(dp), INTENT(IN) :: q(1:3)
             INTEGER :: m, mup, mu, khi
-            GSHRot = CONJG(rotation_matrix_between_complex_spherical_harmonics(q,mmax))
+            GSHRot = CONJG(rotation_matrix_between_complex_spherical_harmonics(q,grid%mmax))
             datalabframe = CMPLX(0,0)
             DO m=0,mmax
                 DO mup=-m,m
@@ -1207,11 +1226,11 @@ ff=0._dp
                         DO khi=-m,m
                             datalabframe(m,mup,mu) = datalabframe(m,mup,mu) &
                             + datamolframe(m,khi,mu) *GSHRot(m,mup,khi)
-                        END DO
+                        end do
                         !
-                    END DO
-                END DO
-            END DO
+                    end do
+                end do
+            end do
         END FUNCTION mol2labframe
 
         PURE FUNCTION  angle(x,y)
@@ -1263,31 +1282,31 @@ end module module_energy_cproj
 ! FUNCTION projections_threecolumns2onecolumn (data3c) RESULT (data1c)
 !     IMPLICIT NONE
 !     COMPLEX(dp), INTENT(IN) :: data3c(0:mmax,-mmax:mmax,-mmax:mmax)
-!     COMPLEX(dp) :: data1c(nproj)
+!     COMPLEX(dp) :: data1c(np)
 !     INTEGER :: m, mup, mu, ip
 !     DO m=0,mmax
 !         DO mup=-m,m
 !             DO mu=0,m,molrotsymorder
 !                 ip=indp(m,mup,mu)
 !                 data1c(ip)=data3c(m,mup,mu)
-!             END DO
-!         END DO
-!     END DO
+!             end do
+!         end do
+!     end do
 ! END FUNCTION
 ! !
 ! !
 ! !
 ! FUNCTION projections_onecolumn2threecolumns (data1c) RESULT (data3c)
 !     IMPLICIT NONE
-!     COMPLEX(dp), INTENT(IN) :: data1c(nproj)
+!     COMPLEX(dp), INTENT(IN) :: data1c(np)
 !     COMPLEX(dp) :: data3c(0:mmax,-mmax:mmax,-mmax:mmax)
 !     INTEGER :: m, mup, mu, ip
-!     DO ip=1,nproj
+!     DO ip=1,np
 !         m=im(ip)
 !         mup=imup(ip)
 !         mu=imu(ip)
 !         data3c(m,mup,mu)=data1c(ip)
-!     END DO
+!     end do
 ! END FUNCTION
 
 
@@ -1324,7 +1343,7 @@ end module module_energy_cproj
 !
 !     DO i=1,10            !
 !         READ(iounit,*)   ! Skip 10 lines of comments
-!     END DO               !
+!     end do               !
 !
 !     READ(iounit,*) mychar, alp(:)
 !     READ(iounit,*) mychar, m(:)
@@ -1340,20 +1359,20 @@ end module module_energy_cproj
 !     PRINT*,"        -----        ---         ---          --          --          ---"
 !     DO ia=1,nalpha
 !         print*, alp(ia), m(ia), n(ia), mu(ia), nu(ia), khi(ia)
-!     END DO
+!     end do
 !     PRINT*
 !
-!     ialpha=errorgenerator
+!     myck%inda=errorgenerator
 !     DO ia=1,nalpha
-!         ialpha( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
-!     END DO
+!         myck%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
+!     end do
 !
 !     DO iq=1,nq
 !         READ(iounit,*) normq(iq), fi
 !         DO ia=1,nalpha
 !             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
-!         END DO
-!     END DO
+!         end do
+!     end do
 !
 !     !
 !     ! Close the file containing all the projections of the direct correlation function in the molecular frame
@@ -1401,7 +1420,7 @@ end module module_energy_cproj
 !     ! skip 10 lignes of comments
 !     DO i=1,10
 !         READ(11,*)
-!     END DO
+!     end do
 !     ! then read useful stuff
 !     alp=0
 !     m=0
@@ -1423,23 +1442,23 @@ end module module_energy_cproj
 !     ! print*,int(mu,1)
 !     ! print*,int(nu,1)
 !     ! print*,int(khi,1)
-!     ialpha=errorgenerator
+!     myck%inda=errorgenerator
 !     DO ia=1,nalpha
-!         ialpha( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
-!     END DO
+!         myck%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
+!     end do
 !     DO iq=1,nq
 !         READ(11,*) normq(iq), fi
 !         DO ia=1,nalpha
 !             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
-!         END DO
-!     END DO
+!         end do
+!     end do
 !     !
 !     !
 !     !
 !     ! print*,"== TEST READING =="
 !     ! do iq=3,3
 !     !     do ia=1,nalpha
-!     !         ia2=ialpha( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
+!     !         ia2=myck%inda( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
 !     !         block
 !     !             real :: diff
 !     !             diff = abs(  ck(ia2,iq)  -   (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))    )
