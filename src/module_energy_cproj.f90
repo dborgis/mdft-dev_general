@@ -113,6 +113,7 @@ contains
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         real(dp) :: lx, ly, lz
         integer :: molrotsymorder
+        logical, allocatable :: check(:,:,:)
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
@@ -160,7 +161,7 @@ contains
         allocate (deltarho_m_mup_mu_mq(0:mmax,-mmax:mmax, -mmax:mmax) ,source=zeroc)  ! TODO should be 0:mmax, -mmax:mmax, 0:mmax, isnt it ?
         allocate (xxx_temp_array_of_m_khi_mu_q(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
         allocate (xxx_temp_array_of_m_khi_mu_mq(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
-
+        allocate (check(nx,ny,nz), source=.false.)
 
         ! 1/ get deltarho = rho-rho0
         ! 2/ project deltarho => deltarho_p (use FFT2D-R2C)
@@ -172,14 +173,6 @@ contains
         ! 8/ gather projections: gamma_p(r) => gamma(r)
 
 
-        if(mmax/=grid%mmax) stop "mmax pas bon"
-        if(nx/=grid%nx) stop "nx pas bon"
-        if(ny/=grid%ny) stop "ny pas bon"
-        if(nz/=grid%nz) stop "nz pas bon"
-        if(lx/=grid%lx) stop "lx pas bon"
-        if(ly/=grid%ly) stop "ly pas bon"
-        if(lz/=grid%lz) stop "lz pas bon"
-        if(molrotsymorder/=grid%molrotsymorder) stop "molrotsymorder pas bon"
 
         !
         ! Toutes les projections sont stockées dans un meme vecteur de taille np
@@ -394,7 +387,7 @@ contains
         !
         ! For all vectors q and -q handled simultaneously
         !
-        do ix_q=1,nx ! /2+1 IS SUFFICIENT. THIS IS A TEST
+        do ix_q=1,nx/2+1
             do iy_q=1,ny
                 do iz_q=1,nz
                     !
@@ -438,6 +431,19 @@ contains
                     ix_mq = mqx(ix_q)
                     iy_mq = mqy(iy_q)
                     iz_mq = mqz(iz_q)
+
+                    if (any( [qx(ix_q), qy(iy_q), qz(iz_q)] /= -[qx(ix_mq), qy(iy_mq), qz(iz_mq)] )) then
+                        print*, "-q /= mq"
+                        print*, "ix_q , iy_q , iz_q  =", ix_q, iy_q, iz_q
+                        print*, "ix_mq, iy_mq, iz_mq =", ix_mq, iy_mq, iz_mq
+                        print*, "q =",[qx(ix_q), qy(iy_q), qz(iz_q)]
+                        print*, "mq=",[qx(ix_mq), qy(iy_mq), qz(iz_mq)]
+                        error stop
+                    end if
+                    !
+                    ! print*, " q=",qx(ix_q), qy(iy_q), qz(iz_q)
+                    ! print*, "-q=",qx(ix_mq), qy(iy_mq), qz(iz_mq)
+                    ! print*,
 
                     if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then ! this should only happen for ix=1 and ix=nx/2
                         q_eq_mq=.true.
@@ -546,11 +552,11 @@ contains
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
                     !
-                    IF ( any([ix_q, iy_q, iz_q]/=1) ) then
+                    if ( .not.all([ix_q, iy_q, iz_q]==1) ) then
                         xxx_temp_array_of_m_khi_mu_q=zeroc
                         xxx_temp_array_of_m_khi_mu_mq=zeroc
 
-                        DO ip=1,np
+                        do ip=1,np
                             m=im(ip)
                             khi=imup(ip)
                             mu=imu(ip)
@@ -561,17 +567,14 @@ contains
                         deltarho_m_mup_mu_q = mol2labframe (xxx_temp_array_of_m_khi_mu_q, q)
                         deltarho_m_mup_mu_mq = mol2labframe (xxx_temp_array_of_m_khi_mu_mq, -q)
 
-                        DO ip=1,np
+                        do ip=1,np
                             m = im(ip)
                             mup = imup(ip)
                             mu = imu(ip)
                             gamma_p_q(ip) = deltarho_m_mup_mu_q(m,mup,mu)
                             gamma_p_mq(ip) = deltarho_m_mup_mu_mq(m,mup,mu)
                         end do
-                    END IF
-
-                    gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
-                    gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+                    end if
 
                     if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq)) then
                         print*, "gamma_p_q", gamma_p_q
@@ -579,10 +582,32 @@ contains
                         stop
                     end if
 
+                    if (check(ix_q,iy_q,iz_q).eqv..true.) then
+                        print*, "gamma already calculated for ix iy iz=",ix_q,iy_q,iz_q
+                        print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_q,iy_q,iz_q)
+                        print*, "the new value of gamma_p                is", gamma_p_q(1:np)
+                    end if
+                    if (check(ix_mq,iy_mq,iz_mq).eqv..true.) then
+                        print*, "gamma already calculated for ix iy iz=",ix_mq,iy_mq,iz_mq
+                        print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_mq,iy_mq,iz_mq)
+                        print*, "the new value of gamma_p                is", gamma_p_mq(1:np)
+                    end if
+
+                    gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
+                    gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+
+                    ! we check that all gamma(:,ix, iy, iz) have been calculated
+                    check(ix_q,iy_q,iz_q)=.true.
+                    check(ix_mq,iy_mq,iz_mq)=.true.
+
                 end do
             end do
         end do
 
+        if (.not.all(check.eqv..true.)) then
+            print*, "gamma_p(projections,ix,iy,iz) has not been computed"
+            error stop
+        end if
 
 
         !
@@ -629,16 +654,16 @@ contains
                         do iphi=1,nphi
                             do ipsi=1,npsi
                                 io=grid%indo(itheta,iphi,ipsi)
-        gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
-        ff=ff-kT/2._dp*dv*gamma_o(ix,iy,iz,io)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2
-        df_cproj(ix,iy,iz,io)=-kT*dv*gamma_o(ix,iy,iz,io)/0.0333*grid%w(io)**2
+        ! gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
+        ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2
+        df_cproj(ix,iy,iz,io)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)/0.0333*grid%w(io)**2
                             end do
                         end do
                     end do
                 end do
             end do
         end do
-        print*,"norm2@df_cproj=",norm2(df_cproj)
+        print*,"norm2@df_cproj=",norm2(df_cproj),"X"
         end block
 
         df=df

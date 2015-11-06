@@ -1,4 +1,4 @@
-boxnod = 64 64 64
+boxnod = 33 24 129
 boxlen = 25. 25. 25.
 mmax = 0
 
