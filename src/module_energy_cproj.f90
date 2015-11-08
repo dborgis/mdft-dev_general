@@ -121,7 +121,6 @@ contains
         if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(grid%npsi,grid%nphi))
         if (.not.allocated(fft3d%in)) allocate (fft3d%in(grid%nx,grid%ny,grid%nz))
 
-
         lx=grid%lx
         ly=grid%ly
         lz=grid%lz
@@ -390,7 +389,11 @@ contains
                 end if
             end do
         end do
-        if (i/=nx) error stop "I did not found all the -qx"
+        if (i/=nx) then
+            print*, "I did not found all the -qx. Of",nx,", I found only",i
+            error stop
+        end if
+
         i=0
         do iy_q=1,ny
             do iy_mq=1,ny
@@ -402,7 +405,11 @@ contains
                 end if
             end do
         end do
-        if (i/=ny) error stop "I did not found all the -qy"
+        if (i/=ny) then
+            print*, "I did not found all the -qy. Of",ny,", I found only",i
+            error stop
+        end if
+
         i=0
         do iz_q=1,nz
             do iz_mq=1,nz
@@ -414,7 +421,11 @@ contains
                 end if
             end do
         end do
-        if (i/=nz) error stop "I did not found all the -qy"
+        if (i/=nz) then
+            print*, "I did not found all the -qz. Of",nz,", I found only",i
+            error stop
+        end if
+
 
 
         ! mqx = [( qproj_inv(-qx(ix),nx,lx),  ix=1,nx  )]
@@ -628,30 +639,29 @@ contains
                         end do
                     end if
 
-                    if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq)) then
-                        print*, "q = -q =", q
-                        print*, "ix_q, iy_q, iz_q=",ix_q,iy_q,iz_q
-                        print*, "ix_mq, iy_mq, iz_mq=",ix_mq,iy_mq,iz_mq
-                        print*, "but gamma_p_q /= gamma_p_mq"
-                        print*, "gamma_p_q", gamma_p_q
-                        print*, "gamma_p_mq", gamma_p_mq
-                        print*,
-                        ! stop
-                    end if
-
-                    ! if (check(ix_q,iy_q,iz_q).eqv..true.) then
-                    !     print*, "gamma already calculated for ix iy iz=",ix_q,iy_q,iz_q
-                    !     print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_q,iy_q,iz_q)
-                    !     print*, "the new value of gamma_p                is", gamma_p_q(1:np)
-                    ! end if
-                    ! if (check(ix_mq,iy_mq,iz_mq).eqv..true.) then
-                    !     print*, "gamma already calculated for ix iy iz=",ix_mq,iy_mq,iz_mq
-                    !     print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_mq,iy_mq,iz_mq)
-                    !     print*, "the new value of gamma_p                is", gamma_p_mq(1:np)
+                    ! TODO REFLECHIR OMG C HORRIBLE A L'AIIIIIIIIIIIIIIIIIIIIIIIIIIIIDE
+                    ! if (q_eq_mq) then
+                    !     if ( (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1) .and. any(gamma_p_q/=conjg(gamma_p_mq)) &
+                    !     .or. (ix_q==1 .and. iy_q==1 .and. iz_q==1 .and. any(gamma_p_q/=gamma_p_mq))   ) then ! TODO OMG JE VIENS DE RAJOUTER UN CONJG SANS SAVOIR POURQUOI. JE VOIS JSUTE QUE C
+                    !         print*, "q = -q =", q
+                    !         print*, "ix_q, iy_q, iz_q=",ix_q,iy_q,iz_q
+                    !         print*, "ix_mq, iy_mq, iz_mq=",ix_mq,iy_mq,iz_mq
+                    !         print*, "but gamma_p_q /= gamma_p_mq"
+                    !         print*, "gamma_p_q", gamma_p_q
+                    !         print*, "gamma_p_mq", gamma_p_mq
+                    !         print*,
+                    !         stop
+                    !     end if
                     ! end if
 
+
+                    ! TODO JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
                     gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
-                    gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+                    if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
+                        gamma_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
+                    else
+                        gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+                    end if
 
                     ! we check that all gamma(:,ix, iy, iz) have been calculated
                     check(ix_q,iy_q,iz_q)=.true.
@@ -662,7 +672,7 @@ contains
         end do
 
         if (.not.all(check.eqv..true.)) then
-            print*, "gamma_p(projections,ix,iy,iz) has not been computed"
+            print*, "not all gamma_p(projections,ix,iy,iz) has not been computed"
             error stop
         end if
 
@@ -700,23 +710,19 @@ contains
                         do iphi=1,nphi
                             do ipsi=1,npsi
                                 io=grid%indo(itheta,iphi,ipsi)
-        ! gamma_o(ix,iy,iz,io)=gamma(ix,iy,iz,itheta,iphi,ipsi)
-        ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2
-        df_cproj(ix,iy,iz,io)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)/0.0333*grid%w(io)**2
+    ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2&
+        *real(nphi*npsi*ntheta,dp)
+    df_cproj(ix,iy,iz,io)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)/0.0333*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
                             end do
                         end do
                     end do
                 end do
             end do
         end do
-
-        df=df
-        if (mmax>0) then
-            print*, "ff%c_proj=",ff,"X"
-            print*,"norm2@df_cproj=",norm2(df_cproj),"X"
-            stop "================== FIN DE ENERGY_CPROJ POUR MMAX>0 (DEBUG MODE)"
-        end if
+df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
+        ! print*, "ff%c_proj=",ff,"and norm2@df_cproj=",norm2(df_cproj)
         end block
+
 
         !=============================================================================================
     CONTAINS
