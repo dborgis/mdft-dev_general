@@ -114,6 +114,7 @@ contains
         real(dp) :: lx, ly, lz
         integer :: molrotsymorder
         logical, allocatable :: check(:,:,:)
+        integer, parameter :: molrotsymorder_localenattendantmieux=2
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
@@ -266,7 +267,7 @@ contains
             end if
         end if
 
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
         ! Init la densite en representation MDFT, c'est à dire en REAL space, angles d'Euler
         !
@@ -286,6 +287,7 @@ contains
             end do
         end do
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
         ! On passe tout de suite en projection, dans le repère cartesien
@@ -327,6 +329,8 @@ contains
             end if
         end if
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         !
         ! On a les projections sur la grille cartesienne
         ! On veut passer dans l'espace de Fourier pour calculer les convolutions spatiales
@@ -350,7 +354,7 @@ contains
             end if
         end if
 
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION DE Δρ_p(q) VERS LE REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
         ! We now want this projections in Fourier space and lab frame to the molecular frame
         !
@@ -427,8 +431,7 @@ contains
         !call read_ck_nmax (ck, normq)
         !call read_ck_toutes_nmax( ck, normq)
         if (.not.myck%isok) call read_ck_nonzero
-print*,"mmax=",mmax
-stop "encule"
+
         !
         ! For all vectors q and -q handled simultaneously
         !
@@ -559,18 +562,22 @@ stop "encule"
                     DO khi=-mmax,mmax
                         DO m=ABS(khi),mmax
                             DO mu=0,m,molrotsymorder ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
-                                if (mod(mu,molrotsymorder) /= 0) cycle
+                                if (mod(mu,molrotsymorder_localenattendantmieux) /= 0) cycle
 
                                 gamma_m_khi_mu_q= zeroc
                                 gamma_m_khi_mu_mq = zeroc
                                 do n=abs(khi),mmax
                                     do nu=-n,n,molrotsymorder
-                                        if (mod(nu,molrotsymorder) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
+                                        if (mod(nu,molrotsymorder_localenattendantmieux) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
 
                                         ia = myck%inda(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
                                         if (ia<=0) then
+                                            print*,"ia=",ia
+                                            print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
                                             error stop "ia<=0"
                                         else if (ia>myck%na) then
+                                            print*,"ia=",ia
+                                            print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
                                             error stop "ia>na"
                                         end if
 
@@ -623,6 +630,10 @@ stop "encule"
                     end if
 
                     if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq)) then
+                        print*, "q = -q =", q
+                        print*, "ix_q, iy_q, iz_q=",ix_q,iy_q,iz_q
+                        print*, "ix_mq, iy_mq, iz_mq=",ix_mq,iy_mq,iz_mq
+                        print*, "but gamma_p_q /= gamma_p_mq"
                         print*, "gamma_p_q", gamma_p_q
                         print*, "gamma_p_mq", gamma_p_mq
                         stop
@@ -713,7 +724,7 @@ stop "encule"
         end block
 
         df=df
-
+        if (mmax>0) stop "================== FIN DE ENERGY_CPROJ POUR MMAX>0 (DEBUG MODE)"
 
         !=============================================================================================
     CONTAINS
@@ -1113,19 +1124,21 @@ stop "encule"
                 error stop "In energy_cproj, read_ck_nonzero valid only for mmax=0 to 5"
             end select
 
-            i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
-            if (na/=i) then
-                print*, "in read ck na /= nalpha"
-                print*, "na=",na
-                print*, "bruteforce=",i
-                error stop
-            end if
+
             i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
             if (na/=i) then
                 print*, "in read_ck_cproj nalpha est bizarre"
                 print*, "na=",na
                 print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
-                error stop
+                ! error stop
+            end if
+
+            i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
+            if (na/=i) then
+                print*, "in read ck na /= nalpha"
+                print*, "na=",na
+                print*, "bruteforce=",i
+                ! error stop
             end if
 
             if (allocated(ck) .and. .not.myck%isok) then
@@ -1154,7 +1167,6 @@ stop "encule"
             read(ufile,*)
 
             allocate (myck%inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi
-            myck%inda = -huge(1)
             do ia=1,na
                 m = m_ck(ia)
                 n = n_ck(ia)
