@@ -15,7 +15,7 @@ contains
         implicit none
         integer :: nx, ny, nz, no, ns, ix, iy, iz, is, io, ik, ikmax_incsin
         real(dp), intent(out) :: Fexc
-        real(dp) :: kT, dV, ksqmax, ksq, k, dk
+        real(dp) :: kT, dV, ksqmax, k, dk
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
         real(dp), intent(inout) :: dF(:,:,:,:,:)
 
