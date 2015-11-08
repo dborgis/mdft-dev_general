@@ -78,7 +78,6 @@ contains
         real(dp), intent(out) :: ff
         real(dp), intent(inout) :: df(:,:,:,:,:)
         real(dp) :: dv, kT
-        complex(dp) :: ffc
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
@@ -581,12 +580,12 @@ contains
                                             error stop "ia>na"
                                         end if
 
+                                        ip = indp(n,khi,abs(nu))
+
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                                            ip = indp(n,khi,-nu)
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
                                         else ! transform delta rho (n, khi, -nu)(q) into conjg( deltarho(n,khi,nu)(-q) )
-                                            ip = indp(n,khi,nu)
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
                                         end if
@@ -636,7 +635,8 @@ contains
                         print*, "but gamma_p_q /= gamma_p_mq"
                         print*, "gamma_p_q", gamma_p_q
                         print*, "gamma_p_mq", gamma_p_mq
-                        stop
+                        print*,
+                        ! stop
                     end if
 
                     ! if (check(ix_q,iy_q,iz_q).eqv..true.) then
@@ -677,17 +677,6 @@ contains
             gamma_p(ip,:,:,:) = fft3d%in/real(nx*ny*nz,dp)
         end do
 
-        ffc=sum(gamma_p(1:np,1:nx,1:ny,1:nz)*deltarho_p(1:np,1:nx,1:ny,1:nz))/real(nx*ny*nz,dp)
-        ! ! ffc should be real (have no imaginary part)
-        ! if (abs(aimag(ffc))>epsilon(1._dp)) then
-        !     print*, "aimag(ffc)/=0 in energy_cproj"
-        !     print*, "ffc =", ffc
-        !     error stop
-        ! end if
-        ! ff=-thermo%kbT/2._dp*dv*real(ffc,dp)*eightpisq**2/0.033
-        ! print*, "ff from aimag=", ff
-
-
         !
         ! Gather projections
         !
@@ -720,11 +709,14 @@ contains
                 end do
             end do
         end do
-        print*,"norm2@df_cproj=",norm2(df_cproj),"X"
-        end block
 
         df=df
-        if (mmax>0) stop "================== FIN DE ENERGY_CPROJ POUR MMAX>0 (DEBUG MODE)"
+        if (mmax>0) then
+            print*, "ff%c_proj=",ff,"X"
+            print*,"norm2@df_cproj=",norm2(df_cproj),"X"
+            stop "================== FIN DE ENERGY_CPROJ POUR MMAX>0 (DEBUG MODE)"
+        end if
+        end block
 
         !=============================================================================================
     CONTAINS
@@ -1166,7 +1158,7 @@ contains
             read(ufile,*) somechar, khi_ck
             read(ufile,*)
 
-            allocate (myck%inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi
+            allocate (myck%inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
             do ia=1,na
                 m = m_ck(ia)
                 n = n_ck(ia)
