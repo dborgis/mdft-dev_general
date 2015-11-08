@@ -80,7 +80,7 @@ contains
         real(dp) :: dv, kT
         complex(dp) :: ffc
         logical :: q_eq_mq
-        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
         complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
         complex(dp), allocatable :: deltarho_m_mup_mu_q(:,:,:), deltarho_m_mup_mu_mq(:,:,:)
@@ -90,7 +90,7 @@ contains
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: tharm_sph(grid%ntheta,grid%np)
         real(dp) :: q(3), qx(grid%nx), qy(grid%ny), qz(grid%nz) ! vector q and its components tabulated
-        integer :: mqx(grid%nx), mqy(grid%ny), mqz(grid%nz)
+        integer :: tableof_ix_mq(grid%nx), tableof_iy_mq(grid%ny), tableof_iz_mq(grid%nz)
         type :: fft2d_type
             type(c_ptr) :: plan
             real(dp), allocatable    :: in(:,:)
@@ -367,12 +367,56 @@ contains
         ! And the inverse index that gives vector -q
         ! See function qproj_inv
         !
-        qx = [( qproj(ix,nx,lx), ix=1,nx )]
-        qy = [( qproj(iy,ny,ly), iy=1,ny )]
-        qz = [( qproj(iz,nz,lz), iz=1,nz )]
-        mqx = [( qproj_inv(-qx(ix),nx,lx),  ix=1,nx  )]
-        mqy = [( qproj_inv(-qy(iy),ny,ly),  iy=1,ny  )]
-        mqz = [( qproj_inv(-qz(iz),nz,lz),  iz=1,nz  )]
+        qx(1:nx) = [( qproj(ix,nx,lx), ix=1,nx )]
+        qy(1:ny) = [( qproj(iy,ny,ly), iy=1,ny )]
+        qz(1:nz) = [( qproj(iz,nz,lz), iz=1,nz )]
+
+        !
+        ! for each vector q, defined by its components qx(ix_q), qy(iy_q), qz(iz_q)
+        ! I am looking for the indices ix_mq, iy_mq, iz_mq for which
+        ! qx(ix_mq), qy(iy_mq), qz(iz_mq) defines vector -q
+        !
+        i=0
+        do ix_q=1,nx
+            do ix_mq=1,nx
+                if (qx(ix_q)==-qx(ix_mq) .or. qx(ix_q)+2._dp*pi*nx/lx==-qx(ix_mq) ) then
+                    tableof_ix_mq(ix_q) = ix_mq
+                    i=i+1
+                    ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
+                    cycle
+                end if
+            end do
+        end do
+        if (i/=nx) error stop "I did not found all the -qx"
+        i=0
+        do iy_q=1,ny
+            do iy_mq=1,ny
+                if ( qy(iy_q)==-qy(iy_mq) .or. qy(iy_q)+2._dp*pi*ny/ly==-qy(iy_mq)  ) then
+                    tableof_iy_mq(iy_q) = iy_mq
+                    i=i+1
+                    ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
+                    cycle
+                end if
+            end do
+        end do
+        if (i/=ny) error stop "I did not found all the -qy"
+        i=0
+        do iz_q=1,nz
+            do iz_mq=1,nz
+                if ( qz(iz_q)==-qz(iz_mq) .or. qz(iz_q)+2._dp*pi*nz/lz==-qz(iz_mq)  ) then
+                    tableof_iz_mq(iz_q) = iz_mq
+                    i=i+1
+                    ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
+                    cycle
+                end if
+            end do
+        end do
+        if (i/=nz) error stop "I did not found all the -qy"
+
+
+        ! mqx = [( qproj_inv(-qx(ix),nx,lx),  ix=1,nx  )]
+        ! mqy = [( qproj_inv(-qy(iy),ny,ly),  iy=1,ny  )]
+        ! mqz = [( qproj_inv(-qz(iz),nz,lz),  iz=1,nz  )]
 
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
@@ -383,7 +427,8 @@ contains
         !call read_ck_nmax (ck, normq)
         !call read_ck_toutes_nmax( ck, normq)
         if (.not.myck%isok) call read_ck_nonzero
-
+print*,"mmax=",mmax
+stop "encule"
         !
         ! For all vectors q and -q handled simultaneously
         !
@@ -393,6 +438,8 @@ contains
                     !
                     ! cartesian coordinates of vector q in lab frame
                     !
+                    if (check(ix_q,iy_q,iz_q).eqv..true.) cycle
+
                     q = [qx(ix_q), qy(iy_q), qz(iz_q)]
 
                     ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -428,18 +475,22 @@ contains
                     !
                     ! Find ix_mq,iy_mq,iz_mq so that q(ix_mq,iy_mq,iz_mq)= -q(ix_q,iy_q,iz_q)
                     !
-                    ix_mq = mqx(ix_q)
-                    iy_mq = mqy(iy_q)
-                    iz_mq = mqz(iz_q)
+                    ix_mq = tableof_ix_mq(ix_q)
+                    iy_mq = tableof_iy_mq(iy_q)
+                    iz_mq = tableof_iz_mq(iz_q)
+                    ! ix_mq = mqx(ix_q)
+                    ! iy_mq = mqy(iy_q)
+                    ! iz_mq = mqz(iz_q)
 
-                    if (any( [qx(ix_q), qy(iy_q), qz(iz_q)] /= -[qx(ix_mq), qy(iy_mq), qz(iz_mq)] )) then
-                        print*, "-q /= mq"
-                        print*, "ix_q , iy_q , iz_q  =", ix_q, iy_q, iz_q
-                        print*, "ix_mq, iy_mq, iz_mq =", ix_mq, iy_mq, iz_mq
-                        print*, "q =",[qx(ix_q), qy(iy_q), qz(iz_q)]
-                        print*, "mq=",[qx(ix_mq), qy(iy_mq), qz(iz_mq)]
-                        error stop
-                    end if
+                    ! if (any( [qx(ix_q), qy(iy_q), qz(iz_q)] /= -[qx(ix_mq), qy(iy_mq), qz(iz_mq)] )) then
+                    !     print*, "-q /= mq"
+                    !     print*, "ix_q , iy_q , iz_q  =", ix_q, iy_q, iz_q
+                    !     print*, "ix_mq, iy_mq, iz_mq =", ix_mq, iy_mq, iz_mq
+                    !     print*, "q =",[qx(ix_q), qy(iy_q), qz(iz_q)]
+                    !     print*, "mq=",[qx(ix_mq), qy(iy_mq), qz(iz_mq)]
+                    !     error stop
+                    ! end if
+
                     !
                     ! print*, " q=",qx(ix_q), qy(iy_q), qz(iz_q)
                     ! print*, "-q=",qx(ix_mq), qy(iy_mq), qz(iz_mq)
@@ -451,11 +502,6 @@ contains
                         q_eq_mq=.false.
                     end if
 
-                    !
-                    ! On peut vérifier que
-                    ! q=[grid%kx(ix_q), grid%ky(iy), grid%kz(iz)]
-                    ! q=-[grid%kx(iix_q), grid%ky(iiy), grid%kz(iiz)] ! but for ix_q>nx/2+1 where kx is not allocated
-                    !
                     !
                     ! Move all projections to a smaller temporary array: deltarho_p_q (for q) and deltarho_p_mq (for -q)
                     !
@@ -582,16 +628,16 @@ contains
                         stop
                     end if
 
-                    if (check(ix_q,iy_q,iz_q).eqv..true.) then
-                        print*, "gamma already calculated for ix iy iz=",ix_q,iy_q,iz_q
-                        print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_q,iy_q,iz_q)
-                        print*, "the new value of gamma_p                is", gamma_p_q(1:np)
-                    end if
-                    if (check(ix_mq,iy_mq,iz_mq).eqv..true.) then
-                        print*, "gamma already calculated for ix iy iz=",ix_mq,iy_mq,iz_mq
-                        print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_mq,iy_mq,iz_mq)
-                        print*, "the new value of gamma_p                is", gamma_p_mq(1:np)
-                    end if
+                    ! if (check(ix_q,iy_q,iz_q).eqv..true.) then
+                    !     print*, "gamma already calculated for ix iy iz=",ix_q,iy_q,iz_q
+                    !     print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_q,iy_q,iz_q)
+                    !     print*, "the new value of gamma_p                is", gamma_p_q(1:np)
+                    ! end if
+                    ! if (check(ix_mq,iy_mq,iz_mq).eqv..true.) then
+                    !     print*, "gamma already calculated for ix iy iz=",ix_mq,iy_mq,iz_mq
+                    !     print*, "the old value of gamma_p(1:np,ix,iy,iz) is", gamma_p(1:np,ix_mq,iy_mq,iz_mq)
+                    !     print*, "the new value of gamma_p                is", gamma_p_mq(1:np)
+                    ! end if
 
                     gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
                     gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
@@ -1000,7 +1046,7 @@ contains
             REAL(dp), INTENT(IN) :: length ! size of the supercell
             IF( i == 1 ) THEN
                 qproj = 0._dp
-            ELSE IF( i <= imax/2 ) THEN
+            ELSE IF( i <= imax/2  ) THEN
                 qproj = twopi*REAL(i-1,dp)/length
             ELSE
                 qproj = twopi*REAL(i-1-imax,dp)/length
