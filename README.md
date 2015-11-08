@@ -1,81 +1,8 @@
-# MDFT
+# MDFT-dev
 
-MDFT uses molecular density functional theory to computing solvation free energie and profile of any molecular solute in an arbitrary solvent.
-
-## Authors
-
-MDFT is being developped in the group of Daniel Borgis at École Normale Supérieure, Paris, France, by  
-	- [Daniel Borgis](http://hartree.chimie.ens.fr/theorie/borgis/)  
-	- [Maximilien Levesque](http://www.chimie.ens.fr/?q=en/umr-8640/physico-chimie-th-orique/profil/maximilien.levesque) (since Nov. 2010)  
-	- Guillaume Jeanmairet (since Oct. 2011)  
-        - Volodymyr Sergiievskyi (from Mar. 2013 to Mar. 2014)  
-        - Ljiljana Stojanovic (from Oct. 2013 to Nov. 2014)  
-        - Lu Ding (since Oct. 2013)  
-
-## Installation
-
-MDFT has been tested on various flavours of Linux and MacOSX.
-
-### Requirements
-
-- [git](http://git-scm.com/). It is our version control system.
-```bash
-sudo apt-get install git
-```
-- [gfortran version 4.7 or later](https://gcc.gnu.org/wiki/GFortran). The fortran compiler.
-```sh
-sudo apt-get install gfortran
-```
-How to know which version you have? `gfortran --version`
-- [the (multithread) FFTW3 library](http://www.fftw.org/). This library handles fast fourier transforms.
-```sh
-sudo apt-get install fftw3 fftw3-dev
-```
-- [NLopt](http://ab-initio.mit.edu/wiki/index.php/NLopt), the library we use for nonlinear optimization.
-
-
-##### Notes for Mac users
-
-MDFT needs the fftw3-multithread library. There can be trouble to install the FFTW3 multithread library on Mac OS. Here is a way to do it properly:
-
-- Download the FFTW3 sources from [here](http://www.fftw.org/download.html)
-- Untar the downloaded file and go to the generated fftw-3.XX folder
-- Compile it from sources:
-```bash
-./configure --enable-threads
-make
-sudo make install
-```
-
-### Installation process
-
-1. Get the code using git
-```bash
-git clone https://github.com/dborgis/MDFT
-```
-
-Then, compile everything using [GNU Make](https://www.gnu.org/software/make/):
-```sh
-make optim
-```
-
-*mdft* executable file should then be generated in its most performant version.
-You may want to compile *mdft* without optimization with:
-```sh
-make
-```
-or with debugging informations and profiling capabilities with:
-```sh
-make debug
-```
-
-
-## Input files
-
-Three files are necessary: *input/dft.in*, *input/solute.in*, *input/solvent.in*
--   `dft.in` contains all simulation information
--   `solute.in` contains informations about the solute (force field, position, etc)
--   `solvent.in` contains all information about the solvent (force field, position, etc)
+MDFT-dev is the dev fork of MDFT.
+It should be used only by Maximilien Levesque.
+It is private, and you have absolutely no reason to fork it if you have any collaborator right on this repo but if I tell you.
 
 ## Comment signaler efficacement un bug ?
 
