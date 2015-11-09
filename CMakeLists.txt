@@ -27,7 +27,7 @@ enable_language(Fortran)
 # - DEBUG   (with debug flags)
 # make sure that the default is RELEASE
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE DEBUG CACHE STRING
+    set (CMAKE_BUILD_TYPE  RELEASE  CACHE STRING
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -38,7 +38,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # external libraries dependencies
 find_package(FFTW REQUIRED)
-find_package(NLOPT REQUIRED)
+#find_package(NLOPT REQUIRED)
 
 #
 # check compiler (gfortran, ifort, ...)
@@ -55,7 +55,6 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # GNU fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffast-math -funroll-all-loops -fimplicit-none -ffree-line-length-none -O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall")
-                # -Wno-unused-value -Wno-unused-variable"
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # INTEL fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
@@ -126,7 +125,7 @@ if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
   add_executable(mdft-dev ${mdft_SRCS})
   set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}")
-  target_link_libraries(mdft-dev ${FFTW_LIBRARIES} ${NLOPT_LIBRARIES} m)
+  target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
 elseif(WIN32)
   message(STATUS "WIN32 platform not yet supported...")
 endif()
