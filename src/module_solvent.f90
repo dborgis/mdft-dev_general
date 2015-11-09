@@ -51,6 +51,8 @@ module module_solvent
         type(correlationfunction_type) :: cd
     contains
         procedure, nopass :: init => read_solvent
+        procedure, nopass :: init_chargedensity_molecularpolarization => &
+            chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
     end type
     type (solvent_type), allocatable :: solvent(:)
 
@@ -94,6 +96,7 @@ contains
                 print*, "mmax is trop grand"
                 error stop
             end select
+
             !
             ! select case (getinput%char("polarization", defaultvalue="no"))
             ! case("no","none")

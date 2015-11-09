@@ -24,7 +24,6 @@ contains
         use module_solute, only: soluteChargeDensityFromSoluteChargeCoordinates
         use module_debug, only: debugmode
         implicit none
-        integer :: i,j,k,o,p,s,n1,n2,n3
         type :: myerror_type
             integer :: i
             character(180) :: msg
@@ -60,6 +59,7 @@ contains
         ! Check that a solute with no charge induces zero potential
         !
         if (debugmode) then
+            print*,"debugmode test of phi started"
             sourcedistrib = 0._dp
             call poissonsolver (psgrid%n, psgrid%len, sourcedistrib, phi)
             if (any(abs(phi)>epsdp)) then
@@ -67,9 +67,8 @@ contains
                 print*, "I expected the electric potential phi to be zero everywhere"
                 error stop
             end if
+            print*,"debugmode test of phi ok"
         end if
-
-
 
         call soluteChargeDensityFromSoluteChargeCoordinates (psgrid%n, psgrid%len, sourcedistrib)
 
@@ -128,7 +127,7 @@ contains
         real(dp), intent(in) :: sourcedistrib (gridnode(1),gridnode(2),gridnode(3))
         real(dp), intent(out) :: phi (gridnode(1),gridnode(2),gridnode(3))
         complex(dp), allocatable, dimension(:,:,:) :: sourcedistrib_k, phi_k
-        integer  :: i,j,k,m1,m2,m3,s,o,p,io
+        integer  :: i,j,k,m1,m2,m3,s,io
         real(dp) :: k2
         real(dp), allocatable :: fftw3inforward(:,:,:), fftw3outbackward(:,:,:)
         complex(dp), allocatable :: fftw3outforward(:,:,:), fftw3inbackward(:,:,:)
@@ -160,10 +159,10 @@ contains
 
 
 
-        ! if ( all(abs(sourcedistrib)<=epsilon(1._dp)) ) then
-        !     phi = 0._dp
-        !     return
-        ! end if
+        if ( all(abs(sourcedistrib)<=epsilon(1._dp)) ) then
+            phi = 0._dp
+            return
+        end if
 
         allocate( sourcedistrib_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
         allocate( phi_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
@@ -212,7 +211,7 @@ contains
 
 
         ! old construction
-        if (.not. getinput%log('better_poisson_solver', defaultvalue=.false.)) then
+        if (getinput%log('better_poisson_solver', defaultvalue=.false.)) then
             ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
             fftw3InBackward = phi_k
             call dfftw_execute (fpspb)
@@ -220,7 +219,10 @@ contains
         else
             ! new construction
             ! get multipolar electrostatic potential in real space. It is already solvent dependent here
-            do s=1,size(solvent)
+            do s=1,solvent(1)%nspec
+                if (.not. allocated(solvent(s)%sigma_k) ) then
+                    call solvent(s)%init_chargedensity_molecularpolarization
+                end if
                 do io = 1, grid%no
                     fftw3InBackward = phi_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     call dfftw_execute (fpspb)
@@ -253,7 +255,7 @@ contains
         INTEGER, INTENT(IN) :: gridnode(3)
         REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: phi
         REAL(dp), INTENT(IN) :: gridlen(3)
-        INTEGER :: i, j, k, o, p, m, s, nfft(3), l(3), u(3), d, io, no, ns
+        INTEGER :: i, j, k, m, s, nfft(3), l(3), u(3), io
         real(dp), dimension(3,solvent(1)%nspec,solvent(1)%nsite,grid%no) :: xmod
         REAL(dp) :: vext_q_of_r_and_omega ! external potential for a given i,j,k,omega & psi.
         REAL(dp) :: r(3), cube(0:1,0:1,0:1), dl(3), x(3)

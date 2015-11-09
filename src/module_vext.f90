@@ -14,7 +14,6 @@ contains
     subroutine init_vext
         use precision_kinds, only: dp, i2b
         use module_input, only: getinput
-        use module_solute, only: solute
         use module_solvent, only: solvent
         use module_grid, only: grid
 
@@ -94,10 +93,11 @@ contains
         use module_fastpoissonsolver, only: init_fastpoissonsolver
         use module_solute, only: solute
         implicit none
-        integer :: s, i, nx, ny, nz, no, ns
+        integer :: s, i
         character(180) :: myerrormsg
         logical :: is_direct, is_poisson, i_want_vextq
         real(dp), parameter :: epsdp=epsilon(1._dp)
+
         is_direct = getinput%log('direct_sum', defaultvalue=.false.)
         is_poisson = getinput%log('poisson_solver', defaultvalue=.true.)
 
@@ -123,25 +123,29 @@ contains
                 print*, "That should not be the case."
                 error stop
             end if
-            if ( any(abs(solute%site%q)>epsdp)  ) then
+            ! Does the solute wear charges ? Check any of its sites is charged:
+            if ( any(abs(solute%site%q)>epsdp) ) then
                 i_want_vextq = .true.
                 allocate (solvent(s)%vextq(grid%nx,grid%ny,grid%nz,grid%no) ,source=0._dp, stat=i, errmsg=myerrormsg)
                 if (i/=0) then
                     print*, myerrormsg
                     error stop "in init_electrostatic_potential"
                 end if
+            else
+                ! the solute wears no charge. Thus, it does not generate any electric field.
+                i_want_vextq = .false.
             end if
         end do
 
         if (.not. i_want_vextq) return
 
         !
-        ! Chose the Coulomb solver you want
+        ! Chose Coulomb solver
         ! This may go elsewhere
         !
 
         ! DIRECT SUMMATION, pot = sum of qq'/r
-        IF ( getinput%log('direct_sum', defaultvalue=.false.) ) call compute_vcoul_as_sum_of_pointcharges
+        IF ( is_direct ) call compute_vcoul_as_sum_of_pointcharges
 
         ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
         IF (getinput%log('fastpoissonsolver', defaultvalue=.true.)) call init_fastpoissonsolver
@@ -226,7 +230,7 @@ contains
         ! step 4/ we compute the external potential created by the walls, which depends upon the fluid radius
 
         use precision_kinds, only: i2b, dp
-        use module_input, only: input_line, getinput
+        use module_input, only: input_line
         use module_solvent, only: solvent
         use hardspheres, only: hs
         use module_grid, only: grid
@@ -303,7 +307,7 @@ contains
         use module_solute, only: solute
         use module_solvent, only: solvent
         use module_grid, only: grid
-        use module_input, only: input_line, verbose
+        ! use module_input, only: input_line, verbose
         use module_debug, only: debugmode
         implicit none
         INTEGER :: nx, ny, nz, no, ns
@@ -487,7 +491,7 @@ contains
         !     use module_solvent, only: solvent
         !     use external_potential  ,only: Vext_total
         !     use constants           ,only: zerodp=>zero
-        use module_grid, only: grid
+        ! use module_grid, only: grid
         ! use module_quadrature, only: mean_over_orientations
         !
         !     IMPLICIT NONE
@@ -608,7 +612,7 @@ contains
 
         IMPLICIT NONE
 
-        INTEGER(i2b)    :: i,j,k,o,p,m,n,s,io,no
+        INTEGER         :: i,j,k,m,n,s,io
         REAL(dp)        :: xgrid(3), xv(3), xuv(3), xuv2, V_psi
         REAL, PARAMETER :: hardShellRadiusSQ=1._dp ! charge pseudo radius **2   == Rc**2
         real, parameter :: epsdp = epsilon(1._dp)
@@ -735,7 +739,7 @@ contains
         use precision_kinds, only: dp
         use module_solvent, only: solvent
         use module_grid, only: grid
-        use module_input, only: verbose
+        ! use module_input, only: verbose
         ! use module_quadrature, only: mean_over_orientations
 
         implicit none

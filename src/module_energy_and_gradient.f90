@@ -44,6 +44,7 @@ contains
         real(dp), intent(out) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         real(dp) :: df_loc (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         real(dp), parameter :: zerodp=0._dp
+        real :: t(10)
         integer :: s, ns
 
         if (.not. allocated(solvent)) then
@@ -59,32 +60,40 @@ contains
 
         do s=1,solvent(1)%nspec
             if (solvent(s)%do%id_and_ext) then
+                call cpu_time(t(1))
                 call energy_ideal_and_external (ff%id, ff%ext, df_loc)
+                call cpu_time(t(2))
                 print*, "ff%ext          =", ff%ext
-                print*, "ff%id           =", ff%id
+                print*, "ff%id           =", ff%id, " in",t(2)-t(1),"sec"
                 f=f+ff%id+ff%ext
                 df = df + df_loc
             end if
             if (solvent(s)%do%exc_cs) then
                 df_loc=0._dp
+                call cpu_time(t(3))
                 call energy_cs (ff%exc_cs, df_loc)
-                print*, "ff%exc_cs       =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc)
-                ! f=f+ff%exc_cs
-                ! df = df + df_loc
+                call cpu_time(t(4))
+                print*, "ff%exc_cs       =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
+                f = f + ff%exc_cs
+                df = df + df_loc
             end if
             if (solvent(s)%do%exc_cdeltacd) then
                 df_loc=0._dp
+                call cpu_time(t(5))
                 call energy_cdeltacd (ff%exc_cdeltacd, df_loc)
-                print*, "ff%exc_cdeltacd =", ff%exc_cdeltacd, "and norm2@df_exc_cdeltacd=",norm2(df_loc)
-                ! f=f + ff%exc_cdeltacd
-                ! df = df + df_loc
+                call cpu_time(t(6))
+                print*, "ff%exc_cdeltacd =", ff%exc_cdeltacd, "and norm2@df_exc_cdeltacd=",norm2(df_loc),"in",t(6)-t(5),"sec"
+                f = f + ff%exc_cdeltacd
+                df = df + df_loc
             end if
             if (solvent(s)%do%exc_cproj) then
                 df_loc=0._dp
+                call cpu_time(t(7))
                 call energy_cproj (ff%exc_cproj, df_loc)
-                print*, "ff%exc_cproj    =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc)
-                f = f + ff%exc_cproj
-                df = df + df_loc
+                call cpu_time(t(8))
+                print*, "ff%exc_cproj    =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc),"in",t(8)-t(7),"sec"
+                ! f = f + ff%exc_cproj
+                ! df = df + df_loc
             end if
             ! if (solvent(s)%do%exc_fmt) call energy_fmt (ff%exc_fmt, df)
             ! if (solvent(s)%do%wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc_wca, df)
