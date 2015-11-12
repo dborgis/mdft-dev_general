@@ -18,15 +18,6 @@ module module_energy_cproj
     !
     LOGICAL, PARAMETER :: debug=.true.
 
-    ! real(dp) :: lx, ly, lz
-    ! integer :: nx, ny, nz
-    ! integer :: mmax
-    ! integer :: molrotsymorder
-    ! integer :: np
-    ! integer :: ntheta
-    ! integer :: nphi
-    ! integer :: npsi
-
     !
     ! Arrays to translate index of vector to tuple of projections, and inverse
     ! alpha(m,mup,mu), m(alpha), mup(alpha), mu(alpha)
@@ -64,15 +55,25 @@ module module_energy_cproj
     ! real(dp), parameter :: fm(0:mmax) = [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )]
     integer, parameter :: errorgenerator=-1
 
+    type :: fft2d_c_type
+        type(c_ptr) :: plan
+        complex(c_double), allocatable :: in(:,:), out(:,:)
+    end type fft2d_c_type
+    type (fft2d_c_type) :: fft2d_c
+
+
     public :: energy_cproj
 
 contains
 
     subroutine energy_cproj (ff,df)
+        ! use ieee_arithmetic
+        use iso_c_binding
         use precision_kinds, only: dp
         use module_grid, only: grid
         use module_thermo, only: thermo
         implicit none
+        include "fftw3.f03"
         real(dp), parameter :: zero=0._dp
         complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
         real(dp), intent(out) :: ff
@@ -106,7 +107,7 @@ contains
             type(c_ptr) :: plan
             complex(dp), allocatable :: in(:,:,:)
         end type
-        type(  fft2d_type ), save ::  fft2d
+        type(  fft2d_type ), save :: fft2d
         type( ifft2d_type ), save :: ifft2d
         type( fft3d_type ) :: fft3d
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
@@ -285,6 +286,7 @@ contains
             end do
         end do
 
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
@@ -295,6 +297,9 @@ contains
         !
         if (.not. fft2d%isalreadyplanned) then
             call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
+            allocate (fft2d_c%in(npsi,nphi))
+            allocate (fft2d_c%out(npsi,nphi))
+            call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
             fft2d%isalreadyplanned =.true.
         end if
         if (.not. ifft2d%isalreadyplanned) then
@@ -1087,6 +1092,7 @@ df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
             character(3) :: somechar
             integer :: ufile, ios, mmax
             integer, allocatable, dimension(:) :: m_ck, n_ck, mu_ck, nu_ck, khi_ck
+            character(65) :: filename
 
             if (myck%isok) return
             nq=myck%nq
@@ -1096,30 +1102,55 @@ df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
             select case (mmax)
             case (0)
                 na = 1
-                open(newunit=ufile, file="ck_nonzero_nmax0_ml", iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax0_ml"
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax0_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
             case (1)
                 na = 6
-                open(newunit=ufile, file="ck_nonzero_nmax1_ml", iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax1_ml"
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax1_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
             case (2)
                 na = 75
-                open(newunit=ufile, file="ck_nonzero_nmax2_ml", iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax2_ml"
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax2_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
             case (3)
                 na = 252
-                open(newunit=ufile, file="ck_nonzero_nmax3_ml", iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax3_ml"
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax3_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
             case (4)
                 na = 877
-                open(newunit=ufile, file="ck_nonzero_nmax4_ml", iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax4_ml"
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax4_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
             case (5)
                 na = 2002
-                open(newunit=ufile, file="ck_nonzero_nmax5_ml", iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) stop "Error opening file ck_nonzero_nmax5_ml"
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax5_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
             case default
-                error stop "In energy_cproj, read_ck_nonzero valid only for mmax=0 to 5"
+                print*, "In module_energy_cproj, you want mmax>5. I cant read the corresponding file."
+                error stop
             end select
 
 
@@ -1194,26 +1225,90 @@ df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
             COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
             COMPLEX(dp) :: projections(1:grid%np)
             INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
-            complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
+            complex(dp), parameter :: zeroc=complex(0._dp,0._dp), ii=complex(0._dp,1._dp)
+            complex(dp), allocatable :: test_explicit(:,:,:), proj_theta_full(:,:,:)
+            complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
             mmax=grid%mmax
             molrotsymorder=grid%molrotsymorder
             projections = zeroc
             proj_theta = zeroc
+
+
+            allocate (proj_theta_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
+            allocate (test_explicit(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
+            do itheta=1,ntheta
+                do mu=-mmax,mmax
+                    do mup=-mmax,mmax
+                        do ipsi=1,grid%npsi
+                            do iphi=1,grid%nphi
+                                test_explicit(itheta,mu,mup) = test_explicit(itheta,mu,mup)&
+                                    +eulerangles(itheta,iphi,ipsi) &
+                                    *exp(ii*mup*grid%phiofnphi(iphi)) *exp(ii*mu*grid%psiofnpsi(ipsi))
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+
+
             DO itheta=1,ntheta
                 DO iphi=1,nphi
                     DO ipsi=1,npsi
                         fft2d%in(ipsi,iphi) = eulerangles(itheta,iphi,ipsi)
                     end do
                 end do
-                call dfftw_execute( fft2d%plan )
+                fft2d_c%in(:,:)=fft2d%in
+                call dfftw_execute (fft2d%plan)
+                call dfftw_execute (fft2d_c%plan)
+
+
+                ! do iphi=1,nphi
+                !     do ipsi=1,npsi/2+1
+                !         print*,ipsi,iphi, fft2d_c%out(ipsi,iphi), fft2d%out(ipsi,iphi)
+                !     end do
+                !     do ipsi=npsi/2+2,npsi
+                !         print*,ipsi,iphi,fft2d_c%out(ipsi,iphi)
+                !     end do
+                ! end do
                 proj_theta(itheta,0:mmax/molrotsymorder,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
                 proj_theta(itheta,0:mmax/molrotsymorder,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
+
+                proj_theta_full(itheta,0:mmax,0:mmax)     = fft2d_c%out(1:npsi/2+1, 1:nphi/2+1)
+                proj_theta_full(itheta,0:mmax,-mmax:-1)   = fft2d_c%out(1:npsi/2+1, nphi/2+2:)
+                proj_theta_full(itheta,-mmax:-1,0:mmax)   = fft2d_c%out(npsi/2+2:, 1:nphi/2+1)
+                proj_theta_full(itheta,-mmax:-1,-mmax:-1) = fft2d_c%out(npsi/2+2:, nphi/2+2:)
+
             end do
-            DO m=0,mmax
-                DO mup=-m,m
-                    DO mu=0,m,molrotsymorder
+
+
+        allocate (proj_m_mup_mu(0:mmax,-mmax:mmax,-mmax:mmax), source=zeroc)
+        do m=0,mmax
+            do mup=-m,m
+                do mu=-m,m
+                    do itheta=1,ntheta
+                        proj_m_mup_mu(m,mup,mu) = proj_m_mup_mu(m,mup,mu) +&
+                            proj_theta_full(itheta,mu,mup)*wtheta(itheta)*harm_sph(m,mup,mu,theta(itheta))*fm(m)
+                    end do
+                end do
+            end do
+        end do
+        do m=0,mmax
+            do mup=-m,m
+                do mu=-m,m
+                    print*, "I'm checking relation 1.7 is valid"
+                    if (proj_m_mup_mu(m,-mup,-mu) - (-1)**(mup+mu)*conjg(proj_m_mup_mu(m,mup,mu)) /= zeroc) then
+                        print*, "Relation 1.7 is not satisfied"
+                        error stop
+                    end if
+                end do
+            end do
+        end do
+
+            do m=0,mmax
+                do mup=-m,m
+                    do mu=0,m,molrotsymorder
                         ip = indp( m,mup,mu )
-                        projections(ip)= SUM(proj_theta(:,mu,mup)*tharm_sph(:,ip)*wtheta(:))*fm(m)
+                        projections(ip)= sum(proj_theta(:,mu,mup)*tharm_sph(:,ip)*wtheta(:))*fm(m)
                     end do
                 end do
             end do

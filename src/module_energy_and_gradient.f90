@@ -60,6 +60,7 @@ contains
 
         do s=1,solvent(1)%nspec
             if (solvent(s)%do%id_and_ext) then
+                df_loc = 0._dp
                 call cpu_time(t(1))
                 call energy_ideal_and_external (ff%id, ff%ext, df_loc)
                 call cpu_time(t(2))

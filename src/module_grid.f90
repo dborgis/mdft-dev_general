@@ -22,7 +22,11 @@ module module_grid
         !
         integer :: molrotsymorder, mmax, ntheta, nphi, npsi, no, np
         real(dp) :: dphi, dpsi
-        real(dp), allocatable :: theta(:), phi(:), psi(:), wtheta(:), wphi(:), wpsi(:), w(:), thetaofitheta(:), wthetaofitheta(:)
+        real(dp), allocatable :: theta(:), phi(:), psi(:), wtheta(:), wphi(:), wpsi(:), w(:)
+        real(dp), allocatable :: thetaofntheta(:), wthetaofntheta(:)
+        real(dp), allocatable :: phiofnphi(:), psiofnpsi(:) !(grid%nphi), psiofnpsi(grid%npsi)
+        real(dp), allocatable :: wphiofnphi(:)!(grid%nphi)
+        real(dp), allocatable :: wpsiofnpsi(:)!(grid%npsi)
         integer, allocatable :: indo(:,:,:) ! table of index of orientations
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
@@ -99,34 +103,34 @@ contains
         allocate( grid%wtheta(grid%no) , source=0._dp)
         allocate( grid%wphi(grid%no) , source=0._dp)
         allocate( grid%wpsi(grid%no) , source=0._dp)
-        allocate( grid%wthetaofitheta(grid%ntheta), source=0._dp)
+        allocate( grid%wthetaofntheta(grid%ntheta), source=0._dp)
         allocate( grid%w(grid%no) , source=0._dp)
-        allocate( grid%thetaofitheta(grid%ntheta), source=0._dp) ! itheta => theta
+        allocate( grid%thetaofntheta(grid%ntheta), source=0._dp) ! itheta => theta
         block
             integer :: err, io, i, itheta, iphi, ipsi
-            real(dp) :: phiofiphi(grid%nphi), psiofipsi(grid%npsi)
-            real(dp) :: wphiofiphi(grid%nphi)
-            real(dp) :: wpsiofipsi(grid%npsi)
-            wphiofiphi = 1._dp/real(grid%nphi,dp)
-            wpsiofipsi = 1._dp/real(grid%npsi,dp)
-            psiofipsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
-            phiofiphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
-            call gauss_legendre( grid%ntheta, grid%thetaofitheta, grid%wthetaofitheta, err)
+            allocate( grid%phiofnphi(grid%nphi), grid%psiofnpsi(grid%npsi) )
+            allocate( grid%wphiofnphi(grid%nphi) )
+            allocate( grid%wpsiofnpsi(grid%npsi) )
+            grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
+            grid%wpsiofnpsi = 1._dp/real(grid%npsi,dp)
+            grid%psiofnpsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
+            grid%phiofnphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
+            call gauss_legendre( grid%ntheta, grid%thetaofntheta, grid%wthetaofntheta, err)
             if (err /= 0) error stop "problem in gauss_legendre"
-            grid%thetaofitheta = acos(grid%thetaofitheta)
+            grid%thetaofntheta = acos(grid%thetaofntheta)
             allocate( grid%indo(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
             io = 0
             do itheta = 1, grid%ntheta
                 do iphi = 1, grid%nphi
                     do ipsi = 1, grid%npsi
                         io = io+1
-                        grid%theta(io) = grid%thetaofitheta(itheta)
-                        grid%phi(io) = phiofiphi(iphi)
-                        grid%psi(io) = psiofipsi(ipsi)
+                        grid%theta(io) = grid%thetaofntheta(itheta)
+                        grid%phi(io) = grid%phiofnphi(iphi)
+                        grid%psi(io) = grid%psiofnpsi(ipsi)
                         grid%indo(itheta,iphi,ipsi) = io
-                        grid%wtheta(io) = grid%wthetaofitheta(itheta)
-                        grid%wphi(io) = wphiofiphi(iphi)
-                        grid%wpsi(io) = wpsiofipsi(ipsi)
+                        grid%wtheta(io) = grid%wthetaofntheta(itheta)
+                        grid%wphi(io) = grid%wphiofnphi(iphi)
+                        grid%wpsi(io) = grid%wpsiofnpsi(ipsi)
                         grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io) *quadrature_norm
                     end do
                 end do
