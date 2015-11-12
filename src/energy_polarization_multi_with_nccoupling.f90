@@ -1,7 +1,7 @@
 SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 
-    use precision_kinds, ONLY: i2b, dp
-    use module_grid, only: grid
+    use precision_kinds, ONLY: dp
+!    use module_grid, only: grid
 !     use system,          ONLY: thermocond
 !       use module_solvent, only: solvent
 !     use dcf,             ONLY: Cnn, Cnc, Ccc, chi_t, nb_k, delta_k, delta_k_in_C, nb_k_in_c
@@ -29,6 +29,7 @@ SUBROUTINE energy_polarization_multi_with_nccoupling(F_pol)
 !     COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: rho_k, dF_pol_k
 !     real(dp) :: kvec(3)
 !
+F_pol=0._dp
 !     IF (size(solvent)/=1) STOP 'energy_polarization_...withnccoupling not working for several solvent species'
 !
 ! !===================================================================================================================================
