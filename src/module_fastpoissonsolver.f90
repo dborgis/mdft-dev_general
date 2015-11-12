@@ -22,7 +22,6 @@ contains
         use precision_kinds, only: dp
         use module_grid, only: grid
         use module_solute, only: soluteChargeDensityFromSoluteChargeCoordinates
-        use module_debug, only: debugmode
         implicit none
         type :: myerror_type
             integer :: i
@@ -53,21 +52,6 @@ contains
         if (er%i/=0) then
             print*, er%msg
             error stop "This problem arises in module fastPoissonSolver"
-        end if
-
-        !
-        ! Check that a solute with no charge induces zero potential
-        !
-        if (debugmode) then
-            print*,"debugmode test of phi started"
-            sourcedistrib = 0._dp
-            call poissonsolver (psgrid%n, psgrid%len, sourcedistrib, phi)
-            if (any(abs(phi)>epsdp)) then
-                print*, "debugmode: I'm trying to use poissonsolver for a zero chargedistribution source"
-                print*, "I expected the electric potential phi to be zero everywhere"
-                error stop
-            end if
-            print*,"debugmode test of phi ok"
         end if
 
         call soluteChargeDensityFromSoluteChargeCoordinates (psgrid%n, psgrid%len, sourcedistrib)
