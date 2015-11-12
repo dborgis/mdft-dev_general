@@ -80,7 +80,7 @@ contains
         real(dp), intent(inout) :: df(:,:,:,:,:)
         real(dp) :: dv, kT
         logical :: q_eq_mq
-        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i
+        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
         complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
         complex(dp), allocatable :: deltarho_m_mup_mu_q(:,:,:), deltarho_m_mup_mu_mq(:,:,:)
@@ -89,7 +89,7 @@ contains
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: tharm_sph(grid%ntheta,grid%np)
-        real(dp) :: q(3), qx(grid%nx), qy(grid%ny), qz(grid%nz) ! vector q and its components tabulated
+        real(dp) :: q(3), mq(3), qx(grid%nx), qy(grid%ny), qz(grid%nz) ! vector q and its components tabulated
         integer :: tableof_ix_mq(grid%nx), tableof_iy_mq(grid%ny), tableof_iz_mq(grid%nz)
         type :: fft2d_type
             type(c_ptr) :: plan
@@ -232,11 +232,8 @@ contains
         ! Les racines sont les racines d'un polynomes en cos(theta).
         ! Comme nous voulons les theta correspondant, on en prend l'arccos(cos(theta))
         !
-        block
-            real(dp) :: costheta(1:ntheta)
-            call gauss_legendre( ntheta, costheta, wtheta, exitstatus ) ! retourne les ntheta racines (theta(:)) et poids (wtheta(:))
-            theta = acos(costheta)
-        end block
+        theta=grid%thetaofntheta
+        wtheta=grid%wthetaofntheta
 
 
         !
@@ -258,15 +255,8 @@ contains
                 tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
             end do
         end do
-        if (mmax==0) then
-            if (size(tharm_sph,1) /= size(tharm_sph,2) .or. tharm_sph(1,1)/=1._dp) then
-                print*, "in energy_cproj, pour mmax==0, tharm_sph ne vaut pas 1."
-                print*, "tharm_sph(itheta=1,ip=1) =", tharm_sph(1,1)
-                error stop
-            end if
-        end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
         ! Init la densite en representation MDFT, c'est à dire en REAL space, angles d'Euler
         !
@@ -278,7 +268,7 @@ contains
                         do iy=1,ny
                             do ix=1,nx
                                 deltarho(ix,iy,iz,itheta,iphi,ipsi)= &
-                                    solvent(1)%density(ix,iy,iz,io) - solvent(1)%rho0
+                                solvent(1)%density(ix,iy,iz,io) - solvent(1)%rho0
                             end do
                         end do
                     end do
@@ -287,7 +277,7 @@ contains
         end do
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
         ! On passe tout de suite en projection, dans le repère cartesien
@@ -323,16 +313,8 @@ contains
                 end do
             end do
         end do
-        if (mmax==0) then
-            if (complex(deltarho(1,1,1,1,1,1),0._dp) /= deltarho_p(1,1,1,1)) then
-                print*, "in energy_cproj et mmax==0, deltarho /= deltarho_p avant meme la FFT3D"
-                print*, "deltarho(1,1,1,1,1,1),0._dp) =", complex(deltarho(1,1,1,1,1,1),0._dp)
-                print*, "deltarho_p(1,1,1,1)", deltarho_p(1,1,1,1)
-                error stop
-            end if
-        end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
         ! On a les projections sur la grille cartesienne
@@ -342,22 +324,12 @@ contains
         !
         call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_BACKWARD, FFTW_ESTIMATE ) ! in-place. BACKWARD means exp(iqr)
         do ip=1,np
-            ! deltarho_p in real space (is a complex number)
             fft3d%in = deltarho_p(ip,1:nx,1:ny,1:nz)
             call dfftw_execute( fft3d%plan )
             deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
-            ! now deltarhop in fourier space
         end do
-        if (mmax==0 .and. nx==1 .and. ny==1 .and. nz==1) then
-            if (complex(deltarho(1,1,1,1,1,1),0._dp) /= deltarho_p(1,1,1,1)) then
-                print*, "in energy_cproj et mmax=0, deltarho /= deltarho_p apres la FFT3D"
-                print*, "deltarho(1,1,1,1,1,1),0._dp) =", complex(deltarho(1,1,1,1,1,1),0._dp)
-                print*, "deltarho_p(1,1,1,1)", deltarho_p(1,1,1,1)
-                error stop
-            end if
-        end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION DE Δρ_p(q) VERS LE REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION DE Δρ_p(q) VERS LE REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
         ! We now want this projections in Fourier space and lab frame to the molecular frame
         !
@@ -374,68 +346,13 @@ contains
         ! And the inverse index that gives vector -q
         ! See function qproj_inv
         !
+
         qx(1:nx) = [( qproj(ix,nx,lx), ix=1,nx )]
         qy(1:ny) = [( qproj(iy,ny,ly), iy=1,ny )]
         qz(1:nz) = [( qproj(iz,nz,lz), iz=1,nz )]
 
-        !
-        ! for each vector q, defined by its components qx(ix_q), qy(iy_q), qz(iz_q)
-        ! I am looking for the indices ix_mq, iy_mq, iz_mq for which
-        ! qx(ix_mq), qy(iy_mq), qz(iz_mq) defines vector -q
-        !
-        i=0
-        do ix_q=1,nx
-            do ix_mq=1,nx
-                if (qx(ix_q)==-qx(ix_mq) .or. qx(ix_q)+2._dp*pi*nx/lx==-qx(ix_mq) ) then
-                    tableof_ix_mq(ix_q) = ix_mq
-                    i=i+1
-                    ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
-                    cycle
-                end if
-            end do
-        end do
-        if (i/=nx) then
-            print*, "I did not found all the -qx. Of",nx,", I found only",i
-            error stop
-        end if
+        call for_all_q_find_indices_of_mq
 
-        i=0
-        do iy_q=1,ny
-            do iy_mq=1,ny
-                if ( qy(iy_q)==-qy(iy_mq) .or. qy(iy_q)+2._dp*pi*ny/ly==-qy(iy_mq)  ) then
-                    tableof_iy_mq(iy_q) = iy_mq
-                    i=i+1
-                    ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
-                    cycle
-                end if
-            end do
-        end do
-        if (i/=ny) then
-            print*, "I did not found all the -qy. Of",ny,", I found only",i
-            error stop
-        end if
-
-        i=0
-        do iz_q=1,nz
-            do iz_mq=1,nz
-                if ( qz(iz_q)==-qz(iz_mq) .or. qz(iz_q)+2._dp*pi*nz/lz==-qz(iz_mq)  ) then
-                    tableof_iz_mq(iz_q) = iz_mq
-                    i=i+1
-                    ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
-                    cycle
-                end if
-            end do
-        end do
-        if (i/=nz) then
-            print*, "I did not found all the -qz. Of",nz,", I found only",i
-            error stop
-        end if
-
-
-
-        ! mqx = [( qproj_inv(-qx(ix),nx,lx),  ix=1,nx  )]
-        ! mqy = [( qproj_inv(-qy(iy),ny,ly),  iy=1,ny  )]
-        ! mqz = [( qproj_inv(-qz(iz),nz,lz),  iz=1,nz  )]
 
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
@@ -450,15 +367,14 @@ contains
         !
         ! For all vectors q and -q handled simultaneously
         !
-        do ix_q=1,nx/2+1
+        do ix_q=1,nx
             do iy_q=1,ny
                 do iz_q=1,nz
                     !
                     ! cartesian coordinates of vector q in lab frame
                     !
-                    if (check(ix_q,iy_q,iz_q).eqv..true.) cycle
+                    ! TODO if (check(ix_q,iy_q,iz_q).eqv..true.) cycle
 
-                    q = [qx(ix_q), qy(iy_q), qz(iz_q)]
 
                     ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
                     ! block
@@ -496,23 +412,9 @@ contains
                     ix_mq = tableof_ix_mq(ix_q)
                     iy_mq = tableof_iy_mq(iy_q)
                     iz_mq = tableof_iz_mq(iz_q)
-                    ! ix_mq = mqx(ix_q)
-                    ! iy_mq = mqy(iy_q)
-                    ! iz_mq = mqz(iz_q)
 
-                    ! if (any( [qx(ix_q), qy(iy_q), qz(iz_q)] /= -[qx(ix_mq), qy(iy_mq), qz(iz_mq)] )) then
-                    !     print*, "-q /= mq"
-                    !     print*, "ix_q , iy_q , iz_q  =", ix_q, iy_q, iz_q
-                    !     print*, "ix_mq, iy_mq, iz_mq =", ix_mq, iy_mq, iz_mq
-                    !     print*, "q =",[qx(ix_q), qy(iy_q), qz(iz_q)]
-                    !     print*, "mq=",[qx(ix_mq), qy(iy_mq), qz(iz_mq)]
-                    !     error stop
-                    ! end if
-
-                    !
-                    ! print*, " q=",qx(ix_q), qy(iy_q), qz(iz_q)
-                    ! print*, "-q=",qx(ix_mq), qy(iy_mq), qz(iz_mq)
-                    ! print*,
+                    q = [qx(ix_q), qy(iy_q), qz(iz_q)]
+                    mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]
 
                     if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then ! this should only happen for ix=1 and ix=nx/2
                         q_eq_mq=.true.
@@ -530,14 +432,14 @@ contains
                     ! Rotate projections from laboratory frame to molecular frame
                     ! If q=0 then chose the rotation you want: the identity is the simplest option.
                     !
-                    if ( any([ix_q, iy_q, iz_q]/=1) ) then  ! case 1,1,1 corresponds to |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
+                    if ( ix_q/=1 .or. iy_q/=1 .or. iz_q/=1 ) then  ! case 1,1,1 corresponds to |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
                         deltarho_m_mup_mu_q  = zeroc
                         deltarho_m_mup_mu_mq = zeroc
                         DO ip=1,np
                             m = im(ip)
                             mup = imup(ip)
                             mu = imu(ip)
-                            deltarho_m_mup_mu_q(m,mup,mu) = deltarho_p_q(ip)
+                            deltarho_m_mup_mu_q(m,mup,mu)  = deltarho_p_q (ip)
                             deltarho_m_mup_mu_mq(m,mup,mu) = deltarho_p_mq(ip)
                         end do
                         xxx_temp_array_of_m_khi_mu_q = zeroc
@@ -707,25 +609,27 @@ contains
         block
             real(dp) :: df_cproj(nx,ny,nz,no)
             df_cproj=0._dp
-        ff=0._dp
-        do ix=1,nx
-            do iy=1,ny
-                do iz=1,nz
-                    do itheta=1,ntheta
-                        do iphi=1,nphi
-                            do ipsi=1,npsi
-                                io=grid%indo(itheta,iphi,ipsi)
-    ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)*(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333*grid%w(io)**2&
-        *real(nphi*npsi*ntheta,dp)
-    df_cproj(ix,iy,iz,io)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)/0.0333*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
+            ff=0._dp
+            do ix=1,nx
+                do iy=1,ny
+                    do iz=1,nz
+                        do itheta=1,ntheta
+                            do iphi=1,nphi
+                                do ipsi=1,npsi
+                                    io=grid%indo(itheta,iphi,ipsi)
+                                    ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
+                                    *(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333_dp*grid%w(io)**2&
+                                    *real(nphi*npsi*ntheta,dp)
+                                    df_cproj(ix,iy,iz,io)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
+                                    /0.0333_dp*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
+                                end do
                             end do
                         end do
                     end do
                 end do
             end do
-        end do
-df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
-        ! print*, "ff%c_proj=",ff,"and norm2@df_cproj=",norm2(df_cproj)
+            df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
+            ! print*, "ff%c_proj=",ff,"and norm2@df_cproj=",norm2(df_cproj)
         end block
 
 
@@ -784,52 +688,7 @@ df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
                 harm_sph = sqrt(fact(m+mu)*fact(m-mu)*fact(m+mup)*fact(m-mup))*harm_sph
             end if
         END FUNCTION harm_sph
-        !
-        !
-        !
-        PURE SUBROUTINE gauss_legendre( n, x, w, exitstatus) ! copy paste from Luc's subroutine Luc74p85
-            !
-            ! Returns the n roots (x) and associated weights(w) of a gauss legendre quadrature of order n
-            ! The roots are the Cos(theta) so that if you need theta, don't forget to acos(x)
-            !
-            IMPLICIT NONE
-            INTEGER, intent(in) :: n
-            REAL(dp), intent(out) :: x(n), w(n)
-            INTEGER, optional, intent(out) :: exitstatus
-            INTEGER :: m, i, j
-            REAL(dp), PARAMETER :: pi=acos(-1._dp)
-            REAL(dp) :: xi, p1, p2, p3, pp, deltaxi
-            exitstatus = 1
-            if( n <= 0 ) then
-                exitstatus = -1
-                return
-            else
-                m = (n+1)/2
-                do i = 1,m          ! on s'interesse au ième zero du polynome pn(x) de legendre
-                    xi = cos(pi*(i-0.25)/(n+0.5))     ! estimation de départ qu'on va raffiner par nr
-                    deltaxi = 1
-                    do while (abs(deltaxi)>1.d-13)
-                        p1 = 1.
-                        p2 = 0.
-                        do j = 1,n
-                            p3 = p2
-                            p2 = p1
-                            p1 = ((2*j-1.)*xi*p2-(j-1.)*p3)/j         ! relation de récurrence entre les pj
-                        end do
-                        pp = n*(xi*p1-p2)/(xi**2-1.)                   ! donne pn' en fonction de pn et pn-1
-                        deltaxi = -p1/pp                                  ! nr
-                        xi = xi + deltaxi
-                    end do
-                    x(i) = xi
-                    w(i) = 1./((1.-xi**2)*pp**2)                  ! poids normalise a 1
-                    x(n+1-i) = -xi
-                    w(n+1-i) = w(i)
-                end do
-            end if
-        END SUBROUTINE gauss_legendre
-        !
-        !
-        !
+
         PURE FUNCTION trimed(x)
             !
             ! If some REAL value is smaller than some epsilon, then give it 0 value
@@ -1242,8 +1101,8 @@ df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
                         do ipsi=1,grid%npsi
                             do iphi=1,grid%nphi
                                 test_explicit(itheta,mu,mup) = test_explicit(itheta,mu,mup)&
-                                    +eulerangles(itheta,iphi,ipsi) &
-                                    *exp(ii*mup*grid%phiofnphi(iphi)) *exp(ii*mu*grid%psiofnpsi(ipsi))
+                                +eulerangles(itheta,iphi,ipsi) &
+                                *exp(ii*mup*grid%phiofnphi(iphi)) *exp(ii*mu*grid%psiofnpsi(ipsi))
                             end do
                         end do
                     end do
@@ -1279,36 +1138,58 @@ df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
                 proj_theta_full(itheta,-mmax:-1,-mmax:-1) = fft2d_c%out(npsi/2+2:, nphi/2+2:)
 
             end do
-
-
-        allocate (proj_m_mup_mu(0:mmax,-mmax:mmax,-mmax:mmax), source=zeroc)
-        do m=0,mmax
-            do mup=-m,m
-                do mu=-m,m
-                    do itheta=1,ntheta
-                        proj_m_mup_mu(m,mup,mu) = proj_m_mup_mu(m,mup,mu) +&
+            !
+            !
+            ! do itheta=1,ntheta
+            !     do mup=-mmax,mmax
+            !         do mu=-mmax,mmax
+            !             print*,"itheta, mup, mu =",itheta,mup,mu
+            !             print*,"explicit                      =",test_explicit(itheta,mu,mup)
+            !             print*,"proj_theta_full(itheta,mu,mup)=",proj_theta_full(itheta,mu,mup)
+            !             print*,"proj_theta_full reconstruit   =",(-1)**(-mup-mu)*conjg(proj_theta_full(itheta,-mu,-mup))," WWWW"
+            !             if(mu>=0) print*,"proj_theta(itheta,mu,mup)     =",proj_theta(itheta,mu,mup)
+            !             if(mu<0 ) print*,"proj_theta(itheta,mu,mup)     =",(-1)**(-mup-mu)*conjg(proj_theta(itheta,-mu,-mup))," reconstruit"
+            !             print*,
+            !         end do
+            !     end do
+            ! end do
+            ! print*, "loop itheta,mup,mu FINISHED"
+            ! print*,
+            !
+            allocate (proj_m_mup_mu(0:mmax,-mmax:mmax,-mmax:mmax), source=zeroc)
+            do m=0,mmax
+                do mup=-m,m
+                    do mu=-m,m
+                        do itheta=1,ntheta
+                            proj_m_mup_mu(m,mup,mu) = proj_m_mup_mu(m,mup,mu) +&
                             proj_theta_full(itheta,mu,mup)*wtheta(itheta)*harm_sph(m,mup,mu,theta(itheta))*fm(m)
+                        end do
                     end do
                 end do
             end do
-        end do
-        do m=0,mmax
-            do mup=-m,m
-                do mu=-m,m
-                    print*, "I'm checking relation 1.7 is valid"
-                    if (proj_m_mup_mu(m,-mup,-mu) - (-1)**(mup+mu)*conjg(proj_m_mup_mu(m,mup,mu)) /= zeroc) then
-                        print*, "Relation 1.7 is not satisfied"
-                        error stop
-                    end if
+            do m=0,mmax
+                do mup=-m,m
+                    do mu=-m,m
+                        ! Check relation 1.7
+                        if (proj_m_mup_mu(m,-mup,-mu) - (-1)**(mup+mu)*conjg(proj_m_mup_mu(m,mup,mu)) /= zeroc) then
+                            print*, "Relation 1.7 is not satisfied"
+                            error stop
+                        end if
+                    end do
                 end do
             end do
-        end do
 
             do m=0,mmax
                 do mup=-m,m
                     do mu=0,m,molrotsymorder
                         ip = indp( m,mup,mu )
                         projections(ip)= sum(proj_theta(:,mu,mup)*tharm_sph(:,ip)*wtheta(:))*fm(m)
+                        if (abs(projections(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
+                            print*, "projections(ip)/=proj_m_mup_mu(m,mup,mu)"
+                            print*, "projections(ip)         =",projections(ip)
+                            print*, "proj_m_mup_mu(m,mup,mu) =",proj_m_mup_mu(m,mup,mu)
+                            error stop
+                        end if
                     end do
                 end do
             end do
@@ -1406,7 +1287,108 @@ df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
             END IF
         END FUNCTION
         !
+
+        subroutine for_all_q_find_indices_of_mq
+            !
+            ! for each vector q, defined by its components qx(ix_q), qy(iy_q), qz(iz_q)
+            ! I am looking for the indices ix_mq, iy_mq, iz_mq for which
+            ! qx(ix_mq), qy(iy_mq), qz(iz_mq) defines vector -q
+            !
+
+            implicit none
+            integer :: i, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+
+            i=0
+            do ix_q=1,nx
+                do ix_mq=1,nx
+                    if (qx(ix_q)==-qx(ix_mq) .or. qx(ix_q)+2._dp*pi*nx/lx==-qx(ix_mq) ) then
+                        tableof_ix_mq(ix_q) = ix_mq
+                        i=i+1
+                        ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
+                        cycle
+                    end if
+                end do
+            end do
+            if (i/=nx) then
+                print*, "I did not found all the -qx. Of",nx,", I found only",i
+                error stop
+            end if
+
+            i=0
+            do iy_q=1,ny
+                do iy_mq=1,ny
+                    if ( qy(iy_q)==-qy(iy_mq) .or. qy(iy_q)+2._dp*pi*ny/ly==-qy(iy_mq)  ) then
+                        tableof_iy_mq(iy_q) = iy_mq
+                        i=i+1
+                        ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
+                        cycle
+                    end if
+                end do
+            end do
+            if (i/=ny) then
+                print*, "I did not found all the -qy. Of",ny,", I found only",i
+                error stop
+            end if
+
+            i=0
+            do iz_q=1,nz
+                do iz_mq=1,nz
+                    if ( qz(iz_q)==-qz(iz_mq) .or. qz(iz_q)+2._dp*pi*nz/lz==-qz(iz_mq)  ) then
+                        tableof_iz_mq(iz_q) = iz_mq
+                        i=i+1
+                        ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
+                        cycle
+                    end if
+                end do
+            end do
+            if (i/=nz) then
+                print*, "I did not found all the -qz. Of",nz,", I found only",i
+                error stop
+            end if
+
+            ! Here I want to check that we really have q == -q but for the point in each direction at index 0 and nx/2+1
+            ! for odd numbers, please ask maximilien
+            if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
+                print*, "nx, ny ou nz est impair"
+                print*, "nx ny nz =", nx, ny, nz
+                print*, "that is not compatible with our energy_cproj for now"
+                error stop
+            end if
+            do ix_q=1,nx
+                do iy_q=1,ny
+                    do iz_q=1,nz
+                        ix_mq = tableof_ix_mq(ix_q)
+                        iy_mq = tableof_iy_mq(iy_q)
+                        iz_mq = tableof_iz_mq(iz_q)
+                        if ( qx(ix_q)/=-qx(ix_mq) .or. qy(iy_q)/=-qy(iy_mq) .or. qz(iz_q)/=-qz(iz_mq) ) then
+                            if (ix_q==1 .or. iy_q==1 .or. iz_q==1 .or. ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1) then
+                                ! that is the expected behavior
+                            else
+                                print*,"q n'est pas l'opposé de mq dans la boucle de verification des q apres la recherche"
+                                print*, "des indices de mq"
+                                print*, "ix_q, iy_q, iz_q, q(ix_q, iy_q, iz_q)    =",ix_q, iy_q, iz_q, qx(ix_q), qy(iy_q), qz(iz_q)
+                                print*, "ix_mq, iy_mq, iz_mq, q(ix_mq,iy_mq,iz_mq)=",ix_mq,iy_mq,iz_mq,qx(ix_mq),qy(iy_mq),qz(iz_mq)
+                                error stop
+                            end if
+                        end if
+                    end do
+                end do
+            end do
+        end subroutine for_all_q_find_indices_of_mq
+
     end subroutine energy_cproj
+
+
+
+
+
+
+
+
+
+
+
+
 end module module_energy_cproj
 
 
