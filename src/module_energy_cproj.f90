@@ -420,18 +420,16 @@ contains
                     iy_mq = tableof_iy_mq(iy_q)
                     iz_mq = tableof_iz_mq(iz_q)
 
-
-                    if (check(ix_q,iy_q,iz_q).eqv..true.) then
-                        if (check(ix_mq, iy_mq,iz_mq).eqv..true.) then
-                            cycle
-                        else
-                            print*,"in the main loop of energy_cproj, i have already done q but not mq!"
-                            print*, "ix_q, iy_q, iz_q =",ix_q, iy_q, iz_q
-                            print*, "ix_mq, iy_mq, iz_mq =",ix_mq, iy_mq, iz_mq
-                            error stop
-                        end if
-                    end if
-
+                    ! if (check(ix_q,iy_q,iz_q).eqv..true.) then
+                    !     if (check(ix_mq, iy_mq,iz_mq).eqv..true.) then
+                    !         cycle
+                    !     else
+                    !         print*,"in the main loop of energy_cproj, i have already done q but not mq!"
+                    !         print*, "ix_q, iy_q, iz_q =",ix_q, iy_q, iz_q
+                    !         print*, "ix_mq, iy_mq, iz_mq =",ix_mq, iy_mq, iz_mq
+                    !         error stop
+                    !     end if
+                    ! end if
 
                     q = [qx(ix_q), qy(iy_q), qz(iz_q)]
                     mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]
@@ -449,6 +447,15 @@ contains
                     deltarho_p_mq(1:np) = deltarho_p(1:np,ix_mq,iy_mq,iz_mq)
 
                     call rotate_to_molecular_frame ! does q and mq at the same time.
+
+                    if (q_eq_mq .and. any(deltarho_p_q/=deltarho_p_mq) ) then
+                        print*, "q = mq mais apres la rotation vers le molecular frame, on n'a plus deltarho_p_q=deltarho_p_mq"
+                        print*, "ix_q,iy_q,iz_q=", ix_q,iy_q,iz_q
+                        print*, "ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
+                        print*, "deltarho_p_q", deltarho_p_q
+                        print*, "deltarho_p_mq", deltarho_p_mq
+                        error stop "oijazd"
+                    end if
 
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for 200 values of |q|.
@@ -502,25 +509,26 @@ contains
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
                                         end if
+
                                     end do
                                 end do
 
                                 ip=indp(m,khi,mu)
-                                if (gamma_p_q(ip) /= zeroc) then
-                                    print*, "gamma_p_q(ip) is already calculated"
-                                    print*, "gamma_p_q(ip) old value=", gamma_p_q(ip)
-                                    print*, "new value =", gamma_m_khi_mu_q
-                                    error stop
-                                end if
-                                if (gamma_p_mq(ip) /= zeroc) then
-                                    print*, "gamma_p_mq(ip) is already calculated"
-                                    print*, "gamma_p_mq(ip) old value=", gamma_p_mq(ip)
-                                    print*, "new value =", gamma_m_khi_mu_mq
-                                    error stop
-                                end if
-
-                                gamma_p_q(ip) = gamma_m_khi_mu_q
+                                gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
+
+                                if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq) ) then
+                                    print*, "we have q=mq"
+                                    print*, "for ix_q,iy_q,iz_q=",  ix_q, iy_q, iz_q
+                                    print*, "and ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
+                                    print*, "q=",q
+                                    print*, "mq=",mq
+                                    print*, "gamma_p_q=",gamma_p_q
+                                    print*, "gamma_p_mq=",gamma_p_mq
+                                    print*, "deltarho_p_q=",deltarho_p_q
+                                    print*, "deltarho_p_mq=",deltarho_p_mq
+                                    error stop "apzokdukhsf"
+                                end if
 
                             end do
                         end do
@@ -533,27 +541,29 @@ contains
 
                     ! TOdo JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
 
-                    ! if (check(ix_q,iy_q,iz_q).eqv..true.) then
-                    !     print*, "gamma_p has already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
-                    !     print*, "q=",q
-                    !     print*, "                        ip          m          mup          mu"
-                    !     do ip=1,np
-                    !         print*, "old gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
-                    !         print*, "new gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p_q(ip)
-                    !         print*,
-                    !     end do
-                    ! end if
-                    !
-                    ! if (check(ix_mq,iy_mq,iz_mq).eqv..true.) then
-                    !     print*, "gamma_p has already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
-                    !     print*, "mq=",mq
-                    !     print*, "                        ip          m          mup          mu"
-                    !     do ip=1,np
-                    !         print*, "old gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
-                    !         print*, "new gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p_mq(ip)
-                    !         print*,
-                    !     end do
-                    ! end if
+                    if (check(ix_q,iy_q,iz_q).eqv..true. .and. any( gamma_p(:,ix_q,iy_q,iz_q)/=gamma_p_q(:) )) then
+                        print*, "gamma(q) already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
+                        print*, "q=",q
+                        print*,'mq=',mq
+                        print*, "                        ip          m          mup          mu"
+                        do ip=1,np
+                            print*, "old gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
+                            print*, "new gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p_q(ip)
+                            print*,
+                        end do
+                    end if
+
+                    if (check(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( gamma_p(:,ix_mq,iy_mq,iz_mq)/=gamma_p_mq(:) )    ) then
+                        print*, "gamma(q) already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
+                        print*, "mq=",mq
+                        print*,"q=",q
+                        print*, "                        ip          m          mup          mu"
+                        do ip=1,np
+                            print*, "old gamma_mq =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
+                            print*, "new gamma_mq =",ip, im(ip), imup(ip), imu(ip), gamma_p_mq(ip)
+                            print*,
+                        end do
+                    end if
 
                     gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
@@ -572,7 +582,7 @@ contains
 
 
         if (.not.all(check.eqv..true.)) then
-            print*, "not all gamma_p(projections,ix,iy,iz) has not been computed"
+            print*, "not all gamma_p(projections,ix,iy,iz) have not been computed"
             error stop
         end if
 
@@ -594,6 +604,7 @@ contains
         !
         ! Gather projections
         !
+        gamma=0._dp
         call dfftw_plan_dft_c2r_2d( ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE)
         do iz=1,nz
             do iy=1,ny
@@ -614,7 +625,7 @@ contains
                                 do ipsi=1,npsi
                                     io=grid%indo(itheta,iphi,ipsi)
         ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
-                *(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333_dp*grid%w(io)**2&
+                *(solvent(is)%density(ix,iy,iz,io)-solvent(is)%rho0)/0.0333_dp*grid%w(io)**2&
                     *real(nphi*npsi*ntheta,dp)
         df(ix,iy,iz,io,is)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
                                     /0.0333_dp*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
@@ -634,6 +645,7 @@ contains
             complex(dp) :: gamma_p_q_temp(1:np)
             complex(dp) :: gamma_p_mq_temp(1:np)
             complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
+            complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
             integer :: m, khi, mu, mup, ip, ip2
             if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
                 !return
@@ -641,6 +653,7 @@ contains
                 gamma_p_q_temp = zeroc
                 gamma_p_mq_temp = zeroc
                 gshrot = conjg(rotation_matrix_between_complex_spherical_harmonics(q,mmax) )
+                gshrot_mq = conjg(rotation_matrix_between_complex_spherical_harmonics(mq,mmax) )
                 do m=0,mmax
                     do mup=-m,m
                         do mu=0,m
@@ -648,8 +661,17 @@ contains
                             ! Equation 1.22
                             do khi=-m,m
                                 ip2=indp(m,khi,mu)
-                                gamma_p_q_temp(ip) = gamma_p_q_temp(ip) + gamma_p_q(ip2)*gshrot(m,mup,khi)
-                                gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                                gamma_p_q_temp(ip) = gamma_p_q_temp(ip)   + gamma_p_q(ip2)*gshrot(m,mup,khi)
+                                ! gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                                gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
+
+                                if (q_eq_mq .and. gamma_p_q_temp(ip)/=gamma_p_mq_temp(ip)) then
+                                    print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
+                                    print*, "m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)"
+                                    print*,m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)
+                                    error stop
+                                end if
+
                             end do
                             !
                         end do
@@ -665,9 +687,8 @@ contains
             complex(dp) :: deltarho_p_q_temp(1:np)
             complex(dp) :: deltarho_p_mq_temp(1:np)
             complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
-            ! complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
+            complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
             integer :: m, khi, mu, mup, ip2, ip
-            ! deltarho_p_q(1:np) in f => deltarho_p_q(1:np)
             !
             ! Rotate projections from laboratory frame to molecular frame
             ! If q=0 then chose the rotation you want: the identity is the simplest option.
@@ -676,6 +697,8 @@ contains
                 ! return
             else
                 gshrot    = rotation_matrix_between_complex_spherical_harmonics ( q, mmax)
+                gshrot_mq = rotation_matrix_between_complex_spherical_harmonics ( mq, mmax)
+
                 ! gshrot_mq = rotation_matrix_between_complex_spherical_harmonics (mq, mmax)
                 deltarho_p_q_temp = zeroc
                 deltarho_p_mq_temp = zeroc
@@ -688,7 +711,13 @@ contains
                                 ip2=indp(m,mup,mu)
                                 deltarho_p_q_temp(ip) = deltarho_p_q_temp(ip)  + deltarho_p_q(ip2)*gshrot(m,mup,khi)
                                 ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
-                                deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                                ! deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                                deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*gshrot_mq(m,mup,khi)
+                                if (q_eq_mq .and. deltarho_p_q_temp(ip)/=deltarho_p_mq_temp(ip)) then
+                                    print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
+                                    print*,m,khi,mu,ip,mup,ip2,deltarho_p_q_temp(ip),deltarho_p_mq_temp(ip)
+                                    error stop
+                                end if
                                 ! print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
                                 ! print*, "q=", q
                                 ! print*, "mq=", mq
@@ -799,7 +828,7 @@ contains
                 R(3,:)=[0,0,1]
             else
                 R3 = q/NORM2(q) ! The rotation matrix R will induce z to be aligned to vector q
-                IF( ABS(R3(1)) < 0.99 ) THEN
+                IF( ABS(R3(1)) < 0.99 ) THEN ! TODO COMPRENDRE POURQUOI JE PEUX PAS FIARE AVEC 010 au lieu de 100 PAR DEFAUT
                     R1 = cross_product( REAL([1,0,0],dp) , R3 ) ! we dont care about R2 and R1, as long as they are orthogonal to R3.
                 ELSE
                     R1 = cross_product( REAL([0,1,0],dp) , R3 )

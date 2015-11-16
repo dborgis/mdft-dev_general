@@ -1,4 +1,4 @@
-boxnod = 32 32 32
+boxnod = 2 2 4
 boxlen = 25. 25. 25.
 mmax = 1
 bulk_density = 0.0333
