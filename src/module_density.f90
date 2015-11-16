@@ -48,27 +48,27 @@ contains
         end do
 
         ! Read the density from a previous run
-        if (getinput%log('reuse_density', defaultvalue=.false.)) then
+        if (getinput%log('restart', defaultvalue=.false.)) then
             stop "LOOK AT MODULE_DENSITY"
-            ! INQUIRE (file='input/density.bin.in', EXIST=exists)
-            ! IF ( .NOT. exists) STOP "input/density.bin.in not found"
-            ! OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
-            ! IF ( ios /= 0 ) then
-            !     print *, 'problem while opening input/density.bin.in. bug at init_density.f90'
-            !     stop
-            ! END IF
+            INQUIRE (file='input/density.bin.in', EXIST=exists)
+            IF ( .NOT. exists) STOP "input/density.bin.in not found"
+            OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
+            IF ( ios /= 0 ) then
+                print *, 'problem while opening input/density.bin.in. bug at init_density.f90'
+                stop
+            END IF
             ! READ ( 10, iostat=ios ) cg_vect_new
-            ! IF ( ios<0 ) THEN
-            !     STOP "input/density.bin.in is empty"
-            ! ELSE IF ( ios>0 ) THEN
-            !     STOP "problem while trying to read cg_vect_new in input/density.bin.in"
-            ! END IF
-            ! PRINT*, '*** RESTART ***'
-            ! CLOSE (10)
-            ! OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
+            IF ( ios<0 ) THEN
+                STOP "input/density.bin.in is empty"
+            ELSE IF ( ios>0 ) THEN
+                STOP "problem while trying to read cg_vect_new in input/density.bin.in"
+            END IF
+            PRINT*, '*** RESTART ***'
+            CLOSE (10)
+            OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
             ! WRITE ( 10 ) cg_vect_new
-            ! CLOSE (10)
-            ! RETURN
+            CLOSE (10)
+            RETURN
         end if
 
 

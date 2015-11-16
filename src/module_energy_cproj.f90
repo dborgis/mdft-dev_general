@@ -50,7 +50,6 @@ module module_energy_cproj
     ! real(dp), parameter :: psi(npsi) = [(   (i-1)*dpsi   , i=1,npsi )]
     ! real(dp), parameter :: wpsi(npsi) = 1./npsi
 
-    integer :: exitstatus
     real(dp), allocatable :: fm(:)
     ! real(dp), parameter :: fm(0:mmax) = [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )]
     integer, parameter :: errorgenerator=-1
@@ -61,6 +60,16 @@ module module_energy_cproj
     end type fft2d_c_type
     type (fft2d_c_type) :: fft2d_c
 
+    type :: fft3d_c_type
+        type(c_ptr) :: plan_forward
+        type(c_ptr) :: plan_backward
+        logical :: plan_forward_ok = .false.
+        logical :: plan_backward_ok = .false.
+    end type fft3d_c_type
+    type (fft3d_c_type) :: fft3d
+
+    integer, allocatable :: tableof_ix_mq(:), tableof_iy_mq(:), tableof_iz_mq(:)
+    real(dp), allocatable :: qx(:), qy(:), qz(:) ! vector q and its components tabulated
 
     public :: energy_cproj
 
@@ -77,20 +86,18 @@ contains
         real(dp), parameter :: zero=0._dp
         complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
         real(dp), intent(out) :: ff
-        real(dp), intent(inout) :: df(:,:,:,:,:)
+        real(dp), intent(out) :: df(:,:,:,:,:)
         real(dp) :: dv, kT
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
         complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
-        complex(dp), allocatable :: deltarho_m_mup_mu_q(:,:,:), deltarho_m_mup_mu_mq(:,:,:)
-        integer :: nx, ny, nz, np, no, ntheta, nphi, npsi, mmax, na, nq, m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq
-        complex(dp), allocatable :: xxx_temp_array_of_m_khi_mu_q(:,:,:), xxx_temp_array_of_m_khi_mu_mq(:,:,:)
+        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq
+        integer :: m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq, is
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: tharm_sph(grid%ntheta,grid%np)
-        real(dp) :: q(3), mq(3), qx(grid%nx), qy(grid%ny), qz(grid%nz) ! vector q and its components tabulated
-        integer :: tableof_ix_mq(grid%nx), tableof_iy_mq(grid%ny), tableof_iz_mq(grid%nz)
+        real(dp) :: q(3), mq(3)
         type :: fft2d_type
             type(c_ptr) :: plan
             real(dp), allocatable    :: in(:,:)
@@ -103,24 +110,17 @@ contains
             real(dp), allocatable    :: out(:,:)
             logical :: isalreadyplanned
         end type
-        type :: fft3d_type
-            type(c_ptr) :: plan
-            complex(dp), allocatable :: in(:,:,:)
-        end type
         type(  fft2d_type ), save :: fft2d
         type( ifft2d_type ), save :: ifft2d
-        type( fft3d_type ) :: fft3d
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         real(dp) :: lx, ly, lz
         integer :: molrotsymorder
         logical, allocatable :: check(:,:,:)
-        integer, parameter :: molrotsymorder_localenattendantmieux=2
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
         if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(grid%npsi/2+1,grid%nphi))
         if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(grid%npsi,grid%nphi))
-        if (.not.allocated(fft3d%in)) allocate (fft3d%in(grid%nx,grid%ny,grid%nz))
 
         lx=grid%lx
         ly=grid%ly
@@ -136,6 +136,7 @@ contains
         no=grid%no
         na=myck%na
         nq=myck%nq
+        ns=solvent(1)%nspec
         ntheta=grid%ntheta
         nphi=grid%nphi
         npsi=grid%npsi
@@ -157,10 +158,6 @@ contains
         allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
         allocate (deltarho_p_q(np) ,source=zeroc)
         allocate (deltarho_p_mq(np) ,source=zeroc)
-        allocate (deltarho_m_mup_mu_q(0:mmax,-mmax:mmax, -mmax:mmax) ,source=zeroc)   ! TODO should be 0:mmax, -mmax:mmax, 0:mmax, isnt it ?
-        allocate (deltarho_m_mup_mu_mq(0:mmax,-mmax:mmax, -mmax:mmax) ,source=zeroc)  ! TODO should be 0:mmax, -mmax:mmax, 0:mmax, isnt it ?
-        allocate (xxx_temp_array_of_m_khi_mu_q(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
-        allocate (xxx_temp_array_of_m_khi_mu_mq(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
         allocate (check(nx,ny,nz), source=.false.)
 
         ! 1/ get deltarho = rho-rho0
@@ -244,7 +241,7 @@ contains
         ! m is related to theta
         ! mup is related to phi
         ! mu is related to psi
-        ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
+        ! TOdo: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
         tharm_sph = 0._dp
         do ip=1,np
@@ -322,11 +319,20 @@ contains
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_BACKWARD, FFTW_ESTIMATE ) ! in-place. BACKWARD means exp(iqr)
+        ! call dfftw_plan_dft_3d( fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_BACKWARD, FFTW_ESTIMATE ) ! in-place. BACKWARD means exp(iqr)
+        ! do ip=1,np
+        !     fft3d%in = deltarho_p(ip,1:nx,1:ny,1:nz)
+        !     call dfftw_execute( fft3d%plan )
+        !     deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
+        ! end do
+        if (.not. fft3d%plan_backward_ok) then
+            print*, "planning 3D FFTW plan_backward"
+            call dfftw_plan_dft_3d (fft3d%plan_backward,&
+                                    nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_PATIENT) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
+            fft3d%plan_backward_ok = .true.
+        end if
         do ip=1,np
-            fft3d%in = deltarho_p(ip,1:nx,1:ny,1:nz)
-            call dfftw_execute( fft3d%plan )
-            deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
+            call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION DE Δρ_p(q) VERS LE REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -347,12 +353,8 @@ contains
         ! See function qproj_inv
         !
 
-        qx(1:nx) = [( qproj(ix,nx,lx), ix=1,nx )]
-        qy(1:ny) = [( qproj(iy,ny,ly), iy=1,ny )]
-        qz(1:nz) = [( qproj(iz,nz,lz), iz=1,nz )]
 
         call for_all_q_find_indices_of_mq
-
 
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
@@ -373,8 +375,6 @@ contains
                     !
                     ! cartesian coordinates of vector q in lab frame
                     !
-                    ! TODO if (check(ix_q,iy_q,iz_q).eqv..true.) cycle
-
 
                     ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
                     ! block
@@ -413,6 +413,18 @@ contains
                     iy_mq = tableof_iy_mq(iy_q)
                     iz_mq = tableof_iz_mq(iz_q)
 
+                    if (check(ix_q,iy_q,iz_q).eqv..true.) then
+                        if (check(ix_mq, iy_mq,iz_mq).eqv..true.) then
+                            cycle
+                        else
+                            print*,"in the main loop of energy_cproj, i have already done q but not mq!"
+                            print*, "ix_q, iy_q, iz_q =",ix_q, iy_q, iz_q
+                            print*, "ix_mq, iy_mq, iz_mq =",ix_mq, iy_mq, iz_mq
+                            error stop
+                        end if
+                    end if
+
+
                     q = [qx(ix_q), qy(iy_q), qz(iz_q)]
                     mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]
 
@@ -428,34 +440,7 @@ contains
                     deltarho_p_q (1:np) = deltarho_p(1:np,ix_q,iy_q,iz_q)
                     deltarho_p_mq(1:np) = deltarho_p(1:np,ix_mq,iy_mq,iz_mq)
 
-                    !
-                    ! Rotate projections from laboratory frame to molecular frame
-                    ! If q=0 then chose the rotation you want: the identity is the simplest option.
-                    !
-                    if ( ix_q/=1 .or. iy_q/=1 .or. iz_q/=1 ) then  ! case 1,1,1 corresponds to |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
-                        deltarho_m_mup_mu_q  = zeroc
-                        deltarho_m_mup_mu_mq = zeroc
-                        DO ip=1,np
-                            m = im(ip)
-                            mup = imup(ip)
-                            mu = imu(ip)
-                            deltarho_m_mup_mu_q(m,mup,mu)  = deltarho_p_q (ip)
-                            deltarho_m_mup_mu_mq(m,mup,mu) = deltarho_p_mq(ip)
-                        end do
-                        xxx_temp_array_of_m_khi_mu_q = zeroc
-                        xxx_temp_array_of_m_khi_mu_mq = zeroc
-                        xxx_temp_array_of_m_khi_mu_q = lab2molframe  (deltarho_m_mup_mu_q, q)
-                        xxx_temp_array_of_m_khi_mu_mq = lab2molframe (deltarho_m_mup_mu_mq, -q)
-
-                        DO ip=1,np
-                            m = im(ip)
-                            khi = imup(ip)
-                            mu = imu(ip)
-                            deltarho_p_q(ip) = xxx_temp_array_of_m_khi_mu_q(m,khi,mu)
-                            deltarho_p_mq(ip) = xxx_temp_array_of_m_khi_mu_mq(m,khi,mu)
-                        end do
-                        ! now deltarho_p_q and deltarho_p_mq are in the molecular frame
-                    END IF
+                    call rotate_to_molecular_frame ! does q and mq at the same time.
 
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for 200 values of |q|.
@@ -472,20 +457,22 @@ contains
 
                     !
                     ! Ornstein-Zernike in the molecular frame
+                    ! We do OZ for q and -q at the same time
                     !
                     gamma_p_q(1:np) = zeroc
                     gamma_p_mq(1:np) = zeroc
 
-                    DO khi=-mmax,mmax
-                        DO m=ABS(khi),mmax
-                            DO mu=0,m,molrotsymorder ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
-                                if (mod(mu,molrotsymorder_localenattendantmieux) /= 0) cycle
+                    do khi=-mmax,mmax
+                        do m=abs(khi),mmax
+                            do mu=0,m,molrotsymorder ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
+                                if (mod(mu,2) /= 0) cycle
 
                                 gamma_m_khi_mu_q= zeroc
                                 gamma_m_khi_mu_mq = zeroc
+
                                 do n=abs(khi),mmax
                                     do nu=-n,n,molrotsymorder
-                                        if (mod(nu,molrotsymorder_localenattendantmieux) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
+                                        if (mod(nu,2) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
 
                                         ia = myck%inda(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
                                         if (ia<=0) then
@@ -511,9 +498,21 @@ contains
                                 end do
 
                                 ip=indp(m,khi,mu)
+                                if (gamma_p_q(ip) /= zeroc) then
+                                    print*, "gamma_p_q(ip) is already calculated"
+                                    print*, "gamma_p_q(ip) old value=", gamma_p_q(ip)
+                                    print*, "new value =", gamma_m_khi_mu_q
+                                    error stop
+                                end if
+                                if (gamma_p_mq(ip) /= zeroc) then
+                                    print*, "gamma_p_mq(ip) is already calculated"
+                                    print*, "gamma_p_mq(ip) old value=", gamma_p_mq(ip)
+                                    print*, "new value =", gamma_m_khi_mu_mq
+                                    error stop
+                                end if
+
                                 gamma_p_q(ip) = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
-
 
                             end do
                         end do
@@ -522,47 +521,32 @@ contains
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
                     !
-                    if ( .not.all([ix_q, iy_q, iz_q]==1) ) then
-                        xxx_temp_array_of_m_khi_mu_q=zeroc
-                        xxx_temp_array_of_m_khi_mu_mq=zeroc
+                    call rotate_to_fixed_frame ! does q and mq at the same time.
 
-                        do ip=1,np
-                            m=im(ip)
-                            khi=imup(ip)
-                            mu=imu(ip)
-                            xxx_temp_array_of_m_khi_mu_q(m,khi,mu) = gamma_p_q(ip)
-                            xxx_temp_array_of_m_khi_mu_mq(m,khi,mu) = gamma_p_mq(ip)
-                        end do
+                    ! TOdo JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
 
-                        deltarho_m_mup_mu_q = mol2labframe (xxx_temp_array_of_m_khi_mu_q, q)
-                        deltarho_m_mup_mu_mq = mol2labframe (xxx_temp_array_of_m_khi_mu_mq, -q)
-
-                        do ip=1,np
-                            m = im(ip)
-                            mup = imup(ip)
-                            mu = imu(ip)
-                            gamma_p_q(ip) = deltarho_m_mup_mu_q(m,mup,mu)
-                            gamma_p_mq(ip) = deltarho_m_mup_mu_mq(m,mup,mu)
-                        end do
-                    end if
-
-                    ! TODO REFLECHIR OMG C HORRIBLE A L'AIIIIIIIIIIIIIIIIIIIIIIIIIIIIDE
-                    ! if (q_eq_mq) then
-                    !     if ( (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1) .and. any(gamma_p_q/=conjg(gamma_p_mq)) &
-                    !     .or. (ix_q==1 .and. iy_q==1 .and. iz_q==1 .and. any(gamma_p_q/=gamma_p_mq))   ) then ! TODO OMG JE VIENS DE RAJOUTER UN CONJG SANS SAVOIR POURQUOI. JE VOIS JSUTE QUE C
-                    !         print*, "q = -q =", q
-                    !         print*, "ix_q, iy_q, iz_q=",ix_q,iy_q,iz_q
-                    !         print*, "ix_mq, iy_mq, iz_mq=",ix_mq,iy_mq,iz_mq
-                    !         print*, "but gamma_p_q /= gamma_p_mq"
-                    !         print*, "gamma_p_q", gamma_p_q
-                    !         print*, "gamma_p_mq", gamma_p_mq
+                    ! if (check(ix_q,iy_q,iz_q).eqv..true.) then
+                    !     print*, "gamma_p has already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
+                    !     print*, "q=",q
+                    !     print*, "                        ip          m          mup          mu"
+                    !     do ip=1,np
+                    !         print*, "old gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
+                    !         print*, "new gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p_q(ip)
                     !         print*,
-                    !         stop
-                    !     end if
+                    !     end do
+                    ! end if
+                    !
+                    ! if (check(ix_mq,iy_mq,iz_mq).eqv..true.) then
+                    !     print*, "gamma_p has already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
+                    !     print*, "mq=",mq
+                    !     print*, "                        ip          m          mup          mu"
+                    !     do ip=1,np
+                    !         print*, "old gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
+                    !         print*, "new gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p_mq(ip)
+                    !         print*,
+                    !     end do
                     ! end if
 
-
-                    ! TODO JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
                     gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
                         gamma_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
@@ -578,6 +562,7 @@ contains
             end do
         end do
 
+
         if (.not.all(check.eqv..true.)) then
             print*, "not all gamma_p(projections,ix,iy,iz) has not been computed"
             error stop
@@ -587,17 +572,27 @@ contains
         !
         ! FFT3D from Fourier space to real space
         !
-        call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_FORWARD, FFTW_MEASURE )
-        DO ip=1,np
-            fft3d%in = gamma_p(ip,1:nx,1:ny,1:nz)
-            call dfftw_execute( fft3d%plan )
-            gamma_p(ip,:,:,:) = fft3d%in/real(nx*ny*nz,dp)
+        !call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_FORWARD, FFTW_MEASURE )
+        ! do ip=1,np
+        !     fft3d%in = gamma_p(ip,1:nx,1:ny,1:nz)
+        !     call dfftw_execute( fft3d%plan )
+        !     gamma_p(ip,:,:,:) = fft3d%in/real(nx*ny*nz,dp)
+        ! end do
+        if (.not. fft3d%plan_forward_ok) then
+            print*," planning fftw3 plan_forward"
+            call dfftw_plan_dft_3d( fft3d%plan_forward,&
+                                    nx, ny, nz, gamma_p(1,1:nx,1:ny,1:nz), gamma_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_PATIENT )
+            fft3d%plan_forward_ok = .true.
+        end if
+        do ip=1,np
+            call dfftw_execute_dft( fft3d%plan_forward, gamma_p(ip,1:nx,1:ny,1:nz), gamma_p(ip,1:nx,1:ny,1:nz) )
         end do
+        gamma_p=gamma_p/real(nx*ny*nz,dp)
 
         !
         ! Gather projections
         !
-        call dfftw_plan_dft_c2r_2d(ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE)
+        call dfftw_plan_dft_c2r_2d( ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE)
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
@@ -606,10 +601,9 @@ contains
             end do
         end do
 
-        block
-            real(dp) :: df_cproj(nx,ny,nz,no)
-            df_cproj=0._dp
-            ff=0._dp
+        df=0._dp
+        ff=0._dp
+        do is=1,ns
             do ix=1,nx
                 do iy=1,ny
                     do iz=1,nz
@@ -620,7 +614,7 @@ contains
                                     ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
                                     *(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333_dp*grid%w(io)**2&
                                     *real(nphi*npsi*ntheta,dp)
-                                    df_cproj(ix,iy,iz,io)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
+                                    df(ix,iy,iz,io,is)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
                                     /0.0333_dp*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
                                 end do
                             end do
@@ -628,14 +622,88 @@ contains
                     end do
                 end do
             end do
-            df(:,:,:,:,1)=df(:,:,:,:,1)+df_cproj
-            ! print*, "ff%c_proj=",ff,"and norm2@df_cproj=",norm2(df_cproj)
-        end block
+        end do
 
 
         !=============================================================================================
     CONTAINS
 
+        subroutine rotate_to_fixed_frame
+            implicit none
+            complex(dp) :: gamma_p_q_temp(1:np)
+            complex(dp) :: gamma_p_mq_temp(1:np)
+            complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
+            integer :: m, khi, mu, mup, ip, ip2
+            if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
+                return
+            else
+                gamma_p_q_temp = zeroc
+                gamma_p_mq_temp = zeroc
+                gshrot = conjg(rotation_matrix_between_complex_spherical_harmonics(q,mmax) )
+                do m=0,mmax
+                    do mup=-m,m
+                        do mu=0,m
+                            ip=indp(m,mup,mu)
+                            ! Equation 1.22
+                            do khi=-m,m
+                                ip2=indp(m,khi,mu)
+                                gamma_p_q_temp(ip) = gamma_p_q_temp(ip) + gamma_p_q(ip2)*gshrot(m,mup,khi)
+                                gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                            end do
+                            !
+                        end do
+                    end do
+                end do
+                gamma_p_q = gamma_p_q_temp
+                gamma_p_mq = gamma_p_mq_temp
+            end if
+        end subroutine rotate_to_fixed_frame
+
+        subroutine rotate_to_molecular_frame
+            implicit none
+            complex(dp) :: deltarho_p_q_temp(1:np)
+            complex(dp) :: deltarho_p_mq_temp(1:np)
+            complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
+            ! complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
+            integer :: m, khi, mu, mup, ip2, ip
+            ! deltarho_p_q(1:np) in f => deltarho_p_q(1:np)
+            !
+            ! Rotate projections from laboratory frame to molecular frame
+            ! If q=0 then chose the rotation you want: the identity is the simplest option.
+            !
+            if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
+                return
+            else
+                gshrot    = rotation_matrix_between_complex_spherical_harmonics ( q, mmax)
+                ! gshrot_mq = rotation_matrix_between_complex_spherical_harmonics (mq, mmax)
+                deltarho_p_q_temp = zeroc
+                deltarho_p_mq_temp = zeroc
+                do m=0,mmax
+                    do khi=-m,m
+                        do mu=0,m
+                            ip=indp(m,khi,mu)
+                            ! Equation 1.22
+                            do mup=-m,m
+                                ip2=indp(m,mup,mu)
+                                deltarho_p_q_temp(ip) = deltarho_p_q_temp(ip)  + deltarho_p_q(ip2)*gshrot(m,mup,khi)
+                                ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
+                                deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                                ! print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
+                                ! print*, "q=", q
+                                ! print*, "mq=", mq
+                                ! print*, "gshrot(q,m,mup,khi)                 =", gshrot(m,mup,khi)
+                                ! print*, "gshrot(mq,m,mup,khi) par sym 1.23/1 =", (-1)**m*gshrot(m,mup,-khi)
+                                ! print*, "gshrot(mq,m,mup,khi) par sym 1.23/2 =", (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
+                                ! print*, "gshrot(mq,m,mup,khi) brutal         =", gshrot_mq(m,mup,khi)
+                                ! print*,
+                            end do
+                        end do
+                    end do
+                end do
+                deltarho_p_q = deltarho_p_q_temp
+                deltarho_p_mq = deltarho_p_mq_temp
+            end if
+        end subroutine rotate_to_molecular_frame
 
         PURE FUNCTION harm_sph( m, mu, mup, beta ) ! Luc's luc72p143
             !
@@ -700,9 +768,7 @@ contains
             REAL(dp), PARAMETER :: zero = 0._dp
             if( abs(x) <= epsilon(x) ) trimed = zero
         END FUNCTION trimed
-        !
-        !
-        !
+
         PURE FUNCTION cross_product(a,b)
             !
             ! Cross product of two vectors
@@ -714,9 +780,7 @@ contains
             cross_product(2) = a(3)*b(1)-a(1)*b(3)
             cross_product(3) = a(1)*b(2)-a(2)*b(1)
         END FUNCTION cross_product
-        !
-        !
-        !
+
         PURE FUNCTION rotation_matrix_from_lab_to_q_frame(q) RESULT(R)
             !
             ! Given the coordinates q(3) in a frame (let's call it lab frame),
@@ -728,20 +792,25 @@ contains
             IMPLICIT NONE
             REAL(dp), INTENT(IN) :: q(3)
             REAL(dp) :: R1(3), R2(3), R3(3), R(3,3)
-            R3 = q/NORM2(q) ! The rotation matrix R will induce z to be aligned to vector q
-            IF( ABS(R3(1)) < 0.99 ) THEN
-                R1 = cross_product( REAL([1,0,0],dp) , R3 ) ! we dont care about R2 and R1, as long as they are orthogonal to R3.
-            ELSE
-                R1 = cross_product( REAL([0,1,0],dp) , R3 )
-            END IF
-            R1 = R1/NORM2(R1) ! normalization
-            R2 = cross_product( R3, R1 )
-            R(1,:) = R1
-            R(2,:) = R2
-            R(3,:) = R3
-        END FUNCTION
-        !
-        !
+            if (norm2(q)<=epsilon(1._dp)) then
+                R(1,:)=[1,0,0]
+                R(2,:)=[0,1,0]
+                R(3,:)=[0,0,1]
+            else
+                R3 = q/NORM2(q) ! The rotation matrix R will induce z to be aligned to vector q
+                IF( ABS(R3(1)) < 0.99 ) THEN
+                    R1 = cross_product( REAL([1,0,0],dp) , R3 ) ! we dont care about R2 and R1, as long as they are orthogonal to R3.
+                ELSE
+                    R1 = cross_product( REAL([0,1,0],dp) , R3 )
+                END IF
+                R1 = R1/NORM2(R1) ! normalization
+                R2 = cross_product( R3, R1 )
+                R(1,:) = R1
+                R(2,:) = R2
+                R(3,:) = R3
+            end if
+        end function rotation_matrix_from_lab_to_q_frame
+
         FUNCTION rotation_matrix_between_complex_spherical_harmonics(q,lmax) RESULT (R)
             !
             ! Given a column vector of REAL values q of dimension 3,
@@ -756,6 +825,7 @@ contains
             ! Conditions for m==-l and m==l by ML
             ! All bugs due to ML
             !
+            use precision_kinds, only: dp
             IMPLICIT NONE
             !
             INTEGER, INTENT(IN) :: lmax
@@ -771,14 +841,14 @@ contains
             !
             fi = 0
             gi = 0
-            R = CMPLX(0,0)
+            R = complex(0._dp,0._dp)
             !
             ! l = 0
             !
             fi(0,0,0) = 1
             gi(0,0,0) = 0
             IF( lmax == 0 ) THEN
-                R = CMPLX(1,0)
+                R = complex(1._dp,0._dp)
                 RETURN
             ELSE
                 !
@@ -818,22 +888,22 @@ contains
                 tsqrt(0)=0
                 tsqrt(1)=1
                 tsqrt(2)=tsqrt2
-                DO l=3,2*lmax+1
+                do l=3,2*lmax+1
                     tsqrt(l) = SQRT(REAL(l,dp))
                 end do
                 !
                 ! Coefficients needed for the recursion
                 ! see eq 6.1 to 6.5 of Choi et al.
                 !
-                DO l=1,lmax
+                do l=1,lmax
                     a(l,-l,:)=0
                     b(l,-l,:)=0
                     c(l,-l,:)=0
                     d(l,-l,:)=0
-                    DO m=-l+1,l
+                    do m=-l+1,l
                         anumerator=tsqrt(l+m)*tsqrt(l-m)
                         bnumerator=tsqrt(l+m)*tsqrt(l+m-1)
-                        DO m1=-l+1,l-1
+                        do m1=-l+1,l-1
                             adenom = 1/(tsqrt(l+m1)*tsqrt(l-m1))
                             a(l,m,m1)=anumerator*adenom
                             b(l,m,m1)=bnumerator*adenom/tsqrt2
@@ -848,12 +918,12 @@ contains
             !
             ! l > 1    Use recursion
             !
-            DO l=2,lmax
+            do l=2,lmax
                 l1=l-1
-                DO m=-l,l
+                do m=-l,l
                     m1min=0
                     IF(m>0) m1min=1
-                    DO m1=m1min,l-1
+                    do m1=m1min,l-1
                         if( m==-l) then
                             fi(l,m,m1)=b(l,-m,m1)*(fi(1,-1,0)*fi(l1,m+1,m1)-gi(1,-1,0)*gi(l1,m+1,m1))
                             gi(l,m,m1)=b(l,-m,m1)*(fi(1,-1,0)*gi(l1,m+1,m1)+gi(1,-1,0)*fi(l1,m+1,m1))
@@ -893,9 +963,9 @@ contains
             !
             ! fi and gi are the REAL and imaginary part of our rotation matrix
             !
-            R = CMPLX(fi,gi,dp)
+            R = cmplx(fi,gi,dp)
         END FUNCTION rotation_matrix_between_complex_spherical_harmonics
-        !
+
         PURE FUNCTION qproj( i, imax, length)
             !
             ! Say you have grid nodes every 2pi/lx distance units (unit given by the unit of lx)
@@ -925,25 +995,6 @@ contains
                 qproj = twopi*REAL(i-1-imax,dp)/length
             END IF
         END FUNCTION qproj
-
-
-        PURE FUNCTION qproj_inv( qi, imax, length)
-            !
-            ! You know the length of vector q in one direction, and you want to know what index in the table it comes from
-            ! we thus have    qproj_inv( qproj(i,imax,length) , imax, length) = i
-            !
-            IMPLICIT NONE
-            INTEGER :: qproj_inv
-            REAL(dp), INTENT(IN) :: qi ! length of vector q in the direction you want
-            REAL(dp), INTENT(IN) :: length ! length of the supercell, in the direction you want
-            INTEGER, INTENT(IN)  :: imax ! how many nodes in this direction
-            REAL(dp), PARAMETER  :: twopi=2*ACOS(-1._dp)
-            IF( qi < 0 ) THEN
-                qproj_inv = NINT( qi*length/twopi +1 +imax )
-            ELSE
-                qproj_inv = NINT( qi*length/twopi +1 )
-            END IF
-        END FUNCTION qproj_inv
 
         subroutine read_ck_nonzero
             implicit none
@@ -1077,7 +1128,6 @@ contains
             myck%nq=nq
         end subroutine read_ck_nonzero
 
-
         FUNCTION euler2proj (eulerangles) RESULT (projections)
             IMPLICIT NONE
             REAL(dp), INTENT(IN) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
@@ -1110,9 +1160,9 @@ contains
             end do
 
 
-            DO itheta=1,ntheta
-                DO iphi=1,nphi
-                    DO ipsi=1,npsi
+            do itheta=1,ntheta
+                do iphi=1,nphi
+                    do ipsi=1,npsi
                         fft2d%in(ipsi,iphi) = eulerangles(itheta,iphi,ipsi)
                     end do
                 end do
@@ -1194,7 +1244,7 @@ contains
                 end do
             end do
         END FUNCTION euler2proj
-        !
+
         FUNCTION proj2euler (projections) RESULT (eulerangles)
             IMPLICIT NONE
             REAL(dp) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
@@ -1204,10 +1254,10 @@ contains
             mmax=grid%mmax
             molrotsymorder=grid%molrotsymorder
             proj_theta = CMPLX(0,0)
-            DO itheta=1,ntheta
-                DO mup=-mmax,mmax
-                    DO mu=0,mmax/molrotsymorder
-                        DO m= MAX(ABS(mup),ABS(mu)), mmax
+            do itheta=1,ntheta
+                do mup=-mmax,mmax
+                    do mu=0,mmax/molrotsymorder
+                        do m= MAX(ABS(mup),ABS(mu)), mmax
                             ip=indp(m,mup,mu)
                             proj_theta(itheta,mu,mup) = proj_theta(itheta,mu,mup)&
                             +projections(ip)*tharm_sph(itheta,ip)*fm(m)
@@ -1215,63 +1265,17 @@ contains
                     end do
                 end do
             end do
-            DO itheta=1,ntheta
+            do itheta=1,ntheta
                 ifft2d%in(:,1:mmax+1) = CONJG( proj_theta(itheta,:,0:mmax)   )
                 ifft2d%in(:,mmax+2:)  = CONJG( proj_theta(itheta,:,-mmax:-1) )
                 call dfftw_execute( ifft2d%plan )
-                DO iphi=1,nphi
-                    DO ipsi=1,npsi
+                do iphi=1,nphi
+                    do ipsi=1,npsi
                         eulerangles(itheta,iphi,ipsi) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
                     end do
                 end do
             end do
         END FUNCTION proj2euler
-
-        FUNCTION lab2molframe (datalabframe, q) RESULT (datamolframe)
-            IMPLICIT NONE
-            COMPLEX(dp), INTENT(IN) :: datalabframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
-            COMPLEX(dp) :: datamolframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
-            REAL(dp), INTENT(IN) :: q(1:3)
-            INTEGER :: m, mup, mu, khi
-            COMPLEX(dp) :: GSHRot(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
-            GSHRot = rotation_matrix_between_complex_spherical_harmonics(q,grid%mmax)
-            datamolframe = CMPLX(0,0)
-            DO m=0,mmax
-                DO khi=-m,m
-                    DO mu=0,m
-                        !
-                        DO mup=-m,m
-                            datamolframe(m,khi,mu) = datamolframe(m,khi,mu)&
-                            + datalabframe(m,mup,mu) *GSHRot(m,mup,khi)
-                        end do
-                        !
-                    end do
-                end do
-            end do
-        END FUNCTION
-        !
-        FUNCTION mol2labframe (datamolframe, q) RESULT (datalabframe)
-            IMPLICIT NONE
-            COMPLEX(dp) :: GSHRot(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
-            COMPLEX(dp) :: datalabframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
-            COMPLEX(dp), INTENT(IN) :: datamolframe(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax:grid%mmax)
-            REAL(dp), INTENT(IN) :: q(1:3)
-            INTEGER :: m, mup, mu, khi
-            GSHRot = CONJG(rotation_matrix_between_complex_spherical_harmonics(q,grid%mmax))
-            datalabframe = CMPLX(0,0)
-            DO m=0,mmax
-                DO mup=-m,m
-                    DO mu=0,m
-                        !
-                        DO khi=-m,m
-                            datalabframe(m,mup,mu) = datalabframe(m,mup,mu) &
-                            + datamolframe(m,khi,mu) *GSHRot(m,mup,khi)
-                        end do
-                        !
-                    end do
-                end do
-            end do
-        END FUNCTION mol2labframe
 
         PURE FUNCTION  angle(x,y)
             IMPLICIT NONE
@@ -1285,8 +1289,7 @@ contains
             ELSE
                 angle = 2*pi -ACOS(xx)
             END IF
-        END FUNCTION
-        !
+        END FUNCTION angle
 
         subroutine for_all_q_find_indices_of_mq
             !
@@ -1297,7 +1300,23 @@ contains
 
             implicit none
             integer :: i, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+            if ( allocated(tableof_ix_mq) .and. allocated(tableof_iy_mq) .and. allocated(tableof_iz_mq)) then
+                if ( size(tableof_ix_mq)==nx .and. size(tableof_iy_mq)==ny .and. size(tableof_iz_mq)==nz &
+                    .and. allocated(qx) .and. size(qx)==nx .and. allocated(qy) .and. size(qy)==ny .and.&
+                    allocated(qz) .and. size(qz)==nz ) then
+                    return
+                else
+                    print*, "problem detected in the subroutine that allocates and defines all q and mq related arrays"
+                    error stop
+                end if
+            end if
 
+            allocate (qx(nx), qy(ny), qz(nz), source=0._dp)
+            qx(1:nx) = [( qproj(ix,nx,lx), ix=1,nx )]
+            qy(1:ny) = [( qproj(iy,ny,ly), iy=1,ny )]
+            qz(1:nz) = [( qproj(iz,nz,lz), iz=1,nz )]
+
+            allocate (tableof_ix_mq(nx), tableof_iy_mq(ny), tableof_iz_mq(nz) ,source=-huge(1))
             i=0
             do ix_q=1,nx
                 do ix_mq=1,nx
@@ -1376,18 +1395,9 @@ contains
             end do
         end subroutine for_all_q_find_indices_of_mq
 
+
+
     end subroutine energy_cproj
-
-
-
-
-
-
-
-
-
-
-
 
 end module module_energy_cproj
 
@@ -1425,9 +1435,9 @@ end module module_energy_cproj
 !     COMPLEX(dp), INTENT(IN) :: data3c(0:mmax,-mmax:mmax,-mmax:mmax)
 !     COMPLEX(dp) :: data1c(np)
 !     INTEGER :: m, mup, mu, ip
-!     DO m=0,mmax
-!         DO mup=-m,m
-!             DO mu=0,m,molrotsymorder
+!     do m=0,mmax
+!         do mup=-m,m
+!             do mu=0,m,molrotsymorder
 !                 ip=indp(m,mup,mu)
 !                 data1c(ip)=data3c(m,mup,mu)
 !             end do
@@ -1442,7 +1452,7 @@ end module module_energy_cproj
 !     COMPLEX(dp), INTENT(IN) :: data1c(np)
 !     COMPLEX(dp) :: data3c(0:mmax,-mmax:mmax,-mmax:mmax)
 !     INTEGER :: m, mup, mu, ip
-!     DO ip=1,np
+!     do ip=1,np
 !         m=im(ip)
 !         mup=imup(ip)
 !         mu=imu(ip)
@@ -1482,7 +1492,7 @@ end module module_energy_cproj
 !         error stop "Stopping with error"
 !     end if
 !
-!     DO i=1,10            !
+!     do i=1,10            !
 !         READ(iounit,*)   ! Skip 10 lines of comments
 !     end do               !
 !
@@ -1498,19 +1508,19 @@ end module module_energy_cproj
 !     PRINT*,"Non-zero projections of the direct correlation function in molecular frame c^{m n}_{mu nu, khi}:"
 !     PRINT*,"        index         m           n           mu          nu          khi"
 !     PRINT*,"        -----        ---         ---          --          --          ---"
-!     DO ia=1,nalpha
+!     do ia=1,nalpha
 !         print*, alp(ia), m(ia), n(ia), mu(ia), nu(ia), khi(ia)
 !     end do
 !     PRINT*
 !
 !     myck%inda=errorgenerator
-!     DO ia=1,nalpha
+!     do ia=1,nalpha
 !         myck%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
 !     end do
 !
-!     DO iq=1,nq
+!     do iq=1,nq
 !         READ(iounit,*) normq(iq), fi
-!         DO ia=1,nalpha
+!         do ia=1,nalpha
 !             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
 !         end do
 !     end do
@@ -1559,7 +1569,7 @@ end module module_energy_cproj
 !         ERROR STOP "I don't ck_toutes_nmax file with all projections for nmax = 0 or nmax > 3 yet"
 !     END SELECT
 !     ! skip 10 lignes of comments
-!     DO i=1,10
+!     do i=1,10
 !         READ(11,*)
 !     end do
 !     ! then read useful stuff
@@ -1584,12 +1594,12 @@ end module module_energy_cproj
 !     ! print*,int(nu,1)
 !     ! print*,int(khi,1)
 !     myck%inda=errorgenerator
-!     DO ia=1,nalpha
+!     do ia=1,nalpha
 !         myck%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
 !     end do
-!     DO iq=1,nq
+!     do iq=1,nq
 !         READ(11,*) normq(iq), fi
-!         DO ia=1,nalpha
+!         do ia=1,nalpha
 !             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
 !         end do
 !     end do

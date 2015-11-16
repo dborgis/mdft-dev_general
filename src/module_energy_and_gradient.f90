@@ -55,12 +55,12 @@ contains
 
         f  = zerodp
         df = zerodp
+        df_loc = zerodp
 
         print*,
 
         do s=1,solvent(1)%nspec
             if (solvent(s)%do%id_and_ext) then
-                df_loc = 0._dp
                 call cpu_time(t(1))
                 call energy_ideal_and_external (ff%id, ff%ext, df_loc)
                 call cpu_time(t(2))
@@ -70,7 +70,6 @@ contains
                 df = df + df_loc
             end if
             if (solvent(s)%do%exc_cs) then
-                df_loc=0._dp
                 call cpu_time(t(3))
                 call energy_cs (ff%exc_cs, df_loc)
                 call cpu_time(t(4))
@@ -79,7 +78,6 @@ contains
                 df = df + df_loc
             end if
             if (solvent(s)%do%exc_cdeltacd) then
-                df_loc=0._dp
                 call cpu_time(t(5))
                 call energy_cdeltacd (ff%exc_cdeltacd, df_loc)
                 call cpu_time(t(6))
@@ -88,7 +86,6 @@ contains
                 df = df + df_loc
             end if
             if (solvent(s)%do%exc_cproj) then
-                df_loc=0._dp
                 call cpu_time(t(7))
                 call energy_cproj (ff%exc_cproj, df_loc)
                 call cpu_time(t(8))

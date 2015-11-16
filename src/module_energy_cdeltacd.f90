@@ -15,13 +15,13 @@ contains
         use module_dcf, only: init_dcf
 
         implicit none
-        integer :: nx, ny, nz, no, ns, ix, iy, iz, is, io, ik, ikmax
+        integer :: nx, ny, nz, no, ix, iy, iz, is, io, ik, ikmax
         real(dp), intent(out) :: Fexc
         real(dp) :: kT, dv, ksq, k, dk, vexc, kmax, rho, rho0
         complex(dp) :: kP
         real(dp) :: kx(grid%nx/2+1), ky(grid%ny), kz(grid%nz)
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
-        real(dp), intent(inout) :: dF(:,:,:,:,:)
+        real(dp), intent(out) :: dF(:,:,:,:,:)
         real(dp), allocatable :: Px(:,:,:), Py(:,:,:), Pz(:,:,:)
         complex(dp), allocatable :: Px_k(:,:,:), Py_k(:,:,:), Pz_k(:,:,:)
         complex(dp), allocatable :: Ex_k(:,:,:), Ey_k(:,:,:), Ez_k(:,:,:)
@@ -156,6 +156,7 @@ contains
 
         rho0=solvent(1)%rho0
         fexc=0._dp
+        df = 0._dp
         is=1
         do ix=1,nx
             do iy=1,ny

@@ -16,7 +16,7 @@ contains
         implicit none
 
         real(dp), intent(out) :: fid, fext
-        real(dp), intent(inout) :: df(:,:,:,:,:)
+        real(dp), intent(out) :: df(:,:,:,:,:)
         integer :: is, io, ns, ix, iy, iz
         real(dp) :: x, x0, vext, volume, dv, kT, mu, w, dfid
         real(dp), parameter :: zerodp = 0._dp
@@ -38,6 +38,7 @@ contains
         !
         fid = zerodp
         fext = zerodp
+        df = zerodp
         do is=1,ns
             x0 = solvent(is)%rho0 ! bulk density
             do io=1,grid%no
