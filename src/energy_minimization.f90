@@ -72,7 +72,6 @@ subroutine energy_minimization
 
     print*,
     print*,
-    print*, "solvent(1)%density(1,1,1,1) =", solvent(1)%density(1,1,1,1)
     print*, "===== Energy minimization ====="
     print*,
     print*,

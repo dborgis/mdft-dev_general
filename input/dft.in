@@ -1,6 +1,9 @@
 boxnod = 64 64 64
 boxlen = 25. 25. 25.
 mmax = 1
+bulk_density = 0.0333
+temperature = 300.
+
 
 
 #############################
@@ -16,8 +19,6 @@ mmax = 1
 ##polarization_order = dipol # multi or dipol
 ##include_nc_coupling = F
 #
-bulk_density = 0.0333
-temperature = 300.
 #
 #
 #############################

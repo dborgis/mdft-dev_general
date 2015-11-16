@@ -413,6 +413,7 @@ contains
                     iy_mq = tableof_iy_mq(iy_q)
                     iz_mq = tableof_iz_mq(iz_q)
 
+
                     if (check(ix_q,iy_q,iz_q).eqv..true.) then
                         if (check(ix_mq, iy_mq,iz_mq).eqv..true.) then
                             cycle
@@ -611,10 +612,10 @@ contains
                             do iphi=1,nphi
                                 do ipsi=1,npsi
                                     io=grid%indo(itheta,iphi,ipsi)
-                                    ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
-                                    *(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333_dp*grid%w(io)**2&
-                                    *real(nphi*npsi*ntheta,dp)
-                                    df(ix,iy,iz,io,is)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
+        ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
+                *(solvent(1)%density(ix,iy,iz,io)-solvent(1)%rho0)/0.0333_dp*grid%w(io)**2&
+                    *real(nphi*npsi*ntheta,dp)
+        df(ix,iy,iz,io,is)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
                                     /0.0333_dp*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
                                 end do
                             end do
@@ -625,8 +626,7 @@ contains
         end do
 
 
-        !=============================================================================================
-    CONTAINS
+    contains
 
         subroutine rotate_to_fixed_frame
             implicit none
