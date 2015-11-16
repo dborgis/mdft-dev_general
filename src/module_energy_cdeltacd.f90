@@ -108,15 +108,6 @@ contains
         ikmax =size(solvent(1)%cdelta%x)
         kmax =solvent(1)%cdelta%x(ikmax)
 
-        if (sqrt(maxval(kx)**2+maxval(ky)**2+maxval(kz)**2)>kmax) then
-            print*, "In module_energy_cdeltacs"
-            print*, "because of our grid",nx,ny,nz,"and deltax:",grid%dx,grid%dy,grid%dz
-            print*, "|k| will be as high as:",sqrt(maxval(kx)**2+maxval(ky)**2+maxval(kz)**2)
-            print*, "that is higher than what we have tabulated :",kmax
-            print*, "instead of this kmax, we use the last value we have in the file :",kmax
-            error stop
-        end if
-
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx/2+1
@@ -128,6 +119,7 @@ contains
                     end if
                     k=sqrt(ksq)
                     ik=int(k/dk)+1
+                    if (ik>ikmax) ik=ikmax
                     Ex_k(ix,iy,iz)=solvent(1)%cdelta%y(ik)*Px_k(ix,iy,iz)+solvent(1)%cd%y(ik)*(3._dp*kP*kx(ix)-Px_k(ix,iy,iz))
                     Ey_k(ix,iy,iz)=solvent(1)%cdelta%y(ik)*Py_k(ix,iy,iz)+solvent(1)%cd%y(ik)*(3._dp*kP*ky(iy)-Py_k(ix,iy,iz))
                     Ez_k(ix,iy,iz)=solvent(1)%cdelta%y(ik)*Pz_k(ix,iy,iz)+solvent(1)%cd%y(ik)*(3._dp*kP*kz(iz)-Pz_k(ix,iy,iz))

@@ -293,6 +293,18 @@ contains
             call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
             ifft2d%isalreadyplanned =.true.
         end if
+        if (.not. fft3d%plan_backward_ok) then
+            call dfftw_plan_dft_3d (fft3d%plan_backward,&
+                                    nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_PATIENT) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
+            fft3d%plan_backward_ok = .true.
+        end if
+        if (.not. fft3d%plan_forward_ok) then
+            call dfftw_plan_dft_3d( fft3d%plan_forward,&
+                                    nx, ny, nz, gamma_p(1,1:nx,1:ny,1:nz), gamma_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_PATIENT )
+            fft3d%plan_forward_ok = .true.
+        end if
+
+
 
         do iz=1,nz
             do iy=1,ny
@@ -325,12 +337,7 @@ contains
         !     call dfftw_execute( fft3d%plan )
         !     deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
         ! end do
-        if (.not. fft3d%plan_backward_ok) then
-            print*, "planning 3D FFTW plan_backward"
-            call dfftw_plan_dft_3d (fft3d%plan_backward,&
-                                    nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_PATIENT) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
-            fft3d%plan_backward_ok = .true.
-        end if
+
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
         end do
@@ -579,12 +586,6 @@ contains
         !     call dfftw_execute( fft3d%plan )
         !     gamma_p(ip,:,:,:) = fft3d%in/real(nx*ny*nz,dp)
         ! end do
-        if (.not. fft3d%plan_forward_ok) then
-            print*," planning fftw3 plan_forward"
-            call dfftw_plan_dft_3d( fft3d%plan_forward,&
-                                    nx, ny, nz, gamma_p(1,1:nx,1:ny,1:nz), gamma_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_PATIENT )
-            fft3d%plan_forward_ok = .true.
-        end if
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_forward, gamma_p(ip,1:nx,1:ny,1:nz), gamma_p(ip,1:nx,1:ny,1:nz) )
         end do
@@ -635,7 +636,7 @@ contains
             complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
             integer :: m, khi, mu, mup, ip, ip2
             if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
-                return
+                !return
             else
                 gamma_p_q_temp = zeroc
                 gamma_p_mq_temp = zeroc
@@ -672,7 +673,7 @@ contains
             ! If q=0 then chose the rotation you want: the identity is the simplest option.
             !
             if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
-                return
+                ! return
             else
                 gshrot    = rotation_matrix_between_complex_spherical_harmonics ( q, mmax)
                 ! gshrot_mq = rotation_matrix_between_complex_spherical_harmonics (mq, mmax)
@@ -1065,20 +1066,20 @@ contains
 
 
             i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
-            if (na/=i) then
-                print*, "in read_ck_cproj nalpha est bizarre"
-                print*, "na=",na
-                print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
-                ! error stop
-            end if
+          !  if (na/=i) then
+          !      print*, "in read_ck_cproj nalpha est bizarre"
+          !      print*, "na=",na
+          !      print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
+          !      ! error stop
+          !  end if
 
             i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
-            if (na/=i) then
-                print*, "in read ck na /= nalpha"
-                print*, "na=",na
-                print*, "bruteforce=",i
-                ! error stop
-            end if
+          !  if (na/=i) then
+          !      print*, "in read ck na /= nalpha"
+          !      print*, "na=",na
+          !      print*, "bruteforce=",i
+          !      ! error stop
+          !  end if
 
             if (allocated(ck) .and. .not.myck%isok) then
                 print*, "ck is already allocated but .not. myck%isok"

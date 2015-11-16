@@ -66,7 +66,7 @@ contains
                 call cpu_time(t(2))
                 print*, "ff%ext          =", ff%ext
                 print*, "ff%id           =", ff%id, " in",t(2)-t(1),"sec"
-                f=f+ff%id+ff%ext
+                f = f +ff%id +ff%ext
                 df = df + df_loc
             end if
             if (solvent(s)%do%exc_cs) then
@@ -85,6 +85,7 @@ contains
                 f = f + ff%exc_cdeltacd
                 df = df + df_loc
             end if
+                print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
                 call energy_cproj (ff%exc_cproj, df_loc)
@@ -105,7 +106,7 @@ contains
         end do
 
         print*, "____________"
-        print*, "TOTAL (FF), |df| =", f, norm2(df)
+        print*, "TOTAL (FF) =", f
 
 
     end subroutine energy_and_gradient
