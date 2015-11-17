@@ -3,13 +3,14 @@ module module_energy_cproj
     use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
-    use mathematica, only: fact
+    use module_rotation
     implicit none
     private
     include 'fftw3.f03' ! Needed by FFTW3. Needs iso_c_binding
 
     complex(dp), parameter :: imag=(0_dp,1_dp), zeroc=complex(0._dp,0._dp)
     real(dp), parameter :: eightpisq=8._dp*acos(-1._dp)**2
+    real(dp), parameter :: epsdp=epsilon(1._dp)
 
     ! integer :: m,n,mup,mu,nu,khi,i,ix,iy,iz,iix,iiy,iiz,p,itheta,ip,iq,ia,iphi,ipsi,io,no
 
@@ -243,6 +244,8 @@ contains
         ! mu is related to psi
         ! TOdo: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
+        call test_routines_calcul_de_Rm_mup_mu_q
+
         tharm_sph = 0._dp
         do ip=1,np
             m = im(ip)
@@ -252,6 +255,7 @@ contains
                 tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
             end do
         end do
+
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
@@ -313,7 +317,7 @@ contains
                     !
                     ! Test if result contains NaN or Inf
                     !
-                    if (debug .and. any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
+                    if ( any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
                         print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
                         print*, "deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) =", deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi)
                         print*, "deltarho_p(1:np,ix,iy,iz) = ",deltarho_p(1:np,ix,iy,iz)
@@ -379,6 +383,7 @@ contains
         do ix_q=1,nx
             do iy_q=1,ny
                 do iz_q=1,nz
+
                     !
                     ! cartesian coordinates of vector q in lab frame
                     !
@@ -420,16 +425,16 @@ contains
                     iy_mq = tableof_iy_mq(iy_q)
                     iz_mq = tableof_iz_mq(iz_q)
 
-                    ! if (check(ix_q,iy_q,iz_q).eqv..true.) then
-                    !     if (check(ix_mq, iy_mq,iz_mq).eqv..true.) then
-                    !         cycle
-                    !     else
-                    !         print*,"in the main loop of energy_cproj, i have already done q but not mq!"
-                    !         print*, "ix_q, iy_q, iz_q =",ix_q, iy_q, iz_q
-                    !         print*, "ix_mq, iy_mq, iz_mq =",ix_mq, iy_mq, iz_mq
-                    !         error stop
-                    !     end if
-                    ! end if
+                    if (check(ix_q,iy_q,iz_q).eqv..true.) then
+                        if (check(ix_mq, iy_mq,iz_mq).eqv..true.) then
+                            cycle
+                        else
+                            print*,"in the main loop of energy_cproj, i have already done q but not mq!"
+                            print*, "ix_q, iy_q, iz_q =",ix_q, iy_q, iz_q
+                            print*, "ix_mq, iy_mq, iz_mq =",ix_mq, iy_mq, iz_mq
+                            error stop
+                        end if
+                    end if
 
                     q = [qx(ix_q), qy(iy_q), qz(iz_q)]
                     mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]
@@ -446,7 +451,35 @@ contains
                     deltarho_p_q (1:np) = deltarho_p(1:np,ix_q,iy_q,iz_q)
                     deltarho_p_mq(1:np) = deltarho_p(1:np,ix_mq,iy_mq,iz_mq)
 
+                    if(any(deltarho_p_mq/=deltarho_p_mq)) then
+                        do ip=1,np
+                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_mq(ip)
+                        end do
+                        error stop "lisfwlhukwlkuhwzlef"
+                    end if
+                    if(any(deltarho_p_q/=deltarho_p_q)) then
+                        do iq=1,np
+                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_q(ip)
+                        end do
+                        error stop "hkhwkjhselkuhfkjhl"
+                    end if
+
                     call rotate_to_molecular_frame ! does q and mq at the same time.
+
+
+                    if(any(deltarho_p_mq/=deltarho_p_mq)) then
+                        do ip=1,np
+                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_mq(ip)
+                        end do
+                        error stop "yhrgvussnehfkil"
+                    end if
+                    if(any(deltarho_p_q/=deltarho_p_q)) then
+                        do iq=1,np
+                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_q(ip)
+                        end do
+                        error stop "opiloyukiuskerg"
+                    end if
+
 
                     if (q_eq_mq .and. any(deltarho_p_q/=deltarho_p_mq) ) then
                         print*, "q = mq mais apres la rotation vers le molecular frame, on n'a plus deltarho_p_q=deltarho_p_mq"
@@ -513,6 +546,9 @@ contains
                                     end do
                                 end do
 
+                                if (gamma_m_khi_mu_q/=gamma_m_khi_mu_q) error stop "jhwdlijweflkhwke"
+                                if (gamma_m_khi_mu_mq/=gamma_m_khi_mu_mq) error stop "lijsfdkuglserhk"
+
                                 ip=indp(m,khi,mu)
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
@@ -533,15 +569,20 @@ contains
                             end do
                         end do
                     end do
-
+if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
+if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
                     !
                     call rotate_to_fixed_frame ! does q and mq at the same time.
 
+                    if (any(gamma_p_q/=gamma_p_q)) error stop "oijjiuurkgserg"
+                    if (any(gamma_p_mq/=gamma_p_mq)) error stop "098123KJN"
+
+
                     ! TOdo JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
 
-                    if (check(ix_q,iy_q,iz_q).eqv..true. .and. any( gamma_p(:,ix_q,iy_q,iz_q)/=gamma_p_q(:) )) then
+                    if (check(ix_q,iy_q,iz_q).eqv..true. .and. any( abs(gamma_p(:,ix_q,iy_q,iz_q)-gamma_p_q(:))>epsdp )) then
                         print*, "gamma(q) already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
                         print*, "q=",q
                         print*,'mq=',mq
@@ -551,9 +592,10 @@ contains
                             print*, "new gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p_q(ip)
                             print*,
                         end do
+                        error stop "jfhzoenfhsozk"
                     end if
 
-                    if (check(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( gamma_p(:,ix_mq,iy_mq,iz_mq)/=gamma_p_mq(:) )    ) then
+        if (check(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( abs(gamma_p(:,ix_mq,iy_mq,iz_mq)-gamma_p_mq(:))>epsdp)) then
                         print*, "gamma(q) already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
                         print*, "mq=",mq
                         print*,"q=",q
@@ -563,6 +605,7 @@ contains
                             print*, "new gamma_mq =",ip, im(ip), imup(ip), imu(ip), gamma_p_mq(ip)
                             print*,
                         end do
+                        error stop "oihskdjhfkuhse"
                     end if
 
                     gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
@@ -576,9 +619,19 @@ contains
                     check(ix_q,iy_q,iz_q)=.true.
                     check(ix_mq,iy_mq,iz_mq)=.true.
 
+                    if (any(gamma_p(:,ix_q,iy_q,iz_q)/=gamma_p(:,ix_q,iy_q,iz_q))) then
+                        print*, "I FOUND A NAN OR SOMETHING NASTY"
+                        print*, ix_q, iy_q, iz_q
+                        do ip=1,np
+                            print*, ip, deltarho_p(ip,ix_q,iy_q,iz_q), gamma_p(ip,ix_q,iy_q,iz_q)
+                        end do
+                        error stop "ihsdfuygfkhll"
+                    end if
+
                 end do
             end do
         end do
+
 
 
         if (.not.all(check.eqv..true.)) then
@@ -638,7 +691,8 @@ contains
         end do
 
 
-    contains
+contains
+
 
         subroutine rotate_to_fixed_frame
             implicit none
@@ -652,8 +706,8 @@ contains
             else
                 gamma_p_q_temp = zeroc
                 gamma_p_mq_temp = zeroc
-                gshrot = conjg(rotation_matrix_between_complex_spherical_harmonics(q,mmax) )
-                gshrot_mq = conjg(rotation_matrix_between_complex_spherical_harmonics(mq,mmax) )
+                gshrot = conjg(rotation_matrix_between_complex_spherical_harmonics_lu(q,mmax) )
+                gshrot_mq = conjg(rotation_matrix_between_complex_spherical_harmonics_lu(mq,mmax) )
                 do m=0,mmax
                     do mup=-m,m
                         do mu=0,m
@@ -696,10 +750,9 @@ contains
             if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
                 ! return
             else
-                gshrot    = rotation_matrix_between_complex_spherical_harmonics ( q, mmax)
-                gshrot_mq = rotation_matrix_between_complex_spherical_harmonics ( mq, mmax)
+                gshrot    = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax)
+                gshrot_mq = rotation_matrix_between_complex_spherical_harmonics_lu ( mq, mmax)
 
-                ! gshrot_mq = rotation_matrix_between_complex_spherical_harmonics (mq, mmax)
                 deltarho_p_q_temp = zeroc
                 deltarho_p_mq_temp = zeroc
                 do m=0,mmax
@@ -735,57 +788,6 @@ contains
             end if
         end subroutine rotate_to_molecular_frame
 
-        PURE FUNCTION harm_sph( m, mu, mup, beta ) ! Luc's luc72p143
-            !
-            ! R^m_{mu,mup}(\beta)
-            ! beta is the angle in radian
-            !
-            REAL(dp) :: harm_sph
-            INTEGER, intent(in) :: m, mu, mup
-            REAL(dp), intent(in) :: beta
-            REAL(dp) :: beta0, x, cc, ss, pm, pm1, pm2
-            INTEGER :: mu0, l, it
-            if( abs(mu)>m .or. abs(mup)>m ) then
-                harm_sph = 0
-                return
-            end if
-            if( m==0 ) then
-                harm_sph = 1
-                return
-            end if
-            if( mu==0 .or. mup==0 ) then
-                mu0 = mu
-                beta0 = beta
-                if(mu==0) then            ! je mets le 0 en second
-                    mu0 = mup
-                    beta0 = -beta
-                end if
-                x = 1                 ! si mu negatif, ca vaut (-1)**mu * valeur pour -mu
-                if(mu0<0) then
-                    x = (-1)**mu0
-                    mu0 = -mu0
-                end if
-                cc = cos(beta0)           ! plutôt a partir d'une formule de recurrence stable
-                pm1 = 0.               ! des polynomes de legendre associes pl,m
-                pm = 1.                ! luc73p96
-                do l = mu0+1,m
-                    pm2 = pm1
-                    pm1 = pm
-                    pm = (cc*REAL(2*l-1,dp)*pm1-REAL(l+mu0-1,dp)*pm2)/REAL(l-mu0,dp)
-                end do
-                harm_sph = x*(-1.)**mu0*sqrt(fact(m-mu0)/fact(m+mu0))&
-                *fact(2*mu0)/(2.**mu0*fact(mu0))*sin(beta0)**mu0*pm
-            else                        ! donc mu et mup non nuls, utiliser betement la formule de wigner
-                harm_sph = 0
-                cc = cos(0.5*beta)
-                ss = sin(0.5*beta)
-                do it = max(0,mu-mup),min(m+mu,m-mup)
-                    harm_sph = harm_sph+(-1.)**it/(fact(m+mu-it)*fact(m-mup-it)*fact(it)*&
-                    fact(it-mu+mup))*cc**(2*m+mu-mup-2*it)*ss**(2*it-mu+mup)
-                end do
-                harm_sph = sqrt(fact(m+mu)*fact(m-mu)*fact(m+mup)*fact(m-mup))*harm_sph
-            end if
-        END FUNCTION harm_sph
 
         PURE FUNCTION trimed(x)
             !
@@ -799,202 +801,6 @@ contains
             if( abs(x) <= epsilon(x) ) trimed = zero
         END FUNCTION trimed
 
-        PURE FUNCTION cross_product(a,b)
-            !
-            ! Cross product of two vectors
-            !
-            IMPLICIT NONE
-            REAL(dp) :: cross_product(3)
-            REAL(dp), INTENT(IN) :: a(3), b(3)
-            cross_product(1) = a(2)*b(3)-a(3)*b(2)
-            cross_product(2) = a(3)*b(1)-a(1)*b(3)
-            cross_product(3) = a(1)*b(2)-a(2)*b(1)
-        END FUNCTION cross_product
-
-        PURE FUNCTION rotation_matrix_from_lab_to_q_frame(q) RESULT(R)
-            !
-            ! Given the coordinates q(3) in a frame (let's call it lab frame),
-            ! this function produces the rotation matrix that
-            ! transforms any coordinates in lab frame to some frame
-            ! whose (0,0,1) vector is aligned with q.
-            ! In other words, transform a vector in lab frame to a vector in intermolecular (or q) frame.
-            !
-            IMPLICIT NONE
-            REAL(dp), INTENT(IN) :: q(3)
-            REAL(dp) :: R1(3), R2(3), R3(3), R(3,3)
-            if (norm2(q)<=epsilon(1._dp)) then
-                R(1,:)=[1,0,0]
-                R(2,:)=[0,1,0]
-                R(3,:)=[0,0,1]
-            else
-                R3 = q/NORM2(q) ! The rotation matrix R will induce z to be aligned to vector q
-                IF( ABS(R3(1)) < 0.99 ) THEN ! TODO COMPRENDRE POURQUOI JE PEUX PAS FIARE AVEC 010 au lieu de 100 PAR DEFAUT
-                    R1 = cross_product( REAL([1,0,0],dp) , R3 ) ! we dont care about R2 and R1, as long as they are orthogonal to R3.
-                ELSE
-                    R1 = cross_product( REAL([0,1,0],dp) , R3 )
-                END IF
-                R1 = R1/NORM2(R1) ! normalization
-                R2 = cross_product( R3, R1 )
-                R(1,:) = R1
-                R(2,:) = R2
-                R(3,:) = R3
-            end if
-        end function rotation_matrix_from_lab_to_q_frame
-
-        FUNCTION rotation_matrix_between_complex_spherical_harmonics(q,lmax) RESULT (R)
-            !
-            ! Given a column vector of REAL values q of dimension 3,
-            ! this function returns the rotation matrix between complex spherical harmonics.
-            ! The algorithm is from Choi et al., J. Chem. Phys. 111, 8825 (1999)
-            ! http://dx.doi.org/10.1063/1.480229
-            ! see eq 6.1 and following and 7.3 and following
-            ! We use Choi's notation
-            !
-            ! Luc Belloni wrote the original fortran code (luc85p17)
-            ! Maximilien Levesque rewrote it from scratch thanks to Luc's explanations
-            ! Conditions for m==-l and m==l by ML
-            ! All bugs due to ML
-            !
-            use precision_kinds, only: dp
-            IMPLICIT NONE
-            !
-            INTEGER, INTENT(IN) :: lmax
-            REAL(dp), INTENT(IN) :: q(3)
-            COMPLEX(dp) :: R(0:lmax,-lmax:lmax,-lmax:lmax)
-            REAL(dp), DIMENSION(0:lmax,-lmax:lmax,-lmax:lmax) :: fi, gi, a, b, c, d
-            REAL(dp) :: Rot(3,3)
-            REAL(dp), PARAMETER :: tsqrt2=SQRT(2._dp)
-            REAL(dp) :: tsqrt(-1:2*lmax+1), adenom, cdenom, anumerator, bnumerator
-            INTEGER :: l,l1,m,m1,m1min
-            !
-            ! Init R, fi and gi to zero
-            !
-            fi = 0
-            gi = 0
-            R = complex(0._dp,0._dp)
-            !
-            ! l = 0
-            !
-            fi(0,0,0) = 1
-            gi(0,0,0) = 0
-            IF( lmax == 0 ) THEN
-                R = complex(1._dp,0._dp)
-                RETURN
-            ELSE
-                !
-                ! We will need the rotation matrix from lab to q frame
-                !
-                Rot = rotation_matrix_from_lab_to_q_frame(q)
-            END IF
-            !
-            ! l = 1
-            !
-            fi(1,-1,-1) = (Rot(2,2)+Rot(1,1))/2.
-            fi(1,-1, 0) = Rot(1,3)/tsqrt2
-            fi(1,-1, 1) = (Rot(2,2)-Rot(1,1))/2.
-            fi(1, 0,-1) = Rot(3,1)/tsqrt2
-            fi(1, 0, 0) = Rot(3,3)
-            fi(1, 0, 1) = -Rot(3,1)/tsqrt2
-            fi(1, 1,-1) = (Rot(2,2)-Rot(1,1))/2.
-            fi(1, 1, 0) = -Rot(1,3)/tsqrt2
-            fi(1, 1, 1) = (Rot(2,2)+Rot(1,1))/2.
-            gi(1,-1,-1) = (Rot(2,1)-Rot(1,2))/2.
-            gi(1,-1, 0) = Rot(2,3)/tsqrt2
-            gi(1,-1, 1) = (-Rot(2,1)-Rot(1,2))/2.
-            gi(1, 0,-1) = -Rot(3,2)/tsqrt2
-            gi(1, 0, 0) = 0
-            gi(1, 0, 1) = -Rot(3,2)/tsqrt2
-            gi(1, 1,-1) = (Rot(2,1)+Rot(1,2))/2.
-            gi(1, 1, 0) = Rot(2,3)/tsqrt2
-            gi(1, 1, 1) = (Rot(1,2)-Rot(2,1))/2.
-            IF( lmax == 1 ) THEN
-                R = CMPLX(fi,gi,dp)
-                RETURN
-            ELSE
-                !
-                ! Tabulate sqrt
-                !
-                tsqrt(-1)=0 ! to avoid problems later
-                tsqrt(0)=0
-                tsqrt(1)=1
-                tsqrt(2)=tsqrt2
-                do l=3,2*lmax+1
-                    tsqrt(l) = SQRT(REAL(l,dp))
-                end do
-                !
-                ! Coefficients needed for the recursion
-                ! see eq 6.1 to 6.5 of Choi et al.
-                !
-                do l=1,lmax
-                    a(l,-l,:)=0
-                    b(l,-l,:)=0
-                    c(l,-l,:)=0
-                    d(l,-l,:)=0
-                    do m=-l+1,l
-                        anumerator=tsqrt(l+m)*tsqrt(l-m)
-                        bnumerator=tsqrt(l+m)*tsqrt(l+m-1)
-                        do m1=-l+1,l-1
-                            adenom = 1/(tsqrt(l+m1)*tsqrt(l-m1))
-                            a(l,m,m1)=anumerator*adenom
-                            b(l,m,m1)=bnumerator*adenom/tsqrt2
-                        end do
-                        m1=l
-                        cdenom=1/(tsqrt(l+m1)*tsqrt(l+m1-1))
-                        c(l,m,m1)=tsqrt2*anumerator*cdenom
-                        d(l,m,m1)=       bnumerator*cdenom
-                    end do
-                end do
-            END IF
-            !
-            ! l > 1    Use recursion
-            !
-            do l=2,lmax
-                l1=l-1
-                do m=-l,l
-                    m1min=0
-                    IF(m>0) m1min=1
-                    do m1=m1min,l-1
-                        if( m==-l) then
-                            fi(l,m,m1)=b(l,-m,m1)*(fi(1,-1,0)*fi(l1,m+1,m1)-gi(1,-1,0)*gi(l1,m+1,m1))
-                            gi(l,m,m1)=b(l,-m,m1)*(fi(1,-1,0)*gi(l1,m+1,m1)+gi(1,-1,0)*fi(l1,m+1,m1))
-                        else if( m==l) then
-                            fi(l,m,m1)=b(l,m,m1)*(fi(1, 1,0)*fi(l1,m-1,m1)-gi(1, 1,0)*gi(l1,m-1,m1))
-                            gi(l,m,m1)=b(l,m,m1)*(fi(1, 1,0)*gi(l1,m-1,m1)+gi(1, 1,0)*fi(l1,m-1,m1))
-                        else
-                            fi(l,m,m1)=a(l, m,m1)*(fi(1, 0,0)*fi(l1,m  ,m1))+   &
-                            b(l, m,m1)*(fi(1, 1,0)*fi(l1,m-1,m1)-gi(1, 1,0)*gi(l1,m-1,m1))+   &
-                            b(l,-m,m1)*(fi(1,-1,0)*fi(l1,m+1,m1)-gi(1,-1,0)*gi(l1,m+1,m1))
-                            gi(l,m,m1)=a(l, m,m1)*(fi(1, 0,0)*gi(l1,m  ,m1))+   &
-                            b(l, m,m1)*(fi(1, 1,0)*gi(l1,m-1,m1)+gi(1, 1,0)*fi(l1,m-1,m1))+   &
-                            b(l,-m,m1)*(fi(1,-1,0)*gi(l1,m+1,m1)+gi(1,-1,0)*fi(l1,m+1,m1))
-                        end if
-                        fi(l,-m,-m1)=(-1)**(m+m1)*fi(l,m,m1)
-                        gi(l,-m,-m1)=-(-1)**(m+m1)*gi(l,m,m1)
-                    end do
-                    m1=l
-                    if( m==-l) then
-                        fi(l,m,m1)=d(l,-m,m1)*(fi(1,-1,+1)*fi(l1,m+1,m1-1)-gi(1,-1,+1)*gi(l1,m+1,m1-1))
-                        gi(l,m,m1)=d(l,-m,m1)*(fi(1,-1,+1)*gi(l1,m+1,m1-1)+gi(1,-1,+1)*fi(l1,m+1,m1-1))
-                    else if( m==l) then
-                        fi(l,m,m1)=d(l,m,m1)*(fi(1,+1,+1)*fi(l1,m-1,m1-1)-gi(1,+1,+1)*gi(l1,m-1,m1-1))
-                        gi(l,m,m1)=d(l,m,m1)*(fi(1,+1,+1)*gi(l1,m-1,m1-1)+gi(1,+1,+1)*fi(l1,m-1,m1-1))
-                    else
-                        fi(l,m,m1)=c(l,m,m1)*(fi(1,0,+1)*fi(l1,m,m1-1)-gi(1,0,+1)*gi(l1,m,m1-1))+         &
-                        d(l,m,m1)*(fi(1,+1,+1)*fi(l1,m-1,m1-1)-gi(1,+1,+1)*gi(l1,m-1,m1-1))+   &
-                        d(l,-m,m1)*(fi(1,-1,+1)*fi(l1,m+1,m1-1)-gi(1,-1,+1)*gi(l1,m+1,m1-1))
-                        gi(l,m,m1)=c(l,m,m1)*(fi(1,0,+1)*gi(l1,m,m1-1)+gi(1,0,+1)*fi(l1,m,m1-1))+         &
-                        d(l,m,m1)*(fi(1,+1,+1)*gi(l1,m-1,m1-1)+gi(1,+1,+1)*fi(l1,m-1,m1-1))+   &
-                        d(l,-m,m1)*(fi(1,-1,+1)*gi(l1,m+1,m1-1)+gi(1,-1,+1)*fi(l1,m+1,m1-1))
-                    end if
-                    fi(l,-m,-m1)=(-1)**(m+m1)*fi(l,m,m1)
-                    gi(l,-m,-m1)=-(-1)**(m+m1)*gi(l,m,m1)
-                end do
-            end do
-            !
-            ! fi and gi are the REAL and imaginary part of our rotation matrix
-            !
-            R = cmplx(fi,gi,dp)
-        END FUNCTION rotation_matrix_between_complex_spherical_harmonics
 
         PURE FUNCTION qproj( i, imax, length)
             !
@@ -1012,7 +818,7 @@ contains
             !
             IMPLICIT NONE
             REAL(dp) :: qproj
-            REAL(dp), PARAMETER :: twopi=2*ACOS(-1._dp)
+            REAL(dp), PARAMETER :: twopi=2*acos(-1._dp)
             INTEGER, INTENT(IN) :: i, imax ! index the node and number of nodes in the direction you wish
             ! If you use REAL to complex transforms, and thus have in the first direction nx/2+1 nodes, you should still pass nx to this
             ! routine, not nx/2+1
@@ -1159,6 +965,7 @@ contains
         end subroutine read_ck_nonzero
 
         FUNCTION euler2proj (eulerangles) RESULT (projections)
+            use module_rotation, only: harm_sph
             IMPLICIT NONE
             REAL(dp), INTENT(IN) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
             COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
@@ -1307,20 +1114,6 @@ contains
             end do
         END FUNCTION proj2euler
 
-        PURE FUNCTION  angle(x,y)
-            IMPLICIT NONE
-            REAL(dp) :: angle
-            REAL(dp), INTENT(IN) :: x, y
-            REAL(dp) :: xx, r
-            r = SQRT(x**2+y**2)
-            xx = x/r
-            IF (y >= 0) THEN
-                angle = ACOS(xx)
-            ELSE
-                angle = 2*pi -ACOS(xx)
-            END IF
-        END FUNCTION angle
-
         subroutine for_all_q_find_indices_of_mq
             !
             ! for each vector q, defined by its components qx(ix_q), qy(iy_q), qz(iz_q)
@@ -1425,73 +1218,51 @@ contains
             end do
         end subroutine for_all_q_find_indices_of_mq
 
+        subroutine test_routines_calcul_de_Rm_mup_mu_q
+            !
+            ! ici test de la routine de Choi
+            !
+            implicit none
+                real(dp) :: qx, qy, qz
+                complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax), Rlu(0:mmax,-mmax:mmax,-mmax:mmax)
+                complex(dp), parameter :: ii=complex(0._dp,1._dp)
+                real(dp), parameter :: epsdp=epsilon(1._dp)
+                integer :: ix_q, iy_q, iz_q, m, mup, mu
+                do ix_q=1,nx
+                    do iy_q=1,ny
+                        do iz_q=1,nz
+                            qx=qproj(ix_q,nx,lx)
+                            qy=qproj(iy_q,ny,ly)
+                            qz=qproj(iz_q,nz,lz)
+                            R= rotation_matrix_between_complex_spherical_harmonics ([qx,qy,qz], mmax) ! exactement Luc
+                            Rlu= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! Lu
+                            do m=0,mmax
+                                do mup=-m,m
+                                    do mu=-m,m
+                                        if (abs(&
+                                            Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))&
+                                                >epsdp) then
+                                            print*, "dans test_routines_calcul_de_Rm_mup_mu_q on a Choi+Lu /= Wigner"
+                                            print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
+                                            print*, "qx qy qz", qx, qy, qz
+                                            print*, "m, mup, mu", m, mup, mu
+                                            print*, "Rlu(m,mup,mu)",Rlu(m,mup,mu)
+                                            print*, "harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))",&
+                                            harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))
+                                            error stop "oihjkkhblkuyuiykjhbkjhg76"
+                                        end if
+                                    end do
+                                end do
+                            end do
+                        end do
+                    end do
+                end do
+        end subroutine test_routines_calcul_de_Rm_mup_mu_q
 
 
     end subroutine energy_cproj
 
 end module module_energy_cproj
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-! FUNCTION projections_threecolumns2onecolumn (data3c) RESULT (data1c)
-!     IMPLICIT NONE
-!     COMPLEX(dp), INTENT(IN) :: data3c(0:mmax,-mmax:mmax,-mmax:mmax)
-!     COMPLEX(dp) :: data1c(np)
-!     INTEGER :: m, mup, mu, ip
-!     do m=0,mmax
-!         do mup=-m,m
-!             do mu=0,m,molrotsymorder
-!                 ip=indp(m,mup,mu)
-!                 data1c(ip)=data3c(m,mup,mu)
-!             end do
-!         end do
-!     end do
-! END FUNCTION
-! !
-! !
-! !
-! FUNCTION projections_onecolumn2threecolumns (data1c) RESULT (data3c)
-!     IMPLICIT NONE
-!     COMPLEX(dp), INTENT(IN) :: data1c(np)
-!     COMPLEX(dp) :: data3c(0:mmax,-mmax:mmax,-mmax:mmax)
-!     INTEGER :: m, mup, mu, ip
-!     do ip=1,np
-!         m=im(ip)
-!         mup=imup(ip)
-!         mu=imu(ip)
-!         data3c(m,mup,mu)=data1c(ip)
-!     end do
-! END FUNCTION
-
-
-
 
 
 

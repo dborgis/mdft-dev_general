@@ -89,14 +89,13 @@ contains
                 ! df = df + df_loc
                 df_loc2=df_loc2+df_loc
             end if
-print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)/size(df_loc2)
+print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
                 call energy_cproj (ff%exc_cproj, df_loc)
                 call cpu_time(t(8))
-                print*, "ff%exc_cproj    =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc)/size(df_loc),&
-                                                                                                    "in",t(8)-t(7),"sec"
                 f = f + ff%exc_cproj
+                print*, "ff%exc_cproj    =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"
                 df = df + df_loc
             end if
             block
@@ -109,7 +108,7 @@ print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2         
                                 a=df_loc(ix,iy,iz,io,1)
                                 b=df_loc2(ix,iy,iz,io,1)
                                 d=a-b
-                                print*, ix,iy,iz,io,a,b,d
+                                print*, ix,iy,iz,io,grid%theta(io),grid%phi(io),grid%psi(io),a,b,d
                             end do
                         end do
                     end do
