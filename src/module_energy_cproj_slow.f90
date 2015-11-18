@@ -1,4 +1,4 @@
-module module_energy_cproj
+module module_energy_cproj_slow
 
     use iso_c_binding
     use precision_kinds, only: dp
@@ -25,6 +25,20 @@ module module_energy_cproj
     real(dp), parameter :: eightpisq=8._dp*pi**2
     real(dp), parameter :: twopi=2._dp*pi
 
+    !
+    ! Arrays to translate index of vector to tuple of projections, and inverse
+    ! alpha(m,mup,mu), m(alpha), mup(alpha), mu(alpha)
+    !
+    type :: p3_type
+        integer :: np ! how many projections
+        integer, allocatable :: p(:,:,:) ! p of m, mup, mu
+        integer, allocatable :: m(:) ! m of p
+        integer, allocatable :: mup(:) ! mu' of p
+        integer, allocatable :: mu(:) ! mu of p
+        real(dp), allocatable :: tharm_sph(:,:) ! Associated Legendre function of np and theta
+        complex(dp), allocatable :: drho_p(:,:,:,:) ! delta rho en projections
+    end type p3_type
+    type (p3_type) :: p3
 
     integer, allocatable :: indp(:,:,:) ! index of the projection corresponding to m, mup, mu
     integer, allocatable :: im(:) ! m for projection 1 to np
@@ -65,11 +79,11 @@ module module_energy_cproj
     integer, allocatable :: tableof_ix_mq(:), tableof_iy_mq(:), tableof_iz_mq(:)
     real(dp), allocatable :: qx(:), qy(:), qz(:) ! vector q and its components tabulated
 
-    public :: energy_cproj
+    public :: energy_cproj_slow
 
 contains
 
-    subroutine energy_cproj (ff,df)
+    subroutine energy_cproj_slow (ff,df)
         ! use ieee_arithmetic
         use iso_c_binding, only: c_ptr, dp=>c_double
         use module_grid, only: grid
@@ -82,8 +96,8 @@ contains
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
         complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
-        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, molrotsymorder
-        integer :: m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq, is
+        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, p, molrotsymorder
+        integer :: m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq, is, i,j,k
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: tharm_sph(grid%ntheta,grid%np)
@@ -105,6 +119,7 @@ contains
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         real(dp) :: lx, ly, lz, rho0
         logical, allocatable :: gamma_p_isok(:,:,:)
+        complex(dp), allocatable :: foo(:,:,:)
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
@@ -131,7 +146,7 @@ contains
         npsi=grid%npsi
         rho0 = solvent(1)%rho0
 
-        if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
+        if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp)) ,m=0,mmax  )])
 
         allocate (deltarho(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
         allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
@@ -168,6 +183,38 @@ contains
         if (.not.allocated(imu))  allocate ( imu(np) ,source=-huge(1))
 
 
+        !
+        ! Count projections without hermitian symetry
+        !
+        if (.not.allocated(p3%p)) then
+            p3%np=0
+            do m=0,mmax
+                do mup=-m,m
+                    do mu=-m,m
+                        p3%np=p3%np+1
+                    end do
+                end do
+            end do
+            if (.not.allocated(p3%p)) allocate(p3%p(0:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1))
+            if (.not.allocated(p3%m)) allocate(p3%m(1:p3%np), source=-huge(1))
+            if (.not.allocated(p3%mup)) allocate(p3%mup(1:p3%np), source=-huge(1))
+            if (.not.allocated(p3%mu)) allocate(p3%mu(1:p3%np), source=-huge(1))
+            p=0
+            do m=0,mmax
+                do mup=-m,m
+                    do mu=-m,m
+                        p=p+1
+                        p3%p(m,mup,mu)=p
+                        p3%m(p)=m
+                        p3%mup(p)=mup
+                        p3%mu(p)=mu
+                    end do
+                end do
+            end do
+            if (p3%np/=p) error stop "9866751823"
+        end if
+
+
         ip=0
         do m=0,mmax
             do mup=-m,m
@@ -178,7 +225,7 @@ contains
                 ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to indp(m,mup,mu) with mu=1 will return -999
                 ! Also, the array imu only contains even values (des valeurs paires)
                 !
-                do mu=0,m,molrotsymorder
+                do mu=0,m!,molrotsymorder
                     ip=ip+1
                     IF (ip > np) ERROR STOP "p > np at line 166"
                     indp(m,mup,mu) = ip
@@ -188,7 +235,7 @@ contains
                 end do
             end do
         end do
-        if (ip /= np) error stop "ip /= np in energy_cproj"
+        if (ip /= np) error stop "ip /= np in energy_cproj_slow"
         if ( any(abs(im)>mmax) .or. any(abs(imup)>mmax) .or. any(abs(imu)>mmax) ) then
             print*, "tabulated m, mup or mu have incorrect values"
             error stop
@@ -205,6 +252,15 @@ contains
             write(11,*) ip, im(ip), imup(ip), imu(ip)
         end do
         close(11)
+
+        open(12, file="output/nonzero-projections_nohermitiansymetry.out")
+        write(12,*)"Non-zero projections:"
+        write(12,*)"        index         m          mup          mu"
+        write(12,*)"        -----        ---         ---          --"
+        do p=1,p3%np
+            write(12,*) p, p3%m(p), p3%mup(p), p3%mu(p)
+        end do
+        close(12)
 
         !
         ! Initie poids et racines de l'integration angulaire par la methode de Gauss-Legendre
@@ -236,6 +292,18 @@ contains
                 tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
             end do
         end do
+
+        if (.not. allocated(p3%tharm_sph)) then
+            allocate (p3%tharm_sph(p3%np,ntheta), source=0._dp)
+            do itheta=1,ntheta
+                do p=1,p3%np
+                    m=p3%m(p)
+                    mup=p3%mup(p)
+                    mu=p3%mu(p)
+                    p3%tharm_sph(p,itheta) = harm_sph(m,mup,mu,theta(itheta))
+                end do
+            end do
+        end if
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -290,23 +358,89 @@ contains
         end if
 
 
+        if (.not. allocated(foo)) allocate (foo(ntheta,-mmax:mmax,-mmax:mmax) ,source=zeroc)
+        if (.not. allocated(p3%drho_p)) allocate(p3%drho_p(p3%np,nx,ny,nz), source=zeroc)
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    deltarho_p(1:np,ix,iy,iz) = euler2proj( deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) )
-                    !
-                    ! Test if result contains NaN or Inf
-                    !
-                    if ( any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
-                        print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
-                        print*, "deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) =", deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi)
-                        print*, "deltarho_p(1:np,ix,iy,iz) = ",deltarho_p(1:np,ix,iy,iz)
-                        error stop "Bug found in euler2proj. NaN or Inf is hiding somewhere."
-                    end if
+
+                    foo=zeroc
+                    do itheta=1,ntheta
+                        do mup=-mmax,mmax
+                            do mu=-mmax,mmax
+
+                                do iphi=1,nphi
+                                    do ipsi=1,npsi
+                                        j=iphi-1
+                                        k=ipsi-1
+                                        io=grid%indo(itheta,iphi,ipsi)
+                                        foo(itheta,mup,mu)=foo(itheta,mup,mu) &
+                                             +complex(solvent(1)%density(ix,iy,iz,io)-rho0, 0._dp)&
+                                             *exp(twopi*ii*(real(mup*j,dp)/real(nphi,dp)+real(mu*k,dp)/real(npsi,dp)))&
+                                             /real(nphi*npsi,dp)
+                                    end do
+                                end do
+
+                            end do
+                        end do
+                    end do
+
+                    p3%drho_p(:,ix,iy,iz)=zeroc
+                    do mup=-mmax,mmax
+                        do mu=-mmax,mmax
+                            do m=max(abs(mup),abs(mu)),mmax
+                                p=p3%p(m,mup,mu)
+                                do i=1,ntheta
+                                    p3%drho_p(p,ix,iy,iz) = p3%drho_p(p,ix,iy,iz) &
+                                    +fm(m)*wtheta(i)*foo(i,mup,mu)*p3%tharm_sph(p,i)
+                                end do
+                            end do
+                        end do
+                    end do
+
                 end do
             end do
         end do
 
+        do iz=1,nz
+            do iy=1,ny
+                do ix=1,nx
+                    deltarho_p(1:np,ix,iy,iz) = euler2proj( deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) ) /real(nphi*npsi,dp)
+                end do
+            end do
+        end do
+
+        block
+            complex(dp) :: a, b
+            do ix=1,nx
+                do iy=1,ny
+                    do iz=1,nz
+                        do m=0,mmax
+                            do mup=-m,m
+                                do mu=-m,m
+                                    if(mu>=0) then
+                                        a= p3%drho_p(p3%p(m,mup,mu),ix,iy,iz)
+                                        b= deltarho_p(indp(m,mup,mu),ix,iy,iz)
+                                        if (abs(a-b)>epsdp) then
+                                            print*, a, b, a-b
+                                            error stop "ifhdyr"
+                                        end if
+                                    else
+                                        a= p3%drho_p(p3%p(m,mup,mu),ix,iy,iz)
+                                        b= (-1)**(mup+mu)*conjg(deltarho_p(indp(m,-mup,-mu),ix,iy,iz))
+                                        if (abs(a-b)>epsdp) then
+                                            print*, a, b, a-b
+                                            error stop "098766512723"
+                                        end if
+                                    end if
+                                end do
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        end block
+stop "ce stop est volontaire"
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -323,6 +457,12 @@ contains
         !     call dfftw_execute( fft3d%plan )
         !     deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
         ! end do
+
+        do p=1,p3%np
+            call dfftw_execute_dft( fft3d%plan_backward, p3%drho_p(p,:,:,:), p3%drho_p(p,:,:,:) )
+        end do
+
+
 
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
@@ -381,7 +521,7 @@ contains
                         if (gamma_p_isok(ix_mq, iy_mq,iz_mq).eqv..true.) then
                             cycle
                         else
-                            print*,"in the main loop of energy_cproj, i have already done q but not mq!"
+                            print*,"in the main loop of energy_cproj_slow, i have already done q but not mq!"
                             print*, "ix_q, iy_q, iz_q =",ix_q, iy_q, iz_q
                             print*, "ix_mq, iy_mq, iz_mq =",ix_mq, iy_mq, iz_mq
                             error stop
@@ -451,10 +591,9 @@ contains
                     if (iq>nq) then
                         iq=nq
                     else if (iq<=0) then
-                        print*, "in energy_cproj, ik <=0"
+                        print*, "in energy_cproj_slow, ik <=0"
                         error stop
                     end if
-
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -931,7 +1070,6 @@ contains
             projections = zeroc
             proj_theta = zeroc
 
-
             allocate (proj_theta_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
             allocate (test_explicit(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
             do itheta=1,ntheta
@@ -1145,7 +1283,7 @@ contains
             if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
                 print*, "nx, ny ou nz est impair"
                 print*, "nx ny nz =", nx, ny, nz
-                print*, "that is not compatible with our energy_cproj for now"
+                print*, "that is not compatible with our energy_cproj_slow for now"
                 error stop
             end if
             do ix_q=1,nx
@@ -1215,174 +1353,6 @@ contains
         end subroutine test_routines_calcul_de_Rm_mup_mu_q
 
 
-    end subroutine energy_cproj
+    end subroutine energy_cproj_slow
 
-end module module_energy_cproj
-
-
-
-
-
-
-
-! SUBROUTINE read_ck_nmax( ck, normq )
-!     implicit none
-!     integer :: m_, n_, mu_, nu_, khi_
-!     CHARACTER(3) :: mychar
-!     integer, parameter :: tnalpha(0:5)=[1,4,27,79,250,549]
-!     integer, parameter :: nalpha=tnalpha(mmax)
-!     integer, dimension(nalpha) :: alp, m, n, mu, nu, khi
-!     COMPLEX(dp), INTENT(OUT) :: ck(nalpha,nq)
-!     REAL(dp), INTENT(OUT) :: normq(nq)
-!     REAL(dp) :: fi(nalpha*2)
-!     INTEGER :: i, iq, p, ia, ia2, ios
-!     INTEGER, PARAMETER :: iounit=11
-!     character(len=8), parameter :: tfilename(0:5)=["ck_nmax0","ck_nmax1","ck_nmax2","ck_nmax3","ck_nmax4","ck_nmax5"]
-!     character(len=8), parameter :: filename=tfilename(mmax)
-!     !
-!     ! Open the file containing all the projections of the direct correlation function in the molecular frame
-!     !
-!     open(unit=iounit, file=filename, iostat=ios, status="old", action="read")
-!     if ( ios /= 0 ) then
-!         print*, "Error opening file ", filename
-!         error stop "Stopping with error"
-!     end if
-!
-!     do i=1,10            !
-!         READ(iounit,*)   ! Skip 10 lines of comments
-!     end do               !
-!
-!     READ(iounit,*) mychar, alp(:)
-!     READ(iounit,*) mychar, m(:)
-!     READ(iounit,*) mychar, n(:)
-!     READ(iounit,*) mychar, mu(:)
-!     READ(iounit,*) mychar, nu(:)
-!     READ(iounit,*) mychar, khi(:)
-!     READ(iounit,*)
-!
-!     print*,
-!     PRINT*,"Non-zero projections of the direct correlation function in molecular frame c^{m n}_{mu nu, khi}:"
-!     PRINT*,"        index         m           n           mu          nu          khi"
-!     PRINT*,"        -----        ---         ---          --          --          ---"
-!     do ia=1,nalpha
-!         print*, alp(ia), m(ia), n(ia), mu(ia), nu(ia), khi(ia)
-!     end do
-!     PRINT*
-!
-!     cq%inda=errorgenerator
-!     do ia=1,nalpha
-!         cq%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
-!     end do
-!
-!     do iq=1,nq
-!         READ(iounit,*) normq(iq), fi
-!         do ia=1,nalpha
-!             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
-!         end do
-!     end do
-!
-!     !
-!     ! Close the file containing all the projections of the direct correlation function in the molecular frame
-!     !
-!     close(unit=iounit, iostat=ios, status="keep")
-!     if ( ios /= 0 ) then
-!         print*, "Error closing file ", filename, "in read_ck_nmax"
-!         error stop "Stopping with error"
-!     end if
-! END SUBROUTINE read_ck_nmax
-
-
-
-
-
-
-
-
-
-
-
-! SUBROUTINE read_ck_toutes_nmax( ck , normq )
-!     IMPLICIT NONE
-!     INTEGER :: m_, n_, mu_, nu_, khi_
-!     INTEGER, PARAMETER :: nalpha=SUM( &
-!     [([([([([(1,nu_=-n_,n_)],mu_=-m_,m_)],n_=abs(khi_),mmax)],&
-!     m_=abs(khi_),mmax)],khi_=-mmax,mmax)]  )
-!     !INTEGER, PARAMETER :: nalpha=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 ! number of projections for c^{m n}_{mu nu,khi}(q)
-!     CHARACTER(3) :: mychar
-!     INTEGER, DIMENSION(nalpha) :: alp, m, n, mu, nu, khi
-!     COMPLEX(dp), INTENT(OUT) :: ck(nalpha,nq)
-!     REAL(dp), INTENT(OUT) :: normq(nq)
-!     REAL(dp) :: fi(nalpha*2)
-!     INTEGER :: i, iq, p, ia, ia2
-!     SELECT CASE (mmax)
-!     CASE (1)
-!         OPEN(11, file="ck_toutes_nmax1")
-!     CASE (2)
-!         OPEN(11, file="ck_toutes_nmax2")
-!     CASE (3)
-!         OPEN(11, file="ck_toutes_nmax3")
-!     CASE DEFAULT
-!         ERROR STOP "I don't ck_toutes_nmax file with all projections for nmax = 0 or nmax > 3 yet"
-!     END SELECT
-!     ! skip 10 lignes of comments
-!     do i=1,10
-!         READ(11,*)
-!     end do
-!     ! then read useful stuff
-!     alp=0
-!     m=0
-!     n=0
-!     mu=0
-!     nu=0
-!     khi=0
-!     ! PRINT*,"nalpha=",nalpha
-!     READ(11,*) mychar, alp(:)
-!     READ(11,*) mychar, m(:)
-!     READ(11,*) mychar, n(:)
-!     READ(11,*) mychar, mu(:)
-!     READ(11,*) mychar, nu(:)
-!     READ(11,*) mychar, khi(:)
-!     READ(11,*)
-!     ! PRINT*,int(alp,1)
-!     ! PRINT*,int(m,1)
-!     ! print*,int(n,1)
-!     ! print*,int(mu,1)
-!     ! print*,int(nu,1)
-!     ! print*,int(khi,1)
-!     cq%inda=errorgenerator
-!     do ia=1,nalpha
-!         cq%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
-!     end do
-!     do iq=1,nq
-!         READ(11,*) normq(iq), fi
-!         do ia=1,nalpha
-!             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
-!         end do
-!     end do
-!     !
-!     !
-!     !
-!     ! print*,"== TEST READING =="
-!     ! do iq=3,3
-!     !     do ia=1,nalpha
-!     !         ia2=cq%inda( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
-!     !         block
-!     !             real :: diff
-!     !             diff = abs(  ck(ia2,iq)  -   (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))    )
-!     !             if( diff == 0 ) then
-!     !                 print*, ia, ia2, m(ia), n(ia), mu(ia), nu(ia), khi(ia)
-!     !             else
-!     !                 print*, ia, ia2, m(ia), n(ia), mu(ia), nu(ia), khi(ia), " #", ck(ia2,iq), (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))
-!     !             end if
-!     !         end block
-!     !     !if( abs(  ck(ia2,iq)  -   (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))      ) /= 0) print*,"ERROR FOR ia=",ia
-!     ! !    if(abs(ck(ia,iq))/=0) print*,int(iq,1),ia,int([m(ia),n(ia),mu(ia),nu(ia),khi(ia)],1), ck(ia,iq)
-!     !     end do
-!     ! end do
-!     ! print*,"== END TEST READING =="
-!     ! CECI EST UN TEST DE LA ROUTINE DE GENERATION
-!     do ia=1,nalpha
-!         print*,m(ia), n(ia), mu(ia), nu(ia), khi(ia), ck(ia,2)
-!     end do
-!     ! CECI EST LA FIN DU TEST DE LA ROUTINE DE GENERATION
-! END SUBROUTINE read_ck_toutes_nmax
+end module module_energy_cproj_slow
