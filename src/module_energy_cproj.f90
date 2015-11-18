@@ -116,7 +116,7 @@ contains
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         real(dp) :: lx, ly, lz
         integer :: molrotsymorder
-        logical, allocatable :: check(:,:,:)
+        logical, allocatable :: gamma_p_isok(:,:,:)
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
@@ -159,7 +159,7 @@ contains
         allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
         allocate (deltarho_p_q(np) ,source=zeroc)
         allocate (deltarho_p_mq(np) ,source=zeroc)
-        allocate (check(nx,ny,nz), source=.false.)
+        allocate (gamma_p_isok(nx,ny,nz), source=.false.)
 
         ! 1/ get deltarho = rho-rho0
         ! 2/ project deltarho => deltarho_p (use FFT2D-R2C)
@@ -385,38 +385,8 @@ contains
                 do iz_q=1,nz
 
                     !
-                    ! cartesian coordinates of vector q in lab frame
+                    ! cartesian coordinates of vector q  and mq (-q) in lab frame
                     !
-
-                    ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    ! block
-                    !     real(dp) :: norm2q, cos_theta, sin_theta, theta, phi
-                    !     complex(dp) :: mat(0:mmax,-mmax:mmax,-mmax:mmax)
-                    !     integer :: m, mup, mu
-                    !     norm2q= norm2(q)
-                    !     ! print*, "q=",q
-                    !     if (norm2q /= 0) then
-                    !         cos_theta = q(3)/norm2q
-                    !         sin_theta = sqrt(1-cos_theta**2)
-                    !         theta = acos(cos_theta)
-                    !         phi = angle( q(1)/norm2q , q(2)/norm2q )
-                    !     else
-                    !         stop "norm2q==0"
-                    !     end if
-                    !     mat = rotation_matrix_between_complex_spherical_harmonics(q, mmax)
-                    !     do m=0,mmax
-                    !         do mup=-m,m
-                    !             do mu=-m,m
-                    !                 print*, mat(m,mup,mu)
-                    !                 print*, harm_sph(m,mup,mu,theta)*exp(-imag*mu*phi)
-                    !                 print*, harm_sph(m,mup,mu,theta)*exp(imag*mup*phi)
-                    !                 print*,
-                    !             end do
-                    !         end do
-                    !     end do
-                    !     ! stop "ici"
-                    ! end block
-                    ! !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
                     !
                     ! Find ix_mq,iy_mq,iz_mq so that q(ix_mq,iy_mq,iz_mq)= -q(ix_q,iy_q,iz_q)
@@ -425,8 +395,8 @@ contains
                     iy_mq = tableof_iy_mq(iy_q)
                     iz_mq = tableof_iz_mq(iz_q)
 
-                    if (check(ix_q,iy_q,iz_q).eqv..true.) then
-                        if (check(ix_mq, iy_mq,iz_mq).eqv..true.) then
+                    if (gamma_p_isok(ix_q,iy_q,iz_q).eqv..true.) then
+                        if (gamma_p_isok(ix_mq, iy_mq,iz_mq).eqv..true.) then
                             cycle
                         else
                             print*,"in the main loop of energy_cproj, i have already done q but not mq!"
@@ -582,7 +552,7 @@ if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
 
                     ! TOdo JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
 
-                    if (check(ix_q,iy_q,iz_q).eqv..true. .and. any( abs(gamma_p(:,ix_q,iy_q,iz_q)-gamma_p_q(:))>epsdp )) then
+                    if (gamma_p_isok(ix_q,iy_q,iz_q).eqv..true. .and. any( abs(gamma_p(:,ix_q,iy_q,iz_q)-gamma_p_q(:))>epsdp )) then
                         print*, "gamma(q) already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
                         print*, "q=",q
                         print*,'mq=',mq
@@ -595,7 +565,7 @@ if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
                         error stop "jfhzoenfhsozk"
                     end if
 
-        if (check(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( abs(gamma_p(:,ix_mq,iy_mq,iz_mq)-gamma_p_mq(:))>epsdp)) then
+        if (gamma_p_isok(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( abs(gamma_p(:,ix_mq,iy_mq,iz_mq)-gamma_p_mq(:))>epsdp)) then
                         print*, "gamma(q) already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
                         print*, "mq=",mq
                         print*,"q=",q
@@ -615,9 +585,9 @@ if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
                         gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
                     end if
 
-                    ! we check that all gamma(:,ix, iy, iz) have been calculated
-                    check(ix_q,iy_q,iz_q)=.true.
-                    check(ix_mq,iy_mq,iz_mq)=.true.
+                    ! we gamma_p_isok that all gamma(:,ix, iy, iz) have been calculated
+                    gamma_p_isok(ix_q,iy_q,iz_q)=.true.
+                    gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
                     if (any(gamma_p(:,ix_q,iy_q,iz_q)/=gamma_p(:,ix_q,iy_q,iz_q))) then
                         print*, "I FOUND A NAN OR SOMETHING NASTY"
@@ -634,7 +604,7 @@ if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
 
 
 
-        if (.not.all(check.eqv..true.)) then
+        if (.not.all(gamma_p_isok.eqv..true.)) then
             print*, "not all gamma_p(projections,ix,iy,iz) have not been computed"
             error stop
         end if
@@ -1234,14 +1204,14 @@ contains
                             qx=qproj(ix_q,nx,lx)
                             qy=qproj(iy_q,ny,ly)
                             qz=qproj(iz_q,nz,lz)
-                            R= rotation_matrix_between_complex_spherical_harmonics ([qx,qy,qz], mmax) ! exactement Luc
+                            R= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! exactement Luc
                             Rlu= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! Lu
                             do m=0,mmax
                                 do mup=-m,m
                                     do mu=-m,m
                                         if (abs(&
                                             Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))&
-                                                >epsdp) then
+                                                >1E-10) then
                                             print*, "dans test_routines_calcul_de_Rm_mup_mu_q on a Choi+Lu /= Wigner"
                                             print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
                                             print*, "qx qy qz", qx, qy, qz
@@ -1249,6 +1219,9 @@ contains
                                             print*, "Rlu(m,mup,mu)",Rlu(m,mup,mu)
                                             print*, "harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))",&
                                             harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))
+                                            print*, "diff=",&
+                                            abs(Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))
+                                            print*, "epsilon=",epsdp
                                             error stop "oihjkkhblkuyuiykjhbkjhg76"
                                         end if
                                     end do

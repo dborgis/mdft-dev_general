@@ -94,27 +94,27 @@ print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2         
                 call cpu_time(t(7))
                 call energy_cproj (ff%exc_cproj, df_loc)
                 call cpu_time(t(8))
-                f = f + ff%exc_cproj
                 print*, "ff%exc_cproj    =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"
+                f = f + ff%exc_cproj
                 df = df + df_loc
             end if
-            block
-                integer :: ix, iy, iz, io
-                real :: a, b ,d
-                do ix=1,size(df,1)
-                    do iy=1,size(df,2)
-                        do iz=1,size(df,3)
-                            do io=1,size(df,4)
-                                a=df_loc(ix,iy,iz,io,1)
-                                b=df_loc2(ix,iy,iz,io,1)
-                                d=a-b
-                                print*, ix,iy,iz,io,grid%theta(io),grid%phi(io),grid%psi(io),a,b,d
-                            end do
-                        end do
-                    end do
-                end do
-            end block
-            STOP "FIN DE LA ROUTINE ENERGY AND GRADIENT. ON NE FAIT PAS DE CYCLE AUTOCOHERENT TANT QUE CS+CDELTA+CD/=CPROJ"
+            ! block
+            !     integer :: ix, iy, iz, io
+            !     real :: a, b ,d
+            !     do ix=1,size(df,1)
+            !         do iy=1,size(df,2)
+            !             do iz=1,size(df,3)
+            !                 do io=1,size(df,4)
+            !                     a=df_loc(ix,iy,iz,io,1)
+            !                     b=df_loc2(ix,iy,iz,io,1)
+            !                     d=a-b
+            !                     print*, ix,iy,iz,io,grid%theta(io),grid%phi(io),grid%psi(io),a,b,d
+            !                 end do
+            !             end do
+            !         end do
+            !     end do
+            ! end block
+            ! STOP "FIN DE LA ROUTINE ENERGY AND GRADIENT. ON NE FAIT PAS DE CYCLE AUTOCOHERENT TANT QUE CS+CDELTA+CD/=CPROJ"
 
             ! if (solvent(s)%do%exc_fmt) call energy_fmt (ff%exc_fmt, df)
             ! if (solvent(s)%do%wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc_wca, df)
