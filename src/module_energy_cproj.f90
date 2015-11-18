@@ -1,28 +1,31 @@
 module module_energy_cproj
+
     use iso_c_binding
     use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
     use module_rotation
+
     implicit none
     private
-    include 'fftw3.f03' ! Needed by FFTW3. Needs iso_c_binding
 
-    complex(dp), parameter :: imag=(0_dp,1_dp), zeroc=complex(0._dp,0._dp)
-    real(dp), parameter :: eightpisq=8._dp*acos(-1._dp)**2
+    !
+    ! FFTW3 header - modern (f03) version. Expects iso_c_binding
+    !
+    include 'fftw3.f03'
+
+    !
+    ! Parameters
+    !
+    real(dp), parameter :: zero=0._dp
+    complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
+    complex(dp), parameter :: ii=complex(0._dp,1._dp)
     real(dp), parameter :: epsdp=epsilon(1._dp)
+    real(dp), parameter :: pi=acos(-1._dp)
+    real(dp), parameter :: eightpisq=8._dp*pi**2
+    real(dp), parameter :: twopi=2._dp*pi
 
-    ! integer :: m,n,mup,mu,nu,khi,i,ix,iy,iz,iix,iiy,iiz,p,itheta,ip,iq,ia,iphi,ipsi,io,no
 
-    !
-    ! Main physical parameters
-    !
-    LOGICAL, PARAMETER :: debug=.true.
-
-    !
-    ! Arrays to translate index of vector to tuple of projections, and inverse
-    ! alpha(m,mup,mu), m(alpha), mup(alpha), mu(alpha)
-    !
     integer, allocatable :: indp(:,:,:) ! index of the projection corresponding to m, mup, mu
     integer, allocatable :: im(:) ! m for projection 1 to np
     integer, allocatable :: imup(:) ! mup for projection 1 to np. mup corresponds to phi
@@ -31,8 +34,7 @@ module module_energy_cproj
     !
     ! Direct correlation functions from Luc
     !
-    integer, parameter :: nq=200 ! nombre de valeurs de |q| dans le fichier de c(q) de luc
-    type :: ck_type
+    type :: cq_type
         logical :: isok = .false.
         real(dp) :: q
         integer :: na ! number of projections for the direct correlation function
@@ -41,19 +43,10 @@ module module_energy_cproj
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
     end type
-    type (ck_type) :: myck
+    type (cq_type) :: cq
     complex(dp), allocatable :: ck(:,:)
 
-    real(dp), parameter :: pi=acos(-1._dp), twopi=2._dp*pi
-    ! real(dp), parameter :: phi(nphi) = [(   (i-1)*dphi   , i=1,nphi )]
-    ! real(dp), parameter :: wphi(nphi) = 1./nphi
-    ! real(dp), parameter :: dpsi = twopi/real(npsi*molrotsymorder,dp)
-    ! real(dp), parameter :: psi(npsi) = [(   (i-1)*dpsi   , i=1,npsi )]
-    ! real(dp), parameter :: wpsi(npsi) = 1./npsi
-
     real(dp), allocatable :: fm(:)
-    ! real(dp), parameter :: fm(0:mmax) = [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )]
-    integer, parameter :: errorgenerator=-1
 
     type :: fft2d_c_type
         type(c_ptr) :: plan
@@ -78,14 +71,10 @@ contains
 
     subroutine energy_cproj (ff,df)
         ! use ieee_arithmetic
-        use iso_c_binding
-        use precision_kinds, only: dp
+        use iso_c_binding, only: c_ptr, dp=>c_double
         use module_grid, only: grid
         use module_thermo, only: thermo
         implicit none
-        include "fftw3.f03"
-        real(dp), parameter :: zero=0._dp
-        complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
         real(dp), intent(out) :: ff
         real(dp), intent(out) :: df(:,:,:,:,:)
         real(dp) :: dv, kT
@@ -93,7 +82,7 @@ contains
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
         real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
         complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
-        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq
+        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, molrotsymorder
         integer :: m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq, is
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
@@ -114,8 +103,7 @@ contains
         type(  fft2d_type ), save :: fft2d
         type( ifft2d_type ), save :: ifft2d
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
-        real(dp) :: lx, ly, lz
-        integer :: molrotsymorder
+        real(dp) :: lx, ly, lz, rho0
         logical, allocatable :: gamma_p_isok(:,:,:)
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
@@ -135,17 +123,13 @@ contains
         nz=grid%nz
         np=grid%np
         no=grid%no
-        na=myck%na
-        nq=myck%nq
+        na=cq%na
+        nq=cq%nq
         ns=solvent(1)%nspec
         ntheta=grid%ntheta
         nphi=grid%nphi
         npsi=grid%npsi
-
-        if (np/=SUM( [( [( [( 1 ,mu=0,m,molrotsymorder)], mup=-m,m)], m=0,mmax)] )) then
-            print*,"problem in np in module_energy_cproj"
-            error stop
-        end if
+        rho0 = solvent(1)%rho0
 
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
@@ -182,6 +166,8 @@ contains
         if (.not.allocated(im))   allocate ( im(np) ,source=-huge(1))
         if (.not.allocated(imup)) allocate ( imup(np) ,source=-huge(1))
         if (.not.allocated(imu))  allocate ( imu(np) ,source=-huge(1))
+
+
         ip=0
         do m=0,mmax
             do mup=-m,m
@@ -202,28 +188,23 @@ contains
                 end do
             end do
         end do
-
-        if (debug) then
-            if (ip /= np) error stop "ip /= np in energy_cproj"
-            if ( any(abs(im)>mmax) .or. any(abs(imup)>mmax) .or. any(abs(imu)>mmax) ) then
-                print*, "tabulated m, mup or mu have incorrect values"
-                error stop
-            end if
+        if (ip /= np) error stop "ip /= np in energy_cproj"
+        if ( any(abs(im)>mmax) .or. any(abs(imup)>mmax) .or. any(abs(imu)>mmax) ) then
+            print*, "tabulated m, mup or mu have incorrect values"
+            error stop
         end if
 
         !
         ! Print all projections that will be kept in memory
         !
-        if (debug) then
-            open(11, file="output/nonzero-projections.out")
-            write(11,*)"Non-zero projections:"
-            write(11,*)"        index         m          mup          mu"
-            write(11,*)"        -----        ---         ---          --"
-            do ip=1,np
-                write(11,*) ip, im(ip), imup(ip), imu(ip)
-            end do
-            close(11)
-        end if
+        open(11, file="output/nonzero-projections.out")
+        write(11,*)"Non-zero projections:"
+        write(11,*)"        index         m          mup          mu"
+        write(11,*)"        -----        ---         ---          --"
+        do ip=1,np
+            write(11,*) ip, im(ip), imup(ip), imu(ip)
+        end do
+        close(11)
 
         !
         ! Initie poids et racines de l'integration angulaire par la methode de Gauss-Legendre
@@ -309,7 +290,6 @@ contains
         end if
 
 
-
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
@@ -326,6 +306,8 @@ contains
                 end do
             end do
         end do
+
+
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -375,7 +357,7 @@ contains
         !
         !call read_ck_nmax (ck, normq)
         !call read_ck_toutes_nmax( ck, normq)
-        if (.not.myck%isok) call read_ck_nonzero
+        if (.not.cq%isok) call read_ck_nonzero
 
         !
         ! For all vectors q and -q handled simultaneously
@@ -465,13 +447,15 @@ contains
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = int(norm2(q)/myck%dq)+1
+                    iq = int(norm2(q)/cq%dq)+1
                     if (iq>nq) then
                         iq=nq
                     else if (iq<=0) then
                         print*, "in energy_cproj, ik <=0"
                         error stop
                     end if
+
+
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -492,12 +476,12 @@ contains
                                     do nu=-n,n,molrotsymorder
                                         if (mod(nu,2) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
 
-                                        ia = myck%inda(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
+                                        ia = cq%inda(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
                                         if (ia<=0) then
                                             print*,"ia=",ia
                                             print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
                                             error stop "ia<=0"
-                                        else if (ia>myck%na) then
+                                        else if (ia>cq%na) then
                                             print*,"ia=",ia
                                             print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
                                             error stop "ia>na"
@@ -810,9 +794,9 @@ contains
             integer, allocatable, dimension(:) :: m_ck, n_ck, mu_ck, nu_ck, khi_ck
             character(65) :: filename
 
-            if (myck%isok) return
-            nq=myck%nq
-            if (.not.allocated(myck%normq)) allocate(myck%normq(nq), source=0._dp)
+            if (cq%isok) return
+            nq=cq%nq
+            if (.not.allocated(cq%normq)) allocate(cq%normq(nq), source=0._dp)
             mmax=grid%mmax
 
             select case (mmax)
@@ -886,8 +870,8 @@ contains
           !      ! error stop
           !  end if
 
-            if (allocated(ck) .and. .not.myck%isok) then
-                print*, "ck is already allocated but .not. myck%isok"
+            if (allocated(ck) .and. .not.cq%isok) then
+                print*, "ck is already allocated but .not. cq%isok"
                 error stop
             end if
 
@@ -911,27 +895,27 @@ contains
             read(ufile,*) somechar, khi_ck
             read(ufile,*)
 
-            allocate (myck%inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+            allocate (cq%inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
             do ia=1,na
                 m = m_ck(ia)
                 n = n_ck(ia)
                 mu = mu_ck(ia)
                 nu = nu_ck(ia)
                 khi = khi_ck(ia)
-                myck%inda(m,n,mu,nu,khi) = ia
+                cq%inda(m,n,mu,nu,khi) = ia
             end do
 
             allocate( ck(na,nq), source=zeroc)
             do iq=1,nq
-                read(ufile,*) myck%normq(iq), ck(:,iq)
+                read(ufile,*) cq%normq(iq), ck(:,iq)
             end do
             close(ufile)
-            myck%dq = myck%normq(2)
+            cq%dq = cq%normq(2)
 
             deallocate (m_ck, n_ck, mu_ck, nu_ck, khi_ck)
-            myck%isok=.true.
-            myck%na=na
-            myck%nq=nq
+            cq%isok=.true.
+            cq%na=na
+            cq%nq=nq
         end subroutine read_ck_nonzero
 
         FUNCTION euler2proj (eulerangles) RESULT (projections)
@@ -941,7 +925,6 @@ contains
             COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
             COMPLEX(dp) :: projections(1:grid%np)
             INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
-            complex(dp), parameter :: zeroc=complex(0._dp,0._dp), ii=complex(0._dp,1._dp)
             complex(dp), allocatable :: test_explicit(:,:,:), proj_theta_full(:,:,:)
             complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
             mmax=grid%mmax
@@ -1287,9 +1270,9 @@ end module module_energy_cproj
 !     end do
 !     PRINT*
 !
-!     myck%inda=errorgenerator
+!     cq%inda=errorgenerator
 !     do ia=1,nalpha
-!         myck%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
+!         cq%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
 !     end do
 !
 !     do iq=1,nq
@@ -1367,9 +1350,9 @@ end module module_energy_cproj
 !     ! print*,int(mu,1)
 !     ! print*,int(nu,1)
 !     ! print*,int(khi,1)
-!     myck%inda=errorgenerator
+!     cq%inda=errorgenerator
 !     do ia=1,nalpha
-!         myck%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
+!         cq%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
 !     end do
 !     do iq=1,nq
 !         READ(11,*) normq(iq), fi
@@ -1383,7 +1366,7 @@ end module module_energy_cproj
 !     ! print*,"== TEST READING =="
 !     ! do iq=3,3
 !     !     do ia=1,nalpha
-!     !         ia2=myck%inda( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
+!     !         ia2=cq%inda( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
 !     !         block
 !     !             real :: diff
 !     !             diff = abs(  ck(ia2,iq)  -   (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))    )

@@ -37,6 +37,7 @@ contains
         use module_energy_cs, only: energy_cs
         use module_energy_cdeltacd, only: energy_cdeltacd
         use module_energy_cproj, only: energy_cproj
+        use module_energy_cproj_slow, only: energy_cproj_slow
 
         implicit none
 
@@ -75,7 +76,7 @@ contains
                 call cpu_time(t(3))
                 call energy_cs (ff%exc_cs, df_loc)
                 call cpu_time(t(4))
-                print*, "ff%exc_cs       =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
+                ! print*, "ff%exc_cs       =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
                 ! f = f + ff%exc_cs
                 ! df = df + df_loc
                 df_loc2=df_loc2+df_loc
@@ -92,6 +93,7 @@ contains
 print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
+                call energy_cproj_slow (ff%exc_cproj, df_loc)
                 call energy_cproj (ff%exc_cproj, df_loc)
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj    =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"

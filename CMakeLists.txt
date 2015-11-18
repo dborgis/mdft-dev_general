@@ -54,7 +54,7 @@ SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # GNU fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffast-math -funroll-all-loops -fimplicit-none -ffree-line-length-none -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall ")#-ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # INTEL fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
@@ -72,6 +72,7 @@ endif()
 # set source files list
 set(mdft_SRCS
   src/module_rotation.f90
+  src/module_energy_cproj_slow.f90
   src/module_energy_cproj.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90

@@ -6,7 +6,7 @@ module module_minimizer
     type lbfgsb_type
         !     Declare variables and parameters needed by mylbfgsb.f90>setulb
 
-        integer                :: n, m=5, iprint=1
+        integer                :: n, m=3, iprint=1
         real(dp)               :: factr  = 1.0d+12, pgtol  = 1.0d-5
         character(len=60)      :: task, csave
         logical                :: lsave(4)
