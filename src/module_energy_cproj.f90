@@ -63,7 +63,6 @@ module module_energy_cproj
 
     real(dp), allocatable :: gamma(:,:,:,:,:,:)
     real(dp), allocatable :: gamma_o(:,:,:,:)
-    real(dp), allocatable :: deltarho(:,:,:,:,:,:)
     complex(dp), allocatable :: deltarho_p(:,:,:,:)
     complex(dp), allocatable :: deltarho_p_q(:)
     complex(dp), allocatable :: deltarho_p_mq(:)
@@ -77,6 +76,22 @@ module module_energy_cproj
         integer, allocatable :: mu(:) ! mu for projection 1 to np. mu corresponds to psi
     end type p3_type
     type (p3_type) :: p3
+
+
+    type :: fft2d_type
+        type(c_ptr) :: plan
+        real(dp), allocatable    :: in(:,:)
+        complex(dp), allocatable :: out(:,:)
+        logical :: isalreadyplanned
+    end type
+    type :: ifft2d_type
+        type(c_ptr) :: plan
+        complex(dp), allocatable :: in(:,:)
+        real(dp), allocatable    :: out(:,:)
+        logical :: isalreadyplanned
+    end type
+    type(  fft2d_type ), save :: fft2d
+    type( ifft2d_type ), save :: ifft2d
 
 
     public :: energy_cproj
@@ -99,20 +114,6 @@ contains
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: q(3), mq(3)
-        type :: fft2d_type
-            type(c_ptr) :: plan
-            real(dp), allocatable    :: in(:,:)
-            complex(dp), allocatable :: out(:,:)
-            logical :: isalreadyplanned
-        end type
-        type :: ifft2d_type
-            type(c_ptr) :: plan
-            complex(dp), allocatable :: in(:,:)
-            real(dp), allocatable    :: out(:,:)
-            logical :: isalreadyplanned
-        end type
-        type(  fft2d_type ), save :: fft2d
-        type( ifft2d_type ), save :: ifft2d
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         real(dp) :: lx, ly, lz, rho0
         logical, allocatable :: gamma_p_isok(:,:,:)
@@ -147,7 +148,6 @@ contains
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
 
-        if (.not. allocated (deltarho) ) allocate (deltarho(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
         if (.not. allocated (gamma) ) allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
         if (.not. allocated (gamma_o) ) allocate (gamma_o(nx,ny,nz,no) ,source=zero)
         if (.not. allocated (gamma_p_q) ) allocate (gamma_p_q(np), source=zeroc)
@@ -254,27 +254,6 @@ contains
         end if
 
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !
-        ! Init la densite en representation MDFT, c'est à dire en REAL space, angles d'Euler
-        !
-        do ipsi=1,npsi
-            do iphi=1,nphi
-                do itheta=1,ntheta
-                    io=grid%indo(itheta,iphi,ipsi)
-                    do iz=1,nz
-                        do iy=1,ny
-                            do ix=1,nx
-                                deltarho(ix,iy,iz,itheta,iphi,ipsi)= &
-                                solvent(1)%density(ix,iy,iz,io) - solvent(1)%rho0
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        end do
-
-
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
@@ -306,16 +285,19 @@ contains
         end if
 
 
+
+        !
+        ! Projection of delta rho
+        !
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    deltarho_p(1:np,ix,iy,iz) = euler2proj( deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) )
+                    deltarho_p(1:np,ix,iy,iz) = euler2proj( solvent(1)%density(ix,iy,iz,1:no)-solvent(1)%rho0 )
                     !
                     ! Test if result contains NaN or Inf
                     !
                     if ( any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
                         print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
-                        print*, "deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi) =", deltarho(ix,iy,iz,1:ntheta,1:nphi,1:npsi)
                         print*, "deltarho_p(1:np,ix,iy,iz) = ",deltarho_p(1:np,ix,iy,iz)
                         error stop "Bug found in euler2proj. NaN or Inf is hiding somewhere."
                     end if
@@ -915,18 +897,18 @@ contains
             cq%nq=nq
         end subroutine read_ck_nonzero
 
-        FUNCTION euler2proj (eulerangles) RESULT (projections)
+        FUNCTION euler2proj (foo_o) RESULT (foo_p)
             use module_rotation, only: harm_sph
             IMPLICIT NONE
-            REAL(dp), INTENT(IN) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
+            real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
             COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
-            COMPLEX(dp) :: projections(1:grid%np)
+            COMPLEX(dp) :: foo_p(1:grid%np)
             INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
             complex(dp), allocatable :: test_explicit(:,:,:), proj_theta_full(:,:,:)
             complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
             mmax=grid%mmax
             molrotsymorder=grid%molrotsymorder
-            projections = zeroc
+            foo_p = zeroc
             proj_theta = zeroc
 
 
@@ -938,7 +920,7 @@ contains
                         do ipsi=1,grid%npsi
                             do iphi=1,grid%nphi
                                 test_explicit(itheta,mu,mup) = test_explicit(itheta,mu,mup)&
-                                +eulerangles(itheta,iphi,ipsi) &
+                                +foo_o( grid%indo(itheta,iphi,ipsi) ) &
                                 *exp(ii*mup*grid%phiofnphi(iphi)) *exp(ii*mu*grid%psiofnpsi(ipsi))
                             end do
                         end do
@@ -950,7 +932,7 @@ contains
             do itheta=1,ntheta
                 do iphi=1,nphi
                     do ipsi=1,npsi
-                        fft2d%in(ipsi,iphi) = eulerangles(itheta,iphi,ipsi)
+                        fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
                     end do
                 end do
                 fft2d_c%in(:,:)=fft2d%in
@@ -1020,10 +1002,10 @@ contains
                 do mup=-m,m
                     do mu=0,m,molrotsymorder
                         ip = p3%p( m,mup,mu )
-                        projections(ip)= sum(proj_theta(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
-                        if (abs(projections(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
-                            print*, "projections(ip)/=proj_m_mup_mu(m,mup,mu)"
-                            print*, "projections(ip)         =",projections(ip)
+                        foo_p(ip)= sum(proj_theta(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
+                        if (abs(foo_p(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
+                            print*, "foo_p(ip)/=proj_m_mup_mu(m,mup,mu)"
+                            print*, "foo_p(ip)         =",foo_p(ip)
                             print*, "proj_m_mup_mu(m,mup,mu) =",proj_m_mup_mu(m,mup,mu)
                             error stop
                         end if
@@ -1032,10 +1014,10 @@ contains
             end do
         END FUNCTION euler2proj
 
-        FUNCTION proj2euler (projections) RESULT (eulerangles)
+        FUNCTION proj2euler (foo_p) RESULT (eulerangles)
             IMPLICIT NONE
             REAL(dp) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
-            COMPLEX(dp), INTENT(IN) :: projections(1:grid%np)
+            COMPLEX(dp), INTENT(IN) :: foo_p(1:grid%np)
             COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax)
             INTEGER :: m, mup, mu, ip, itheta, iphi, ipsi, mmax, molrotsymorder
             mmax=grid%mmax
@@ -1047,7 +1029,7 @@ contains
                         do m= MAX(ABS(mup),ABS(mu)), mmax
                             ip=p3%p(m,mup,mu)
                             proj_theta(itheta,mu,mup) = proj_theta(itheta,mu,mup)&
-                            +projections(ip)*p3%harm_sph(itheta,ip)*fm(m)
+                            +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
                         end do
                     end do
                 end do
