@@ -61,8 +61,6 @@ module module_energy_cproj
     integer, allocatable :: tableof_ix_mq(:), tableof_iy_mq(:), tableof_iz_mq(:)
     real(dp), allocatable :: qx(:), qy(:), qz(:) ! vector q and its components tabulated
 
-    real(dp), allocatable :: gamma(:,:,:,:,:,:)
-    real(dp), allocatable :: gamma_o(:,:,:,:)
     complex(dp), allocatable :: deltarho_p(:,:,:,:)
     complex(dp), allocatable :: deltarho_p_q(:)
     complex(dp), allocatable :: deltarho_p_mq(:)
@@ -148,8 +146,6 @@ contains
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
 
-        if (.not. allocated (gamma) ) allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
-        if (.not. allocated (gamma_o) ) allocate (gamma_o(nx,ny,nz,no) ,source=zero)
         if (.not. allocated (gamma_p_q) ) allocate (gamma_p_q(np), source=zeroc)
         if (.not. allocated (gamma_p_mq) ) allocate (gamma_p_mq(np), source=zeroc)
         if (.not. allocated (gamma_p) ) allocate (gamma_p(np,nx,ny,nz) ,source=zeroc)
@@ -621,40 +617,19 @@ contains
         !
         ! Gather projections
         !
-        gamma=0._dp
         call dfftw_plan_dft_c2r_2d( ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE)
-
-        do iz=1,nz
-            do iy=1,ny
-                do ix=1,nx
-                    gamma(ix,iy,iz,1:ntheta,1:nphi,1:npsi) = proj2euler( gamma_p(1:np,ix,iy,iz) )
-                end do
-            end do
-        end do
 
         df=0._dp
         ff=0._dp
-        do is=1,ns
-            do ix=1,nx
-                do iy=1,ny
-                    do iz=1,nz
-                        do itheta=1,ntheta
-                            do iphi=1,nphi
-                                do ipsi=1,npsi
-                                    io=grid%indo(itheta,iphi,ipsi)
-        ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
-                *(solvent(is)%density(ix,iy,iz,io)-solvent(is)%rho0)/0.0333_dp*grid%w(io)**2&
-                    *real(nphi*npsi*ntheta,dp)
-        df(ix,iy,iz,io,is)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
-                                    /0.0333_dp*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
-                                end do
-                            end do
-                        end do
-                    end do
+        do iz=1,nz
+            do iy=1,ny
+                do ix=1,nx
+                    ! gamma_o(1:no) = proj2euler( gamma_p(1:np,ix,iy,iz) )
+                    df(ix,iy,iz,:,1) = -kT*dv*proj2euler( gamma_p(1:np,ix,iy,iz) )/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
+                    ff=ff +sum( df(ix,iy,iz,:,1)*(solvent(1)%density(ix,iy,iz,:)-rho0) ) /2._dp
                 end do
             end do
         end do
-
 
 contains
 
@@ -986,10 +961,11 @@ contains
                     end do
                 end do
             end do
+
+            ! Check relation 1.7
             do m=0,mmax
                 do mup=-m,m
                     do mu=-m,m
-                        ! Check relation 1.7
                         if (proj_m_mup_mu(m,-mup,-mu) - (-1)**(mup+mu)*conjg(proj_m_mup_mu(m,mup,mu)) /= zeroc) then
                             print*, "Relation 1.7 is not satisfied"
                             error stop
@@ -1014,9 +990,9 @@ contains
             end do
         END FUNCTION euler2proj
 
-        FUNCTION proj2euler (foo_p) RESULT (eulerangles)
+        FUNCTION proj2euler (foo_p) RESULT (foo_o)
             IMPLICIT NONE
-            REAL(dp) :: eulerangles(1:grid%ntheta,1:grid%nphi,1:grid%npsi)
+            real(dp) :: foo_o (1:grid%no)
             COMPLEX(dp), INTENT(IN) :: foo_p(1:grid%np)
             COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax)
             INTEGER :: m, mup, mu, ip, itheta, iphi, ipsi, mmax, molrotsymorder
@@ -1040,7 +1016,7 @@ contains
                 call dfftw_execute( ifft2d%plan )
                 do iphi=1,nphi
                     do ipsi=1,npsi
-                        eulerangles(itheta,iphi,ipsi) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
+                        foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
                     end do
                 end do
             end do
@@ -1198,171 +1174,3 @@ contains
     end subroutine energy_cproj
 
 end module module_energy_cproj
-
-
-
-
-
-
-
-! SUBROUTINE read_ck_nmax( ck, normq )
-!     implicit none
-!     integer :: m_, n_, mu_, nu_, khi_
-!     CHARACTER(3) :: mychar
-!     integer, parameter :: tnalpha(0:5)=[1,4,27,79,250,549]
-!     integer, parameter :: nalpha=tnalpha(mmax)
-!     integer, dimension(nalpha) :: alp, m, n, mu, nu, khi
-!     COMPLEX(dp), INTENT(OUT) :: ck(nalpha,nq)
-!     REAL(dp), INTENT(OUT) :: normq(nq)
-!     REAL(dp) :: fi(nalpha*2)
-!     INTEGER :: i, iq, p, ia, ia2, ios
-!     INTEGER, PARAMETER :: iounit=11
-!     character(len=8), parameter :: tfilename(0:5)=["ck_nmax0","ck_nmax1","ck_nmax2","ck_nmax3","ck_nmax4","ck_nmax5"]
-!     character(len=8), parameter :: filename=tfilename(mmax)
-!     !
-!     ! Open the file containing all the projections of the direct correlation function in the molecular frame
-!     !
-!     open(unit=iounit, file=filename, iostat=ios, status="old", action="read")
-!     if ( ios /= 0 ) then
-!         print*, "Error opening file ", filename
-!         error stop "Stopping with error"
-!     end if
-!
-!     do i=1,10            !
-!         READ(iounit,*)   ! Skip 10 lines of comments
-!     end do               !
-!
-!     READ(iounit,*) mychar, alp(:)
-!     READ(iounit,*) mychar, m(:)
-!     READ(iounit,*) mychar, n(:)
-!     READ(iounit,*) mychar, mu(:)
-!     READ(iounit,*) mychar, nu(:)
-!     READ(iounit,*) mychar, khi(:)
-!     READ(iounit,*)
-!
-!     print*,
-!     PRINT*,"Non-zero projections of the direct correlation function in molecular frame c^{m n}_{mu nu, khi}:"
-!     PRINT*,"        index         m           n           mu          nu          khi"
-!     PRINT*,"        -----        ---         ---          --          --          ---"
-!     do ia=1,nalpha
-!         print*, alp(ia), m(ia), n(ia), mu(ia), nu(ia), khi(ia)
-!     end do
-!     PRINT*
-!
-!     cq%a=errorgenerator
-!     do ia=1,nalpha
-!         cq%a( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
-!     end do
-!
-!     do iq=1,nq
-!         READ(iounit,*) normq(iq), fi
-!         do ia=1,nalpha
-!             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
-!         end do
-!     end do
-!
-!     !
-!     ! Close the file containing all the projections of the direct correlation function in the molecular frame
-!     !
-!     close(unit=iounit, iostat=ios, status="keep")
-!     if ( ios /= 0 ) then
-!         print*, "Error closing file ", filename, "in read_ck_nmax"
-!         error stop "Stopping with error"
-!     end if
-! END SUBROUTINE read_ck_nmax
-
-
-
-
-
-
-
-
-
-
-
-! SUBROUTINE read_ck_toutes_nmax( ck , normq )
-!     IMPLICIT NONE
-!     INTEGER :: m_, n_, mu_, nu_, khi_
-!     INTEGER, PARAMETER :: nalpha=SUM( &
-!     [([([([([(1,nu_=-n_,n_)],mu_=-m_,m_)],n_=abs(khi_),mmax)],&
-!     m_=abs(khi_),mmax)],khi_=-mmax,mmax)]  )
-!     !INTEGER, PARAMETER :: nalpha=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 ! number of projections for c^{m n}_{mu nu,khi}(q)
-!     CHARACTER(3) :: mychar
-!     INTEGER, DIMENSION(nalpha) :: alp, m, n, mu, nu, khi
-!     COMPLEX(dp), INTENT(OUT) :: ck(nalpha,nq)
-!     REAL(dp), INTENT(OUT) :: normq(nq)
-!     REAL(dp) :: fi(nalpha*2)
-!     INTEGER :: i, iq, p, ia, ia2
-!     SELECT CASE (mmax)
-!     CASE (1)
-!         OPEN(11, file="ck_toutes_nmax1")
-!     CASE (2)
-!         OPEN(11, file="ck_toutes_nmax2")
-!     CASE (3)
-!         OPEN(11, file="ck_toutes_nmax3")
-!     CASE DEFAULT
-!         ERROR STOP "I don't ck_toutes_nmax file with all projections for nmax = 0 or nmax > 3 yet"
-!     END SELECT
-!     ! skip 10 lignes of comments
-!     do i=1,10
-!         READ(11,*)
-!     end do
-!     ! then read useful stuff
-!     alp=0
-!     m=0
-!     n=0
-!     mu=0
-!     nu=0
-!     khi=0
-!     ! PRINT*,"nalpha=",nalpha
-!     READ(11,*) mychar, alp(:)
-!     READ(11,*) mychar, m(:)
-!     READ(11,*) mychar, n(:)
-!     READ(11,*) mychar, mu(:)
-!     READ(11,*) mychar, nu(:)
-!     READ(11,*) mychar, khi(:)
-!     READ(11,*)
-!     ! PRINT*,int(alp,1)
-!     ! PRINT*,int(m,1)
-!     ! print*,int(n,1)
-!     ! print*,int(mu,1)
-!     ! print*,int(nu,1)
-!     ! print*,int(khi,1)
-!     cq%a=errorgenerator
-!     do ia=1,nalpha
-!         cq%a( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
-!     end do
-!     do iq=1,nq
-!         READ(11,*) normq(iq), fi
-!         do ia=1,nalpha
-!             ck(ia,iq)= CMPLX(fi(2*ia-1),fi(2*ia),dp)
-!         end do
-!     end do
-!     !
-!     !
-!     !
-!     ! print*,"== TEST READING =="
-!     ! do iq=3,3
-!     !     do ia=1,nalpha
-!     !         ia2=cq%a( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
-!     !         block
-!     !             real :: diff
-!     !             diff = abs(  ck(ia2,iq)  -   (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))    )
-!     !             if( diff == 0 ) then
-!     !                 print*, ia, ia2, m(ia), n(ia), mu(ia), nu(ia), khi(ia)
-!     !             else
-!     !                 print*, ia, ia2, m(ia), n(ia), mu(ia), nu(ia), khi(ia), " #", ck(ia2,iq), (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))
-!     !             end if
-!     !         end block
-!     !     !if( abs(  ck(ia2,iq)  -   (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))      ) /= 0) print*,"ERROR FOR ia=",ia
-!     ! !    if(abs(ck(ia,iq))/=0) print*,int(iq,1),ia,int([m(ia),n(ia),mu(ia),nu(ia),khi(ia)],1), ck(ia,iq)
-!     !     end do
-!     ! end do
-!     ! print*,"== END TEST READING =="
-!     ! CECI EST UN TEST DE LA ROUTINE DE GENERATION
-!     do ia=1,nalpha
-!         print*,m(ia), n(ia), mu(ia), nu(ia), khi(ia), ck(ia,2)
-!     end do
-!     ! CECI EST LA FIN DU TEST DE LA ROUTINE DE GENERATION
-! END SUBROUTINE read_ck_toutes_nmax
