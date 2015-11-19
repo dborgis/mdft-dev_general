@@ -73,6 +73,11 @@ module module_energy_cproj
     complex(dp), allocatable :: deltarho_p_mq(:)
     complex(dp), allocatable :: gamma_p(:,:,:,:)
 
+    type :: p3_type
+        real(dp), allocatable :: harm_sph(:,:)
+    end type p3_type
+    type (p3_type) :: p3
+
     public :: energy_cproj
 
 contains
@@ -87,12 +92,11 @@ contains
         real(dp), intent(out) :: df(:,:,:,:,:)
         real(dp) :: dv, kT
         logical :: q_eq_mq
-        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, molrotsymorder
         integer :: m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq, is
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
-        real(dp) :: tharm_sph(grid%ntheta,grid%np)
         real(dp) :: q(3), mq(3)
         type :: fft2d_type
             type(c_ptr) :: plan
@@ -112,6 +116,7 @@ contains
         real(dp) :: lx, ly, lz, rho0
         logical, allocatable :: gamma_p_isok(:,:,:)
         integer :: points_q_considere_en_vrai
+
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
@@ -223,7 +228,7 @@ contains
 
 
         !
-        ! Tabulate generalized spherical harmonics in array tharm_sph(theta,proj)
+        ! Tabulate generalized spherical harmonics in array p3%harm_sph(theta,proj)
         ! where theta can be any of the GaussLegendre integration roots for theta
         ! where proj is an index related to a tuple {m,mup,mu}
         ! Blum's notation :
@@ -234,15 +239,17 @@ contains
         !
         call test_routines_calcul_de_Rm_mup_mu_q
 
-        tharm_sph = 0._dp
-        do ip=1,np
-            m = im(ip)
-            mup = imup(ip)
-            mu = imu(ip)
-            do itheta=1,ntheta
-                tharm_sph(itheta,ip) = harm_sph(m,mup,mu,theta(itheta))
+        if (.not. allocated(p3%harm_sph)) then
+            allocate ( p3%harm_sph(1:ntheta, 1:np) ,source=0._dp)
+            do p=1,np
+                m = im(p)
+                mup = imup(p)
+                mu = imu(p)
+                do i=1,ntheta
+                    p3%harm_sph(i,p) = harm_sph(m,mup,mu,theta(i))
+                end do
             end do
-        end do
+        end if
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1011,7 +1018,7 @@ contains
                 do mup=-m,m
                     do mu=0,m,molrotsymorder
                         ip = indp( m,mup,mu )
-                        projections(ip)= sum(proj_theta(:,mu,mup)*tharm_sph(:,ip)*wtheta(:))*fm(m)
+                        projections(ip)= sum(proj_theta(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
                         if (abs(projections(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
                             print*, "projections(ip)/=proj_m_mup_mu(m,mup,mu)"
                             print*, "projections(ip)         =",projections(ip)
@@ -1038,7 +1045,7 @@ contains
                         do m= MAX(ABS(mup),ABS(mu)), mmax
                             ip=indp(m,mup,mu)
                             proj_theta(itheta,mu,mup) = proj_theta(itheta,mu,mup)&
-                            +projections(ip)*tharm_sph(itheta,ip)*fm(m)
+                            +projections(ip)*p3%harm_sph(itheta,ip)*fm(m)
                         end do
                     end do
                 end do
