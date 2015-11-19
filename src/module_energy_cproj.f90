@@ -108,7 +108,7 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, molrotsymorder
-        integer :: m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq, is
+        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: q(3), mq(3)
@@ -395,23 +395,10 @@ contains
                     end if
 
                     !
-                    ! Move all projections to a smaller temporary array: deltarho_p_q (for q) and deltarho_p_mq (for -q)
+                    ! Move all projections for q and -q to a smaller temporary array: deltarho_p_q (for q) and deltarho_p_mq (for -q)
                     !
                     deltarho_p_q (1:np) = deltarho_p(1:np,ix_q,iy_q,iz_q)
                     deltarho_p_mq(1:np) = deltarho_p(1:np,ix_mq,iy_mq,iz_mq)
-
-                    if(any(deltarho_p_mq/=deltarho_p_mq)) then
-                        do ip=1,np
-                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_mq(ip)
-                        end do
-                        error stop "lisfwlhukwlkuhwzlef"
-                    end if
-                    if(any(deltarho_p_q/=deltarho_p_q)) then
-                        do iq=1,np
-                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_q(ip)
-                        end do
-                        error stop "hkhwkjhselkuhfkjhl"
-                    end if
 
                     call rotate_to_molecular_frame ! does q and mq at the same time.
 
@@ -591,7 +578,6 @@ contains
                 end do
             end do
         end do
-
 
 
         if (.not.all(gamma_p_isok.eqv..true.)) then
@@ -876,18 +862,18 @@ contains
             use module_rotation, only: harm_sph
             IMPLICIT NONE
             real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
-            COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
+            COMPLEX(dp) :: foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
             COMPLEX(dp) :: foo_p(1:grid%np)
             INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
-            complex(dp), allocatable :: test_explicit(:,:,:), proj_theta_full(:,:,:)
+            complex(dp), allocatable :: test_explicit(:,:,:), foo_theta_mup_mu_full(:,:,:)
             complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
             mmax=grid%mmax
             molrotsymorder=grid%molrotsymorder
             foo_p = zeroc
-            proj_theta = zeroc
+            foo_theta_mup_mu = zeroc
 
 
-            allocate (proj_theta_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
+            allocate (foo_theta_mup_mu_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
             allocate (test_explicit(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
             do itheta=1,ntheta
                 do mu=-mmax,mmax
@@ -923,13 +909,13 @@ contains
                 !         print*,ipsi,iphi,fft2d_c%out(ipsi,iphi)
                 !     end do
                 ! end do
-                proj_theta(itheta,0:mmax/molrotsymorder,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
-                proj_theta(itheta,0:mmax/molrotsymorder,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
+                foo_theta_mup_mu(itheta,0:mmax/molrotsymorder,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
+                foo_theta_mup_mu(itheta,0:mmax/molrotsymorder,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
 
-                proj_theta_full(itheta,0:mmax,0:mmax)     = fft2d_c%out(1:npsi/2+1, 1:nphi/2+1)
-                proj_theta_full(itheta,0:mmax,-mmax:-1)   = fft2d_c%out(1:npsi/2+1, nphi/2+2:)
-                proj_theta_full(itheta,-mmax:-1,0:mmax)   = fft2d_c%out(npsi/2+2:, 1:nphi/2+1)
-                proj_theta_full(itheta,-mmax:-1,-mmax:-1) = fft2d_c%out(npsi/2+2:, nphi/2+2:)
+                foo_theta_mup_mu_full(itheta,0:mmax,0:mmax)     = fft2d_c%out(1:npsi/2+1, 1:nphi/2+1)
+                foo_theta_mup_mu_full(itheta,0:mmax,-mmax:-1)   = fft2d_c%out(1:npsi/2+1, nphi/2+2:)
+                foo_theta_mup_mu_full(itheta,-mmax:-1,0:mmax)   = fft2d_c%out(npsi/2+2:, 1:nphi/2+1)
+                foo_theta_mup_mu_full(itheta,-mmax:-1,-mmax:-1) = fft2d_c%out(npsi/2+2:, nphi/2+2:)
 
             end do
             !
@@ -939,10 +925,10 @@ contains
             !         do mu=-mmax,mmax
             !             print*,"itheta, mup, mu =",itheta,mup,mu
             !             print*,"explicit                      =",test_explicit(itheta,mu,mup)
-            !             print*,"proj_theta_full(itheta,mu,mup)=",proj_theta_full(itheta,mu,mup)
-            !             print*,"proj_theta_full reconstruit   =",(-1)**(-mup-mu)*conjg(proj_theta_full(itheta,-mu,-mup))," WWWW"
-            !             if(mu>=0) print*,"proj_theta(itheta,mu,mup)     =",proj_theta(itheta,mu,mup)
-            !             if(mu<0 ) print*,"proj_theta(itheta,mu,mup)     =",(-1)**(-mup-mu)*conjg(proj_theta(itheta,-mu,-mup))," reconstruit"
+            !             print*,"foo_theta_mup_mu_full(itheta,mu,mup)=",foo_theta_mup_mu_full(itheta,mu,mup)
+            !             print*,"foo_theta_mup_mu_full reconstruit   =",(-1)**(-mup-mu)*conjg(foo_theta_mup_mu_full(itheta,-mu,-mup))," WWWW"
+            !             if(mu>=0) print*,"foo_theta_mup_mu(itheta,mu,mup)     =",foo_theta_mup_mu(itheta,mu,mup)
+            !             if(mu<0 ) print*,"foo_theta_mup_mu(itheta,mu,mup)     =",(-1)**(-mup-mu)*conjg(foo_theta_mup_mu(itheta,-mu,-mup))," reconstruit"
             !             print*,
             !         end do
             !     end do
@@ -956,7 +942,7 @@ contains
                     do mu=-m,m
                         do itheta=1,ntheta
                             proj_m_mup_mu(m,mup,mu) = proj_m_mup_mu(m,mup,mu) +&
-                            proj_theta_full(itheta,mu,mup)*wtheta(itheta)*harm_sph(m,mup,mu,theta(itheta))*fm(m)
+                            foo_theta_mup_mu_full(itheta,mu,mup)*wtheta(itheta)*harm_sph(m,mup,mu,theta(itheta))*fm(m)
                         end do
                     end do
                 end do
@@ -978,7 +964,7 @@ contains
                 do mup=-m,m
                     do mu=0,m,molrotsymorder
                         ip = p3%p( m,mup,mu )
-                        foo_p(ip)= sum(proj_theta(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
+                        foo_p(ip)= sum(foo_theta_mup_mu(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
                         if (abs(foo_p(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
                             print*, "foo_p(ip)/=proj_m_mup_mu(m,mup,mu)"
                             print*, "foo_p(ip)         =",foo_p(ip)
@@ -990,29 +976,26 @@ contains
             end do
         END FUNCTION euler2proj
 
-        FUNCTION proj2euler (foo_p) RESULT (foo_o)
-            IMPLICIT NONE
+        function proj2euler (foo_p) result (foo_o)
+            implicit none
             real(dp) :: foo_o (1:grid%no)
-            COMPLEX(dp), INTENT(IN) :: foo_p(1:grid%np)
-            COMPLEX(dp) :: proj_theta(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax)
-            INTEGER :: m, mup, mu, ip, itheta, iphi, ipsi, mmax, molrotsymorder
-            mmax=grid%mmax
-            molrotsymorder=grid%molrotsymorder
-            proj_theta = CMPLX(0,0)
+            complex(dp), intent(in) :: foo_p(1:grid%np)
+            complex(dp) :: foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! in fact foo_theta_mu_mup
+            foo_theta_mup_mu = zeroc
             do itheta=1,ntheta
                 do mup=-mmax,mmax
                     do mu=0,mmax/molrotsymorder
                         do m= MAX(ABS(mup),ABS(mu)), mmax
                             ip=p3%p(m,mup,mu)
-                            proj_theta(itheta,mu,mup) = proj_theta(itheta,mu,mup)&
+                            foo_theta_mup_mu(itheta,mu,mup) = foo_theta_mup_mu(itheta,mu,mup)&
                             +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
                         end do
                     end do
                 end do
             end do
             do itheta=1,ntheta
-                ifft2d%in(:,1:mmax+1) = CONJG( proj_theta(itheta,:,0:mmax)   )
-                ifft2d%in(:,mmax+2:)  = CONJG( proj_theta(itheta,:,-mmax:-1) )
+                ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mup_mu(itheta,:,0:mmax)   )
+                ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mup_mu(itheta,:,-mmax:-1) )
                 call dfftw_execute( ifft2d%plan )
                 do iphi=1,nphi
                     do ipsi=1,npsi
