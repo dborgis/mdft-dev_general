@@ -111,6 +111,7 @@ contains
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         real(dp) :: lx, ly, lz, rho0
         logical, allocatable :: gamma_p_isok(:,:,:)
+        integer :: points_q_considere_en_vrai
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
@@ -367,6 +368,8 @@ contains
         !
         ! For all vectors q and -q handled simultaneously
         !
+        points_q_considere_en_vrai = 0
+
         do ix_q=1,nx
             do iy_q=1,ny
                 do iz_q=1,nz
@@ -392,6 +395,8 @@ contains
                             error stop
                         end if
                     end if
+
+                    points_q_considere_en_vrai = points_q_considere_en_vrai +1
 
                     q = [qx(ix_q), qy(iy_q), qz(iz_q)]
                     mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]
@@ -438,14 +443,14 @@ contains
                     end if
 
 
-                    if (q_eq_mq .and. any(deltarho_p_q/=deltarho_p_mq) ) then
-                        print*, "q = mq mais apres la rotation vers le molecular frame, on n'a plus deltarho_p_q=deltarho_p_mq"
-                        print*, "ix_q,iy_q,iz_q=", ix_q,iy_q,iz_q
-                        print*, "ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
-                        print*, "deltarho_p_q", deltarho_p_q
-                        print*, "deltarho_p_mq", deltarho_p_mq
-                        error stop "oijazd"
-                    end if
+                    ! if (q_eq_mq .and. any(deltarho_p_q/=deltarho_p_mq) ) then
+                    !     print*, "q = mq mais apres la rotation vers le molecular frame, on n'a plus deltarho_p_q=deltarho_p_mq"
+                    !     print*, "ix_q,iy_q,iz_q=", ix_q,iy_q,iz_q
+                    !     print*, "ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
+                    !     print*, "deltarho_p_q", deltarho_p_q
+                    !     print*, "deltarho_p_mq", deltarho_p_mq
+                    !     error stop "oijazd"
+                    ! end if
 
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for 200 values of |q|.
@@ -519,24 +524,26 @@ contains
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
 
-                                if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq) ) then
-                                    print*, "we have q=mq"
-                                    print*, "for ix_q,iy_q,iz_q=",  ix_q, iy_q, iz_q
-                                    print*, "and ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
-                                    print*, "q=",q
-                                    print*, "mq=",mq
-                                    print*, "gamma_p_q=",gamma_p_q
-                                    print*, "gamma_p_mq=",gamma_p_mq
-                                    print*, "deltarho_p_q=",deltarho_p_q
-                                    print*, "deltarho_p_mq=",deltarho_p_mq
-                                    error stop "apzokdukhsf"
-                                end if
+                                ! if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq) ) then
+                                !     print*, "we have q=mq"
+                                !     print*, "for ix_q,iy_q,iz_q=",  ix_q, iy_q, iz_q
+                                !     print*, "and ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
+                                !     print*, "q=",q
+                                !     print*, "mq=",mq
+                                !     print*, "gamma_p_q=",gamma_p_q
+                                !     print*, "gamma_p_mq=",gamma_p_mq
+                                !     print*, "deltarho_p_q=",deltarho_p_q
+                                !     print*, "deltarho_p_mq=",deltarho_p_mq
+                                !     error stop "apzokdukhsf"
+                                ! end if
 
                             end do
                         end do
                     end do
-if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
-if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
+
+                    if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
+                    if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
+
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
                     !
@@ -625,6 +632,7 @@ if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
         !
         gamma=0._dp
         call dfftw_plan_dft_c2r_2d( ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE)
+
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
@@ -665,7 +673,7 @@ contains
             complex(dp) :: gamma_p_q_temp(1:np)
             complex(dp) :: gamma_p_mq_temp(1:np)
             complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
-            complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
+            ! complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
             integer :: m, khi, mu, mup, ip, ip2
             if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
                 !return
@@ -673,7 +681,7 @@ contains
                 gamma_p_q_temp = zeroc
                 gamma_p_mq_temp = zeroc
                 gshrot = conjg(rotation_matrix_between_complex_spherical_harmonics_lu(q,mmax) )
-                gshrot_mq = conjg(rotation_matrix_between_complex_spherical_harmonics_lu(mq,mmax) )
+                ! gshrot_mq = conjg(rotation_matrix_between_complex_spherical_harmonics_lu(mq,mmax) )
                 do m=0,mmax
                     do mup=-m,m
                         do mu=0,m
@@ -682,15 +690,15 @@ contains
                             do khi=-m,m
                                 ip2=indp(m,khi,mu)
                                 gamma_p_q_temp(ip) = gamma_p_q_temp(ip)   + gamma_p_q(ip2)*gshrot(m,mup,khi)
-                                ! gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
-                                gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
+                                gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                                ! gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
 
-                                if (q_eq_mq .and. gamma_p_q_temp(ip)/=gamma_p_mq_temp(ip)) then
-                                    print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
-                                    print*, "m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)"
-                                    print*,m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)
-                                    error stop
-                                end if
+                                ! if (q_eq_mq .and. gamma_p_q_temp(ip)/=gamma_p_mq_temp(ip)) then
+                                !     print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
+                                !     print*, "m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)"
+                                !     print*,m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)
+                                !     error stop
+                                ! end if
 
                             end do
                             !
@@ -707,9 +715,9 @@ contains
             complex(dp) :: deltarho_p_q_temp(1:np)
             complex(dp) :: deltarho_p_mq_temp(1:np)
             complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
-            complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
+            ! complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
             integer :: m, khi, mu, mup, ip2, ip
-            complex(dp) :: a, b, c, d, e
+            ! complex(dp) :: a, b, c, d, e
             !
             ! Rotate projections from laboratory frame to molecular frame
             ! If q=0 then chose the rotation you want: the identity is the simplest option.
@@ -718,7 +726,7 @@ contains
                 ! return
             else
                 gshrot    = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax)
-                gshrot_mq = rotation_matrix_between_complex_spherical_harmonics_lu ( mq, mmax)
+                ! gshrot_mq = rotation_matrix_between_complex_spherical_harmonics_lu ( mq, mmax)
 
                 deltarho_p_q_temp = zeroc
                 deltarho_p_mq_temp = zeroc
@@ -731,19 +739,19 @@ contains
                                 ip2=indp(m,mup,mu)
                                 deltarho_p_q_temp(ip) = deltarho_p_q_temp(ip)  + deltarho_p_q(ip2)*gshrot(m,mup,khi)
                                 ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
-                                ! deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
-                                deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*gshrot_mq(m,mup,khi)
-                                if (q_eq_mq .and. deltarho_p_q_temp(ip)/=deltarho_p_mq_temp(ip)) then
-                                    print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
-                                    print*,m,khi,mu,ip,mup,ip2,deltarho_p_q_temp(ip),deltarho_p_mq_temp(ip)
-                                    error stop
-                                end if
+                                deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
+                        !!        ! deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*gshrot_mq(m,mup,khi)
+                                ! if (q_eq_mq .and. deltarho_p_q_temp(ip)/=deltarho_p_mq_temp(ip)) then
+                                !     print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
+                                !     print*,m,khi,mu,ip,mup,ip2,deltarho_p_q_temp(ip),deltarho_p_mq_temp(ip)
+                                !     error stop
+                                ! end if
 
-                                a = (-1)**m*gshrot(m,mup,-khi)
-                                b = (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
-                                c = gshrot_mq(m,mup,khi)
-                                d = a-b
-                                e = b-c
+                                ! a = (-1)**m*gshrot(m,mup,-khi)
+                                ! b = (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
+                                ! c = gshrot_mq(m,mup,khi)
+                                ! d = a-b
+                                ! e = b-c
 
                                 ! if (abs(e)>epsdp .or. abs(d)>epsdp) then
                                 !     print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
