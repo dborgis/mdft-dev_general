@@ -175,49 +175,50 @@ contains
         ! p3%m(p) donne inversement le m correspondant à l'indice p dans le tableau des projections
         ! On a donc p3%p(p3%m(p),p3%mup(p),p3%mu(p)) == p
         !
-        if (.not.allocated(p3%p)) allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax) ,source=-huge(1))
-        if (.not.allocated(p3%m))   allocate ( p3%m(np) ,source=-huge(1))
-        if (.not.allocated(p3%mup)) allocate ( p3%mup(np) ,source=-huge(1))
-        if (.not.allocated(p3%mu))  allocate ( p3%mu(np) ,source=-huge(1))
-
-
-        ip=0
-        do m=0,mmax
-            do mup=-m,m
-                !
-                ! We chose to have p3%p and p3%mu to contain the true value of mu, not mu/molrotsymorder.
-                ! Thus, we loop over mu with steps of molrotsymorder
-                ! Thus, we have holes in p3%p, but all calls to p3%p and p3%mu should be done with this true mu
-                ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to p3%p(m,mup,mu) with mu=1 will return -999
-                ! Also, the array p3%mu only contains even values (des valeurs paires)
-                !
-                do mu=0,m,molrotsymorder
-                    ip=ip+1
-                    IF (ip > np) ERROR STOP "p > np at line 166"
-                    p3%p(m,mup,mu) = ip
-                    p3%m(ip) = m
-                    p3%mup(ip) = mup
-                    p3%mu(ip) = mu
+        if (.not.allocated(p3%p)) then
+            allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax) ,source=-huge(1))
+            allocate ( p3%m(np) ,source=-huge(1))
+            allocate ( p3%mup(np) ,source=-huge(1))
+            allocate ( p3%mu(np) ,source=-huge(1))
+            ip=0
+            do m=0,mmax
+                do mup=-m,m
+                    !
+                    ! We chose to have p3%p and p3%mu to contain the true value of mu, not mu/molrotsymorder.
+                    ! Thus, we loop over mu with steps of molrotsymorder
+                    ! Thus, we have holes in p3%p, but all calls to p3%p and p3%mu should be done with this true mu
+                    ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to p3%p(m,mup,mu) with mu=1 will return -999
+                    ! Also, the array p3%mu only contains even values (des valeurs paires)
+                    !
+                    do mu=0,m,molrotsymorder
+                        ip=ip+1
+                        IF (ip > np) ERROR STOP "p > np at line 166"
+                        p3%p(m,mup,mu) = ip
+                        p3%m(ip) = m
+                        p3%mup(ip) = mup
+                        p3%mu(ip) = mu
+                    end do
                 end do
             end do
-        end do
-        if (ip /= np) error stop "ip /= np in energy_cproj"
-        if ( any(abs(p3%m)>mmax) .or. any(abs(p3%mup)>mmax) .or. any(abs(p3%mu)>mmax) ) then
-            print*, "tabulated m, mup or mu have incorrect values"
-            error stop
+            if (ip /= np) error stop "ip /= np in energy_cproj"
+            if ( any(abs(p3%m)>mmax) .or. any(abs(p3%mup)>mmax) .or. any(abs(p3%mu)>mmax) ) then
+                print*, "tabulated m, mup or mu have incorrect values"
+                error stop
+            end if
+            !
+            ! Print all projections that will be kept in memory
+            !
+            open(11, file="output/nonzero-projections.out")
+            write(11,*)"Non-zero projections:"
+            write(11,*)"        index         m          mup          mu"
+            write(11,*)"        -----        ---         ---          --"
+            do ip=1,np
+                write(11,*) ip, p3%m(ip), p3%mup(ip), p3%mu(ip)
+            end do
+            close(11)
         end if
 
-        !
-        ! Print all projections that will be kept in memory
-        !
-        open(11, file="output/nonzero-projections.out")
-        write(11,*)"Non-zero projections:"
-        write(11,*)"        index         m          mup          mu"
-        write(11,*)"        -----        ---         ---          --"
-        do ip=1,np
-            write(11,*) ip, p3%m(ip), p3%mup(ip), p3%mu(ip)
-        end do
-        close(11)
+
 
         !
         ! Initie poids et racines de l'integration angulaire par la methode de Gauss-Legendre
