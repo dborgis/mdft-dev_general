@@ -36,16 +36,19 @@ module module_energy_cproj_slow
         integer, allocatable :: mup(:) ! mu' of p
         integer, allocatable :: mu(:) ! mu of p
         real(dp), allocatable :: tharm_sph(:,:) ! Associated Legendre function of np and theta
-        complex(dp), allocatable :: drho_p(:,:,:,:) ! delta rho en projections
-        complex(dp), allocatable :: gam_p (:,:,:,:) ! gamma en projections
-        complex(dp), allocatable :: drho_p_q(:) ! drho_p for a given q
-        complex(dp), allocatable :: gam_p_q(:) ! gam_p for a given q
+        complex(dp), allocatable :: drho(:,:,:,:) ! delta rho en projections
+        complex(dp), allocatable :: gam (:,:,:,:) ! gamma en projections
+        complex(dp), allocatable :: drho_q(:) ! drho for a given q
+        complex(dp), allocatable :: gam_q(:) ! gam for a given q
     end type p3_type
     type (p3_type) :: p3
 
     type :: o3_type
         complex(dp), allocatable :: gam(:,:,:,:) ! gamma(orientation,x,y,z )
+        integer, allocatable :: o(:,:,:) ! index of the orientation corresponding to theta, phi, psi
+        complex(dp), allocatable :: in(:,:,:,:) ! for test purpose only
     end type o3_type
+    type (o3_type) :: o3
 
     integer, allocatable :: indp(:,:,:) ! index of the projection corresponding to m, mup, mu
     integer, allocatable :: im(:) ! m for projection 1 to np
@@ -286,7 +289,7 @@ contains
         ! m is related to theta
         ! mup is related to phi
         ! mu is related to psi
-        ! TOdo: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
+        ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
         call test_routines_calcul_de_Rm_mup_mu_q
 
@@ -365,8 +368,16 @@ contains
         end if
 
 
+
+        if (.not. allocated(o3%in)) allocate(o3%in(no,nx,ny,nz), source=zeroc)
+        do concurrent (ix=1:nx, iy=1:ny, iz=1:nz, io=1:no)
+            o3%in(io,ix,iy,iz) = complex(solvent(1)%density(ix,iy,iz,io)-rho0, 0._dp)
+        end do
+
+
+
         if (.not. allocated(foo)) allocate (foo(ntheta,-mmax:mmax,-mmax:mmax) ,source=zeroc)
-        if (.not. allocated(p3%drho_p)) allocate(p3%drho_p(p3%np,nx,ny,nz), source=zeroc)
+        if (.not. allocated(p3%drho)) allocate(p3%drho(p3%np,nx,ny,nz), source=zeroc)
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
@@ -392,13 +403,13 @@ contains
                         end do
                     end do
 
-                    p3%drho_p(:,ix,iy,iz)=zeroc
+                    p3%drho(:,ix,iy,iz)=zeroc
                     do mup=-mmax,mmax
                         do mu=-mmax,mmax
                             do m=max(abs(mup),abs(mu)),mmax
                                 p=p3%p(m,mup,mu)
                                 do i=1,ntheta
-                                    p3%drho_p(p,ix,iy,iz) = p3%drho_p(p,ix,iy,iz) &
+                                    p3%drho(p,ix,iy,iz) = p3%drho(p,ix,iy,iz) &
                                     +fm(m)*wtheta(i)*foo(i,mup,mu)*p3%tharm_sph(p,i)
                                 end do
                             end do
@@ -426,14 +437,14 @@ contains
                             do mup=-m,m
                                 do mu=-m,m
                                     if(mu>=0) then
-                                        a= p3%drho_p(p3%p(m,mup,mu),ix,iy,iz)
+                                        a= p3%drho(p3%p(m,mup,mu),ix,iy,iz)
                                         b= deltarho_p(indp(m,mup,mu),ix,iy,iz)
                                         if (abs(a-b)>epsdp) then
                                             print*, a, b, a-b
                                             error stop "ifhdyr"
                                         end if
                                     else
-                                        a= p3%drho_p(p3%p(m,mup,mu),ix,iy,iz)
+                                        a= p3%drho(p3%p(m,mup,mu),ix,iy,iz)
                                         b= (-1)**(mup+mu)*conjg(deltarho_p(indp(m,-mup,-mu),ix,iy,iz))
                                         if (abs(a-b)>epsdp) then
                                             print*, a, b, a-b
@@ -465,7 +476,7 @@ contains
         ! end do
 
         do p=1,p3%np
-            call dfftw_execute_dft( fft3d%plan_backward, p3%drho_p(p,:,:,:), p3%drho_p(p,:,:,:) )
+            call dfftw_execute_dft( fft3d%plan_backward, p3%drho(p,:,:,:), p3%drho(p,:,:,:) )
         end do
 
         do ip=1,np
@@ -499,7 +510,7 @@ contains
 
 
         ! rotation to molecular frame without symetry
-        if (.not. allocated( p3%drho_p_q) ) allocate (p3%drho_p_q(p3%np) , source=zeroc)
+        if (.not. allocated( p3%drho_q) ) allocate (p3%drho_q(p3%np) , source=zeroc)
         block
             complex(dp) :: sum_over_mup
             complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax)
@@ -508,7 +519,8 @@ contains
                 do iy_q=1,ny
                     do iz_q=1,nz
 
-                        p3%drho_p_q(:) = zeroc
+                        q = [ qx(ix_q), qy(iy_q), qz(iz_q) ]
+                        p3%drho_q(:) = zeroc
                         R = rotation_matrix_between_complex_spherical_harmonics_lu (q, mmax)
                         do m=0,mmax
                             do khi=-m,m
@@ -517,14 +529,14 @@ contains
                                     sum_over_mup = zeroc
                                     do mup=-m,m
                                         sum_over_mup = sum_over_mup &
-                                            + p3%drho_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi)
+                                            + p3%drho(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi)
                                     end do
-                                    p3%drho_p_q(p3%p(m,khi,mu)) = sum_over_mup
+                                    p3%drho_q(p3%p(m,khi,mu)) = sum_over_mup
 
                                 end do
                             end do
                         end do
-                        p3%drho_p(:,ix_q,iy_q,iz_q) = p3%drho_p_q(:)
+                        p3%drho(:,ix_q,iy_q,iz_q) = p3%drho_q(:)
 
                     end do
                 end do
@@ -547,40 +559,41 @@ contains
         if (.not.cq%isok) call read_ck_nonzero
 
 
+!
+!
+!         !OZ sans sym
+        if (.not. allocated(p3%gam) ) allocate ( p3%gam(p3%np,nx,ny,nz) )
+p3%gam = p3%drho ! TODO FOR TESTING ONLY
+!         p3%gam = zeroc
+!         do ix_q=1,nx
+!             do iy_q=1,ny
+!                 do iz_q=1,nz
+!                     iq = int( sqrt( qx(ix_q)**2 + qy(iy_q)**2 + qz(iz_q)**2 ) /cq%dq )+1
+!                     if (iq>cq%nq) iq=cq%nq
+!
+!                     do khi=-mmax,mmax
+!                         do m=abs(khi),mmax
+!                             do mu=-m,m
+!
+!                                 do n=abs(khi),mmax
+!                                     do nu=-n,n
+!                                         if (mod(mu,2)/=0 .or. mod(nu,2)/=0) cycle
+!                                         ia = cq%inda(m,n,mu,nu,khi)
+! p3%gam( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) = p3%gam( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) &
+!     + (-1)**(khi+nu) * ck(ia,iq) * p3%drho( p3%p(n,khi,-nu), ix_q,iy_q,iz_q)
+!                                     end do
+!                                 end do
+!                             end do
+!                         end do
+!                     end do
+!
+!                 end do
+!             end do
+!         end do
 
-
-        !OZ sans sym
-        if (.not. allocated(p3%gam_p) ) allocate ( p3%gam_p(p3%np,nx,ny,nz) )
-        p3%gam_p = zeroc
-        do ix_q=1,nx
-            do iy_q=1,ny
-                do iz_q=1,nz
-                    iq = int( sqrt( qx(ix_q)**2 + qy(iy_q)**2 + qz(iz_q)**2 ) /cq%dq )+1
-                    if (iq>cq%nq) iq=cq%nq
-
-                    do khi=-mmax,mmax
-                        do m=abs(khi),mmax
-                            do mu=-m,m
-
-                                do n=abs(khi),mmax
-                                    do nu=-n,n
-                                        if (mod(mu,2)/=0 .or. mod(nu,2)/=0) cycle
-                                        ia = cq%inda(m,n,mu,nu,khi)
-p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) = p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) &
-    + (-1)**(khi+nu) * ck(ia,iq) * p3%drho_p( p3%p(n,khi,-nu), ix_q,iy_q,iz_q)
-                                    end do
-                                end do
-                            end do
-                        end do
-                    end do
-
-                end do
-            end do
-        end do
-
-
-        ! rotation to molecular frame without symetry
-        if (.not. allocated(p3%gam_p_q) ) allocate ( p3%gam_p_q(p3%np) )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! rotation to fixed frame without symetry
+        if (.not. allocated(p3%gam_q) ) allocate ( p3%gam_q(p3%np) )
         block
             complex(dp) :: sum_over_khi
             complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax)
@@ -589,7 +602,8 @@ p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) = p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,
                 do iy_q=1,ny
                     do iz_q=1,nz
 
-                        p3%gam_p_q(:) = zeroc
+                        q = [ qx(ix_q), qy(iy_q), qz(iz_q) ]
+                        p3%gam_q(:) = zeroc
                         R = rotation_matrix_between_complex_spherical_harmonics_lu (q, mmax)
                         do m=0,mmax
                             do khi=-m,m
@@ -598,33 +612,124 @@ p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) = p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,
                                     sum_over_khi = zeroc
                                     do mup=-m,m
                                         sum_over_khi = sum_over_khi &
-                                            + p3%gam_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) * conjg( R(m,mup,khi) )
+                                            + p3%gam(p3%p(m,khi,mu),ix_q,iy_q,iz_q) * conjg( R(m,mup,khi) )
                                     end do
-                                    p3%gam_p_q(p3%p(m,khi,mu)) = sum_over_khi
+                                    p3%gam_q(p3%p(m,khi,mu)) = sum_over_khi
 
                                 end do
                             end do
                         end do
-                        p3%gam_p(:,ix_q,iy_q,iz_q) = p3%gam_p_q(:)
+                        p3%gam(:,ix_q,iy_q,iz_q) = p3%gam_q(:)
 
                     end do
                 end do
             end do
         end block
 
-        do p=1,p3%np
-            call dfftw_execute_dft( fft3d%plan_forward, p3%gam_p(p,:,:,:), p3%gam_p(p,:,:,:) )
-        end do
 
-        do ix=1,nx
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! retour à l'espace reel
+        do p=1,p3%np
+            call dfftw_execute_dft( fft3d%plan_forward, p3%gam(p,:,:,:), p3%gam(p,:,:,:) )
+        end do
+        p3%gam=p3%gam/real(nx*ny*nz,dp)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! retour en orientations
+        if (.not. allocated(o3%gam)) allocate (o3%gam(no,nx,ny,nz) ,source=zeroc)
+        do iz=1,nz
             do iy=1,ny
-                do iz=1,nz
-                    
-                    !gamma( p
+                do ix=1,nx
+
+                    foo(:,:,:)=zeroc
+                    do mup=-mmax,mmax
+                        do mu=-mmax,mmax
+                            do itheta=1,ntheta
+
+                                do m= max(abs(mup),abs(mu)) ,mmax
+                                    p = p3%p(m,mup,mu)
+                                    foo(itheta,mup,mu) = foo(itheta,mup,mu) +p3%gam(p,ix,iy,iz) * p3%tharm_sph(p,itheta)
+                                end do
+
+                            end do
+                        end do
+                    end do
+
+                    do iphi=1,nphi
+                        do ipsi=1,npsi
+                            do itheta=1,ntheta
+
+                                io=grid%indo(itheta,iphi,ipsi)
+                                do mup=-mmax,mmax
+                                    do mu=-mmax,mmax
+
+                                        j=iphi-1
+                                        i=ipsi-1
+                                        o3%gam(io,ix,iy,iz) = o3%gam(io,ix,iy,iz)&
+                                            + foo(itheta,mup,mu) *exp(-twopi*ii*real(mup*j,dp)/real(nphi,dp)&
+                                            + real(mu*k,dp)/real(npsi,dp)) /real(nphi*npsi,dp)
+
+                                    end do
+                                end do
+
+                            end do
+                        end do
+                    end do
 
                 end do
             end do
         end do
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+do ix=1,nx
+    do iy=1,ny
+        do iz=1,nz
+            do io=1,grid%no
+                print*, "ix,iy,iz,itheta,iphi,ipsi",ix,iy,iz,grid%theta(io), grid%phi(io), grid%psi(io),&
+                    o3%in(io,ix,iy,iz), o3%gam(io,ix,iy,iz)
+            end do
+        end do
+    end do
+end do
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        ! df=0._dp
+        ! ff=0._dp
+        ! do is=1,ns
+        !     do ix=1,nx
+        !         do iy=1,ny
+        !             do iz=1,nz
+        !                 do itheta=1,ntheta
+        !                     do iphi=1,nphi
+        !                         do ipsi=1,npsi
+        !                             io=grid%indo(itheta,iphi,ipsi)
+        ! ff=ff-kT/2._dp*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
+        !         *(solvent(is)%density(ix,iy,iz,io)-solvent(is)%rho0)/0.0333_dp*grid%w(io)**2&
+        !             *real(nphi*npsi*ntheta,dp)
+        ! df(ix,iy,iz,io,is)=-kT*dv*gamma(ix,iy,iz,itheta,iphi,ipsi)&
+        !                             /0.0333_dp*grid%w(io)**2*real(nphi*npsi*ntheta,dp)
+        !                         end do
+        !                     end do
+        !                 end do
+        !             end do
+        !         end do
+        !     end do
+        ! end do
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -697,7 +802,7 @@ p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) = p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,
                     !        do khi=-m,m
                     !            do mu=0,m
                     !                a = deltarho_p_q( indp(m,khi,mu) )
-                    !                b = p3%drho_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q)
+                    !                b = p3%drho( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q)
                     !                print*, ix_q,iy_q,iz_q,m,khi,mu, a, b, a-b
                     !            end do
                     !        end do
