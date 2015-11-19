@@ -37,6 +37,7 @@ module module_energy_cproj_slow
         integer, allocatable :: mu(:) ! mu of p
         real(dp), allocatable :: tharm_sph(:,:) ! Associated Legendre function of np and theta
         complex(dp), allocatable :: drho_p(:,:,:,:) ! delta rho en projections
+        complex(dp), allocatable :: drho_p_q(:) ! drho_p for a given q
     end type p3_type
     type (p3_type) :: p3
 
@@ -440,7 +441,6 @@ contains
                 end do
             end do
         end block
-stop "ce stop est volontaire"
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -462,11 +462,11 @@ stop "ce stop est volontaire"
             call dfftw_execute_dft( fft3d%plan_backward, p3%drho_p(p,:,:,:), p3%drho_p(p,:,:,:) )
         end do
 
-
-
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
         end do
+
+
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION DE Δρ_p(q) VERS LE REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
@@ -488,6 +488,52 @@ stop "ce stop est volontaire"
 
 
         call for_all_q_find_indices_of_mq
+
+
+
+
+
+        if (.not. allocated( p3%drho_p_q) ) allocate (p3%drho_p_q(p3%np) , source=zeroc)
+        block
+            complex(dp) :: sum_over_mup
+            complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax)
+            ! pour chaque q
+            do ix_q=1,nx
+                do iy_q=1,ny
+                    do iz_q=1,nz
+
+                        p3%drho_p_q(:) = zeroc
+                        R = rotation_matrix_between_complex_spherical_harmonics_lu (q, mmax)
+                        do m=0,mmax
+                            do khi=-m,m
+                                do mu=-m,m
+
+                                    sum_over_mup = zeroc
+                                    do mup=-m,m
+                                        sum_over_mup = sum_over_mup &
+                                            + p3%drho_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi) 
+                                    end do
+                                    p3%drho_p_q(p3%p(m,khi,mu)) = sum_over_mup
+
+                                end do
+                            end do
+                        end do
+                        p3%drho_p(:,ix_q,iy_q,iz_q) = p3%drho_p_q(:)
+                    
+                    end do
+                end do
+            end do
+        end block
+
+
+
+
+
+stop "this stop is ok :)"
+
+
+
+
 
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
