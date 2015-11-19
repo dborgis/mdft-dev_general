@@ -39,7 +39,7 @@ module module_energy_cproj
         real(dp) :: q
         integer :: na ! number of projections for the direct correlation function
         integer :: nq=200 ! number of q points in c(q)
-        integer, allocatable :: inda(:,:,:,:,:) ! inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
+        integer, allocatable :: a(:,:,:,:,:) ! index of m, n, mu, nu, khi => (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
     end type
@@ -65,6 +65,14 @@ module module_energy_cproj
     integer, allocatable :: tableof_ix_mq(:), tableof_iy_mq(:), tableof_iz_mq(:)
     real(dp), allocatable :: qx(:), qy(:), qz(:) ! vector q and its components tabulated
 
+    real(dp), allocatable :: gamma(:,:,:,:,:,:)
+    real(dp), allocatable :: gamma_o(:,:,:,:)
+    real(dp), allocatable :: deltarho(:,:,:,:,:,:)
+    complex(dp), allocatable :: deltarho_p(:,:,:,:)
+    complex(dp), allocatable :: deltarho_p_q(:)
+    complex(dp), allocatable :: deltarho_p_mq(:)
+    complex(dp), allocatable :: gamma_p(:,:,:,:)
+
     public :: energy_cproj
 
 contains
@@ -80,8 +88,6 @@ contains
         real(dp) :: dv, kT
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
-        real(dp), allocatable :: gamma(:,:,:,:,:,:), gamma_o(:,:,:,:), deltarho(:,:,:,:,:,:)
-        complex(dp), allocatable :: deltarho_p(:,:,:,:), deltarho_p_q(:), deltarho_p_mq(:), gamma_p(:,:,:,:)
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, molrotsymorder
         integer :: m, n, mu, nu, khi, mup, ia, ip, io, ipsi, iphi, itheta, iq, is
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
@@ -133,17 +139,17 @@ contains
 
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
-        allocate (deltarho(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
-        allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
-        allocate (gamma_o(nx,ny,nz,no) ,source=zero)
 
-        allocate (gamma_p_q(np), source=zeroc)
-        allocate (gamma_p_mq(np), source=zeroc)
-        allocate (gamma_p(np,nx,ny,nz) ,source=zeroc)
-        allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
-        allocate (deltarho_p_q(np) ,source=zeroc)
-        allocate (deltarho_p_mq(np) ,source=zeroc)
-        allocate (gamma_p_isok(nx,ny,nz), source=.false.)
+        if (.not. allocated (deltarho) ) allocate (deltarho(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
+        if (.not. allocated (gamma) ) allocate (gamma(nx,ny,nz,ntheta,nphi,npsi) ,source=zero)
+        if (.not. allocated (gamma_o) ) allocate (gamma_o(nx,ny,nz,no) ,source=zero)
+        if (.not. allocated (gamma_p_q) ) allocate (gamma_p_q(np), source=zeroc)
+        if (.not. allocated (gamma_p_mq) ) allocate (gamma_p_mq(np), source=zeroc)
+        if (.not. allocated (gamma_p) ) allocate (gamma_p(np,nx,ny,nz) ,source=zeroc)
+        if (.not. allocated (deltarho_p) ) allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
+        if (.not. allocated (deltarho_p_q) ) allocate (deltarho_p_q(np) ,source=zeroc)
+        if (.not. allocated (deltarho_p_mq) ) allocate (deltarho_p_mq(np) ,source=zeroc)
+        if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
 
         ! 1/ get deltarho = rho-rho0
         ! 2/ project deltarho => deltarho_p (use FFT2D-R2C)
@@ -341,9 +347,8 @@ contains
         !
         ! First we tabulate the vector q (Fourier vector) corresponding to x, y and z
         ! This is specific to our FFTW's black box and how it expects indices to be ranged.
-        ! See function qproj
+        ! See function kproj in module_grid
         ! And the inverse index that gives vector -q
-        ! See function qproj_inv
         !
 
 
@@ -475,7 +480,7 @@ contains
                                     do nu=-n,n,molrotsymorder
                                         if (mod(nu,2) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
 
-                                        ia = cq%inda(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
+                                        ia = cq%a(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
                                         if (ia<=0) then
                                             print*,"ia=",ia
                                             print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
@@ -492,10 +497,16 @@ contains
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
                                         else ! transform delta rho (n, khi, -nu)(q) into conjg( deltarho(n,khi,nu)(-q) )
-                                            if (ip/=indp(1,0,0) .or. ix_q/=1 .or. iy_q/=1 .or. iz_q/=1) then
+                                            select case (mmax)
+                                            case (0)
+                                            gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
+                                            case default
+                                                if (ip/=indp(1,0,0) .or. ix_q/=1 .or. iy_q/=1 .or. iz_q/=1) then
                                                 gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                                 gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
-                                            end if
+                                                end if
+                                            end select
                                         end if
 
                                     end do
@@ -698,6 +709,7 @@ contains
             complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
             complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
             integer :: m, khi, mu, mup, ip2, ip
+            complex(dp) :: a, b, c, d, e
             !
             ! Rotate projections from laboratory frame to molecular frame
             ! If q=0 then chose the rotation you want: the identity is the simplest option.
@@ -726,14 +738,24 @@ contains
                                     print*,m,khi,mu,ip,mup,ip2,deltarho_p_q_temp(ip),deltarho_p_mq_temp(ip)
                                     error stop
                                 end if
-                                ! print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
-                                ! print*, "q=", q
-                                ! print*, "mq=", mq
-                                ! print*, "gshrot(q,m,mup,khi)                 =", gshrot(m,mup,khi)
-                                ! print*, "gshrot(mq,m,mup,khi) par sym 1.23/1 =", (-1)**m*gshrot(m,mup,-khi)
-                                ! print*, "gshrot(mq,m,mup,khi) par sym 1.23/2 =", (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
-                                ! print*, "gshrot(mq,m,mup,khi) brutal         =", gshrot_mq(m,mup,khi)
-                                ! print*,
+
+                                a = (-1)**m*gshrot(m,mup,-khi)
+                                b = (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
+                                c = gshrot_mq(m,mup,khi)
+                                d = a-b
+                                e = b-c
+
+                                ! if (abs(e)>epsdp .or. abs(d)>epsdp) then
+                                !     print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
+                                !     print*, "q=", q
+                                !     print*, "mq=", mq
+                                !     print*, "gshrot(q,m,mup,khi)                 =", gshrot(m,mup,khi)
+                                !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/1 =", (-1)**m*gshrot(m,mup,-khi)
+                                !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/2 =", (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
+                                !     print*, "gshrot(mq,m,mup,khi) brutal         =", gshrot_mq(m,mup,khi)
+                                !     error stop "85643820"
+                                ! end if
+
                             end do
                         end do
                     end do
@@ -743,49 +765,6 @@ contains
             end if
         end subroutine rotate_to_molecular_frame
 
-
-        PURE FUNCTION trimed(x)
-            !
-            ! If some REAL value is smaller than some epsilon, then give it 0 value
-            ! This is usefull for printing stuff where you don't want 1E-19 to be printed everywhere.
-            !
-            implicit none
-            REAL(dp) :: trimed
-            REAL(dp), intent(in) :: x
-            REAL(dp), PARAMETER :: zero = 0._dp
-            if( abs(x) <= epsilon(x) ) trimed = zero
-        END FUNCTION trimed
-
-
-        PURE FUNCTION qproj( i, imax, length)
-            !
-            ! Say you have grid nodes every 2pi/lx distance units (unit given by the unit of lx)
-            ! and you have imax grid nodes, indices of which range from 1 to imax
-            ! Remember you are in periodic boundary conditions.
-            ! What is the coordinate of point index i in FFTW's way of representing stuff (ie with q=0 for index 1)?
-            ! That is what compute qproj.
-            ! For my part I was used to thinking about q vectors from negative values to positives ones. Here it starts with 0.
-            ! See FFTW documentation.
-            !
-            ! i must be in [1,imax]
-            ! imax must be >= 1
-            ! lx must be > 0.
-            !
-            IMPLICIT NONE
-            REAL(dp) :: qproj
-            REAL(dp), PARAMETER :: twopi=2*acos(-1._dp)
-            INTEGER, INTENT(IN) :: i, imax ! index the node and number of nodes in the direction you wish
-            ! If you use REAL to complex transforms, and thus have in the first direction nx/2+1 nodes, you should still pass nx to this
-            ! routine, not nx/2+1
-            REAL(dp), INTENT(IN) :: length ! size of the supercell
-            IF( i == 1 ) THEN
-                qproj = 0._dp
-            ELSE IF( i <= imax/2  ) THEN
-                qproj = twopi*REAL(i-1,dp)/length
-            ELSE
-                qproj = twopi*REAL(i-1-imax,dp)/length
-            END IF
-        END FUNCTION qproj
 
         subroutine read_ck_nonzero
             implicit none
@@ -855,7 +834,7 @@ contains
             end select
 
 
-            i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
+            ! i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
           !  if (na/=i) then
           !      print*, "in read_ck_cproj nalpha est bizarre"
           !      print*, "na=",na
@@ -863,7 +842,7 @@ contains
           !      ! error stop
           !  end if
 
-            i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
+            ! i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
           !  if (na/=i) then
           !      print*, "in read ck na /= nalpha"
           !      print*, "na=",na
@@ -896,14 +875,14 @@ contains
             read(ufile,*) somechar, khi_ck
             read(ufile,*)
 
-            allocate (cq%inda(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+            allocate (cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
             do ia=1,na
                 m = m_ck(ia)
                 n = n_ck(ia)
                 mu = mu_ck(ia)
                 nu = nu_ck(ia)
                 khi = khi_ck(ia)
-                cq%inda(m,n,mu,nu,khi) = ia
+                cq%a(m,n,mu,nu,khi) = ia
             end do
 
             allocate( ck(na,nq), source=zeroc)
@@ -1089,9 +1068,9 @@ contains
             end if
 
             allocate (qx(nx), qy(ny), qz(nz), source=0._dp)
-            qx(1:nx) = [( qproj(ix,nx,lx), ix=1,nx )]
-            qy(1:ny) = [( qproj(iy,ny,ly), iy=1,ny )]
-            qz(1:nz) = [( qproj(iz,nz,lz), iz=1,nz )]
+            qx(1:nx) = grid%kx(1:nx)
+            qy(1:ny) = grid%ky(1:ny)
+            qz(1:nz) = grid%kz(1:nz)
 
             allocate (tableof_ix_mq(nx), tableof_iy_mq(ny), tableof_iz_mq(nz) ,source=-huge(1))
             i=0
@@ -1185,9 +1164,9 @@ contains
                 do ix_q=1,nx
                     do iy_q=1,ny
                         do iz_q=1,nz
-                            qx=qproj(ix_q,nx,lx)
-                            qy=qproj(iy_q,ny,ly)
-                            qz=qproj(iz_q,nz,lz)
+                            qx=grid%kx(ix_q)
+                            qy=grid%ky(iy_q)
+                            qz=grid%kz(iz_q)
                             R= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! exactement Luc
                             Rlu= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! Lu
                             do m=0,mmax
@@ -1271,9 +1250,9 @@ end module module_energy_cproj
 !     end do
 !     PRINT*
 !
-!     cq%inda=errorgenerator
+!     cq%a=errorgenerator
 !     do ia=1,nalpha
-!         cq%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
+!         cq%a( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
 !     end do
 !
 !     do iq=1,nq
@@ -1351,9 +1330,9 @@ end module module_energy_cproj
 !     ! print*,int(mu,1)
 !     ! print*,int(nu,1)
 !     ! print*,int(khi,1)
-!     cq%inda=errorgenerator
+!     cq%a=errorgenerator
 !     do ia=1,nalpha
-!         cq%inda( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
+!         cq%a( m(ia), n(ia), mu(ia), nu(ia), khi(ia) ) = alp(ia)
 !     end do
 !     do iq=1,nq
 !         READ(11,*) normq(iq), fi
@@ -1367,7 +1346,7 @@ end module module_energy_cproj
 !     ! print*,"== TEST READING =="
 !     ! do iq=3,3
 !     !     do ia=1,nalpha
-!     !         ia2=cq%inda( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
+!     !         ia2=cq%a( m(ia), n(ia), -mu(ia), -nu(ia), khi(ia) )
 !     !         block
 !     !             real :: diff
 !     !             diff = abs(  ck(ia2,iq)  -   (-1)**(m(ia) + n(ia) + mu(ia) + nu(ia))*CONJG(ck(ia,iq))    )

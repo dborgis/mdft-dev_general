@@ -207,10 +207,10 @@ contains
         nx = grid%nx
         ny = grid%ny
         nz = grid%nz
-        allocate ( grid%kx(nx/2+1), source=0._dp)
-        allocate ( grid%ky(ny)    , source=0._dp)
-        allocate ( grid%kz(nz)    , source=0._dp)
-        do concurrent ( l=1:nx/2+1 )
+        allocate ( grid%kx(nx), source=0._dp)
+        allocate ( grid%ky(ny), source=0._dp)
+        allocate ( grid%kz(nz), source=0._dp)
+        do concurrent ( l=1:nx )
             grid%kx(l) = kproj(1,l)
         end do
         do concurrent ( l=1:ny )
