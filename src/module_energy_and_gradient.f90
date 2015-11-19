@@ -76,9 +76,9 @@ contains
                 call cpu_time(t(3))
                 call energy_cs (ff%exc_cs, df_loc)
                 call cpu_time(t(4))
-                ! print*, "ff%exc_cs       =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
-                ! f = f + ff%exc_cs
-                ! df = df + df_loc
+                print*, "ff%exc_cs       =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
+                f = f + ff%exc_cs
+                df = df + df_loc
                 df_loc2=df_loc2+df_loc
             end if
             if (solvent(s)%do%exc_cdeltacd) then
@@ -86,19 +86,19 @@ contains
                 call energy_cdeltacd (ff%exc_cdeltacd, df_loc)
                 call cpu_time(t(6))
                 print*, "ff%exc_cdeltacd =", ff%exc_cdeltacd, "and norm2@df_exc_cdeltacd=",norm2(df_loc),"in",t(6)-t(5),"sec"
-                ! f = f + ff%exc_cdeltacd
-                ! df = df + df_loc
+                f = f + ff%exc_cdeltacd
+                df = df + df_loc
                 df_loc2=df_loc2+df_loc
             end if
 print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
-                call energy_cproj_slow (ff%exc_cproj, df_loc)
+                ! call energy_cproj_slow (ff%exc_cproj, df_loc)
                 call energy_cproj (ff%exc_cproj, df_loc)
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj    =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"
-                f = f + ff%exc_cproj
-                df = df + df_loc
+                ! f = f + ff%exc_cproj
+                ! df = df + df_loc
             end if
             ! block
             !     integer :: ix, iy, iz, io
@@ -116,7 +116,7 @@ print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2         
             !         end do
             !     end do
             ! end block
-            ! STOP "FIN DE LA ROUTINE ENERGY AND GRADIENT. ON NE FAIT PAS DE CYCLE AUTOCOHERENT TANT QUE CS+CDELTA+CD/=CPROJ"
+            !  STOP "FIN DE LA ROUTINE ENERGY AND GRADIENT. ON NE FAIT PAS DE CYCLE AUTOCOHERENT TANT QUE CS+CDELTA+CD/=CPROJ"
 
             ! if (solvent(s)%do%exc_fmt) call energy_fmt (ff%exc_fmt, df)
             ! if (solvent(s)%do%wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc_wca, df)

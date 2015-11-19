@@ -37,9 +37,15 @@ module module_energy_cproj_slow
         integer, allocatable :: mu(:) ! mu of p
         real(dp), allocatable :: tharm_sph(:,:) ! Associated Legendre function of np and theta
         complex(dp), allocatable :: drho_p(:,:,:,:) ! delta rho en projections
+        complex(dp), allocatable :: gam_p (:,:,:,:) ! gamma en projections
         complex(dp), allocatable :: drho_p_q(:) ! drho_p for a given q
+        complex(dp), allocatable :: gam_p_q(:) ! gam_p for a given q
     end type p3_type
     type (p3_type) :: p3
+
+    type :: o3_type
+        complex(dp), allocatable :: gam(:,:,:,:) ! gamma(orientation,x,y,z )
+    end type o3_type
 
     integer, allocatable :: indp(:,:,:) ! index of the projection corresponding to m, mup, mu
     integer, allocatable :: im(:) ! m for projection 1 to np
@@ -492,7 +498,7 @@ contains
 
 
 
-
+        ! rotation to molecular frame without symetry
         if (.not. allocated( p3%drho_p_q) ) allocate (p3%drho_p_q(p3%np) , source=zeroc)
         block
             complex(dp) :: sum_over_mup
@@ -511,7 +517,7 @@ contains
                                     sum_over_mup = zeroc
                                     do mup=-m,m
                                         sum_over_mup = sum_over_mup &
-                                            + p3%drho_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi) 
+                                            + p3%drho_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi)
                                     end do
                                     p3%drho_p_q(p3%p(m,khi,mu)) = sum_over_mup
 
@@ -519,17 +525,12 @@ contains
                             end do
                         end do
                         p3%drho_p(:,ix_q,iy_q,iz_q) = p3%drho_p_q(:)
-                    
+
                     end do
                 end do
             end do
         end block
 
-
-
-
-
-stop "this stop is ok :)"
 
 
 
@@ -545,6 +546,91 @@ stop "this stop is ok :)"
         !call read_ck_toutes_nmax( ck, normq)
         if (.not.cq%isok) call read_ck_nonzero
 
+
+
+
+        !OZ sans sym
+        if (.not. allocated(p3%gam_p) ) allocate ( p3%gam_p(p3%np,nx,ny,nz) )
+        p3%gam_p = zeroc
+        do ix_q=1,nx
+            do iy_q=1,ny
+                do iz_q=1,nz
+                    iq = int( sqrt( qx(ix_q)**2 + qy(iy_q)**2 + qz(iz_q)**2 ) /cq%dq )+1
+                    if (iq>cq%nq) iq=cq%nq
+
+                    do khi=-mmax,mmax
+                        do m=abs(khi),mmax
+                            do mu=-m,m
+
+                                do n=abs(khi),mmax
+                                    do nu=-n,n
+                                        if (mod(mu,2)/=0 .or. mod(nu,2)/=0) cycle
+                                        ia = cq%inda(m,n,mu,nu,khi)
+p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) = p3%gam_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q) &
+    + (-1)**(khi+nu) * ck(ia,iq) * p3%drho_p( p3%p(n,khi,-nu), ix_q,iy_q,iz_q)
+                                    end do
+                                end do
+                            end do
+                        end do
+                    end do
+
+                end do
+            end do
+        end do
+
+
+        ! rotation to molecular frame without symetry
+        if (.not. allocated(p3%gam_p_q) ) allocate ( p3%gam_p_q(p3%np) )
+        block
+            complex(dp) :: sum_over_khi
+            complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax)
+            ! pour chaque q
+            do ix_q=1,nx
+                do iy_q=1,ny
+                    do iz_q=1,nz
+
+                        p3%gam_p_q(:) = zeroc
+                        R = rotation_matrix_between_complex_spherical_harmonics_lu (q, mmax)
+                        do m=0,mmax
+                            do khi=-m,m
+                                do mu=-m,m
+
+                                    sum_over_khi = zeroc
+                                    do mup=-m,m
+                                        sum_over_khi = sum_over_khi &
+                                            + p3%gam_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) * conjg( R(m,mup,khi) )
+                                    end do
+                                    p3%gam_p_q(p3%p(m,khi,mu)) = sum_over_khi
+
+                                end do
+                            end do
+                        end do
+                        p3%gam_p(:,ix_q,iy_q,iz_q) = p3%gam_p_q(:)
+
+                    end do
+                end do
+            end do
+        end block
+
+        do p=1,p3%np
+            call dfftw_execute_dft( fft3d%plan_forward, p3%gam_p(p,:,:,:), p3%gam_p(p,:,:,:) )
+        end do
+
+        do ix=1,nx
+            do iy=1,ny
+                do iz=1,nz
+                    
+                    !gamma( p
+
+                end do
+            end do
+        end do
+
+
+
+
+        stop "i would gladly abord"
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
         ! For all vectors q and -q handled simultaneously
         !
@@ -603,6 +689,22 @@ stop "this stop is ok :)"
                     end if
 
                     call rotate_to_molecular_frame ! does q and mq at the same time.
+
+                    ! NE FONCTIONNE PAS
+                    !block
+                    !    complex(dp) :: a, b
+                    !    do m=0,mmax
+                    !        do khi=-m,m
+                    !            do mu=0,m
+                    !                a = deltarho_p_q( indp(m,khi,mu) )
+                    !                b = p3%drho_p( p3%p(m,khi,mu) ,ix_q,iy_q,iz_q)
+                    !                print*, ix_q,iy_q,iz_q,m,khi,mu, a, b, a-b
+                    !            end do
+                    !        end do
+                    !    end do
+                    !end block
+
+
 
 
                     if(any(deltarho_p_mq/=deltarho_p_mq)) then
