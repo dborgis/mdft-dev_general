@@ -26,10 +26,6 @@ module module_energy_cproj
     real(dp), parameter :: twopi=2._dp*pi
 
 
-    integer, allocatable :: indp(:,:,:) ! index of the projection corresponding to m, mup, mu
-    integer, allocatable :: im(:) ! m for projection 1 to np
-    integer, allocatable :: imup(:) ! mup for projection 1 to np. mup corresponds to phi
-    integer, allocatable :: imu(:) ! mu for projection 1 to np. mu corresponds to psi
 
     !
     ! Direct correlation functions from Luc
@@ -74,9 +70,14 @@ module module_energy_cproj
     complex(dp), allocatable :: gamma_p(:,:,:,:)
 
     type :: p3_type
-        real(dp), allocatable :: harm_sph(:,:)
+        real(dp), allocatable :: harm_sph(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
+        integer, allocatable :: p(:,:,:) ! index of the projection corresponding to m, mup, mu
+        integer, allocatable :: m(:) ! m for projection 1 to np
+        integer, allocatable :: mup(:) ! mup for projection 1 to np. mup corresponds to phi
+        integer, allocatable :: mu(:) ! mu for projection 1 to np. mu corresponds to psi
     end type p3_type
     type (p3_type) :: p3
+
 
     public :: energy_cproj
 
@@ -170,38 +171,38 @@ contains
 
         !
         ! Toutes les projections sont stockées dans un meme vecteur de taille np
-        ! indp(m,mup,mu) lie le triplet (m,mup,mu) a l'unique indice de projection ip
-        ! im(p) donne inversement le m correspondant à l'indice p dans le tableau des projections
-        ! On a donc indp(im(p),imup(p),imu(p)) == p
+        ! p3%p(m,mup,mu) lie le triplet (m,mup,mu) a l'unique indice de projection ip
+        ! p3%m(p) donne inversement le m correspondant à l'indice p dans le tableau des projections
+        ! On a donc p3%p(p3%m(p),p3%mup(p),p3%mu(p)) == p
         !
-        if (.not.allocated(indp)) allocate ( indp(0:mmax,-mmax:mmax, 0:mmax) ,source=-huge(1))
-        if (.not.allocated(im))   allocate ( im(np) ,source=-huge(1))
-        if (.not.allocated(imup)) allocate ( imup(np) ,source=-huge(1))
-        if (.not.allocated(imu))  allocate ( imu(np) ,source=-huge(1))
+        if (.not.allocated(p3%p)) allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax) ,source=-huge(1))
+        if (.not.allocated(p3%m))   allocate ( p3%m(np) ,source=-huge(1))
+        if (.not.allocated(p3%mup)) allocate ( p3%mup(np) ,source=-huge(1))
+        if (.not.allocated(p3%mu))  allocate ( p3%mu(np) ,source=-huge(1))
 
 
         ip=0
         do m=0,mmax
             do mup=-m,m
                 !
-                ! We chose to have indp and imu to contain the true value of mu, not mu/molrotsymorder.
+                ! We chose to have p3%p and p3%mu to contain the true value of mu, not mu/molrotsymorder.
                 ! Thus, we loop over mu with steps of molrotsymorder
-                ! Thus, we have holes in indp, but all calls to indp and imu should be done with this true mu
-                ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to indp(m,mup,mu) with mu=1 will return -999
-                ! Also, the array imu only contains even values (des valeurs paires)
+                ! Thus, we have holes in p3%p, but all calls to p3%p and p3%mu should be done with this true mu
+                ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to p3%p(m,mup,mu) with mu=1 will return -999
+                ! Also, the array p3%mu only contains even values (des valeurs paires)
                 !
                 do mu=0,m,molrotsymorder
                     ip=ip+1
                     IF (ip > np) ERROR STOP "p > np at line 166"
-                    indp(m,mup,mu) = ip
-                    im(ip) = m
-                    imup(ip) = mup
-                    imu(ip) = mu
+                    p3%p(m,mup,mu) = ip
+                    p3%m(ip) = m
+                    p3%mup(ip) = mup
+                    p3%mu(ip) = mu
                 end do
             end do
         end do
         if (ip /= np) error stop "ip /= np in energy_cproj"
-        if ( any(abs(im)>mmax) .or. any(abs(imup)>mmax) .or. any(abs(imu)>mmax) ) then
+        if ( any(abs(p3%m)>mmax) .or. any(abs(p3%mup)>mmax) .or. any(abs(p3%mu)>mmax) ) then
             print*, "tabulated m, mup or mu have incorrect values"
             error stop
         end if
@@ -214,7 +215,7 @@ contains
         write(11,*)"        index         m          mup          mu"
         write(11,*)"        -----        ---         ---          --"
         do ip=1,np
-            write(11,*) ip, im(ip), imup(ip), imu(ip)
+            write(11,*) ip, p3%m(ip), p3%mup(ip), p3%mu(ip)
         end do
         close(11)
 
@@ -242,9 +243,9 @@ contains
         if (.not. allocated(p3%harm_sph)) then
             allocate ( p3%harm_sph(1:ntheta, 1:np) ,source=0._dp)
             do p=1,np
-                m = im(p)
-                mup = imup(p)
-                mu = imu(p)
+                m = p3%m(p)
+                mup = p3%mup(p)
+                mu = p3%mu(p)
                 do i=1,ntheta
                     p3%harm_sph(i,p) = harm_sph(m,mup,mu,theta(i))
                 end do
@@ -503,7 +504,7 @@ contains
                                             error stop "ia>na"
                                         end if
 
-                                        ip = indp(n,khi,abs(nu))
+                                        ip = p3%p(n,khi,abs(nu))
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
@@ -514,7 +515,7 @@ contains
                                             gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
                                             case default
-                                                if (ip/=indp(1,0,0) .or. ix_q/=1 .or. iy_q/=1 .or. iz_q/=1) then
+                                                if (ip/=p3%p(1,0,0) .or. ix_q/=1 .or. iy_q/=1 .or. iz_q/=1) then
                                                 gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                                 gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
                                                 end if
@@ -527,7 +528,7 @@ contains
                                 if (gamma_m_khi_mu_q/=gamma_m_khi_mu_q) error stop "jhwdlijweflkhwke"
                                 if (gamma_m_khi_mu_mq/=gamma_m_khi_mu_mq) error stop "lijsfdkuglserhk"
 
-                                ip=indp(m,khi,mu)
+                                ip=p3%p(m,khi,mu)
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
 
@@ -568,8 +569,8 @@ contains
                         print*,'mq=',mq
                         print*, "                        ip          m          mup          mu"
                         do ip=1,np
-                            print*, "old gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
-                            print*, "new gamma_p =",ip, im(ip), imup(ip), imu(ip), gamma_p_q(ip)
+                            print*, "old gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
+                            print*, "new gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_q(ip)
                             print*,
                         end do
                         error stop "jfhzoenfhsozk"
@@ -581,8 +582,8 @@ contains
                         print*,"q=",q
                         print*, "                        ip          m          mup          mu"
                         do ip=1,np
-                            print*, "old gamma_mq =",ip, im(ip), imup(ip), imu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
-                            print*, "new gamma_mq =",ip, im(ip), imup(ip), imu(ip), gamma_p_mq(ip)
+                            print*, "old gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
+                            print*, "new gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_mq(ip)
                             print*,
                         end do
                         error stop "oihskdjhfkuhse"
@@ -692,10 +693,10 @@ contains
                 do m=0,mmax
                     do mup=-m,m
                         do mu=0,m
-                            ip=indp(m,mup,mu)
+                            ip=p3%p(m,mup,mu)
                             ! Equation 1.22
                             do khi=-m,m
-                                ip2=indp(m,khi,mu)
+                                ip2=p3%p(m,khi,mu)
                                 gamma_p_q_temp(ip) = gamma_p_q_temp(ip)   + gamma_p_q(ip2)*gshrot(m,mup,khi)
                                 gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
                                 ! gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
@@ -740,10 +741,10 @@ contains
                 do m=0,mmax
                     do khi=-m,m
                         do mu=0,m
-                            ip=indp(m,khi,mu)
+                            ip=p3%p(m,khi,mu)
                             ! Equation 1.22
                             do mup=-m,m
-                                ip2=indp(m,mup,mu)
+                                ip2=p3%p(m,mup,mu)
                                 deltarho_p_q_temp(ip) = deltarho_p_q_temp(ip)  + deltarho_p_q(ip2)*gshrot(m,mup,khi)
                                 ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
                                 deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
@@ -1017,7 +1018,7 @@ contains
             do m=0,mmax
                 do mup=-m,m
                     do mu=0,m,molrotsymorder
-                        ip = indp( m,mup,mu )
+                        ip = p3%p( m,mup,mu )
                         projections(ip)= sum(proj_theta(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
                         if (abs(projections(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
                             print*, "projections(ip)/=proj_m_mup_mu(m,mup,mu)"
@@ -1043,7 +1044,7 @@ contains
                 do mup=-mmax,mmax
                     do mu=0,mmax/molrotsymorder
                         do m= MAX(ABS(mup),ABS(mu)), mmax
-                            ip=indp(m,mup,mu)
+                            ip=p3%p(m,mup,mu)
                             proj_theta(itheta,mu,mup) = proj_theta(itheta,mu,mup)&
                             +projections(ip)*p3%harm_sph(itheta,ip)*fm(m)
                         end do
