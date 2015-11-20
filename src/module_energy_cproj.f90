@@ -43,12 +43,12 @@ module module_energy_cproj
     complex(dp), allocatable :: ck(:,:)
 
     real(dp), allocatable :: fm(:)
-
-    type :: fft2d_c_type
-        type(c_ptr) :: plan
-        complex(c_double), allocatable :: in(:,:), out(:,:)
-    end type fft2d_c_type
-    type (fft2d_c_type) :: fft2d_c
+    !
+    ! type :: fft2d_c_type
+    !     type(c_ptr) :: plan
+    !     complex(c_double), allocatable :: in(:,:), out(:,:)
+    ! end type fft2d_c_type
+    ! type (fft2d_c_type) :: fft2d_c
 
     type :: fft3d_c_type
         type(c_ptr) :: plan_forward
@@ -181,7 +181,6 @@ call cpu_time (time(2))
         ! 8/ gather projections: gamma_p(r) => gamma(r)
 
 
-
         !
         ! Toutes les projections sont stockées dans un meme vecteur de taille np
         ! p3%p(m,mup,mu) lie le triplet (m,mup,mu) a l'unique indice de projection ip
@@ -277,9 +276,9 @@ call cpu_time (time(4))
         !
         if (.not. fft2d%isalreadyplanned) then
             call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
-            allocate (fft2d_c%in(npsi,nphi))
-            allocate (fft2d_c%out(npsi,nphi))
-            call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
+            ! allocate (fft2d_c%in(npsi,nphi))
+            ! allocate (fft2d_c%out(npsi,nphi))
+            ! call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
             fft2d%isalreadyplanned =.true.
         end if
         if (.not. ifft2d%isalreadyplanned) then
@@ -853,23 +852,24 @@ contains
             cq%nq=nq
         end subroutine read_ck_nonzero
 
-        FUNCTION euler2proj (foo_o) RESULT (foo_p)
+        function euler2proj (foo_o) result (foo_p)
             use module_rotation, only: harm_sph
-            IMPLICIT NONE
+            implicit none
             real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
-            COMPLEX(dp) :: foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
-            COMPLEX(dp) :: foo_p(1:grid%np)
-            INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
+            complex(dp) :: foo_p(1:grid%np)
+
+            complex(dp) :: foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
+            integer :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
             ! complex(dp), allocatable :: test_explicit(:,:,:)
-            complex(dp), allocatable :: foo_theta_mup_mu_full(:,:,:)
+            ! complex(dp), allocatable :: foo_theta_mup_mu_full(:,:,:)
             complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
             mmax=grid%mmax
             molrotsymorder=grid%molrotsymorder
             foo_p = zeroc
-            foo_theta_mup_mu = zeroc
+            ! foo_theta_mup_mu = zeroc
 
 
-            allocate (foo_theta_mup_mu_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
+            ! allocate (foo_theta_mup_mu_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
             ! allocate (test_explicit(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
             ! do itheta=1,ntheta
             !     do mu=-mmax,mmax
@@ -892,9 +892,9 @@ contains
                         fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
                     end do
                 end do
-                fft2d_c%in(:,:)=fft2d%in
+                ! fft2d_c%in(:,:)=fft2d%in
                 call dfftw_execute (fft2d%plan)
-                call dfftw_execute (fft2d_c%plan)
+                ! call dfftw_execute (fft2d_c%plan)
 
 
                 ! do iphi=1,nphi
@@ -908,10 +908,10 @@ contains
                 foo_theta_mup_mu(itheta,0:mmax/molrotsymorder,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
                 foo_theta_mup_mu(itheta,0:mmax/molrotsymorder,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
 
-                foo_theta_mup_mu_full(itheta,0:mmax,0:mmax)     = fft2d_c%out(1:npsi/2+1, 1:nphi/2+1)
-                foo_theta_mup_mu_full(itheta,0:mmax,-mmax:-1)   = fft2d_c%out(1:npsi/2+1, nphi/2+2:)
-                foo_theta_mup_mu_full(itheta,-mmax:-1,0:mmax)   = fft2d_c%out(npsi/2+2:, 1:nphi/2+1)
-                foo_theta_mup_mu_full(itheta,-mmax:-1,-mmax:-1) = fft2d_c%out(npsi/2+2:, nphi/2+2:)
+                ! foo_theta_mup_mu_full(itheta,0:mmax,0:mmax)     = fft2d_c%out(1:npsi/2+1, 1:nphi/2+1)
+                ! foo_theta_mup_mu_full(itheta,0:mmax,-mmax:-1)   = fft2d_c%out(1:npsi/2+1, nphi/2+2:)
+                ! foo_theta_mup_mu_full(itheta,-mmax:-1,0:mmax)   = fft2d_c%out(npsi/2+2:, 1:nphi/2+1)
+                ! foo_theta_mup_mu_full(itheta,-mmax:-1,-mmax:-1) = fft2d_c%out(npsi/2+2:, nphi/2+2:)
 
             end do
             !
@@ -932,45 +932,47 @@ contains
             ! print*, "loop itheta,mup,mu FINISHED"
             ! print*,
             !
-            allocate (proj_m_mup_mu(0:mmax,-mmax:mmax,-mmax:mmax), source=zeroc)
-            do m=0,mmax
-                do mup=-m,m
-                    do mu=-m,m
-                        do itheta=1,ntheta
-                            proj_m_mup_mu(m,mup,mu) = proj_m_mup_mu(m,mup,mu) +&
-                            foo_theta_mup_mu_full(itheta,mu,mup)*wtheta(itheta)*harm_sph(m,mup,mu,theta(itheta))*fm(m)
-                        end do
-                    end do
-                end do
-            end do
+            ! allocate (proj_m_mup_mu(0:mmax,-mmax:mmax,-mmax:mmax), source=zeroc)
+            ! do m=0,mmax
+            !     do mup=-m,m
+            !         do mu=-m,m
+            !             do itheta=1,ntheta
+            !                 proj_m_mup_mu(m,mup,mu) = proj_m_mup_mu(m,mup,mu) +&
+            !                 foo_theta_mup_mu_full(itheta,mu,mup)*wtheta(itheta)*harm_sph(m,mup,mu,theta(itheta))*fm(m)
+            !             end do
+            !         end do
+            !     end do
+            ! end do
 
             ! Check relation 1.7
-            do m=0,mmax
-                do mup=-m,m
-                    do mu=-m,m
-                        if (proj_m_mup_mu(m,-mup,-mu) - (-1)**(mup+mu)*conjg(proj_m_mup_mu(m,mup,mu)) /= zeroc) then
-                            print*, "Relation 1.7 is not satisfied"
-                            error stop
-                        end if
-                    end do
-                end do
-            end do
+            ! do m=0,mmax
+            !     do mup=-m,m
+            !         do mu=-m,m
+            !             if (proj_m_mup_mu(m,-mup,-mu) - (-1)**(mup+mu)*conjg(proj_m_mup_mu(m,mup,mu)) /= zeroc) then
+            !                 print*, "Relation 1.7 is not satisfied"
+            !                 error stop
+            !             end if
+            !         end do
+            !     end do
+            ! end do
 
             do m=0,mmax
                 do mup=-m,m
                     do mu=0,m,molrotsymorder
                         ip = p3%p( m,mup,mu )
                         foo_p(ip)= sum(foo_theta_mup_mu(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
-                        if (abs(foo_p(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
-                            print*, "foo_p(ip)/=proj_m_mup_mu(m,mup,mu)"
-                            print*, "foo_p(ip)         =",foo_p(ip)
-                            print*, "proj_m_mup_mu(m,mup,mu) =",proj_m_mup_mu(m,mup,mu)
-                            error stop
-                        end if
+                        ! if (abs(foo_p(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
+                        !     print*, "foo_p(ip)/=proj_m_mup_mu(m,mup,mu)"
+                        !     print*, "foo_p(ip)         =",foo_p(ip)
+                        !     print*, "proj_m_mup_mu(m,mup,mu) =",proj_m_mup_mu(m,mup,mu)
+                        !     error stop
+                        ! end if
                     end do
                 end do
             end do
-        END FUNCTION euler2proj
+
+        end function euler2proj
+
 
         function proj2euler (foo_p) result (foo_o)
             implicit none
