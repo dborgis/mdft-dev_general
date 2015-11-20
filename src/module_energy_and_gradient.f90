@@ -101,7 +101,7 @@ contains
                 ! print*, "ff%exc_cproj_slow=", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"
                 call energy_cproj (ff%exc_cproj, df_loc)
                 call cpu_time(t(8))
-                print*, "ff%exc_cproj     =", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"
+                print*, "ff%exc_cproj     =", ff%exc_cproj,    "and norm2@df_exc_cproj  =",norm2(df_loc), "in",t(8)-t(7),"sec"
                 f = f + ff%exc_cproj
                 df = df + df_loc
             end if

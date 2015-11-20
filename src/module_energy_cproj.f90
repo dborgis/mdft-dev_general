@@ -352,6 +352,9 @@ contains
         !call read_ck_toutes_nmax( ck, normq)
         if (.not.cq%isok) call read_ck_nonzero
 
+
+
+
         !
         ! For all vectors q and -q handled simultaneously
         !
@@ -439,6 +442,11 @@ contains
                         error stop
                     end if
 
+                    if (mmax>0 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
+                        deltarho_p_q ( p3%p(1,0,0) ) = zeroc
+                        deltarho_p_mq( p3%p(1,0,0) ) = zeroc
+                    end if
+
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -476,16 +484,16 @@ contains
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
                                         else ! transform delta rho (n, khi, -nu)(q) into conjg( deltarho(n,khi,nu)(-q) )
-                                            select case (mmax)
-                                            case (0)
+                                            ! select case (mmax)
+                                            ! case (0)
                                             gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
-                                            case default
-                                                if (ip/=p3%p(1,0,0) .or. ix_q/=1 .or. iy_q/=1 .or. iz_q/=1) then
-                                                gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
-                                                gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
-                                                end if
-                                            end select
+                                            ! case default
+                                            !     if (ip/=p3%p(1,0,0) .or. ix_q/=1 .or. iy_q/=1 .or. iz_q/=1) then
+                                            !     gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            !     gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
+                                            !     end if
+                                            ! end select
                                         end if
 
                                     end do
