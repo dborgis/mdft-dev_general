@@ -501,13 +501,7 @@ call cpu_time (time(9))
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = int(norm2(q)/cq%dq)+1
-                    ! if (iq>nq) then
-                    !     iq=nq
-                    ! else if (iq<=0) then
-                    !     print*, "in energy_cproj, ik <=0"
-                    !     error stop
-                    ! end if
+                    iq = min( int(norm2(q)/cq%dq)+1   ,nq)
 
                     !
                     ! Consider the case of Pz(k=0). In cdeltacd, we impose it is zeroc because it is non defined. Here we do
@@ -557,7 +551,7 @@ call cpu_time (time(9))
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
                                         else
-                                            gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_q = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
                                         end if
 
@@ -719,7 +713,7 @@ call cpu_time(time(12))
 call cpu_time(time(13))
 
 do i=2,13
-    print*, i, time(i)-time(1)
+    print*, "timer ", i, time(i)-time(1)
 end do
 
 contains
@@ -866,7 +860,8 @@ contains
             COMPLEX(dp) :: foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
             COMPLEX(dp) :: foo_p(1:grid%np)
             INTEGER :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
-            complex(dp), allocatable :: test_explicit(:,:,:), foo_theta_mup_mu_full(:,:,:)
+            ! complex(dp), allocatable :: test_explicit(:,:,:)
+            complex(dp), allocatable :: foo_theta_mup_mu_full(:,:,:)
             complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
             mmax=grid%mmax
             molrotsymorder=grid%molrotsymorder
@@ -875,20 +870,20 @@ contains
 
 
             allocate (foo_theta_mup_mu_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
-            allocate (test_explicit(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
-            do itheta=1,ntheta
-                do mu=-mmax,mmax
-                    do mup=-mmax,mmax
-                        do ipsi=1,grid%npsi
-                            do iphi=1,grid%nphi
-                                test_explicit(itheta,mu,mup) = test_explicit(itheta,mu,mup)&
-                                +foo_o( grid%indo(itheta,iphi,ipsi) ) &
-                                *exp(ii*mup*grid%phiofnphi(iphi)) *exp(ii*mu*grid%psiofnpsi(ipsi))
-                            end do
-                        end do
-                    end do
-                end do
-            end do
+            ! allocate (test_explicit(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
+            ! do itheta=1,ntheta
+            !     do mu=-mmax,mmax
+            !         do mup=-mmax,mmax
+            !             do ipsi=1,grid%npsi
+            !                 do iphi=1,grid%nphi
+            !                     test_explicit(itheta,mu,mup) = test_explicit(itheta,mu,mup)&
+            !                     +foo_o( grid%indo(itheta,iphi,ipsi) ) &
+            !                     *exp(ii*mup*grid%phiofnphi(iphi)) *exp(ii*mu*grid%psiofnpsi(ipsi))
+            !                 end do
+            !             end do
+            !         end do
+            !     end do
+            ! end do
 
 
             do itheta=1,ntheta
