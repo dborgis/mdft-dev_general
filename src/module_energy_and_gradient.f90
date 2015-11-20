@@ -37,7 +37,7 @@ contains
         use module_energy_cs, only: energy_cs
         use module_energy_cdeltacd, only: energy_cdeltacd
         use module_energy_cproj, only: energy_cproj
-        use module_energy_cproj_slow, only: energy_cproj_slow
+        ! use module_energy_cproj_slow, only: energy_cproj_slow
 
         implicit none
 
@@ -47,6 +47,7 @@ contains
         real(dp) :: df_loc2(grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         real(dp), parameter :: zerodp=0._dp
         real :: t(10)
+        real(dp) :: fold
         integer :: s, ns
 
         if (.not. allocated(solvent)) then
@@ -55,6 +56,7 @@ contains
         end if
         ns = solvent(1)%nspec
 
+        fold=f
         f  = zerodp
         df = zerodp
         df_loc = zerodp
@@ -134,8 +136,10 @@ contains
             ! if (solvent(s)%do%exc_3b) call energy_threebody_faster (ff%exc_3d, df)
         end do
 
-        print*, "____________"
-        print*, "TOTAL (FF) =", f
+        print*, "-------------------------------------------------------------------------------"
+        print*, "TOTAL (FF) =", f, "|   Δf/f", (f-fold)/fold
+        print*, "-------------------------------------------------------------------------------"
+        print*,
 
     end subroutine energy_and_gradient
 end module module_energy_and_gradient
