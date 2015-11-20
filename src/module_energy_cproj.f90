@@ -288,12 +288,12 @@ call cpu_time (time(4))
         end if
         if (.not. fft3d%plan_backward_ok) then
             call dfftw_plan_dft_3d (fft3d%plan_backward,&
-                                    nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_PATIENT) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
+                                    nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
             fft3d%plan_backward_ok = .true.
         end if
         if (.not. fft3d%plan_forward_ok) then
             call dfftw_plan_dft_3d( fft3d%plan_forward,&
-                                    nx, ny, nz, gamma_p(1,1:nx,1:ny,1:nz), gamma_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_PATIENT )
+                                    nx, ny, nz, gamma_p(1,1:nx,1:ny,1:nz), gamma_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
             fft3d%plan_forward_ok = .true.
         end if
 
