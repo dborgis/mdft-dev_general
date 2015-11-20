@@ -560,17 +560,9 @@ contains
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
-                                        else ! transform delta rho (n, khi, -nu)(q) into conjg( deltarho(n,khi,nu)(-q) )
-                                            ! select case (mmax)
-                                            ! case (0)
+                                        else
                                             gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
-                                            ! case default
-                                            !     if (ip/=p3%p(1,0,0) .or. ix_q/=1 .or. iy_q/=1 .or. iz_q/=1) then
-                                            !     gamma_m_khi_mu_q= gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            !     gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
-                                            !     end if
-                                            ! end select
                                         end if
 
                                     end do
@@ -740,7 +732,7 @@ contains
             end do
         end do
 
-        
+
         print*, "time for OZ:",time(20)
 
 
