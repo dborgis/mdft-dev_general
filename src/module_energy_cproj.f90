@@ -147,6 +147,7 @@ contains
         nphi=grid%nphi
         npsi=grid%npsi
         rho0 = solvent(1)%rho0
+        time=0
 
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
@@ -478,12 +479,14 @@ contains
 
 
                     if(any(deltarho_p_mq/=deltarho_p_mq)) then
+                        print*, "problem in deltarho_p_mq somewhere"
                         do ip=1,np
-                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_mq(ip)
+                            print*, ip, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, deltarho_p_mq(ip)
                         end do
                         error stop "yhrgvussnehfkil"
                     end if
                     if(any(deltarho_p_q/=deltarho_p_q)) then
+                        print*,"problem in deltarho_p_q somewhere"
                         do iq=1,np
                             print*, ip, ix_q, iy_q, iz_q, deltarho_p_q(ip)
                         end do
@@ -541,10 +544,12 @@ contains
 
                                         ia = cq%a(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
                                         if (ia<=0) then
+                                            print*,"problem in ia"
                                             print*,"ia=",ia
                                             print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
                                             error stop "ia<=0"
                                         else if (ia>cq%na) then
+                                            print*,"problem in ia"
                                             print*,"ia=",ia
                                             print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
                                             error stop "ia>na"
@@ -594,7 +599,8 @@ contains
                             end do
                         end do
                     end do
-                    call cpu_time (time(9))
+                    call cpu_time (time(10))
+                    time(20)=time(20)+(time(10)-time(9)) ! total time for oz
 
                     if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
                     if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
@@ -733,6 +739,9 @@ contains
                 end do
             end do
         end do
+
+        
+        print*, "time for OZ:",time(20)
 
 
 contains
