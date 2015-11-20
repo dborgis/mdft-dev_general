@@ -93,7 +93,7 @@ contains
                 df_loc2=df_loc2+df_loc
             end if
 
-            print*, "cs + cdelta+ cd =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
+            print*, "cs + cdelta+ cd  =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
 
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
