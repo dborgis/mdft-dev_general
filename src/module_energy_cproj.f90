@@ -307,11 +307,11 @@ contains
                     !
                     ! Test if result contains NaN or Inf
                     !
-                    if ( any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
-                        print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
-                        print*, "deltarho_p(1:np,ix,iy,iz) = ",deltarho_p(1:np,ix,iy,iz)
-                        error stop "Bug found in euler2proj. NaN or Inf is hiding somewhere."
-                    end if
+                    ! if ( any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
+                    !     print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
+                    !     print*, "deltarho_p(1:np,ix,iy,iz) = ",deltarho_p(1:np,ix,iy,iz)
+                    !     error stop "Bug found in euler2proj. NaN or Inf is hiding somewhere."
+                    ! end if
                 end do
             end do
         end do
@@ -326,13 +326,6 @@ contains
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        ! call dfftw_plan_dft_3d( fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_BACKWARD, FFTW_ESTIMATE ) ! in-place. BACKWARD means exp(iqr)
-        ! do ip=1,np
-        !     fft3d%in = deltarho_p(ip,1:nx,1:ny,1:nz)
-        !     call dfftw_execute( fft3d%plan )
-        !     deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
-        ! end do
-
         call cpu_time (time(2))
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
@@ -478,20 +471,20 @@ contains
                     ! call rotate_to_molecular_frame ! does q and mq at the same time.
 
 
-                    if(any(deltarho_p_mq/=deltarho_p_mq)) then
-                        print*, "problem in deltarho_p_mq somewhere"
-                        do ip=1,np
-                            print*, ip, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, deltarho_p_mq(ip)
-                        end do
-                        error stop "yhrgvussnehfkil"
-                    end if
-                    if(any(deltarho_p_q/=deltarho_p_q)) then
-                        print*,"problem in deltarho_p_q somewhere"
-                        do iq=1,np
-                            print*, ip, ix_q, iy_q, iz_q, deltarho_p_q(ip)
-                        end do
-                        error stop "opiloyukiuskerg"
-                    end if
+                    ! if(any(deltarho_p_mq/=deltarho_p_mq)) then
+                    !     print*, "problem in deltarho_p_mq somewhere"
+                    !     do ip=1,np
+                    !         print*, ip, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, deltarho_p_mq(ip)
+                    !     end do
+                    !     error stop "yhrgvussnehfkil"
+                    ! end if
+                    ! if(any(deltarho_p_q/=deltarho_p_q)) then
+                    !     print*,"problem in deltarho_p_q somewhere"
+                    !     do iq=1,np
+                    !         print*, ip, ix_q, iy_q, iz_q, deltarho_p_q(ip)
+                    !     end do
+                    !     error stop "opiloyukiuskerg"
+                    ! end if
 
 
                     ! if (q_eq_mq .and. any(deltarho_p_q/=deltarho_p_mq) ) then
@@ -509,13 +502,17 @@ contains
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
                     iq = int(norm2(q)/cq%dq)+1
-                    if (iq>nq) then
-                        iq=nq
-                    else if (iq<=0) then
-                        print*, "in energy_cproj, ik <=0"
-                        error stop
-                    end if
+                    ! if (iq>nq) then
+                    !     iq=nq
+                    ! else if (iq<=0) then
+                    !     print*, "in energy_cproj, ik <=0"
+                    !     error stop
+                    ! end if
 
+                    !
+                    ! Consider the case of Pz(k=0). In cdeltacd, we impose it is zeroc because it is non defined. Here we do
+                    ! the equivalent. One can show Pz(k=0) is equivalent to projection 100 of deltarho
+                    !
                     if (mmax>0 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
                         deltarho_p_q ( p3%p(1,0,0) ) = zeroc
                         deltarho_p_mq( p3%p(1,0,0) ) = zeroc
@@ -593,18 +590,14 @@ contains
                     end do
                     call cpu_time (time(10))
                     time(20)=time(20)+(time(10)-time(9)) ! total time for oz
-
-                    if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
-                    if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
+                    !
+                    ! if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
+                    ! if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
 
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
                     !
-                    ! call rotate_to_fixed_frame ! does q and mq at the same time.
-
-
-                    R = conjg(R)
-                    ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
+                    R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
 
                     p3%foo_q = zeroc
                     p3%foo_mq = zeroc
@@ -637,58 +630,57 @@ contains
 
 
 
-
-                    if (any(gamma_p_q/=gamma_p_q)) error stop "oijjiuurkgserg"
-                    if (any(gamma_p_mq/=gamma_p_mq)) error stop "098123KJN"
+                    !
+                    ! if (any(gamma_p_q/=gamma_p_q)) error stop "oijjiuurkgserg"
+                    ! if (any(gamma_p_mq/=gamma_p_mq)) error stop "098123KJN"
 
 
                     ! TOdo JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
 
-                    if (gamma_p_isok(ix_q,iy_q,iz_q).eqv..true. .and. any( abs(gamma_p(:,ix_q,iy_q,iz_q)-gamma_p_q(:))>epsdp )) then
-                        print*, "gamma(q) already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
-                        print*, "q=",q
-                        print*,'mq=',mq
-                        print*, "                        ip          m          mup          mu"
-                        do ip=1,np
-                            print*, "old gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
-                            print*, "new gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_q(ip)
-                            print*,
-                        end do
-                        error stop "jfhzoenfhsozk"
-                    end if
-
-        if (gamma_p_isok(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( abs(gamma_p(:,ix_mq,iy_mq,iz_mq)-gamma_p_mq(:))>epsdp)) then
-                        print*, "gamma(q) already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
-                        print*, "mq=",mq
-                        print*,"q=",q
-                        print*, "                        ip          m          mup          mu"
-                        do ip=1,np
-                            print*, "old gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
-                            print*, "new gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_mq(ip)
-                            print*,
-                        end do
-                        error stop "oihskdjhfkuhse"
-                    end if
+        !             if (gamma_p_isok(ix_q,iy_q,iz_q).eqv..true. .and. any( abs(gamma_p(:,ix_q,iy_q,iz_q)-gamma_p_q(:))>epsdp )) then
+        !                 print*, "gamma(q) already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
+        !                 print*, "q=",q
+        !                 print*,'mq=',mq
+        !                 print*, "                        ip          m          mup          mu"
+        !                 do ip=1,np
+        !                     print*, "old gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
+        !                     print*, "new gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_q(ip)
+        !                     print*,
+        !                 end do
+        !                 error stop "jfhzoenfhsozk"
+        !             end if
+        !
+        ! if (gamma_p_isok(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( abs(gamma_p(:,ix_mq,iy_mq,iz_mq)-gamma_p_mq(:))>epsdp)) then
+        !                 print*, "gamma(q) already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
+        !                 print*, "mq=",mq
+        !                 print*,"q=",q
+        !                 print*, "                        ip          m          mup          mu"
+        !                 do ip=1,np
+        !                     print*, "old gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
+        !                     print*, "new gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_mq(ip)
+        !                     print*,
+        !                 end do
+        !                 error stop "oihskdjhfkuhse"
+        !             end if
 
                     gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
+                    gamma_p_isok(ix_q,iy_q,iz_q)=.true.
+
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
                         gamma_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
                     else
                         gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
                     end if
-
-                    ! we gamma_p_isok that all gamma(:,ix, iy, iz) have been calculated
-                    gamma_p_isok(ix_q,iy_q,iz_q)=.true.
                     gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
-                    if (any(gamma_p(:,ix_q,iy_q,iz_q)/=gamma_p(:,ix_q,iy_q,iz_q))) then
-                        print*, "I FOUND A NAN OR SOMETHING NASTY"
-                        print*, ix_q, iy_q, iz_q
-                        do ip=1,np
-                            print*, ip, deltarho_p(ip,ix_q,iy_q,iz_q), gamma_p(ip,ix_q,iy_q,iz_q)
-                        end do
-                        error stop "ihsdfuygfkhll"
-                    end if
+                    ! if (any(gamma_p(:,ix_q,iy_q,iz_q)/=gamma_p(:,ix_q,iy_q,iz_q))) then
+                    !     print*, "I FOUND A NAN OR SOMETHING NASTY"
+                    !     print*, ix_q, iy_q, iz_q
+                    !     do ip=1,np
+                    !         print*, ip, deltarho_p(ip,ix_q,iy_q,iz_q), gamma_p(ip,ix_q,iy_q,iz_q)
+                    !     end do
+                    !     error stop "ihsdfuygfkhll"
+                    ! end if
 
                 end do
             end do
@@ -704,28 +696,19 @@ contains
         !
         ! FFT3D from Fourier space to real space
         !
-        !call dfftw_plan_dft_3d(  fft3d%plan, nx, ny, nz, fft3d%in, fft3d%in, FFTW_FORWARD, FFTW_MEASURE )
-        ! do ip=1,np
-        !     fft3d%in = gamma_p(ip,1:nx,1:ny,1:nz)
-        !     call dfftw_execute( fft3d%plan )
-        !     gamma_p(ip,:,:,:) = fft3d%in/real(nx*ny*nz,dp)
-        ! end do
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_forward, gamma_p(ip,1:nx,1:ny,1:nz), gamma_p(ip,1:nx,1:ny,1:nz) )
         end do
         gamma_p=gamma_p/real(nx*ny*nz,dp)
 
         !
-        ! Gather projections
+        ! Gather projections into gamma (in fact, into the gradient, that IS gamma)
         !
-        call dfftw_plan_dft_c2r_2d( ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE)
-
         df=0._dp
         ff=0._dp
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    ! gamma_o(1:no) = proj2euler( gamma_p(1:np,ix,iy,iz) )
                     df(ix,iy,iz,:,1) = -kT*dv*proj2euler( gamma_p(1:np,ix,iy,iz) )/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
                     ff=ff +sum( df(ix,iy,iz,:,1)*(solvent(1)%density(ix,iy,iz,:)-rho0) ) /2._dp
                 end do
@@ -733,7 +716,6 @@ contains
         end do
 
 
-        print*, "time for OZ:",time(20)
 
 
 contains
