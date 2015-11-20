@@ -72,6 +72,8 @@ module module_energy_cproj
         integer, allocatable :: m(:) ! m for projection 1 to np
         integer, allocatable :: mup(:) ! mup for projection 1 to np. mup corresponds to phi
         integer, allocatable :: mu(:) ! mu for projection 1 to np. mu corresponds to psi
+        complex(dp), allocatable :: foo_q(:) ! foo (:) is a temporary array of size np
+        complex(dp), allocatable :: foo_mq(:) ! foo (:) is a temporary array of size np
     end type p3_type
     type (p3_type) :: p3
 
@@ -91,6 +93,8 @@ module module_energy_cproj
     type(  fft2d_type ), save :: fft2d
     type( ifft2d_type ), save :: ifft2d
 
+    complex(dp), allocatable :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
+
 
     public :: energy_cproj
 
@@ -106,7 +110,7 @@ contains
         real(dp), intent(out) :: df(:,:,:,:,:)
         real(dp) :: dv, kT
         logical :: q_eq_mq
-        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p
+        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, molrotsymorder
         integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq
         complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
@@ -114,6 +118,7 @@ contains
         real(dp) :: q(3), mq(3)
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         real(dp) :: lx, ly, lz, rho0
+        real :: time(20)
         logical, allocatable :: gamma_p_isok(:,:,:)
         integer :: points_q_considere_en_vrai
 
@@ -146,12 +151,20 @@ contains
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
 
+        if (.not. allocated(p3%foo_q)) allocate ( p3%foo_q(1:np) )
+        if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
+
+
         if (.not. allocated (gamma_p_q) ) allocate (gamma_p_q(np), source=zeroc)
         if (.not. allocated (gamma_p_mq) ) allocate (gamma_p_mq(np), source=zeroc)
         if (.not. allocated (gamma_p) ) allocate (gamma_p(np,nx,ny,nz) ,source=zeroc)
-        if (.not. allocated (deltarho_p) ) allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
-        if (.not. allocated (deltarho_p_q) ) allocate (deltarho_p_q(np) ,source=zeroc)
-        if (.not. allocated (deltarho_p_mq) ) allocate (deltarho_p_mq(np) ,source=zeroc)
+
+        if (.not. allocated (deltarho_p) ) then
+            allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
+            allocate (deltarho_p_q(np) ,source=zeroc)
+            allocate (deltarho_p_mq(np) ,source=zeroc)
+        end if
+
         if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
 
         ! 1/ get deltarho = rho-rho0
@@ -285,6 +298,7 @@ contains
         !
         ! Projection of delta rho
         !
+        call cpu_time (time(1))
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
@@ -318,6 +332,7 @@ contains
         !     deltarho_p(ip,1:nx,1:ny,1:nz) = fft3d%in
         ! end do
 
+        call cpu_time (time(2))
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
         end do
@@ -339,7 +354,7 @@ contains
         ! And the inverse index that gives vector -q
         !
 
-
+        call cpu_time (time(3))
         call for_all_q_find_indices_of_mq
 
         !
@@ -358,6 +373,7 @@ contains
         !
         ! For all vectors q and -q handled simultaneously
         !
+        call cpu_time(time(4))
         points_q_considere_en_vrai = 0
 
         do ix_q=1,nx
@@ -403,7 +419,62 @@ contains
                     deltarho_p_q (1:np) = deltarho_p(1:np,ix_q,iy_q,iz_q)
                     deltarho_p_mq(1:np) = deltarho_p(1:np,ix_mq,iy_mq,iz_mq)
 
-                    call rotate_to_molecular_frame ! does q and mq at the same time.
+                    !
+                    ! Prepare R^m_mup_khi(q)
+                    !
+                    call cpu_time(time(6))
+                    if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
+                    R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax )
+                    ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
+
+                    !
+                    ! Rotation to molecular (q) frame
+                    !
+                    call cpu_time(time(7))
+                    p3%foo_q = zeroc
+                    p3%foo_mq = zeroc
+                    do m=0,mmax
+                        do khi=-m,m
+                            do mu=0,m
+                                ip=p3%p(m,khi,mu)
+                                ! Equation 1.22
+                                do mup=-m,m
+                                    ip2=p3%p(m,mup,mu)
+                                    p3%foo_q(ip) = p3%foo_q(ip)  + deltarho_p_q(ip2)*R(m,mup,khi)
+                                    p3%foo_mq(ip) = p3%foo_mq(ip) + deltarho_p_mq(ip2)*(-1)**m*R(m,mup,-khi)
+                            !!        ! p3%foo_mq(ip) = p3%foo_mq(ip) + deltarho_p_mq(ip2)*gshrot_mq(m,mup,khi)
+                                    ! if (q_eq_mq .and. p3%foo_q(ip)/=p3%foo_mq(ip)) then
+                                    !     print*, "q == mq mais pourtant p3%foo_q /= p3%foo_mq"
+                                    !     print*,m,khi,mu,ip,mup,ip2,p3%foo_q(ip),p3%foo_mq(ip)
+                                    !     error stop
+                                    ! end if
+
+                                    ! a = (-1)**m*gshrot(m,mup,-khi)
+                                    ! b = (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
+                                    ! c = gshrot_mq(m,mup,khi)
+                                    ! d = a-b
+                                    ! e = b-c
+
+                                    ! if (abs(e)>epsdp .or. abs(d)>epsdp) then
+                                    !     print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
+                                    !     print*, "q=", q
+                                    !     print*, "mq=", mq
+                                    !     print*, "gshrot(q,m,mup,khi)                 =", gshrot(m,mup,khi)
+                                    !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/1 =", (-1)**m*gshrot(m,mup,-khi)
+                                    !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/2 =", (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
+                                    !     print*, "gshrot(mq,m,mup,khi) brutal         =", gshrot_mq(m,mup,khi)
+                                    !     error stop "85643820"
+                                    ! end if
+
+                                end do
+                            end do
+                        end do
+                    end do
+                    deltarho_p_q = p3%foo_q
+                    deltarho_p_mq = p3%foo_mq
+                    call cpu_time(time(8))
+
+                    ! call rotate_to_molecular_frame ! does q and mq at the same time.
 
 
                     if(any(deltarho_p_mq/=deltarho_p_mq)) then
@@ -452,6 +523,7 @@ contains
                     ! Ornstein-Zernike in the molecular frame
                     ! We do OZ for q and -q at the same time
                     !
+                    call cpu_time (time(9))
                     gamma_p_q(1:np) = zeroc
                     gamma_p_mq(1:np) = zeroc
 
@@ -522,6 +594,7 @@ contains
                             end do
                         end do
                     end do
+                    call cpu_time (time(9))
 
                     if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
                     if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
@@ -529,7 +602,43 @@ contains
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
                     !
-                    call rotate_to_fixed_frame ! does q and mq at the same time.
+                    ! call rotate_to_fixed_frame ! does q and mq at the same time.
+
+
+                    R = conjg(R)
+                    ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
+
+                    p3%foo_q = zeroc
+                    p3%foo_mq = zeroc
+                    do m=0,mmax
+                        do mup=-m,m
+                            do mu=0,m
+                                ip=p3%p(m,mup,mu)
+                                ! Equation 1.22
+                                do khi=-m,m
+                                    ip2=p3%p(m,khi,mu)
+                                    p3%foo_q(ip) = p3%foo_q(ip)   + gamma_p_q(ip2)  *R(m,mup,khi)
+                                    p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
+                                    ! p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
+
+                                    ! if (q_eq_mq .and. p3%foo_q(ip)/=p3%foo_mq(ip)) then
+                                    !     print*, "q == mq mais pourtant p3%foo_q /= p3%foo_mq"
+                                    !     print*, "m,khi,mu,ip,mup,ip2,p3%foo_q(ip), p3%foo_mq(ip)"
+                                    !     print*,m,khi,mu,ip,mup,ip2,p3%foo_q(ip),p3%foo_mq(ip)
+                                    !     error stop
+                                    ! end if
+
+                                end do
+                                !
+                            end do
+                        end do
+                    end do
+                    gamma_p_q = p3%foo_q
+                    gamma_p_mq = p3%foo_mq
+                    call cpu_time (time(10))
+
+
+
 
                     if (any(gamma_p_q/=gamma_p_q)) error stop "oijjiuurkgserg"
                     if (any(gamma_p_mq/=gamma_p_mq)) error stop "098123KJN"
@@ -625,113 +734,10 @@ contains
             end do
         end do
 
+
 contains
 
 
-        subroutine rotate_to_fixed_frame
-            implicit none
-            complex(dp) :: gamma_p_q_temp(1:np)
-            complex(dp) :: gamma_p_mq_temp(1:np)
-            complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
-            ! complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
-            integer :: m, khi, mu, mup, ip, ip2
-            if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
-                !return
-            else
-                gamma_p_q_temp = zeroc
-                gamma_p_mq_temp = zeroc
-                gshrot = conjg(rotation_matrix_between_complex_spherical_harmonics_lu(q,mmax) )
-                ! gshrot_mq = conjg(rotation_matrix_between_complex_spherical_harmonics_lu(mq,mmax) )
-                do m=0,mmax
-                    do mup=-m,m
-                        do mu=0,m
-                            ip=p3%p(m,mup,mu)
-                            ! Equation 1.22
-                            do khi=-m,m
-                                ip2=p3%p(m,khi,mu)
-                                gamma_p_q_temp(ip) = gamma_p_q_temp(ip)   + gamma_p_q(ip2)*gshrot(m,mup,khi)
-                                gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
-                                ! gamma_p_mq_temp(ip) = gamma_p_mq_temp(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
-
-                                ! if (q_eq_mq .and. gamma_p_q_temp(ip)/=gamma_p_mq_temp(ip)) then
-                                !     print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
-                                !     print*, "m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)"
-                                !     print*,m,khi,mu,ip,mup,ip2,gamma_p_q_temp(ip),gamma_p_mq_temp(ip)
-                                !     error stop
-                                ! end if
-
-                            end do
-                            !
-                        end do
-                    end do
-                end do
-                gamma_p_q = gamma_p_q_temp
-                gamma_p_mq = gamma_p_mq_temp
-            end if
-        end subroutine rotate_to_fixed_frame
-
-        subroutine rotate_to_molecular_frame
-            implicit none
-            complex(dp) :: deltarho_p_q_temp(1:np)
-            complex(dp) :: deltarho_p_mq_temp(1:np)
-            complex(dp) :: gshrot (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
-            ! complex(dp) :: gshrot_mq (0:grid%mmax, -grid%mmax:grid%mmax, -grid%mmax:grid%mmax)
-            integer :: m, khi, mu, mup, ip2, ip
-            ! complex(dp) :: a, b, c, d, e
-            !
-            ! Rotate projections from laboratory frame to molecular frame
-            ! If q=0 then chose the rotation you want: the identity is the simplest option.
-            !
-            if (ix_q==1 .and. iy_q==1 .and. iz_q==1) then ! that is if |q|=0. Rotation is arbitrary: we chose the Identity and thus have nothing to do.
-                ! return
-            else
-                gshrot    = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax)
-                ! gshrot_mq = rotation_matrix_between_complex_spherical_harmonics_lu ( mq, mmax)
-
-                deltarho_p_q_temp = zeroc
-                deltarho_p_mq_temp = zeroc
-                do m=0,mmax
-                    do khi=-m,m
-                        do mu=0,m
-                            ip=p3%p(m,khi,mu)
-                            ! Equation 1.22
-                            do mup=-m,m
-                                ip2=p3%p(m,mup,mu)
-                                deltarho_p_q_temp(ip) = deltarho_p_q_temp(ip)  + deltarho_p_q(ip2)*gshrot(m,mup,khi)
-                                ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
-                                deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*(-1)**m*gshrot(m,mup,-khi)
-                        !!        ! deltarho_p_mq_temp(ip) = deltarho_p_mq_temp(ip) + deltarho_p_mq(ip2)*gshrot_mq(m,mup,khi)
-                                ! if (q_eq_mq .and. deltarho_p_q_temp(ip)/=deltarho_p_mq_temp(ip)) then
-                                !     print*, "q == mq mais pourtant deltarho_p_q_temp /= deltarho_p_mq_temp"
-                                !     print*,m,khi,mu,ip,mup,ip2,deltarho_p_q_temp(ip),deltarho_p_mq_temp(ip)
-                                !     error stop
-                                ! end if
-
-                                ! a = (-1)**m*gshrot(m,mup,-khi)
-                                ! b = (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
-                                ! c = gshrot_mq(m,mup,khi)
-                                ! d = a-b
-                                ! e = b-c
-
-                                ! if (abs(e)>epsdp .or. abs(d)>epsdp) then
-                                !     print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
-                                !     print*, "q=", q
-                                !     print*, "mq=", mq
-                                !     print*, "gshrot(q,m,mup,khi)                 =", gshrot(m,mup,khi)
-                                !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/1 =", (-1)**m*gshrot(m,mup,-khi)
-                                !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/2 =", (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
-                                !     print*, "gshrot(mq,m,mup,khi) brutal         =", gshrot_mq(m,mup,khi)
-                                !     error stop "85643820"
-                                ! end if
-
-                            end do
-                        end do
-                    end do
-                end do
-                deltarho_p_q = deltarho_p_q_temp
-                deltarho_p_mq = deltarho_p_mq_temp
-            end if
-        end subroutine rotate_to_molecular_frame
 
 
         subroutine read_ck_nonzero
