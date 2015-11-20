@@ -122,6 +122,7 @@ contains
         logical, allocatable :: gamma_p_isok(:,:,:)
         integer :: points_q_considere_en_vrai
 
+call cpu_time (time(1))
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(grid%npsi,grid%nphi))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
@@ -147,7 +148,7 @@ contains
         nphi=grid%nphi
         npsi=grid%npsi
         rho0 = solvent(1)%rho0
-        time=0
+
 
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
@@ -167,6 +168,8 @@ contains
         end if
 
         if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
+
+call cpu_time (time(2))
 
         ! 1/ get deltarho = rho-rho0
         ! 2/ project deltarho => deltarho_p (use FFT2D-R2C)
@@ -227,7 +230,7 @@ contains
             end do
             close(11)
         end if
-
+call cpu_time (time(3))
 
 
         !
@@ -249,7 +252,7 @@ contains
         ! mu is related to psi
         ! TOdo: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
-        call test_routines_calcul_de_Rm_mup_mu_q
+        ! call test_routines_calcul_de_Rm_mup_mu_q
 
         if (.not. allocated(p3%harm_sph)) then
             allocate ( p3%harm_sph(1:ntheta, 1:np) ,source=0._dp)
@@ -262,7 +265,7 @@ contains
                 end do
             end do
         end if
-
+call cpu_time (time(4))
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -294,12 +297,11 @@ contains
             fft3d%plan_forward_ok = .true.
         end if
 
-
+call cpu_time (time(5))
 
         !
         ! Projection of delta rho
         !
-        call cpu_time (time(1))
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
@@ -316,7 +318,7 @@ contains
             end do
         end do
 
-
+call cpu_time (time(6))
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -326,10 +328,11 @@ contains
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        call cpu_time (time(2))
         do ip=1,np
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
         end do
+
+call cpu_time (time(7))
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION DE Δρ_p(q) VERS LE REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
@@ -348,9 +351,8 @@ contains
         ! And the inverse index that gives vector -q
         !
 
-        call cpu_time (time(3))
         call for_all_q_find_indices_of_mq
-
+call cpu_time (time(8))
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
         ! projected on generalized spherical harmonics
@@ -359,15 +361,16 @@ contains
         !
         !call read_ck_nmax (ck, normq)
         !call read_ck_toutes_nmax( ck, normq)
-        if (.not.cq%isok) call read_ck_nonzero
+        if (.not.cq%isok) then
+            call read_ck_nonzero
+            cq%isok=.true.
+        end if
 
-
-
+call cpu_time (time(9))
 
         !
         ! For all vectors q and -q handled simultaneously
         !
-        call cpu_time(time(4))
         points_q_considere_en_vrai = 0
 
         do ix_q=1,nx
@@ -416,7 +419,6 @@ contains
                     !
                     ! Prepare R^m_mup_khi(q)
                     !
-                    call cpu_time(time(6))
                     if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax )
                     ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
@@ -424,7 +426,6 @@ contains
                     !
                     ! Rotation to molecular (q) frame
                     !
-                    call cpu_time(time(7))
                     p3%foo_q = zeroc
                     p3%foo_mq = zeroc
                     do m=0,mmax
@@ -466,7 +467,6 @@ contains
                     end do
                     deltarho_p_q = p3%foo_q
                     deltarho_p_mq = p3%foo_mq
-                    call cpu_time(time(8))
 
                     ! call rotate_to_molecular_frame ! does q and mq at the same time.
 
@@ -523,7 +523,6 @@ contains
                     ! Ornstein-Zernike in the molecular frame
                     ! We do OZ for q and -q at the same time
                     !
-                    call cpu_time (time(9))
                     gamma_p_q(1:np) = zeroc
                     gamma_p_mq(1:np) = zeroc
 
@@ -588,8 +587,6 @@ contains
                             end do
                         end do
                     end do
-                    call cpu_time (time(10))
-                    time(20)=time(20)+(time(10)-time(9)) ! total time for oz
                     !
                     ! if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
                     ! if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
@@ -626,7 +623,6 @@ contains
                     end do
                     gamma_p_q = p3%foo_q
                     gamma_p_mq = p3%foo_mq
-                    call cpu_time (time(10))
 
 
 
@@ -663,7 +659,7 @@ contains
         !                 error stop "oihskdjhfkuhse"
         !             end if
 
-                    gamma_p(1:np, ix_q,  iy_q,  iz_q) = gamma_p_q(1:np)
+                    gamma_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
@@ -686,12 +682,15 @@ contains
             end do
         end do
 
+call cpu_time(time(10))
+
 
         if (.not.all(gamma_p_isok.eqv..true.)) then
             print*, "not all gamma_p(projections,ix,iy,iz) have not been computed"
             error stop
         end if
 
+call cpu_time(time(11))
 
         !
         ! FFT3D from Fourier space to real space
@@ -700,6 +699,8 @@ contains
             call dfftw_execute_dft( fft3d%plan_forward, gamma_p(ip,1:nx,1:ny,1:nz), gamma_p(ip,1:nx,1:ny,1:nz) )
         end do
         gamma_p=gamma_p/real(nx*ny*nz,dp)
+
+call cpu_time(time(12))
 
         !
         ! Gather projections into gamma (in fact, into the gradient, that IS gamma)
@@ -715,8 +716,11 @@ contains
             end do
         end do
 
+call cpu_time(time(13))
 
-
+do i=2,13
+    print*, i, time(i)-time(1)
+end do
 
 contains
 
