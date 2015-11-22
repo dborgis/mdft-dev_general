@@ -38,6 +38,7 @@ module module_energy_cproj
         integer, allocatable :: a(:,:,:,:,:) ! index of m, n, mu, nu, khi => (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
+        integer, allocatable :: m(:), n(:), mu(:), nu(:), khi(:)
     end type
     type (cq_type) :: cq
     complex(dp), allocatable :: ck(:,:)
@@ -731,7 +732,6 @@ contains
             integer :: i, na, iq, m, n, mu, nu, khi, ia, nq
             character(3) :: somechar
             integer :: ufile, ios, mmax
-            integer, allocatable, dimension(:) :: m_ck, n_ck, mu_ck, nu_ck, khi_ck
             character(65) :: filename
 
             if (cq%isok) return
@@ -815,11 +815,14 @@ contains
                 error stop
             end if
 
-            if (.not.allocated( m_ck)) allocate( m_ck(na) )
-            if (.not.allocated( n_ck)) allocate( n_ck(na) )
-            if (.not.allocated( mu_ck)) allocate( mu_ck(na) )
-            if (.not.allocated( nu_ck)) allocate( nu_ck(na) )
-            if (.not.allocated( khi_ck)) allocate( khi_ck(na) )
+            if (.not.allocated( cq%m)) then
+                allocate ( cq%m(na) ,source=-huge(1))
+                allocate ( cq%n(na) ,source=-huge(1))
+                allocate ( cq%mu(na) ,source=-huge(1))
+                allocate ( cq%nu(na) ,source=-huge(1))
+                allocate ( cq%khi(na) ,source=-huge(1))
+                allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+            end if
             !
             ! Skip 10 lines of comments
             !
@@ -828,20 +831,20 @@ contains
             end do
 
             read(ufile,*) somechar
-            read(ufile,*) somechar, m_ck
-            read(ufile,*) somechar, n_ck
-            read(ufile,*) somechar, mu_ck
-            read(ufile,*) somechar, nu_ck
-            read(ufile,*) somechar, khi_ck
+            read(ufile,*) somechar, cq%m
+            read(ufile,*) somechar, cq%n
+            read(ufile,*) somechar, cq%mu
+            read(ufile,*) somechar, cq%nu
+            read(ufile,*) somechar, cq%khi
             read(ufile,*)
 
-            allocate (cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+
             do ia=1,na
-                m = m_ck(ia)
-                n = n_ck(ia)
-                mu = mu_ck(ia)
-                nu = nu_ck(ia)
-                khi = khi_ck(ia)
+                m = cq%m(ia)
+                n = cq%n(ia)
+                mu = cq%mu(ia)
+                nu = cq%nu(ia)
+                khi = cq%khi(ia)
                 cq%a(m,n,mu,nu,khi) = ia
             end do
 
@@ -852,7 +855,7 @@ contains
             close(ufile)
             cq%dq = cq%normq(2)
 
-            deallocate (m_ck, n_ck, mu_ck, nu_ck, khi_ck)
+            deallocate (cq%m, cq%n, cq%mu, cq%nu, cq%khi)
             cq%isok=.true.
             cq%na=na
             cq%nq=nq
