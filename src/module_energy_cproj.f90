@@ -866,11 +866,11 @@ contains
             integer :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
             ! complex(dp), allocatable :: test_explicit(:,:,:)
             ! complex(dp), allocatable :: foo_theta_mup_mu_full(:,:,:)
-            complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
+            ! complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
             mmax=grid%mmax
             molrotsymorder=grid%molrotsymorder
             foo_p = zeroc
-            ! foo_theta_mup_mu = zeroc
+            foo_theta_mup_mu = zeroc
 
 
             ! allocate (foo_theta_mup_mu_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
@@ -983,6 +983,7 @@ contains
             real(dp) :: foo_o (1:grid%no)
             complex(dp), intent(in) :: foo_p(1:grid%np)
             foo_theta_mup_mu = zeroc
+            foo_o = zeroc
             do itheta=1,ntheta
                 do mup=-mmax,mmax
                     do mu=0,mmax/molrotsymorder
