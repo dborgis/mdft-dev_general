@@ -539,17 +539,6 @@ call cpu_time (time(9))
                                         if (mod(nu,2) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
 
                                         ia = cq%a(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
-                                        if (ia<=0) then
-                                            print*,"problem in ia"
-                                            print*,"ia=",ia
-                                            print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
-                                            error stop "ia<=0"
-                                        else if (ia>cq%na) then
-                                            print*,"problem in ia"
-                                            print*,"ia=",ia
-                                            print*,"for m, n, mu, nu, khi=",m,n,mu,nu,khi
-                                            error stop "ia>na"
-                                        end if
 
                                         ip = p3%p(n,khi,abs(nu))
 
