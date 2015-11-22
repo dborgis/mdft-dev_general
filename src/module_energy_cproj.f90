@@ -66,6 +66,9 @@ module module_energy_cproj
     complex(dp), allocatable :: deltarho_p_mq(:)
     complex(dp), allocatable :: gamma_p(:,:,:,:)
 
+    complex(dp), allocatable :: foo_theta_mup_mu(:,:,:) ! in fact foo_theta_mu_mup
+
+
     type :: p3_type
         real(dp), allocatable :: harm_sph(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
         integer, allocatable :: p(:,:,:) ! index of the projection corresponding to m, mup, mu
@@ -128,6 +131,9 @@ call cpu_time (time(1))
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(grid%npsi/2+1,grid%nphi))
         if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(grid%npsi/2+1,grid%nphi))
         if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(grid%npsi,grid%nphi))
+
+        if (.not. allocated( foo_theta_mup_mu) ) &
+            allocate (foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax))
 
         lx=grid%lx
         ly=grid%ly
@@ -857,8 +863,6 @@ contains
             implicit none
             real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
             complex(dp) :: foo_p(1:grid%np)
-
-            complex(dp) :: foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! itheta,mu,mup    note we changed mu(psi) to the 2nd position
             integer :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
             ! complex(dp), allocatable :: test_explicit(:,:,:)
             ! complex(dp), allocatable :: foo_theta_mup_mu_full(:,:,:)
@@ -978,7 +982,6 @@ contains
             implicit none
             real(dp) :: foo_o (1:grid%no)
             complex(dp), intent(in) :: foo_p(1:grid%np)
-            complex(dp) :: foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax) ! in fact foo_theta_mu_mup
             foo_theta_mup_mu = zeroc
             do itheta=1,ntheta
                 do mup=-mmax,mmax
