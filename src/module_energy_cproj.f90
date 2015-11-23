@@ -280,23 +280,18 @@ call cpu_time (time(4))
         !
         if (.not. fft2d%isalreadyplanned) then
             call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
-            ! allocate (fft2d_c%in(npsi,nphi))
-            ! allocate (fft2d_c%out(npsi,nphi))
+            call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
             ! call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
             fft2d%isalreadyplanned =.true.
-        end if
-        if (.not. ifft2d%isalreadyplanned) then
-            call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
             ifft2d%isalreadyplanned =.true.
         end if
+
         if (.not. fft3d%plan_backward_ok) then
             call dfftw_plan_dft_3d (fft3d%plan_backward,&
-                                    nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
-            fft3d%plan_backward_ok = .true.
-        end if
-        if (.not. fft3d%plan_forward_ok) then
+                nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
             call dfftw_plan_dft_3d( fft3d%plan_forward,&
-                    nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
+                nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
+            fft3d%plan_backward_ok = .true.
             fft3d%plan_forward_ok = .true.
         end if
 
@@ -581,7 +576,6 @@ contains
         complex(dp) :: foo_p(1:grid%np)
         integer :: itheta, iphi, ipsi, m, mup, mu, ip
         foo_theta_mu_mup = zeroc
-        foo_p = zeroc
         do itheta=1,ntheta
             do iphi=1,nphi
                 do ipsi=1,npsi
@@ -592,6 +586,7 @@ contains
             foo_theta_mu_mup(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
             foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
         end do
+        foo_p = zeroc
         do m=0,mmax
             do mup=-m,m
                 do mu=0,m,2
