@@ -124,7 +124,6 @@ contains
         real(dp) :: lx, ly, lz, rho0
         real :: time(20)
         logical, allocatable :: gamma_p_isok(:,:,:)
-        integer :: points_q_considere_en_vrai
 
 call cpu_time (time(1))
 
@@ -310,14 +309,6 @@ call cpu_time (time(5))
             do iy=1,ny
                 do ix=1,nx
                     deltarho_p(1:np,ix,iy,iz) = euler2proj( solvent(1)%density(ix,iy,iz,1:no)-solvent(1)%rho0 )
-                    !
-                    ! Test if result contains NaN or Inf
-                    !
-                    ! if ( any(deltarho_p(1:np,ix,iy,iz) /= deltarho_p(1:np,ix,iy,iz)) ) then
-                    !     print*, "Error in euler2proj for ix,iy,iz =", ix, iy, iz
-                    !     print*, "deltarho_p(1:np,ix,iy,iz) = ",deltarho_p(1:np,ix,iy,iz)
-                    !     error stop "Bug found in euler2proj. NaN or Inf is hiding somewhere."
-                    ! end if
                 end do
             end do
         end do
@@ -356,7 +347,9 @@ call cpu_time (time(7))
         !
 
         call for_all_q_find_indices_of_mq
+
 call cpu_time (time(8))
+
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
         ! projected on generalized spherical harmonics
@@ -375,8 +368,6 @@ call cpu_time (time(9))
         !
         ! For all vectors q and -q handled simultaneously
         !
-        points_q_considere_en_vrai = 0
-
         do ix_q=1,nx
             do iy_q=1,ny
                 do iz_q=1,nz
@@ -392,18 +383,7 @@ call cpu_time (time(9))
                     iy_mq = tableof_iy_mq(iy_q)
                     iz_mq = tableof_iz_mq(iz_q)
 
-                    if (gamma_p_isok(ix_q,iy_q,iz_q).eqv..true.) then
-                        if (gamma_p_isok(ix_mq, iy_mq,iz_mq).eqv..true.) then
-                            cycle
-                        else
-                            print*,"in the main loop of energy_cproj, i have already done q but not mq!"
-                            print*, "ix_q, iy_q, iz_q =",ix_q, iy_q, iz_q
-                            print*, "ix_mq, iy_mq, iz_mq =",ix_mq, iy_mq, iz_mq
-                            error stop
-                        end if
-                    end if
-
-                    points_q_considere_en_vrai = points_q_considere_en_vrai +1
+                    if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq,iz_mq) ) cycle
 
                     q = [qx(ix_q), qy(iy_q), qz(iz_q)]
                     mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]
@@ -441,64 +421,12 @@ call cpu_time (time(9))
                                     ip2=p3%p(m,mup,mu)
                                     p3%foo_q(ip) = p3%foo_q(ip)  + deltarho_p_q(ip2)*R(m,mup,khi)
                                     p3%foo_mq(ip) = p3%foo_mq(ip) + deltarho_p_mq(ip2)*(-1)**m*R(m,mup,-khi)
-                            !!        ! p3%foo_mq(ip) = p3%foo_mq(ip) + deltarho_p_mq(ip2)*gshrot_mq(m,mup,khi)
-                                    ! if (q_eq_mq .and. p3%foo_q(ip)/=p3%foo_mq(ip)) then
-                                    !     print*, "q == mq mais pourtant p3%foo_q /= p3%foo_mq"
-                                    !     print*,m,khi,mu,ip,mup,ip2,p3%foo_q(ip),p3%foo_mq(ip)
-                                    !     error stop
-                                    ! end if
-
-                                    ! a = (-1)**m*gshrot(m,mup,-khi)
-                                    ! b = (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
-                                    ! c = gshrot_mq(m,mup,khi)
-                                    ! d = a-b
-                                    ! e = b-c
-
-                                    ! if (abs(e)>epsdp .or. abs(d)>epsdp) then
-                                    !     print*, "ix, iy, iz =", ix_q, iy_q, iz_q,"m,mup,mu=", m, mup, khi
-                                    !     print*, "q=", q
-                                    !     print*, "mq=", mq
-                                    !     print*, "gshrot(q,m,mup,khi)                 =", gshrot(m,mup,khi)
-                                    !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/1 =", (-1)**m*gshrot(m,mup,-khi)
-                                    !     print*, "gshrot(mq,m,mup,khi) par sym 1.23/2 =", (-1)**(m+mup+khi)*conjg(gshrot(m,-mup,khi))
-                                    !     print*, "gshrot(mq,m,mup,khi) brutal         =", gshrot_mq(m,mup,khi)
-                                    !     error stop "85643820"
-                                    ! end if
-
                                 end do
                             end do
                         end do
                     end do
                     deltarho_p_q = p3%foo_q
                     deltarho_p_mq = p3%foo_mq
-
-                    ! call rotate_to_molecular_frame ! does q and mq at the same time.
-
-
-                    ! if(any(deltarho_p_mq/=deltarho_p_mq)) then
-                    !     print*, "problem in deltarho_p_mq somewhere"
-                    !     do ip=1,np
-                    !         print*, ip, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, deltarho_p_mq(ip)
-                    !     end do
-                    !     error stop "yhrgvussnehfkil"
-                    ! end if
-                    ! if(any(deltarho_p_q/=deltarho_p_q)) then
-                    !     print*,"problem in deltarho_p_q somewhere"
-                    !     do iq=1,np
-                    !         print*, ip, ix_q, iy_q, iz_q, deltarho_p_q(ip)
-                    !     end do
-                    !     error stop "opiloyukiuskerg"
-                    ! end if
-
-
-                    ! if (q_eq_mq .and. any(deltarho_p_q/=deltarho_p_mq) ) then
-                    !     print*, "q = mq mais apres la rotation vers le molecular frame, on n'a plus deltarho_p_q=deltarho_p_mq"
-                    !     print*, "ix_q,iy_q,iz_q=", ix_q,iy_q,iz_q
-                    !     print*, "ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
-                    !     print*, "deltarho_p_q", deltarho_p_q
-                    !     print*, "deltarho_p_mq", deltarho_p_mq
-                    !     error stop "oijazd"
-                    ! end if
 
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for 200 values of |q|.
@@ -558,25 +486,10 @@ call cpu_time (time(9))
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
 
-                                ! if (q_eq_mq .and. any(gamma_p_q/=gamma_p_mq) ) then
-                                !     print*, "we have q=mq"
-                                !     print*, "for ix_q,iy_q,iz_q=",  ix_q, iy_q, iz_q
-                                !     print*, "and ix_mq,iy_mq,iz_mq=", ix_mq, iy_mq, iz_mq
-                                !     print*, "q=",q
-                                !     print*, "mq=",mq
-                                !     print*, "gamma_p_q=",gamma_p_q
-                                !     print*, "gamma_p_mq=",gamma_p_mq
-                                !     print*, "deltarho_p_q=",deltarho_p_q
-                                !     print*, "deltarho_p_mq=",deltarho_p_mq
-                                !     error stop "apzokdukhsf"
-                                ! end if
-
                             end do
                         end do
                     end do
-                    !
-                    ! if (any(gamma_p_q/=gamma_p_q)) error stop "gammapqijosuiheofij"
-                    ! if (any(gamma_p_mq/=gamma_p_mq)) error stop "ljsfkjhfksgrlkhh"
+
 
                     !
                     ! Rotation from molecular frame to fix laboratory (Fourier) frame
@@ -595,14 +508,6 @@ call cpu_time (time(9))
                                     p3%foo_q(ip) = p3%foo_q(ip)   + gamma_p_q(ip2)  *R(m,mup,khi)
                                     p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
                                     ! p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
-
-                                    ! if (q_eq_mq .and. p3%foo_q(ip)/=p3%foo_mq(ip)) then
-                                    !     print*, "q == mq mais pourtant p3%foo_q /= p3%foo_mq"
-                                    !     print*, "m,khi,mu,ip,mup,ip2,p3%foo_q(ip), p3%foo_mq(ip)"
-                                    !     print*,m,khi,mu,ip,mup,ip2,p3%foo_q(ip),p3%foo_mq(ip)
-                                    !     error stop
-                                    ! end if
-
                                 end do
                                 !
                             end do
@@ -613,39 +518,6 @@ call cpu_time (time(9))
 
 
 
-                    !
-                    ! if (any(gamma_p_q/=gamma_p_q)) error stop "oijjiuurkgserg"
-                    ! if (any(gamma_p_mq/=gamma_p_mq)) error stop "098123KJN"
-
-
-                    ! TOdo JE NE SAIS PAS JUSTIFIER POURQUOI FAUT RAJOTUER UN CONJG SI (VOIR IF CI DESSOUS) OMG OMG OMG OMG OMG
-
-        !             if (gamma_p_isok(ix_q,iy_q,iz_q).eqv..true. .and. any( abs(gamma_p(:,ix_q,iy_q,iz_q)-gamma_p_q(:))>epsdp )) then
-        !                 print*, "gamma(q) already been calculated for ix_q, iy_q, iz_q =",ix_q,iy_q,iz_q
-        !                 print*, "q=",q
-        !                 print*,'mq=',mq
-        !                 print*, "                        ip          m          mup          mu"
-        !                 do ip=1,np
-        !                     print*, "old gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_q,iy_q,iz_q)
-        !                     print*, "new gamma_p =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_q(ip)
-        !                     print*,
-        !                 end do
-        !                 error stop "jfhzoenfhsozk"
-        !             end if
-        !
-        ! if (gamma_p_isok(ix_mq,iy_mq,iz_mq).eqv..true.  .and. any( abs(gamma_p(:,ix_mq,iy_mq,iz_mq)-gamma_p_mq(:))>epsdp)) then
-        !                 print*, "gamma(q) already been calculated for ix_mq, iy_mq, iz_mq =",ix_mq,iy_mq,iz_mq
-        !                 print*, "mq=",mq
-        !                 print*,"q=",q
-        !                 print*, "                        ip          m          mup          mu"
-        !                 do ip=1,np
-        !                     print*, "old gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p(ip,ix_mq,iy_mq,iz_mq)
-        !                     print*, "new gamma_mq =",ip, p3%m(ip), p3%mup(ip), p3%mu(ip), gamma_p_mq(ip)
-        !                     print*,
-        !                 end do
-        !                 error stop "oihskdjhfkuhse"
-        !             end if
-
                     deltarho_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
@@ -655,15 +527,6 @@ call cpu_time (time(9))
                         deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
                     end if
                     gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
-
-                    ! if (any(gamma_p(:,ix_q,iy_q,iz_q)/=gamma_p(:,ix_q,iy_q,iz_q))) then
-                    !     print*, "I FOUND A NAN OR SOMETHING NASTY"
-                    !     print*, ix_q, iy_q, iz_q
-                    !     do ip=1,np
-                    !         print*, ip, deltarho_p(ip,ix_q,iy_q,iz_q), gamma_p(ip,ix_q,iy_q,iz_q)
-                    !     end do
-                    !     error stop "ihsdfuygfkhll"
-                    ! end if
 
                 end do
             end do
