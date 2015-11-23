@@ -62,10 +62,11 @@ module module_energy_cproj
     integer, allocatable :: tableof_ix_mq(:), tableof_iy_mq(:), tableof_iz_mq(:)
     real(dp), allocatable :: qx(:), qy(:), qz(:) ! vector q and its components tabulated
 
-    complex(dp), allocatable :: deltarho_p(:,:,:,:)
+    complex(dp), allocatable, target :: deltarho_p(:,:,:,:)
     complex(dp), allocatable :: deltarho_p_q(:)
     complex(dp), allocatable :: deltarho_p_mq(:)
-    complex(dp), allocatable :: gamma_p(:,:,:,:)
+    complex(dp), allocatable :: gamma_p_q(:)
+    complex(dp), allocatable :: gamma_p_mq(:)
 
     complex(dp), allocatable :: foo_theta_mup_mu(:,:,:) ! in fact foo_theta_mu_mup
 
@@ -117,7 +118,6 @@ contains
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, molrotsymorder
         integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq
-        complex(dp), allocatable :: gamma_p_q(:), gamma_p_mq(:)
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: q(3), mq(3)
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
@@ -164,14 +164,12 @@ call cpu_time (time(1))
         if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
 
 
-        if (.not. allocated (gamma_p_q) ) allocate (gamma_p_q(np), source=zeroc)
-        if (.not. allocated (gamma_p_mq) ) allocate (gamma_p_mq(np), source=zeroc)
-        if (.not. allocated (gamma_p) ) allocate (gamma_p(np,nx,ny,nz) ,source=zeroc)
-
         if (.not. allocated (deltarho_p) ) then
             allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
             allocate (deltarho_p_q(np) ,source=zeroc)
             allocate (deltarho_p_mq(np) ,source=zeroc)
+            allocate (gamma_p_q(np), source=zeroc)
+            allocate (gamma_p_mq(np), source=zeroc)
         end if
 
         if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
@@ -299,7 +297,7 @@ call cpu_time (time(4))
         end if
         if (.not. fft3d%plan_forward_ok) then
             call dfftw_plan_dft_3d( fft3d%plan_forward,&
-                                    nx, ny, nz, gamma_p(1,1:nx,1:ny,1:nz), gamma_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
+                    nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
             fft3d%plan_forward_ok = .true.
         end if
 
@@ -648,13 +646,13 @@ call cpu_time (time(9))
         !                 error stop "oihskdjhfkuhse"
         !             end if
 
-                    gamma_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
+                    deltarho_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
-                        gamma_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
                     else
-                        gamma_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
                     end if
                     gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
@@ -685,9 +683,9 @@ call cpu_time(time(11))
         ! FFT3D from Fourier space to real space
         !
         do ip=1,np
-            call dfftw_execute_dft( fft3d%plan_forward, gamma_p(ip,1:nx,1:ny,1:nz), gamma_p(ip,1:nx,1:ny,1:nz) )
+            call dfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
         end do
-        gamma_p=gamma_p/real(nx*ny*nz,dp)
+        deltarho_p=deltarho_p/real(nx*ny*nz,dp)
 
 call cpu_time(time(12))
 
@@ -699,8 +697,8 @@ call cpu_time(time(12))
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    df(ix,iy,iz,:,1) = -kT*dv*proj2euler( gamma_p(1:np,ix,iy,iz) )/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
-                    ff=ff +sum( df(ix,iy,iz,:,1)*(solvent(1)%density(ix,iy,iz,:)-rho0) ) /2._dp
+                df(ix,iy,iz,:,1) = -kT*dv*proj2euler( deltarho_p(1:np,ix,iy,iz) )/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
+                ff=ff +sum( df(ix,iy,iz,:,1)*(solvent(1)%density(ix,iy,iz,:)-rho0) ) /2._dp
                 end do
             end do
         end do
@@ -851,118 +849,27 @@ contains
         end subroutine read_ck_nonzero
 
         function euler2proj (foo_o) result (foo_p)
-            use module_rotation, only: harm_sph
             implicit none
             real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
             complex(dp) :: foo_p(1:grid%np)
-            integer :: itheta, iphi, ipsi, m, mup, mu, ip, mmax, molrotsymorder
-            ! complex(dp), allocatable :: test_explicit(:,:,:)
-            ! complex(dp), allocatable :: foo_theta_mup_mu_full(:,:,:)
-            ! complex(dp), allocatable :: proj_m_mup_mu(:,:,:)
-            mmax=grid%mmax
-            molrotsymorder=grid%molrotsymorder
-            foo_p = zeroc
+            integer :: itheta, iphi, ipsi, m, mup, mu, ip
             foo_theta_mup_mu = zeroc
-
-
-            ! allocate (foo_theta_mup_mu_full(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
-            ! allocate (test_explicit(ntheta,-mmax:mmax,-mmax:mmax), source=zeroc)
-            ! do itheta=1,ntheta
-            !     do mu=-mmax,mmax
-            !         do mup=-mmax,mmax
-            !             do ipsi=1,grid%npsi
-            !                 do iphi=1,grid%nphi
-            !                     test_explicit(itheta,mu,mup) = test_explicit(itheta,mu,mup)&
-            !                     +foo_o( grid%indo(itheta,iphi,ipsi) ) &
-            !                     *exp(ii*mup*grid%phiofnphi(iphi)) *exp(ii*mu*grid%psiofnpsi(ipsi))
-            !                 end do
-            !             end do
-            !         end do
-            !     end do
-            ! end do
-
-
+            foo_p = zeroc
             do itheta=1,ntheta
                 do iphi=1,nphi
                     do ipsi=1,npsi
                         fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
                     end do
                 end do
-                ! fft2d_c%in(:,:)=fft2d%in
                 call dfftw_execute (fft2d%plan)
-                ! call dfftw_execute (fft2d_c%plan)
-
-
-                ! do iphi=1,nphi
-                !     do ipsi=1,npsi/2+1
-                !         print*,ipsi,iphi, fft2d_c%out(ipsi,iphi), fft2d%out(ipsi,iphi)
-                !     end do
-                !     do ipsi=npsi/2+2,npsi
-                !         print*,ipsi,iphi,fft2d_c%out(ipsi,iphi)
-                !     end do
-                ! end do
-                foo_theta_mup_mu(itheta,0:mmax/molrotsymorder,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
-                foo_theta_mup_mu(itheta,0:mmax/molrotsymorder,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
-
-                ! foo_theta_mup_mu_full(itheta,0:mmax,0:mmax)     = fft2d_c%out(1:npsi/2+1, 1:nphi/2+1)
-                ! foo_theta_mup_mu_full(itheta,0:mmax,-mmax:-1)   = fft2d_c%out(1:npsi/2+1, nphi/2+2:)
-                ! foo_theta_mup_mu_full(itheta,-mmax:-1,0:mmax)   = fft2d_c%out(npsi/2+2:, 1:nphi/2+1)
-                ! foo_theta_mup_mu_full(itheta,-mmax:-1,-mmax:-1) = fft2d_c%out(npsi/2+2:, nphi/2+2:)
-
+                foo_theta_mup_mu(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
+                foo_theta_mup_mu(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
             end do
-            !
-            !
-            ! do itheta=1,ntheta
-            !     do mup=-mmax,mmax
-            !         do mu=-mmax,mmax
-            !             print*,"itheta, mup, mu =",itheta,mup,mu
-            !             print*,"explicit                      =",test_explicit(itheta,mu,mup)
-            !             print*,"foo_theta_mup_mu_full(itheta,mu,mup)=",foo_theta_mup_mu_full(itheta,mu,mup)
-            !             print*,"foo_theta_mup_mu_full reconstruit   =",(-1)**(-mup-mu)*conjg(foo_theta_mup_mu_full(itheta,-mu,-mup))," WWWW"
-            !             if(mu>=0) print*,"foo_theta_mup_mu(itheta,mu,mup)     =",foo_theta_mup_mu(itheta,mu,mup)
-            !             if(mu<0 ) print*,"foo_theta_mup_mu(itheta,mu,mup)     =",(-1)**(-mup-mu)*conjg(foo_theta_mup_mu(itheta,-mu,-mup))," reconstruit"
-            !             print*,
-            !         end do
-            !     end do
-            ! end do
-            ! print*, "loop itheta,mup,mu FINISHED"
-            ! print*,
-            !
-            ! allocate (proj_m_mup_mu(0:mmax,-mmax:mmax,-mmax:mmax), source=zeroc)
-            ! do m=0,mmax
-            !     do mup=-m,m
-            !         do mu=-m,m
-            !             do itheta=1,ntheta
-            !                 proj_m_mup_mu(m,mup,mu) = proj_m_mup_mu(m,mup,mu) +&
-            !                 foo_theta_mup_mu_full(itheta,mu,mup)*wtheta(itheta)*harm_sph(m,mup,mu,theta(itheta))*fm(m)
-            !             end do
-            !         end do
-            !     end do
-            ! end do
-
-            ! Check relation 1.7
-            ! do m=0,mmax
-            !     do mup=-m,m
-            !         do mu=-m,m
-            !             if (proj_m_mup_mu(m,-mup,-mu) - (-1)**(mup+mu)*conjg(proj_m_mup_mu(m,mup,mu)) /= zeroc) then
-            !                 print*, "Relation 1.7 is not satisfied"
-            !                 error stop
-            !             end if
-            !         end do
-            !     end do
-            ! end do
-
             do m=0,mmax
                 do mup=-m,m
-                    do mu=0,m,molrotsymorder
+                    do mu=0,m,2
                         ip = p3%p( m,mup,mu )
                         foo_p(ip)= sum(foo_theta_mup_mu(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
-                        ! if (abs(foo_p(ip)-proj_m_mup_mu(m,mup,mu))>epsilon(1._dp)) then
-                        !     print*, "foo_p(ip)/=proj_m_mup_mu(m,mup,mu)"
-                        !     print*, "foo_p(ip)         =",foo_p(ip)
-                        !     print*, "proj_m_mup_mu(m,mup,mu) =",proj_m_mup_mu(m,mup,mu)
-                        !     error stop
-                        ! end if
                     end do
                 end do
             end do
@@ -978,7 +885,7 @@ contains
             foo_o = zeroc
             do itheta=1,ntheta
                 do mup=-mmax,mmax
-                    do mu=0,mmax/molrotsymorder
+                    do mu=0,mmax,2
                         do m= MAX(ABS(mup),ABS(mu)), mmax
                             ip=p3%p(m,mup,mu)
                             foo_theta_mup_mu(itheta,mu,mup) = foo_theta_mup_mu(itheta,mu,mup)&
@@ -988,8 +895,8 @@ contains
                 end do
             end do
             do itheta=1,ntheta
-                ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mup_mu(itheta,:,0:mmax)   )
-                ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mup_mu(itheta,:,-mmax:-1) )
+                ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mup_mu(itheta,0:mmax,0:mmax)   )
+                ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mup_mu(itheta,0:mmax,-mmax:-1) )
                 call dfftw_execute( ifft2d%plan )
                 do iphi=1,nphi
                     do ipsi=1,npsi
@@ -1103,49 +1010,49 @@ contains
             end do
         end subroutine for_all_q_find_indices_of_mq
 
-        subroutine test_routines_calcul_de_Rm_mup_mu_q
-            !
-            ! ici test de la routine de Choi
-            !
-            implicit none
-                real(dp) :: qx, qy, qz
-                complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax), Rlu(0:mmax,-mmax:mmax,-mmax:mmax)
-                complex(dp), parameter :: ii=complex(0._dp,1._dp)
-                real(dp), parameter :: epsdp=epsilon(1._dp)
-                integer :: ix_q, iy_q, iz_q, m, mup, mu
-                do ix_q=1,nx
-                    do iy_q=1,ny
-                        do iz_q=1,nz
-                            qx=grid%kx(ix_q)
-                            qy=grid%ky(iy_q)
-                            qz=grid%kz(iz_q)
-                            R= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! exactement Luc
-                            Rlu= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! Lu
-                            do m=0,mmax
-                                do mup=-m,m
-                                    do mu=-m,m
-                                        if (abs(&
-                                            Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))&
-                                                >1E-10) then
-                                            print*, "dans test_routines_calcul_de_Rm_mup_mu_q on a Choi+Lu /= Wigner"
-                                            print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
-                                            print*, "qx qy qz", qx, qy, qz
-                                            print*, "m, mup, mu", m, mup, mu
-                                            print*, "Rlu(m,mup,mu)",Rlu(m,mup,mu)
-                                            print*, "harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))",&
-                                            harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))
-                                            print*, "diff=",&
-                                            abs(Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))
-                                            print*, "epsilon=",epsdp
-                                            error stop "oihjkkhblkuyuiykjhbkjhg76"
-                                        end if
-                                    end do
-                                end do
-                            end do
-                        end do
-                    end do
-                end do
-        end subroutine test_routines_calcul_de_Rm_mup_mu_q
+        ! subroutine test_routines_calcul_de_Rm_mup_mu_q
+        !     !
+        !     ! ici test de la routine de Choi
+        !     !
+        !     implicit none
+        !         real(dp) :: qx, qy, qz
+        !         complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax), Rlu(0:mmax,-mmax:mmax,-mmax:mmax)
+        !         complex(dp), parameter :: ii=complex(0._dp,1._dp)
+        !         real(dp), parameter :: epsdp=epsilon(1._dp)
+        !         integer :: ix_q, iy_q, iz_q, m, mup, mu
+        !         do ix_q=1,nx
+        !             do iy_q=1,ny
+        !                 do iz_q=1,nz
+        !                     qx=grid%kx(ix_q)
+        !                     qy=grid%ky(iy_q)
+        !                     qz=grid%kz(iz_q)
+        !                     R= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! exactement Luc
+        !                     Rlu= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! Lu
+        !                     do m=0,mmax
+        !                         do mup=-m,m
+        !                             do mu=-m,m
+        !                                 if (abs(&
+        !                                     Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))&
+        !                                         >1E-10) then
+        !                                     print*, "dans test_routines_calcul_de_Rm_mup_mu_q on a Choi+Lu /= Wigner"
+        !                                     print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
+        !                                     print*, "qx qy qz", qx, qy, qz
+        !                                     print*, "m, mup, mu", m, mup, mu
+        !                                     print*, "Rlu(m,mup,mu)",Rlu(m,mup,mu)
+        !                                     print*, "harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))",&
+        !                                     harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))
+        !                                     print*, "diff=",&
+        !                                     abs(Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))
+        !                                     print*, "epsilon=",epsdp
+        !                                     error stop "oihjkkhblkuyuiykjhbkjhg76"
+        !                                 end if
+        !                             end do
+        !                         end do
+        !                     end do
+        !                 end do
+        !             end do
+        !         end do
+        ! end subroutine test_routines_calcul_de_Rm_mup_mu_q
 
 
     end subroutine energy_cproj
