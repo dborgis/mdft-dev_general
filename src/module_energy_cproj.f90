@@ -68,7 +68,7 @@ module module_energy_cproj
     complex(dp), allocatable :: gamma_p_q(:)
     complex(dp), allocatable :: gamma_p_mq(:)
 
-    complex(dp), allocatable :: foo_theta_mup_mu(:,:,:) ! in fact foo_theta_mu_mup
+    complex(dp), allocatable :: foo_theta_mu_mup(:,:,:) ! in fact foo_theta_mu_mup
 
 
     type :: p3_type
@@ -132,8 +132,8 @@ call cpu_time (time(1))
         if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(grid%npsi/2+1,grid%nphi))
         if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(grid%npsi,grid%nphi))
 
-        if (.not. allocated( foo_theta_mup_mu) ) &
-            allocate (foo_theta_mup_mu(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax))
+        if (.not. allocated( foo_theta_mu_mup) ) &
+            allocate (foo_theta_mu_mup(1:grid%ntheta,0:grid%mmax/grid%molrotsymorder,-grid%mmax:grid%mmax))
 
         lx=grid%lx
         ly=grid%ly
@@ -575,12 +575,72 @@ end do
 contains
 
 
+    function euler2proj_h2o (foo_o) result (foo_p)
+        implicit none
+        real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
+        complex(dp) :: foo_p(1:grid%np)
+        integer :: itheta, iphi, ipsi, m, mup, mu, ip
+        foo_theta_mu_mup = zeroc
+        foo_p = zeroc
+        do itheta=1,ntheta
+            do iphi=1,nphi
+                do ipsi=1,npsi
+                    fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
+                end do
+            end do
+            call dfftw_execute (fft2d%plan)
+            foo_theta_mu_mup(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
+            foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
+        end do
+        do m=0,mmax
+            do mup=-m,m
+                do mu=0,m,2
+                    ip = p3%p( m,mup,mu )
+                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
+                end do
+            end do
+        end do
+
+    end function euler2proj_h2o
+
+
+    function proj2euler_h2o (foo_p) result (foo_o)
+        implicit none
+        real(dp) :: foo_o (1:grid%no)
+        complex(dp), intent(in) :: foo_p(1:grid%np)
+        foo_theta_mu_mup = zeroc
+        foo_o = zeroc
+        do itheta=1,ntheta
+            do mup=-mmax,mmax
+                do mu=0,mmax,2
+                    do m= MAX(ABS(mup),ABS(mu)), mmax
+                        ip=p3%p(m,mup,mu)
+                        foo_theta_mu_mup(itheta,mu,mup) = foo_theta_mu_mup(itheta,mu,mup)&
+                        +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
+                    end do
+                end do
+            end do
+        end do
+        do itheta=1,ntheta
+            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax,0:mmax)   )
+            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) )
+            call dfftw_execute( ifft2d%plan )
+            do iphi=1,nphi
+                do ipsi=1,npsi
+                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
+                end do
+            end do
+        end do
+    end function proj2euler_h2o
+
+
+
         function euler2proj (foo_o) result (foo_p)
             implicit none
             real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
             complex(dp) :: foo_p(1:grid%np)
             integer :: itheta, iphi, ipsi, m, mup, mu, ip
-            foo_theta_mup_mu = zeroc
+            foo_theta_mu_mup = zeroc
             foo_p = zeroc
             do itheta=1,ntheta
                 do iphi=1,nphi
@@ -589,14 +649,14 @@ contains
                     end do
                 end do
                 call dfftw_execute (fft2d%plan)
-                foo_theta_mup_mu(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
-                foo_theta_mup_mu(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
+                foo_theta_mu_mup(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
+                foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
             end do
             do m=0,mmax
                 do mup=-m,m
                     do mu=0,m,2
                         ip = p3%p( m,mup,mu )
-                        foo_p(ip)= sum(foo_theta_mup_mu(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
+                        foo_p(ip)= sum(foo_theta_mu_mup(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
                     end do
                 end do
             end do
@@ -608,22 +668,22 @@ contains
             implicit none
             real(dp) :: foo_o (1:grid%no)
             complex(dp), intent(in) :: foo_p(1:grid%np)
-            foo_theta_mup_mu = zeroc
+            foo_theta_mu_mup = zeroc
             foo_o = zeroc
             do itheta=1,ntheta
                 do mup=-mmax,mmax
                     do mu=0,mmax,2
                         do m= MAX(ABS(mup),ABS(mu)), mmax
                             ip=p3%p(m,mup,mu)
-                            foo_theta_mup_mu(itheta,mu,mup) = foo_theta_mup_mu(itheta,mu,mup)&
+                            foo_theta_mu_mup(itheta,mu,mup) = foo_theta_mu_mup(itheta,mu,mup)&
                             +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
                         end do
                     end do
                 end do
             end do
             do itheta=1,ntheta
-                ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mup_mu(itheta,0:mmax,0:mmax)   )
-                ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mup_mu(itheta,0:mmax,-mmax:-1) )
+                ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax,0:mmax)   )
+                ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) )
                 call dfftw_execute( ifft2d%plan )
                 do iphi=1,nphi
                     do ipsi=1,npsi
