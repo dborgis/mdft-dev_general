@@ -575,142 +575,6 @@ end do
 contains
 
 
-
-
-        subroutine read_ck_nonzero
-            implicit none
-            integer :: i, na, iq, m, n, mu, nu, khi, ia, nq
-            character(3) :: somechar
-            integer :: ufile, ios, mmax
-            character(65) :: filename
-
-            if (cq%isok) return
-            nq=cq%nq
-            if (.not.allocated(cq%normq)) allocate(cq%normq(nq), source=0._dp)
-            mmax=grid%mmax
-
-            select case (mmax)
-            case (0)
-                na = 1
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax0_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (1)
-                na = 6
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax1_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (2)
-                na = 75
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax2_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (3)
-                na = 252
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax3_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (4)
-                na = 877
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax4_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (5)
-                na = 2002
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax5_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case default
-                print*, "In module_energy_cproj, you want mmax>5. I cant read the corresponding file."
-                error stop
-            end select
-
-
-            ! i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
-          !  if (na/=i) then
-          !      print*, "in read_ck_cproj nalpha est bizarre"
-          !      print*, "na=",na
-          !      print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
-          !      ! error stop
-          !  end if
-
-            ! i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
-          !  if (na/=i) then
-          !      print*, "in read ck na /= nalpha"
-          !      print*, "na=",na
-          !      print*, "bruteforce=",i
-          !      ! error stop
-          !  end if
-
-            if (allocated(ck) .and. .not.cq%isok) then
-                print*, "ck is already allocated but .not. cq%isok"
-                error stop
-            end if
-
-            if (.not.allocated( cq%m)) then
-                allocate ( cq%m(na) ,source=-huge(1))
-                allocate ( cq%n(na) ,source=-huge(1))
-                allocate ( cq%mu(na) ,source=-huge(1))
-                allocate ( cq%nu(na) ,source=-huge(1))
-                allocate ( cq%khi(na) ,source=-huge(1))
-                allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
-            end if
-            !
-            ! Skip 10 lines of comments
-            !
-            do i=1,10
-                read(ufile,*)
-            end do
-
-            read(ufile,*) somechar
-            read(ufile,*) somechar, cq%m
-            read(ufile,*) somechar, cq%n
-            read(ufile,*) somechar, cq%mu
-            read(ufile,*) somechar, cq%nu
-            read(ufile,*) somechar, cq%khi
-            read(ufile,*)
-
-
-            do ia=1,na
-                m = cq%m(ia)
-                n = cq%n(ia)
-                mu = cq%mu(ia)
-                nu = cq%nu(ia)
-                khi = cq%khi(ia)
-                cq%a(m,n,mu,nu,khi) = ia
-            end do
-
-            allocate( ck(na,nq), source=zeroc)
-            do iq=1,nq
-                read(ufile,*) cq%normq(iq), ck(:,iq)
-            end do
-            close(ufile)
-            cq%dq = cq%normq(2)
-
-            deallocate (cq%m, cq%n, cq%mu, cq%nu, cq%khi)
-            cq%isok=.true.
-            cq%na=na
-            cq%nq=nq
-        end subroutine read_ck_nonzero
-
         function euler2proj (foo_o) result (foo_p)
             implicit none
             real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
@@ -916,6 +780,140 @@ contains
         !             end do
         !         end do
         ! end subroutine test_routines_calcul_de_Rm_mup_mu_q
+
+        subroutine read_ck_nonzero
+            implicit none
+            integer :: i, na, iq, m, n, mu, nu, khi, ia, nq
+            character(3) :: somechar
+            integer :: ufile, ios, mmax
+            character(65) :: filename
+
+            if (cq%isok) return
+            nq=cq%nq
+            if (.not.allocated(cq%normq)) allocate(cq%normq(nq), source=0._dp)
+            mmax=grid%mmax
+
+            select case (mmax)
+            case (0)
+                na = 1
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax0_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
+            case (1)
+                na = 6
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax1_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
+            case (2)
+                na = 75
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax2_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
+            case (3)
+                na = 252
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax3_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
+            case (4)
+                na = 877
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax4_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
+            case (5)
+                na = 2002
+                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax5_ml"
+                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+                if ( ios /= 0 ) then
+                    print*, "Cant open file", filename
+                    error stop "in module_energy_cproj.f90"
+                end if
+            case default
+                print*, "In module_energy_cproj, you want mmax>5. I cant read the corresponding file."
+                error stop
+            end select
+
+
+            ! i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
+          !  if (na/=i) then
+          !      print*, "in read_ck_cproj nalpha est bizarre"
+          !      print*, "na=",na
+          !      print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
+          !      ! error stop
+          !  end if
+
+            ! i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
+          !  if (na/=i) then
+          !      print*, "in read ck na /= nalpha"
+          !      print*, "na=",na
+          !      print*, "bruteforce=",i
+          !      ! error stop
+          !  end if
+
+            if (allocated(ck) .and. .not.cq%isok) then
+                print*, "ck is already allocated but .not. cq%isok"
+                error stop
+            end if
+
+            if (.not.allocated( cq%m)) then
+                allocate ( cq%m(na) ,source=-huge(1))
+                allocate ( cq%n(na) ,source=-huge(1))
+                allocate ( cq%mu(na) ,source=-huge(1))
+                allocate ( cq%nu(na) ,source=-huge(1))
+                allocate ( cq%khi(na) ,source=-huge(1))
+                allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+            end if
+            !
+            ! Skip 10 lines of comments
+            !
+            do i=1,10
+                read(ufile,*)
+            end do
+
+            read(ufile,*) somechar
+            read(ufile,*) somechar, cq%m
+            read(ufile,*) somechar, cq%n
+            read(ufile,*) somechar, cq%mu
+            read(ufile,*) somechar, cq%nu
+            read(ufile,*) somechar, cq%khi
+            read(ufile,*)
+
+
+            do ia=1,na
+                m = cq%m(ia)
+                n = cq%n(ia)
+                mu = cq%mu(ia)
+                nu = cq%nu(ia)
+                khi = cq%khi(ia)
+                cq%a(m,n,mu,nu,khi) = ia
+            end do
+
+            allocate( ck(na,nq), source=zeroc)
+            do iq=1,nq
+                read(ufile,*) cq%normq(iq), ck(:,iq)
+            end do
+            close(ufile)
+            cq%dq = cq%normq(2)
+
+            deallocate (cq%m, cq%n, cq%mu, cq%nu, cq%khi)
+            cq%isok=.true.
+            cq%na=na
+            cq%nq=nq
+        end subroutine read_ck_nonzero
 
 
     end subroutine energy_cproj
