@@ -46,7 +46,7 @@ contains
         use module_input, only: getinput
         implicit none
         real(dp), parameter :: twopi=2._dp*acos(-1._dp)
-        integer :: io, m, mup, mu
+        integer :: io, m, mup, mu, mmax, err, i, itheta, iphi, ipsi
 
         if (grid%isinitiated) then
             print*, "Dans init_grid, c'est bizarre. On veut initialiser le type derivé grid mais il semble deja initialisé"
@@ -106,43 +106,40 @@ contains
         allocate( grid%wthetaofntheta(grid%ntheta), source=0._dp)
         allocate( grid%w(grid%no) , source=0._dp)
         allocate( grid%thetaofntheta(grid%ntheta), source=0._dp) ! itheta => theta
-        block
-            integer :: err, io, i, itheta, iphi, ipsi
-            allocate( grid%phiofnphi(grid%nphi), grid%psiofnpsi(grid%npsi) )
-            allocate( grid%wphiofnphi(grid%nphi) )
-            allocate( grid%wpsiofnpsi(grid%npsi) )
-            grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
-            grid%wpsiofnpsi = 1._dp/real(grid%npsi,dp)
-            grid%psiofnpsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
-            grid%phiofnphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
-            call gauss_legendre( grid%ntheta, grid%thetaofntheta, grid%wthetaofntheta, err)
-            if (err /= 0) error stop "problem in gauss_legendre"
-            grid%thetaofntheta = acos(grid%thetaofntheta)
-            allocate( grid%indo(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
-            io = 0
-            do itheta = 1, grid%ntheta
-                do iphi = 1, grid%nphi
-                    do ipsi = 1, grid%npsi
-                        io = io+1
-                        grid%theta(io) = grid%thetaofntheta(itheta)
-                        grid%phi(io) = grid%phiofnphi(iphi)
-                        grid%psi(io) = grid%psiofnpsi(ipsi)
-                        grid%indo(itheta,iphi,ipsi) = io
-                        grid%wtheta(io) = grid%wthetaofntheta(itheta)
-                        grid%wphi(io) = grid%wphiofnphi(iphi)
-                        grid%wpsi(io) = grid%wpsiofnpsi(ipsi)
-                        grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io) *quadrature_norm
-                    end do
+        allocate( grid%phiofnphi(grid%nphi), grid%psiofnpsi(grid%npsi) )
+        allocate( grid%wphiofnphi(grid%nphi) )
+        allocate( grid%wpsiofnpsi(grid%npsi) )
+        grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
+        grid%wpsiofnpsi = 1._dp/real(grid%npsi*grid%molrotsymorder,dp)
+        grid%psiofnpsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
+        grid%phiofnphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
+        call gauss_legendre( grid%ntheta, grid%thetaofntheta, grid%wthetaofntheta, err)
+        if (err /= 0) error stop "problem in gauss_legendre"
+        grid%thetaofntheta = acos(grid%thetaofntheta)
+        allocate( grid%indo(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
+        io = 0
+        do itheta = 1, grid%ntheta
+            do iphi = 1, grid%nphi
+                do ipsi = 1, grid%npsi
+                    io = io+1
+                    grid%theta(io) = grid%thetaofntheta(itheta)
+                    grid%phi(io) = grid%phiofnphi(iphi)
+                    grid%psi(io) = grid%psiofnpsi(ipsi)
+                    grid%indo(itheta,iphi,ipsi) = io
+                    grid%wtheta(io) = grid%wthetaofntheta(itheta)
+                    grid%wphi(io) = grid%wphiofnphi(iphi)
+                    grid%wpsi(io) = grid%wpsiofnpsi(ipsi)
+                    grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io) *quadrature_norm
                 end do
             end do
-        end block
+        end do
 
 
-        if (abs(sum(grid%w)-quadrature_norm)>1.e-10) then
+        if (abs(sum(grid%w)-quadrature_norm/grid%molrotsymorder)>1.e-10) then
             print*, "In module_grid.f90, I am checking the normalization of the angular quadrature"
             print*, "The sum of all quadrature weights is", sum(grid%w)
             print*, "It should be ", quadrature_norm
-            print*, "deviation to reference value is", abs(sum(grid%w)-quadrature_norm)
+            print*, "deviation to reference value is", abs(sum(grid%w)-quadrature_norm/grid%molrotsymorder)
             print*, "I fixed the error acceptance to", 1.e-10
             error stop
         end if
@@ -154,8 +151,11 @@ contains
         end do
         close(56)
 
-        print*, "   mmax =",int(grid%mmax,1),"and molrotsymorder =",int(grid%molrotsymorder,1)
-        print*, "=>",grid%no,"orientations and",grid%np,"projections of the density"
+        mmax=grid%mmax
+        print*, "   mmax =",int(grid%mmax,1)," => redondant orientations =", (mmax+1)*(2*mmax+1)**2,&
+            " => redondant projections =", sum( [( [( [( 1 ,mu=-m,m)], mup=-m,m)], m=0,grid%mmax)] )
+        print*, "   molrotsymorder =",int(grid%molrotsymorder,1)
+        print*, "   =>",grid%no,"orientations and",grid%np,"projections"
         print*, "   θ φ ψ:",int([grid%ntheta,grid%nphi,grid%npsi],1)
         print*, "===== Grid ====="
 
