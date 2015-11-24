@@ -563,67 +563,6 @@ end do
 
 contains
 
-
-    function euler2proj_h2o (foo_o) result (foo_p)
-        implicit none
-        real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
-        complex(dp) :: foo_p(1:grid%np)
-        integer :: itheta, iphi, ipsi, m, mup, mu, ip
-        foo_theta_mu_mup = zeroc
-        do itheta=1,ntheta
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
-                end do
-            end do
-            call dfftw_execute (fft2d%plan)
-            foo_theta_mu_mup(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
-            foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
-        end do
-        foo_p = zeroc
-        do m=0,mmax
-            do mup=-m,m
-                do mu=0,m,2
-                    ip = p3%p( m,mup,mu )
-                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
-                end do
-            end do
-        end do
-
-    end function euler2proj_h2o
-
-
-    function proj2euler_h2o (foo_p) result (foo_o)
-        implicit none
-        real(dp) :: foo_o (1:grid%no)
-        complex(dp), intent(in) :: foo_p(1:grid%np)
-        foo_theta_mu_mup = zeroc
-        foo_o = zeroc
-        do itheta=1,ntheta
-            do mup=-mmax,mmax
-                do mu=0,mmax,2
-                    do m= MAX(ABS(mup),ABS(mu)), mmax
-                        ip=p3%p(m,mup,mu)
-                        foo_theta_mu_mup(itheta,mu,mup) = foo_theta_mu_mup(itheta,mu,mup)&
-                        +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
-                    end do
-                end do
-            end do
-        end do
-        do itheta=1,ntheta
-            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax,0:mmax)   )
-            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) )
-            call dfftw_execute( ifft2d%plan )
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
-                end do
-            end do
-        end do
-    end function proj2euler_h2o
-
-
-
         function euler2proj (foo_o) result (foo_p)
             implicit none
             real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
