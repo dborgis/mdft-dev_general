@@ -10,7 +10,7 @@ module module_energy_cproj
     private
 
     !
-    ! FFTW3 header - modern (f03) version. Expects iso_c_binding
+    ! FFTW3 header - modern (fortran 2003) version. Expects iso_c_binding
     !
     include 'fftw3.f03'
 
@@ -44,12 +44,6 @@ module module_energy_cproj
     complex(dp), allocatable :: ck(:,:)
 
     real(dp), allocatable :: fm(:)
-    !
-    ! type :: fft2d_c_type
-    !     type(c_ptr) :: plan
-    !     complex(c_double), allocatable :: in(:,:), out(:,:)
-    ! end type fft2d_c_type
-    ! type (fft2d_c_type) :: fft2d_c
 
     type :: fft3d_c_type
         type(c_ptr) :: plan_forward
