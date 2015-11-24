@@ -215,7 +215,7 @@ call cpu_time (time(2))
                 print*, "tabulated m, mup or mu have incorrect values"
                 error stop
             end if
-            stop "police"
+
             !
             ! Print all projections that will be kept in memory
             !
@@ -228,6 +228,7 @@ call cpu_time (time(2))
             end do
             close(11)
         end if
+
 call cpu_time (time(3))
 
 
@@ -251,7 +252,6 @@ call cpu_time (time(3))
         ! TOdo: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
         ! call test_routines_calcul_de_Rm_mup_mu_q
-
         if (.not. allocated(p3%harm_sph)) then
             allocate ( p3%harm_sph(1:ntheta, 1:np) ,source=0._dp)
             do p=1,np
@@ -263,6 +263,7 @@ call cpu_time (time(3))
                 end do
             end do
         end if
+
 call cpu_time (time(4))
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -404,11 +405,11 @@ call cpu_time (time(9))
                     p3%foo_mq = zeroc
                     do m=0,mmax
                         do khi=-m,m
-                            do mu=0,m
-                                ip=p3%p(m,khi,mu)
+                            do mu=0,m,mrso
+                                ip=p3%p(m,khi,mu/mrso)
                                 ! Equation 1.22
                                 do mup=-m,m
-                                    ip2=p3%p(m,mup,mu)
+                                    ip2=p3%p(m,mup,mu/mrso)
                                     p3%foo_q(ip) = p3%foo_q(ip)  + deltarho_p_q(ip2)*R(m,mup,khi)
                                     p3%foo_mq(ip) = p3%foo_mq(ip) + deltarho_p_mq(ip2)*(-1)**m*R(m,mup,-khi)
                                 end do
@@ -445,18 +446,16 @@ call cpu_time (time(9))
                     do khi=-mmax,mmax
                         do m=abs(khi),mmax
                             do mu=0,m,mrso ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
-                                if (mod(mu,2) /= 0) cycle
 
                                 gamma_m_khi_mu_q= zeroc
                                 gamma_m_khi_mu_mq = zeroc
 
                                 do n=abs(khi),mmax
-                                    do nu=-n,n,mrso
-                                        if (mod(nu,2) /=0) cycle ! don't threat cases where c is (0,0) for instance all nu even in water (molrotsymorder==2)
+                                    do nu= -mrso*(n/mrso), mrso*(n/mrso), mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
 
                                         ia = cq%a(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
 
-                                        ip = p3%p(n,khi,abs(nu))
+                                        ip = p3%p(n,khi,abs(nu)/mrso)
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
@@ -472,7 +471,7 @@ call cpu_time (time(9))
                                 if (gamma_m_khi_mu_q/=gamma_m_khi_mu_q) error stop "jhwdlijweflkhwke"
                                 if (gamma_m_khi_mu_mq/=gamma_m_khi_mu_mq) error stop "lijsfdkuglserhk"
 
-                                ip=p3%p(m,khi,mu)
+                                ip=p3%p(m,khi,mu/mrso)
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
 
@@ -490,11 +489,11 @@ call cpu_time (time(9))
                     p3%foo_mq = zeroc
                     do m=0,mmax
                         do mup=-m,m
-                            do mu=0,m
-                                ip=p3%p(m,mup,mu)
+                            do mu=0,m,mrso
+                                ip=p3%p(m,mup,mu/mrso)
                                 ! Equation 1.22
                                 do khi=-m,m
-                                    ip2=p3%p(m,khi,mu)
+                                    ip2=p3%p(m,khi,mu/mrso)
                                     p3%foo_q(ip) = p3%foo_q(ip)   + gamma_p_q(ip2)  *R(m,mup,khi)
                                     p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
                                     ! p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
@@ -565,7 +564,7 @@ end do
 contains
 
 
-    function euler2proj_h2o (foo_o) result (foo_p)
+    function euler2proj (foo_o) result (foo_p)
         implicit none
         real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
         complex(dp) :: foo_p(1:grid%np)
@@ -578,23 +577,23 @@ contains
                 end do
             end do
             call dfftw_execute (fft2d%plan)
-            foo_theta_mu_mup(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
-            foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
+            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
+            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
         end do
         foo_p = zeroc
         do m=0,mmax
             do mup=-m,m
-                do mu=0,m,2
-                    ip = p3%p( m,mup,mu )
-                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
+                do mu=0,m,mrso
+                    ip = p3%p( m,mup,mu/mrso )
+                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
                 end do
             end do
         end do
 
-    end function euler2proj_h2o
+    end function euler2proj
 
 
-    function proj2euler_h2o (foo_p) result (foo_o)
+    function proj2euler (foo_p) result (foo_o)
         implicit none
         real(dp) :: foo_o (1:grid%no)
         complex(dp), intent(in) :: foo_p(1:grid%np)
@@ -602,18 +601,18 @@ contains
         foo_o = zeroc
         do itheta=1,ntheta
             do mup=-mmax,mmax
-                do mu=0,mmax,2
-                    do m= MAX(ABS(mup),ABS(mu)), mmax
-                        ip=p3%p(m,mup,mu)
-                        foo_theta_mu_mup(itheta,mu,mup) = foo_theta_mu_mup(itheta,mu,mup)&
+                do mu=0,mmax,mrso
+                    do m= max(abs(mup),abs(mu)), mmax
+                        ip=p3%p(m,mup,mu/mrso)
+                        foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
                         +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
                     end do
                 end do
             end do
         end do
         do itheta=1,ntheta
-            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax,0:mmax)   )
-            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) )
+            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
+            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
             call dfftw_execute( ifft2d%plan )
             do iphi=1,nphi
                 do ipsi=1,npsi
@@ -621,67 +620,9 @@ contains
                 end do
             end do
         end do
-    end function proj2euler_h2o
+    end function proj2euler
 
 
-
-        function euler2proj (foo_o) result (foo_p)
-            implicit none
-            real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
-            complex(dp) :: foo_p(1:grid%np)
-            integer :: itheta, iphi, ipsi, m, mup, mu, ip
-            foo_theta_mu_mup = zeroc
-            foo_p = zeroc
-            do itheta=1,ntheta
-                do iphi=1,nphi
-                    do ipsi=1,npsi
-                        fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
-                    end do
-                end do
-                call dfftw_execute (fft2d%plan)
-                foo_theta_mu_mup(itheta,0:mmax,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
-                foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
-            end do
-            do m=0,mmax
-                do mup=-m,m
-                    do mu=0,m,2
-                        ip = p3%p( m,mup,mu )
-                        foo_p(ip)= sum(foo_theta_mu_mup(:,mu,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
-                    end do
-                end do
-            end do
-
-        end function euler2proj
-
-
-        function proj2euler (foo_p) result (foo_o)
-            implicit none
-            real(dp) :: foo_o (1:grid%no)
-            complex(dp), intent(in) :: foo_p(1:grid%np)
-            foo_theta_mu_mup = zeroc
-            foo_o = zeroc
-            do itheta=1,ntheta
-                do mup=-mmax,mmax
-                    do mu=0,mmax,2
-                        do m= MAX(ABS(mup),ABS(mu)), mmax
-                            ip=p3%p(m,mup,mu)
-                            foo_theta_mu_mup(itheta,mu,mup) = foo_theta_mu_mup(itheta,mu,mup)&
-                            +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
-                        end do
-                    end do
-                end do
-            end do
-            do itheta=1,ntheta
-                ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax,0:mmax)   )
-                ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax,-mmax:-1) )
-                call dfftw_execute( ifft2d%plan )
-                do iphi=1,nphi
-                    do ipsi=1,npsi
-                        foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
-                    end do
-                end do
-            end do
-        END FUNCTION proj2euler
 
         subroutine for_all_q_find_indices_of_mq
             !

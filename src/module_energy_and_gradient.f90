@@ -61,7 +61,7 @@ contains
         f  = zerodp
         df = zerodp
         df_loc = zerodp
-        df_loc2=zerodp
+        ! df_loc2=zerodp
 
         print*,
 
@@ -76,25 +76,25 @@ contains
                 df = df + df_loc
             end if
             if (solvent(s)%do%exc_cs) then
-                call cpu_time(t(3))
-                call energy_cs (ff%exc_cs, df_loc)
-                call cpu_time(t(4))
-                print*, "ff%exc_cs        =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
-                ! f = f + ff%exc_cs
-                ! df = df + df_loc
-                df_loc2=df_loc2+df_loc
+                ! call cpu_time(t(3))
+                ! call energy_cs (ff%exc_cs, df_loc)
+                ! call cpu_time(t(4))
+                ! print*, "ff%exc_cs        =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
+                ! ! f = f + ff%exc_cs
+                ! ! df = df + df_loc
+                ! df_loc2=df_loc2+df_loc
             end if
             if (solvent(s)%do%exc_cdeltacd) then
-                call cpu_time(t(5))
-                call energy_cdeltacd (ff%exc_cdeltacd, df_loc)
-                call cpu_time(t(6))
-                print*, "ff%exc_cdeltacd  =", ff%exc_cdeltacd, "and norm2@df_exc_cdeltacd=",norm2(df_loc),"in",t(6)-t(5),"sec"
-                ! f = f + ff%exc_cdeltacd
-                ! df = df + df_loc
-                df_loc2=df_loc2+df_loc
+                ! call cpu_time(t(5))
+                ! call energy_cdeltacd (ff%exc_cdeltacd, df_loc)
+                ! call cpu_time(t(6))
+                ! print*, "ff%exc_cdeltacd  =", ff%exc_cdeltacd, "and norm2@df_exc_cdeltacd=",norm2(df_loc),"in",t(6)-t(5),"sec"
+                ! ! f = f + ff%exc_cdeltacd
+                ! ! df = df + df_loc
+                ! df_loc2=df_loc2+df_loc
             end if
 
-            print*, "cs + cdelta+ cd  =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
+            ! print*, "cs + cdelta+ cd  =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
 
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
@@ -104,6 +104,7 @@ contains
                 case (1)
                     call energy_cproj (ff%exc_cproj, df_loc)
                 case default
+                    print*, "=========================================> calling mrso"
                     call energy_cproj_mrso (ff%exc_cproj, df_loc)
                 end select
                 call cpu_time(t(8))
