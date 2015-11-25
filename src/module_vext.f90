@@ -218,6 +218,7 @@ contains
                 END DO
             END IF
         END DO
+        deallocate (rblock)
     end subroutine prevent_numerical_catastrophes
 
     subroutine vext_hard_walls

@@ -45,7 +45,7 @@ contains
         real(dp), intent(out) :: f
         real(dp), intent(out) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         real(dp) :: df_loc (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
-        real(dp) :: df_loc2(grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
+        ! real(dp) :: df_loc2(grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         real(dp), parameter :: zerodp=0._dp
         real :: t(10)
         real(dp) :: fold
@@ -56,6 +56,12 @@ contains
             error stop
         end if
         ns = solvent(1)%nspec
+
+        if (allocated (solvent(1)%vextq)) then
+            do s=1,ns
+                deallocate (solvent(s)%vextq)
+            end do
+        end if
 
         fold=f
         f  = zerodp
