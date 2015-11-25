@@ -508,7 +508,6 @@ call cpu_time (time(9))
                     gamma_p_mq = p3%foo_mq
 
 
-
                     deltarho_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
@@ -598,13 +597,13 @@ contains
     function proj2euler (foo_p) result (foo_o)
         implicit none
         real(dp) :: foo_o (1:grid%no)
-        complex(dp), intent(in) :: foo_p(1:grid%np)
+        complex(dp), intent(in) :: foo_p(:) ! np
         foo_theta_mu_mup = zeroc
         foo_o = zeroc
-        do itheta=1,ntheta
-            do mup=-mmax,mmax
-                do mu=0,mmax,mrso
-                    do m= max(abs(mup),abs(mu)), mmax
+        do mup=-mmax,mmax
+            do mu=0,mmax,mrso
+                do m= max(abs(mup),abs(mu)), mmax
+                    do itheta=1,ntheta
                         ip=p3%p(m,mup,mu/mrso)
                         foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
                         +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
