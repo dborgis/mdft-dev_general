@@ -603,8 +603,8 @@ contains
         do mup=-mmax,mmax
             do mu=0,mmax,mrso
                 do m= max(abs(mup),abs(mu)), mmax
+                    ip=p3%p(m,mup,mu/mrso)
                     do itheta=1,ntheta
-                        ip=p3%p(m,mup,mu/mrso)
                         foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
                         +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
                     end do
