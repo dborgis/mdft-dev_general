@@ -214,13 +214,23 @@ contains
         integer(i2b) :: l,l1,m,m1,m1min,k
         real(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: a,b,c,d
         real(dp), dimension(-1:2*mmax+1) :: rac
+        real(dp), parameter :: zerodp=0._dp
+        complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
+
+        a=zerodp
+        b=zerodp
+        c=zerodp
+        d=zerodp
+        f=zeroc
+        g=zeroc
+        R=zeroc
 
         ! prepare coefficients
         rac(-1)=0._dp
         do k=0,2*mmax+1
             rac(k)=sqrt(real(k,dp))
         end do
-        a = 0._dp; b = 0._dp; c = 0._dp; d = 0._dp
+
         if (mmax /= 0) then
             do l=1,mmax; do m=-l,l
                 do m1=-l+1,l-1
@@ -332,12 +342,13 @@ contains
                     f(l,m,m1)=d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))
                     g(l,m,m1)=d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))
                 else
-                    f(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*f(l1,m,m1-1)-g(1,0,+1)*g(l1,m,m1-1))+         &
-                    d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))+   &
-                    d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
-                    g(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*g(l1,m,m1-1)+g(1,0,+1)*f(l1,m,m1-1))+         &
-                    d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))+   &
-                    d(l,-m,m1)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
+                    f(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*f(l1,m,m1-1)-g(1,0,+1)*g(l1,m,m1-1))+   &
+                        d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))+   &
+                        d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
+
+                    g(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*g(l1,m,m1-1)+g(1,0,+1)*f(l1,m,m1-1))+   &
+                        d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))+   &
+                        d(l,-m,m1)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
                 end if
                 f(l,-m,-m1)=(-1)**(m+m1)*f(l,m,m1)
                 g(l,-m,-m1)=-(-1)**(m+m1)*g(l,m,m1)
