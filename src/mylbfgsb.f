@@ -4432,7 +4432,7 @@ c  or “3-clause license”)
 c  Please read attached file License.txt
 c
       subroutine timer(ttime)
-      double precision ttime
+      double precision, intent(out) :: ttime
 c
 c
 c     This routine computes cpu time in double precision; it makes use of
