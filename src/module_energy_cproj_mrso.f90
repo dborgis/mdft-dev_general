@@ -430,10 +430,15 @@ call cpu_time (time(9))
                     ! Consider the case of Pz(k=0). In cdeltacd, we impose it is zeroc because it is non defined. Here we do
                     ! the equivalent. One can show Pz(k=0) is equivalent to projection 100 of deltarho
                     !
-                    if (mmax>0 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
+                    if (mmax>=1 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
                         deltarho_p_q ( p3%p(1,0,0) ) = zeroc
                         deltarho_p_mq( p3%p(1,0,0) ) = zeroc
                     end if
+
+                    ! if (mmax>=2 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
+                    !     deltarho_p_q ( p3%p(2,0,0) ) = zeroc
+                    !     deltarho_p_mq( p3%p(2,0,0) ) = zeroc
+                    ! end if
 
 
                     !
@@ -467,9 +472,6 @@ call cpu_time (time(9))
 
                                     end do
                                 end do
-
-                                if (gamma_m_khi_mu_q/=gamma_m_khi_mu_q) error stop "jhwdlijweflkhwke"
-                                if (gamma_m_khi_mu_mq/=gamma_m_khi_mu_mq) error stop "lijsfdkuglserhk"
 
                                 ip=p3%p(m,khi,mu/mrso)
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
