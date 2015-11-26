@@ -33,12 +33,11 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 
 # allow cmake to use custom modules located in cmake subdir
-# (e.g. FindFFTW, FindNLOPT)
+# (e.g. FindFFTW)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # external libraries dependencies
 find_package(FFTW REQUIRED)
-#find_package(NLOPT REQUIRED)
 
 #
 # check compiler (gfortran, ifort, ...)
