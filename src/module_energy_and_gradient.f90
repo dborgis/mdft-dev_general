@@ -106,12 +106,7 @@ contains
                 call cpu_time(t(7))
                 ! call energy_cproj_slow (ff%exc_cproj, df_loc)
                 ! print*, "ff%exc_cproj_slow=", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"
-                select case (grid%molrotsymorder)
-                case (1)
-                    call energy_cproj (ff%exc_cproj, df_loc)
-                case default
-                    print*, "=========================================> calling mrso"
-                    call energy_cproj_mrso (ff%exc_cproj, df_loc)
+                call energy_cproj_mrso (ff%exc_cproj, df_loc)
                 end select
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj     =", ff%exc_cproj,    "and norm2@df_exc_cproj  =",norm2(df_loc), "in",t(8)-t(7),"sec"
