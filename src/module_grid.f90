@@ -52,7 +52,7 @@ contains
             print*, "Dans init_grid, c'est bizarre. On veut initialiser le type derivé grid mais il semble deja initialisé"
             stop "dans module_grid/init_grid "
         end if
-        grid%molrotsymorder = getinput%int('molrotsymorder', defaultvalue=1, assert=">0") !Get the order of the main symmetry axis of the solvent
+        grid%molrotsymorder = getinput%int('molrotsymorder', defaultvalue=2, assert=">0") !Get the order of the main symmetry axis of the solvent
         grid%length = getinput%dp3( "boxlen" , defaultvalue=[128._dp,128._dp,128._dp], assert=">0" )
         if (ANY( grid%length  <= 0._dp ) ) THEN
             PRINT*,'The supercell cannot have negative length.'

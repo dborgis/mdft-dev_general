@@ -1,5 +1,5 @@
-boxnod = 16 16 16  
-boxlen = 20. 20. 20.
+boxnod = 64 64 64 
+boxlen = 30. 30. 30.
 mmax = 3
 bulk_density = 0.0333
 temperature = 300.
