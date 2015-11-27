@@ -11,6 +11,7 @@ subroutine energy_minimization
     real(dp) :: f ! functional to minimize
     real(dp) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec )
     integer :: is, io, ix, iy, iz, i
+    real :: time(1:10)
 
     print*,
     print*,
@@ -20,6 +21,8 @@ subroutine energy_minimization
     call init_lbfgsb
 
     do while(lbfgsb%task(1:2).eq.'FG'.or.lbfgsb%task.eq.'NEW_X'.or.lbfgsb%task.eq.'START')
+time(:)=0
+call cpu_time(time(1))
         !
         !     This is the call to the L-BFGS-B code. It updates the one-column vector lbfgsb%x.
         !
@@ -27,12 +30,15 @@ subroutine energy_minimization
         lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         lbfgsb%dsave )
 
+call cpu_time(time(2))
+
         if (lbfgsb%task(1:2) == "FG") then
             !
             ! lbfgs propose un nouveau vecteur colonne à tester, lbfgsb%x(:), qui correspond à un reshape de notre solvent(:)%density(:,:,:,:)
             ! Passons ce x dnas solvent%density qui va ensuite servir de base à un nouveau calcul de f et df
             ! Note pour plus tard : on pourrait utiliser la fonction RESHAPE de fortran
             !
+call cpu_time(time(3))
             i=0
             do is=1,solvent(1)%nspec
                 do io=1,grid%no
@@ -46,9 +52,11 @@ subroutine energy_minimization
                     end do
                 end do
             end do
+call cpu_time(time(4))
 
             call energy_and_gradient(f, df) ! f and df are intent(out) of energy_and_gradient. see below for explanations of isave(34)
 
+call cpu_time(time(5))
             !   Energy_and_gradient does not change solvent%density but updates df
             !   Passons df au format lbfgs%g one-column
             !   Note pour plus tard : on pourrait utiliser la fonction PACK de fortran
@@ -66,7 +74,19 @@ subroutine energy_minimization
                     end do
                 end do
             end do
+call cpu_time(time(6))
+        end if
+        call cpu_time(time(7))
 
+        if (lbfgsb%task(1:2) == "FG") then
+            print*, "]=><=[ Time to setulb: ", time(2)-time(1)
+            print*, "]=><=[ Time to mv lbfgs%x into density(:): ", time(4)-time(3)
+            print*, "]=><=[ Time to energy_and_gradient: ", time(5)-time(4)
+            print*, "]=><=[ Time to mv new gradient to lbfgs%g: ", time(6)-time(5)
+            print*, "]=><=[ Time to full cycle (evaluation + bfgs stuff): ", time(7)-time(1)
+            print*, "==============================================================================="
+            print*,
+            print*,
         end if
     end do
 
