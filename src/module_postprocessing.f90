@@ -10,6 +10,7 @@ contains
     subroutine init_postprocessing
         use precision_kinds, only: dp
         use module_solvent, only: solvent
+        use module_solute, only: solute
         use module_grid, only: grid
         implicit none
         character(len=80) :: filename
@@ -28,6 +29,29 @@ contains
         call grid%integrate_over_orientations( solvent(1)%density, density)
         filename = "output/density.cube"
         call write_to_cube_file (density ,filename)
+
+
+        !
+        ! Hunenberger's corrections
+        !
+        !... We use P-scheme instead of M-scheme for the electrostatics in MDFT.
+        ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 35 and 37 with Ri=0
+        ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
+        ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
+        !
+        block
+            double precision :: correction ! Hunenberger's P-scgeme correction in kJ/mol
+            double precision :: solute_net_charge ! net charge of the solute
+            double precision :: gamma ! trace of the quadrupole moment
+            gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
+            solute_net_charge = sum(solute%site%q)
+            print*, "Hunenberger's P-scheme correction is solute net charge times", -gamma*solvent(1)%n0*2.909857E3
+            correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol   ! n0 of water is 0.0333
+            write(*,'(A,F12.2,A)') "P-scheme correction ", correction, " kJ/mol"
+            open(79,file="output/Pscheme_correction")
+            write(79,*) correction
+            close(79)
+        end block
 
 !         use system,             ONLY: thermocond
 !         use module_solvent, only: solvent
@@ -195,20 +219,6 @@ contains
 !
 !
 !
-!         !... We use P-scheme instead of M-scheme for the electrostatics in MDFT.
-!         ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 35 and 37 with Ri=0
-!         ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
-!         ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
-!         Pscheme_correction = 0._dp
-!         if( getinput%log("poisson_solver") ) then
-!           gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
-!           numberdensity = solvent(1)%n0
-!           solutecharge = sum(solute%site%q)
-!           Pscheme_correction = -gamma*numberdensity*2.909857E3*solutecharge ! in kJ/mol
-!         end if
-!         write(*,'(A,F12.2,A)') "P-scheme correction ", Pscheme_correction," kJ/mol"
-!         open(79,file="output/Pscheme_correction"); write(79,*) Pscheme_correction; close(79)
-!         FFcorrected_final = FFcorrected_final + Pscheme_correction
 !
 !
 !
