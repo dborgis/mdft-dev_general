@@ -80,20 +80,14 @@ call cpu_time(time(6))
 
         if (lbfgsb%task(1:2) == "FG") then
             print*, "]=><=[ Time to setulb: ", time(2)-time(1)
-            print*, "]=><=[ Time to mv lbfgs%x into density(:): ", time(4)-time(3)
+!            print*, "]=><=[ Time to mv lbfgs%x into density(:): ", time(4)-time(3)
             print*, "]=><=[ Time to energy_and_gradient: ", time(5)-time(4)
-            print*, "]=><=[ Time to mv new gradient to lbfgs%g: ", time(6)-time(5)
+!            print*, "]=><=[ Time to mv new gradient to lbfgs%g: ", time(6)-time(5)
             print*, "]=><=[ Time to full cycle (evaluation + bfgs stuff): ", time(7)-time(1)
             print*, "==============================================================================="
             print*,
             print*,
         end if
     end do
-
-    print*,
-    print*,
-    print*, "===== Energy minimization ====="
-    print*,
-    print*,
 
 end subroutine energy_minimization
