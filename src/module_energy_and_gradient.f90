@@ -29,7 +29,7 @@ contains
         ! for computing the total energy and associated gradient
         ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
         ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
-
+        use iso_c_binding, only: c_sizeof
         use precision_kinds, only: dp
         use module_solvent, only: solvent
         use module_grid, only: grid
@@ -44,7 +44,6 @@ contains
 
         real(dp), intent(out) :: f
         real(dp), intent(out) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
-        real(dp) :: df_loc (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         ! real(dp) :: df_loc2(grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         real(dp), parameter :: zerodp=0._dp
         real :: t(10)
@@ -66,71 +65,40 @@ contains
         fold=f
         f  = zerodp
         df = zerodp
-        df_loc = zerodp
-        ! df_loc2=zerodp
 
         print*,
 
         do s=1,solvent(1)%nspec
             if (solvent(s)%do%id_and_ext) then
                 call cpu_time(t(1))
-                call energy_ideal_and_external (ff%id, ff%ext, df_loc)
+                call energy_ideal_and_external (ff%id, ff%ext, df)
                 call cpu_time(t(2))
                 print*, "ff%ext           =", ff%ext
                 print*, "ff%id            =", ff%id, " in",t(2)-t(1),"sec"
                 f = f +ff%id +ff%ext
-                df = df + df_loc
             end if
             if (solvent(s)%do%exc_cs) then
                 ! call cpu_time(t(3))
-                ! call energy_cs (ff%exc_cs, df_loc)
+                ! call energy_cs (ff%exc_cs, df)
                 ! call cpu_time(t(4))
-                ! print*, "ff%exc_cs        =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df_loc),"in",t(4)-t(3),"sec"
+                ! print*, "ff%exc_cs        =", ff%exc_cs,       "and norm2@df_exc_cs      =",norm2(df),"in",t(4)-t(3),"sec"
                 ! ! f = f + ff%exc_cs
-                ! ! df = df + df_loc
-                ! df_loc2=df_loc2+df_loc
             end if
             if (solvent(s)%do%exc_cdeltacd) then
                 ! call cpu_time(t(5))
-                ! call energy_cdeltacd (ff%exc_cdeltacd, df_loc)
+                ! call energy_cdeltacd (ff%exc_cdeltacd, df)
                 ! call cpu_time(t(6))
-                ! print*, "ff%exc_cdeltacd  =", ff%exc_cdeltacd, "and norm2@df_exc_cdeltacd=",norm2(df_loc),"in",t(6)-t(5),"sec"
+                ! print*, "ff%exc_cdeltacd  =", ff%exc_cdeltacd, "and norm2@df_exc_cdeltacd=",norm2(df),"in",t(6)-t(5),"sec"
                 ! ! f = f + ff%exc_cdeltacd
-                ! ! df = df + df_loc
-                ! df_loc2=df_loc2+df_loc
             end if
-
-            ! print*, "cs + cdelta+ cd  =", ff%exc_cdeltacd + ff%exc_cs, "norm df_loc2             =",norm2(df_loc2)
 
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
-                ! call energy_cproj_slow (ff%exc_cproj, df_loc)
-                ! print*, "ff%exc_cproj_slow=", ff%exc_cproj,    "and norm2@df_exc_cproj   =",norm2(df_loc), "in",t(8)-t(7),"sec"
-                call energy_cproj_mrso (ff%exc_cproj, df_loc)
+                call energy_cproj_mrso (ff%exc_cproj, df)
                 call cpu_time(t(8))
-                print*, "ff%exc_cproj     =", ff%exc_cproj,    "and norm2@df_exc_cproj  =",norm2(df_loc), "in",t(8)-t(7),"sec"
+                print*, "ff%exc_cproj     =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
                 f = f + ff%exc_cproj
-                df = df + df_loc
             end if
-
-
-            ! block
-            !     integer :: ix, iy, iz, io
-            !     real :: a, b ,d
-            !     do ix=1,size(df,1)
-            !         do iy=1,size(df,2)
-            !             do iz=1,size(df,3)
-            !                 do io=1,size(df,4)
-            !                     a=df_loc(ix,iy,iz,io,1)
-            !                     b=df_loc2(ix,iy,iz,io,1)
-            !                     d=a-b
-            !                     print*, ix,iy,iz,io,grid%theta(io),grid%phi(io),grid%psi(io),a,b,d
-            !                 end do
-            !             end do
-            !         end do
-            !     end do
-            ! end block
-            !  STOP "FIN DE LA ROUTINE ENERGY AND GRADIENT. ON NE FAIT PAS DE CYCLE AUTOCOHERENT TANT QUE CS+CDELTA+CD/=CPROJ"
 
             ! if (solvent(s)%do%exc_fmt) call energy_fmt (ff%exc_fmt, df)
             ! if (solvent(s)%do%wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc_wca, df)

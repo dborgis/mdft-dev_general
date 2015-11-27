@@ -17,7 +17,7 @@ contains
         real(dp), intent(out) :: Fexc
         real(dp) :: kT, dV, ksqmax, k, dk
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
-        real(dp), intent(out) :: dF(:,:,:,:,:)
+        real(dp), intent(inout) :: dF(:,:,:,:,:)
 
         if (.not.allocated(solvent)) call print_solvent_not_allocated ("Dans module_energy_cs")
         if (solvent(1)%nspec >1) then
@@ -108,7 +108,6 @@ contains
         !     Fexc_k = -kT/2._dp*dv*sum(fftw3%in_backward*fftw3%out_forward)
         ! print*, "       Fexc_cs in real space, vs Fexc_cs in k space:",Fexc, -kT/2._dp*dv*sum(fftw3%in_backward*fftw3%out_forward)
 
-        df = 0._dp
         do is=1,ns
             do io=1,no
                 do iz=1,nz

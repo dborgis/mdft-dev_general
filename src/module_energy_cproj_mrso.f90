@@ -61,6 +61,7 @@ module module_energy_cproj_mrso
     complex(dp), allocatable :: deltarho_p_mq(:)
     complex(dp), allocatable :: gamma_p_q(:)
     complex(dp), allocatable :: gamma_p_mq(:)
+    real(dp), allocatable :: gamma_o(:)
 
     complex(dp), allocatable :: foo_theta_mu_mup(:,:,:)
 
@@ -106,7 +107,7 @@ contains
         use module_thermo, only: thermo
         implicit none
         real(dp), intent(out) :: ff
-        real(dp), intent(out) :: df(:,:,:,:,:) ! x y z o s
+        real(dp), intent(inout) :: df(:,:,:,:,:) ! x y z o s
         real(dp) :: dv, kT
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
@@ -545,13 +546,14 @@ call cpu_time(time(12))
         !
         ! Gather projections into gamma (in fact, into the gradient, that IS gamma)
         !
-        df=0._dp
+        if (.not. allocated(gamma_o)) allocate (gamma_o(1:no) ,source=0._dp)
         ff=0._dp
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                df(ix,iy,iz,:,1) = -kT*dv*proj2euler( deltarho_p(1:np,ix,iy,iz) )/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
-                ff=ff +sum( df(ix,iy,iz,:,1)*(solvent(1)%density(ix,iy,iz,:)-rho0) ) /2._dp
+                    gamma_o(1:no) = -kT*dv*proj2euler(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
+                    df(ix,iy,iz,:,1) = df(ix,iy,iz,:,1) + gamma_o(:)
+                    ff = ff + sum( gamma_o*(solvent(1)%density(ix,iy,iz,:)-rho0) )/2._dp
                 end do
             end do
         end do
