@@ -152,8 +152,9 @@ contains
         close(56)
 
         mmax=grid%mmax
-        print*, "   mmax =",int(grid%mmax,1)," => redondant orientations =", (mmax+1)*(2*mmax+1)**2,&
-            " => redondant projections =", sum( [( [( [( 1 ,mu=-m,m)], mup=-m,m)], m=0,grid%mmax)] )
+        print*, "   mmax =",int(grid%mmax,1)
+        print*, "   =>",(mmax+1)*(2*mmax+1)**2,"orientations and", &
+            sum( [( [( [( 1 ,mu=-m,m)], mup=-m,m)], m=0,grid%mmax)] ), "projections"
         print*, "   molrotsymorder =",int(grid%molrotsymorder,1)
         print*, "   =>",grid%no,"orientations and",grid%np,"projections"
         print*, "   θ φ ψ:",int([grid%ntheta,grid%nphi,grid%npsi],1)
