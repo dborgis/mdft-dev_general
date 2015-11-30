@@ -114,9 +114,10 @@ contains
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
         integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
-        real(dp) :: q(3), mq(3), lx, ly, lz, rho0, time(20)
+        real(dp) :: q(3), mq(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
+        real :: time(20)
 
 call cpu_time (time(1))
 
@@ -569,9 +570,18 @@ call cpu_time(time(12))
 
 call cpu_time(time(13))
 
-do i=2,13
-    print*, "timer ", i, time(i)-time(1)
-end do
+print*, "   > allocations                                                  ", time(2)-time(1),"sec"
+print*, "   > print projections to file                                    ", time(3)-time(2),"sec"
+print*, "   > tabulate spherical harmonics                                 ", time(4)-time(3),"sec"
+print*, "   > plan all ffts                                                ", time(5)-time(4),"sec"
+print*, "   > project delta rho                                            ", time(6)-time(5),"sec"
+print*, "   > FFT 3D of deltarho_p                                         ", time(7)-time(6),"sec"
+print*, "   > find correspondance between q and -q                         ", time(8)-time(7),"sec"
+print*, "   > read ck                                                      ", time(9)-time(8),"sec"
+print*, "   > rotation to molecular frame + OZ + rotation back to lab frame", time(10)-time(9),"sec"
+print*, "   > check all q points have been used in OZ                      ", time(11)-time(10),"sec"
+print*, "   > FFT-1 of deltarho_p                                          ", time(12)-time(11),"sec"
+print*, "   > Fcproj: gather projections into gamma and sum                ", time(13)-time(12),"sec"
 
 contains
 
