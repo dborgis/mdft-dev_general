@@ -72,7 +72,6 @@ endif()
 set(mdft_SRCS
   src/module_rotation.f90
   src/module_energy_cproj_mrso.f90
-  src/module_energy_cproj.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90
