@@ -51,7 +51,7 @@ contains
         end if
     end function angle
 
-    function rotation_matrix_from_lab_to_q_frame_lu (q) result (rmat)
+    pure function rotation_matrix_from_lab_to_q_frame_lu (q) result (rmat)
         implicit none
         real(dp), intent(in) :: q(3)
         real(dp) :: rmat(3,3), rmat1(3), rmat2(3), rmat3(3)
@@ -73,7 +73,7 @@ contains
         rmat(:,3) = rmat3
     end function rotation_matrix_from_lab_to_q_frame_lu
 
-    function rotation_matrix_from_lab_to_q_frame(q) result(R)
+    pure function rotation_matrix_from_lab_to_q_frame(q) result(R)
         !
         ! Given the coordinates q(3) in a frame (let's call it lab frame),
         ! this function produces the rotation matrix that
@@ -144,7 +144,7 @@ contains
         cross_product(3) = a(1)*b(2)-a(2)*b(1)
     end function cross_product
 
-    function harm_sph( m, mu, mup, beta ) ! Luc's luc72p143
+    pure function harm_sph( m, mu, mup, beta ) ! Luc's luc72p143
         !
         ! R^m_{mu,mup}(\beta)
         ! beta is the angle in radian
@@ -199,7 +199,7 @@ contains
     end function harm_sph
 
 
-    function rotation_matrix_between_complex_spherical_harmonics_lu(q,mmax) result(R)
+    pure function rotation_matrix_between_complex_spherical_harmonics_lu(q,mmax) result(R)
 
         use precision_kinds, only : i2b,dp
         implicit none
@@ -369,7 +369,7 @@ contains
     end function rotation_matrix_between_complex_spherical_harmonics_lu
 
 
-    function rotation_matrix_between_complex_spherical_harmonics (q, lmax) result (R)
+    pure function rotation_matrix_between_complex_spherical_harmonics (q, lmax) result (R)
         !
         ! Given a column vector of real values q of dimension 3,
         ! this function returns the rotation matrix between complex spherical harmonics.
