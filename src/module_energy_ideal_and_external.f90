@@ -45,7 +45,7 @@ contains
                 do iy=1,grid%ny
                     do ix=1,grid%nx
                         do io=1,grid%no
-                            x = solvent(is)%density(ix,iy,iz,io)
+                            x = solvent(is)%density(io,ix,iy,iz)
                             if (x>epsdp) then
                                 fid = fid + kT*dv*grid%w(io)*(x*log(x/x0)-x+x0)
                                 dfid = kT*dv*grid%w(io)*log(x/x0)

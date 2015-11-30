@@ -38,8 +38,7 @@ contains
         ! allocate the solvent density field for each solvent species
         do s=1,solvent(1)%nspec
             if (.not. allocated( solvent(s)%density) ) then
-                allocate(solvent(s)%density(grid%nx,grid%ny,grid%nz,grid%no), &
-                    source=solvent(s)%rho0, stat=ios)
+                allocate(solvent(s)%density(grid%no, grid%nx, grid%ny, grid%nz),   source=solvent(s)%rho0, stat=ios)
                 if (ios /= 0) then
                     print*, "solvent(s)%density(grid%nx,grid%ny,grid%nz,grid%no), source=0._dp: Allocation request denied"
                     print*, "for s =", s
@@ -93,15 +92,15 @@ contains
                             if (vextq_is_allocated) then
                                 v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
                             else
-                                v = solvent(s)%vext(i,j,k,io)
+                                v = solvent(s)%vext(io,i,j,k)
                             end if
 
                             betav = thermo%beta * v
 
                             if ( betav >= threeshold_in_betav ) then
-                                solvent(s)%density(i,j,k,io) = 0.0_dp
+                                solvent(s)%density(io,i,j,k) = 0.0_dp
                             else
-                                solvent(s)%density(i,j,k,io) = exp(-betav)*solvent(s)%density(i,j,k,io)
+                                solvent(s)%density(io,i,j,k) = exp(-betav)*solvent(s)%density(io,i,j,k)
                             end if
 
                         end do

@@ -19,8 +19,9 @@ module module_minimizer
         logical                :: lsave(4)
         integer                :: isave(44)
         real(dp)               :: dsave(29)
-        integer,  allocatable  :: nbd(:), iwa(:)
-        real(dp), allocatable  :: x(:), l(:), u(:), g(:), wa(:)
+        integer,  allocatable :: nbd(:), iwa(:)
+        real(dp), allocatable :: x(:), l(:), u(:), wa(:)
+        real(dp), allocatable :: g(:)
         integer :: itermax=30
     end type lbfgsb_type
 
@@ -67,13 +68,14 @@ contains
         !   init vector x (the densities)
         icg=0
         do is=1,solvent(1)%nspec
-            do io=1,grid%no
                 do iz=1,grid%nz
                     do iy=1,grid%ny
                         do ix=1,grid%nx
+                            do io=1,grid%no
+
                             icg=icg+1
                             if (solvent(is)%vext(io,ix,iy,iz) < solvent(is)%vext_threeshold) then
-                                lbfgsb%x(icg) = solvent(is)%density(ix,iy,iz,io)
+                                lbfgsb%x(icg) = solvent(is)%density(io,ix,iy,iz)
                                 lbfgsb%nbd(icg) = 1 ! lower bounded
                                 lbfgsb%l(icg) = 0._dp ! the lower bound
                             else
@@ -84,7 +86,7 @@ contains
                                 !     print*, "ix,iy,iz,io=",ix,iy,iz,io
                                 !     error stop
                                 ! end if
-                                lbfgsb%x(icg) = solvent(is)%density(ix,iy,iz,io)
+                                lbfgsb%x(icg) = solvent(is)%density(io,ix,iy,iz)
                                 lbfgsb%nbd(icg) = 2 ! lower and upper bounded
                                 lbfgsb%l(icg) = 0._dp!solvent(is)%density(ix,iy,iz,io)
                                 lbfgsb%u(icg) = 0._dp!solvent(is)%density(ix,iy,iz,io) ! lower and upper bounds the same, I hope lbfgsb understands this means don't touch to this?

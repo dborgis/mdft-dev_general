@@ -40,7 +40,7 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%density(ix,iy,iz,:) * grid%w(:)) - solvent(1)%n0 ! =n(r)-n0=
+                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%density(:,ix,iy,iz) * grid%w(:)) - solvent(1)%n0 ! =n(r)-n0=
                 end do
             end do
         end do
@@ -113,7 +113,7 @@ contains
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
-                            df(ix,iy,iz,io,is) = df(ix,iy,iz,io,is) -kT*dv*grid%w(io)*fftw3%out_backward(ix,iy,iz)
+                            df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) -kT*dv*grid%w(io)*fftw3%out_backward(ix,iy,iz)
                         end do
                     end do
                 end do

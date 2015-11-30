@@ -9,7 +9,7 @@ subroutine energy_minimization
     implicit none
 
     real(dp) :: f ! functional to minimize
-    real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
+    real(dp), target :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
     integer :: is, io, ix, iy, iz, i
     real :: time(1:10)
 
@@ -41,12 +41,12 @@ call cpu_time(time(2))
 call cpu_time(time(3))
             i=0
             do is=1,solvent(1)%nspec
-                do io=1,grid%no
-                    do iz=1,grid%nz
-                        do iy=1,grid%ny
-                            do ix=1,grid%nx
+                do iz=1,grid%nz
+                    do iy=1,grid%ny
+                        do ix=1,grid%nx
+                            do io=1,grid%no
                                 i=i+1
-                                solvent(is)%density(ix,iy,iz,io) = lbfgsb%x(i)
+                                solvent(is)%density(io,ix,iy,iz) = lbfgsb%x(i)
                             end do
                         end do
                     end do
@@ -63,10 +63,10 @@ call cpu_time(time(5))
 
             i=0
             do is=1,solvent(1)%nspec
-                do io=1,grid%no
-                    do iz=1,grid%nz
-                        do iy=1,grid%ny
-                            do ix=1,grid%nx
+                do iz=1,grid%nz
+                    do iy=1,grid%ny
+                        do ix=1,grid%nx
+                            do io=1,grid%no
                                 i=i+1
                                 lbfgsb%g(i) = df(io,ix,iy,iz,is)
                             end do
@@ -74,15 +74,17 @@ call cpu_time(time(5))
                     end do
                 end do
             end do
+
+
 call cpu_time(time(6))
         end if
         call cpu_time(time(7))
 
         if (lbfgsb%task(1:2) == "FG") then
             print*, "]=><=[ Time to setulb: ", time(2)-time(1)
-!            print*, "]=><=[ Time to mv lbfgs%x into density(:): ", time(4)-time(3)
+            print*, "]=><=[ Time to mv lbfgs%x into density(:): ", time(4)-time(3)
             print*, "]=><=[ Time to energy_and_gradient: ", time(5)-time(4)
-!            print*, "]=><=[ Time to mv new gradient to lbfgs%g: ", time(6)-time(5)
+            print*, "]=><=[ Time to mv new gradient to lbfgs%g: ", time(6)-time(5)
             print*, "]=><=[ Time to full cycle (evaluation + bfgs stuff): ", time(7)-time(1)
             print*, "==============================================================================="
             print*,
