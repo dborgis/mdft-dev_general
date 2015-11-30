@@ -9,7 +9,7 @@ subroutine energy_minimization
     implicit none
 
     real(dp) :: f ! functional to minimize
-    real(dp) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec )
+    real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
     integer :: is, io, ix, iy, iz, i
     real :: time(1:10)
 
@@ -68,7 +68,7 @@ call cpu_time(time(5))
                         do iy=1,grid%ny
                             do ix=1,grid%nx
                                 i=i+1
-                                lbfgsb%g(i) = df(ix,iy,iz,io,is)
+                                lbfgsb%g(i) = df(io,ix,iy,iz,is)
                             end do
                         end do
                     end do

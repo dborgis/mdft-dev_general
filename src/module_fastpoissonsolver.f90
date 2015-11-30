@@ -210,7 +210,7 @@ contains
                 do io = 1, grid%no
                     fftw3InBackward = phi_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     call dfftw_execute (fpspb)
-                    solvent(s)%vextq(:,:,:,io) = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
+                    solvent(s)%vextq(io,:,:,:) = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
                 end do
             end do
         end if
@@ -276,7 +276,7 @@ contains
 
 
         DO CONCURRENT( s=1:solvent(1)%nspec)
-            do concurrent ( i=1:nfft(1), j=1:nfft(2), k=1:nfft(3), io=1:grid%no )
+            do concurrent ( io=1:grid%no, i=1:nfft(1), j=1:nfft(2), k=1:nfft(3) )
                 vext_q_of_r_and_omega = 0.0_dp
 
                 DO CONCURRENT (m=1:solvent(1)%nsite, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))
@@ -328,7 +328,7 @@ contains
 
                     vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(s)%site(m)%q * TriLinearInterpolation(cube,r)
                 end do
-                solvent(s)%vextq(i,j,k,io) = vext_q_of_r_and_omega
+                solvent(s)%vextq(io,i,j,k) = vext_q_of_r_and_omega
 
             end do
         end do

@@ -46,7 +46,7 @@ contains
         end if
 
         do s=1,ns
-            allocate ( solvent(s)%vext(nx,ny,nz,no), source=0._dp, stat=er%i, errmsg=er%msg )
+            allocate ( solvent(s)%vext(no,nx,ny,nz), source=0._dp, stat=er%i, errmsg=er%msg )
             if (er%i/=0) then
                 print*,"Reported error is:", er%msg
                 stop "I can't allocate solvent(:)%vext in init_external_potential.f90:init_external_potential"
@@ -126,7 +126,7 @@ contains
             ! Does the solute wear charges ? Check any of its sites is charged:
             if ( any(abs(solute%site%q)>epsdp) ) then
                 i_want_vextq = .true.
-                allocate (solvent(s)%vextq(grid%nx,grid%ny,grid%nz,grid%no) ,source=0._dp, stat=i, errmsg=myerrormsg)
+                allocate (solvent(s)%vextq(grid%no,grid%nx,grid%ny,grid%nz) ,source=0._dp, stat=i, errmsg=myerrormsg)
                 if (i/=0) then
                     print*, myerrormsg
                     error stop "in init_electrostatic_potential"
@@ -145,7 +145,7 @@ contains
         !
 
         ! DIRECT SUMMATION, pot = sum of qq'/r
-        IF ( is_direct ) call compute_vcoul_as_sum_of_pointcharges
+        ! IF ( is_direct ) call compute_vcoul_as_sum_of_pointcharges
 
         ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
         IF (getinput%log('fastpoissonsolver', defaultvalue=.true.)) call init_fastpoissonsolver
@@ -294,7 +294,7 @@ contains
                 dist_hard = 0.5_dp*thickness(w) + hs(s)%r
             end if
             if (dplan <= dist_hard) then
-                solvent(s)%vext(i,j,k,:) = huge(1.0_dp) ! no dependency over orientations
+                solvent(s)%vext(:,i,j,k) = huge(1.0_dp) ! no dependency over orientations
             endif
         end do
 
@@ -461,7 +461,7 @@ contains
                         END IF
                     END IF
                 end do soluteloop
-                solvent(s)%vext(i,j,k,:) = solvent(s)%vext(i,j,k,:) + V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
+                solvent(s)%vext(:,i,j,k) = solvent(s)%vext(:,i,j,k) + V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
             end do ! x,y,z
         end do ! solvent species
     contains
@@ -678,7 +678,7 @@ contains
                                 end do
                             end do
 
-                            solvent(s)%vextq(i,j,k,io) = min( 100._dp, v_psi )
+                            solvent(s)%vextq(io,i,j,k) = min( 100._dp, v_psi )
 
                         end do
                     end do

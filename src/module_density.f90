@@ -85,13 +85,13 @@ contains
 
         do concurrent (s=1: solvent(1)%nspec)
             vextq_is_allocated = allocated (solvent(s)%vextq)
-            do io = 1, grid%no
                 do k = 1, grid%nz
                     do j = 1, grid%ny
                         do i = 1, grid%nx
+                            do io = 1, grid%no
 
                             if (vextq_is_allocated) then
-                                v = max( solvent(s)%vext(i,j,k,io), solvent(s)%vext(i,j,k,io) - solvent(s)%vextq(i,j,k,io) ) ! A VERIFIER
+                                v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
                             else
                                 v = solvent(s)%vext(i,j,k,io)
                             end if

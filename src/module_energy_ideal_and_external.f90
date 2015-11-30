@@ -41,42 +41,20 @@ contains
         df = zerodp
         do is=1,ns
             x0 = solvent(is)%rho0 ! bulk density
-            do io=1,grid%no
-                w = grid%w(io) ! weight of the orientation
-                do iz=1,grid%nz
-                    do iy=1,grid%ny
-                        do ix=1,grid%nx
+            do iz=1,grid%nz
+                do iy=1,grid%ny
+                    do ix=1,grid%nx
+                        do io=1,grid%no
                             x = solvent(is)%density(ix,iy,iz,io)
-                            vext = solvent(is)%vext(ix,iy,iz,io) - mu
-                            ! if (x<1e-10 .and. vext<36._dp) then
-                            !     print*, x, vext
-                            ! end if
                             if (x>epsdp) then
-                                fid = fid + kT*dv*w*(x*log(x/x0)-x+x0)
-                                dfid = kT*dv*w*log(x/x0)
+                                fid = fid + kT*dv*grid%w(io)*(x*log(x/x0)-x+x0)
+                                dfid = kT*dv*grid%w(io)*log(x/x0)
                             else if (x<=epsdp) then
-                                fid = fid + kT*dv*w*x0 ! par continuite. Plot x*log(x/x0)-x+x0 dans Mathematica pour un x non nul mais arbitrairement petit pour t'en convaincre.
+                                fid = fid + kT*dv*grid%w(io)*x0 ! par continuite. Plot x*log(x/x0)-x+x0 dans Mathematica pour un x non nul mais arbitrairement petit pour t'en convaincre.
                                 dfid = 0._dp
                             end if
-                            fext = fext + dv*w*vext*x
-                            df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) + dfid + dv*w*vext
-
-
-
-                            ! if (vext>=solvent(is)%vext_threeshold ) then
-                            !     fid = fid + kT*(x*log(x/x0)-x+x0)*dv*w
-                            !     fext = fext + x*vext*dv*w
-                            !     df (ix,iy,iz,io,is) = df (ix,iy,iz,io,is) + w*dv*(kT*log(x/x0)+vext)
-                            ! else ! we take the limit, which is well-behaved
-                            !     fid = fid + kT*(x*log(x/x0)-x+x0)*dv*w
-                            !     fext = fext + x*vext*dv*w
-                            !     df (ix,iy,iz,io,is) = df (ix,iy,iz,io,is) + w*(kT*log(x/x0)+vext)
-                            ! end if
-
-                            ! fid = fid + kT*(x*log(x/x0)-x+x0)*dv*w
-                            ! fext = fext + x*vext*dv*w
-                            ! df (ix,iy,iz,io,is) = df (ix,iy,iz,io,is) + w*(kT*log(x/x0)+vext)
-
+                            fext = fext + dv*grid%w(io)*(solvent(is)%vext(io,ix,iy,iz) - mu)*x
+                            df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) + dfid + dv*grid%w(io)*(solvent(is)%vext(io,ix,iy,iz) - mu)
                         end do
                     end do
                 end do

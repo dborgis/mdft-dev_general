@@ -21,7 +21,7 @@ module module_minimizer
         real(dp)               :: dsave(29)
         integer,  allocatable  :: nbd(:), iwa(:)
         real(dp), allocatable  :: x(:), l(:), u(:), g(:), wa(:)
-        integer :: itermax
+        integer :: itermax=30
     end type lbfgsb_type
 
     type (lbfgsb_type) :: lbfgsb
@@ -72,14 +72,14 @@ contains
                     do iy=1,grid%ny
                         do ix=1,grid%nx
                             icg=icg+1
-                            if (solvent(is)%vext(ix,iy,iz,io) < solvent(is)%vext_threeshold) then
+                            if (solvent(is)%vext(io,ix,iy,iz) < solvent(is)%vext_threeshold) then
                                 lbfgsb%x(icg) = solvent(is)%density(ix,iy,iz,io)
                                 lbfgsb%nbd(icg) = 1 ! lower bounded
                                 lbfgsb%l(icg) = 0._dp ! the lower bound
                             else
                                 ! if (abs(solvent(is)%density(ix,iy,iz,io))>epsdp) then
                                 !     print*, "Dans module_minimizer, je croyais que qd vext>threeshold, density init à 0?!!!!"
-                                !     print*, "On a solvent(is)%vext(ix,iy,iz,io) =" ,solvent(is)%vext(ix,iy,iz,io)
+                                !     print*, "On a solvent(is)%vext(io,ix,iy,iz) =" ,solvent(is)%vext(io,ix,iy,iz)
                                 !     print*, "solvent(is)%density(ix,iy,iz,io) =", solvent(is)%density(ix,iy,iz,io)
                                 !     print*, "ix,iy,iz,io=",ix,iy,iz,io
                                 !     error stop
