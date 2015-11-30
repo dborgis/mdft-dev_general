@@ -43,7 +43,7 @@ contains
         implicit none
 
         real(dp), intent(out) :: f
-        real(dp), intent(out) :: df (grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
+        real(dp), intent(out) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
         ! real(dp) :: df_loc2(grid%nx, grid%ny, grid%nz, grid%no, solvent(1)%nspec)
         real(dp), parameter :: zerodp=0._dp
         real :: t(10)

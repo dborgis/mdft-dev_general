@@ -59,7 +59,7 @@ contains
                                 dfid = 0._dp
                             end if
                             fext = fext + dv*w*vext*x
-                            df(ix,iy,iz,io,is) = df(ix,iy,iz,io,is) + dfid + dv*w*vext
+                            df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) + dfid + dv*w*vext
 
 
 

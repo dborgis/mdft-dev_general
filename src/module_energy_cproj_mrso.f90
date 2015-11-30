@@ -561,7 +561,7 @@ call cpu_time(time(12))
             do iy=1,ny
                 do ix=1,nx
                     gamma_o(1:no) = -kT*dv*proj2euler(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
-                    df(ix,iy,iz,:,1) = df(ix,iy,iz,:,1) + gamma_o(:)
+                    df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)
                     ff = ff + sum( gamma_o*(solvent(1)%density(ix,iy,iz,:)-rho0) )/2._dp
                 end do
             end do
