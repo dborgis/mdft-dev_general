@@ -346,25 +346,24 @@ contains
         implicit none
         real(dp), intent(in) :: array(:,:,:,:)
         real(dp), allocatable, intent(out) :: integrated_array(:,:,:)
-        integer :: i, il, iu, j, jl, ju, k, kl, ku
+        integer :: ix, iy ,iz, nx, ny, nz
         if (size(array,1)/=size(grid%w)) then
             print*, "In module_grid > integrate_over_orientations"
             print*, "You want to integrate an array(:,:,:,:) whose last dimension is not the same as grid%w(:)"
             error stop
         end if
-        il=lbound(array,2)
-        iu=ubound(array,2)
-        jl=lbound(array,3)
-        ju=ubound(array,3)
-        kl=lbound(array,4)
-        ku=ubound(array,4)
+        nx=grid%nx
+        ny=grid%ny
+        nz=grid%nz
         if (.not. allocated(integrated_array)) then
-            allocate (integrated_array(il:iu,jl:ju,kl:ku), source=0._dp)
+            allocate (integrated_array(nx,ny,nz), source=0._dp)
         end if
-        do k=lbound(array,3),ubound(array,3)
-            do j=lbound(array,2),ubound(array,2)
-                do i=lbound(array,1),ubound(array,1)
-                    integrated_array(i,j,k)=sum(array(:,i,j,k)*grid%w(:))
+
+
+        do iz=1,nz
+            do iy=1,ny
+                do ix=1,nx
+                    integrated_array(ix,iy,iz) = sum( array(:,ix,iy,iz)*grid%w(:) )
                 end do
             end do
         end do
