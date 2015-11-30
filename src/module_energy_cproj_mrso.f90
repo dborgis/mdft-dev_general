@@ -150,6 +150,15 @@ call cpu_time (time(1))
         ns=solvent(1)%nspec
         rho0 = solvent(1)%rho0
 
+        !
+        ! MDFT-dev only valid for even number of nodes in each direction
+        !
+        if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
+            print*, "mdft-dev only  valid for even grid nodes"
+            print*, "nx,ny,nz=",nx,ny,nz
+            error stop
+        end if
+
 
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
 
