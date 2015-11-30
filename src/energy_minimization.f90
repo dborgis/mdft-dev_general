@@ -1,7 +1,7 @@
 subroutine energy_minimization
 
     use precision_kinds, only : dp
-    use module_minimizer, only: lbfgsb, init_lbfgsb
+    use module_minimizer, only: lbfgsb
     use module_grid, only: grid
     use module_solvent, only: solvent
     use module_energy_and_gradient, only: energy_and_gradient
@@ -9,7 +9,7 @@ subroutine energy_minimization
     implicit none
 
     real(dp) :: f ! functional to minimize
-    real(dp), target :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
+    real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
     integer :: is, io, ix, iy, iz, i
     real :: time(1:10)
 
@@ -18,7 +18,7 @@ subroutine energy_minimization
     print*, "===== Energy minimization ====="
 
     ! Init minimization process. From allocations to optimizer parameters to guess solution
-    call init_lbfgsb
+    call lbfgsb%init
 
     do while(lbfgsb%task(1:2).eq.'FG'.or.lbfgsb%task.eq.'NEW_X'.or.lbfgsb%task.eq.'START')
 time(:)=0
@@ -26,9 +26,14 @@ call cpu_time(time(1))
         !
         !     This is the call to the L-BFGS-B code. It updates the one-column vector lbfgsb%x.
         !
-        call setulb ( lbfgsb%n, lbfgsb%m, lbfgsb%x, lbfgsb%l, lbfgsb%u, lbfgsb%nbd, f, lbfgsb%g, lbfgsb%factr, &
+        ! call setulb ( lbfgsb%n, lbfgsb%m, lbfgsb%x, lbfgsb%l, lbfgsb%u, lbfgsb%nbd, f, lbfgsb%g, lbfgsb%factr, &
+        ! lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
+        ! lbfgsb%dsave )
+
+        call setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%density, lbfgsb%l, lbfgsb%l, lbfgsb%nbd, f, pack(df, .true.), lbfgsb%factr, &
         lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         lbfgsb%dsave )
+
 
 call cpu_time(time(2))
 
@@ -43,9 +48,9 @@ call cpu_time(time(3))
             !
             ! l-bfgs-b%x is a vector (1dim array). We have to reshape it to fit into density(o,x,y,z)
             !
-            do is=1,solvent(1)%nspec
-                solvent(is)%density = reshape( lbfgsb%x, [grid%no, grid%nx, grid%ny, grid%nz] )
-            end do
+            ! do is=1,solvent(1)%nspec
+            !     solvent(is)%density = reshape( solvent(is)%density, [grid%no, grid%nx, grid%ny, grid%nz] )
+            ! end do
 
 call cpu_time(time(4))
 
@@ -60,7 +65,7 @@ call cpu_time(time(5))
             !   Energy_and_gradient does not change solvent%density but updates df and gives the value of the functional, f
             !   lbfgs%g is one-column
             !
-            lbfgsb%g = pack(df, .true.)
+            ! lbfgsb%g = pack(df, .true.)
 
 
 call cpu_time(time(6))
