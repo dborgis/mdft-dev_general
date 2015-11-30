@@ -366,6 +366,7 @@ call cpu_time (time(8))
         end if
 
 call cpu_time (time(9))
+        if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
 
         !
         ! For all vectors q and -q handled simultaneously
@@ -405,7 +406,6 @@ call cpu_time (time(9))
                     !
                     ! Prepare R^m_mup_khi(q)
                     !
-                    if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax )
                     ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
 
