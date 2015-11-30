@@ -45,9 +45,9 @@ contains
             double precision :: gamma ! trace of the quadrupole moment
             gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
             solute_net_charge = sum(solute%site%q)
-            print*, "Hunenberger's P-scheme correction is solute net charge times", -gamma*solvent(1)%n0*2.909857E3
+            ! print*, "Hunenberger's P-scheme correction is solute net charge times", -gamma*solvent(1)%n0*2.909857E3
             correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol   ! n0 of water is 0.0333
-            write(*,'(A,F12.2,A)') "P-scheme correction ", correction, " kJ/mol"
+            write(*,'(A,F12.2,A)') "P-scheme correction =", correction, " kJ/mol"
             open(79,file="output/Pscheme_correction")
             write(79,*) correction
             close(79)
