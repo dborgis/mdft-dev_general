@@ -346,32 +346,24 @@ contains
         real(dp), intent(in) :: array(:,:,:,:)
         real(dp), allocatable, intent(out) :: integrated_array(:,:,:)
         integer :: i, il, iu, j, jl, ju, k, kl, ku
-        if (size(array,4)/=size(grid%w)) then
+        if (size(array,1)/=size(grid%w)) then
             print*, "In module_grid > integrate_over_orientations"
             print*, "You want to integrate an array(:,:,:,:) whose last dimension is not the same as grid%w(:)"
             error stop
         end if
-        il=lbound(array,1)
-        iu=ubound(array,1)
-        jl=lbound(array,2)
-        ju=ubound(array,2)
-        kl=lbound(array,3)
-        ku=ubound(array,3)
+        il=lbound(array,2)
+        iu=ubound(array,2)
+        jl=lbound(array,3)
+        ju=ubound(array,3)
+        kl=lbound(array,4)
+        ku=ubound(array,4)
         if (.not. allocated(integrated_array)) then
-            allocate (integrated_array(il:iu,jl:ju,kl:ku))
+            allocate (integrated_array(il:iu,jl:ju,kl:ku), source=0._dp)
         end if
-        if (lbound(integrated_array,1)/=il) stop "pb of bounds in integrate_over_orientations"
-        if (ubound(integrated_array,1)/=iu) stop "pb of bounds in integrate_over_orientations"
-        if (lbound(integrated_array,2)/=jl) stop "pb of bounds in integrate_over_orientations"
-        if (ubound(integrated_array,2)/=ju) stop "pb of bounds in integrate_over_orientations"
-        if (lbound(integrated_array,3)/=kl) stop "pb of bounds in integrate_over_orientations"
-        if (ubound(integrated_array,3)/=ku) stop "pb of bounds in integrate_over_orientations"
-
-        integrated_array=0._dp
         do k=lbound(array,3),ubound(array,3)
             do j=lbound(array,2),ubound(array,2)
                 do i=lbound(array,1),ubound(array,1)
-                    integrated_array(i,j,k)=sum(array(i,j,k,:)*grid%w(:))
+                    integrated_array(i,j,k)=sum(array(:,i,j,k)*grid%w(:))
                 end do
             end do
         end do
