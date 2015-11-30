@@ -40,15 +40,22 @@ call cpu_time(time(2))
             !
 call cpu_time(time(3))
 
+            !
+            ! l-bfgs-b%x is a vector (1dim array). We have to reshape it to fit into density(o,x,y,z)
+            !
             do is=1,solvent(1)%nspec
                 solvent(is)%density = reshape( lbfgsb%x, [grid%no, grid%nx, grid%ny, grid%nz] )
             end do
 
 call cpu_time(time(4))
 
+            !
+            ! Given a density of orientation, xyz, return the value of the functional at this point F[rho] and the gradient dF/drho
+            !
             call energy_and_gradient(f, df) ! f and df are intent(out) of energy_and_gradient. see below for explanations of isave(34)
 
 call cpu_time(time(5))
+
             !
             !   Energy_and_gradient does not change solvent%density but updates df and gives the value of the functional, f
             !   lbfgs%g is one-column
