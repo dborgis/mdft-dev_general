@@ -39,41 +39,21 @@ call cpu_time(time(2))
             ! Note pour plus tard : on pourrait utiliser la fonction RESHAPE de fortran
             !
 call cpu_time(time(3))
-            i=0
+
             do is=1,solvent(1)%nspec
-                do iz=1,grid%nz
-                    do iy=1,grid%ny
-                        do ix=1,grid%nx
-                            do io=1,grid%no
-                                i=i+1
-                                solvent(is)%density(io,ix,iy,iz) = lbfgsb%x(i)
-                            end do
-                        end do
-                    end do
-                end do
+                solvent(is)%density = reshape( lbfgsb%x, [grid%no, grid%nx, grid%ny, grid%nz] )
             end do
+
 call cpu_time(time(4))
 
             call energy_and_gradient(f, df) ! f and df are intent(out) of energy_and_gradient. see below for explanations of isave(34)
 
 call cpu_time(time(5))
-            !   Energy_and_gradient does not change solvent%density but updates df
-            !   Passons df au format lbfgs%g one-column
-            !   Note pour plus tard : on pourrait utiliser la fonction PACK de fortran
-
-            i=0
-            do is=1,solvent(1)%nspec
-                do iz=1,grid%nz
-                    do iy=1,grid%ny
-                        do ix=1,grid%nx
-                            do io=1,grid%no
-                                i=i+1
-                                lbfgsb%g(i) = df(io,ix,iy,iz,is)
-                            end do
-                        end do
-                    end do
-                end do
-            end do
+            !
+            !   Energy_and_gradient does not change solvent%density but updates df and gives the value of the functional, f
+            !   lbfgs%g is one-column
+            !
+            lbfgsb%g = pack(df, .true.)
 
 
 call cpu_time(time(6))
