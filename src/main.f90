@@ -20,7 +20,9 @@ program main
     call energy_minimization
     call init_postprocessing
 
-
+    print*,
+    print*,
+    print*,"---"
 
     call system_clock (count1)
     mdft_wholetime = real(count1-count0)/real(count_rate)

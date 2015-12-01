@@ -1,7 +1,16 @@
 module module_postprocessing
+    use precision_kinds, only: dp
     implicit none
     private
+    type :: correction_type
+        real(dp) :: pscheme
+        real(dp) :: pbc
+    end type correction_type
+    type (correction_type) :: correction
     public :: init_postprocessing
+
+
+
 contains
 !
 !     !
@@ -30,6 +39,8 @@ contains
         filename = "output/density.cube"
         call write_to_cube_file (density ,filename)
 
+        print*, "===== Corrections to ΔG_MDFT ====="
+
 
         !
         ! Hunenberger's corrections
@@ -40,18 +51,47 @@ contains
         ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
         !
         block
-            double precision :: correction ! Hunenberger's P-scgeme correction in kJ/mol
             double precision :: solute_net_charge ! net charge of the solute
             double precision :: gamma ! trace of the quadrupole moment
             gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
             solute_net_charge = sum(solute%site%q)
             ! print*, "Hunenberger's P-scheme correction is solute net charge times", -gamma*solvent(1)%n0*2.909857E3
-            correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol   ! n0 of water is 0.0333
-            write(*,'(A,F12.2,A)') "P-scheme correction =", correction, " kJ/mol"
+            correction%pscheme = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol   ! n0 of water is 0.0333
+            write(*,'(A,F12.2,A)') "    P-scheme correction =", correction%pscheme, " kJ/mol"
             open(79,file="output/Pscheme_correction")
-            write(79,*) correction
+            write(79,*) correction%pscheme
             close(79)
         end block
+
+
+        !
+        !   Type B correction of Hunenberger (due to lattice sums with periodic boundary conditions)
+        !   see J. Chem. Phys. 124, 224501 (2006), eq. 32 with R_I=0 (no ionic radius)
+        !
+        block
+            double precision :: solute_net_charge, L
+            solute_net_charge = sum (solute%site%q)
+            if (.not. all(grid%length==grid%length(1))) then
+                print*, "The grid is not cubic."
+                print*, "The periodic boundary conditions correction is intended for cubic cells."
+                print*, "We use the average length sum(len)/3."
+                L = sum(grid%length)/3._dp
+            else
+                L = grid%length(1)
+            end if
+            if (L<=epsilon(1._dp)) then
+                print*, "somethings wrong in module postprocessing: L is <= 0"
+                error stop
+            end if
+            correction%pbc = -1949.0466_dp*solute_net_charge**2/L
+            write(*,'(A,F12.2,A)') "    PBC correction      =", correction%pbc, " kJ/mol"
+            open(79,file="output/PBC_correction")
+            write(79,*) correction%pbc
+            close(79)
+        end block
+
+        print*, "===== Corrections to ΔG_MDFT ====="
+
 
 !         use system,             ONLY: thermocond
 !         use module_solvent, only: solvent
