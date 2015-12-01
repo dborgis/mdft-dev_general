@@ -4,7 +4,7 @@ SUBROUTINE compute_Vext_hard_sphere
     use module_grid, only: grid
 ! use precision_kinds,only : i2b , dp
 ! use module_input,only : input_line,getinput%dp
-! use system,only : solute, grid
+! use module_solute, only : solute
 ! use external_potential,only : Vext_total , Vext_hard
 ! use quadrature, only: angGrid, molRotGrid
 ! use hardspheres ,ONLY: hs

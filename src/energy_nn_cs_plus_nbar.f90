@@ -4,7 +4,8 @@ SUBROUTINE energy_nn_cs_plus_nbar (Fint)
 
   use precision_kinds,only : dp , i2b
   use module_grid, only: grid
-!   use system,only : thermocond, solvent, grid
+!   use system,only : thermocond, grid
+!use module_solvent, only: solvent
 !   use dcf, ONLY: c_s, nb_k ,delta_k
 !   use constants,only : fourpi , i_complex,twopi
 !   use module_minimizer, ONLY: cg_vect_new, FF , dF_new

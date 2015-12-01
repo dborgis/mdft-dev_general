@@ -2,9 +2,10 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !
     use precision_kinds, ONLY : i2b, dp
     use module_grid, only: grid
-!     use system,          ONLY : thermocond, grid, solvent
-!     use module_minimizer,       ONLY : cg_vect_new , FF , dF_new
-!     use constants,       ONLY : twopi, zeroC
+!     use system,          ONLY : grid
+    use module_thermo, only: thermo
+!     use module_solvent, only: solvent
+!     use constants,       ONLY : zeroC
 !     use fft,             ONLY : fftw3, k2, kproj, norm_k
 !     use module_input,           ONLY : verbose
 !     use mathematica,     only : splint
@@ -47,14 +48,13 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !             DO p=1 , molRotGrid%n_angles
 !                 psi = cg_vect_new(i,j,k,o,p,s)
 !                 rho = psi ** 2
-!                 Fint = Fint + (rho - 1.0_dp) * molRotGrid%weight(p) * Vint
+!                 Fint = Fint + 0.5_dp* (rho - 1.0_dp) * molRotGrid%weight(p) * Vint * fact
 !                 dF_new(i,j,k,o,p,s) = dF_new(i,j,k,o,p,s) + 2.0_dp * psi * molRotGrid%weight(p) * Vint * fact
 !             END DO
 !         END DO
 !     END DO
 !     END DO
 !     END DO
-!     Fint = Fint * 0.5_dp * grid%dv * solvent(1)%rho0
 !     FF = FF + Fint
 !
 !     DEALLOCATE ( Ex, Ey, Ez )
@@ -102,21 +102,6 @@ SUBROUTINE energy_polarization_dipol (Fint)
 !                 END DO
 !             END DO
 !             DEALLOCATE ( weight_omx, weight_omy, weight_omz )
-!             IF (verbose) THEN
-!                 BLOCK
-!                     REAL(dp), DIMENSION (nfft1,nfft2,nfft3,1) ::  polatot
-!         !~             OPEN(11,FILE='output/polatotxmax')
-!         !~                 DO i=1,nfft1
-!         !~                     WRITE(11,*) i*dx, 0.4894_dp*Px(i,nfft2/2+1,nfft3/2+1)
-!         !~                 END DO
-!         !~             CLOSE(11)
-!                     !Compute Radial Polarization
-!                     filename='output/radial_polarization_dipolar'
-!                     polatot(:,:,:,1)=sqrt(0.4894_dp**2*(Px(:,:,:)**2+Py(:,:,:)**2+Pz(:,:,:)**2))*solvent(1)%rho0
-!                     CALL output_rdf(polatot(:,:,:,1), filename)
-! !~                     filename='output/radial_polarization_scalar'
-!                 END BLOCK
-!             END IF
 !         END SUBROUTINE build_polarization_vector_field_Px_Py_Pz
 !
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

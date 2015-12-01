@@ -1,7 +1,8 @@
 SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !
     use precision_kinds, ONLY : i2b, dp
-!     use system,          ONLY : thermocond, grid, solvent
+!     use system,          ONLY : thermocond, grid
+!       use module_solvent, only: solvent
 !     use quadrature,      ONLY : Omx, Omy, Omz, angGrid, molRotGrid, molRotSymOrder
 !     use module_minimizer,       ONLY : cg_vect_new, FF, dF_new
 !     use constants,       ONLY : twopi

@@ -1,11 +1,13 @@
 SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 
     use precision_kinds ,ONLY: i2b, dp
-    use module_grid, only: grid
+!    use module_grid, only: grid
 !     use module_input           ,ONLY: verbose, getinput%dp
 !     use constants       ,ONLY: twopi,zeroC
 !     use quadrature      ,ONLY: angGrid, molRotGrid
-!     use system          ,ONLY: thermocond, grid, solute, solvent
+!     use system          ,ONLY: thermocond, grid
+!       use module_solute, only: solute
+!       use module_solvent, only: solvent
 !     use module_minimizer       ,ONLY: cg_vect_new, dF_new, FF
 !     use fft             ,ONLY: fftw3, kproj
 !
@@ -558,5 +560,8 @@ SUBROUTINE energy_threebody_faster (F3B1,F3B2,F3B_ww)
 !             F3B_ww=0._dp
 !         END IF
 !     END SUBROUTINE compute_water_water_3body_term
+F3B1=0._dp
+F3B2=0._dp
+F3B_ww=0._dp
 stop "energy_threebody_faster desactivated since o,p => io"
 END SUBROUTINE energy_threebody_faster

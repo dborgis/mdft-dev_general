@@ -40,9 +40,8 @@ end function packing_fraction
 subroutine weight_functions
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, zeroC, zerodp
-  use system          ,only: solvent
-  use module_grid, only: grid
-  use fft             ,only: norm_k
+  use module_solvent, only: solvent
+  use module_grid, only: grid, norm_k
   implicit none
   real(dp)     :: kR, sinkR, coskR, norm_k_loc, R, k
   integer(i2b) :: l,m,n,s,nfft1,nfft2,nfft3
@@ -82,7 +81,7 @@ end subroutine weight_functions
 ! read the excess functional
 ! compute accordingly the chemical potential and the reference bulk density
 subroutine compute_hard_spheres_parameters
-  use system          ,only: solvent
+  use module_solvent, only: solvent
   use module_input           ,only: getinput
   implicit none
   character(4) :: hs_functional
@@ -103,7 +102,7 @@ end subroutine compute_hard_spheres_parameters
 ! they would be unphysical. 0.74 is the maximum packing of a solid crystal.
 subroutine compute_packing_fractions
   use precision_kinds ,only: dp,i2b
-  use system          ,only: solvent
+  use module_solvent, only: solvent
   use module_input           ,only: verbose
   implicit none
   integer(i2b) :: s
@@ -130,7 +129,8 @@ end subroutine compute_packing_fractions
 SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   use precision_kinds ,only: dp, i2b
   use constants       ,only: fourpi, pi
-  use system          ,only: thermoCond, solvent
+  use module_thermo, only: thermo
+  use module_solvent, only: solvent
   use module_grid, only: grid
   use module_input           ,only: verbose, getinput
   implicit none
@@ -141,7 +141,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   integer  :: s
   character(len=4) :: hs_functional
   hs_functional=getinput%char('hs_functional')
-  kT=thermocond%kbT
+  kT=thermo%kbT
   do s=1,size(solvent) ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
     ! weighted densities in the case of constant density = ref bulk density
     R=hs(s)%R
@@ -196,7 +196,8 @@ end subroutine excess_chemical_potential_and_reference_bulk_grand_potential
 subroutine read_hard_sphere_radius
   use precision_kinds  ,only: dp, i2b
   use module_input            ,only: input_line
-  use system           ,only: thermocond, solvent
+  use module_thermo ,only: thermo
+  use module_solvent, only: solvent
   implicit none
   integer(i2b) :: i,j,s
   real(dp)     :: d_wca ! optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
@@ -215,7 +216,7 @@ subroutine read_hard_sphere_radius
         READ( input_line(i+s) ,*) hs(s)%R
         IF ( hs(s)%R <= 0.0_dp ) THEN ! check if one radius is negative, ie if one has to compute wca diameter
           print*, "You ask for a WCA calculation of hard sphere diameter"
-          CALL compute_wca_diameter (solvent(s)%n0 , thermocond%T, solvent(s)%site(1)%sig , solvent(s)%site(1)%eps, d_wca)
+          CALL compute_wca_diameter (solvent(s)%n0 , thermo%T, solvent(s)%site(1)%sig , solvent(s)%site(1)%eps, d_wca)
           hs(s)%R = d_wca / 2.0_dp
         END IF
       END DO

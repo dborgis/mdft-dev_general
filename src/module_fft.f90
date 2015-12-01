@@ -1,154 +1,121 @@
-!===================================================================================================================================
-MODULE fft
-!===================================================================================================================================
-! This module deals with everything related to the fast fourier transforms and all Fourier space related functions
+module module_fft
+    ! This module deals with everything related to the fast fourier transforms and all Fourier space related functions
+    use precision_kinds, only: i2b, dp, i4b
+    implicit none
+    private
 
-    use precision_kinds ,ONLY : i2b, dp, i4b
+    type :: fftw3_type3d_r2c2r
+        integer(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
+        real(dp), allocatable, dimension(:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
+        complex(dp), allocatable, dimension(:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT
+        integer :: nthread = 1
+    end type
 
-    IMPLICIT NONE
 
-    TYPE :: fftw3Needs
-        INTEGER(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
-        REAL(dp), ALLOCATABLE, DIMENSION (:,:,:) :: in_forward, out_backward ! input of FFT and output (result) of inverse FFT
-        COMPLEX(dp), ALLOCATABLE, DIMENSION (:,:,:) :: out_forward, in_backward ! output (result) of FFT and input of inverse FFT
-    END TYPE
-    TYPE( fftw3Needs ) :: fftw3
-    REAL(dp), PRIVATE, PARAMETER :: twopi = 2._dp*ACOS(-1._dp)
-    REAL(dp), ALLOCATABLE, DIMENSION (:) :: kx, ky, kz ! projection of k
+    type :: fftw3_type2d_r2c2r
+        integer(i4b) :: plan_forward, plan_backward ! descriptors of our FFTs
+        real(dp), allocatable, dimension(:,:) :: in_forward, out_backward    ! input of FFT and output (result) of inverse FFT
+        complex(dp), allocatable, dimension(:,:) :: in_backward, out_forward ! output (result) of FFT and input of inverse FFT
+        integer :: nthread = 1
+        logical :: isok=.false.
+    contains
+        procedure, nopass :: init => init_fft2d
+    end type
 
-    CONTAINS
+    type(fftw3_type3d_r2c2r) :: fftw3
+    type(fftw3_type2d_r2c2r) :: fft2d
 
-    !===============================================================================================================================
+    public :: init, fft2d, fftw3
+
+contains
+
+    subroutine init_fft2d
+        use precision_kinds, only: dp
+        use module_grid, only: grid
+        implicit none
+        integer :: npsi, nphi
+        include "fftw3.f"
+        if (fft2d%isok) then
+            print*, "in init_fft2d, fft2d%isok is already ok"
+            print*, "but still, i have received a call to fft2d%init"
+            error stop "in module_fft > init_fft2d = fft2d%init"
+        end if
+        ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
+        ! or needed as input for inverse FFT (in_backward) etc.
+        npsi = grid%npsi
+        nphi = grid%nphi
+        allocate (fft2d%in_forward  (npsi,nphi), source=0._dp)
+        allocate (fft2d%out_backward(npsi,nphi), source=0._dp)
+        allocate (fft2d%in_backward (npsi/2+1,nphi), source=(0._dp,0._dp))
+        allocate (fft2d%out_forward (npsi/2+1,nphi), source=(0._dp,0._dp))
+        ! prepare plans needed by fftw3
+        call dfftw_plan_dft_r2c_2d (fft2d%plan_forward, npsi, nphi, fft2d%in_forward, fft2d%out_forward, FFTW_EXHAUSTIVE)
+        call dfftw_plan_dft_c2r_2d (fft2d%plan_backward, npsi, nphi, fft2d%in_backward, fft2d%out_backward, FFTW_EXHAUSTIVE)
+        ! in case of using energy_cproj, we will do a HUGE number of these fft2d.
+        ! It is worth doing FFTW_EXHAUSTIVE
+        fft2d%isok=.true.
+    end subroutine init_fft2d
+
     subroutine init_threads
         use module_input, only: getinput
         implicit none
-        integer :: n_threads, iRet
-        n_threads = getinput%int('number_of_fftw3_threads',1)
-        print*,"Number of threads for FFTW3:", n_threads
+        integer :: iRet
+        fftw3%nthread = getinput%int('number_of_fftw3_threads',defaultvalue=1,assert=">0")
+        if (fftw3%nthread/=1) then
+            print*,"Number of threads for FFTW3:", fftw3%nthread
+        end if
         call dfftw_init_threads(iRet)
-            if (iRet/=1) then
-                print*, "Problem in dfftw_init_threads(), returned value is ",iRet
-                stop
-            end if
-        call dfftw_plan_with_nthreads (n_threads)
+        if (iRet/=1) then
+            print*, "Problem in dfftw_init_threads(), returned value is ",iRet
+            stop
+        end if
+        call dfftw_plan_with_nthreads (fftw3%nthread)
     end subroutine
-    !===============================================================================================================================
 
 
-    !===============================================================================================================================
-    subroutine finalize_fftw
-        implicit none
-        call dfftw_cleanup_threads()
-    end subroutine finalize_fftw
-    !===============================================================================================================================
+    ! subroutine finalize_fftw
+    !     call dfftw_cleanup_threads()
+    ! end subroutine finalize_fftw
 
 
-    !===============================================================================================================================
     SUBROUTINE init
-    !===============================================================================================================================
-        CALL init_fftw3_plans! initialize FFTW3 plans
-        CALL tabulate_kx_ky_kz! tabulate the value of norm(\vec{k}) and k2 = norm_k**2 in order to speed up program
+        call init_threads()
+        call init_fftw3_plans() ! initialize FFTW3 plans
     END SUBROUTINE
-    !===============================================================================================================================
 
 
-    !===============================================================================================================================
-    SUBROUTINE tabulate_kx_ky_kz
-    !===============================================================================================================================
+    ! this SUBROUTINE initiates the plans needed by fftw3.
+    ! it also allocates the input and output arrays of fftw3.
+    SUBROUTINE init_fftw3_plans
         use module_grid, only: grid
-        INTEGER(i2b), DIMENSION(3) :: nfft
-        INTEGER(i2b):: l
-        nfft = grid%n_nodes
-        ALLOCATE ( kx (nfft(1)/2+1), ky (nfft(2)), kz (nfft(3)), SOURCE=0._dp)
-        DO CONCURRENT ( l=1:nfft(1)/2+1 )
-            kx(l) = kproj(1,l)
-        END DO
-        DO CONCURRENT ( l=1:nfft(2) )
-            ky(l) = kproj(2,l)
-        END DO
-        DO CONCURRENT ( l=1:nfft(3) )
-            kz(l) = kproj(3,l)
-        END DO
-    END SUBROUTINE
-    !===============================================================================================================================
+        IMPLICIT NONE
+        integer :: nx, ny, nz
+        INCLUDE "fftw3.f"
+        ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
+        ! or needed as input for inverse FFT (in_backward) etc.
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
+        allocate (fftw3%in_forward(nx,ny,nz))
+        allocate (fftw3%out_backward(nx,ny,nz))
+        allocate (fftw3%in_backward(nx/2+1,ny,nz))
+        allocate (fftw3%out_forward(nx/2+1,ny,nz))
+        ! prepare plans needed by fftw3
+        CALL dfftw_plan_dft_r2c_3d &
+        ( fftw3%plan_forward, nx, ny, nz, fftw3%in_forward, fftw3%out_forward, FFTW_MEASURE )
+        CALL dfftw_plan_dft_c2r_3d &
+        ( fftw3%plan_backward, nx, ny, nz, fftw3%in_backward, fftw3%out_backward, FFTW_MEASURE )
+        ! Note about fftw planning-flags:
+        ! Since lots of FFT will be done in each direction with these two plans, we use the quite rigorous planner flag (FFTW_MEASURE)
+        ! to find the optimal plan. This, of course, costs a substantial planning time. We do not use more rigorous planner because
+        ! it then becomes the most time-consuming step of MDFT !
+        ! See http://www.fftw.org/doc/Planner-Flags.html
+    END SUBROUTINE init_fftw3_plans
 
 
-    !===============================================================================================================================
-    PURE FUNCTION k2 (l,m,n)
-    !===============================================================================================================================
-        INTEGER(i2b), INTENT(IN) :: l,m,n
-        REAL(dp) :: k2
-        k2 = kx(l)**2 + ky(m)**2 + kz(n)**2
-    END FUNCTION k2
-    !===============================================================================================================================
+    ! SUBROUTINE deallocate_everything_fft
+    !     CALL dfftw_destroy_plan ( fftw3%plan_forward ) ! destroy FFTW3 plans
+    !     CALL dfftw_destroy_plan ( fftw3%plan_backward ) ! destroy FFTW3 plans
+    ! END SUBROUTINE deallocate_everything_fft
 
-
-    !===============================================================================================================================
-    PURE FUNCTION norm_k (l,m,n)
-    !===============================================================================================================================
-        INTEGER(i2b), INTENT(IN) :: l,m,n
-        REAL(dp) :: norm_k
-        norm_k = SQRT( k2(l,m,n) )
-    END FUNCTION norm_k
-    !===============================================================================================================================
-
-
-    !===============================================================================================================================
-    PURE FUNCTION kproj (dir,l)
-    !===============================================================================================================================
-    ! note the special ordering for negative values. See
-    ! http://www.fftw.org/doc/Real_002ddata-DFT-Array-Format.html#Real_002ddata-DFT-Array-Format
-    ! http://www.fftw.org/doc/The-1d-Discrete-Fourier-Transform-_0028DFT_0029.html#The-1d-Discrete-Fourier-Transform-_0028DFT_0029
-        use module_grid, only: grid
-        INTEGER(i2b), INTENT(IN) :: dir, l ! dir is 1 for x, 2 for y, 3 for z
-        REAL(dp) :: kproj
-        INTEGER(i2b) :: m1
-        IF ( l <= grid%n_nodes(dir)/2 ) THEN
-            m1 = l - 1
-        ELSE
-            m1 = l - 1 - grid%n_nodes(dir)
-        END IF
-        kproj = twopi/grid%length(dir)*REAL(m1,dp)
-    END FUNCTION
-    !===============================================================================================================================
-
-
-    !===============================================================================================================================
-    PURE FUNCTION kvec (l,m,n)
-    !===============================================================================================================================
-        INTEGER(i2b), INTENT(IN) :: l,m,n
-        REAL(dp), DIMENSION(3) :: kvec
-        kvec(1) = kproj(1,l)
-        kvec(2) = kproj(2,m)
-        kvec(3) = kproj(3,n)
-    END FUNCTION kvec
-    !===============================================================================================================================
-
-
-    !===============================================================================================================================
-    SUBROUTINE deallocate_everything_fft
-    !===============================================================================================================================
-        CALL dfftw_destroy_plan ( fftw3%plan_forward ) ! destroy FFTW3 plans
-        CALL dfftw_destroy_plan ( fftw3%plan_backward ) ! destroy FFTW3 plans
-    END SUBROUTINE deallocate_everything_fft
-    !===============================================================================================================================
-
-
-    !===============================================================================================================================
-    PURE FUNCTION timesExpPrefactork2 (array3D, prefactor)
-    !===============================================================================================================================
-        COMPLEX(dp), DIMENSION(:,:,:), INTENT(IN) :: array3D
-        COMPLEX(dp), DIMENSION(SIZE(array3D,1),SIZE(array3D,2),SIZE(array3D,3)) :: timesExpPrefactork2
-        REAL(dp), INTENT(IN) :: prefactor
-        INTEGER(i2b) :: i,j,k,imax,jmax,kmax
-        imax = SIZE(array3D,1)
-        jmax = SIZE(array3D,2)
-        kmax = SIZE(array3D,3)
-        DO CONCURRENT ( i=1:imax, j=1:jmax, k=1:kmax )
-            timesExpPrefactork2 (i,j,k) = array3D (i,j,k) * EXP( prefactor* k2 (i,j,k) )
-        END DO
-    END FUNCTION
-    !===============================================================================================================================
-
-
-END MODULE fft
+end module module_fft

@@ -1,7 +1,8 @@
 subroutine output_gOfRandCosTheta
-    use module_grid, only: grid
+    ! use module_grid, only: grid
   ! use precision_kinds, only: dp
-  ! use system,          only: solute, solvent
+  ! use module_solute,          only: solute
+  ! use module_solvent, only: solvent
   ! use constants,       only: zerodp, pi
   ! use module_minimizer,       only: cg_vect_new
   ! use mathematica,     only: deduce_optimal_histogram_properties

@@ -2,7 +2,9 @@ SUBROUTINE energy_polarization_multi (F_pol)
 !
     use precision_kinds, ONLY: i2b, dp
     use module_grid, only: grid
-!     use system, ONLY: thermocond, solvent(1)%nspec, grid, solvent
+    use module_solvent, only: solvent
+!     use system, ONLY: thermocond, grid
+!   use module_solvent, only: solvent
 !     use dcf, ONLY: chi_l, chi_t, nb_k, delta_k
 !     use quadrature,ONLY : angGrid, molRotGrid
 !     use module_minimizer, ONLY: cg_vect_new, FF, dF_new
