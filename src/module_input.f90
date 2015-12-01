@@ -606,7 +606,9 @@ contains
                     arraytemp(i)(:) = input_line(i)(:)
                 end do
                 deallocate (input_line)
-                allocate (input_line(n), source= arraytemp )
+                !  for some reason gfortran 5.2 is not happy with deallocate followed by allocate with source
+                allocate (input_line(1:n))
+                input_line(1:n) = arraytemp(1:n)
                 deallocate (arraytemp)
 
                 ! print what has been considered as input by the parser, that is what is contained by input_line(), to output dir.
