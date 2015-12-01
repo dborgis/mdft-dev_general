@@ -36,7 +36,6 @@ contains
         use module_energy_ideal_and_external, only: energy_ideal_and_external
         use module_energy_cs, only: energy_cs
         use module_energy_cdeltacd, only: energy_cdeltacd
-        use module_energy_cproj, only: energy_cproj
         use module_energy_cproj_mrso, only: energy_cproj_mrso
         ! use module_energy_cproj_slow, only: energy_cproj_slow
 
