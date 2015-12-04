@@ -414,7 +414,6 @@ contains
             ! We will need the rotation matrix from lab to q frame
             !
             Rot = rotation_matrix_from_lab_to_q_frame(q)
-            if (norm2(rot)<=epsilon(1._dp))  error stop "oijouhskueghfuyfgjcfgr"
             where (rot<=epsilon(1._dp)) rot=0._dp
         END IF
         !
