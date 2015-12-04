@@ -89,7 +89,7 @@ contains
                                 lbfgsb%nbd(icg) = 1 ! lower bounded
                                 lbfgsb%l(icg) = 0._dp ! the lower bound
                             else
-                                lbfgsb%nbd(icg) = 2 ! lower and upper bounded
+                                lbfgsb%nbd(icg) = 1 ! lower and upper bounded
                                 lbfgsb%l(icg) = 0._dp!solvent(is)%density(ix,iy,iz,io)
                                 ! lbfgsb%u(icg) = 0._dp!solvent(is)%density(ix,iy,iz,io) ! lower and upper bounds the same, I hope lbfgsb understands this means don't touch to this?
                             end if
