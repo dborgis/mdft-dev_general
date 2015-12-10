@@ -100,7 +100,7 @@ contains
                             if ( betav >= threeshold_in_betav ) then
                                 solvent(s)%density(io,i,j,k) = 0.0_dp
                             else
-                                solvent(s)%density(io,i,j,k) = exp(-betav)*solvent(s)%density(io,i,j,k)
+                                solvent(s)%density(io,i,j,k) = exp(-betav)*solvent(s)%rho0
                             end if
 
                         end do
