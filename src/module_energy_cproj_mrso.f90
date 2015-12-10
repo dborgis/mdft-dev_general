@@ -646,108 +646,107 @@ contains
 
 
 
-        subroutine for_all_q_find_indices_of_mq
-            !
-            ! for each vector q, defined by its components qx(ix_q), qy(iy_q), qz(iz_q)
-            ! I am looking for the indices ix_mq, iy_mq, iz_mq for which
-            ! qx(ix_mq), qy(iy_mq), qz(iz_mq) defines vector -q
-            !
-
-            implicit none
-            integer :: i, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
-            if ( allocated(tableof_ix_mq) .and. allocated(tableof_iy_mq) .and. allocated(tableof_iz_mq)) then
-                if ( size(tableof_ix_mq)==nx .and. size(tableof_iy_mq)==ny .and. size(tableof_iz_mq)==nz &
-                    .and. allocated(qx) .and. size(qx)==nx .and. allocated(qy) .and. size(qy)==ny .and.&
+    subroutine for_all_q_find_indices_of_mq
+        !
+        ! for each vector q, defined by its components qx(ix_q), qy(iy_q), qz(iz_q)
+        ! I am looking for the indices ix_mq, iy_mq, iz_mq for which
+        ! qx(ix_mq), qy(iy_mq), qz(iz_mq) defines vector -q
+        !
+        implicit none
+        integer :: i, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+        if ( allocated(tableof_ix_mq) .and. allocated(tableof_iy_mq) .and. allocated(tableof_iz_mq)) then
+            if ( size(tableof_ix_mq)==nx .and. size(tableof_iy_mq)==ny .and. size(tableof_iz_mq)==nz &
+                .and. allocated(qx) .and. size(qx)==nx .and. allocated(qy) .and. size(qy)==ny .and.&
                     allocated(qz) .and. size(qz)==nz ) then
-                    return
-                else
-                    print*, "problem detected in the subroutine that allocates and defines all q and mq related arrays"
-                    error stop
+                return
+            else
+                print*, "problem detected in the subroutine that allocates and defines all q and mq related arrays"
+                error stop
+            end if
+        end if
+
+        allocate (qx(nx), qy(ny), qz(nz), source=0._dp)
+        qx(1:nx) = grid%kx(1:nx)
+        qy(1:ny) = grid%ky(1:ny)
+        qz(1:nz) = grid%kz(1:nz)
+
+        allocate (tableof_ix_mq(nx), tableof_iy_mq(ny), tableof_iz_mq(nz) ,source=-huge(1))
+        i=0
+        do ix_q=1,nx
+            do ix_mq=1,nx
+                if (qx(ix_q)==-qx(ix_mq) .or. qx(ix_q)+2._dp*pi*nx/lx==-qx(ix_mq) ) then
+                    tableof_ix_mq(ix_q) = ix_mq
+                    i=i+1
+                    ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
+                    cycle
                 end if
-            end if
-
-            allocate (qx(nx), qy(ny), qz(nz), source=0._dp)
-            qx(1:nx) = grid%kx(1:nx)
-            qy(1:ny) = grid%ky(1:ny)
-            qz(1:nz) = grid%kz(1:nz)
-
-            allocate (tableof_ix_mq(nx), tableof_iy_mq(ny), tableof_iz_mq(nz) ,source=-huge(1))
-            i=0
-            do ix_q=1,nx
-                do ix_mq=1,nx
-                    if (qx(ix_q)==-qx(ix_mq) .or. qx(ix_q)+2._dp*pi*nx/lx==-qx(ix_mq) ) then
-                        tableof_ix_mq(ix_q) = ix_mq
-                        i=i+1
-                        ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
-                        cycle
-                    end if
-                end do
             end do
-            if (i/=nx) then
-                print*, "I did not found all the -qx. Of",nx,", I found only",i
-                error stop
-            end if
+        end do
+        if (i/=nx) then
+            print*, "I did not found all the -qx. Of",nx,", I found only",i
+            error stop
+        end if
 
-            i=0
+        i=0
+        do iy_q=1,ny
+            do iy_mq=1,ny
+                if ( qy(iy_q)==-qy(iy_mq) .or. qy(iy_q)+2._dp*pi*ny/ly==-qy(iy_mq)  ) then
+                    tableof_iy_mq(iy_q) = iy_mq
+                    i=i+1
+                    ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
+                    cycle
+                end if
+            end do
+        end do
+        if (i/=ny) then
+            print*, "I did not found all the -qy. Of",ny,", I found only",i
+            error stop
+        end if
+
+        i=0
+        do iz_q=1,nz
+            do iz_mq=1,nz
+                if ( qz(iz_q)==-qz(iz_mq) .or. qz(iz_q)+2._dp*pi*nz/lz==-qz(iz_mq)  ) then
+                    tableof_iz_mq(iz_q) = iz_mq
+                    i=i+1
+                    ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
+                    cycle
+                end if
+            end do
+        end do
+        if (i/=nz) then
+            print*, "I did not found all the -qz. Of",nz,", I found only",i
+            error stop
+        end if
+
+        ! Here I want to check that we really have q == -q but for the point in each direction at index 0 and nx/2+1
+        ! for odd numbers, please ask maximilien
+        if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
+            print*, "nx, ny ou nz est impair"
+            print*, "nx ny nz =", nx, ny, nz
+            print*, "that is not compatible with our energy_cproj for now"
+            error stop
+        end if
+        do ix_q=1,nx
             do iy_q=1,ny
-                do iy_mq=1,ny
-                    if ( qy(iy_q)==-qy(iy_mq) .or. qy(iy_q)+2._dp*pi*ny/ly==-qy(iy_mq)  ) then
-                        tableof_iy_mq(iy_q) = iy_mq
-                        i=i+1
-                        ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
-                        cycle
-                    end if
-                end do
-            end do
-            if (i/=ny) then
-                print*, "I did not found all the -qy. Of",ny,", I found only",i
-                error stop
-            end if
-
-            i=0
-            do iz_q=1,nz
-                do iz_mq=1,nz
-                    if ( qz(iz_q)==-qz(iz_mq) .or. qz(iz_q)+2._dp*pi*nz/lz==-qz(iz_mq)  ) then
-                        tableof_iz_mq(iz_q) = iz_mq
-                        i=i+1
-                        ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
-                        cycle
-                    end if
-                end do
-            end do
-            if (i/=nz) then
-                print*, "I did not found all the -qz. Of",nz,", I found only",i
-                error stop
-            end if
-
-            ! Here I want to check that we really have q == -q but for the point in each direction at index 0 and nx/2+1
-            ! for odd numbers, please ask maximilien
-            if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
-                print*, "nx, ny ou nz est impair"
-                print*, "nx ny nz =", nx, ny, nz
-                print*, "that is not compatible with our energy_cproj for now"
-                error stop
-            end if
-            do ix_q=1,nx
-                do iy_q=1,ny
-                    do iz_q=1,nz
-                        ix_mq = tableof_ix_mq(ix_q)
-                        iy_mq = tableof_iy_mq(iy_q)
-                        iz_mq = tableof_iz_mq(iz_q)
-                        if ( qx(ix_q)/=-qx(ix_mq) .or. qy(iy_q)/=-qy(iy_mq) .or. qz(iz_q)/=-qz(iz_mq) ) then
-                            if (ix_q==1 .or. iy_q==1 .or. iz_q==1 .or. ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1) then
-                                ! that is the expected behavior
-                            else
-                                print*,"q n'est pas l'opposé de mq dans la boucle de verification des q apres la recherche"
-                                print*, "des indices de mq"
-                                print*, "ix_q, iy_q, iz_q, q(ix_q, iy_q, iz_q)    =",ix_q, iy_q, iz_q, qx(ix_q), qy(iy_q), qz(iz_q)
-                                print*, "ix_mq, iy_mq, iz_mq, q(ix_mq,iy_mq,iz_mq)=",ix_mq,iy_mq,iz_mq,qx(ix_mq),qy(iy_mq),qz(iz_mq)
-                                error stop
-                            end if
+                do iz_q=1,nz
+                    ix_mq = tableof_ix_mq(ix_q)
+                    iy_mq = tableof_iy_mq(iy_q)
+                    iz_mq = tableof_iz_mq(iz_q)
+                    if ( qx(ix_q)/=-qx(ix_mq) .or. qy(iy_q)/=-qy(iy_mq) .or. qz(iz_q)/=-qz(iz_mq) ) then
+                        if (ix_q==1 .or. iy_q==1 .or. iz_q==1 .or. ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1) then
+                            ! that is the expected behavior
+                        else
+                            print*,"q n'est pas l'opposé de mq dans la boucle de verification des q apres la recherche"
+                            print*, "des indices de mq"
+                            print*, "ix_q, iy_q, iz_q, q(ix_q, iy_q, iz_q)    =",ix_q, iy_q, iz_q, qx(ix_q), qy(iy_q), qz(iz_q)
+                            print*, "ix_mq, iy_mq, iz_mq, q(ix_mq,iy_mq,iz_mq)=",ix_mq,iy_mq,iz_mq,qx(ix_mq),qy(iy_mq),qz(iz_mq)
+                            error stop
                         end if
-                    end do
+                    end if
                 end do
             end do
+        end do
         end subroutine for_all_q_find_indices_of_mq
 
         ! subroutine test_routines_calcul_de_Rm_mup_mu_q
