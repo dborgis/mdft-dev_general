@@ -99,11 +99,7 @@ contains
         real(dp), parameter :: epsdp=epsilon(1._dp)
 
         is_direct = getinput%log('direct_sum', defaultvalue=.false.)
-        is_poisson = getinput%log('poisson_solver', defaultvalue=.true.)
-
-        if (is_poisson .and. is_direct) then
-            STOP 'You ask for two different methods for computing the electrostatic potential: direct_sum and poisson'
-        end if
+        is_poisson = .not. is_direct
 
         if (.not.allocated(solvent)) then
             print*, "solvent% is not allocated in module_vext init_electrostatic_potential"
@@ -145,10 +141,17 @@ contains
         !
 
         ! DIRECT SUMMATION, pot = sum of qq'/r
-        ! IF ( is_direct ) call compute_vcoul_as_sum_of_pointcharges
+        IF ( is_direct ) then
+            print*, "electrostatic potential calculated by direct summation"
+            call compute_vcoul_as_sum_of_pointcharges
+        end if
 
         ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
-        IF (getinput%log('fastpoissonsolver', defaultvalue=.true.)) call init_fastpoissonsolver
+        IF (is_poisson) then
+            print*, "electrostatic potential calculated by FFT"
+            call init_fastpoissonsolver
+        end if
+
     end subroutine init_electrostatic_potential
 
     subroutine prevent_numerical_catastrophes
@@ -615,7 +618,7 @@ contains
 
         INTEGER         :: i,j,k,m,n,s,io
         REAL(dp)        :: xgrid(3), xv(3), xuv(3), xuv2, V_psi
-        REAL, PARAMETER :: hardShellRadiusSQ=1._dp ! charge pseudo radius **2   == Rc**2
+        REAL, PARAMETER :: hardShellRadiusSQ=0.5_dp ! charge pseudo radius **2   == Rc**2
         real, parameter :: epsdp = epsilon(1._dp)
         REAL(dp), DIMENSION( SIZE(solvent(1)%site), grid%no) :: xmod, ymod, zmod
 
@@ -678,7 +681,7 @@ contains
                                 end do
                             end do
 
-                            solvent(s)%vextq(io,i,j,k) = min( 100._dp, v_psi )
+                            solvent(s)%vextq(io,i,j,k) = min( solvent(s)%vext_threeshold, v_psi )
 
                         end do
                     end do
