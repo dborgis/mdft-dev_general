@@ -160,7 +160,7 @@ call cpu_time (time(1))
             error stop
         end if
 
-        if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
+        if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp)) ,m=0,mmax  )])
 
         if (.not. allocated(p3%foo_q)) allocate ( p3%foo_q(1:np) )
         if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
@@ -597,8 +597,8 @@ contains
                 end do
             end do
             call dfftw_execute (fft2d%plan)
-            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )
-            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )
+            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)
+            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
         end do
         foo_p = zeroc
         do m=0,mmax
@@ -636,7 +636,7 @@ contains
             call dfftw_execute( ifft2d%plan )
             do iphi=1,nphi
                 do ipsi=1,npsi
-                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi) *(nphi*npsi)
+                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi)
                 end do
             end do
         end do
