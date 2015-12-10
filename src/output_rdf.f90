@@ -48,7 +48,7 @@ SUBROUTINE output_rdf (array,filename)
     ! end do
 
     open (10, file=filename)
-    open (12, file=trim(adjustl(filename))//"-spline")
+    ! open (12, file=trim(adjustl(filename))//"-spline")
     !
     ! Compute and print histogram (the rdf) for each solute site
     !
