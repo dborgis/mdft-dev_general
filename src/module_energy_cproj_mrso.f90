@@ -310,7 +310,7 @@ call cpu_time (time(5))
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    deltarho_p(1:np,ix,iy,iz) = euler2proj( solvent(1)%density(1:no,ix,iy,iz)-solvent(1)%rho0 )
+                    deltarho_p(1:np,ix,iy,iz) = angl2proj( solvent(1)%density(1:no,ix,iy,iz)-solvent(1)%rho0 )
                 end do
             end do
         end do
@@ -561,7 +561,7 @@ call cpu_time(time(12))
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    gamma_o(1:no) = -kT*dv*proj2euler(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
+                    gamma_o(1:no) = -kT*dv*proj2angl(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
                     df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)
                     ff = ff + sum( gamma_o*(solvent(1)%density(:,ix,iy,iz)-rho0) )/2._dp
                 end do
@@ -586,7 +586,7 @@ print*, "   > Fcproj: gather projections into gamma and sum                ", ti
 contains
 
 
-    function euler2proj (foo_o) result (foo_p)
+    function angl2proj (foo_o) result (foo_p)
         implicit none
         real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
         complex(dp) :: foo_p(1:grid%np)
@@ -612,10 +612,10 @@ contains
             end do
         end do
 
-    end function euler2proj
+    end function angl2proj
 
 
-    function proj2euler (foo_p) result (foo_o)
+    function proj2angl (foo_p) result (foo_o)
         implicit none
         real(dp) :: foo_o (1:grid%no)
         complex(dp), intent(in) :: foo_p(:) ! np
@@ -642,7 +642,7 @@ contains
                 end do
             end do
         end do
-    end function proj2euler
+    end function proj2angl
 
 
 
