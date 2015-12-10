@@ -34,7 +34,7 @@ module module_energy_cproj_mrso
         logical :: isok = .false.
         real(dp) :: q
         integer :: na ! number of projections for the direct correlation function
-        integer :: nq=200 ! number of q points in c(q)
+        integer :: nq=1024 ! number of q points in c(q)
         integer, allocatable :: a(:,:,:,:,:) ! index of m, n, mu, nu, khi => (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
