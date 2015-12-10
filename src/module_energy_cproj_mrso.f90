@@ -126,8 +126,8 @@ call cpu_time (time(1))
         npsi=grid%npsi
 
         if (.not.allocated(fft2d%in)) allocate (fft2d%in(npsi,nphi))
-        if (.not.allocated(fft2d%out)) allocate (fft2d%out(npsi/2+1,nphi))
-        if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(npsi/2+1,nphi))
+        if (.not.allocated(fft2d%out)) allocate (fft2d%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
+        if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
         if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(npsi,nphi))
 
         mmax=grid%mmax
@@ -155,14 +155,12 @@ call cpu_time (time(1))
         ! MDFT-dev only valid for even number of nodes in each direction
         !
         if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
-            print*, "mdft-dev only  valid for even grid nodes"
+            print*, "mdft-dev wants even grid nodes"
             print*, "nx,ny,nz=",nx,ny,nz
             error stop
         end if
 
-
         if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp))/real(nphi*npsi,dp) ,m=0,mmax  )])
-
 
         if (.not. allocated(p3%foo_q)) allocate ( p3%foo_q(1:np) )
         if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
