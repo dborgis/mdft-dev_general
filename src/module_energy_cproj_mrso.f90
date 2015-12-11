@@ -301,6 +301,24 @@ call cpu_time (time(4))
         end if
 
 call cpu_time (time(5))
+block
+    character(50) :: filename
+    filename = "output/density_o1.dat"
+    call output_rdf ( solvent(1)%density(1,:,:,:)-solvent(1)%rho0, filename)
+    print*,"printed output/density_o1.dat"
+    filename = "output/density_o2.dat"
+    call output_rdf ( solvent(1)%density(2,:,:,:)-solvent(1)%rho0, filename)
+    print*,"printed output/density_o2.dat"
+    filename = "output/density_o3.dat"
+    call output_rdf ( solvent(1)%density(3,:,:,:)-solvent(1)%rho0, filename)
+    print*,"printed output/density_o3.dat"
+    filename = "output/density_o4.dat"
+    call output_rdf ( solvent(1)%density(4,:,:,:)-solvent(1)%rho0, filename)
+    print*,"printed output/density_o4.dat"
+    filename = "output/density_o5.dat"
+    call output_rdf ( solvent(1)%density(5,:,:,:)-solvent(1)%rho0, filename)
+    print*,"printed output/density_o5.dat"
+end block
 
         !
         ! Projection of delta rho
@@ -312,10 +330,88 @@ call cpu_time (time(5))
                 end do
             end do
         end do
-
-call cpu_time (time(6))
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!         block
+!             character(50) :: filename
+!             filename = "output/rho_000.dat"
+!             call output_rdf (real(deltarho_p(p3%p(0,0,0),:,:,:),dp), filename)
+!             print*,"printed output/rho_000.dat"
+!         end block
+!         do ix=1,nx
+!             do iy=1,ny
+!                 do iz=1,nz
+!                     deltarho_p(1:np,ix,iy,iz) = angl2proj(proj2angl(deltarho_p(1:np,ix,iy,iz)))
+!                 end do
+!             end do
+!         end do
+!         block
+!             character(50) :: filename
+!             filename = "output/rho_000_AR.dat"
+!             call output_rdf (real(deltarho_p(p3%p(0,0,0),:,:,:),dp), filename)
+!             print*,"printed output/rho_000_AR.dat"
+!         end block
+!         do ix=1,nx
+!             do iy=1,ny
+!                 do iz=1,nz
+!                     solvent(1)%density(1:no,ix,iy,iz) = proj2angl(deltarho_p(1:np,ix,iy,iz))
+!                 end do
+!             end do
+!         end do
+!         block
+!             character(50) :: filename
+!             filename = "output/density_o1_AR.dat"
+!             call output_rdf ( solvent(1)%density(1,:,:,:), filename)
+!             print*,"printed output/density_o1_AR.dat"
+!             filename = "output/density_o2_AR.dat"
+!             call output_rdf ( solvent(1)%density(2,:,:,:), filename)
+!             print*,"printed output/density_o2_AR.dat"
+!             filename = "output/density_o3_AR.dat"
+!             call output_rdf ( solvent(1)%density(3,:,:,:), filename)
+!             print*,"printed output/density_o3_AR.dat"
+!             filename = "output/density_o4_AR.dat"
+!             call output_rdf ( solvent(1)%density(4,:,:,:), filename)
+!             print*,"printed output/density_o4_AR.dat"
+!             filename = "output/density_o5_AR.dat"
+!             call output_rdf ( solvent(1)%density(5,:,:,:), filename)
+!             print*,"printed output/density_o5_AR.dat"
+!         end block
+!
+!
+! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! !
+! ! Test que proj2angl( angl2proj( x )) = x
+! !
+! block
+!     real(dp) :: a(no), b(no)
+!     real(dp) :: c
+!     integer :: io
+!     do ix=1,nx
+!         do iy=1,ny
+!             do iz=1,nz
+!                 a = proj2angl(   angl2proj(   solvent(1)%density(1:no,ix,iy,iz)  ))
+!                 b = proj2angl(   angl2proj(   a))
+!                 do itheta=1,ntheta
+!                     do iphi=1,nphi
+!                         do ipsi=1,npsi
+!                             io=grid%indo(itheta,iphi,ipsi)
+!                             print*,"ix,iy,iz=", ix, iy, iz,"itheta iphi ipsi=", itheta,iphi,ipsi, "on veut", a(io),"on a", b(io)
+!                         end do
+!                     end do
+!                 end do
+!             end do
+!         end do
+!     end do
+!     stop "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+! end block
+! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! call cpu_time (time(6))
+!
+!         block
+!             character(50) :: filename
+!             filename = "output/rho_000.dat"
+!             call output_rdf (real(deltarho_p(p3%p(0,0,0),:,:,:),dp), filename)
+!             print*,"printed output/rho_000.dat"
+!         end block
+!         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
         ! On a les projections sur la grille cartesienne
@@ -584,11 +680,17 @@ print*, "   > Fcproj: gather projections into gamma and sum                ", ti
 contains
 
 
+    !
+    ! Transform angles to projections
+    !
     function angl2proj (foo_o) result (foo_p)
         implicit none
         real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
         complex(dp) :: foo_p(1:grid%np)
-        integer :: itheta, iphi, ipsi, m, mup, mu, ip
+        integer :: itheta, iphi, ipsi, m, mup, mu, ip, p, o
+        complex(dp) :: zeroc=complex(0._dp,0._dp)
+        real(dp) :: eightpisq_I_mrso
+        eightpisq_I_mrso = 8._dp*acos(-1._dp)**2/real(mrso,dp)
         foo_theta_mu_mup = zeroc
         do itheta=1,ntheta
             do iphi=1,nphi
@@ -598,7 +700,9 @@ contains
             end do
             call dfftw_execute (fft2d%plan)
             foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)
-            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
+            if (mmax>0) then
+                foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
+            end if
         end do
         foo_p = zeroc
         do m=0,mmax
@@ -610,6 +714,28 @@ contains
             end do
         end do
 
+
+
+        ! foo_p = zeroc
+        ! do m=0,mmax
+        !     do mup=-m,m
+        !         do mu=0,m,mrso
+        !             p=p3%p(m,mup,mu/mrso)
+        !             foo_p(p) = zeroc
+        !             do itheta=1,ntheta
+        !                 do iphi=1,nphi
+        !                     do ipsi=1,npsi
+        !                         o = grid%indo(itheta,iphi,ipsi)
+        !                         foo_p(p) = foo_p(p) + fm(m) * p3%harm_sph(itheta,p)* grid%w(o)/ sum(grid%w) * &
+        !                             foo_o(o)*exp(ii*mup*grid%phi(o)+ii*mu*grid%psi(o))
+        !                     end do
+        !                 end do
+        !             end do
+        !         end do
+        !     end do
+        ! end do
+
+
     end function angl2proj
 
 
@@ -617,16 +743,21 @@ contains
         implicit none
         real(dp) :: foo_o (1:grid%no)
         complex(dp), intent(in) :: foo_p(:) ! np
+        integer :: o, p, m, mup, mu, ip, iphi, ipsi, itheta
+        complex(dp), parameter :: ii=complex(0._dp,1._dp)
+        complex(dp) :: foo_o_c
+        complex(dp) :: R
         foo_theta_mu_mup = zeroc
-        foo_o = zeroc
+        foo_o = 0._dp
         do mup=-mmax,mmax
             do mu=0,mmax,mrso
                 do m= max(abs(mup),abs(mu)), mmax
                     ip=p3%p(m,mup,mu/mrso)
-                    do itheta=1,ntheta
-                        foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
-                        +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
-                    end do
+                    ! do itheta=1,ntheta
+                        foo_theta_mu_mup(1:ntheta,mu/mrso,mup) = foo_p(ip)*sum(p3%harm_sph(:,ip))*fm(m)
+                        ! foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
+                        ! +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
+                    ! end do
                 end do
             end do
         end do
@@ -637,6 +768,31 @@ contains
             do iphi=1,nphi
                 do ipsi=1,npsi
                     foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi)
+                end do
+            end do
+        end do
+
+
+        do itheta=1,ntheta
+            do iphi=1,nphi
+                do ipsi=1,npsi
+                    o=grid%indo(itheta,iphi,ipsi)
+                    foo_o_c = zeroc
+                    do m=0,mmax
+                        do mup=-m,m
+                            mu=0
+                            p = p3%p(m,mup,mu)
+                            foo_o_c = foo_o_c + foo_p(p)*fm(m)*p3%harm_sph(itheta,p)*exp(-ii*mup*grid%phi(iphi))
+                            if (mmax>=2) then
+                                do mu=2,m,mrso
+                                    p = p3%p(m,mup,mu/mrso)
+                                    R = foo_p(p)*fm(m)*p3%harm_sph(itheta,p)*exp(-ii*mup*grid%phi(iphi)-ii*mup*grid%phi(iphi))
+                                    foo_o_c = foo_o_c + R + conjg(R)
+                                end do
+                            end if
+                        end do
+                    end do
+                    foo_o(o) = real(foo_o_c)
                 end do
             end do
         end do
