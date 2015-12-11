@@ -106,9 +106,10 @@ contains
         allocate( grid%wthetaofntheta(grid%ntheta), source=0._dp)
         allocate( grid%w(grid%no) , source=0._dp)
         allocate( grid%thetaofntheta(grid%ntheta), source=0._dp) ! itheta => theta
-        allocate( grid%phiofnphi(grid%nphi), grid%psiofnpsi(grid%npsi) )
-        allocate( grid%wphiofnphi(grid%nphi) )
-        allocate( grid%wpsiofnpsi(grid%npsi) )
+        allocate( grid%phiofnphi(grid%nphi) ,source=0._dp)
+        allocate( grid%psiofnpsi(grid%npsi) ,source=0._dp)
+        allocate( grid%wphiofnphi(grid%nphi) ,source=0._dp)
+        allocate( grid%wpsiofnpsi(grid%npsi) ,source=0._dp)
         grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
         grid%wpsiofnpsi = 1._dp/real(grid%npsi*grid%molrotsymorder,dp)
         grid%psiofnpsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
