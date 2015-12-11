@@ -301,24 +301,6 @@ call cpu_time (time(4))
         end if
 
 call cpu_time (time(5))
-block
-    character(50) :: filename
-    filename = "output/density_o1.dat"
-    call output_rdf ( solvent(1)%density(1,:,:,:)-solvent(1)%rho0, filename)
-    print*,"printed output/density_o1.dat"
-    filename = "output/density_o2.dat"
-    call output_rdf ( solvent(1)%density(2,:,:,:)-solvent(1)%rho0, filename)
-    print*,"printed output/density_o2.dat"
-    filename = "output/density_o3.dat"
-    call output_rdf ( solvent(1)%density(3,:,:,:)-solvent(1)%rho0, filename)
-    print*,"printed output/density_o3.dat"
-    filename = "output/density_o4.dat"
-    call output_rdf ( solvent(1)%density(4,:,:,:)-solvent(1)%rho0, filename)
-    print*,"printed output/density_o4.dat"
-    filename = "output/density_o5.dat"
-    call output_rdf ( solvent(1)%density(5,:,:,:)-solvent(1)%rho0, filename)
-    print*,"printed output/density_o5.dat"
-end block
 
         !
         ! Projection of delta rho
@@ -716,24 +698,24 @@ contains
 
 
 
-        ! foo_p = zeroc
-        ! do m=0,mmax
-        !     do mup=-m,m
-        !         do mu=0,m,mrso
-        !             p=p3%p(m,mup,mu/mrso)
-        !             foo_p(p) = zeroc
-        !             do itheta=1,ntheta
-        !                 do iphi=1,nphi
-        !                     do ipsi=1,npsi
-        !                         o = grid%indo(itheta,iphi,ipsi)
-        !                         foo_p(p) = foo_p(p) + fm(m) * p3%harm_sph(itheta,p)* grid%w(o)/ sum(grid%w) * &
-        !                             foo_o(o)*exp(ii*mup*grid%phi(o)+ii*mu*grid%psi(o))
-        !                     end do
-        !                 end do
-        !             end do
-        !         end do
-        !     end do
-        ! end do
+        foo_p = zeroc
+        do m=0,mmax
+            do mup=-m,m
+                do mu=0,m,mrso
+                    p=p3%p(m,mup,mu/mrso)
+                    foo_p(p) = zeroc
+                    do itheta=1,ntheta
+                        do iphi=1,nphi
+                            do ipsi=1,npsi
+                                o = grid%indo(itheta,iphi,ipsi)
+                                foo_p(p) = foo_p(p) + fm(m) * p3%harm_sph(itheta,p)* grid%w(o)/ sum(grid%w) * &
+                                    foo_o(o)*exp(ii*mup*grid%phi(o)+ii*mu*grid%psi(o))
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        end do
 
 
     end function angl2proj
@@ -749,25 +731,28 @@ contains
         complex(dp) :: R
         foo_theta_mu_mup = zeroc
         foo_o = 0._dp
-        do mup=-mmax,mmax
-            do mu=0,mmax,mrso
-                do m= max(abs(mup),abs(mu)), mmax
-                    ip=p3%p(m,mup,mu/mrso)
-                    ! do itheta=1,ntheta
-                        foo_theta_mu_mup(1:ntheta,mu/mrso,mup) = foo_p(ip)*sum(p3%harm_sph(:,ip))*fm(m)
-                        ! foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
-                        ! +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
-                    ! end do
+        do itheta=1,ntheta
+            do mup=-mmax,mmax
+                do mu=0,mmax,mrso
+                    do m= max(abs(mup),abs(mu)), mmax
+                        ip=p3%p(m,mup,mu/mrso)
+                        foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup) &
+                            + foo_p(ip)*p3%harm_sph(itheta,ip)
+                        ! foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_p(ip)*sum(p3%harm_sph(:,ip))*fm(m)
+                            ! foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
+                            ! +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
+                    end do
                 end do
             end do
         end do
         do itheta=1,ntheta
-            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
-            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
+            ifft2d%in(:,1:mmax+1) = 2*conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
+            ifft2d%in(:,mmax+2:)  = 2*conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
             call dfftw_execute( ifft2d%plan )
             do iphi=1,nphi
                 do ipsi=1,npsi
-                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi)
+                    o = grid%indo(itheta,iphi,ipsi)
+                    foo_o(o) = ifft2d%out(ipsi,iphi)
                 end do
             end do
         end do
@@ -792,6 +777,7 @@ contains
                             end if
                         end do
                     end do
+                    ! print*, foo_o(o), foo_o_c
                     foo_o(o) = real(foo_o_c)
                 end do
             end do
