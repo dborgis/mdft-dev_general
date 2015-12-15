@@ -46,10 +46,9 @@ module module_energy_cproj_mrso
     real(dp), allocatable :: fm(:)
 
     type :: fft3d_c_type
-        type(c_ptr) :: plan_forward
-        type(c_ptr) :: plan_backward
-        logical :: plan_forward_ok = .false.
-        logical :: plan_backward_ok = .false.
+        type(c_ptr) :: plan_sens_minus
+        type(c_ptr) :: plan_sens_plus
+        logical :: is_alread_planned = .false.
     end type fft3d_c_type
     type (fft3d_c_type) :: fft3d
 
@@ -78,20 +77,20 @@ module module_energy_cproj_mrso
     type (p3_type) :: p3
 
 
-    type :: fft2d_type
+    type :: fft2d_r2c_type
         type(c_ptr) :: plan
         real(dp), allocatable    :: in(:,:)
         complex(dp), allocatable :: out(:,:)
-        logical :: isalreadyplanned
+        logical :: is_already_planned
     end type
-    type :: ifft2d_type
+    type :: fft2d_c2r_type
         type(c_ptr) :: plan
         complex(dp), allocatable :: in(:,:)
         real(dp), allocatable    :: out(:,:)
-        logical :: isalreadyplanned
+        logical :: is_already_planned
     end type
-    type(  fft2d_type ), save :: fft2d
-    type( ifft2d_type ), save :: ifft2d
+    type( fft2d_r2c_type ), save :: fft2d_r2c
+    type( fft2d_c2r_type ), save :: fft2d_c2r
 
     complex(dp), allocatable :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
@@ -100,24 +99,26 @@ module module_energy_cproj_mrso
 
 contains
 
-    subroutine energy_cproj_mrso (ff,df)
-        ! use ieee_arithmetic
-        use iso_c_binding, only: c_ptr, dp=>c_double
-        use module_grid, only: grid
-        use module_thermo, only: thermo
-        implicit none
-        real(dp), intent(out) :: ff
-        real(dp), intent(inout) :: df(:,:,:,:,:) ! x y z o s
-        real(dp) :: dv, kT
-        logical :: q_eq_mq
-        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
-        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq
-        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
-        real(dp) :: q(3), mq(3), lx, ly, lz, rho0
-        real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
-        logical, allocatable :: gamma_p_isok(:,:,:)
-        real :: time(20)
+subroutine energy_cproj_mrso (ff,df)
+
+    use iso_c_binding, only: c_ptr, dp=>c_double
+    use module_grid, only: grid
+    use module_thermo, only: thermo
+
+    implicit none
+
+    real(dp), intent(out) :: ff
+    real(dp), intent(inout) :: df(:,:,:,:,:) ! x y z o s
+    real(dp) :: dv, kT
+    logical :: q_eq_mq
+    integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
+    integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
+    integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq
+    complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
+    real(dp) :: q(3), mq(3), lx, ly, lz, rho0
+    real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
+    logical, allocatable :: gamma_p_isok(:,:,:)
+    real :: time(20)
 
 call cpu_time (time(1))
 
@@ -125,10 +126,10 @@ call cpu_time (time(1))
         nphi=grid%nphi
         npsi=grid%npsi
 
-        if (.not.allocated(fft2d%in)) allocate (fft2d%in(npsi,nphi))
-        if (.not.allocated(fft2d%out)) allocate (fft2d%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
-        if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
-        if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(npsi,nphi))
+        if (.not.allocated(fft2d_r2c%in))  allocate (fft2d_r2c%in (npsi,nphi))
+        if (.not.allocated(fft2d_r2c%out)) allocate (fft2d_r2c%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
+        if (.not.allocated(fft2d_c2r%in))  allocate (fft2d_c2r%in (npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
+        if (.not.allocated(fft2d_c2r%out)) allocate (fft2d_c2r%out(npsi,nphi))
 
         mmax=grid%mmax
         mrso=grid%molrotsymorder
@@ -283,21 +284,20 @@ call cpu_time (time(4))
         ! permet de ne garder que les mup>=0 ou les mu>=0.
         ! On choisit les mu>=0 (cf doc de Luc)
         !
-        if (.not. fft2d%isalreadyplanned) then
-            call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
-            call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+        if (.not. fft2d_r2c%is_already_planned) then
+            call dfftw_plan_dft_r2c_2d(  fft2d_r2c%plan, npsi, nphi,  fft2d_r2c%in,  fft2d_r2c%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
+            call dfftw_plan_dft_c2r_2d(  fft2d_c2r%plan, npsi, nphi, fft2d_c2r%in, fft2d_c2r%out, FFTW_EXHAUSTIVE )
             ! call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
-            fft2d%isalreadyplanned =.true.
-            ifft2d%isalreadyplanned =.true.
+            fft2d_r2c%is_already_planned =.true.
+            fft2d_c2r%is_already_planned =.true.
         end if
 
-        if (.not. fft3d%plan_backward_ok) then
-            call dfftw_plan_dft_3d (fft3d%plan_backward,&
+        if (.not. fft3d%is_alread_planned) then
+            call dfftw_plan_dft_3d (fft3d%plan_sens_plus,&
                 nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
-            call dfftw_plan_dft_3d( fft3d%plan_forward,&
-                nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
-            fft3d%plan_backward_ok = .true.
-            fft3d%plan_forward_ok = .true.
+            call dfftw_plan_dft_3d( fft3d%plan_sens_minus,&
+                nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_FORWARD, FFTW_MEASURE )
+            fft3d%is_alread_planned = .true.
         end if
 
 call cpu_time (time(5))
@@ -312,50 +312,6 @@ call cpu_time (time(5))
                 end do
             end do
         end do
-!         block
-!             character(50) :: filename
-!             filename = "output/rho_000.dat"
-!             call output_rdf (real(deltarho_p(p3%p(0,0,0),:,:,:),dp), filename)
-!             print*,"printed output/rho_000.dat"
-!         end block
-!         do ix=1,nx
-!             do iy=1,ny
-!                 do iz=1,nz
-!                     deltarho_p(1:np,ix,iy,iz) = angl2proj(proj2angl(deltarho_p(1:np,ix,iy,iz)))
-!                 end do
-!             end do
-!         end do
-!         block
-!             character(50) :: filename
-!             filename = "output/rho_000_AR.dat"
-!             call output_rdf (real(deltarho_p(p3%p(0,0,0),:,:,:),dp), filename)
-!             print*,"printed output/rho_000_AR.dat"
-!         end block
-!         do ix=1,nx
-!             do iy=1,ny
-!                 do iz=1,nz
-!                     solvent(1)%density(1:no,ix,iy,iz) = proj2angl(deltarho_p(1:np,ix,iy,iz))
-!                 end do
-!             end do
-!         end do
-!         block
-!             character(50) :: filename
-!             filename = "output/density_o1_AR.dat"
-!             call output_rdf ( solvent(1)%density(1,:,:,:), filename)
-!             print*,"printed output/density_o1_AR.dat"
-!             filename = "output/density_o2_AR.dat"
-!             call output_rdf ( solvent(1)%density(2,:,:,:), filename)
-!             print*,"printed output/density_o2_AR.dat"
-!             filename = "output/density_o3_AR.dat"
-!             call output_rdf ( solvent(1)%density(3,:,:,:), filename)
-!             print*,"printed output/density_o3_AR.dat"
-!             filename = "output/density_o4_AR.dat"
-!             call output_rdf ( solvent(1)%density(4,:,:,:), filename)
-!             print*,"printed output/density_o4_AR.dat"
-!             filename = "output/density_o5_AR.dat"
-!             call output_rdf ( solvent(1)%density(5,:,:,:), filename)
-!             print*,"printed output/density_o5_AR.dat"
-!         end block
 !
 !
 ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -402,7 +358,7 @@ call cpu_time (time(5))
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
         do ip=1,np
-            call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
+            call dfftw_execute_dft( fft3d%plan_sens_plus, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
         end do
 
 call cpu_time (time(7))
@@ -623,7 +579,7 @@ call cpu_time(time(11))
         ! FFT3D from Fourier space to real space
         !
         do ip=1,np
-            call dfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
+            call dfftw_execute_dft( fft3d%plan_sens_minus, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
         end do
         deltarho_p=deltarho_p/real(nx*ny*nz,dp)
 
@@ -659,6 +615,80 @@ print*, "   > check all q points have been used in OZ                      ", ti
 print*, "   > FFT-1 of deltarho_p                                          ", time(12)-time(11),"sec"
 print*, "   > Fcproj: gather projections into gamma and sum                ", time(13)-time(12),"sec"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 contains
 
 
@@ -670,20 +700,21 @@ contains
         real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
         complex(dp) :: foo_p(1:grid%np)
         integer :: itheta, iphi, ipsi, m, mup, mu, ip, p, o
-        complex(dp) :: zeroc=complex(0._dp,0._dp)
+        complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
+        complex(dp) :: xp
         real(dp) :: eightpisq_I_mrso
         eightpisq_I_mrso = 8._dp*acos(-1._dp)**2/real(mrso,dp)
         foo_theta_mu_mup = zeroc
         do itheta=1,ntheta
             do iphi=1,nphi
                 do ipsi=1,npsi
-                    fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
+                    fft2d_r2c%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
                 end do
             end do
-            call dfftw_execute (fft2d%plan)
-            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)
+            call dfftw_execute (fft2d_r2c%plan)
+            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d_r2c%out(:,1:mmax+1) )/real(nphi*npsi,dp)
             if (mmax>0) then
-                foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
+                foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d_r2c%out(:,mmax+2:) )/real(nphi*npsi,dp)
             end if
         end do
         foo_p = zeroc
@@ -698,27 +729,27 @@ contains
 
 
 
-        foo_p = zeroc
-        do m=0,mmax
-            do mup=-m,m
-                do mu=0,m,mrso
-                    p=p3%p(m,mup,mu/mrso)
-                    foo_p(p) = zeroc
-                    do itheta=1,ntheta
-                        do iphi=1,nphi
-                            do ipsi=1,npsi
-                                o = grid%indo(itheta,iphi,ipsi)
-                                foo_p(p) = foo_p(p) + fm(m) * p3%harm_sph(itheta,p)* grid%w(o)/ sum(grid%w) * &
-                                    foo_o(o)*exp(ii*mup*grid%phi(o)+ii*mu*grid%psi(o))
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        end do
+    ! do concurrent( m=0:mmax)
+    !     do concurrent( mup=-m:m, mu=0:m:mrso)
+    !         p = p3%p(m,mup,mu/mrso)
+    !         foo_p(p) = zeroc
+    !         do concurrent (itheta=1:ntheta, iphi=1:nphi, ipsi=1:npsi)
+    !             o = grid%indo(itheta,iphi,ipsi)
+    !             xp = exp(ii*mup*grid%phi(o) +ii*mu*grid%psi(o))
+    !             foo_p(p) = foo_p(p) + fm(m)*p3%harm_sph(itheta,p)*grid%w(o)/sum(grid%w)*foo_o(o)*xp
+    !         end do
+    !     end do
+    ! end do
+
+end function angl2proj
 
 
-    end function angl2proj
+
+
+
+
+
+
 
 
     function proj2angl (foo_p) result (foo_o)
@@ -729,6 +760,7 @@ contains
         complex(dp), parameter :: ii=complex(0._dp,1._dp)
         complex(dp) :: foo_o_c
         complex(dp) :: R
+        complex(dp) :: xp
         foo_theta_mu_mup = zeroc
         foo_o = 0._dp
         do itheta=1,ntheta
@@ -746,43 +778,40 @@ contains
             end do
         end do
         do itheta=1,ntheta
-            ifft2d%in(:,1:mmax+1) = 2*conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
-            ifft2d%in(:,mmax+2:)  = 2*conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
-            call dfftw_execute( ifft2d%plan )
+            fft2d_c2r%in(:,1:mmax+1) = 2*conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
+            fft2d_c2r%in(:,mmax+2:)  = 2*conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
+            call dfftw_execute( fft2d_c2r%plan )
             do iphi=1,nphi
                 do ipsi=1,npsi
                     o = grid%indo(itheta,iphi,ipsi)
-                    foo_o(o) = ifft2d%out(ipsi,iphi)
+                    foo_o(o) = fft2d_c2r%out(ipsi,iphi)
                 end do
             end do
         end do
 
 
-        do itheta=1,ntheta
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    o=grid%indo(itheta,iphi,ipsi)
-                    foo_o_c = zeroc
-                    do m=0,mmax
-                        do mup=-m,m
-                            mu=0
-                            p = p3%p(m,mup,mu)
-                            foo_o_c = foo_o_c + foo_p(p)*fm(m)*p3%harm_sph(itheta,p)*exp(-ii*mup*grid%phi(iphi))
-                            if (mmax>=2) then
-                                do mu=2,m,mrso
-                                    p = p3%p(m,mup,mu/mrso)
-                                    R = foo_p(p)*fm(m)*p3%harm_sph(itheta,p)*exp(-ii*mup*grid%phi(iphi)-ii*mup*grid%phi(iphi))
-                                    foo_o_c = foo_o_c + R + conjg(R)
-                                end do
-                            end if
-                        end do
-                    end do
-                    ! print*, foo_o(o), foo_o_c
-                    foo_o(o) = real(foo_o_c)
+    do concurrent (itheta=1:ntheta, iphi=1:nphi, ipsi=1:npsi)
+        o=grid%indo(itheta,iphi,ipsi)
+        foo_o_c = zeroc
+        do m=0,mmax
+            do mup=-m,m
+                do mu=0,m,2
+                    if (mu==0) then
+                        p=p3%p(m,mup,0)
+                        xp = exp(-ii*mup*grid%phi(iphi))
+                        foo_o_c = foo_o_c + foo_p(p) *fm(m) *xp *p3%harm_sph(itheta,p)
+                    else
+                        p=p3%p(m,mup,mu/mrso)
+                        xp = exp(-ii*mup*grid%phi(iphi)-ii*mu*grid%psi(ipsi))
+                        foo_o_c = foo_o_c + 2*foo_p(p) *fm(m)  *p3%harm_sph(itheta,p)
+                    end if
                 end do
             end do
         end do
-    end function proj2angl
+        print*, foo_o(o), foo_o_c
+        foo_o(o) = real(foo_o_c)
+    end do
+end function proj2angl
 
 
 
