@@ -126,11 +126,6 @@ call cpu_time (time(1))
         nphi=grid%nphi
         npsi=grid%npsi
 
-        if (.not.allocated(fft2d_r2c%in))  allocate (fft2d_r2c%in (npsi,nphi))
-        if (.not.allocated(fft2d_r2c%out)) allocate (fft2d_r2c%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
-        if (.not.allocated(fft2d_c2r%in))  allocate (fft2d_c2r%in (npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
-        if (.not.allocated(fft2d_c2r%out)) allocate (fft2d_c2r%out(npsi,nphi))
-
         mmax=grid%mmax
         mrso=grid%molrotsymorder
 
@@ -284,6 +279,12 @@ call cpu_time (time(4))
         ! permet de ne garder que les mup>=0 ou les mu>=0.
         ! On choisit les mu>=0 (cf doc de Luc)
         !
+
+        if (.not.allocated(fft2d_r2c%in))  allocate (fft2d_r2c%in (npsi,nphi))
+        if (.not.allocated(fft2d_r2c%out)) allocate (fft2d_r2c%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
+        if (.not.allocated(fft2d_c2r%in))  allocate (fft2d_c2r%in (npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
+        if (.not.allocated(fft2d_c2r%out)) allocate (fft2d_c2r%out(npsi,nphi))
+
         if (.not. fft2d_r2c%is_already_planned) then
             call dfftw_plan_dft_r2c_2d(  fft2d_r2c%plan, npsi, nphi,  fft2d_r2c%in,  fft2d_r2c%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
             call dfftw_plan_dft_c2r_2d(  fft2d_c2r%plan, npsi, nphi, fft2d_c2r%in, fft2d_c2r%out, FFTW_EXHAUSTIVE )
