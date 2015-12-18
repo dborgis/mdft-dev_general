@@ -90,7 +90,8 @@ contains
                             do io = 1, grid%no
 
                             if (vextq_is_allocated) then
-                                v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
+                                ! v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
+                                v = solvent(s)%vext(io,i,j,k)
                             else
                                 v = solvent(s)%vext(io,i,j,k)
                             end if
