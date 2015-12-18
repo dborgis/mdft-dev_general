@@ -775,9 +775,8 @@ contains
             do m= max(abs(mup),abs(mu)), mmax
               ip=p3%p(m,mup,mu/mrso)
               foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup) &
-                    + foo_p(ip) *p3%harm_sph(itheta,ip)
+                    + foo_p(ip) *p3%harm_sph(itheta,ip) *fm(m)
             end do
-            print*, itheta,mup,mu,foo_theta_mu_mup(itheta,mu/mrso,mup)
           end do
         end do
       end do
@@ -794,11 +793,11 @@ do itheta=1,ntheta
       do m= max(abs(mup),abs(mu)), mmax
         if (mu>=0) then
           p=p3%p(m,mup,mu/mrso)
-          foo_theta_mu_mup2(itheta,mu/mrso,mup) = foo_theta_mu_mup2(itheta,mu/mrso,mup) + foo_p(p)*p3%harm_sph(itheta,p)
+          foo_theta_mu_mup2(itheta,mu/mrso,mup) = foo_theta_mu_mup2(itheta,mu/mrso,mup) + foo_p(p)*p3%harm_sph(itheta,p)*fm(m)
         else if (mu<0) then
           p=p3%p(m,-mup,-mu/mrso)
           foo_theta_mu_mup2(itheta,mu/mrso,mup) = foo_theta_mu_mup2(itheta,mu/mrso,mup) + (-1)**(mup+mu)*conjg(foo_p(p))*&
-            (-1)**(mup+mu)*p3%harm_sph(itheta,p)
+            (-1)**(mup+mu)*p3%harm_sph(itheta,p)*fm(m)
         end if
       end do
 
@@ -881,7 +880,7 @@ print*, "I AM NOW COMPUTING Δρ^m_μ'μ from Δρ_μ'μ(θ)"
               end do
             end do
           end do
-          print*, itheta,iphi,ipsi,o, foo_o(o), foo_o_c, foo_o(o)/real(foo_o_c)
+          print*, o, foo_o(o), foo_o_c, foo_o(o)/real(foo_o_c)
           ! foo_o(o) = real(foo_o_c)
         end do
       end block
