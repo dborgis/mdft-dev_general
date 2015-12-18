@@ -92,9 +92,9 @@ contains
                 solvent(s)%do%exc_cdeltacd=.true.
                 solvent(s)%do%exc_cproj=.true.
             case default
+                solvent(s)%do%exc_cproj=.true.
                 print*, "see module_solvent > functional decision tree"
                 print*, "mmax is trop grand"
-                error stop
             end select
 
             !
