@@ -550,12 +550,6 @@ contains
               end do
             end do
           end do
-          ! if(q_eq_mq) then
-          !   print*, "in mol frame, gamma_q and gamma_mq="
-          !   print*, gamma_p_q
-          !   print*, gamma_p_mq
-          !   print*,
-          ! end if
 
           !
           ! Rotation from molecular frame to fix laboratory (Fourier) frame
@@ -595,13 +589,6 @@ contains
             deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
             gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
           end if
-          !
-          ! if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
-          !   deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
-          ! else
-          !   deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
-          ! end if
-          ! gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
         end do
       end do
