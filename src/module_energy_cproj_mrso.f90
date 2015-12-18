@@ -790,6 +790,7 @@ print*, "JE COMPARE AVEC ET SANS SYMETRIE LE CALCUL DE _mup_mu(theta)"
 do itheta=1,ntheta
   do mup= -mmax,mmax
     do mu= -(mmax/mrso)*mrso, (mmax/mrso)*mrso, mrso
+
       do m= max(abs(mup),abs(mu)), mmax
         if (mu>=0) then
           p=p3%p(m,mup,mu/mrso)
@@ -800,6 +801,7 @@ do itheta=1,ntheta
             (-1)**(mup+mu)*p3%harm_sph(itheta,p)
         end if
       end do
+
       if (mu>=0) then
         a=foo_theta_mu_mup(itheta,mu/mrso,mup)
         b=foo_theta_mu_mup2(itheta,mu/mrso,mup)
