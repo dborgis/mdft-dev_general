@@ -313,19 +313,17 @@ contains
     !
     ! Projection of delta rho
     !
-    print*, "COMPARE ALLER RETOUR"
     do iz=1,nz
       do iy=1,ny
         do ix=1,nx
           deltarho_p(:,ix,iy,iz) = angl2proj( solvent(1)%density(:,ix,iy,iz)-rho0 )
-          block
-              real(dp) :: rototo(1:no)
-              rototo = proj2angl(deltarho_p(:,ix,iy,iz))
-              do i=1,no
-                print*, ix,iy,iz, i,(solvent(1)%density(i,ix,iy,iz)-solvent(1)%rho0)/rototo(i)
-              end do
-          end block
-          stop "pikokouac"
+          ! block
+          !     real(dp) :: rototo(1:no)
+          !     rototo = proj2angl(deltarho_p(:,ix,iy,iz))
+          !     do i=1,no
+          !       print*, ix,iy,iz, i,(solvent(1)%density(i,ix,iy,iz)-solvent(1)%rho0)-rototo(i)
+          !     end do
+          ! end block
         end do
       end do
     end do
@@ -552,12 +550,12 @@ contains
               end do
             end do
           end do
-! if(q_eq_mq) then
-!   print*, "in mol frame, gamma_q and gamma_mq="
-!   print*, gamma_p_q
-!   print*, gamma_p_mq
-!   print*,
-! end if
+          ! if(q_eq_mq) then
+          !   print*, "in mol frame, gamma_q and gamma_mq="
+          !   print*, gamma_p_q
+          !   print*, gamma_p_mq
+          !   print*,
+          ! end if
 
           !
           ! Rotation from molecular frame to fix laboratory (Fourier) frame
@@ -705,7 +703,6 @@ contains
 
 
 
-
   contains
 
 
@@ -714,135 +711,29 @@ contains
 
 
 
-
-    ! function proj2angl (foo_p) result (foo_o)
-    !   implicit none
-    !   real(dp) :: foo_o (1:grid%no)
-    !   complex(dp), intent(in) :: foo_p(:) ! np
-    !   integer :: o, p, m, mup, mu, ip, iphi, ipsi, itheta
-    !   complex(dp), parameter :: ii=complex(0._dp,1._dp)
-    !   complex(dp) :: foo_o_c
-    !   complex(dp) :: R
-    !   complex(dp) :: xp
-    !   real(dp) :: norm2foo_o
-    !   foo_theta_mu_mup = zeroc
-    !   foo_o = 0._dp
-    !   do itheta=1,ntheta
-    !     do mup=-mmax,mmax
-    !       do mu=0,mmax,mrso
-    !         do m= max(abs(mup),abs(mu)), mmax
-    !           ip=p3%p(m,mup,mu/mrso)
-    !           foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup) &
-    !                 + foo_p(ip)*p3%harm_sph(itheta,ip)
-    !           ! foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_p(ip)*sum(p3%harm_sph(:,ip))*fm(m)
-    !           ! foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
-    !           ! +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
-    !         end do
-    !       end do
-    !     end do
-    !   end do
-    !   do itheta=1,ntheta
-    !     fft2d_c2r%in(:,1:mmax+1) = conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
-    !     if(mmax>0) then
-    !       fft2d_c2r%in(:,mmax+2:)  = conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
-    !     end if
-    !     call dfftw_execute ( fft2d_c2r%plan )
-    !     do iphi=1,nphi
-    !       do ipsi=1,npsi
-    !         o = grid%indo(itheta,iphi,ipsi)
-    !         foo_o(o) = fft2d_c2r%out(ipsi,iphi)
-    !       end do
-    !     end do
-    !   end do
-
     function proj2angl (foo_p) result (foo_o)
       implicit none
       real(dp) :: foo_o (1:grid%no)
       complex(dp), intent(in) :: foo_p(:) ! np
       integer :: o, p, m, mup, mu, ip, iphi, ipsi, itheta
       complex(dp), parameter :: ii=complex(0._dp,1._dp)
-      complex(dp) :: foo_o_c, foo_o_c2
+      complex(dp) :: foo_o_c
       complex(dp) :: R
       complex(dp) :: xp
       real(dp) :: norm2foo_o
-      print*,"JE RENTRE DANS PROJ2ANGL"
       foo_theta_mu_mup = zeroc
       foo_o = 0._dp
       do itheta=1,ntheta
         do mup=-mmax,mmax
           do mu=0,mmax,mrso
-            ! f(theta,mup,mu) est la somme sur m de
             do m= max(abs(mup),abs(mu)), mmax
               ip=p3%p(m,mup,mu/mrso)
               foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup) &
-                    + foo_p(ip) *p3%harm_sph(itheta,ip) *fm(m)
+              + foo_p(ip) *p3%harm_sph(itheta,ip) *fm(m)
             end do
           end do
         end do
       end do
-
-! on verifie que foo_theta_mu_mup est bon
-block
-complex(dp) :: foo_theta_mu_mup2(ntheta,-mmax/mrso:mmax/mrso, -mmax:mmax), a, b, c
-foo_theta_mu_mup2 = zeroc
-print*, "JE COMPARE AVEC ET SANS SYMETRIE LE CALCUL DE _mup_mu(theta)"
-do itheta=1,ntheta
-  do mup= -mmax,mmax
-    do mu= -(mmax/mrso)*mrso, (mmax/mrso)*mrso, mrso
-
-      do m= max(abs(mup),abs(mu)), mmax
-        if (mu>=0) then
-          p=p3%p(m,mup,mu/mrso)
-          foo_theta_mu_mup2(itheta,mu/mrso,mup) = foo_theta_mu_mup2(itheta,mu/mrso,mup) + foo_p(p)*p3%harm_sph(itheta,p)*fm(m)
-        else if (mu<0) then
-          p=p3%p(m,-mup,-mu/mrso)
-          foo_theta_mu_mup2(itheta,mu/mrso,mup) = foo_theta_mu_mup2(itheta,mu/mrso,mup) + (-1)**(mup+mu)*conjg(foo_p(p))*&
-            (-1)**(mup+mu)*p3%harm_sph(itheta,p)*fm(m)
-        end if
-      end do
-
-      if (mu>=0) then
-        a=foo_theta_mu_mup(itheta,mu/mrso,mup)
-        b=foo_theta_mu_mup2(itheta,mu/mrso,mup)
-        c=a-b
-        print*, itheta,mup,mu,a,b,c,"mu>=0"
-      end if
-      if (mu<0) then
-        a=foo_theta_mu_mup2(itheta,mu/mrso,mup)
-        b=conjg(foo_theta_mu_mup(itheta,-mu/mrso,-mup))
-        c=a-b
-        print*, itheta,mup,mu,a,b,c,"mu<0"
-      end if
-    end do
-  end do
-end do
-print*, "J'AI FINI DE COMPARER AVEC ET SANS SYMETRIE LE CALCUL DE _mup_mu(theta)"
-! oui foo_theta_mu_mup est bon
-
-
-
-! block
-!   type(c_ptr) :: plan
-!   complex(dp), allocatable :: in(:,:), out(:,:)
-!   allocate(  in(2*mmax/mrso+1,2*mmax+1), source=zeroc)
-!   allocate( out(2*mmax/mrso+1,2*mmax+1), source=zeroc)
-!   call dfftw_plan_dft_2d (plan, 2*mmax+1, 2*mmax+1, in, out, FFTW_FORWARD, FFTW_ESTIMATE)
-!   do itheta=1,ntheta
-!     in=zeroc
-!     out=zeroc
-!     in(1:mmax/mrso+1,1:mmax+1) = foo_theta_mu_mup2(itheta,0:mmax/mrso,0:mmax)
-!     in(1:mmax/mrso+1,mmax+2:2*mmax+1) = foo_theta_mu_mup2(itheta,0:mmax/mrso,-mmax:-1)
-!     if(mmax>=2) then
-!       in(mmax/mrso+2:2*mmax/mrso+1,1:mmax+1) = foo_theta_mu_mup2(itheta,-mmax/mrso:-1,0:mmax)
-!       in(mmax/mrso+2:2*mmax/mrso+1,2:2*mmax+1) = foo_theta_mu_mup2(itheta,-mmax/mrso:-1,-mmax:-1)
-!     end if
-!     call dfftw_execute_dft (plan, in, out)
-!   end do
-! end block
-
-
-print*, "I AM NOW COMPUTING Δρ^m_μ'μ from Δρ_μ'μ(θ)"
-
       do itheta=1,ntheta
         fft2d_c2r%in(:,1:mmax+1)   = conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )  ! c2r == FFTW_BACKWARD == exp(+ii...)
         if(mmax>0) then
@@ -857,39 +748,141 @@ print*, "I AM NOW COMPUTING Δρ^m_μ'μ from Δρ_μ'μ(θ)"
         end do
       end do
 
-
-      block
-        real(dp) :: phi, psi
-        print*,"by FFT,     brutal,      byFFT/real(brutal)"
-        do concurrent (itheta=1:ntheta, iphi=1:nphi, ipsi=1:npsi)
-          o=grid%indo(itheta,iphi,ipsi)
-          phi = grid%phi(o)
-          psi = grid%psi(o)
-          foo_o_c = zeroc
-          do m=0,mmax
-            do mup=-m,m
-              do mu=-(m/mrso)*mrso,(m/mrso)*mrso,mrso
-                if (mu>=0) then
-                  p = p3%p(m,mup,mu/mrso)
-                  foo_o_c = foo_o_c + fm(m)*foo_p(p)*p3%harm_sph(itheta,p)*exp(-ii*mup*phi-ii*mu*psi)
-                else
-                  p = p3%p(m,-mup,-mu/mrso)
-                  foo_o_c = foo_o_c + fm(m)*(-1)**(mup+mu)*conjg(foo_p(p))*&
-                  (-1)**(mup+mu)*harm_sph(m,-mup,-mu,theta(itheta))*exp(-ii*mup*phi-ii*mu*psi)
-                end if
-              end do
-            end do
-          end do
-          print*, o, foo_o(o), foo_o_c, foo_o(o)/real(foo_o_c)
-          ! foo_o(o) = real(foo_o_c)
-        end do
-      end block
-    end block
-    print*, "J'AI FINI DE CALCULER Δρ^m_μ'μ"
-stop "megaman"
     end function proj2angl
 
 
+    function proj2angl_debug (foo_p) result (foo_o)
+      implicit none
+      real(dp) :: foo_o (1:grid%no)
+      complex(dp), intent(in) :: foo_p(:) ! np
+      integer :: o, p, m, mup, mu, ip, iphi, ipsi, itheta
+      complex(dp), parameter :: ii=complex(0._dp,1._dp)
+      complex(dp) :: foo_o_c, foo_o_c2
+      complex(dp) :: R
+      complex(dp) :: xp
+      real(dp) :: norm2foo_o
+      foo_theta_mu_mup = zeroc
+      foo_o = 0._dp
+      do itheta=1,ntheta
+        do mup=-mmax,mmax
+          do mu=0,mmax,mrso
+            ! f(theta,mup,mu) est la somme sur m de
+            do m= max(abs(mup),abs(mu)), mmax
+              ip=p3%p(m,mup,mu/mrso)
+              foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup) &
+              + foo_p(ip) *p3%harm_sph(itheta,ip) *fm(m)
+            end do
+          end do
+        end do
+      end do
+
+      ! on verifie que foo_theta_mu_mup est bon
+      block
+        complex(dp) :: foo_theta_mu_mup2(ntheta,-mmax/mrso:mmax/mrso, -mmax:mmax), a, b, c
+        foo_theta_mu_mup2 = zeroc
+        ! print*, "JE COMPARE AVEC ET SANS SYMETRIE LE CALCUL DE _mup_mu(theta)"
+        do itheta=1,ntheta
+          do mup= -mmax,mmax
+            do mu= -(mmax/mrso)*mrso, (mmax/mrso)*mrso, mrso
+
+              do m= max(abs(mup),abs(mu)), mmax
+                if (mu>=0) then
+                  p=p3%p(m,mup,mu/mrso)
+                  foo_theta_mu_mup2(itheta,mu/mrso,mup) = foo_theta_mu_mup2(itheta,mu/mrso,mup) +&
+                    foo_p(p)*p3%harm_sph(itheta,p)*fm(m)
+                else if (mu<0) then
+                  p=p3%p(m,-mup,-mu/mrso)
+                  foo_theta_mu_mup2(itheta,mu/mrso,mup) = foo_theta_mu_mup2(itheta,mu/mrso,mup) &
+                    + (-1)**(mup+mu)*conjg(foo_p(p))*(-1)**(mup+mu)*p3%harm_sph(itheta,p)*fm(m)
+                end if
+              end do
+
+              if (mu>=0) then
+                a=foo_theta_mu_mup(itheta,mu/mrso,mup)
+                b=foo_theta_mu_mup2(itheta,mu/mrso,mup)
+                c=a-b
+                if (abs(c)>1e-10) print*, itheta,mup,mu,a,b,c,"mu>=0"
+              end if
+              if (mu<0) then
+                a=foo_theta_mu_mup2(itheta,mu/mrso,mup)
+                b=conjg(foo_theta_mu_mup(itheta,-mu/mrso,-mup))
+                c=a-b
+                if (abs(c)>1e-10) print*, itheta,mup,mu,a,b,c,"mu<0"
+              end if
+            end do
+          end do
+        end do
+        ! print*, "J'AI FINI DE COMPARER AVEC ET SANS SYMETRIE LE CALCUL DE _mup_mu(theta)"
+        ! oui foo_theta_mu_mup est bon
+
+
+
+        ! block
+        !   type(c_ptr) :: plan
+        !   complex(dp), allocatable :: in(:,:), out(:,:)
+        !   allocate(  in(2*mmax/mrso+1,2*mmax+1), source=zeroc)
+        !   allocate( out(2*mmax/mrso+1,2*mmax+1), source=zeroc)
+        !   call dfftw_plan_dft_2d (plan, 2*mmax+1, 2*mmax+1, in, out, FFTW_FORWARD, FFTW_ESTIMATE)
+        !   do itheta=1,ntheta
+        !     in=zeroc
+        !     out=zeroc
+        !     in(1:mmax/mrso+1,1:mmax+1) = foo_theta_mu_mup2(itheta,0:mmax/mrso,0:mmax)
+        !     in(1:mmax/mrso+1,mmax+2:2*mmax+1) = foo_theta_mu_mup2(itheta,0:mmax/mrso,-mmax:-1)
+        !     if(mmax>=2) then
+        !       in(mmax/mrso+2:2*mmax/mrso+1,1:mmax+1) = foo_theta_mu_mup2(itheta,-mmax/mrso:-1,0:mmax)
+        !       in(mmax/mrso+2:2*mmax/mrso+1,2:2*mmax+1) = foo_theta_mu_mup2(itheta,-mmax/mrso:-1,-mmax:-1)
+        !     end if
+        !     call dfftw_execute_dft (plan, in, out)
+        !   end do
+        ! end block
+
+
+
+        do itheta=1,ntheta
+          fft2d_c2r%in(:,1:mmax+1)   = conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )  ! c2r == FFTW_BACKWARD == exp(+ii...)
+          if(mmax>0) then
+            fft2d_c2r%in(:,mmax+2:)  = conjg( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
+          end if
+          call dfftw_execute ( fft2d_c2r%plan )
+          do iphi=1,nphi
+            do ipsi=1,npsi
+              o = grid%indo(itheta,iphi,ipsi)
+              foo_o(o) = fft2d_c2r%out(ipsi,iphi)
+            end do
+          end do
+        end do
+
+
+        block
+          real(dp) :: phi, psi
+          complex(dp) :: a, b, c
+          do concurrent (itheta=1:ntheta, iphi=1:nphi, ipsi=1:npsi)
+            o=grid%indo(itheta,iphi,ipsi)
+            phi = grid%phi(o)
+            psi = grid%psi(o)
+            foo_o_c = zeroc
+            do m=0,mmax
+              do mup=-m,m
+                do mu=-(m/mrso)*mrso,(m/mrso)*mrso,mrso
+                  if (mu>=0) then
+                    p = p3%p(m,mup,mu/mrso)
+                    foo_o_c = foo_o_c + fm(m)*foo_p(p)*p3%harm_sph(itheta,p)*exp(-ii*mup*phi-ii*mu*psi)
+                  else
+                    p = p3%p(m,-mup,-mu/mrso)
+                    foo_o_c = foo_o_c + fm(m)*(-1)**(mup+mu)*conjg(foo_p(p))*&
+                    (-1)**(mup+mu)*harm_sph(m,-mup,-mu,theta(itheta))*exp(-ii*mup*phi-ii*mu*psi)
+                  end if
+                end do
+              end do
+            end do
+            a = complex(foo_o(o),0._dp)
+            b = foo_o_c
+            c = a-b
+            ! if (abs(a-b)>1e-10) print*, a,b,c, " <proj2angl fft vs brutal"
+          end do
+        end block
+      end block
+    end function proj2angl_debug
 
 
 
@@ -927,17 +920,12 @@ stop "megaman"
 
 
 
-    !
-    ! Transform angles to projections
-    !
+
     function angl2proj (foo_o) result (foo_p)
       implicit none
       real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
       complex(dp) :: foo_p(1:grid%np)
-      integer :: itheta, iphi, ipsi, m, mup, mu, ip, p, o
-      complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
-      complex(dp) :: xp
-      print*, "JE RENTRE DANS ANGL2PROJ"
+      integer :: itheta, iphi, ipsi, m, mup, mu, ip
       foo_theta_mu_mup = zeroc
       do itheta=1,ntheta
         do iphi=1,nphi
@@ -960,7 +948,38 @@ stop "megaman"
           end do
         end do
       end do
-      print*,"JE SORS DE ANGL2PROJ"
+    end function angl2proj
+    !
+    ! Transform angles to projections
+    !
+    function angl2proj_debug (foo_o) result (foo_p)
+      implicit none
+      real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
+      complex(dp) :: foo_p(1:grid%np)
+      integer :: itheta, iphi, ipsi, m, mup, mu, ip
+      complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
+      foo_theta_mu_mup = zeroc
+      do itheta=1,ntheta
+        do iphi=1,nphi
+          do ipsi=1,npsi
+            fft2d_r2c%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))   ! r2c==FFTW_FORWARD== exp(-ii...)
+          end do
+        end do
+        call dfftw_execute (fft2d_r2c%plan)
+        foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = conjg( fft2d_r2c%out(:,1:mmax+1) )/real(nphi*npsi,dp)
+        if (mmax>0) then
+          foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = conjg( fft2d_r2c%out(:,mmax+2:) )/real(nphi*npsi,dp)
+        end if
+      end do
+      foo_p = zeroc
+      do m=0,mmax
+        do mup=-m,m
+          do mu=0,m,mrso
+            ip = p3%p( m,mup,mu/mrso )
+            foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
+          end do
+        end do
+      end do
       !
       !
       ! block
@@ -994,7 +1013,7 @@ stop "megaman"
       !   stop "godzilla verification"
       ! end block
       !
-    end function angl2proj
+    end function angl2proj_debug
 
 
     subroutine for_all_q_find_indices_of_mq
