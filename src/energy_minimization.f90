@@ -19,9 +19,12 @@ subroutine energy_minimization
     ! Init minimization process. From allocations to optimizer parameters to guess solution
     call lbfgsb%init
 
-    do while(lbfgsb%task(1:2).eq.'FG'.or.lbfgsb%task.eq.'NEW_X'.or.lbfgsb%task.eq.'START')
+    do while( (lbfgsb%task(1:2).eq.'FG'.or.lbfgsb%task.eq.'NEW_X'.or.lbfgsb%task.eq.'START') &
+      .and. (lbfgsb%isave(30)<lbfgsb%itermax) )
+
 time(:)=0
 call cpu_time(time(1))
+
         !
         !     This is the call to the L-BFGS-B code. It updates the one-column vector lbfgsb%x.
         !
