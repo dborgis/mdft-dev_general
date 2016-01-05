@@ -4,7 +4,7 @@ module module_energy_cproj_mrso
     use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
-    use module_rotation
+    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu, harm_sph
 
     implicit none
     private
@@ -448,7 +448,9 @@ call cpu_time (time(4))
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = min( int(norm2(q)/cq%dq)+1   ,nq)
+                    iq = int( norm2(q) /cq%dq +0.5 ) +1
+                    if (iq >1024) error stop "we need larger norm of q in Luc's cq"
+                    ! iq = min( int(norm2(q)/cq%dq)+1   ,nq)
 
                     !
                     ! Consider the case of Pz(k=0). In cdeltacd, we impose it is zeroc because it is non defined. Here we do
@@ -458,11 +460,6 @@ call cpu_time (time(4))
                         deltarho_p_q ( p3%p(1,0,0) ) = zeroc
                         deltarho_p_mq( p3%p(1,0,0) ) = zeroc
                     end if
-
-                    ! if (mmax>=2 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
-                    !     deltarho_p_q ( p3%p(2,0,0) ) = zeroc
-                    !     deltarho_p_mq( p3%p(2,0,0) ) = zeroc
-                    ! end if
 
 
                     !
@@ -548,7 +545,6 @@ call cpu_time (time(4))
 
 call cpu_time(time(10))
 
-
         if (.not.all(gamma_p_isok.eqv..true.)) then
             print*, "not all gamma_p(projections,ix,iy,iz) have not been computed"
             error stop
@@ -568,7 +564,8 @@ call cpu_time(time(11))
 call cpu_time(time(12))
 
         !
-        ! Gather projections into gamma (in fact, into the gradient, that IS gamma)
+        ! Gather projections into gamma
+        ! Note that gamma==df
         !
         if (.not. allocated(gamma_o)) allocate (gamma_o(1:no) ,source=0._dp)
         ff=0._dp
