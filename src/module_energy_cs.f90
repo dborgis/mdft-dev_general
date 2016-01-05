@@ -40,7 +40,7 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%density(:,ix,iy,iz) * grid%w(:)) - solvent(1)%n0 ! =n(r)-n0=
+                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%rho(:,ix,iy,iz) * grid%w(:)) - solvent(1)%n0 ! =n(r)-n0=
                 end do
             end do
         end do

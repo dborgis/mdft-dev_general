@@ -56,9 +56,9 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*solvent(1)%density(:,ix,iy,iz))!/rho0
-                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*solvent(1)%density(:,ix,iy,iz))!/rho0
-                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*solvent(1)%density(:,ix,iy,iz))!/rho0
+                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*solvent(1)%rho(:,ix,iy,iz))!/rho0
+                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*solvent(1)%rho(:,ix,iy,iz))!/rho0
+                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*solvent(1)%rho(:,ix,iy,iz))!/rho0
                 end do
             end do
         end do
@@ -153,7 +153,7 @@ contains
             do iy=1,ny
                 do iz=1,nz
                     do io=1,no
-                        rho=solvent(1)%density(io,ix,iy,iz)
+                        rho=solvent(1)%rho(io,ix,iy,iz)
                         vexc=-kT*grid%w(io)*(grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))
                         fexc=fexc+(rho-rho0)*0.5_dp*vexc*dv
                         df(io,ix,iy,iz,is)=df(io,ix,iy,iz,is)+vexc*dv

@@ -24,7 +24,7 @@
 !                     local_Py = 0.0_dp
 !                     local_Pz = 0.0_dp
 !                     DO io =1,grid%no
-!                         x = solvent(s)%density(i,j,k,io)
+!                         x = solvent(s)%rho(i,j,k,io)
 !                         local_Px = local_Px + grid%omx(io) * grid%w(io) * x
 !                         local_Py = local_Py + grid%omy(io) * grid%w(io) * x
 !                         local_Pz = local_Pz + grid%omz(io) * grid%w(io) * x

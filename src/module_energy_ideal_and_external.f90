@@ -30,6 +30,7 @@ contains
         mu = getinput%dp( 'imposed_chempot', defaultvalue=0._dp)
         if ( mu/=0._dp) stop "mu /=0 in module_energy_ideal_and_external. That's implemented but for now shutitoff"
         if ( ns/=1 .AND. mu/=0._dp) STOP "Imposing a chemical potential is valid only for single-species solvent"
+
         !
         ! fid = integrate over whole space of   x.log(x/x0)-x+x0 = Int[x.(log(x/x0)-1)] + Int[x0]
         !
@@ -44,7 +45,7 @@ contains
                 do iy=1,grid%ny
                     do ix=1,grid%nx
                         do io=1,grid%no
-                            x = solvent(is)%density(io,ix,iy,iz)
+                            x = solvent(is)%rho(io,ix,iy,iz)
                             if (x>epsdp) then
                                 fid = fid + kT*dv*grid%w(io)*(x*log(x/x0)-x+x0)
                                 dfid = kT*dv*grid%w(io)*log(x/x0)

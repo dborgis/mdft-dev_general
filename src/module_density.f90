@@ -37,10 +37,10 @@ contains
 
         ! allocate the solvent density field for each solvent species
         do s=1,solvent(1)%nspec
-            if (.not. allocated( solvent(s)%density) ) then
-                allocate(solvent(s)%density(grid%no, grid%nx, grid%ny, grid%nz),   source=solvent(s)%rho0, stat=ios)
+            if (.not. allocated( solvent(s)%rho) ) then
+                allocate(solvent(s)%rho(grid%no, grid%nx, grid%ny, grid%nz),   source=solvent(s)%rho0, stat=ios)
                 if (ios /= 0) then
-                    print*, "solvent(s)%density(grid%nx,grid%ny,grid%nz,grid%no), source=0._dp: Allocation request denied"
+                    print*, "solvent(s)%rho(grid%nx,grid%ny,grid%nz,grid%no), source=0._dp: Allocation request denied"
                     print*, "for s =", s
                 end if
             end if
@@ -98,9 +98,9 @@ contains
                             betav = thermo%beta * v
 
                             if ( betav >= threeshold_in_betav ) then
-                                solvent(s)%density(io,i,j,k) = 0.0_dp
+                                solvent(s)%rho(io,i,j,k) = 0.0_dp
                             else
-                                solvent(s)%density(io,i,j,k) = exp(-betav)*solvent(s)%rho0
+                                solvent(s)%rho(io,i,j,k) = exp(-betav)*solvent(s)%rho0
                             end if
 
                         end do

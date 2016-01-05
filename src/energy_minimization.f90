@@ -32,8 +32,8 @@ call cpu_time(time(1))
         ! lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         ! lbfgsb%dsave )
 
-        call setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%density, lbfgsb%l, lbfgsb%l, lbfgsb%nbd, f, pack(df, .true.), lbfgsb%factr, &
-        lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
+        call setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%rho, lbfgsb%l, lbfgsb%l, lbfgsb%nbd, f, reshape(df,[size(df)]), &
+        lbfgsb%factr, lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         lbfgsb%dsave )
 
 
@@ -41,8 +41,8 @@ call cpu_time(time(2))
 
         if (lbfgsb%task(1:2) == "FG") then
             !
-            ! lbfgs propose un nouveau vecteur colonne à tester, lbfgsb%x(:), qui correspond à un reshape de notre solvent(:)%density(:,:,:,:)
-            ! Passons ce x dnas solvent%density qui va ensuite servir de base à un nouveau calcul de f et df
+            ! lbfgs propose un nouveau vecteur colonne à tester, lbfgsb%x(:), qui correspond à un reshape de notre solvent(:)%rho(:,:,:,:)
+            ! Passons ce x dnas solvent%rho qui va ensuite servir de base à un nouveau calcul de f et df
             ! Note pour plus tard : on pourrait utiliser la fonction RESHAPE de fortran
             !
 call cpu_time(time(3))
@@ -51,7 +51,7 @@ call cpu_time(time(3))
             ! l-bfgs-b%x is a vector (1dim array). We have to reshape it to fit into density(o,x,y,z)
             !
             ! do is=1,solvent(1)%nspec
-            !     solvent(is)%density = reshape( solvent(is)%density, [grid%no, grid%nx, grid%ny, grid%nz] )
+            !     solvent(is)%rho = reshape( solvent(is)%rho, [grid%no, grid%nx, grid%ny, grid%nz] )
             ! end do
 
 call cpu_time(time(4))
@@ -64,7 +64,7 @@ call cpu_time(time(4))
 call cpu_time(time(5))
 
             !
-            !   Energy_and_gradient does not change solvent%density but updates df and gives the value of the functional, f
+            !   Energy_and_gradient does not change solvent%rho but updates df and gives the value of the functional, f
             !   lbfgs%g is one-column
             !
             ! lbfgsb%g = pack(df, .true.)
@@ -72,6 +72,8 @@ call cpu_time(time(5))
 
 call cpu_time(time(6))
         end if
+
+
         call cpu_time(time(7))
 
         if (lbfgsb%task(1:2) == "FG") then

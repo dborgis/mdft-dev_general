@@ -35,7 +35,7 @@ contains
         ! print density
         !
         allocate (density(nx,ny,nz))
-        call grid%integrate_over_orientations( solvent(1)%density, density)
+        call grid%integrate_over_orientations( solvent(1)%rho, density)
         filename = "output/density.cube"
         call write_to_cube_file (density ,filename)
 
@@ -324,7 +324,7 @@ contains
 !         implicit none
 !         integer, intent(in) :: s ! the solvent species of which we want the number density
 !         real(dp), intent(out) :: neq(:,:,:)
-!         call mean_over_orientations( solvent(solventspecies)%density , neq)
+!         call mean_over_orientations( solvent(solventspecies)%rho , neq)
 !     end subroutine get_final_density
 !
 !
@@ -357,7 +357,7 @@ contains
 !                         local_Py = 0.0_dp
 !                         local_Pz = 0.0_dp
 !                         DO io =1,grid%no
-!                             x = solvent(s)%density(i,j,k,io)
+!                             x = solvent(s)%rho(i,j,k,io)
 !                             local_Px = local_Px + grid%omx(io) * grid%w(io) * x
 !                             local_Py = local_Py + grid%omy(io) * grid%w(io) * x
 !                             local_Pz = local_Pz + grid%omz(io) * grid%w(io) * x

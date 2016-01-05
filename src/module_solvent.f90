@@ -36,7 +36,7 @@ module module_solvent
         integer :: nspec ! number of solvent species
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         real(dp) :: diameter ! hard sphere diameter, for instance
-        real(dp), allocatable :: density(:,:,:,:) ! ix, iy, iz, io
+        real(dp), allocatable :: rho(:,:,:,:) ! ix, iy, iz, io
         type (site_type), allocatable :: site(:)
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
