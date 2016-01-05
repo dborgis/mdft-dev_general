@@ -43,8 +43,6 @@ module module_energy_cproj_mrso
     type (cq_type) :: cq
     complex(dp), allocatable :: ck(:,:)
 
-    real(dp), allocatable :: fm(:)
-
     type :: fft3d_c_type
         type(c_ptr) :: plan_forward
         type(c_ptr) :: plan_backward
@@ -118,6 +116,7 @@ contains
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
+        real(dp), parameter :: fm(0:7) = [( sqrt(real(2*m+1,dp)) ,m=0,7 )]
 
 call cpu_time (time(1))
 
@@ -133,8 +132,7 @@ call cpu_time (time(1))
         mmax=grid%mmax
         mrso=grid%molrotsymorder
 
-        if (.not. allocated( foo_theta_mu_mup) ) &
-            allocate ( foo_theta_mu_mup(1:ntheta,0:mmax/mrso,-mmax:mmax))
+        if (.not. allocated( foo_theta_mu_mup) ) allocate ( foo_theta_mu_mup(1:ntheta,0:mmax/mrso,-mmax:mmax))
 
         lx=grid%lx
         ly=grid%ly
@@ -152,15 +150,13 @@ call cpu_time (time(1))
         rho0 = solvent(1)%rho0
 
         !
-        ! MDFT-dev only valid for even number of nodes in each direction
+        ! Routine energy_cproj of mdft-dev is valid only for even numbers of nodes per direction
         !
         if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
             print*, "mdft-dev wants even grid nodes"
             print*, "nx,ny,nz=",nx,ny,nz
             error stop
         end if
-
-        if (.not.allocated(fm)) allocate (fm(0:mmax) ,source= [( sqrt(real(2*m+1,dp)) ,m=0,mmax  )])
 
         if (.not. allocated(p3%foo_q)) allocate ( p3%foo_q(1:np) )
         if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
@@ -190,15 +186,19 @@ call cpu_time (time(2))
 
         !
         ! Toutes les projections sont stockées dans un meme vecteur de taille np
-        ! p3%p(m,mup,mu) lie le triplet (m,mup,mu) a l'unique indice de projection ip
-        ! p3%m(p) donne inversement le m correspondant à l'indice p dans le tableau des projections
+        ! p3%p(m,mup,mu) transforme le triplet (m,mup,mu) a l'indice de la projection, ip.
+        ! p3%m(ip) donne, inversement à p3%p(m,mup,mu), le m (de {m,mup,mu}) qui correspondant à l'indice ip dans le tableau des projections
         ! On a donc p3%p(p3%m(p),p3%mup(p),p3%mu(p)) == p
         !
+        ! On ne fait ce travail que la première fois qu'on passe dans cette routine.
+        ! Les fois suivantes, p3%p reste alloué, et donc le .not.allocated(p3%p) est skippé.
+        ! On utilise cette astuce de nombreuses fois dans cette routine.
+        !
         if (.not.allocated(p3%p)) then
-            allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax/mrso) ,source=-huge(1)) ! Dans p3%p, on met mu2, pas mu
-            allocate ( p3%m(np) ,source=-huge(1))
+            allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax/mrso) ,source=-huge(1)) ! Dans p3%p, on met mu2=2*mu, pas mu
+            allocate ( p3%m(np) ,source=-huge(1)) ! mettre des -huge comme valeur initiale permet de plus tard verifier que s'il reste un -huge qqpart, il y a un problème. Si on avait mis 0, on ne peut pas vérifier.
             allocate ( p3%mup(np) ,source=-huge(1))
-            allocate ( p3%mu(np) ,source=-huge(1)) ! c'est bien mu, pas mu2
+            allocate ( p3%mu(np) ,source=-huge(1)) ! c'est bien mu qu'on met dans p3%mu(), pas mu2
             ip=0
             do m=0,mmax
                 do mup=-m,m
@@ -242,9 +242,12 @@ call cpu_time (time(3))
 
 
         !
-        ! Initie poids et racines de l'integration angulaire par la methode de Gauss-Legendre
-        ! Les racines sont les racines d'un polynomes en cos(theta).
-        ! Comme nous voulons les theta correspondant, on en prend l'arccos(cos(theta))
+        ! L'initialisation des racines et des poids de la quadrature angulaire a été faite beaucoup plus tot
+        ! dans le module_grid.
+        ! On fait attention qu'on a deux tableaux des racines et des poids:
+        ! - le premier tableau, grid%theteaofntheta, est un tableau de taille  le nombre de theta (ntheta)
+        ! - le deuxième, grid%theta, est de taille le nombre total d'angle. Il retourne le theta qui correspond à l'indice de chaque angle.
+        ! Si on veut la liste de tous les theta, on utilisera donc le tableau grid%thetaofntheta.
         !
         theta=grid%thetaofntheta
         wtheta=grid%wthetaofntheta
@@ -258,7 +261,7 @@ call cpu_time (time(3))
         ! m is related to theta
         ! mup is related to phi
         ! mu is related to psi
-        ! TOdo: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
+        ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
         ! call test_routines_calcul_de_Rm_mup_mu_q
         if (.not. allocated(p3%harm_sph)) then
@@ -268,6 +271,7 @@ call cpu_time (time(3))
                 mup = p3%mup(p)
                 mu = p3%mu(p)
                 do i=1,ntheta
+                    ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la métohde de Wigner.
                     p3%harm_sph(i,p) = harm_sph(m,mup,mu,theta(i))
                 end do
             end do
@@ -275,7 +279,9 @@ call cpu_time (time(3))
 
 call cpu_time (time(4))
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PROJECTION DE Δρ(r,ω) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
         ! On passe tout de suite en projection, dans le repère cartesien
@@ -283,6 +289,9 @@ call cpu_time (time(4))
         ! permet de ne garder que les mup>=0 ou les mu>=0.
         ! On choisit les mu>=0 (cf doc de Luc)
         !
+
+        ! 1/ ON PREPARE LES FFT
+
         if (.not. fft2d%isalreadyplanned) then
             call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
             call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
@@ -300,11 +309,10 @@ call cpu_time (time(4))
             fft3d%plan_forward_ok = .true.
         end if
 
-call cpu_time (time(5))
+        call cpu_time (time(5))
 
-        !
-        ! Projection of delta rho
-        !
+        ! 2/ ON PROJETTE
+
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
@@ -313,9 +321,11 @@ call cpu_time (time(5))
             end do
         end do
 
-call cpu_time (time(6))
+        call cpu_time (time(6))
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT DE Δρ_p(r) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FFT SPATIALE [ Δρ^m_mup,mu(r) ] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
         ! On a les projections sur la grille cartesienne
@@ -327,9 +337,13 @@ call cpu_time (time(6))
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
         end do
 
-call cpu_time (time(7))
+        call cpu_time (time(7))
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION DE Δρ_p(q) VERS LE REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ROTATION VERS REPAIRE MOLECULAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!        +                       OZ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!        + RETOUR VERS REPAIRE FIXE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
         ! We now want this projections in Fourier space and lab frame to the molecular frame
         !
@@ -348,7 +362,7 @@ call cpu_time (time(7))
 
         call for_all_q_find_indices_of_mq
 
-call cpu_time (time(8))
+        call cpu_time (time(8))
 
         !
         ! Read Luc's direct correlation function c^{m,n}_{mu,nu_,chi}(|q|)
@@ -363,7 +377,8 @@ call cpu_time (time(8))
             cq%isok=.true.
         end if
 
-call cpu_time (time(9))
+        call cpu_time (time(9))
+
         if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
 
         !
@@ -541,6 +556,7 @@ call cpu_time(time(10))
 
 call cpu_time(time(11))
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !
         ! FFT3D from Fourier space to real space
         !
@@ -618,7 +634,7 @@ contains
         real(dp) :: foo_o (1:grid%no)
         complex(dp), intent(in) :: foo_p(:) ! np
         foo_theta_mu_mup = zeroc
-        foo_o = zeroc
+        foo_o = 0._dp
         do mup=-mmax,mmax
             do mu=0,mmax,mrso
                 do m= max(abs(mup),abs(mu)), mmax
