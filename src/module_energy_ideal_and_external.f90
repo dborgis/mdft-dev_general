@@ -18,7 +18,7 @@ contains
         real(dp), intent(out) :: fid, fext
         real(dp), intent(out) :: df(:,:,:,:,:)
         integer :: is, io, ns, ix, iy, iz
-        real(dp) :: x, x0, vext, volume, dv, kT, mu, w, dfid
+        real(dp) :: x, x0, vext, dv, kT, mu, w, dfid
         real(dp), parameter :: zerodp = 0._dp
         real(dp), parameter :: epsdp = epsilon(0._dp)
 
@@ -27,7 +27,6 @@ contains
         ns = solvent(1)%nspec
         kT = thermo%kbT
         dv = grid%dv
-        volume = grid%v ! volume
         mu = getinput%dp( 'imposed_chempot', defaultvalue=0._dp)
         if ( mu/=0._dp) stop "mu /=0 in module_energy_ideal_and_external. That's implemented but for now shutitoff"
         if ( ns/=1 .AND. mu/=0._dp) STOP "Imposing a chemical potential is valid only for single-species solvent"
