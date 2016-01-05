@@ -10,7 +10,6 @@ subroutine energy_minimization
 
     real(dp) :: f ! functional to minimize
     real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
-    integer :: is, io, ix, iy, iz, i
     real :: time(1:10)
 
     print*,
