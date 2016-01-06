@@ -111,7 +111,7 @@ contains
         end do
 
         print*, "-------------------------------------------------------------------------------"
-        print*, "TOTAL (FF) =", f, "|   Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp]))
+        print*, "TOTAL (FF) =", real(f), "|   Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])), "|  l2@df=",real(norm2(df))
         print*, "-------------------------------------------------------------------------------"
         print*,
 

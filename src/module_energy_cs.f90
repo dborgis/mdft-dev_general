@@ -40,7 +40,7 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%rho(:,ix,iy,iz) * grid%w(:)) - solvent(1)%n0 ! =n(r)-n0=
+                    fftw3%in_forward(ix,iy,iz) = sum (solvent(1)%xi(:,ix,iy,iz)**2*solvent(1)%rho0 * grid%w(:)) - solvent(1)%n0 ! =n(r)-n0=
                 end do
             end do
         end do
@@ -109,15 +109,16 @@ contains
         ! print*, "       Fexc_cs in real space, vs Fexc_cs in k space:",Fexc, -kT/2._dp*dv*sum(fftw3%in_backward*fftw3%out_forward)
 
         do is=1,ns
-            do io=1,no
-                do iz=1,nz
-                    do iy=1,ny
-                        do ix=1,nx
-                            df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) -kT*dv*grid%w(io)*fftw3%out_backward(ix,iy,iz)
-                        end do
-                    end do
+          do iz=1,nz
+            do iy=1,ny
+              do ix=1,nx
+                do io=1,no
+                  df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) &
+                      -kT*dv*grid%w(io)*fftw3%out_backward(ix,iy,iz)*2._dp*solvent(is)%rho0*solvent(is)%xi(io,ix,iy,iz)
                 end do
+              end do
             end do
+          end do
         end do
 
     end subroutine energy_cs

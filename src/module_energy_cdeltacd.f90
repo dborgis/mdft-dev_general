@@ -17,7 +17,7 @@ contains
         implicit none
         integer :: nx, ny, nz, no, ix, iy, iz, is, io, ik, ikmax
         real(dp), intent(out) :: Fexc
-        real(dp) :: kT, dv, ksq, k, dk, vexc, kmax, rho, rho0
+        real(dp) :: kT, dv, ksq, k, dk, vexc, kmax, xi, rho0
         complex(dp) :: kP
         real(dp) :: kx(grid%nx/2+1), ky(grid%ny), kz(grid%nz)
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
@@ -56,9 +56,9 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*solvent(1)%rho(:,ix,iy,iz))!/rho0
-                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*solvent(1)%rho(:,ix,iy,iz))!/rho0
-                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*solvent(1)%rho(:,ix,iy,iz))!/rho0
+                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*solvent(1)%xi(:,ix,iy,iz))**2*rho0
+                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*solvent(1)%xi(:,ix,iy,iz))**2*rho0
+                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*solvent(1)%xi(:,ix,iy,iz))**2*rho0
                 end do
             end do
         end do
@@ -146,17 +146,16 @@ contains
         allocate (Ez(nx,ny,nz), source=fftw3%out_backward/real(nx*ny*nz,dp))
 
 
-        rho0=solvent(1)%rho0
         fexc=0._dp
         is=1
         do ix=1,nx
             do iy=1,ny
                 do iz=1,nz
                     do io=1,no
-                        rho=solvent(1)%rho(io,ix,iy,iz)
+                        xi=solvent(1)%xi(io,ix,iy,iz)
                         vexc=-kT*grid%w(io)*(grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))
-                        fexc=fexc+(rho-rho0)*0.5_dp*vexc*dv
-                        df(io,ix,iy,iz,is)=df(io,ix,iy,iz,is)+vexc*dv
+                        fexc=fexc+(rho0*xi**2-rho0)*0.5_dp*vexc*dv
+                        df(io,ix,iy,iz,is)=df(io,ix,iy,iz,is)+vexc*dv*2._dp*rho0*xi
                     end do
                 end do
             end do

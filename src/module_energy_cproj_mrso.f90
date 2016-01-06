@@ -316,7 +316,7 @@ call cpu_time (time(4))
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    deltarho_p(1:np,ix,iy,iz) = angl2proj( solvent(1)%rho(1:no,ix,iy,iz)-solvent(1)%rho0 )
+                    deltarho_p(1:np,ix,iy,iz) = angl2proj( rho0*solvent(1)%xi(1:no,ix,iy,iz)**2-rho0 )
                 end do
             end do
         end do
@@ -573,8 +573,8 @@ call cpu_time(time(12))
             do iy=1,ny
                 do ix=1,nx
                     gamma_o(1:no) = -kT*dv*proj2angl(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
-                    df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)
-                    ff = ff + sum( gamma_o*(solvent(1)%rho(:,ix,iy,iz)-rho0) )/2._dp
+                    df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)*2._dp*solvent(1)%xi(:,ix,iy,iz)*rho0
+                    ff = ff + sum( gamma_o*(solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0) )/2._dp
                 end do
             end do
         end do

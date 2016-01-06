@@ -35,7 +35,7 @@ contains
         ! print density
         !
         allocate (density(nx,ny,nz))
-        call grid%integrate_over_orientations( solvent(1)%rho, density)
+        call grid%integrate_over_orientations( solvent(1)%xi**2*solvent(1)%rho0, density)
         filename = "output/density.cube"
         call write_to_cube_file (density ,filename)
 

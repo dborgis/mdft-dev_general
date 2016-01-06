@@ -16,9 +16,9 @@ contains
         implicit none
 
         real(dp), intent(out) :: fid, fext
-        real(dp), intent(out) :: df(:,:,:,:,:)
+        real(dp), intent(inout) :: df(:,:,:,:,:)
         integer :: is, io, ns, ix, iy, iz
-        real(dp) :: x, x0, vext, dv, kT, mu, w, dfid
+        real(dp) :: xi, rho0, dv, kT, mu, rho
         real(dp), parameter :: zerodp = 0._dp
         real(dp), parameter :: epsdp = epsilon(0._dp)
 
@@ -38,28 +38,32 @@ contains
         !
         fid = zerodp
         fext = zerodp
-        df = zerodp
         do is=1,ns
-            x0 = solvent(is)%rho0 ! bulk density
-            do iz=1,grid%nz
-                do iy=1,grid%ny
-                    do ix=1,grid%nx
-                        do io=1,grid%no
-                            x = solvent(is)%rho(io,ix,iy,iz)
-                            if (x>epsdp) then
-                                fid = fid + kT*dv*grid%w(io)*(x*log(x/x0)-x+x0)
-                                dfid = kT*dv*grid%w(io)*log(x/x0)
-                            else if (x<=epsdp) then
-                                fid = fid + kT*dv*grid%w(io)*x0 ! par continuite. Plot x*log(x/x0)-x+x0 dans Mathematica pour un x non nul mais arbitrairement petit pour t'en convaincre.
-                                dfid = 0._dp
-                            end if
-                            fext = fext + dv*grid%w(io)*(solvent(is)%vext(io,ix,iy,iz) - mu)*x
-                            df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) + dfid + dv*grid%w(io)*(solvent(is)%vext(io,ix,iy,iz) - mu)
-                        end do
-                    end do
+          rho0 = solvent(is)%rho0 ! bulk density
+          do iz=1,grid%nz
+            do iy=1,grid%ny
+              do ix=1,grid%nx
+                do io=1,grid%no
+
+                  xi = solvent(is)%xi(io,ix,iy,iz)
+                  rho = xi**2 *rho0
+
+                  if (rho > epsdp) then
+                    fid = fid + kT*dv*grid%w(io)*( rho*log(rho/rho0)-rho+rho0 )
+                    fext = fext + dv*grid%w(io)*rho*solvent(1)%vext(io,ix,iy,iz)
+                    df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) + kT*grid%w(io)*2._dp*rho0*xi*log(rho/rho0) &
+                                                            +    grid%w(io)*2._dp*rho0*xi*solvent(1)%vext(io,ix,iy,iz)
+                  else
+                    fid = fid + kT*dv*grid%w(io)*  rho0
+                  end if
+
                 end do
+              end do
             end do
+          end do
         end do
+
+print*,"OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO", solvent(1)%xi(1,1,1,1)**2
 
     end subroutine energy_ideal_and_external
 end module module_energy_ideal_and_external

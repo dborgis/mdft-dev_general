@@ -35,12 +35,12 @@ contains
             error stop
         end if
 
-        ! allocate the solvent density field for each solvent species
+        ! allocate the solvent density field for each solvent species. Remember : xi**2=rho/rho0
         do s=1,solvent(1)%nspec
-            if (.not. allocated( solvent(s)%rho) ) then
-                allocate(solvent(s)%rho(grid%no, grid%nx, grid%ny, grid%nz),   source=solvent(s)%rho0, stat=ios)
+            if (.not. allocated( solvent(s)%xi) ) then
+                allocate(solvent(s)%xi(grid%no, grid%nx, grid%ny, grid%nz),   source=1._dp, stat=ios)
                 if (ios /= 0) then
-                    print*, "solvent(s)%rho(grid%nx,grid%ny,grid%nz,grid%no), source=0._dp: Allocation request denied"
+                    print*, "solvent(s)%xi(grid%no,grid%nx,grid%ny,grid%nz), source=0._dp: Allocation request denied"
                     print*, "for s =", s
                 end if
             end if
@@ -98,9 +98,9 @@ contains
                             betav = thermo%beta * v
 
                             if ( betav >= threeshold_in_betav ) then
-                                solvent(s)%rho(io,i,j,k) = 0.0_dp
+                                solvent(s)%xi(io,i,j,k) = 0.0_dp ! highly repulsive potential induces zero density
                             else
-                                solvent(s)%rho(io,i,j,k) = exp(-betav)*solvent(s)%rho0
+                                solvent(s)%xi(io,i,j,k) = exp(-betav) ! xi**2=rho/rho0=exp(-beta*v)
                             end if
 
                         end do

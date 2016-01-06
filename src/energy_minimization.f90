@@ -11,6 +11,7 @@ subroutine energy_minimization
     real(dp) :: f ! functional to minimize
     real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
     real :: time(1:10)
+    integer :: i
 
     print*,
     print*,
@@ -32,7 +33,12 @@ call cpu_time(time(1))
         ! lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         ! lbfgsb%dsave )
 
-        call setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%rho, lbfgsb%l, lbfgsb%l, lbfgsb%nbd, f, reshape(df,[size(df)]), &
+        ! ATTENTION ici astuce de malade. Je passe le array (solvent%xi(:,:,:,:)) qui est un tableau à 4 colonnes.
+        ! MAIS lbfgsb a besoin d'un vecteur, c'est à dire d'une seule colonne.
+        ! MAIS il est con et mon array est contigu en mémoire, donc je lui passe mon colonne à 4 colonnes dans le bon sens
+        ! et il ne s'en rend pas compte.
+
+        call setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%xi, 0._dp, 0._dp, [(0,i=1,lbfgsb%n)], f, df, &
         lbfgsb%factr, lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         lbfgsb%dsave )
 
@@ -41,47 +47,28 @@ call cpu_time(time(2))
 
         if (lbfgsb%task(1:2) == "FG") then
             !
-            ! lbfgs propose un nouveau vecteur colonne à tester, lbfgsb%x(:), qui correspond à un reshape de notre solvent(:)%rho(:,:,:,:)
-            ! Passons ce x dnas solvent%rho qui va ensuite servir de base à un nouveau calcul de f et df
+            ! lbfgs propose un nouveau vecteur colonne à tester, lbfgsb%x(:), qui correspond à un reshape de notre solvent(:)%xi(:,:,:,:)
+            ! Passons ce x dnas solvent%xi qui va ensuite servir de base à un nouveau calcul de f et df
             ! Note pour plus tard : on pourrait utiliser la fonction RESHAPE de fortran
             !
 call cpu_time(time(3))
 
             !
-            ! l-bfgs-b%x is a vector (1dim array). We have to reshape it to fit into density(o,x,y,z)
-            !
-            ! do is=1,solvent(1)%nspec
-            !     solvent(is)%rho = reshape( solvent(is)%rho, [grid%no, grid%nx, grid%ny, grid%nz] )
-            ! end do
-
-call cpu_time(time(4))
-
-            !
-            ! Given a density of orientation, xyz, return the value of the functional at this point F[rho] and the gradient dF/drho
+            ! Given a density of orientation, xyz, return the value of the functional at this point F[xi] and the gradient dF/dxi
             !
             call energy_and_gradient(f, df) ! f and df are intent(out) of energy_and_gradient. see below for explanations of isave(34)
 
-call cpu_time(time(5))
+call cpu_time(time(4))
 
-            !
-            !   Energy_and_gradient does not change solvent%rho but updates df and gives the value of the functional, f
-            !   lbfgs%g is one-column
-            !
-            ! lbfgsb%g = pack(df, .true.)
-
-
-call cpu_time(time(6))
         end if
 
 
-        call cpu_time(time(7))
+call cpu_time(time(5))
 
         if (lbfgsb%task(1:2) == "FG") then
             print*, "]=><=[ Time to setulb: ", time(2)-time(1)
-            print*, "]=><=[ Time to mv lbfgs%x into density(:): ", time(4)-time(3)
-            print*, "]=><=[ Time to energy_and_gradient: ", time(5)-time(4)
-            print*, "]=><=[ Time to mv new gradient to lbfgs%g: ", time(6)-time(5)
-            print*, "]=><=[ Time to full cycle (evaluation + bfgs stuff): ", time(7)-time(1)
+            print*, "]=><=[ Time to energy_and_gradient: ", time(4)-time(3)
+            print*, "]=><=[ Time to full cycle (evaluation + bfgs stuff): ", time(5)-time(1)
             print*, "==============================================================================="
             print*,
             print*,
