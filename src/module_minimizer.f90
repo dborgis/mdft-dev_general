@@ -7,7 +7,7 @@ module module_minimizer
         !     Declare variables and parameters needed by mylbfgsb.f90>setulb
 
         integer                :: n, m=1, iprint=1
-        real(dp)               :: factr  = 1.0d+3 ! The iteration will stop when
+        real(dp)               :: factr  = 1.0d0 ! The iteration will stop when
         ! real(dp)               :: factr  = 1.0d+12 ! The iteration will stop when
                                                    ! (f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr*epsmch
                                                    ! where epsmch is the machine precision, which is automatically
@@ -49,7 +49,7 @@ contains
 
         implicit none
         integer :: n, m
-        
+
         lbfgsb%itermax = getinput%int("maximum_iteration_nbr", defaultvalue=100, assert=">0")
 
         lbfgsb%n = grid%nx * grid%ny * grid%nz * grid%no * solvent(1)%nspec
