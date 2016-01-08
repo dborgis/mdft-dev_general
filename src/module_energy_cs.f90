@@ -17,7 +17,7 @@ contains
         real(dp) :: kT, dV, ksqmax, k, dk
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
         real(dp), intent(inout) :: dF(:,:,:,:,:)
-        real(dp), allocatable :: n(:,:,:)
+        real(dp), allocatable :: delta_n(:,:,:)
 
         if (.not.allocated(solvent)) call print_solvent_not_allocated ("Dans module_energy_cs")
         if (solvent(1)%nspec >1) then
@@ -37,15 +37,15 @@ contains
         ! fill array fftw3 with deltan = n(x,y,z)-n0
         ! with n(x,y,z) built quadrature over orientational
         !
-        allocate (n(nx,ny,nz), source=0._dp)
+        allocate (delta_n(nx,ny,nz), source=0._dp)
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    n(ix,iy,iz) = sum((solvent(1)%xi(:,ix,iy,iz)**2)*solvent(1)%rho0*grid%w(:))  - solvent(1)%n0 ! =n(r)-n0=
+                    delta_n(ix,iy,iz) = sum((solvent(1)%xi(:,ix,iy,iz)**2)*solvent(1)%rho0*grid%w(:))  - solvent(1)%n0 ! =n(r)-n0=
                 end do
             end do
         end do
-        fftw3%in_forward = n
+        fftw3%in_forward = delta_n
 
         !
         ! FFT(deltan(x)) => deltan(k)
@@ -61,27 +61,24 @@ contains
         ! Since the distance between two points is constant in cs
         !
         dk = solvent(1)%cs%x(2) - solvent(1)%cs%x(1)
-        if (dk<=epsilon(1._dp)) then
-            print*, "In module_energy_cs, dk dans cs(k) <= eps machine"
-            error stop
-        end if
+        if (dk<=epsilon(1._dp)) error stop "In module_energy_cs, dk dans cs(k) <= eps machine"
 
         !
         ! multiply c_s(k) by deltan(k) and fill in_backward of fft by it
         !
-        ksqmax = maxval(solvent(1)%cs%x)**2
-        ikmax_incsin = size(solvent(1)%cs%x)
+        ksqmax = solvent(1)%cs%x(ubound(solvent(1)%cs%x,1))**2
+        ikmax_incsin = ubound(solvent(1)%cs%x,1)
         kxsq(1:nx/2+1) = [( grid%kx(ix)**2  ,ix=1,nx/2+1)]
         kysq(1:ny)     = [( grid%ky(iy)**2  ,iy=1,ny)]
         kzsq(1:nz)     = [( grid%kz(iz)**2  ,iz=1,nz)]
 
-        ! if (maxval(kxsq) + maxval(kysq) + maxval(kzsq) > ksqmax) then
-        !     print*, "Dans module_energy_cs > energy_cs, on a tellement de points k que le plus grand |k| est plus grand"
-        !     print*, "que celui du fichier c(|k|) en input"
-        !     print*, "maxof(k²)=",sqrt(maxval(kxsq) + maxval(kysq) + maxval(kzsq))
-        !     print*, "max k² in cs.in", sqrt(ksqmax)
-        !     print*, "I will consider that cs(k>kmax)=0"
-        ! end if
+        if (maxval(kxsq) + maxval(kysq) + maxval(kzsq) > ksqmax) then
+            print*, "Dans module_energy_cs > energy_cs, on a tellement de points k que le plus grand |k| est plus grand"
+            print*, "que celui du fichier c(|k|) en input"
+            print*, "k max in code =",sqrt(maxval(kxsq) + maxval(kysq) + maxval(kzsq))
+            print*, "k max in cs.in =", sqrt(ksqmax)
+            error stop
+        end if
 
         fftw3%in_backward = complex(0._dp,0._dp)
         do iz=1,nz
@@ -89,12 +86,7 @@ contains
                 do ix=1,nx/2+1
                     k = sqrt(kxsq(ix) + kysq(iy) + kzsq(iz))
                     ik = int(k/dk) +1
-                    if (ik <= ikmax_incsin) then
-                        fftw3%in_backward(ix,iy,iz) = fftw3%out_forward(ix,iy,iz) * solvent(1)%cs%y(ik)
-                    else ! cs(k)=0 and thus:
-                        ! print*, "warning in module_energy_cs: cs(k) depasse le kmax autorised", ik, ikmax_incsin
-                        fftw3%in_backward(ix,iy,iz) = complex(0._dp,0._dp)
-                    end if
+                    fftw3%in_backward(ix,iy,iz) = fftw3%out_forward(ix,iy,iz) * solvent(1)%cs%y(ik)
                 end do
             end do
         end do
@@ -107,7 +99,7 @@ contains
         ! in_forward still contains deltan(x)=n(x)-n0
         ! out_forward contains gamma(x) = convolution of cs(x) and deltan(x)
         ! we want the integral of deltan(x)*gamma(x)
-        Fexc = -kT/2._dp*dv*sum (n*fftw3%out_backward)
+        Fexc = -kT/2._dp*dv*sum (delta_n*fftw3%out_backward)
         ! print*, "       Fexc_cs in real space, vs Fexc_cs in k space:",Fexc, -kT/2._dp*dv*sum(fftw3%in_backward*fftw3%out_forward)
         ! stop
 
@@ -117,7 +109,7 @@ contains
               do ix=1,nx
                 do io=1,no
                   df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) &
-                      -kT*dv*grid%w(io)*fftw3%out_backward(ix,iy,iz)*2._dp*solvent(is)%rho0*solvent(is)%xi(io,ix,iy,iz)
+                      -kT*grid%w(io)*fftw3%out_backward(ix,iy,iz)*2._dp*solvent(is)%rho0*solvent(is)%xi(io,ix,iy,iz)
                 end do
               end do
             end do
