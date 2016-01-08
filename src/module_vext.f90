@@ -364,6 +364,7 @@ contains
             PRINT*,'The supercell is small. We replicate it in all directions. Vext calculation will be long.'
             fullpbc=.TRUE. ! much slower
             !~                 STOP
+            STOP "in module_vext, vext_lennardjones, I have a small supercell and thus have full pbc"
         ELSE
             fullpbc=.FALSE. ! much faster
         END IF
@@ -426,11 +427,13 @@ contains
             print*, "le sigma_ij de l'une des interactions lennard jones est negatif."
             print*, "voici la liste des sigma_ij"
             print*, siguv
+            error stop
         end if
         if (any(epsuv<0._dp)) then
             print*, "le eps_ij de l'une des interactions lennard jones est negatif."
             print*, "voici la liste des sigma_ij"
             print*, epsuv
+            error stop
         end if
 
         allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
