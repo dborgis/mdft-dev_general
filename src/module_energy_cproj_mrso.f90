@@ -449,8 +449,8 @@ call cpu_time (time(4))
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = int( norm2(q) /cq%dq +0.5 ) +1
-                    if (iq >1024) error stop "we need larger norm of q in Luc's cq"
+                    iq = int( norm2(q) /cq%dq ) +1
+                    if (iq >cq%nq) error stop "we need larger norm of q in Luc's cq"
                     ! iq = min( int(norm2(q)/cq%dq)+1   ,nq)
 
                     !
