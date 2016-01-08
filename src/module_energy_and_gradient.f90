@@ -94,6 +94,7 @@ contains
                 call energy_cproj_mrso (ff%exc_cproj, df)
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj     =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
+                print*, "sum of ff%exc_cs+ff%exc_cdeltacd=", ff%exc_cs+ff%exc_cproj
                 f = f + ff%exc_cproj
             end if
 
