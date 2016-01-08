@@ -10,16 +10,16 @@ module module_solvent
 
     type :: do_type
         logical ::  id_and_ext = .false.,&
-        exc_cs = .false.,&
-        exc_cdeltacd = .false.,&
-        exc_cproj = .false.,&
-        exc_fmt = .false.,&
-        exc_wca = .false.,&
-        exc_3b = .false.,&
-        exc_multipolar_without_coupling_to_density = .false.,&
-        exc_multipolar_with_coupling_to_density = .false.,&
-        exc_hydro = .false.,&
-        exc_nn_cs_plus_nbar = .false.
+                    exc_cs = .false.,&
+                    exc_cdeltacd = .false.,&
+                    exc_cproj = .false.,&
+                    exc_fmt = .false.,&
+                    exc_wca = .false.,&
+                    exc_3b = .false.,&
+                    exc_multipolar_without_coupling_to_density = .false.,&
+                    exc_multipolar_with_coupling_to_density = .false.,&
+                    exc_hydro = .false.,&
+                    exc_nn_cs_plus_nbar = .false.
     end type
 
     type :: correlationfunction_type
@@ -86,7 +86,7 @@ contains
             select case (grid%mmax)
             case (0)
                 solvent(s)%do%exc_cs=.true.
-                solvent(s)%do%exc_cdeltacd=.true.
+                ! solvent(s)%do%exc_cdeltacd=.true.
                 solvent(s)%do%exc_cproj=.true.
             case (1:5)
                 solvent(s)%do%exc_cs=.true.
