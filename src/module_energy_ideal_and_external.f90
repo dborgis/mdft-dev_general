@@ -51,8 +51,8 @@ contains
                   if (rho > epsdp) then
                     fid = fid + kT*dv*grid%w(io)*( rho*log(rho/rho0)-rho+rho0 )
                     fext = fext + dv*grid%w(io)*rho*solvent(1)%vext(io,ix,iy,iz)
-                    df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) + kT*grid%w(io)*2._dp*rho0*xi*log(rho/rho0) &
-                                                            +    grid%w(io)*2._dp*rho0*xi*solvent(1)%vext(io,ix,iy,iz)
+                    df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) &
+                      + grid%w(io)*2._dp*rho0*xi*(kT*log(rho/rho0)+solvent(1)%vext(io,ix,iy,iz))
                   else
                     fid = fid + kT*dv*grid%w(io)*  rho0
                   end if
@@ -62,8 +62,6 @@ contains
             end do
           end do
         end do
-
-print*,"OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO", solvent(1)%xi(1,1,1,1)**2
 
     end subroutine energy_ideal_and_external
 end module module_energy_ideal_and_external
