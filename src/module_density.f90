@@ -89,18 +89,18 @@ contains
                         do i = 1, grid%nx
                             do io = 1, grid%no
 
-                            if (vextq_is_allocated) then
-                                v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
-                            else
+                            ! if (vextq_is_allocated) then
+                            !     v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
+                            ! else
                                 v = solvent(s)%vext(io,i,j,k)
-                            end if
+                            ! end if
 
                             betav = thermo%beta * v
 
                             if ( betav >= threeshold_in_betav ) then
                                 solvent(s)%xi(io,i,j,k) = 0.0_dp ! highly repulsive potential induces zero density
                             else
-                                solvent(s)%xi(io,i,j,k) = exp(-betav) ! xi**2=rho/rho0=exp(-beta*v)
+                                solvent(s)%xi(io,i,j,k) = sqrt(exp(-betav)) ! xi**2=rho/rho0=exp(-beta*v)
                             end if
 
                         end do
@@ -108,6 +108,7 @@ contains
                 end do
             end do
         end do
+
     end subroutine init_density
 
 
