@@ -182,6 +182,8 @@ contains
         call output_rdf ( density/solvent(1)%n0 , filename ) ! Get radial distribution functions
         call output_gsitesite
         call output_gOfRandCosTheta
+        filename = 'output/rdf-vext.out'
+        call output_rdf ( solvent(1)%vext(1,:,:,:), filename )
         deallocate (density)
 !
 !         CALL adhoc_corrections_to_gsolv
