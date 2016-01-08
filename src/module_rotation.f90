@@ -221,8 +221,8 @@ contains
         b=zerodp
         c=zerodp
         d=zerodp
-        f=zeroc
-        g=zeroc
+        f=zerodp
+        g=zerodp
         R=zeroc
 
         ! prepare coefficients
