@@ -110,13 +110,15 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq
+        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: q(3), mq(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
         real(dp), parameter :: fm(0:7) = [( sqrt(real(2*m+1,dp)) ,m=0,7 )]
+        real(dp) :: vexc(grid%no), rho, xi
+        real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
 
 call cpu_time (time(1))
 
@@ -251,7 +253,6 @@ call cpu_time (time(3))
         !
         theta=grid%thetaofntheta
         wtheta=grid%wthetaofntheta
-
 
         !
         ! Tabulate generalized spherical harmonics in array p3%harm_sph(theta,proj)
@@ -570,13 +571,28 @@ call cpu_time(time(12))
         if (.not. allocated(gamma_o)) allocate (gamma_o(1:no) ,source=0._dp)
         ff=0._dp
         do iz=1,nz
-            do iy=1,ny
-                do ix=1,nx
-                    gamma_o(1:no) = -kT*dv*proj2angl(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
-                    df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)*2._dp*solvent(1)%xi(:,ix,iy,iz)*rho0
-                    ff = ff + sum( gamma_o*(solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0) )/2._dp
-                end do
+          do iy=1,ny
+            do ix=1,nx
+              vexc(1:no) = -kT*grid%w(1:no)*proj2angl(deltarho_p(1:np,ix,iy,iz)) *fourpisq  /solvent(1)%n0  ! /0.0333 vient du c de luc qui est un n0.c
+              do io=1,no
+                xi = solvent(1)%xi(io,ix,iy,iz)
+                rho = xi**2*rho0
+                ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
+                df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
+
+                ! 8 JANVIER 2016
+                ! gamma_o(1:no) = -kT*proj2angl(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)*real(nphi*npsi*ntheta,dp)
+                ! df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)*solvent(1)%xi(:,ix,iy,iz)*rho0*2._dp
+                ! ff = ff + sum( gamma_o*(solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*grid%w )/2._dp *dv
+
+
+                ! CE QUE J'UTILISE DEPUIS TRES LONGTEMPS :
+                ! gamma_o(1:no) = -kT*proj2angl(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
+                ! df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)*solvent(1)%xi(:,ix,iy,iz)*rho0*2._dp
+                ! ff = ff + sum( gamma_o*(solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0) )/2._dp *dv
+              end do
             end do
+          end do
         end do
 
 call cpu_time(time(13))
@@ -685,13 +701,14 @@ contains
         i=0
         do ix_q=1,nx
             do ix_mq=1,nx
-                if (qx(ix_q)==-qx(ix_mq) .or. qx(ix_q)+2._dp*pi*nx/lx==-qx(ix_mq) ) then
-                    tableof_ix_mq(ix_q) = ix_mq
-                    i=i+1
-                    ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
-                    cycle
-                end if
+              if (abs(qx(ix_q)+qx(ix_mq))<100*epsdp .or. abs(qx(ix_q)+2._dp*pi*nx/lx+qx(ix_mq))<100*epsdp ) then
+                  tableof_ix_mq(ix_q) = ix_mq
+                  i=i+1
+                  ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
+                  cycle
+              end if
             end do
+            if (ix_mq==nx) error stop "FUCK YOU BITCH"
         end do
         if (i/=nx) then
             print*, "I did not found all the -qx. Of",nx,", I found only",i
@@ -701,12 +718,12 @@ contains
         i=0
         do iy_q=1,ny
             do iy_mq=1,ny
-                if ( qy(iy_q)==-qy(iy_mq) .or. qy(iy_q)+2._dp*pi*ny/ly==-qy(iy_mq)  ) then
-                    tableof_iy_mq(iy_q) = iy_mq
-                    i=i+1
-                    ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
-                    cycle
-                end if
+              if (abs(qy(iy_q)+qy(iy_mq))<100*epsdp .or. abs(qy(iy_q)+2._dp*pi*ny/ly+qy(iy_mq))<100*epsdp ) then
+                  tableof_iy_mq(iy_q) = iy_mq
+                  i=i+1
+                  ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
+                  cycle
+              end if
             end do
         end do
         if (i/=ny) then
@@ -717,12 +734,12 @@ contains
         i=0
         do iz_q=1,nz
             do iz_mq=1,nz
-                if ( qz(iz_q)==-qz(iz_mq) .or. qz(iz_q)+2._dp*pi*nz/lz==-qz(iz_mq)  ) then
-                    tableof_iz_mq(iz_q) = iz_mq
-                    i=i+1
-                    ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
-                    cycle
-                end if
+              if (abs(qz(iz_q)+qz(iz_mq))<100*epsdp .or. abs(qz(iz_q)+2._dp*pi*nz/lz+qz(iz_mq))<100*epsdp ) then
+                  tableof_iz_mq(iz_q) = iz_mq
+                  i=i+1
+                  ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
+                  cycle
+              end if
             end do
         end do
         if (i/=nz) then
@@ -805,84 +822,51 @@ contains
         ! end subroutine test_routines_calcul_de_Rm_mup_mu_q
 
         subroutine read_ck_nonzero
+            use module_input, only: n_linesInFile
             implicit none
-            integer :: i, na, iq, m, n, mu, nu, khi, ia, nq
+            integer :: i, iq, m, n, mu, nu, khi, ia
             character(3) :: somechar
-            integer :: ufile, ios, mmax
+            integer :: ufile, ios
             character(65) :: filename
+            integer, parameter, dimension(0:5) :: nprojections_for_mmax = [1,6,75,252,877,2002]
 
             if (cq%isok) return
-            nq=cq%nq
-            if (.not.allocated(cq%normq)) allocate(cq%normq(nq), source=0._dp)
-            mmax=grid%mmax
 
-            select case (mmax)
-            case (0)
-                na = 1
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax0_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (1)
-                na = 6
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax1_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (2)
-                na = 75
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax2_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (3)
-                na = 252
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax3_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (4)
-                na = 877
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax4_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
-            case (5)
-                na = 2002
-                filename="input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax5_ml"
-                open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
-                if ( ios /= 0 ) then
-                    print*, "Cant open file", filename
-                    error stop "in module_energy_cproj.f90"
-                end if
+            write(filename,'(a,i0,a)') "input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax",grid%mmax,"_ml"
+
+            select case (grid%mmax)
+            case (0,1,2,3,4,5)
+                cq%na = nprojections_for_mmax(grid%mmax)
             case default
-                print*, "In module_energy_cproj, you want mmax>5. I cant read the corresponding file."
+                print*, "In module_energy_cproj, you want mmax>5 but I don't have the corresponding file."
                 error stop
             end select
 
+            ! number of q points in c_mnmunukhi(q)
+            cq%nq = n_linesInFile(filename) - 17 ! there are 17 lines of "header" before the columns corresponding to cmnmunukhi(q)
 
-            ! i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
-          !  if (na/=i) then
+            ! open the file that contains c_mnmunukhi(q)
+            open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
+            if ( ios /= 0 ) then
+                print*, "Cant open file", filename
+                error stop "in module_energy_cproj.f90"
+            end if
+
+            if (.not.allocated(cq%normq)) allocate(cq%normq(cq%nq), source=0._dp)
+
+
+          ! i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
+          !  if (cq%na/=i) then
           !      print*, "in read_ck_cproj nalpha est bizarre"
-          !      print*, "na=",na
+          !      print*, "cq%na=",cq%na
           !      print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
           !      ! error stop
           !  end if
 
-            ! i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
-          !  if (na/=i) then
-          !      print*, "in read ck na /= nalpha"
-          !      print*, "na=",na
+          ! i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
+          !  if (cq%na/=i) then
+          !      print*, "in read ck cq%na /= nalpha"
+          !      print*, "cq%na=",cq%na
           !      print*, "bruteforce=",i
           !      ! error stop
           !  end if
@@ -893,12 +877,16 @@ contains
             end if
 
             if (.not.allocated( cq%m)) then
-                allocate ( cq%m(na) ,source=-huge(1))
-                allocate ( cq%n(na) ,source=-huge(1))
-                allocate ( cq%mu(na) ,source=-huge(1))
-                allocate ( cq%nu(na) ,source=-huge(1))
-                allocate ( cq%khi(na) ,source=-huge(1))
-                allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+                allocate ( cq%m  (cq%na) ,source=-huge(1))
+                allocate ( cq%n  (cq%na) ,source=-huge(1))
+                allocate ( cq%mu (cq%na) ,source=-huge(1))
+                allocate ( cq%nu (cq%na) ,source=-huge(1))
+                allocate ( cq%khi(cq%na) ,source=-huge(1))
+                block
+                  integer :: mmax
+                  mmax = grid%mmax
+                  allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+                end block
             end if
             !
             ! Skip 10 lines of comments
@@ -915,8 +903,7 @@ contains
             read(ufile,*) somechar, cq%khi
             read(ufile,*)
 
-
-            do ia=1,na
+            do ia=1,cq%na
                 m = cq%m(ia)
                 n = cq%n(ia)
                 mu = cq%mu(ia)
@@ -925,8 +912,8 @@ contains
                 cq%a(m,n,mu,nu,khi) = ia
             end do
 
-            allocate( ck(na,nq), source=zeroc)
-            do iq=1,nq
+            allocate( ck(cq%na,cq%nq), source=zeroc)
+            do iq=1,cq%nq
                 read(ufile,*) cq%normq(iq), ck(:,iq)
             end do
             close(ufile)
@@ -934,8 +921,6 @@ contains
 
             deallocate (cq%m, cq%n, cq%mu, cq%nu, cq%khi)
             cq%isok=.true.
-            cq%na=na
-            cq%nq=nq
         end subroutine read_ck_nonzero
 
 
