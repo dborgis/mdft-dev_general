@@ -25,16 +25,16 @@ contains
             error stop
         end if
 
-        nx = grid%nx
+        nx = grid%nx ! nbr de points de grille dans la direction x
         ny = grid%ny
         nz = grid%nz
-        no = grid%no
-        ns = solvent(1)%nspec
+        no = grid%no ! nbr d'orientations possibles (== nombre de triplets theta phi psi)
+        ns = solvent(1)%nspec ! nb de solvents dans le calcul (1 pour l'instant pour de l'eau pure).
         kT = thermo%kbT
         dV = grid%dV
 
         !
-        ! fill array fftw3 with deltan = n(x,y,z)-n0
+        ! fill array fftw3 with deltan = n(x,y,z)-n0 = rho-rho0 si qu'une orientation
         ! with n(x,y,z) built quadrature over orientational
         !
         allocate (delta_n(nx,ny,nz), source=0._dp)
