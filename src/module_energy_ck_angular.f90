@@ -22,6 +22,9 @@ module module_energy_ck_angular
       integer :: costheta, psi
       real(dp) :: phi
   end type angleind_type
+  ! type ang_type
+  !   real(dp), allocatable :: phi(:)
+  ! end type ang_type
   type(angleind_type), allocatable, dimension(:,:,:,:) :: angleInd ! integer table of correspondence omega(k,Omega)
   complex, allocatable :: ck_angular(:,:,:,:,:,:)
   complex(dp), allocatable :: delta_rho_k(:,:,:,:) ! delta_rho(omega,k)
@@ -81,7 +84,7 @@ subroutine energy_ck_angular (ff, df)
   do io=1,no
     in_forward = rho0*(solvent(1)%xi(io,:,:,:)**2 -1._dp) ! delta_rho
     call dfftw_execute_dft_r2c( plan_forward, in_forward, out_forward )
-    delta_rho_k(io,:,:,:) = out_forward
+    delta_rho_k(io,:,:,:) = out_forward*grid%w(io) ! NOTE THAT WE INCLUDE THE ANGULAR WEIGHT HERE
   end do
   call cpu_time(t(3))
   !
@@ -96,16 +99,16 @@ subroutine energy_ck_angular (ff, df)
       do iy=1,ny
         do ix=1,nx/2+1
           ik = int( sqrt(grid%kx(ix)**2+grid%ky(iy)**2+grid%kz(iz)**2) /ck%dk +0.5) +1
+          ipsi1 = angleInd(io1,ix,iy,iz)%psi
+          icostheta1 = angleInd(io1,ix,iy,iz)%costheta
 
           do io2=1,no
             phi12 = modulo( angleind(io1,ix,iy,iz)%phi - angleind(io2,ix,iy,iz)%phi ,twopi )! phi1 - phi2
             iphi12 = mod( int(phi12*ck%nphi/twopi), ck%nphi ) +1
-            ipsi1 = angleInd(io1,ix,iy,iz)%psi
             ipsi2 = angleInd(io2,ix,iy,iz)%psi
-            icostheta1 = angleInd(io1,ix,iy,iz)%costheta
             icostheta2 = angleInd(io2,ix,iy,iz)%costheta
             my_ck_angular = ck_angular(ipsi1,ipsi2,iphi12,icostheta1,icostheta2,ik)
-            in_backward(ix,iy,iz) = in_backward(ix,iy,iz) + my_ck_angular*delta_rho_k(io2,ix,iy,iz)*grid%w(io2)
+            in_backward(ix,iy,iz) = in_backward(ix,iy,iz) + my_ck_angular*delta_rho_k(io2,ix,iy,iz)
           end do
 
         end do
