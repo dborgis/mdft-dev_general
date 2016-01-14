@@ -22,9 +22,11 @@ module module_energy_ck_angular
       integer :: costheta, psi
       real(dp) :: phi
   end type angleind_type
-  ! type ang_type
-  !   real(dp), allocatable :: phi(:)
-  ! end type ang_type
+  type ang_type
+    real(dp), allocatable :: phi(:,:,:,:)
+    integer, allocatable :: psi(:,:,:,:), costheta(:,:,:,:)
+  end type ang_type
+  type(ang_type) :: ang
   type(angleind_type), allocatable, dimension(:,:,:,:) :: angleInd ! integer table of correspondence omega(k,Omega)
   complex, allocatable :: ck_angular(:,:,:,:,:,:)
   complex(dp), allocatable :: delta_rho_k(:,:,:,:) ! delta_rho(omega,k)
@@ -49,7 +51,7 @@ subroutine energy_ck_angular (ff, df)
   integer :: nx, ny, nz, no, mrso, io, io1, io2, ix, iy, iz, ik, iphi12,ipsi1,ipsi2,icostheta1,icostheta2
   real(dp), parameter :: zerodp=0._dp, twopi=2._dp*acos(-1._dp)
 
-  real(dp) :: rho0, dv, drho, kT, phi12, xi, vexc
+  real(dp) :: rho0, dv, drho, kT, phi12, xi, vexc, phi1
   complex(dp) :: my_ck_angular
   real :: t(10)
 
@@ -99,14 +101,16 @@ subroutine energy_ck_angular (ff, df)
       do iy=1,ny
         do ix=1,nx/2+1
           ik = int( sqrt(grid%kx(ix)**2+grid%ky(iy)**2+grid%kz(iz)**2) /ck%dk +0.5) +1
-          ipsi1 = angleInd(io1,ix,iy,iz)%psi
-          icostheta1 = angleInd(io1,ix,iy,iz)%costheta
+
+          ipsi1 = ang%psi(io1,ix,iy,iz)
+          icostheta1 = ang%costheta(io1,ix,iy,iz)
+          phi1 = ang%phi(io1,ix,iy,iz)
 
           do io2=1,no
-            phi12 = modulo( angleind(io1,ix,iy,iz)%phi - angleind(io2,ix,iy,iz)%phi ,twopi )! phi1 - phi2
+            phi12 = modulo( phi1 - ang%phi(io2,ix,iy,iz) ,twopi )! phi1 - phi2
             iphi12 = mod( int(phi12*ck%nphi/twopi), ck%nphi ) +1
-            ipsi2 = angleInd(io2,ix,iy,iz)%psi
-            icostheta2 = angleInd(io2,ix,iy,iz)%costheta
+            ipsi2 = ang%psi(io2,ix,iy,iz)
+            icostheta2 = ang%costheta(io2,ix,iy,iz)
             my_ck_angular = ck_angular(ipsi1,ipsi2,iphi12,icostheta1,icostheta2,ik)
             in_backward(ix,iy,iz) = in_backward(ix,iy,iz) + my_ck_angular*delta_rho_k(io2,ix,iy,iz)
           end do
@@ -117,7 +121,6 @@ subroutine energy_ck_angular (ff, df)
 
     call dfftw_execute_dft_c2r ( plan_backward , in_backward, out_backward )
     y(io1,:,:,:) = out_backward/real(nx*ny*nz,dp)
-
   end do
   call cpu_time(t(5))
 
@@ -238,6 +241,13 @@ subroutine gen_angleind
   if ( any(angleind%psi <= 0._dp)) error stop "angleind%psi is somewhere negative"
   if ( any(angleind%costheta > ck%ncostheta)) error stop "angleind%costheta is somewhere > ck%ncostheta"
   if ( any(angleInd%psi > ck%npsi)) error stop "angleind%psi is somewhere > ck%npsi"
+
+
+  ! move in new arrays
+  allocate (ang%costheta(grid%no,grid%nx/2+1,grid%ny,grid%nz), source=angleind%costheta)
+  allocate (ang%phi(grid%no,grid%nx/2+1,grid%ny,grid%nz), source=angleind%phi)
+  allocate (ang%psi(grid%no,grid%nx/2+1,grid%ny,grid%nz), source=angleind%psi)
+  deallocate (angleind)
 
 end subroutine gen_angleind
 
