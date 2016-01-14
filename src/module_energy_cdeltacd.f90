@@ -151,7 +151,7 @@ contains
                     do io=1,no
                         xi=solvent(1)%xi(io,ix,iy,iz)
                         vexc=-kT*grid%w(io)*(grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))
-                        fexc=fexc+(rho0*xi**2-rho0)*0.5_dp*vexc*dv
+                        fexc=fexc+rho0*(xi**2-1._dp)*0.5_dp*vexc*dv
                         df(io,ix,iy,iz,is)=df(io,ix,iy,iz,is)+vexc*2._dp*rho0*xi
                     end do
                 end do

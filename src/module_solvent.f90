@@ -19,7 +19,8 @@ module module_solvent
                     exc_multipolar_without_coupling_to_density = .false.,&
                     exc_multipolar_with_coupling_to_density = .false.,&
                     exc_hydro = .false.,&
-                    exc_nn_cs_plus_nbar = .false.
+                    exc_nn_cs_plus_nbar = .false.,&
+                    exc_ck_angular = .false.
     end type
 
     type :: correlationfunction_type
@@ -49,6 +50,7 @@ module module_solvent
         type(correlationfunction_type) :: cs
         type(correlationfunction_type) :: cdelta
         type(correlationfunction_type) :: cd
+        complex(dp), allocatable :: ck_angular(:,:,:,:,:,:) ! TODO REMOVE THIS IS FOR TESTING PURPOSE ONLY!
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &
@@ -88,10 +90,12 @@ contains
                 solvent(s)%do%exc_cs=.true.
                 ! solvent(s)%do%exc_cdeltacd=.true.
                 solvent(s)%do%exc_cproj=.true.
+                solvent(s)%do%exc_ck_angular=.true.
             case (1:5)
                 solvent(s)%do%exc_cs=.true.
                 solvent(s)%do%exc_cdeltacd=.true.
                 solvent(s)%do%exc_cproj=.true.
+                solvent(s)%do%exc_ck_angular=.true.
             case default
                 print*, "see module_solvent > functional decision tree"
                 print*, "mmax is trop grand"

@@ -104,31 +104,6 @@ CONTAINS
             end if
         end if
     end subroutine init_dcf
-
-    !-----------------------------------------------------------------------------------------------------------------------------------
-
-    !     SUBROUTINE read_ck_angular
-    !
-    !         use module_grid, only: grid
-    !         IMPLICIT NONE
-    !
-    !         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
-    !         LOGICAL :: exists
-    !
-    !         INQUIRE(FILE="input/ck_angular.in", EXIST=exists)
-    !         IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_angular.in is not found."
-    !         OPEN(39,FILE="input/ck_angular.in",FORM='UNFORMATTED')
-    !             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm ! Note that psi is from 0 to pi for water, while no other symetry is taken into account
-    !             ALLOCATE(ck_angular(num_psi,num_psi,num_phi,num_cos,num_cos,nb_k))
-    !             REWIND(39)
-    !             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm, ck_angular
-    !             IF (num_symm /= grid%molRotSymOrder) THEN
-    !                 PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', grid%molRotSymOrder, ' being different with num_symm ',num_symm
-    !                 STOP
-    !             END IF
-    !         CLOSE(39)
-    !
-    !     END SUBROUTINE read_ck_angular
     !
     ! !-----------------------------------------------------------------------------------------------------------------------------------
     !

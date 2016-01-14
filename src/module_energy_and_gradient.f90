@@ -8,6 +8,7 @@ module module_energy_and_gradient
         exc_cs = 0._dp,&
         exc_cdeltacd = 0._dp,&
         exc_cproj = 0._dp,&
+        exc_ck_angular = 0._dp,&
         exc_fmt = 0._dp,&
         exc_wca = 0._dp,&
         exc_3b = 0._dp,&
@@ -37,6 +38,7 @@ contains
         use module_energy_cs, only: energy_cs
         use module_energy_cdeltacd, only: energy_cdeltacd
         use module_energy_cproj_mrso, only: energy_cproj_mrso
+        use module_energy_ck_angular, only: energy_ck_angular
         ! use module_energy_cproj_slow, only: energy_cproj_slow
 
         implicit none
@@ -74,31 +76,38 @@ contains
                 call cpu_time(t(1))
                 call energy_ideal_and_external (ff%id, ff%ext, df)
                 call cpu_time(t(2))
-                print*, "ff%ext           =", ff%ext
-                print*, "ff%id            =", ff%id, " in",t(2)-t(1),"sec"
+                print*, "ff%ext            =", ff%ext
+                print*, "ff%id             =", ff%id, " in",t(2)-t(1),"sec"
                 f = f +ff%id +ff%ext
             end if
             if (solvent(s)%do%exc_cs) then
                 call cpu_time(t(3))
                 call energy_cs (ff%exc_cs, df_trash)
                 call cpu_time(t(4))
-                print*, "ff%exc_cs        =", ff%exc_cs, " in",t(4)-t(3),"sec"
+                print*, "ff%exc_cs         =", ff%exc_cs, " in",t(4)-t(3),"sec"
                 ! f = f + ff%exc_cs
             end if
             if (solvent(s)%do%exc_cdeltacd) then
                 call cpu_time(t(5))
                 call energy_cdeltacd (ff%exc_cdeltacd, df_trash)
                 call cpu_time(t(6))
-                print*, "ff%exc_cdeltacd  =", ff%exc_cdeltacd, "in",t(6)-t(5),"sec"
+                print*, "ff%exc_cdeltacd   =", ff%exc_cdeltacd, "in",t(6)-t(5),"sec"
                 ! f = f + ff%exc_cdeltacd
             end if
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
-                call energy_cproj_mrso (ff%exc_cproj, df)
+                call energy_cproj_mrso (ff%exc_cproj, df_trash)
                 call cpu_time(t(8))
-                print*, "ff%exc_cproj     =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
-                print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
-                f = f + ff%exc_cproj
+                print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
+                ! print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
+                ! f = f + ff%exc_cproj
+            end if
+            if (solvent(s)%do%exc_ck_angular) then
+                call cpu_time(t(9))
+                call energy_ck_angular (ff%exc_ck_angular, df)
+                call cpu_time(t(10))
+                print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec"
+                f = f + ff%exc_ck_angular
             end if
 
 
