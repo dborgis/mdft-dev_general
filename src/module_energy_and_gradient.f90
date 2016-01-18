@@ -96,19 +96,19 @@ contains
             end if
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
-                call energy_cproj_mrso (ff%exc_cproj, df_trash)
+                call energy_cproj_mrso (ff%exc_cproj, df)
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
-                ! print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
-                ! f = f + ff%exc_cproj
+                print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
+                f = f + ff%exc_cproj
             end if
-            if (solvent(s)%do%exc_ck_angular) then
-                call cpu_time(t(9))
-                call energy_ck_angular (ff%exc_ck_angular, df)
-                call cpu_time(t(10))
-                print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec"
-                f = f + ff%exc_ck_angular
-            end if
+            ! if (solvent(s)%do%exc_ck_angular) then
+            !     call cpu_time(t(9))
+            !     call energy_ck_angular (ff%exc_ck_angular, df)
+            !     call cpu_time(t(10))
+            !     print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec"
+            !     f = f + ff%exc_ck_angular
+            ! end if
 
 
 

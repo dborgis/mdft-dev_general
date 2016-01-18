@@ -28,7 +28,7 @@ module module_energy_ck_angular
   end type ang_type
   type(ang_type) :: ang
   type(angleind_type), allocatable, dimension(:,:,:,:) :: angleInd ! integer table of correspondence omega(k,Omega)
-  complex, allocatable :: ck_angular(:,:,:,:,:,:)
+  complex(dp), allocatable :: ck_angular(:,:,:,:,:,:)
   complex(dp), allocatable :: delta_rho_k(:,:,:,:) ! delta_rho(omega,k)
   real(dp), allocatable :: in_forward(:,:,:), out_backward(:,:,:)
   complex(dp), allocatable :: out_forward(:,:,:), in_backward(:,:,:)
@@ -89,10 +89,10 @@ subroutine energy_ck_angular (ff, df)
     delta_rho_k(io,:,:,:) = out_forward*grid%w(io) ! NOTE THAT WE INCLUDE THE ANGULAR WEIGHT HERE
   end do
   call cpu_time(t(3))
+
   !
   ! Calcul de gamma == y
   !
-
   call cpu_time(t(4))
   do io1=1,no
 
@@ -111,7 +111,7 @@ subroutine energy_ck_angular (ff, df)
             iphi12 = mod( int(phi12*ck%nphi/twopi), ck%nphi ) +1
             ipsi2 = ang%psi(io2,ix,iy,iz)
             icostheta2 = ang%costheta(io2,ix,iy,iz)
-            my_ck_angular = ck_angular(ipsi1,ipsi2,iphi12,icostheta1,icostheta2,ik)
+            my_ck_angular = ck_angular(ipsi2,iphi12,icostheta2,ipsi1,icostheta1,ik)
             in_backward(ix,iy,iz) = in_backward(ix,iy,iz) + my_ck_angular*delta_rho_k(io2,ix,iy,iz)
           end do
 
@@ -295,10 +295,28 @@ subroutine read_ck_angular
     error stop "987IUHKJN" ! unique tag to simplify bash greps to buggy source
   end if
 
-  allocate( ck_angular(ck%npsi,ck%npsi,ck%nphi,ck%ncostheta,ck%ncostheta,ck%nk)  ,source=complex(0.,0.) )
+  allocate( ck_angular(ck%npsi,ck%npsi,ck%nphi,ck%ncostheta,ck%ncostheta,ck%nk)  ,source=complex(0._dp,0._dp) )
 
   rewind(myunit)
-  read(myunit) ck%nk, ck%dk, ck%ncostheta, ck%nphi, ck%npsi, ck%molrotsymorder, ck_angular
+  ! what follows is here just because ck_angular.in is a single precision binary. One can't read directly the complex(dp)
+  block
+    complex :: ck_angular_sp(ck%npsi,ck%npsi,ck%nphi,ck%ncostheta,ck%ncostheta,ck%nk)
+    read(myunit) ck%nk, ck%dk, ck%ncostheta, ck%nphi, ck%npsi, ck%molrotsymorder, ck_angular_sp
+    ck_angular = ck_angular_sp
+  end block
+
+
+  block
+    integer :: ipsi1,ipsi2,icostheta1,icostheta2,iphi12,ik
+    complex(dp) :: ck_tmp(ck%npsi,ck%nphi,ck%ncostheta,ck%npsi,ck%ncostheta,ck%nk)
+    do concurrent(ipsi1=1:ck%npsi, ipsi2=1:ck%npsi, iphi12=1:ck%nphi, icostheta1=1:ck%ncostheta, icostheta2=1:ck%ncostheta,&
+       ik=1:ck%nk)
+      ck_tmp(ipsi2,iphi12,icostheta2,ipsi1,icostheta1,ik) = ck_angular(ipsi1,ipsi2,iphi12,icostheta1,icostheta2,ik)
+    end do
+    deallocate (ck_angular)
+    allocate (ck_angular(ck%npsi,ck%nphi,ck%ncostheta,ck%npsi,ck%ncostheta,ck%nk), source=ck_tmp)
+  end block
+
 
   ck%dphi=twopi/ck%nphi
   ck%dpsi=twopi/(ck%npsi*ck%molrotsymorder)
