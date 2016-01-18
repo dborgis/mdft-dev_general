@@ -82,7 +82,7 @@ set(mdft_SRCS
   src/convert_coordinate_into_icg.f90
   src/cs_of_k_hard_sphere.f90
   src/module_energy_and_gradient.f90
-  src/energy_ck_angular.f90
+  src/module_energy_ck_angular.f90
   src/module_energy_cs.f90
 #  src/energy_fmt.f90
   src/energy_hydro.f90
