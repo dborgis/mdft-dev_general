@@ -61,6 +61,7 @@ contains
             open(79,file="output/Pscheme_correction")
             write(79,*) correction%pscheme
             close(79)
+            print*, "New output file output/Pscheme_correction"
         end block
 
 
@@ -88,6 +89,7 @@ contains
             open(79,file="output/PBC_correction")
             write(79,*) correction%pbc
             close(79)
+            print*, "New output file output/PBC_correction"
         end block
 
         print*, "===== Corrections to ΔG_MDFT ====="
