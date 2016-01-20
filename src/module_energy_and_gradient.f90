@@ -16,9 +16,12 @@ module module_energy_and_gradient
         exc_multipolar_without_coupling_to_density = 0._dp,&
         exc_multipolar_with_coupling_to_density = 0._dp,&
         exc_hydro = 0._dp,&
-        exc_nn_cs_plus_nbar = 0._dp
+        exc_nn_cs_plus_nbar = 0._dp, &
+        tot=0._dp,&
+        pscheme_correction=-999._dp,&
+        pbc_correction=-999._dp
     end type
-    type (f_type), protected :: ff
+    type (f_type), public :: ff
     public :: energy_and_gradient
 contains
 
@@ -45,7 +48,7 @@ contains
 
         real(dp), intent(out) :: f
         real(dp), intent(out) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
-        real(dp) :: df_trash (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
+        ! real(dp) :: df_trash (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
 
         real(dp), parameter :: zerodp=0._dp
         real :: t(10)
@@ -67,9 +70,11 @@ contains
         fold=f
         f  = zerodp
         df = zerodp
-        df_trash = zerodp
+        ! df_trash = zerodp
 
         print*,
+
+        if( ff%pscheme_correction==-999._dp) call corrections
 
         do s=1,solvent(1)%nspec
             if (solvent(s)%do%id_and_ext) then
@@ -80,35 +85,39 @@ contains
                 print*, "ff%id             =", ff%id, " in",t(2)-t(1),"sec"
                 f = f +ff%id +ff%ext
             end if
-            if (solvent(s)%do%exc_cs) then
-                call cpu_time(t(3))
-                call energy_cs (ff%exc_cs, df_trash)
-                call cpu_time(t(4))
-                print*, "ff%exc_cs         =", ff%exc_cs, " in",t(4)-t(3),"sec"
-                ! f = f + ff%exc_cs
-            end if
-            if (solvent(s)%do%exc_cdeltacd) then
-                call cpu_time(t(5))
-                call energy_cdeltacd (ff%exc_cdeltacd, df_trash)
-                call cpu_time(t(6))
-                print*, "ff%exc_cdeltacd   =", ff%exc_cdeltacd, "in",t(6)-t(5),"sec"
-                ! f = f + ff%exc_cdeltacd
-            end if
+            ! if (solvent(s)%do%exc_cs) then
+            !     call cpu_time(t(3))
+            !     call energy_cs (ff%exc_cs, df)
+            !     call cpu_time(t(4))
+            !     print*, "ff%exc_cs         =", ff%exc_cs, " in",t(4)-t(3),"sec"
+            !     f = f + ff%exc_cs
+            ! end if
+            ! if (solvent(s)%do%exc_cdeltacd) then
+            !     call cpu_time(t(5))
+            !     call energy_cdeltacd (ff%exc_cdeltacd, df)
+            !     call cpu_time(t(6))
+            !     print*, "ff%exc_cdeltacd   =", ff%exc_cdeltacd, "in",t(6)-t(5),"sec"
+            !     f = f + ff%exc_cdeltacd
+            ! end if
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
                 call energy_cproj_mrso (ff%exc_cproj, df)
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
-                print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
+                ! print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
                 f = f + ff%exc_cproj
             end if
             ! if (solvent(s)%do%exc_ck_angular) then
             !     call cpu_time(t(9))
             !     call energy_ck_angular (ff%exc_ck_angular, df)
             !     call cpu_time(t(10))
-            !     print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec"
+            !     print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec   <======= COMPTE DANS LA MINIMIZATION"
             !     f = f + ff%exc_ck_angular
             ! end if
+                print*, "ff%pscheme corr   =", ff%pscheme_correction
+                f = f + ff%pscheme_correction
+                print*, "ff%pbc correction =", ff%pbc_correction
+                f = f + ff%pbc_correction
 
 
 
@@ -126,10 +135,66 @@ contains
 
         end do
 
+        ff%tot = f
+
         print*, "-------------------------------------------------------------------------------"
-        print*, "TOTAL (FF) =", real(f), "|   Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])), "|  l2@df=",real(norm2(df))
+  print*, "TOTAL (FF) =", real(f), "|   Δf/f =", real((fold-ff%tot)/&
+    maxval([abs(fold),abs(f),1._dp])), "|  l2@df=",real(norm2(df))
         print*, "-------------------------------------------------------------------------------"
         print*,
 
     end subroutine energy_and_gradient
+
+
+    subroutine corrections
+      implicit none
+      !
+      ! Hunenberger's corrections
+      !
+      !... We use P-scheme instead of M-scheme for the electrostatics in MDFT.
+      ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 35 and 37 with Ri=0
+      ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
+      ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
+      !
+      block
+        use module_solvent, only: solvent
+        use module_solute, only: solute
+          double precision :: solute_net_charge ! net charge of the solute
+          double precision :: gamma ! trace of the quadrupole moment
+          gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
+          solute_net_charge = sum(solute%site%q)
+          ! print*, "Hunenberger's P-scheme correction is solute net charge times", -gamma*solvent(1)%n0*2.909857E3
+          ff%pscheme_correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol   ! n0 of water is 0.0333
+          open(79,file="output/Pscheme_correction")
+          write(79,*) ff%pscheme_correction
+          close(79)
+      end block
+
+      !
+      !   Type B correction of Hunenberger (due to lattice sums with periodic boundary conditions)
+      !   see J. Chem. Phys. 124, 224501 (2006), eq. 32 with R_I=0 (no ionic radius)
+      !
+      block
+        use module_solute, only: solute
+        use module_grid, only: grid
+          double precision :: solute_net_charge, L
+          solute_net_charge = sum (solute%site%q)
+          if (.not. all(grid%length==grid%length(1))) then
+              print*, "The grid is not cubic."
+              print*, "The periodic boundary conditions correction is intended for cubic cells."
+              print*, "We use the average length sum(len)/3."
+              L = sum(grid%length)/3._dp
+          else
+              L = grid%length(1)
+          end if
+          if (L<=epsilon(1._dp)) then
+              error stop "sherY6S%hx6YYUJ"
+          end if
+          ff%pbc_correction = -1949.0466_dp*solute_net_charge**2/L
+          open(79,file="output/PBC_correction")
+          write(79,*) ff%pbc_correction
+          close(79)
+      end block
+
+    end subroutine corrections
 end module module_energy_and_gradient
