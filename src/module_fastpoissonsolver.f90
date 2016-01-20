@@ -5,7 +5,7 @@ module module_fastpoissonsolver
     private
 
     real(dp), allocatable, dimension(:,:,:), protected :: sourcedistrib ! charge distribution that generates the electrostatic potential
-    real(dp), allocatable, dimension(:,:,:), protected :: phi ! phi is the electrostatic potential
+    real(dp), allocatable, dimension(:,:,:), protected :: electric_potential ! electric_potential is the electrostatic potential
     type :: psgrid_type
         integer :: n(3)
         real(dp) :: len(3)
@@ -48,7 +48,7 @@ contains
             error stop "This problem arises in module fastPoissonSolver"
         end if
 
-        allocate( phi (psgrid%n(1),psgrid%n(2),psgrid%n(3)) ,SOURCE=0._dp, stat=er%i, errmsg=er%msg)
+        allocate( electric_potential (psgrid%n(1),psgrid%n(2),psgrid%n(3)) ,SOURCE=0._dp, stat=er%i, errmsg=er%msg)
         if (er%i/=0) then
             print*, er%msg
             error stop "This problem arises in module fastPoissonSolver"
@@ -57,17 +57,17 @@ contains
         call soluteChargeDensityFromSoluteChargeCoordinates (psgrid%n, psgrid%len, sourcedistrib)
 
         if (all(abs(sourcedistrib)<=epsdp)) then
-            phi = 0._dp
+            electric_potential = 0._dp
         end if
 
-        call poissonSolver (psgrid%n, psgrid%len, sourcedistrib, phi)
+        call poissonSolver (psgrid%n, psgrid%len, sourcedistrib, electric_potential)
 
 
         !
         ! Deallocate unnecessary stuff
         !
         if (allocated(sourcedistrib)) deallocate (sourcedistrib)
-        if (allocated(phi)) deallocate (phi)
+        if (allocated(electric_potential)) deallocate (electric_potential)
 
         ! at this point, one has Vext_q (old fashioned construction of Poisson potential and extrapolation to solvent sites outside grid nodes)
         ! and of solvent(s)%vext(i,j,k,o,p)%q, the new construction with multipole expansion of the solvent molecular charge density.
@@ -79,7 +79,7 @@ contains
         !     end do
         ! ! else ! this should be removed soon once we're used to this new construction
         ! !     print*,"BETTER POISSON SOLVER [OFF]"
-        ! !     call vext_q_from_v_c (psgrid%n, psgrid%len, phi) ! defines Vext_q(i,j,k,o,p) that we used in the past for Poisson solver
+        ! !     call vext_q_from_v_c (psgrid%n, psgrid%len, electric_potential) ! defines Vext_q(i,j,k,o,p) that we used in the past for Poisson solver
         ! end if
 
 
@@ -94,7 +94,7 @@ contains
     ! => V(k)=sourcedistrib(k)/(esp0*k^2)
     ! FFT(V(k)) = V(r)
 
-    SUBROUTINE poissonSolver (gridnode, gridlength, sourcedistrib, phi)
+    SUBROUTINE poissonSolver (gridnode, gridlength, sourcedistrib, electric_potential)
 
         use precision_kinds, only: dp, i4b
         use constants, only: qfact
@@ -102,15 +102,15 @@ contains
         use module_input, only: getinput
         use module_grid, only: grid
 
-        ! phi = electrostatic potential from charge density and poisson equation
+        ! electric_potential = electrostatic potential from charge density and poisson equation
 
         implicit none
 
         integer, intent(in) :: gridnode(3)
         real(dp), intent(in) :: gridlength(3)
         real(dp), intent(in) :: sourcedistrib (gridnode(1),gridnode(2),gridnode(3))
-        real(dp), intent(out) :: phi (gridnode(1),gridnode(2),gridnode(3))
-        complex(dp), allocatable, dimension(:,:,:) :: sourcedistrib_k, phi_k
+        real(dp), intent(out) :: electric_potential (gridnode(1),gridnode(2),gridnode(3))
+        complex(dp), allocatable, dimension(:,:,:) :: sourcedistrib_k, electric_potential_k
         integer  :: i,j,k,m1,m2,m3,s,io
         real(dp) :: k2
         real(dp), allocatable :: fftw3inforward(:,:,:), fftw3outbackward(:,:,:)
@@ -144,12 +144,12 @@ contains
 
 
         if ( all(abs(sourcedistrib)<=epsilon(1._dp)) ) then
-            phi = 0._dp
+            electric_potential = 0._dp
             return
         end if
 
         allocate( sourcedistrib_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
-        allocate( phi_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
+        allocate( electric_potential_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
 
         ! fourier transform of the solute charge density
         fftw3inforward = sourcedistrib
@@ -184,9 +184,9 @@ contains
                     k2 = sum(   (twopi*real([m1,m2,m3],dp)/gridlength)**2   )
 
                     IF ( abs(k2) > epsilon(1._dp) ) THEN
-                        phi_k(i,j,k) = sourcedistrib_k(i,j,k) * fourpi/k2 ! in electrostatic units : V=-4pi rho
+                        electric_potential_k(i,j,k) = sourcedistrib_k(i,j,k) * fourpi/k2 ! in electrostatic units : V=-4pi rho
                     ELSE
-                        phi_k(i,j,k) = complex(0._dp,0._dp)
+                        electric_potential_k(i,j,k) = complex(0._dp,0._dp)
                     END IF
 
                 END DO
@@ -197,9 +197,9 @@ contains
         ! old construction
         if (getinput%log('better_poisson_solver', defaultvalue=.false.)) then
             ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
-            fftw3InBackward = phi_k
+            fftw3InBackward = electric_potential_k
             call dfftw_execute (fpspb)
-            phi = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
+            electric_potential = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
         else
             ! new construction
             ! get multipolar electrostatic potential in real space. It is already solvent dependent here
@@ -208,7 +208,7 @@ contains
                     call solvent(s)%init_chargedensity_molecularpolarization
                 end if
                 do io = 1, grid%no
-                    fftw3InBackward = phi_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
+                    fftw3InBackward = electric_potential_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     call dfftw_execute (fpspb)
                     solvent(s)%vextq(io,:,:,:) = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
                 end do
@@ -218,13 +218,13 @@ contains
         call dfftw_destroy_plan (fpspf)
         call dfftw_destroy_plan (fpspb)
 
-        deallocate( sourcedistrib_k, phi_k, fftw3InForward, fftw3OutForward, fftw3OutBackward, fftw3InBackward)
+        deallocate( sourcedistrib_k, electric_potential_k, fftw3InForward, fftw3OutForward, fftw3OutBackward, fftw3InBackward)
 
     END SUBROUTINE poissonSolver
 
     !===================================================================================================================================
 
-    SUBROUTINE vext_q_from_v_c (gridnode, gridlen, phi)
+    SUBROUTINE vext_q_from_v_c (gridnode, gridlen, electric_potential)
 
         use precision_kinds     ,ONLY: dp
         use module_solute              ,ONLY: solute
@@ -237,7 +237,7 @@ contains
         IMPLICIT NONE
 
         INTEGER, INTENT(IN) :: gridnode(3)
-        REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: phi
+        REAL(dp), DIMENSION(gridnode(1),gridnode(2),gridnode(3)), INTENT(IN) :: electric_potential
         REAL(dp), INTENT(IN) :: gridlen(3)
         INTEGER :: i, j, k, m, s, nfft(3), l(3), u(3), io
         real(dp), dimension(3,solvent(1)%nspec,solvent(1)%nsite,grid%no) :: xmod
@@ -299,7 +299,7 @@ contains
                         err%x = x
                     end if
 
-                    if ( ANY(l<LBOUND(phi)) .or. ANY(l>UBOUND(phi)) ) THEN
+                    if ( ANY(l<LBOUND(electric_potential)) .or. ANY(l>UBOUND(electric_potential)) ) THEN
                         err%pb=.TRUE.
                         err%msg="Problem with l in vext_q_from_v_c.f90"
                         err%l = l
@@ -308,7 +308,7 @@ contains
                         err%x = x
                     END IF
 
-                    if ( ANY(u<LBOUND(phi)) .or. ANY(u>UBOUND(phi)) ) THEN
+                    if ( ANY(u<LBOUND(electric_potential)) .or. ANY(u>UBOUND(electric_potential)) ) THEN
                         err%pb=.TRUE.
                         err%msg="Problem with u in vext_q_from_v_c.f90"
                         err%l = l
@@ -317,14 +317,14 @@ contains
                         err%x = x
                     end if
 
-                    cube(0,0,0) = phi (l(1),l(2),l(3))
-                    cube(1,0,0) = phi (u(1),l(2),l(3))
-                    cube(0,1,0) = phi (l(1),u(2),l(3))
-                    cube(0,0,1) = phi (l(1),l(2),u(3))
-                    cube(1,1,0) = phi (u(1),u(2),l(3))
-                    cube(1,0,1) = phi (u(1),l(2),u(3))
-                    cube(0,1,1) = phi (l(1),u(2),u(3))
-                    cube(1,1,1) = phi (u(1),u(2),u(3))
+                    cube(0,0,0) = electric_potential (l(1),l(2),l(3))
+                    cube(1,0,0) = electric_potential (u(1),l(2),l(3))
+                    cube(0,1,0) = electric_potential (l(1),u(2),l(3))
+                    cube(0,0,1) = electric_potential (l(1),l(2),u(3))
+                    cube(1,1,0) = electric_potential (u(1),u(2),l(3))
+                    cube(1,0,1) = electric_potential (u(1),l(2),u(3))
+                    cube(0,1,1) = electric_potential (l(1),u(2),u(3))
+                    cube(1,1,1) = electric_potential (u(1),u(2),u(3))
 
                     vext_q_of_r_and_omega = vext_q_of_r_and_omega + solvent(s)%site(m)%q * TriLinearInterpolation(cube,r)
                 end do
