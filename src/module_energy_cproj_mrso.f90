@@ -472,12 +472,14 @@ call cpu_time (time(4))
 
                     do khi=-mmax,mmax
                         do m=abs(khi),mmax
+
                             do mu=0,m,mrso ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
 
                                 gamma_m_khi_mu_q= zeroc
                                 gamma_m_khi_mu_mq = zeroc
 
                                 do n=abs(khi),mmax
+
                                     do nu= -mrso*(n/mrso), mrso*(n/mrso), mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
 
                                         ia = cq%a(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
@@ -485,20 +487,24 @@ call cpu_time (time(4))
                                         ip = p3%p(n,khi,abs(nu)/mrso)
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
+                                          IF(M<=1 .AND. N<=1) THEN
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
+                                          END IF
                                         else
+                                          IF(M<=1 .AND. N<=1) THEN
                                             gamma_m_khi_mu_q = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
+                                          END IF
                                         end if
 
                                     end do
                                 end do
 
                                 ip=p3%p(m,khi,mu/mrso)
+
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
-
                             end do
                         end do
                     end do
@@ -829,6 +835,10 @@ contains
             integer :: ufile, ios
             character(65) :: filename
             integer, parameter, dimension(0:5) :: nprojections_for_mmax = [1,6,75,252,877,2002]
+            real(dp) :: qmax_effectif
+            integer :: iqmax_effectif
+            complex(dp), allocatable :: ck_full(:,:)
+
 
             if (cq%isok) return
 
@@ -912,15 +922,31 @@ contains
                 cq%a(m,n,mu,nu,khi) = ia
             end do
 
-            allocate( ck(cq%na,cq%nq), source=zeroc)
+
+            allocate( ck_full(cq%na,cq%nq), source=zeroc)
             do iq=1,cq%nq
-                read(ufile,*) cq%normq(iq), ck(:,iq)
+              read(ufile,*) cq%normq(iq), ck_full(:,iq)
             end do
             close(ufile)
             cq%dq = cq%normq(2)
 
+            !
+            ! Plutot que stocker un tableau tres grand avec toutes les valeurs de |q| dont on a besoin,
+            ! on va aller voir quel est le |q| maximum dont on a besoin dans notre code (depend de nx,ny,nz)
+            ! cette valuer maximum effective de |q| dans le code, on l'appelle qmax_effectif
+            ! on appelle son indice : iqmax_effectif
+            !
+            qmax_effectif = maxval ( sqrt(grid%kx**2 + grid%ky**2 + grid%kz**2)  )
+            iqmax_effectif = int( qmax_effectif / cq%dq  ) + 10 ! +10 is just to be safe. +1 suffit très certainement.
+            cq%nq = iqmax_effectif
+            allocate( ck(cq%na, cq%nq), source=ck_full(1:cq%na,1:cq%nq))
+            deallocate( ck_full )
+
             deallocate (cq%m, cq%n, cq%mu, cq%nu, cq%khi)
+
+            ! tell the world the reading and allocating of the data structure for c(q) is ok
             cq%isok=.true.
+
         end subroutine read_ck_nonzero
 
 
