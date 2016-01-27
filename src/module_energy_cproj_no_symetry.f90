@@ -59,11 +59,12 @@ contains
     use module_wigner_d, only: wigner_big_d
     use module_grid, only: grid
     use module_thermo, only: thermo
+    use module_solvent, only: solvent
 
     implicit none
 
     real(dp), intent(out) :: ff
-    real(dp), intent(inout) :: df(:,:,:,:,:) ! x y z o s
+    real(dp), intent(inout) :: df(:,:,:,:,:) ! grad(f) of omega, x, y, z, solventId
     real(dp) :: dv, kT
     integer :: ix, iy, iz, ix_q, iy_q, iz_q, i, p
     integer :: nx, ny, nz, np, no, ns, mmax, na, nq, mrso
@@ -469,6 +470,7 @@ contains
 
     subroutine read_ck_nonzero
       use module_input, only: n_linesInFile
+      use module_grid, only: grid
       implicit none
       integer :: i, iq, m, n, mu, nu, khi, ia
       character(3) :: somechar
