@@ -67,7 +67,7 @@ contains
         CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
 
         if (any(solvent(1)%vext <= -solvent(1)%vext_threeshold)) then
-            call prevent_numerical_catastrophes
+            ! call prevent_numerical_catastrophes
         end if
 
         if (allocated(solvent(1)%vextq)) then
@@ -141,16 +141,25 @@ contains
         !
 
         ! DIRECT SUMMATION, pot = sum of qq'/r
-        IF ( is_direct ) then
-            print*, "electrostatic potential calculated by direct summation"
+        if (is_direct) then
+            print*, "  => Method : direct"
             call compute_vcoul_as_sum_of_pointcharges
         end if
 
         ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
-        IF (is_poisson) then
-            print*, "electrostatic potential calculated by FFT"
+        if (is_poisson) then
+            print*, "  => Method : FFT"
             call init_fastpoissonsolver
         end if
+
+        block
+          integer :: iz
+          open(39,file="output/vextq-z.dat")
+          do iz=0,grid%nz-1
+            write(39,*) iz*grid%dz, solvent(1)%vextq(1,1,1,iz+1)
+          end do
+          close(39)
+        end block
 
     end subroutine init_electrostatic_potential
 
@@ -160,10 +169,10 @@ contains
         use module_solute, only: solute
         use module_grid, only: grid
         use constants, only: qfact
-        IMPLICIT NONE
+        implicit none
         INTEGER :: i,j
         REAL(dp) :: d(3)
-        REAL(dp), ALLOCATABLE :: dnn(:),epsnn(:),signn(:),qnn(:),rblock(:,:)
+        REAL(dp), allocatable :: dnn(:),epsnn(:),signn(:),qnn(:),rblock(:,:)
         LOGICAL :: iFoundTheNN
 
         i=SIZE(solute%site)
