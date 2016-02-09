@@ -95,6 +95,7 @@ contains
     complex(dp) :: cfulltest(2002,200) ! DOIT ETRE VIRE DES QUE CA FONCTIONNE TODO
     integer :: ptest(0:5,0:5,-5:5,-5:5,-5:5)  ! DOIT ETRE VIRE DES QUE CA FONCTIONNE TODO
     integer :: iqtest
+    complex(dp) :: a, b
 
     call cpu_time(time(12))
 
@@ -175,6 +176,7 @@ contains
 
 
 
+
     !
     ! On va être carrément lourds et transférer xi (pour rappel xi²=rho/rho0) dans un tableau de complexes dont la partie imag est nulle.
     ! on va donc complètement oublier qu'on a une symétrie hermicienne, pour faire des FFT de complexe à complexe
@@ -204,6 +206,70 @@ contains
     print*, "<<<<< FFT en",time(2)-time(1),"seconds"
 
     !
+    ! Vérification de la symétrie dûe a la fonction de départ purement réelle
+    ! cf equations 1.15 de Luc
+    !
+    block
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+
+            if (ix_q == 1) then
+              ix_mq = ix_q
+            else if (ix_q == nx/2 +1) then
+              cycle
+            else
+              ix_mq = nx - ix_q + 2
+            end if
+
+            if (iy_q == 1) then
+              iy_mq = iy_q
+            else if (iy_q == ny/2 +1) then
+              cycle
+            else
+              iy_mq = ny - iy_q + 2
+            end if
+
+            if (iz_q == 1) then
+              iz_mq = iz_q
+            else if (iz_q == nz/2 +1) then
+              cycle
+            else
+              iz_mq = nz - iz_q + 2
+            end if
+
+            do io=1,no
+              a = deltarho_k(io,ix_q,iy_q,iz_q)
+              b = conjg(deltarho_k(io,ix_mq,iy_mq,iz_mq))
+              if (abs(a-b)>1.D-10) then
+                error stop "symetrie hermicienne non respectee pour deltarho_k"
+              end if
+            end do
+
+          end do
+        end do
+      end do
+    end block
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    !
     ! Passage en projections de Δρ(Ω,qx,qy,qz)
     !
     call cpu_time(time(1))
@@ -226,28 +292,70 @@ contains
 !$OMP PARALLEL DO
       do p=1,np
         do o=1,no
-          temp_wigner_big_D(o,p) = conjg( wigner_big_D(p3%m(p),p3%mup(p),p3%mu(p),grid%theta(o),grid%phi(o),grid%psi(o)) )
+          temp_wigner_big_D(o,p) = wigner_big_D(p3%m(p),p3%mup(p),p3%mu(p),grid%theta(o),grid%phi(o),grid%psi(o))
         end do
       end do
 !$OMP END PARALLEL DO
-
+      !
+      ! On verifie les symetries sur wigner_big_D
+      !
+      do o=1,no
+        do p=1,np
+          m   = p3%m(p)
+          mup = p3%mup(p)
+          mu  = p3%mu(p)
+          a = (-1)**(mup+mu) * conjg(temp_wigner_big_D(o,p))
+          b = temp_wigner_big_D(o,p3%p(m,-mup,-mu))
+          if (abs(a-b)>1.D-10) error stop "dans wigner_big_D qui ne verifie pas symetrie 1.6"
+        end do
+      end do
+      !
+      ! On prend le conjugué de la R^m_mup_mu(\Omega) car c'est bien le conjugué qui doit être utilisé pour la projection
+      !
+      temp_wigner_big_D = conjg(temp_wigner_big_D)
       do iz=1,nz
         do iy=1,ny
           do ix=1,nx
             do p=1,np
                ! les grid%w(1:no) sont les poids des quadratures angulaires. Pour rappel, la somme des poids fait 8 pi² ~ 79
               deltarho_k_p(p,ix,iy,iz) = fm_of_p(p) * sum( deltarho_k(:,ix,iy,iz) * grid%w(:) * temp_wigner_big_D(:,p) )
+              if (mod(p3%mu(p),2)/=0 .and. abs(deltarho_k_p(p,ix,iy,iz))>1.D-10) error stop "deltarho_k_p va pas bien"
+              ! if(  mod(p3%mu(p) ,2)/=0  )  print*, "p,m,mup,mu",p,p3%m(p), p3%mup(p), p3%mu(p),deltarho_k_p(p,ix,iy,iz)
             end do
           end do
         end do
       end do
-
       deallocate (temp_wigner_big_D, fm_of_p)
     end block
-    ! deallocate (deltarho_k)
-    PRINT*, "ATTENTION J4AI COMMENTE DEALLOCATE DELTARHO_K POUR UN TEST"
+    deallocate (deltarho_k)
     call cpu_time(time(2))
-    print*, "<<<<< projection fin", time(2)-time(1), "seconds"
+    print*, "<<<<< projection en r terminé en", time(2)-time(1), "seconds"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     !
@@ -312,7 +420,7 @@ contains
 
 
     !
-    ! Rotation vers repaire lié à q:  Δρ^m_µ'µ(qx,qy,qz)  => Δρ'^m_χ_µ(qx,qy,qz)
+    ! Rotation vers repaire lié à q:  Δρ^m_µ'µ (qx,qy,qz)  => Δρ'^m_χ_µ (qx,qy,qz)
     !
     call cpu_time(time(1))
     allocate( deltarho_prime_k_p(np,nx,ny,nz) ,source=zeroc )
@@ -320,23 +428,20 @@ contains
       use module_wigner_d, only: wigner_big_D
       use module_rotation, only: thetaofq, phiofq
       complex(dp), allocatable :: R(:,:,:) ! R^m_{mup,mu} (\hat{q})
+      complex(dp) :: a
       allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
       do iz_q=1,nz
         do iy_q=1,ny
           do ix_q=1,nx
 
             q = [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
-
             R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax ) ! Ici j'utilise Choi. C'est vérifié que c'est équivalent à wigner_big_D^m_mup_mu(q) for psi_q=0.
+
             do m=0,mmax
               do khi=-m,m
                 do mu=-m,m
-                  p=p3%p(m,khi,mu)
-
-                  do mup=-m,m
-                    deltarho_prime_k_p(p,ix_q,iy_q,iz_q) = deltarho_prime_k_p(p,ix_q,iy_q,iz_q) &
-                    + deltarho_k_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi) ! ici j'ai bien testé que remplacé R (qui nécessite Choi) par wigner_big_D ne change rien
-                  end do
+                  deltarho_prime_k_p ( p3%p(m,khi,mu) ,ix_q, iy_q, iz_q) = &
+                      sum( deltarho_k_p( p3%p(m,-m:m,mu), ix_q,iy_q,iz_q) * R(m,-m:m,khi) ) ! la somme sur µ' des Δρ^m_µ'µ(qx,qy,qz)
 
                 end do
               end do
@@ -346,6 +451,7 @@ contains
         end do
       end do
     end block
+
     deallocate (deltarho_k_p)
     call cpu_time(time(2))
     print*, "<<<<< rotation vers repere moleculaire en",time(2)-time(1),"seconds"
@@ -427,11 +533,13 @@ contains
     !
     ! Comment on traite les deltarho(k=0)
     !
-    if (mmax>=1) then
-      do m=1,mmax
-        deltarho_prime_k_p(p3%p(m,0,0),1,1,1) = complex(0,0)
-      end do
-    end if
+    ! if (mmax>=1) then
+    !   ! on s'interesse a la projection 1 0 0 pour q=0
+    !   ix_q=1
+    !   iy_q=1
+    !   iz_q=1
+    !   deltarho_prime_k_p( p3%p(1:,0,0) ,ix_q,iy_q,iz_q) = complex(0,0)
+    ! end if
 
 
 
@@ -448,9 +556,6 @@ contains
     end if
 
 
-    !
-    ! OZ
-    !
     block
       integer :: p, m, n, mu, nu, khi
       print*, "opening /home/levesque/Recherche/00__BELLONI/2016__02/reconstruction_des_ck_depuis_luc_ck_nmax5/ck_nmax5_max"
@@ -473,14 +578,17 @@ contains
     end block
 
 
+    !
+    ! OZ
+    !
     call cpu_time(time(1))
     allocate (gamma_prime_k_p(np,nx,ny,nz), source=zeroc)
     do iz_q=1,nz
       do iy_q=1,ny
         do ix_q=1,nx
-
-          iq = int( norm2([grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]) /cq%dq +0.5) +1
-          if (iq >cq%nq) error stop "we need larger norm of q in Luc's cq"
+          !
+          ! iq = int( norm2([grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]) /cq%dq +0.5) +1
+          ! if (iq >cq%nq) error stop "we need larger norm of q in Luc's cq"
 
           iqtest = int( norm2([grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]) /(0.613592315E-01) +0.5) +1
           if (iqtest>200) error stop "iqtest trop grand"
@@ -489,32 +597,24 @@ contains
             do m=abs(khi),mmax
               do mu=-m,m
                 if (modulo(mu,2)/=0) cycle
+
                 do n=abs(khi),mmax
                   do nu=-n,n
                     if (modulo(nu,2)/=0) cycle
-                    ia = cq%a(m,n,mu,nu,khi)
-                    if (ia<0) then
-                      print*, "error : ia <0"
-                      print*, "m,n,mu,nu,khi=",m,n,mu,nu,khi
-                      error stop
-                    end if
 
-                    ! gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
-                    ! + (-1)**(khi+nu) * ck(ia,iq) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
+
+                    ! ia = cq%a(m,n,mu,nu,khi)
+                    ! if (ia<0) then
+                    !   print*, "error : ia <0"
+                    !   print*, "m,n,mu,nu,khi=",m,n,mu,nu,khi
+                    !   error stop
+                    ! end if
+
+  ! gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
+  !                 + (-1)**(khi+nu) * ck(ia,iq) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
 
   gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
-                    + (-1)**(khi+nu) * cfulltest(ptest(m,n,mu,nu,khi),iqtest) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
-
-                    ! block
-                    !   complex(dp) :: a, b
-                    !   a = cfulltest(ptest(m,n,mu,nu,khi),iqtest)
-                    !   b = ck(ia,iq)
-                    !   if (abs(a-b)>1.D-3) then
-                    !     print*, "diff in c for m n mu nu khi=", m, n, mu, nu, khi, abs(a-b),"at ix_q, iy_q, iz_q",ix_q,iy_q,iz_q,&
-                    !       a, b
-                    !   end if
-                    ! end block
-
+          + (-1)**(khi+nu) * cfulltest(ptest(m,n,mu,nu,khi),iqtest) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
 
                   end do
                 end do
@@ -527,6 +627,21 @@ contains
     end do
     call cpu_time(time(2))
     print*, "<<<<< OZ en",time(2)-time(1),"seconds"
+!
+! !
+! do iz_q=1,nz
+!   do iy_q=1,ny
+!     do ix_q=1,nx
+!       do m=0,mmax
+!         do khi=-m,m
+!           do mu=-m,m
+!             print*,"q", ix_q, iy_q, iz_q,"m khi mu",m,khi,mu,"gamma", gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q)
+!           end do
+!         end do
+!       end do
+!     end do
+!   end do
+! end do
 
 
     !
@@ -580,19 +695,21 @@ contains
               a = conjg(a)*(-1)**(m+mu+khi)
               b = gamma_prime_k_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
 
-              if (abs(a-b) >1.E-10 ) then
-                if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
-                print*,
-                print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
-                print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
-                print*, "q", [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
-                print*, "mq", [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]
-                print*, "m,khi,mu=",m,khi,mu
-                print*, a
-                print*, b
-                print*, a-b
-                error stop "La symétrie 1.15 n'est pas vérifiée pour gamma_prime_k_p"
-              end if
+              !
+              ! if (abs(a-b) >1.E-10 ) then
+              !   if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
+              !   print*,
+              !   print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
+              !   print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
+              !   print*, "q", [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
+              !   print*, "mq", [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]
+              !   print*, "m,khi,mu=",m,khi,mu
+              !   print*, "conjg @ gamma_prime_k_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)*(-1)**(m+mu+khi),  gamma m khi -mu"
+              !   print*,a
+              !   print*,b
+              !   print*, "diff",a-b
+              !   error stop "La symétrie 1.15 n'est pas vérifiée pour gamma_prime_k_p"
+              ! end if
 
             end do
 
@@ -601,7 +718,22 @@ contains
       end do
     end block
 
-
+    do iz_q=1,nz
+      do iy_q=1,ny
+        do ix_q=1,nx
+          do m=0,mmax
+            do khi=-m,m
+              do mu=-m,m
+if(mod(mu,2)/=0 .and. abs(gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q))>epsilon(1._dp)) then
+       print*,"q", ix_q, iy_q, iz_q,"m khi mu",m,khi,mu,"gammaT", gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q)
+       error stop "hasoijazdui"
+end if
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
 
 
     !
@@ -612,22 +744,19 @@ contains
     block
       complex(dp), allocatable :: R(:,:,:) ! R^m_{mup,mu} (\hat{q})
       allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
+
       do iz_q=1,nz
         do iy_q=1,ny
           do ix_q=1,nx
 
             q = [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
-
             R = conjg(rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax ))
+
             do m=0,mmax
               do mup=-m,m
                 do mu=-m,m
-                  p=p3%p(m,mup,mu)
 
-                  do khi=-m,m
-                    gamma_k_p(p,ix_q,iy_q,iz_q) = gamma_k_p(p,ix_q,iy_q,iz_q) &
-                    + gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) * R(m,mup,khi)
-                  end do
+                  gamma_k_p( p3%p(m,mup,mu) ,ix_q,iy_q,iz_q) = sum(gamma_prime_k_p(p3%p(m,-m:m,mu),ix_q,iy_q,iz_q) * R(m,mup,-m:m))
 
                 end do
               end do
@@ -636,11 +765,29 @@ contains
           end do
         end do
       end do
+
     end block
     deallocate (gamma_prime_k_p)
     call cpu_time(time(2))
     print*, "<<<<< retour repère fixe en",time(2)-time(1),"seconds"
 
+
+    do iz_q=1,nz
+      do iy_q=1,ny
+        do ix_q=1,nx
+          do m=0,mmax
+            do khi=-m,m
+              do mu=-m,m
+if(mod(mu,2)/=0 .and. abs(gamma_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q))>epsilon(1._dp)) then
+       print*,"q", ix_q, iy_q, iz_q,"m khi mu",m,khi,mu,"gammaT", gamma_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q)
+       error stop "hasoijazdui"
+end if
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
 
 
     !
@@ -693,7 +840,11 @@ contains
               b = gamma_k_p (p3%p(m,-mup,-mu),ix_q,iy_q,iz_q)
 
               if (abs(a-b)>1.D-10) then
-                error stop "La symétrie 1.15 n'est pas vérifiée pour gamma^m_mup_mu(q)"
+                print*, "La symétrie 1.15 n'est pas vérifiée pour gamma^m_mup_mu(q)"
+                print*, "ix, iy ,iz, m, mup, mu",ix_q,iy_q,iz_q,m,mup,mu
+                print*, "a",a
+                print*, "b",b
+                print*, "a-b",a-b
               end if
 
             end do
@@ -702,7 +853,7 @@ contains
         end do
       end do
     end block
-
+stop "pokazd"
 
 
 
@@ -841,6 +992,7 @@ contains
       allocate (in(nx,ny,nz))
       call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, in, FFTW_FORWARD, FFTW_ESTIMATE)
       do io=1,no
+        in = (0,0)
         in = gamma_k(io,:,:,:)
         call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, in )
         gamma_k(io,:,:,:) = in
@@ -850,7 +1002,7 @@ contains
     !   do iy=1,ny
     !     do ix=1,nx
     !       do io=1,no
-    !         print*, io,ix,iy,iz,imag(gamma_k(io,ix,iy,iz))
+    !         print*,"io ix iy iz imag(gamma_k(io,ix,iy,iz))", io,ix,iy,iz,imag(gamma_k(io,ix,iy,iz))
     !       end do
     !     end do
     !   end do
