@@ -66,7 +66,7 @@ contains
     real(dp), intent(out) :: ff
     real(dp), intent(inout) :: df(:,:,:,:,:) ! grad(f) of omega, x, y, z, solventId
     real(dp) :: dv, kT
-    integer :: ix, iy, iz, ix_q, iy_q, iz_q, i, p
+    integer :: ix, iy, iz, ix_q, iy_q, iz_q, p
     integer :: nx, ny, nz, np, no, ns, mmax, na, nq, mrso
     integer :: m, n, mu, nu, khi, mup, ia, ip, iq, io
     real(dp) :: q(3), lx, ly, lz, rho0
@@ -135,7 +135,7 @@ contains
     ! On utilise cette astuce de nombreuses fois dans cette routine.
     !
     if (.not.allocated(p3%p)) then
-      allocate ( p3%p(0:mmax,-mmax:mmax, -mmax:mmax) ,source=-huge(1)) ! Dans p3%p, on met mu2=2*mu, pas mu
+      allocate ( p3%p(0:mmax, -mmax:mmax, -mmax:mmax) ,source=-huge(1)) ! Dans p3%p, on met mu2=2*mu, pas mu
       allocate ( p3%m(np) ,source=-huge(1)) ! mettre des -huge comme valeur initiale permet de plus tard verifier que s'il reste un -huge qqpart, il y a un problème. Si on avait mis 0, on ne peut pas vérifier.
       allocate ( p3%mup(np) ,source=-huge(1))
       allocate ( p3%mu(np) ,source=-huge(1)) ! c'est bien mu qu'on met dans p3%mu(), pas mu2
@@ -182,26 +182,26 @@ contains
     !
     ! Transformée de Fourier 3D de Δρ(Ω,x,y,z)
     !
-    print*, ">>>>> FFT start"
     call cpu_time(time(1))
     block
       type(c_ptr) :: plan_fft_c2c_3d_signe_plus
-      call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus, nx, ny, nz, deltarho_k(1,:,:,:), deltarho_k(1,:,:,:), FFTW_BACKWARD, &
-        FFTW_ESTIMATE)
-      deltarho_k = cmplx(solvent(1)%xi**2*rho0-rho0,0,dp) ! contient à cet instant Δρ(Ω,x,y,z)
+      complex(dp), allocatable :: in(:,:,:)
+      integer :: io
+      allocate ( in(nx,ny,nz ))
+      call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus, nx, ny, nz, in, in, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
       do io=1,no
-        call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, deltarho_k(io,:,:,:), deltarho_k(io,:,:,:) )
+        in = cmplx(solvent(1)%xi(io,:,:,:)**2*rho0-rho0,0,dp)  ! solvent%xi est réel
+        call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, in )
+        deltarho_k(io,:,:,:) = in  ! Δρ(Ω,qx,qy,qz)
       end do
-      ! deltarho_k contient maintenant   Δρ(Ω,qx,qy,qz)
+      deallocate (in)
     end block
     call cpu_time(time(2))
-    print*, "<<<<< FFT fin en",time(2)-time(1),"seconds"
-
+    print*, "<<<<< FFT en",time(2)-time(1),"seconds"
 
     !
     ! Passage en projections de Δρ(Ω,qx,qy,qz)
     !
-    print*, ">>>>> projection start"
     call cpu_time(time(1))
     allocate( deltarho_k_p(np,nx,ny,nz) ,source=zeroc )
 
@@ -209,9 +209,9 @@ contains
       complex(dp), allocatable :: temp_wigner_big_D(:,:)
       integer :: o
       real(dp), allocatable :: fm_of_p(:)
-      allocate (fm_of_p(np)) ! les fm_of_p sont juste les f(m) dans un tableau de taille 1 à np, pas de taille 0 à mmax
+      allocate (fm_of_p(np)) ! les fm_of_p sont juste les f(m) dans un tableau de taille 1 à np, et non de 0 à mmax
       do p=1,np
-        fm_of_p(p) = fm(p3%m(p))
+        fm_of_p(p) = fm(p3%m(p)) ! c'est juste un f_m de chaque projection.
       end do
 
       allocate (temp_wigner_big_D(no,np), source=zeroc)
@@ -219,17 +219,19 @@ contains
       ! La fonction wigner_big_D^m_µ'µ(θ) := wigner_small_d^m_µ'µ(θ) * exp(-ii.µ'.φ) * exp(-ii.µ.ψ)   Tel que définit dans Luc 1.4  (c'est un peu biblique, ça, non ? :)
       ! Savez vous que dans la bible, Luc 1.4 (Luc chapitre 1 verset 4) correspond au texte suivant : "afin que tu reconnaisses la certitude des enseignements que tu as reçus"
       ! Notez que je n'utilise pas la méthode rapide de Choi ici : seulement la fonction de Luc, harm_sph, qui correspond au calcul de wigner_small_d
+!$OMP PARALLEL DO
       do p=1,np
         do o=1,no
           temp_wigner_big_D(o,p) = conjg( wigner_big_D(p3%m(p),p3%mup(p),p3%mu(p),grid%theta(o),grid%phi(o),grid%psi(o)) )
         end do
       end do
+!$OMP END PARALLEL DO
 
       do iz=1,nz
         do iy=1,ny
           do ix=1,nx
             do p=1,np
-               ! les grid%w(1:no) sont les poids des quadratures angulaires. La somme des poids fait 8 pi² ~ 79
+               ! les grid%w(1:no) sont les poids des quadratures angulaires. Pour rappel, la somme des poids fait 8 pi² ~ 79
               deltarho_k_p(p,ix,iy,iz) = fm_of_p(p) * sum( deltarho_k(:,ix,iy,iz) * grid%w(:) * temp_wigner_big_D(:,p) )
             end do
           end do
@@ -238,18 +240,81 @@ contains
 
       deallocate (temp_wigner_big_D, fm_of_p)
     end block
-    deallocate (deltarho_k)
+    ! deallocate (deltarho_k)
+    PRINT*, "ATTENTION J4AI COMMENTE DEALLOCATE DELTARHO_K POUR UN TEST"
     call cpu_time(time(2))
-    print*, "<<<<< projection fin en", time(2)-time(1), "seconds"
+    print*, "<<<<< projection fin", time(2)-time(1), "seconds"
 
 
     !
-    ! Rotation vers repaire lié à q:  Δρ^m_µ'µ(qx,qy,qz)  => Δρ'^m_µ'µ(qx,qy,qz)
+    ! Vérification de la symétrie dûe a la fonction de départ purement réelle
+    ! cf equations 1.15 de Luc
     !
-    print*, ">>>>> rotation vers repere lié à q fin"
+    block
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+            do p=1,np
+
+              m = p3%m(p)
+              mup = p3%mup(p)
+              mu = p3%mu(p)
+
+              !
+              ! on cherche le l'indice correspond à -q
+              !
+              if (ix_q == 1) then
+                ix_mq = ix_q
+              else if (ix_q == nx/2 +1) then
+                cycle
+              else
+                ix_mq = nx - ix_q + 2
+              end if
+
+              if (iy_q == 1) then
+                iy_mq = iy_q
+              else if (iy_q == ny/2 +1) then
+                cycle
+              else
+                iy_mq = ny - iy_q + 2
+              end if
+
+              if (iz_q == 1) then
+                iz_mq = iz_q
+              else if (iz_q == nz/2 +1) then
+                cycle
+              else
+                iz_mq = nz - iz_q + 2
+              end if
+
+              a = deltarho_k_p (p3%p(m, mup, mu),ix_mq,iy_mq,iz_mq)
+              a = conjg(a)*(-1)**(mup+mu)
+              b = deltarho_k_p (p3%p(m,-mup,-mu),ix_q,iy_q,iz_q)
+
+              if (abs(a-b)/=0) then
+                error stop "La symétrie 1.15 n'est pas vérifiée"
+              end if
+
+            end do
+
+          end do
+        end do
+      end do
+    end block
+
+
+    !
+    ! Rotation vers repaire lié à q:  Δρ^m_µ'µ(qx,qy,qz)  => Δρ'^m_χ_µ(qx,qy,qz)
+    !
     call cpu_time(time(1))
     allocate( deltarho_kmol_p(np,nx,ny,nz) ,source=zeroc )
     block
+      use module_wigner_d, only: wigner_big_D
+      use module_rotation, only: thetaofq, phiofq
       complex(dp), allocatable :: R(:,:,:) ! R^m_{mup,mu} (\hat{q})
       allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
       do iz_q=1,nz
@@ -258,7 +323,7 @@ contains
 
             q = [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
 
-            R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax ) ! Ici j'utilise Choi. Je veux revérifier plus tard que Choi et harm_sph sont bien cohérents
+            R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax ) ! Ici j'utilise Choi. C'est vérifié que c'est équivalent à wigner_big_D^m_mup_mu(q) for psi_q=0.
             do m=0,mmax
               do khi=-m,m
                 do mu=-m,m
@@ -266,7 +331,7 @@ contains
 
                   do mup=-m,m
                     deltarho_kmol_p(p,ix_q,iy_q,iz_q) = deltarho_kmol_p(p,ix_q,iy_q,iz_q) &
-                    + deltarho_k_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi)
+                    + deltarho_k_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi) ! ici j'ai bien testé que remplacé R (qui nécessite Choi) par wigner_big_D ne change rien
                   end do
 
                 end do
@@ -279,24 +344,101 @@ contains
     end block
     deallocate (deltarho_k_p)
     call cpu_time(time(2))
-    print*, "<<<<< rotation vers repere moleculaire fin en",time(2)-time(1),"seconds"
+    print*, "<<<<< rotation vers repere moleculaire en",time(2)-time(1),"seconds"
+
+    !
+    ! Vérification de la relation de symétrie 1.25, c'est à dire la meme que 1.15 en notation χ
+    !
+    block
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+            do p=1,np
+
+              m = p3%m(p)
+              khi = p3%mup(p)
+              mu = p3%mu(p)
+
+              !
+              ! on cherche le l'indice correspond à -q
+              !
+              if (ix_q == 1) then
+                ix_mq = ix_q
+              else if (ix_q == nx/2 +1) then
+                cycle
+              else
+                ix_mq = nx - ix_q + 2
+              end if
+
+              if (iy_q == 1) then
+                iy_mq = iy_q
+              else if (iy_q == ny/2 +1) then
+                cycle
+              else
+                iy_mq = ny - iy_q + 2
+              end if
+
+              if (iz_q == 1) then
+                iz_mq = iz_q
+              else if (iz_q == nz/2 +1) then
+                cycle
+              else
+                iz_mq = nz - iz_q + 2
+              end if
+
+
+              ! ATTENTION
+              ! ICI LA NOTION DE Q ET -Q DEVRAIENT CHANGER PHI EN PHI+PI DANS LE CAS DE Q SELON Z
+              a = deltarho_kmol_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
+              a = conjg(a)*(-1)**(m+mu+khi)
+              b = deltarho_kmol_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
+
+              if (abs(a-b) >1.E-10 ) then
+                if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
+                print*,
+                print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
+                print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
+                print*, "q", [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
+                print*, "mq", [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]
+                print*, "m,khi,mu=",m,khi,mu
+                print*, a
+                print*, b
+                print*, a-b
+                error stop "La symétrie 1.15 n'est pas vérifiée"
+              end if
+
+            end do
+
+          end do
+        end do
+      end do
+    end block
+
 
     !
     ! Read Luc's c of k
     !
     if (.not.cq%isok) then
       call cpu_time(time(1))
-      print*, ">>>>> lecture des c Luc start"
       call read_ck_nonzero
       call cpu_time(time(2))
-      print*, "<<<<< lecture des c Luc fin en",time(2)-time(1),"seconds"
+      print*, "<<<<< lecture des c Luc en",time(2)-time(1),"seconds"
     end if
 
 
     !
     ! OZ
     !
-    print*, ">>>>> OZ start"
+    if (mmax>=1) then
+      do m=1,mmax
+        deltarho_kmol_p(p3%p(m,0,0),1,1,1) = complex(0,0)
+      end do
+    end if
+
     call cpu_time(time(1))
     allocate (gamma_kmol_p(np,nx,ny,nz), source=zeroc)
     do iz_q=1,nz
@@ -333,12 +475,87 @@ contains
       end do
     end do
     call cpu_time(time(2))
-    print*, "<<<<< OZ fin en",time(2)-time(1),"seconds"
+    print*, "<<<<< OZ en",time(2)-time(1),"seconds"
+
+
+    !
+    ! Vérification de la relation de symétrie 1.25, c'est à dire la meme que 1.15 en notation χ
+    !
+    block
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+            do p=1,np
+
+              m = p3%m(p)
+              khi = p3%mup(p)
+              mu = p3%mu(p)
+
+              !
+              ! on cherche le l'indice correspond à -q
+              !
+              if (ix_q == 1) then
+                ix_mq = ix_q
+              else if (ix_q == nx/2 +1) then
+                cycle
+              else
+                ix_mq = nx - ix_q + 2
+              end if
+
+              if (iy_q == 1) then
+                iy_mq = iy_q
+              else if (iy_q == ny/2 +1) then
+                cycle
+              else
+                iy_mq = ny - iy_q + 2
+              end if
+
+              if (iz_q == 1) then
+                iz_mq = iz_q
+              else if (iz_q == nz/2 +1) then
+                cycle
+              else
+                iz_mq = nz - iz_q + 2
+              end if
+
+
+              ! ATTENTION
+              ! ICI LA NOTION DE Q ET -Q DEVRAIENT CHANGER PHI EN PHI+PI DANS LE CAS DE Q SELON Z
+              a = gamma_kmol_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
+              a = conjg(a)*(-1)**(m+mu+khi)
+              b = gamma_kmol_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
+
+              if (abs(a-b) >1.E-10 ) then
+                if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
+                print*,
+                print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
+                print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
+                print*, "q", [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
+                print*, "mq", [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]
+                print*, "m,khi,mu=",m,khi,mu
+                print*, a
+                print*, b
+                print*, a-b
+                error stop "La symétrie 1.15 n'est pas vérifiée pour gamma_prime_k_p"
+              end if
+
+            end do
+
+          end do
+        end do
+      end do
+    end block
+
+
+
 
     !
     ! Retour dans le repère fixe
     !
-    print*, ">>>>> retour repère fixe start"
     call cpu_time(time(1))
     allocate( gamma_k_p(np,nx,ny,nz) ,source=zeroc )
     block
@@ -371,13 +588,77 @@ contains
     end block
     deallocate (gamma_kmol_p)
     call cpu_time(time(2))
-    print*, "<<<<< retour repère fixe fin en",time(2)-time(1),"seconds"
+    print*, "<<<<< retour repère fixe en",time(2)-time(1),"seconds"
+
+
+
+    !
+    ! Vérification de la symétrie dûe a la fonction de départ purement réelle
+    ! cf equations 1.15 de Luc
+    !
+    block
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+            do p=1,np
+
+              m = p3%m(p)
+              mup = p3%mup(p)
+              mu = p3%mu(p)
+
+              !
+              ! on cherche le l'indice correspond à -q
+              !
+              if (ix_q == 1) then
+                ix_mq = ix_q
+              else if (ix_q == nx/2 +1) then
+                cycle
+              else
+                ix_mq = nx - ix_q + 2
+              end if
+
+              if (iy_q == 1) then
+                iy_mq = iy_q
+              else if (iy_q == ny/2 +1) then
+                cycle
+              else
+                iy_mq = ny - iy_q + 2
+              end if
+
+              if (iz_q == 1) then
+                iz_mq = iz_q
+              else if (iz_q == nz/2 +1) then
+                cycle
+              else
+                iz_mq = nz - iz_q + 2
+              end if
+
+              a = gamma_k_p (p3%p(m, mup, mu),ix_mq,iy_mq,iz_mq)
+              a = conjg(a)*(-1)**(mup+mu)
+              b = gamma_k_p (p3%p(m,-mup,-mu),ix_q,iy_q,iz_q)
+
+              if (abs(a-b)>1.D-10) then
+                error stop "La symétrie 1.15 n'est pas vérifiée pour gamma^m_mup_mu(q)"
+              end if
+
+            end do
+
+          end do
+        end do
+      end do
+    end block
+
+
+
 
 
     !
     ! Retour en angles
     !
-    print*, ">>>>> retour en angles start"
     call cpu_time(time(1))
     allocate( gamma_k(no,nx,ny,nz) ,source=zeroc )
     block
@@ -411,34 +692,132 @@ contains
     end block
     deallocate (gamma_k_p)
     call cpu_time(time(2))
-    print*, "<<<<< retour en angles fin en",time(2)-time(1),"seconds"
+    print*, "<<<<< retour en angles en",time(2)-time(1),"seconds"
 
+
+    !
+    ! gamma dans l'espace reel doit être une fonction réelle. On peut donc vérifier la symétrie hermitique sur q
+    ! En fait, on retrouve bien un pure réel par FFT-1 donc cette vérification est un peu inutile.
+    !
+    block
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+            do io=1,no
+
+              !
+              ! on cherche le l'indice correspond à -q
+              !
+              if (ix_q == 1) then
+                ix_mq = ix_q
+              else if (ix_q == nx/2 +1) then
+                cycle
+              else
+                ix_mq = nx - ix_q + 2
+              end if
+
+              if (iy_q == 1) then
+                iy_mq = iy_q
+              else if (iy_q == ny/2 +1) then
+                cycle
+              else
+                iy_mq = ny - iy_q + 2
+              end if
+
+              if (iz_q == 1) then
+                iz_mq = iz_q
+              else if (iz_q == nz/2 +1) then
+                cycle
+              else
+                iz_mq = nz - iz_q + 2
+              end if
+
+              a = conjg( gamma_k (io,ix_mq,iy_mq,iz_mq)  )
+              b =        gamma_k (io,ix_q,iy_q,iz_q)
+
+              if (abs(a-b)>1.D-10) then
+                error stop "La symétrie sur q -q du fait de gamma purement réel n'est pas vérifiée"
+              end if
+
+            end do
+
+          end do
+        end do
+      end do
+    end block
+
+
+
+    ! !
+    ! ! Estimation de l'énergie depuis angles et q (eq. 1.33 ligne 3)
+    ! !
+    ! block
+    !   real(dp) :: ff
+    !   complex(dp) :: a
+    !   ff = 0
+    !   do iz_q=1,nz
+    !     do iy_q=1,ny
+    !       do ix_q=1,nx
+    !         a = sum(grid%w * deltarho_k(:,ix_q,iy_q,iz_q)*conjg(gamma_k(:,ix_q,iy_q,iz_q)) )
+    !         if( abs(imag(a)) > 1.E-10 ) then
+    !           print*, "ff(rvec) devrait être purement réel mais ne l'est pas"
+    !           print*, sum(grid%w * deltarho_k(:,ix_q,iy_q,iz_q)*conjg(gamma_k(:,ix_q,iy_q,iz_q)) )
+    !         end if
+    !         ff = ff - kT/2._dp*real(a,dp)
+    !       end do
+    !     end do
+    !   end do
+    !   block
+    !     double precision, parameter :: pi=acos(-1._dp),   twopi=2*pi
+    !     print*,"ff%exc_cproj calculé depuis l'espace de Fourier=",ff   /real(nx*ny*nz) /solvent(1)%n0! /twopi**3  *kT    /sqrt(real(nx*ny*nz,dp))   *2*pi**2
+    !   end block
+    !   print*, "dk^3=",grid%kx(2)*grid%ky(2)*grid%kz(2)
+    !   print*, "dv=",dv
+    ! end block
 
     !
     ! Transformée de Fourier 3D inverse
     !
-    print*, ">>>>> retour en r par FFT-1 start"
     call cpu_time(time(1))
     allocate (gamma(no,nx,ny,nz), source=0._dp)
     block
+      complex(dp), allocatable :: in(:,:,:)
       type(c_ptr) :: plan_fft_c2c_3d_signe_minus
-      call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, gamma_k(1,:,:,:), gamma_k(1,:,:,:), FFTW_FORWARD, &
-        FFTW_ESTIMATE)
-
+      allocate (in(nx,ny,nz))
+      call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, in, FFTW_FORWARD, FFTW_ESTIMATE)
       do io=1,no
-        call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, gamma_k(io,:,:,:), gamma_k(io,:,:,:) )
+        in = gamma_k(io,:,:,:)
+        call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, in )
+        gamma_k(io,:,:,:) = in
       end do
     end block
+    ! do iz=1,nz
+    !   do iy=1,ny
+    !     do ix=1,nx
+    !       do io=1,no
+    !         print*, io,ix,iy,iz,imag(gamma_k(io,ix,iy,iz))
+    !       end do
+    !     end do
+    !   end do
+    ! end do
+    !
+    ! if ( any(  imag(gamma_k)   >1.D-10) ) then
+    !   error stop "gamma_k has some imaginary component somewhere"
+    ! end if
     gamma = real(gamma_k,dp)/real(nx*ny*nz,dp)
     deallocate (gamma_k)
     call cpu_time(time(2))
-    print*, "<<<<< retour en r par FFT-1 fin en",time(2)-time(1),"seconds"
+    print*, "<<<<< retour en r par FFT-1 en",time(2)-time(1),"seconds"
+
 
 
     !
     ! calcul de l'énergie et du gradient
     !
-    print*, ">>>>> calcul de ff et df start"
     call cpu_time(time(1))
     ff=0._dp
     do iz=1,nz
@@ -455,7 +834,7 @@ contains
       end do
     end do
     call cpu_time(time(2))
-    print*, "<<<<< calcul de ff et df fin en",time(2)-time(1),"seconds"
+    print*, "<<<<< calcul de ff et df en",time(2)-time(1),"seconds"
 
 
   end subroutine energy_cproj_no_symetry
