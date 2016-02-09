@@ -86,11 +86,15 @@ contains
     !
     complex(dp), allocatable :: deltarho_k(:,:,:,:), & ! j'appelle _k ce qui est dans l'espace de fourier
                                 deltarho_k_p(:,:,:,:),& ! j'appelle _p ce qui est en projections
-                                deltarho_kmol_p(:,:,:,:), & ! j'appelle _kmol ce qui est dans le repère lié à k
-                                gamma_kmol_p(:,:,:,:), & ! gamma_kmol_p est donc les projections de gamma dans l'espace de fourier dans le repère lié à k
+                                deltarho_prime_k_p(:,:,:,:), & ! j'appelle _prime ce qui est dans le repère lié à k
+                                gamma_prime_k_p(:,:,:,:), & ! gamma_prime_k_p est donc les projections de gamma dans l'espace de fourier dans le repère lié à k
                                 gamma_k_p(:,:,:,:), & ! projections de gamma dans le repère fixe dans l'espace de fourier
                                 gamma_k(:,:,:,:) ! gamma en orientations  (== en angles) dans l'espace de fourier (et repère fixe)
     real(dp), allocatable ::    gamma(:,:,:,:) ! gamma dans l'espace réel, repère fixe, en orientations
+
+    complex(dp) :: cfulltest(2002,200) ! DOIT ETRE VIRE DES QUE CA FONCTIONNE TODO
+    integer :: ptest(0:5,0:5,-5:5,-5:5,-5:5)  ! DOIT ETRE VIRE DES QUE CA FONCTIONNE TODO
+    integer :: iqtest
 
     call cpu_time(time(12))
 
@@ -311,7 +315,7 @@ contains
     ! Rotation vers repaire lié à q:  Δρ^m_µ'µ(qx,qy,qz)  => Δρ'^m_χ_µ(qx,qy,qz)
     !
     call cpu_time(time(1))
-    allocate( deltarho_kmol_p(np,nx,ny,nz) ,source=zeroc )
+    allocate( deltarho_prime_k_p(np,nx,ny,nz) ,source=zeroc )
     block
       use module_wigner_d, only: wigner_big_D
       use module_rotation, only: thetaofq, phiofq
@@ -330,7 +334,7 @@ contains
                   p=p3%p(m,khi,mu)
 
                   do mup=-m,m
-                    deltarho_kmol_p(p,ix_q,iy_q,iz_q) = deltarho_kmol_p(p,ix_q,iy_q,iz_q) &
+                    deltarho_prime_k_p(p,ix_q,iy_q,iz_q) = deltarho_prime_k_p(p,ix_q,iy_q,iz_q) &
                     + deltarho_k_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q) * R(m,mup,khi) ! ici j'ai bien testé que remplacé R (qui nécessite Choi) par wigner_big_D ne change rien
                   end do
 
@@ -393,9 +397,9 @@ contains
 
               ! ATTENTION
               ! ICI LA NOTION DE Q ET -Q DEVRAIENT CHANGER PHI EN PHI+PI DANS LE CAS DE Q SELON Z
-              a = deltarho_kmol_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
+              a = deltarho_prime_k_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
               a = conjg(a)*(-1)**(m+mu+khi)
-              b = deltarho_kmol_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
+              b = deltarho_prime_k_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
 
               if (abs(a-b) >1.E-10 ) then
                 if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
@@ -419,6 +423,20 @@ contains
     end block
 
 
+
+    !
+    ! Comment on traite les deltarho(k=0)
+    !
+    if (mmax>=1) then
+      do m=1,mmax
+        deltarho_prime_k_p(p3%p(m,0,0),1,1,1) = complex(0,0)
+      end do
+    end if
+
+
+
+
+
     !
     ! Read Luc's c of k
     !
@@ -433,20 +451,39 @@ contains
     !
     ! OZ
     !
-    if (mmax>=1) then
-      do m=1,mmax
-        deltarho_kmol_p(p3%p(m,0,0),1,1,1) = complex(0,0)
-      end do
-    end if
+    block
+      integer :: p, m, n, mu, nu, khi
+      print*, "opening /home/levesque/Recherche/00__BELLONI/2016__02/reconstruction_des_ck_depuis_luc_ck_nmax5/ck_nmax5_max"
+      open(89, file="/home/levesque/Recherche/00__BELLONI/2016__02/reconstruction_des_ck_depuis_luc_ck_nmax5/ck_nmax5_max")
+        do khi=-mmax,mmax
+          do m=abs(khi),mmax
+            do mu=-m,m
+              if (mod(mu,2)/=0) cycle
+              do n=abs(khi),mmax
+                do nu=-n,n
+                  if (mod(nu,2)/=0) cycle
+                  read(89,*) ptest(m,n,mu,nu,khi), cfulltest(ptest(m,n,mu,nu,khi),:)
+                end do
+              end do
+            end do
+          end do
+        end do
+      close(89)
+      print*, "closed /home/levesque/Recherche/00__BELLONI/2016__02/reconstruction_des_ck_depuis_luc_ck_nmax5/ck_nmax5_max"
+    end block
+
 
     call cpu_time(time(1))
-    allocate (gamma_kmol_p(np,nx,ny,nz), source=zeroc)
+    allocate (gamma_prime_k_p(np,nx,ny,nz), source=zeroc)
     do iz_q=1,nz
       do iy_q=1,ny
         do ix_q=1,nx
 
           iq = int( norm2([grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]) /cq%dq +0.5) +1
           if (iq >cq%nq) error stop "we need larger norm of q in Luc's cq"
+
+          iqtest = int( norm2([grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]) /(0.613592315E-01) +0.5) +1
+          if (iqtest>200) error stop "iqtest trop grand"
 
           do khi=-mmax,mmax
             do m=abs(khi),mmax
@@ -462,8 +499,22 @@ contains
                       error stop
                     end if
 
-                    gamma_kmol_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_kmol_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
-                    + (-1)**(khi+nu) * ck(ia,iq) * deltarho_kmol_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
+                    ! gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
+                    ! + (-1)**(khi+nu) * ck(ia,iq) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
+
+  gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
+                    + (-1)**(khi+nu) * cfulltest(ptest(m,n,mu,nu,khi),iqtest) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
+
+                    ! block
+                    !   complex(dp) :: a, b
+                    !   a = cfulltest(ptest(m,n,mu,nu,khi),iqtest)
+                    !   b = ck(ia,iq)
+                    !   if (abs(a-b)>1.D-3) then
+                    !     print*, "diff in c for m n mu nu khi=", m, n, mu, nu, khi, abs(a-b),"at ix_q, iy_q, iz_q",ix_q,iy_q,iz_q,&
+                    !       a, b
+                    !   end if
+                    ! end block
+
 
                   end do
                 end do
@@ -525,9 +576,9 @@ contains
 
               ! ATTENTION
               ! ICI LA NOTION DE Q ET -Q DEVRAIENT CHANGER PHI EN PHI+PI DANS LE CAS DE Q SELON Z
-              a = gamma_kmol_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
+              a = gamma_prime_k_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
               a = conjg(a)*(-1)**(m+mu+khi)
-              b = gamma_kmol_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
+              b = gamma_prime_k_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
 
               if (abs(a-b) >1.E-10 ) then
                 if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
@@ -575,7 +626,7 @@ contains
 
                   do khi=-m,m
                     gamma_k_p(p,ix_q,iy_q,iz_q) = gamma_k_p(p,ix_q,iy_q,iz_q) &
-                    + gamma_kmol_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) * R(m,mup,khi)
+                    + gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) * R(m,mup,khi)
                   end do
 
                 end do
@@ -586,7 +637,7 @@ contains
         end do
       end do
     end block
-    deallocate (gamma_kmol_p)
+    deallocate (gamma_prime_k_p)
     call cpu_time(time(2))
     print*, "<<<<< retour repère fixe en",time(2)-time(1),"seconds"
 
