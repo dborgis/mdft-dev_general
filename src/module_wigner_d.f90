@@ -1,8 +1,8 @@
 module module_wigner_d
-  implicit none
   private
   public :: wigner_small_d, wigner_big_d
 contains
+
   pure function wigner_small_d( m, mu, mup, theta ) ! Luc's luc72p143
       !
       ! r^m_{mu,mup}(\theta)
@@ -68,5 +68,54 @@ contains
     complex(dp), parameter :: ii=complex(0._dp,1._dp)
     wigner_big_D = wigner_small_d( m, mu, mup, theta ) * exp(-ii*(mu*phi+mup*psi))
   end function
+
+  pure function symbol_3j(m,n,l,mu,nu,lu)
+    use mathematica, only: fac=>fact
+    implicit none
+    integer, intent(in) :: m, n, l, mu, nu, lu
+    real(8) :: symbol_3j, som
+    integer :: it
+      ! COMMON/facto/fac(0:50)
+    !
+    !        symbole 3j
+    !        Messiah page 910 eq.21
+    !
+    IF(itriangle(m,n,l)==0.or.mu+nu+lu/=0.or.                                     &
+    ABS(mu).gt.m.or.abs(nu).gt.n.or.abs(lu).gt.l) then
+    symbol_3j=0.
+  else
+    som=0.
+    do it=MAX(0,n-l-mu,m-l+nu),MIN(m+n-l,m-mu,n+nu)
+      som=som+(-1)**it/(fac(it)*fac(l-n+it+mu)*fac(l-m+it-nu)*                          &
+      fac(m+n-l-it)*fac(m-it-mu)*fac(n-it+nu))
+    end do
+    symbol_3j=(-1)**(m-n-lu)*SQRT(delta(m,n,l))*                                       &
+    SQRT(fac(m+mu)*fac(m-mu)*fac(n+nu)*fac(n-nu)*fac(l+lu)*fac(l-lu))                 &
+    *som
+    IF(mu==0.and.nu==0.and.lu==0.and.2*((m+n+l)/2)/=m+n+l) symbol_3j=0.
+  endif
+  end
+  !
+  pure function itriangle(m,n,l)
+    implicit none
+    integer, intent(in) :: m, n, l
+    integer :: itriangle
+    !        nul sauf si |m-n|<l<m+n
+    !        rq: ne depend pas de l'ordre des 3 entiers
+    itriangle=0
+    IF(l>=ABS(m-n).and.l<=m+n) itriangle=1
+  end
+  !
+  pure function delta(m,n,l)
+    use mathematica, only: fac=>fact
+    implicit none
+    real(8) :: delta
+    integer, intent(in) :: m, n, l
+    ! COMMON/facto/fac(0:50)
+    delta=fac(m+n-l)*fac(n+l-m)*fac(l+m-n)/fac(m+n+l+1)
+  end
+
+
+
 
 end module
