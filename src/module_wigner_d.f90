@@ -1,6 +1,6 @@
 module module_wigner_d
   private
-  public :: wigner_small_d, wigner_big_d
+  public :: wigner_small_d, wigner_big_d, symbol_3j
 contains
 
   pure function wigner_small_d( m, mu, mup, theta ) ! Luc's luc72p143
