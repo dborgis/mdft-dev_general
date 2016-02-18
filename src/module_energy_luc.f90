@@ -165,17 +165,225 @@ end module tableaux_dft_3d
 !
 !
 module module_energy_luc
+  real(8) :: fac(0:50)
+
 contains
-  subroutine energy_luc(ff,df)
+
+
+
+subroutine energy_luc (ff,df)
+  use iso_c_binding
+  use module_grid, only: grid
+  use module_solvent, only: solvent
+  use module_wigner_d, only: wigner_big_D
+  implicit none
+  include 'fftw3.f03'
+  integer, parameter :: dp=c_double
+  real(dp), intent(out) :: ff
+  real(dp), intent(inout) :: df(:,:,:,:,:)
+  type(c_ptr) :: plan_fft_c2c_3d_signe_plus, plan_fft_c2c_3d_signe_minus
+  complex(dp), allocatable :: in(:,:,:)
+  real :: time(0:20)
+  integer :: io, no, nx, ny, nz, np, iqx, iqy, iqz, itheta, iphi, ipsi, mmax, mmax2, m, mup, mu, mu2
+  complex(dp), parameter :: zeroc=cmplx(0,0,dp)
+  complex(dp), allocatable :: delta_rho_k_angle(:,:,:,:)
+  complex(dp), allocatable :: gamma_full(:,:,:,:) ! gamma(Ω,x,y,z)
+  complex(dp), allocatable :: delta_rho_k_proj(:,:,:)
+  complex(dp), allocatable :: gamma_k_proj(:,:,:) ! m mup mu2
+  complex(dp), allocatable :: gamma_angle(:,:,:,:) ! omega, x y z
+  real(dp) :: q(3), rho0
+  complex(dp) :: tmpc
+
+  ff=0
+  no = grid%no
+  nx = grid%nx
+  ny = grid%ny
+  nz = grid%nz
+  np = grid%np
+  rho0 = solvent(1)%rho0
+  mmax=grid%mmax
+  mmax2=mmax/2
+  call cpu_time(time(1))
+
+!
+! FOURIER TRANSFORM DE DELTA RHO
+!
+!
+allocate ( delta_rho_k_angle(no,nx,ny,nz) , source=zeroc)
+allocate ( in(nx,ny,nz), source=zeroc)
+call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, in, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, in, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
+
+
+do io=1,no
+  in = cmplx(solvent(1)%xi(io,:,:,:)**2*rho0-rho0,0,dp)  ! solvent%xi est réel
+  call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, in )
+  delta_rho_k_angle(io,:,:,:) = in  ! Δρ(Ω,qx,qy,qz)
+end do
+
+
+
+! allocate (delta_rho_k_theta_phi_psi (grid%ntheta,grid%nphi,grid%npsi), source=zeroc)
+allocate (delta_rho_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
+allocate (gamma_k_proj    (0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
+
+
+do iqz=1,nz
+  do iqy=1,ny
+    do iqx=1,nx
+
+PRINT*,"IKX IKY IKZ",iqx,iqy,iqz
+
+q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
+
+!
+!
+! PASSAGE EN PROJECTIONS
+!
+!
+delta_rho_k_proj = cmplx(0,0)
+do m=0,mmax
+  do mup=-m,m
+    do mu2=-m/2,m/2
+      mu=2*mu2
+      delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum(   &
+[( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )] *delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w  )
+    end do
+  end do
+end do
+
+
+
+!
+!
+! PASSAGE REPERE LIE A Q PUIS OZ PUIS REPASSAGE REPERE FIXE
+!
+!
+! PRINT*,"ATTENTION"
+! DO M=0,MMAX
+!   DO MUP=-M,M
+!     DO MU2=-M/2,M/2
+!       TMPC=DELTA_RHO_K_PROJ(M,MUP,MU2)
+!       IF(ABS(TMPC)>1.D-10)PRINT*,"WWWWWWWWWWWWWWWWWWWWWWWWWWW DELTA_RHO_K_PROJ",M,MUP,MU2,TMPC
+!     END DO
+!   END DO
+! END DO
+call luc_oz (q, delta_rho_k_proj, gamma_k_proj)
+! PRINT*,"ATTENTION"
+! DO M=0,MMAX
+!   DO MUP=-M,M
+!     DO MU2=-M/2,M/2
+!       TMPC=GAMMA_K_PROJ(M,MUP,MU2)
+!       IF(ABS(TMPC)>1.D-10)PRINT*,"WWWWWWWWWWWWWWWWWWWWWWWWWWW    GAMMA_K_PROJ",M,MUP,MU2,TMPC
+!     END DO
+!   END DO
+! END DO
+
+! print*,"ENSUITE",norm2(abs(gamma_k_proj))
+! gamma_k_proj = delta_rho_k_proj
+! stop "me"
+
+!
+!
+! RETOUR EN ANGLES
+!
+!
+delta_rho_k_angle(:,iqx,iqy,iqz) = cmplx(0,0)
+do io=1,no
+  do m=0,mmax
+    do mup=-m,m
+      do mu2=-m/2,m/2
+        mu=mu2*2
+        delta_rho_k_angle(io,iqx,iqy,iqz) = delta_rho_k_angle(io,iqx,iqy,iqz)   &
+         + sqrt(real(2*m+1,dp)) * wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)) * gamma_k_proj(m,mup,mu2)
+      end do
+    end do
+  end do
+end do
+
+
+    end do
+  end do
+end do
+
+deallocate (delta_rho_k_proj )
+deallocate (gamma_k_proj )
+
+
+!
+!
+! INVERSE FOURIER TRANSFORM
+!
+!
+allocate( gamma_angle(no,nx,ny,nz), source=zeroc)
+do io=1,no
+  in = delta_rho_k_angle(io,:,:,:)
+  call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, in)
+  gamma_angle(io,:,:,:) = in/real(nx*ny*nz,dp)
+end do
+
+
+! ON TESTE QUE GAMMA(R,OMEGA) EST PUREMENT REEL
+! IF(ANY(IMAG(GAMMA_ANGLE)>1.D-8)) ERROR STOP "ANY @ IMAG(GAMMA) > 0"
+do iqz=1,nz
+  do iqy=1,ny
+    do iqx=1,nx
+      do io=1,no
+        if(IMAG(gamma_angle(io,iqx,iqy,iqz))>1.D-10)then
+           print*, "GAMMA(R,OMEGA) A UNE PARTIE IMAG A",iqx,iqy,iqz,io,gamma_angle(io,iqx,iqy,iqz)
+       end if
+      end do
+    end do
+  end do
+end do
+!
+! do io=1,no
+! print*, "ioio",io,gamma_angle(io,nx/2+1,ny/2+1,nz/2+1)
+! end do
+
+!
+!
+! POUR SI ON A CHINTÉ OZ ET DONC ON VERIFIE QU ON A BIEN FAIT UN ALLER RETOUR TOUT SIMPLE DE DELTA_RHO(R,OMEGA)
+! block
+!   complex(dp) :: a, b
+! do iqz=1,nz
+!   do iqy=1,ny
+!     do iqx=1,nx
+!       do io=1,no
+!         a = gamma_angle(io,iqx,iqy,iqz)
+!         b = cmplx(solvent(1)%xi(io,iqx,iqy,iqz)**2*rho0-rho0,0,dp)
+!         if(abs(a-b)>1.D-10) print*, "putain de merde"
+!       end do
+!     end do
+!   end do
+! end do
+! end block
+
+
+
+
+call cpu_time (time(3))
+deallocate(in)
+deallocate(delta_rho_k_angle)
+
+df=df
+stop "toute fin de la routine energy_luc OK"
+end subroutine energy_luc
+
+
+
+  subroutine luc_oz (qvec, my_delta_rho_proj, my_gamma_proj)
     USE lecture                                    ! pour lire des valeurs � la Luc
     USE tableaux_dft_3d                            ! d�finit le type des tableaux de valeurs � partager
     use module_grid,only: grid
     implicit real(8) (a-h,o-z)
-    real(8) :: df(:,:,:,:,:)
+    real(8),    intent(in) :: qvec(3)
+    complex(8), intent(in) :: my_delta_rho_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
+    complex(8), intent(out) :: my_gamma_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
     CHARACTER(50)::nomfic,texte
     CHARACTER(10) texte1
     COMPLEX(8)::xi_cmplx,auxi_cmplx,ck_cmplx,coeff_cmplx,coeff1_cmplx,coeff2_cmplx
-    COMMON/facto/fac(0:50)
+    integer :: mmax
     !
     !interface
     !subroutine proj_angl(f_proj,f_ang)
@@ -191,6 +399,7 @@ contains
     !end subroutine
     !END interface
     !
+    mmax = grid%mmax
     fac(0)=1.
     do k=1,50
       fac(k)=fac(k-1)*REAL(k)
@@ -201,88 +410,112 @@ contains
     !               4 methodes differentes
     !               luc91p88
     !
-    9999 continue
-    PRINT*, '********************************************************************************'
-    PRINT*, 'Calcul des projections gam mmu''mu a partir des delta_rho mmu''mu par convolution angulaire avec ck'
-    PRINT*, 'dans l''espace de fourier, pour un vecteur q particulier'
-    PRINT*, '(ces projections sont definies dans le repere fixe, z axe principal)'
-    PRINT*, '4 methodes differentes'
-    PRINT*, '********************************************************************************'
-    PRINT*, 'Valeur de nmax --->'
-    ! call lis(nbeta,nphi,nomeg)
+    ! 9999 continue
+    ! PRINT*, '********************************************************************************'
+    ! PRINT*, 'Calcul des projections gam mmu''mu a partir des delta_rho mmu''mu par convolution angulaire avec ck'
+    ! PRINT*, 'dans l''espace de fourier, pour un vecteur q particulier'
+    ! PRINT*, '(ces projections sont definies dans le repere fixe, z axe principal)'
+    ! PRINT*, '4 methodes differentes'
+    ! PRINT*, '********************************************************************************'
     mnmax=grid%mmax
-    print*, mnmax
     mnmax2=INT(mnmax/2)
-    PRINT*, 'Nombre d''angles theta, phi et psi --->'
-    ! call lis(nbeta,nphi,nomeg)
+    ! PRINT*, 'Valeur de nmax --->', mnmax
     nbeta=grid%ntheta
     nphi=grid%nphi
     nomeg=grid%npsi
-    print*,nbeta,nphi,nomeg
+    ! PRINT*, 'Nombre d''angles theta, phi et psi --->', nbeta, nphi, nomeg
     !
     !                       on calcule les harmoniques spheriques generalisees
     !
     pi=4.d0*ATAN(1.d0)
     xi_cmplx=(0.,1.d0)
     !                       theta (ou beta)
-    if(.not.allocated(beta)) ALLOCATE(beta(nbeta),cosbeta(nbeta),sinbeta(nbeta),wb(nbeta))
-    call gauleg(cosbeta,wb,nbeta)               ! cosbeta()=racines de Pnbeta(x), wb() le poids
-    beta=ACOS(cosbeta)
-    sinbeta=SIN(beta)
+    if(.not.allocated(beta)) then
+      ALLOCATE(beta(nbeta),cosbeta(nbeta),sinbeta(nbeta),wb(nbeta))
+      call gauleg(cosbeta,wb,nbeta)               ! cosbeta()=racines de Pnbeta(x), wb() le poids
+      beta=ACOS(cosbeta)
+      sinbeta=SIN(beta)
+    end if
     !                       phi
-    if(.not.allocated(phi)) ALLOCATE(phi(nphi),cosphi(nphi),sinphi(nphi),expiphi(nphi))
-    phi=2.d0*pi* (/(i-0.5,i=1,nphi)/) /REAL(nphi)               ! sur 0-2pi
-    expiphi=EXP(xi_cmplx*phi)
-    cosphi=REAL(expiphi)
-    sinphi=AIMAG(expiphi)
-    if(.not.allocated(expikhiphi)) ALLOCATE(expikhiphi(-mnmax:mnmax,nphi))
-    do khi=-mnmax,mnmax
-      expikhiphi(khi,:)=EXP(xi_cmplx*khi*phi(:))
-    end do
+    if(.not.allocated(phi)) then
+      ALLOCATE(phi(nphi),cosphi(nphi),sinphi(nphi),expiphi(nphi))
+      phi=2.d0*pi* (/(i-0.5,i=1,nphi)/) /REAL(nphi)               ! sur 0-2pi
+      ! print*,"phi de luc",phi
+      ! print*,"phi de max",grid%phiofnphi
+      ! PHI=GRID%PHIOFNPHI
+      expiphi=EXP(xi_cmplx*phi)
+      cosphi=REAL(expiphi)
+      sinphi=AIMAG(expiphi)
+    end if
+
+    if(.not.allocated(expikhiphi)) then
+      ALLOCATE(expikhiphi(-mnmax:mnmax,nphi))
+      do khi=-mnmax,mnmax
+        expikhiphi(khi,:)=EXP(xi_cmplx*khi*phi(:))
+      end do
+    end if
     !                        psi (ou omega)
-    if(.not.allocated(omeg)) ALLOCATE(omeg(nomeg),expiomeg(nomeg))
-    omeg=pi* (/(i-0.5,i=1,nomeg)/) /REAL(nomeg)                  ! sur 0-pi car H2O
-    expiomeg=EXP(xi_cmplx*omeg)
-    if(.not.allocated(expimuomeg)) ALLOCATE(expimuomeg(-mnmax2:mnmax2,nomeg))     ! et mu pair=2*mu2
-    do mu2=-mnmax2,mnmax2
-      mu=2*mu2
-      expimuomeg(mu2,:)=EXP(xi_cmplx*mu*omeg(:))
-    end do
-    !                            rmmu'mu(theta)
-    if(.not.allocated(harsph)) ALLOCATE(harsph(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,nbeta))
-    harsph=0.
-    do khi=-mnmax,mnmax
+    if(.not.allocated(omeg)) then
+      ALLOCATE(omeg(nomeg),expiomeg(nomeg))
+      omeg=pi* (/(i-0.5,i=1,nomeg)/) /REAL(nomeg)                  ! sur 0-pi car H2O
+      ! print*,"psi de luc",omeg
+      ! print*,"psi de max",grid%psiofnpsi
+      ! OMEG=GRID%PSIOFNPSI
+      expiomeg=EXP(xi_cmplx*omeg)
+    end if
+
+    if(.not.allocated(expimuomeg)) then
+      ALLOCATE(expimuomeg(-mnmax2:mnmax2,nomeg))     ! et mu pair=2*mu2
       do mu2=-mnmax2,mnmax2
         mu=2*mu2
-        do m=MAX(ABS(khi),ABS(mu)),mnmax
-          do ibeta=1,nbeta
-            harsph(m,khi,mu2,ibeta)=harm_sph(m,khi,mu,beta(ibeta))
+        expimuomeg(mu2,:)=EXP(xi_cmplx*mu*omeg(:))
+      end do
+    end if
+
+    !                            rmmu'mu(theta)
+    if(.not.allocated(harsph)) then
+      ALLOCATE(harsph(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,nbeta))
+      harsph=0.
+      do khi=-mnmax,mnmax
+        do mu2=-mnmax2,mnmax2
+          mu=2*mu2
+          do m=MAX(ABS(khi),ABS(mu)),mnmax
+            do ibeta=1,nbeta
+              harsph(m,khi,mu2,ibeta)=harm_sph(m,khi,mu,beta(ibeta))
+            end do
           end do
         end do
       end do
-    end do
+    end if
     !
     !                           coordonnees du vecteur q (en A-1)
     !
-    PRINT*, '********************************************************************************'
-    PRINT*, 'Coordonnees x,y,z du vecteur q  (en A-1) --->'
-    ! call lis(qx,qy,qz)
-
-    qx=2.
-    qy=3.
-    qz=4.
-
+    ! PRINT*, '********************************************************************************'
+    qx=qvec(1)
+    qy=qvec(2)
+    qz=qvec(3)
     qq=SQRT(qx**2+qy**2+qz**2)
-    PRINT*, 'ce qui donne q= ',qq
-    c_theta_q=qz/qq                        ! angles theta,phi pour q
-    theta_q=ACOS(c_theta_q)
-    s_theta_q=SIN(theta_q)
-    c_phi_q=qx/qq/s_theta_q
-    phi_q=ACOS(c_phi_q)
-    IF(qy<0.) phi_q=-phi_q
-    s_phi_q=SIN(phi_q)
+    ! PRINT*, 'Coordonnees x,y,z du vecteur q  (en A-1) --->',qx,qy,qz,'ce qui donne q --->',qq
+    if(abs(qx)+abs(q2)<=epsilon(1.)) then
+      theta_q = 0.
+      phi_q = 0.
+    else
+      c_theta_q=qz/qq                        ! angles theta,phi pour q
+      theta_q=ACOS(c_theta_q)
+      s_theta_q=SIN(theta_q)
+      c_phi_q=qx/qq/s_theta_q
+      if(abs(c_phi_q)-1<1.D-10) then
+        phi_q=0.
+      else
+        phi_q=ACOS(c_phi_q)
+        IF(qy<0.) phi_q=-phi_q
+      end if
+      s_phi_q=SIN(phi_q)
+    end if
+
+
     !           les elements Rllambda0(q)
-    if(.not.allocated(harsph_q))ALLOCATE(harsph_q(0:2*mnmax,-2*mnmax:2*mnmax))
+    if(.not.allocated(harsph_q)) ALLOCATE(harsph_q(0:2*mnmax,-2*mnmax:2*mnmax))
     harsph_q=0.
     do l=0,2*mnmax
       do lambda=-l,l
@@ -299,8 +532,7 @@ contains
         end do
       end do
     end do
-    !          test
-    PRINT*, 'test des R*R'
+    !          test des R*R
     do khi=-mnmax,mnmax
       do m=0,mnmax
         do n=0,mnmax
@@ -313,7 +545,10 @@ contains
                 end do
               end do
               coeff1_cmplx=(-1)**(nu1+khi)*symbol_3j(m,n,l,khi,-khi,0)*harsph1_q(n,-nu1,khi)
-              IF(ABS(coeff1_cmplx-coeff_cmplx)>1.d-10) PRINT*, m,n,l,nu1,khi,coeff_cmplx,coeff1_cmplx
+              IF(ABS(coeff1_cmplx-coeff_cmplx)>1.d-10) then
+                PRINT*, m,n,l,nu1,khi,coeff_cmplx,coeff1_cmplx
+                error stop "test des R*R raté"
+              end if
             end do
           end do
         end do
@@ -324,12 +559,12 @@ contains
     !                           on definit ou lit les projections de delta_rho de depart (complexes!)
     !
     if(.not.allocated(delta_rho_proj)) ALLOCATE(delta_rho_proj(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
-    delta_rho_proj=0.
-    PRINT*, '********************************************************************************'
-    110 PRINT*, 'Projections delta_rho mmu''mu de depart 1) analytique  2) fichier  --->'
-    ! call lis(i_depart)
-    i_depart = 1
+    delta_rho_proj=cmplx(0.,0.)
 
+    ! PRINT*, '********************************************************************************'
+    i_depart = 3
+    ! 110 PRINT*, 'Projections delta_rho mmu''mu de depart 1) analytique  2) fichier 3) passé en argument --->', i_depart
+    110 CONTINUE
     IF(i_depart==1) then ! ANALYTIQUE
       do khi=-mnmax,mnmax
         do mu2=-mnmax2,mnmax2
@@ -340,7 +575,7 @@ contains
         end do
       end do
 
-    else ! DEPUIS UN FICHIER
+    else if (i_depart==2) then ! DEPUIS UN FICHIER
       PRINT*, 'Nom du fichier --->'
       READ(*,*) nomfic
       OPEN(7,FILE=nomfic,STATUS='old',ERR=110)
@@ -348,44 +583,48 @@ contains
         READ(7,*,END=120) m,khi,mu,auxi_cmplx
         delta_rho_proj(m,khi,mu/2)=auxi_cmplx
       end do
+      120 close(7)
+
+    else if (i_depart==3) then
+      delta_rho_proj = my_delta_rho_proj
+    else
+      goto 110
     endif
-    120 CLOSE(7)
     !PRINT*, 'deltarho_proj',delta_rho_proj
     !
     !                          on lit les projections mnlmunu de ck
     !
-    PRINT*, '********************************************************************************'
-    130 PRINT*, 'Lecture des cmnlmunu(q) dans un fichier'
-    PRINT*, 'ce fichier contient apres quelques lignes de baratin la ligne des m puis celle des n...'
-    PRINT*, 'suivies des lignes de q,cmnlmunu(q) (on choisira le q le plus proche, par exces)'
-    PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
-    PRINT*, 'Nom du fichier --->'
-    nomfic="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt"
-    OPEN(7,FILE="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old',ERR=130)
-    PRINT*, 'nombre de lignes de baratin --->'
+    ! PRINT*, '********************************************************************************'
+    ! 130 PRINT*, 'Lecture des cmnlmunu(q) dans un fichier'
+    ! PRINT*, 'ce fichier contient apres quelques lignes de baratin la ligne des m puis celle des n...'
+    ! PRINT*, 'suivies des lignes de q,cmnlmunu(q) (on choisira le q le plus proche, par exces)'
+    ! PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
+    ! PRINT*, 'Nom du fichier --->'
+    OPEN(7,FILE="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old')
     n_baratin=5
-    PRINT*, 'Nombre de projections --->'
+    ! PRINT*, 'nombre de lignes de baratin --->', n_baratin
     ialpmax=549
+    ! PRINT*, 'Nombre de projections --->', ialpmax
     if(.not.allocated(mm)) ALLOCATE(mm(ialpmax),nn(ialpmax),ll(ialpmax),mumu(ialpmax),nunu(ialpmax),ck(ialpmax))
     do i=1,n_baratin
       READ(7,*) texte
-      PRINT*, texte
+      ! PRINT*, texte
     end do
     READ(7,*) texte1,mm
-    PRINT*, texte1,mm(1:10)
+    ! PRINT*, texte1,mm(1:10)
     READ(7,*) texte1,nn
-    PRINT*, texte1,nn(1:10)
+    ! PRINT*, texte1,nn(1:10)
     READ(7,*) texte1,ll
-    PRINT*, texte1,ll(1:10)
+    ! PRINT*, texte1,ll(1:10)
     READ(7,*) texte1,mumu
-    PRINT*, texte1,mumu(1:10)
+    ! PRINT*, texte1,mumu(1:10)
     READ(7,*) texte1,nunu
-    PRINT*, texte1,nunu(1:10)
+    ! PRINT*, texte1,nunu(1:10)
     do i=1,10000
       READ(7,*) q,ck
       IF(q>=qq) exit
     end do
-    PRINT*, 'valeur de q choisie dans le tableau: ',q
+    ! PRINT*, 'valeur de q choisie dans le tableau: ',q
     ! PRINT*, 'ck= ',ck(1:MIN(10,ialpmax))
     CLOSE(7)
     !   je construis en tableau a 5 entrees cmnlmunu pour tests ulterieurs
@@ -581,7 +820,7 @@ contains
             if(.not.allocated(tab3)) ALLOCATE (tab3(-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2),       &
             tab4(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2),       &
             tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
-            PRINT*, 'ckhi'
+            ! PRINT*, 'ckhi'
             !
             tab5=0.
             do khi=0,mnmax                ! que khi>=0 pour l'instant
@@ -610,6 +849,10 @@ contains
                 end do
               end do
             end do
+
+
+
+
             ! !         test a partir de tab6 , reussi
             ! GOTO 217                   ! je shunte les 2 tests a venir puisque reussis
             ! PRINT*, 'test a partir de tableaux a 5 entrees cmnmunu'
@@ -778,82 +1021,84 @@ contains
             ! !      et je projette
             ! PRINT*, 'gam_proj'
             ! call angl_proj(gamma2,gamma2_proj)
-            ! !
-            ! !
-            ! !               Methode 3: je n'utilise que les projections, mais je combine dans le repere fixe
-            ! !
-            ! !
-            ! 300 continue
+            !
+            !
+            !               Methode 3: je n'utilise que les projections, mais je combine dans le repere fixe
+            !
+            !
+            300 continue
             ! PRINT*, '********************************************************************************'
             ! PRINT*, 'Methode 3: je combine directement les projections dans le repere fixe'
-            ! ALLOCATE (tab7(0:mnmax,0:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
-            ! ALLOCATE(gamma3_proj(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
-            ! gamma3_proj=0.
-            ! !            pour chaque mu',nu'
-            ! do mu1=-mnmax,mnmax
-            !   do nu1=-mnmax,mnmax
-            !     !
-            !     lambda1=-mu1-nu1
-            !     tab4=0.
-            !     do ialp=1,ialpmax
-            !       m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
-            !       mu2=mu/2; nu2=nu/2
-            !       coeff_cmplx=ck(ialp)*harsph_q(l,lambda1)
-            !       IF((-1)**l==-1) coeff_cmplx=xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
-            !       s3j=symbol_3j(m,n,l,mu1,nu1,lambda1)
-            !       tab4(m,n,mu2,nu2)=tab4(m,n,mu2,nu2)+coeff_cmplx*s3j                     ! tab5 est donc complexe
-            !       IF(mu/=0.or.nu/=0) tab4(m,n,-mu2,-nu2)=tab4(m,n,-mu2,-nu2)+(-1)**(m+n+l)*coeff_cmplx*s3j
-            !       IF(m/=n.or.ABS(mu)/=ABS(nu)) then
-            !         s3j=symbol_3j(n,m,l,mu1,nu1,lambda1)
-            !         tab4(n,m,nu2,mu2)=tab4(n,m,nu2,mu2)+(-1)**(m+n)*coeff_cmplx*s3j
-            !         IF(mu/=0.or.nu/=0) tab4(n,m,-nu2,-mu2)=tab4(n,m,-nu2,-mu2)+(-1)**(l)*coeff_cmplx*s3j
-            !       endif
-            !     end do                           ! fin ialp
-            !     !                  test en partant plutot de tab6  , reussi donc shunte
-            !     GOTO 317
-            !     tab7=0.
-            !     do mu2=-mnmax2,mnmax2
-            !       mu=2*mu2
-            !       do m=MAX(ABS(mu1),ABS(mu)),mnmax
-            !         do nu2=-mnmax2,mnmax2
-            !           nu=2*nu2
-            !           do n=MAX(ABS(nu1),ABS(nu)),mnmax
-            !             do l=ABS(m-n),m+n
-            !               tab7(m,n,mu2,nu2)=tab7(m,n,mu2,nu2)+tab6(m,n,l,mu2,nu2)*symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)
-            !             end do
-            !             IF(ABS(tab7(m,n,mu2,nu2)-tab4(m,n,mu2,nu2))>1.d-10) PRINT*, mu1,nu1,m,n,mu,nu,tab7(m,n,mu2,nu2),tab4(m,n,mu2,nu2)
-            !           end do
-            !         end do
-            !       end do
-            !     end do
-            !     !            fin test
-            !     317 continue
-            !     !
-            !     do mu2=-mnmax2,mnmax2
-            !       mu=2*mu2
-            !       do m=MAX(ABS(mu1),ABS(mu)),mnmax
-            !         do nu2=-mnmax2,mnmax2
-            !           nu=2*nu2
-            !           do n=MAX(ABS(nu1),ABS(nu)),mnmax
-            !             gamma3_proj(m,mu1,mu2)=gamma3_proj(m,mu1,mu2)+tab4(m,n,mu2,nu2)*(-1)**nu1*delta_rho_proj(n,-nu1,-nu2)
-            !           end do
-            !         end do
-            !       end do
-            !     end do
-            !     !
-            !   end do                     ! fin nu'
-            ! end do                      ! fin mu'
+            IF(.NOT.ALLOCATED(TAB7)) THEN
+              ALLOCATE (tab7(0:mnmax,0:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
+              ALLOCATE(gamma3_proj(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
+            END IF
+            gamma3_proj=0.
+            !            pour chaque mu',nu'
+            do mu1=-mnmax,mnmax
+              do nu1=-mnmax,mnmax
+                !
+                lambda1=-mu1-nu1
+                tab4=0.
+                do ialp=1,ialpmax
+                  m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
+                  mu2=mu/2; nu2=nu/2
+                  coeff_cmplx=ck(ialp)*harsph_q(l,lambda1)
+                  IF((-1)**l==-1) coeff_cmplx=xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
+                  s3j=symbol_3j(m,n,l,mu1,nu1,lambda1)
+                  tab4(m,n,mu2,nu2)=tab4(m,n,mu2,nu2)+coeff_cmplx*s3j                     ! tab5 est donc complexe
+                  IF(mu/=0.or.nu/=0) tab4(m,n,-mu2,-nu2)=tab4(m,n,-mu2,-nu2)+(-1)**(m+n+l)*coeff_cmplx*s3j
+                  IF(m/=n.or.ABS(mu)/=ABS(nu)) then
+                    s3j=symbol_3j(n,m,l,mu1,nu1,lambda1)
+                    tab4(n,m,nu2,mu2)=tab4(n,m,nu2,mu2)+(-1)**(m+n)*coeff_cmplx*s3j
+                    IF(mu/=0.or.nu/=0) tab4(n,m,-nu2,-mu2)=tab4(n,m,-nu2,-mu2)+(-1)**(l)*coeff_cmplx*s3j
+                  endif
+                end do                           ! fin ialp
+                !                  test en partant plutot de tab6  , reussi donc shunte
+                GOTO 317
+                tab7=0.
+                do mu2=-mnmax2,mnmax2
+                  mu=2*mu2
+                  do m=MAX(ABS(mu1),ABS(mu)),mnmax
+                    do nu2=-mnmax2,mnmax2
+                      nu=2*nu2
+                      do n=MAX(ABS(nu1),ABS(nu)),mnmax
+                        do l=ABS(m-n),m+n
+                      tab7(m,n,mu2,nu2)=tab7(m,n,mu2,nu2)+tab6(m,n,l,mu2,nu2)*symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)
+                        end do
+                  IF(ABS(tab7(m,n,mu2,nu2)-tab4(m,n,mu2,nu2))>1.d-10) PRINT*, mu1,nu1,m,n,mu,nu,tab7(m,n,mu2,nu2),tab4(m,n,mu2,nu2)
+                      end do
+                    end do
+                  end do
+                end do
+                !            fin test
+                317 continue
+                !
+                do mu2=-mnmax2,mnmax2
+                  mu=2*mu2
+                  do m=MAX(ABS(mu1),ABS(mu)),mnmax
+                    do nu2=-mnmax2,mnmax2
+                      nu=2*nu2
+                      do n=MAX(ABS(nu1),ABS(nu)),mnmax
+                        gamma3_proj(m,mu1,mu2)=gamma3_proj(m,mu1,mu2)+tab4(m,n,mu2,nu2)*(-1)**nu1*delta_rho_proj(n,-nu1,-nu2)
+                      end do
+                    end do
+                  end do
+                end do
+                !
+              end do                     ! fin nu'
+            end do                      ! fin mu'
     !
     !
     !            Methode 4: projections mais en passant par le repere local
     !
     !
-    PRINT*, '********************************************************************************'
-    PRINT*, 'Methode4: je combine les projections via le repere local!'
+    ! PRINT*, '********************************************************************************'
+    ! PRINT*, 'Methode4: je combine les projections via le repere local!'
     if(.not.allocated(gamma4_proj)) ALLOCATE(gamma4_proj(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
     !     d'abord, passer des projections delta_rho a delta_rho'
     if(.not.allocated(delta_rho_proj1)) ALLOCATE(delta_rho_proj1(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
-    PRINT*, 'deltarho_proj'''
+    ! PRINT*, 'deltarho_proj'''
     delta_rho_proj1=0.
     do m=0,mnmax
       m2=m/2
@@ -865,7 +1110,7 @@ contains
     end do
     ! test aller-retour  reussi donc shunte
     GOTO 417
-    PRINT*, 'test retour a deltarho_proj'
+    ! PRINT*, 'test retour a deltarho_proj'
     gamma4_proj=0.
     do m=0,mnmax
       m2=m/2
@@ -881,7 +1126,7 @@ contains
     !               rappel: cmnmunu;khi est dans tab5
     !               faire alors OZ le plus simple!
     if(.not.allocated(gamma4_proj1)) ALLOCATE(gamma4_proj1(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
-    PRINT*, 'OZ'
+    ! PRINT*, 'OZ'
     gamma4_proj1=0.
     do khi=-mnmax,mnmax
       do mu2=-mnmax2,mnmax2
@@ -897,8 +1142,8 @@ contains
       end do
     end do
     !             et revenir des projections gamma' aux projections gamma
-    PRINT*, 'gam_proj'
-    gamma4_proj=0.
+    ! PRINT*, 'gam_proj'
+    gamma4_proj=cmplx(0.,0)
     do m=0,mnmax
       m2=m/2
       do mu1=-m,m
@@ -907,6 +1152,9 @@ contains
         end do
       end do
     end do
+    if (any(gamma4_proj/=gamma4_proj)) error stop "je suis tristement triste"
+    my_gamma_proj = gamma4_proj
+
     !
     !
     !                 OUF!
@@ -914,18 +1162,26 @@ contains
     !
     !       resultats
     !
-    PRINT*, '********************************************************************************'
-    PRINT*, 'RESULTATS comparatifs:'
+    ! PRINT*, '********************************************************************************'
+    ! PRINT*, 'RESULTATS comparatifs:'
     do m=0,mnmax
       m2=m/2
       do mu1=-m,m
         do mu2=-m2,m2
           mu=2*mu2
+          tmpc=gamma3_proj(m,mu1,mu2)-gamma4_proj(m,mu1,mu2)
+          if(abs(tmpc)>1.D-10)PRINT*, m,mu1,mu,abs(tmpc)
           ! PRINT*, m,mu1,mu,gamma1_proj(m,mu1,mu2),gamma2_proj(m,mu1,mu2),gamma3_proj(m,mu1,mu2),gamma4_proj(m,mu1,mu2)
-          PRINT*, m,mu1,mu, gamma4_proj(m,mu1,mu2)
+          if(gamma4_proj(m,mu1,mu2)/=gamma4_proj(m,mu1,mu2)) then
+            print*, qx,qy,qz
+            error stop "je suis triste"
+          end if
         end do
       end do
     end do
+! stop "RESULTATS comparatifs"
+
+
     ! PRINT*, MAXVAL(ABS(gamma1_proj-gamma4_proj)),MAXVAL(ABS(gamma2_proj-gamma4_proj)),MAXVAL(ABS(gamma3_proj-gamma4_proj))
     !
     !
@@ -942,7 +1198,7 @@ contains
     ! DEALLOCATE(tab3,tab5,tab6,tab4,tab7)
     ! GOTO 9999
     !
-  end
+  end subroutine
 
 
   !
@@ -987,8 +1243,8 @@ contains
     USE tableaux_dft_3d, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,wb,harsph,expikhiphi,expimuomeg
     implicit real(8) (a-h,o-z)
     !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
-    COMPLEX(8), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(out):: f_proj
     COMPLEX(8), DIMENSION(nbeta,nphi,nomeg), intent(in):: f_ang
+    COMPLEX(8), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(out):: f_proj
     !
     !             passe de la fonction angulaire aux projections
     !
@@ -1023,7 +1279,6 @@ contains
   !
   function symbol_3j(m,n,l,mu,nu,lu)
     implicit REAL(8) (a-h,o-z)
-    COMMON/facto/fac(0:50)
     !
     !        symbole 3j
     !        Messiah page 910 eq.21
@@ -1053,13 +1308,11 @@ end
 !
 function delta(m,n,l)
   implicit REAL(8) (a-h,o-z)
-  COMMON/facto/fac(0:50)
   delta=fac(m+n-l)*fac(n+l-m)*fac(l+m-n)/fac(m+n+l+1)
 end
 !
 function harm_sph(m,mu,mup,beta)
   implicit real(8) (a-h,o-z)
-  COMMON/facto/fac(0:50)
   !
   !          pour harmonique spherique Rm,mu,mup(Omega=omega,beta,phi)
   !                                    =exp(-i*omega)*r(m)mu,mup*exp(-i*phi)
