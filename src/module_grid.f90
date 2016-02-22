@@ -31,7 +31,7 @@ module module_grid
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
     contains
-        procedure, nopass :: init, integrate_over_orientations
+        procedure, nopass :: init, integrate_over_orientations, ix_mq, iy_mq, iz_mq
     end type somegrid
     type(somegrid), protected :: grid
     real(dp), parameter, private :: eightpisq=8._dp*acos(-1._dp)**2
@@ -95,8 +95,10 @@ contains
         grid%npsi = 2*(grid%mmax/grid%molrotsymorder)+1
         grid%no = grid%ntheta*grid%nphi*grid%npsi   ! nombez d'orientations dans la representation Euler
         grid%dphi = twopi/real(grid%nphi,dp)
-        grid%dpsi = twopi/real(grid%npsi*grid%molrotsymorder,dp)
-        grid%np=sum( [( [( [( 1 ,mu=0,m,grid%molrotsymorder)], mup=-m,m)], m=0,grid%mmax)] ) ! number of projections
+        grid%dpsi = twopi/real(grid%molrotsymorder,dp)/real(grid%npsi,dp)
+        grid%np= sum( [( [( [( 1 ,  mu=0,m/2   )], mup=-m,m)], m=0,grid%mmax)] ) ! number of projections
+
+        print*, "ATTENTION DANS MODULE_GRID j'AI MIS MU=-M,M,MRSO AU LIEU DE MU=0,M,MRSO POUR DEBUGGER SLT"
         allocate( grid%theta(grid%no) , source=0._dp) ! io => theta
         allocate( grid%phi(grid%no) , source=0._dp)
         allocate( grid%psi(grid%no) , source=0._dp)
@@ -112,6 +114,7 @@ contains
         allocate( grid%wpsiofnpsi(grid%npsi) ,source=0._dp)
         grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
         grid%wpsiofnpsi = 1._dp/real(grid%npsi*grid%molrotsymorder,dp)
+        PRINT*,'ATTENTION !!!!!!!!!!! JE PRENDS LA DEF DE LUC POUR PSI ET PHI'
         grid%psiofnpsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
         grid%phiofnphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
         call gauss_legendre( grid%ntheta, grid%thetaofntheta, grid%wthetaofntheta, err)
@@ -311,14 +314,12 @@ contains
         ! http://www.fftw.org/doc/The-1d-Discrete-Fourier-Transform-_0028DFT_0029.html#The-1d-Discrete-Fourier-Transform-_0028DFT_0029
         integer, INTENT(IN) :: dir, l ! dir is 1 for x, 2 for y, 3 for z
         REAL(dp) :: kproj
-        integer :: m1
         real(dp), parameter :: twopi=2._dp*acos(-1._dp)
-        IF ( l <= grid%n_nodes(dir)/2 ) THEN
-            m1 = l - 1
+        IF ( l <= grid%n_nodes(dir)/2 +1 ) THEN
+            kproj = (l-1)*twopi /grid%l(dir)
         ELSE
-            m1 = l - 1 - grid%n_nodes(dir)
+            kproj = (l-1-grid%n(dir))*twopi/grid%l(dir)
         END IF
-        kproj = twopi/grid%length(dir)*REAL(m1,dp)
     END FUNCTION kproj
 
 
@@ -369,5 +370,44 @@ contains
             end do
         end do
     end subroutine integrate_over_orientations
+
+
+
+    pure function ix_mq(ix_q)
+      implicit none
+      integer, intent(in) :: ix_q
+      integer :: ix_mq, nx
+      nx = grid%nx
+      if( ix_q == 1) then
+        ix_mq = 1
+      else
+        ix_mq = nx - ix_q +2
+      end if
+    end function ix_mq
+
+    pure function iy_mq(iy_q)
+      implicit none
+      integer, intent(in) :: iy_q
+      integer :: iy_mq, ny
+      ny = grid%ny
+      if( iy_q == 1) then
+        iy_mq = 1
+      else
+        iy_mq = ny - iy_q +2
+      end if
+    end function iy_mq
+
+    pure function iz_mq(iz_q)
+      implicit none
+      integer, intent(in) :: iz_q
+      integer :: iz_mq, nz
+      nz = grid%nz
+      if( iz_q == 1) then
+        iz_mq = 1
+      else
+        iz_mq = nz - iz_q +2
+      end if
+    end function iz_mq
+
 
 end module module_grid
