@@ -1,7 +1,7 @@
 
 !     Last change:  LB    1 Feb 2016   12:51 pm
 !
-module tableaux_dft_3d
+module tableaux_dft_3d_fast
   INTEGER::mnmax,mnmax2,nbeta,nphi,nomeg
   REAL(8),DIMENSION(:),ALLOCATABLE::beta,cosbeta,sinbeta,wb
   REAL(8),DIMENSION(:),ALLOCATABLE::phi,cosphi,sinphi
@@ -22,17 +22,17 @@ module tableaux_dft_3d
   COMPLEX(8),DIMENSION(:,:,:,:,:),ALLOCATABLE:: tab5,tab6
   COMPLEX(8),DIMENSION(:,:,:,:),ALLOCATABLE:: tab4,tab7
   COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: tab3
-end module tableaux_dft_3d
+end module tableaux_dft_3d_fast
 !
 !
-module module_energy_luc
+module module_energy_luc_fast
   real(8) :: fac(0:50)
 
 contains
 
 
 
-subroutine energy_luc (ff,df)
+subroutine energy_luc_fast (ff,df)
   use iso_c_binding
   use module_grid, only: grid
   use module_solvent, only: solvent
@@ -53,9 +53,6 @@ subroutine energy_luc (ff,df)
   complex(dp), allocatable :: gamma_k_proj(:,:,:) ! m mup mu2
   complex(dp), allocatable :: gamma_angle(:,:,:,:) ! omega, x y z
   real(dp) :: q(3), rho0
-  complex(dp), allocatable :: delta_rho_k_proj_full(:,:,:,:,:,:)
-  complex(dp), allocatable :: gamma_k_proj_full(:,:,:,:,:,:)
-  complex(dp), allocatable :: delta_rho_prime_k_proj_full(:,:,:,:,:,:)
   complex(dp) :: a, b
   integer :: imqx, imqy, imqz
 
@@ -81,6 +78,8 @@ call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, out, FFTW_F
 ! 1. FOURIER TRANSFORM DELTA RHO
 !
 !
+! call random_number( solvent(1)%xi )
+! solvent(1)%xi = solvent(1)%xi * 10
 
 allocate ( delta_rho_k_angle(no,nx,ny,nz) , source=zeroc)
 allocate ( gamma_k_angle(no,nx,ny,nz) , source=zeroc)
@@ -118,8 +117,6 @@ end do
 allocate (delta_rho_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
 allocate (gamma_k_proj    (0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
 
-allocate (delta_rho_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,nx,ny,nz) , source=zeroc)
-allocate (gamma_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,nx,ny,nz) , source=zeroc)
 
 !
 !
@@ -148,8 +145,6 @@ do m=0,mmax
     end do
   end do
 end do
-! put delta_rho_k_proj into an array that stores all projections for all q. Utile seulement pour les tests
-delta_rho_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,iqx,iqy,iqz) = delta_rho_k_proj(:,:,:)
 
 
 !
@@ -164,7 +159,6 @@ delta_rho_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,iqx,iqy,iqz) = delta_rho_k_
 !
 call luc_oz (q, delta_rho_k_proj, gamma_k_proj)
 
-gamma_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,iqx,iqy,iqz) = gamma_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2)
 
 
 !
@@ -193,63 +187,6 @@ end do ! iqz
 
 
 
-
-! ! est ce qu'on a bien la symetrie hermitienne sur gamma_k_angle ?
-! do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
-!   imqx = grid%ix_mq(iqx)
-!   imqy = grid%iy_mq(iqy)
-!   imqz = grid%iz_mq(iqz)
-!   a = gamma_k_angle(io,iqx,iqy,iqz)
-!   b = conjg(gamma_k_angle(io,imqx,imqy,imqz))
-!   if (abs(a-b)>1.D-10)  print*, io,iqx,iqy,iqz,a,b
-! end do
-! stop "hermite"
-!
-!
-! ! on teste 1.15
-! i = 0
-! do concurrent( iqx=1:nx, iqy=1:ny, iqz=1:nz )
-!   imqx = grid%ix_mq(iqx)
-!   imqy = grid%iy_mq(iqy)
-!   imqz = grid%iz_mq(iqz)
-!   do m=0,mmax
-!     do mup=-m,m
-!       do mu2=-m/2,m/2
-!         mu = 2*mu2
-!         a =        gamma_k_proj_full(m,-mup,-mu2,iqx,iqy,iqz)
-!         b =  (-1)**(mup+mu)*conjg(gamma_k_proj_full(m, mup, mu2,imqx,imqy,imqz))
-!         if (abs(a)>1.D-10) i=i+1
-!         if (abs(a-b)>1.D-10) print*, iqx,iqy,iqz,m,mup,mu,a,b
-!       end do
-!     end do
-!   end do
-! end do
-! print*,i,nx*ny*nz*mmax**3/3
-! stop "1.15 sur delta_rho_proj tel que lu par luc"
-!
-!
-! ! on teste 1.25 sur delta_rho_k_proj_prime
-! i = 0
-! do concurrent( iqx=1:nx, iqy=1:ny, iqz=1:nz )
-!   imqx = grid%ix_mq(iqx)
-!   imqy = grid%iy_mq(iqy)
-!   imqz = grid%iz_mq(iqz)
-!   do m=0,mmax
-!     do khi=-m,m
-!       do mu2=-m/2,m/2
-!         mu = 2*mu2
-!         a = gamma_k_proj_full(m,khi,-mu2,iqx,iqy,iqz)
-!         b = conjg(gamma_k_proj_full(m, khi, mu2,imqx,imqy,imqz)) * (-1)**(m+khi+mu)
-!         if (abs(a)>1.D-10) i=i+1
-!         if (abs(a-b)>1.D-10) print*, iqx,iqy,iqz,m,khi,mu,a,b,real(a)/real(b),imag(a)/imag(b)
-!       end do
-!     end do
-!   end do
-! end do
-! print*,i
-! stop "1.25 stop"
-
-
 deallocate (delta_rho_k_proj)
 deallocate (gamma_k_proj )
 
@@ -267,30 +204,17 @@ do io=1,no
 end do
 
 
-! On a maintenant notre gamma(r,omega). On veut testé qu'il soit purement réel.
-do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
-  if(imag(gamma_angle(io,iqx,iqy,iqz))>1.D-10) then
-    print*, "PROBELM     GAMMA(R,OMEGA) iqx,iqy,iqz,io",int([iqx,iqy,iqz,io],2),gamma_angle(io,iqx,iqy,iqz)
-    error stop
-  end if
-end do
-
-
-
-!
-!
-! print dans un fichier pour comparer avec la suite
-!
-!
-
-
 call cpu_time (time(3))
 deallocate(in)
 deallocate(delta_rho_k_angle)
 
-df(:,:,:,:,1) = gamma_angle
 
-end subroutine energy_luc
+
+print*,maxval(abs(gamma_angle)), maxval((df(:,:,:,:,1))), maxval(abs(gamma_angle-df(:,:,:,:,1)))
+
+
+stop "toute fin de la routine energy_luc_fast OK. Tout va bien."
+end subroutine energy_luc_fast
 
 
 
@@ -341,7 +265,7 @@ end subroutine energy_luc
 
   subroutine luc_oz (qvec, my_delta_rho_proj, my_gamma_proj)
     USE lecture                                    ! pour lire des valeurs � la Luc
-    USE tableaux_dft_3d                            ! d�finit le type des tableaux de valeurs � partager
+    USE tableaux_dft_3d_fast                            ! d�finit le type des tableaux de valeurs � partager
     use module_grid,only: grid
     implicit real(8) (a-h,o-z)
     real(8),    intent(in) :: qvec(3)
@@ -1212,7 +1136,7 @@ end block
 
   !
   subroutine proj_angl(f_proj,f_ang)
-    USE tableaux_dft_3d, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,harsph,expikhiphi,expimuomeg
+    USE tableaux_dft_3d_fast, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,harsph,expikhiphi,expimuomeg
     implicit real(8) (a-h,o-z)
     !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
     COMPLEX(8), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(in):: f_proj
@@ -1249,7 +1173,7 @@ end block
   !
   !
   subroutine angl_proj(f_ang,f_proj)
-    USE tableaux_dft_3d, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,wb,harsph,expikhiphi,expimuomeg
+    USE tableaux_dft_3d_fast, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,wb,harsph,expikhiphi,expimuomeg
     implicit real(8) (a-h,o-z)
     !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
     COMPLEX(8), DIMENSION(nbeta,nphi,nomeg), intent(in):: f_ang

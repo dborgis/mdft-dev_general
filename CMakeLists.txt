@@ -76,6 +76,7 @@ endif()
 set(mdft_SRCS
   src/module_lecture.f90
   src/module_energy_luc.f90
+  src/module_energy_luc_fast.f90
   src/module_rotation.f90
   src/module_energy_cproj_mrso.f90
   src/module_energy_cproj_no_symetry.f90

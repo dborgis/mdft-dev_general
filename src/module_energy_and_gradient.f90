@@ -44,6 +44,7 @@ contains
         use module_energy_cproj_no_symetry, only: energy_cproj_no_symetry
         use module_energy_ck_angular, only: energy_ck_angular
         use module_energy_luc, only: energy_luc
+        use module_energy_luc_fast, only: energy_luc_fast
         use module_input, only: getinput
         ! use module_energy_cproj_slow, only: energy_cproj_slow
 
@@ -106,6 +107,7 @@ contains
                 ! call energy_cproj_mrso (ff%exc_cproj, df)
                 ! call energy_cproj_no_symetry (ff%exc_cproj, df)
                 call energy_luc ( ff%exc_cproj , df )
+                call energy_luc_fast ( ff%exc_cproj, df)
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
                 stop "energy_and_gradient after call to energy_luc"
