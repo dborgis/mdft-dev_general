@@ -41,6 +41,7 @@ contains
 
 
 subroutine energy_ck_angular (ff, df)
+  use omp_lib
   use precision_kinds, only: dp
   use module_grid, only: grid
   use module_thermo, only: thermo
@@ -94,9 +95,12 @@ subroutine energy_ck_angular (ff, df)
   ! Calcul de gamma == y
   !
   call cpu_time(t(4))
+
+
   do io1=1,no
 
     in_backward = complex(0._dp,0._dp)
+!$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(ck_angular,ang,grid,delta_rho_k,ck), REDUCTION(+:in_backward)
     do iz=1,nz
       do iy=1,ny
         do ix=1,nx/2+1
@@ -118,10 +122,12 @@ subroutine energy_ck_angular (ff, df)
         end do
       end do
     end do
+!$OMP END PARALLEL DO
 
     call dfftw_execute_dft_c2r ( plan_backward , in_backward, out_backward )
     y(io1,:,:,:) = out_backward/real(nx*ny*nz,dp)
   end do
+
   call cpu_time(t(5))
 
 

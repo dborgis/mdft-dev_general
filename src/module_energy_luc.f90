@@ -1,143 +1,3 @@
-!     Last change:  LB   14 Dec 2006    5:04 pm
-module lecture
-  !
-  interface lis
-    module PROCEDURE lis_entier,lis_entier_tableau, &
-    lis_reel4,lis_reel4_tableau, &
-    lis_reel8,lis_reel8_tableau
-  end interface
-  !
-contains
-  !
-  subroutine lis_entier(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10)
-    INTEGER, INTENT(INOUT) :: i1
-    INTEGER, INTENT(INOUT), optional:: i2,i3,i4,i5,i6,i7,i8,i9,i10
-    INTEGER :: ient
-    IF(.not.present(i2)) READ(*,*,ERR=100) ient
-    IF(PRESENT(i2).and..not.present(i3)) READ(*,*,ERR=100) ient,i2
-    IF(PRESENT(i3).and..not.present(i4)) READ(*,*,ERR=100) ient,i2,i3
-    IF(PRESENT(i4).and..not.present(i5)) READ(*,*,ERR=100) ient,i2,i3,i4
-    IF(PRESENT(i5).and..not.present(i6)) READ(*,*,ERR=100) ient,i2,i3,i4,i5
-    IF(PRESENT(i6).and..not.present(i7)) READ(*,*,ERR=100) ient,i2,i3,i4,i5,i6
-    IF(PRESENT(i7).and..not.present(i8)) READ(*,*,ERR=100) ient,i2,i3,i4,i5,i6,i7
-    IF(PRESENT(i8).and..not.present(i9)) READ(*,*,ERR=100) ient,i2,i3,i4,i5,i6,i7,i8
-    IF(PRESENT(i9).and..not.present(i10)) READ(*,*,ERR=100) ient,i2,i3,i4,i5,i6,i7,i8,i9
-    IF(PRESENT(i10)) READ(*,*,ERR=100) ient,i2,i3,i4,i5,i6,i7,i8,i9,i10
-    i1=ient
-    return
-    100 continue
-    IF(.not.PRESENT(i2)) WRITE(*,*) i1
-    IF(PRESENT(i2).and..not.present(i3)) WRITE(*,'(1x,i6)') i1,i2
-    IF(PRESENT(i3).AND..not.present(i4)) WRITE(*,'(1x,i6)') i1,i2,i3
-    IF(PRESENT(i4).and..not.present(i5)) WRITE(*,'(1x,i6)') i1,i2,i3,i4
-    IF(PRESENT(i5).and..not.present(i6)) WRITE(*,'(1x,i6)') i1,i2,i3,i4,i5
-    IF(PRESENT(i6).and..not.present(i7)) WRITE(*,'(1x,i6)') i1,i2,i3,i4,i5,i6
-    IF(PRESENT(i7).and..not.present(i8)) WRITE(*,'(1x,i6)') i1,i2,i3,i4,i5,i6,i7
-    IF(PRESENT(i8).and..not.present(i9)) WRITE(*,'(1x,i6)') i1,i2,i3,i4,i5,i6,i7,i8
-    IF(PRESENT(i9).and..not.present(i10)) WRITE(*,'(1x,i6)') i1,i2,i3,i4,i5,i6,i7,i8,i9
-    IF(PRESENT(i10)) WRITE(*,'(1x,i6)') i1,i2,i3,i4,i5,i6,i7,i8,i9,i10
-    WRITE(*,*)
-  end subroutine
-  !
-  subroutine lis_entier_tableau(itab)
-    INTEGER,INTENT(INOUT),DIMENSION(:) :: itab
-    integer j, ient, n
-    n=SIZE(itab)
-    read(*,*,ERR=100) ient,(itab(j),j=2,n)
-    itab(1)=ient
-    return
-    100 continue
-    WRITE(*,'(1x,i6)') (itab(j),j=1,n)
-    WRITE(*,*)
-  end subroutine
-  !
-  subroutine lis_reel4(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10)
-    REAL(4), INTENT(INOUT) :: x1
-    REAL(4), INTENT(INOUT), optional :: x2,x3,x4,x5,x6,x7,x8,x9,x10
-    REAL(4) :: reel
-    IF(.not.present(x2)) READ(*,*,ERR=100) reel
-    IF(PRESENT(x2).and..not.present(x3)) READ(*,*,ERR=100) reel,x2
-    IF(PRESENT(x3).and..not.present(x4)) READ(*,*,ERR=100) reel,x2,x3
-    IF(PRESENT(x4).and..not.present(x5)) READ(*,*,ERR=100) reel,x2,x3,x4
-    IF(PRESENT(x5).and..not.present(x6)) READ(*,*,ERR=100) reel,x2,x3,x4,x5
-    IF(PRESENT(x6).and..not.present(x7)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6
-    IF(PRESENT(x7).and..not.present(x8)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7
-    IF(PRESENT(x8).and..not.present(x9)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7,x8
-    IF(PRESENT(x9).and..not.present(x10)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7,x8,x9
-    IF(PRESENT(x10)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7,x8,x9,x10
-    x1=reel
-    return
-    100 continue
-    IF(.not.PRESENT(x2)) WRITE(*,'(1x,e12.6)') x1
-    IF(PRESENT(x2).and..not.present(x3)) WRITE(*,'(1x,e12.6)') x1,x2
-    IF(PRESENT(x3).AND..not.present(x4)) WRITE(*,'(1x,e12.6)') x1,x2,x3
-    IF(PRESENT(x4).and..not.present(x5)) WRITE(*,'(1x,e12.6)') x1,x2,x3,x4
-    IF(PRESENT(x5).and..not.present(x6)) WRITE(*,'(1x,e12.6)') x1,x2,x3,x4,x5
-    IF(PRESENT(x6).and..not.present(x7)) WRITE(*,'(1x,e12.6)') x1,x2,x3,x4,x5,x6
-    IF(PRESENT(x7).and..not.present(x8)) WRITE(*,'(1x,e12.6)') x1,x2,x3,x4,x5,x6,x7
-    IF(PRESENT(x8).and..not.present(x9)) WRITE(*,'(1x,e12.6)') x1,x2,x3,x4,x5,x6,x7,x8
-    IF(PRESENT(x9).and..not.present(x10)) WRITE(*,'(1x,e12.6)') x1,x2,x3,x4,x5,x6,x7,x8,x9
-    IF(PRESENT(x10)) WRITE(*,'(1x,e12.6)') x1,x2,x3,x4,x5,x6,x7,x8,x9,x10
-    WRITE(*,*)
-  end subroutine
-  !
-  subroutine lis_reel4_tableau(xtab)
-    REAL(4),INTENT(INOUT),DIMENSION(:) :: xtab
-    real(4) reel
-    integer n, j
-    n=SIZE(xtab)
-    read(*,*,ERR=100) reel,(xtab(j),j=2,n)
-    xtab(1)=reel
-    return
-    100 continue
-    WRITE(*,'(1x,e12.6)') (xtab(j),j=1,n)
-    WRITE(*,*)
-  end subroutine
-  !
-  subroutine lis_reel8(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10)
-    REAL(8), INTENT(INOUT) :: x1
-    REAL(8), INTENT(INOUT), optional :: x2,x3,x4,x5,x6,x7,x8,x9,x10
-    REAL(8) :: reel
-    IF(.not.present(x2)) READ(*,*,ERR=100) reel
-    IF(PRESENT(x2).and..not.present(x3)) READ(*,*,ERR=100) reel,x2
-    IF(PRESENT(x3).and..not.present(x4)) READ(*,*,ERR=100) reel,x2,x3
-    IF(PRESENT(x4).and..not.present(x5)) READ(*,*,ERR=100) reel,x2,x3,x4
-    IF(PRESENT(x5).and..not.present(x6)) READ(*,*,ERR=100) reel,x2,x3,x4,x5
-    IF(PRESENT(x6).and..not.present(x7)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6
-    IF(PRESENT(x7).and..not.present(x8)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7
-    IF(PRESENT(x8).and..not.present(x9)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7,x8
-    IF(PRESENT(x9).and..not.present(x10)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7,x8,x9
-    IF(PRESENT(x10)) READ(*,*,ERR=100) reel,x2,x3,x4,x5,x6,x7,x8,x9,x10
-    x1=reel
-    return
-    100 continue
-    IF(.not.PRESENT(x2)) WRITE(*,'(1x,d23.15)') x1
-    IF(PRESENT(x2).and..not.present(x3)) WRITE(*,'(1x,d23.15)') x1,x2
-    IF(PRESENT(x3).AND..not.present(x4)) WRITE(*,'(1x,d23.15)') x1,x2,x3
-    IF(PRESENT(x4).and..not.present(x5)) WRITE(*,'(1x,d23.15)') x1,x2,x3,x4
-    IF(PRESENT(x5).and..not.present(x6)) WRITE(*,'(1x,d23.15)') x1,x2,x3,x4,x5
-    IF(PRESENT(x6).and..not.present(x7)) WRITE(*,'(1x,d23.15)') x1,x2,x3,x4,x5,x6
-    IF(PRESENT(x7).and..not.present(x8)) WRITE(*,'(1x,d23.15)') x1,x2,x3,x4,x5,x6,x7
-    IF(PRESENT(x8).and..not.present(x9)) WRITE(*,'(1x,d23.15)') x1,x2,x3,x4,x5,x6,x7,x8
-    IF(PRESENT(x9).and..not.present(x10)) WRITE(*,'(1x,d23.15)') x1,x2,x3,x4,x5,x6,x7,x8,x9
-    IF(PRESENT(x10)) WRITE(*,'(1x,d23.15)') x1,x2,x3,x4,x5,x6,x7,x8,x9,x10
-    WRITE(*,*)
-  end subroutine
-  !
-  subroutine lis_reel8_tableau(xtab)
-    REAL(8),INTENT(INOUT),DIMENSION(:) :: xtab
-    REAL(8) :: reel
-    integer j, n
-    n=SIZE(xtab)
-    read(*,*,ERR=100) reel,(xtab(j),j=2,n)
-    xtab(1)=reel
-    return
-    100 continue
-    WRITE(*,'(1x,d23.15)') (xtab(j),j=1,n)
-    WRITE(*,*)
-  end subroutine
-  !
-end module
 
 !     Last change:  LB    1 Feb 2016   12:51 pm
 !
@@ -157,6 +17,7 @@ module tableaux_dft_3d
   COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::gamma1,gamma1_proj,gamma2,gamma2_proj,gamma3_proj,gamma4_proj,gamma4_proj1
   INTEGER, DIMENSION(:),ALLOCATABLE:: mm,nn,ll,mumu,nunu
   REAL(8), DIMENSION(:),ALLOCATABLE:: ck
+  real(8), allocatable :: my_ck(:,:)
   COMPLEX(8), DIMENSION(:,:,:,:,:,:),ALLOCATABLE:: ck_omega_omega
   COMPLEX(8),DIMENSION(:,:,:,:,:),ALLOCATABLE:: tab5,tab6
   COMPLEX(8),DIMENSION(:,:,:,:),ALLOCATABLE:: tab4,tab7
@@ -182,17 +43,21 @@ subroutine energy_luc (ff,df)
   real(dp), intent(out) :: ff
   real(dp), intent(inout) :: df(:,:,:,:,:)
   type(c_ptr) :: plan_fft_c2c_3d_signe_plus, plan_fft_c2c_3d_signe_minus
-  complex(dp), allocatable :: in(:,:,:)
+  complex(dp), allocatable :: in(:,:,:), out(:,:,:)
   real :: time(0:20)
-  integer :: io, no, nx, ny, nz, np, iqx, iqy, iqz, itheta, iphi, ipsi, mmax, mmax2, m, mup, mu, mu2
+  integer :: io, no, nx, ny, nz, np, iqx, iqy, iqz, itheta, iphi, ipsi, mmax, mmax2, m, mup, mu, mu2, ix, iy ,iz, i, j, k, khi, m2
   complex(dp), parameter :: zeroc=cmplx(0,0,dp)
-  complex(dp), allocatable :: delta_rho_k_angle(:,:,:,:)
+  complex(dp), allocatable :: delta_rho_k_angle(:,:,:,:), gamma_k_angle(:,:,:,:)
   complex(dp), allocatable :: gamma_full(:,:,:,:) ! gamma(Ω,x,y,z)
   complex(dp), allocatable :: delta_rho_k_proj(:,:,:)
   complex(dp), allocatable :: gamma_k_proj(:,:,:) ! m mup mu2
   complex(dp), allocatable :: gamma_angle(:,:,:,:) ! omega, x y z
   real(dp) :: q(3), rho0
-  complex(dp) :: tmpc
+  complex(dp), allocatable :: delta_rho_k_proj_full(:,:,:,:,:,:)
+  complex(dp), allocatable :: gamma_k_proj_full(:,:,:,:,:,:)
+  complex(dp), allocatable :: delta_rho_prime_k_proj_full(:,:,:,:,:,:)
+  complex(dp) :: a, b
+  integer :: imqx, imqy, imqz
 
   ff=0
   no = grid%no
@@ -205,34 +70,68 @@ subroutine energy_luc (ff,df)
   mmax2=mmax/2
   call cpu_time(time(1))
 
-!
-! FOURIER TRANSFORM DE DELTA RHO
-!
-!
-allocate ( delta_rho_k_angle(no,nx,ny,nz) , source=zeroc)
-allocate ( in(nx,ny,nz), source=zeroc)
-call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, in, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
-call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, in, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
 
+allocate ( in(nx,ny,nz), source=zeroc)
+allocate ( out(nx,ny,nz), source=zeroc)
+call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, out, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, out, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
+
+!
+!
+! 1. FOURIER TRANSFORM DELTA RHO
+!
+!
+! call random_number( solvent(1)%xi )
+! solvent(1)%xi = solvent(1)%xi * 10
+
+allocate ( delta_rho_k_angle(no,nx,ny,nz) , source=zeroc)
+allocate ( gamma_k_angle(no,nx,ny,nz) , source=zeroc)
 
 do io=1,no
-  in = cmplx(solvent(1)%xi(io,:,:,:)**2*rho0-rho0,0,dp)  ! solvent%xi est réel
-  call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, in )
-  delta_rho_k_angle(io,:,:,:) = in  ! Δρ(Ω,qx,qy,qz)
+  in = cmplx(solvent(1)%xi(io,:,:,:)**2*rho0-rho0,0,dp)  ! Δρ(Ω,x,y,z)
+  call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, out )
+  delta_rho_k_angle(io,:,:,:) = out  ! Δρ(Ω,qx,qy,qz)
 end do
 
 
+!
+! on s'assure :
+! - la symétrie hermitienne est gardée
+! - surtout, on sait aller chercher q et -q dans les tableaux pour tous les q. Il n'y a pas d'exception, que nx, ny, nz soient pairs ou impairs.
+! Autrement dit, ce n'est pas vraiment la symétrie hermitienne qu'on teste, mais la fonction grid%ix_mq(ixq) qui a l'indice iqx trouve l'indice ix_mq correspondant à -q(ix_q)
+!
+goto 177
+do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
+  imqx = grid%ix_mq(iqx)
+  imqy = grid%iy_mq(iqy)
+  imqz = grid%iz_mq(iqz)
+  a = delta_rho_k_angle(io,iqx,iqy,iqz)
+  b = conjg(delta_rho_k_angle(io,imqx,imqy,imqz))
+  if (abs(a-b)>1.D-10)  error stop "raté pour la symétrie hermitienne de delta_rho_k_angle"
+end do
+177 continue
 
-! allocate (delta_rho_k_theta_phi_psi (grid%ntheta,grid%nphi,grid%npsi), source=zeroc)
+
+
+
+
+
+
 allocate (delta_rho_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
 allocate (gamma_k_proj    (0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
 
+allocate (delta_rho_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,nx,ny,nz) , source=zeroc)
+allocate (gamma_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,nx,ny,nz) , source=zeroc)
 
+!
+!
+! FOR A GIVEN Q
+!
+!
 do iqz=1,nz
+  print*, "... avancement ...",real(iqz)/real(nz)*100.,"%"
   do iqy=1,ny
     do iqx=1,nx
-
-PRINT*,"IKX IKY IKZ",iqx,iqy,iqz
 
 q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
 
@@ -246,120 +145,137 @@ do m=0,mmax
   do mup=-m,m
     do mu2=-m/2,m/2
       mu=2*mu2
-      delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum(   &
-[( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )] *delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w  )
+      delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum( delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w *  &
+        [( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )]   )
     end do
   end do
 end do
+! put delta_rho_k_proj into an array that stores all projections for all q. Utile seulement pour les tests
+delta_rho_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,iqx,iqy,iqz) = delta_rho_k_proj(:,:,:)
 
 
-
 !
 !
-! PASSAGE REPERE LIE A Q PUIS OZ PUIS REPASSAGE REPERE FIXE
+!   PASSAGE REPERE LIE A Q
+! + OZ
+! + REPASSAGE REPERE FIXE
 !
 !
-! PRINT*,"ATTENTION"
-! DO M=0,MMAX
-!   DO MUP=-M,M
-!     DO MU2=-M/2,M/2
-!       TMPC=DELTA_RHO_K_PROJ(M,MUP,MU2)
-!       IF(ABS(TMPC)>1.D-10)PRINT*,"WWWWWWWWWWWWWWWWWWWWWWWWWWW DELTA_RHO_K_PROJ",M,MUP,MU2,TMPC
-!     END DO
-!   END DO
-! END DO
+! On garde delta_rho_k_proj_full et gamma_k_proj_full qui sont des tableaux énormes mais pour vérifier qu'on a bien la symétrie
+! de l'équation 1.15 de Luc, c'est à dire entre delta_rho_alpha(q) et delta_rho_alpha'(-q)
+!
 call luc_oz (q, delta_rho_k_proj, gamma_k_proj)
-! PRINT*,"ATTENTION"
-! DO M=0,MMAX
-!   DO MUP=-M,M
-!     DO MU2=-M/2,M/2
-!       TMPC=GAMMA_K_PROJ(M,MUP,MU2)
-!       IF(ABS(TMPC)>1.D-10)PRINT*,"WWWWWWWWWWWWWWWWWWWWWWWWWWW    GAMMA_K_PROJ",M,MUP,MU2,TMPC
-!     END DO
-!   END DO
-! END DO
 
-! print*,"ENSUITE",norm2(abs(gamma_k_proj))
-! gamma_k_proj = delta_rho_k_proj
-! stop "me"
+gamma_k_proj_full(0:mmax,-mmax:mmax,-mmax2:mmax2,iqx,iqy,iqz) = gamma_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2)
+
 
 !
 !
 ! RETOUR EN ANGLES
 !
 !
-delta_rho_k_angle(:,iqx,iqy,iqz) = cmplx(0,0)
+gamma_k_angle(:,iqx,iqy,iqz) = (0,0)
 do io=1,no
   do m=0,mmax
     do mup=-m,m
       do mu2=-m/2,m/2
         mu=mu2*2
-        delta_rho_k_angle(io,iqx,iqy,iqz) = delta_rho_k_angle(io,iqx,iqy,iqz)   &
+        gamma_k_angle(io,iqx,iqy,iqz) = gamma_k_angle(io,iqx,iqy,iqz)   &
          + sqrt(real(2*m+1,dp)) * wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)) * gamma_k_proj(m,mup,mu2)
       end do
     end do
   end do
 end do
 
+end do ! iqx
+end do ! iqy
+end do ! iqz
 
-    end do
-  end do
-end do
 
-deallocate (delta_rho_k_proj )
+
+
+
+
+! ! est ce qu'on a bien la symetrie hermitienne sur gamma_k_angle ?
+! do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
+!   imqx = grid%ix_mq(iqx)
+!   imqy = grid%iy_mq(iqy)
+!   imqz = grid%iz_mq(iqz)
+!   a = gamma_k_angle(io,iqx,iqy,iqz)
+!   b = conjg(gamma_k_angle(io,imqx,imqy,imqz))
+!   if (abs(a-b)>1.D-10)  print*, io,iqx,iqy,iqz,a,b
+! end do
+! stop "hermite"
+!
+!
+! ! on teste 1.15
+! i = 0
+! do concurrent( iqx=1:nx, iqy=1:ny, iqz=1:nz )
+!   imqx = grid%ix_mq(iqx)
+!   imqy = grid%iy_mq(iqy)
+!   imqz = grid%iz_mq(iqz)
+!   do m=0,mmax
+!     do mup=-m,m
+!       do mu2=-m/2,m/2
+!         mu = 2*mu2
+!         a =        gamma_k_proj_full(m,-mup,-mu2,iqx,iqy,iqz)
+!         b =  (-1)**(mup+mu)*conjg(gamma_k_proj_full(m, mup, mu2,imqx,imqy,imqz))
+!         if (abs(a)>1.D-10) i=i+1
+!         if (abs(a-b)>1.D-10) print*, iqx,iqy,iqz,m,mup,mu,a,b
+!       end do
+!     end do
+!   end do
+! end do
+! print*,i,nx*ny*nz*mmax**3/3
+! stop "1.15 sur delta_rho_proj tel que lu par luc"
+!
+!
+! ! on teste 1.25 sur delta_rho_k_proj_prime
+! i = 0
+! do concurrent( iqx=1:nx, iqy=1:ny, iqz=1:nz )
+!   imqx = grid%ix_mq(iqx)
+!   imqy = grid%iy_mq(iqy)
+!   imqz = grid%iz_mq(iqz)
+!   do m=0,mmax
+!     do khi=-m,m
+!       do mu2=-m/2,m/2
+!         mu = 2*mu2
+!         a = gamma_k_proj_full(m,khi,-mu2,iqx,iqy,iqz)
+!         b = conjg(gamma_k_proj_full(m, khi, mu2,imqx,imqy,imqz)) * (-1)**(m+khi+mu)
+!         if (abs(a)>1.D-10) i=i+1
+!         if (abs(a-b)>1.D-10) print*, iqx,iqy,iqz,m,khi,mu,a,b,real(a)/real(b),imag(a)/imag(b)
+!       end do
+!     end do
+!   end do
+! end do
+! print*,i
+! stop "1.25 stop"
+
+
+deallocate (delta_rho_k_proj)
 deallocate (gamma_k_proj )
-
 
 !
 !
 ! INVERSE FOURIER TRANSFORM
 !
 !
-allocate( gamma_angle(no,nx,ny,nz), source=zeroc)
+if(.not.allocated(gamma_angle)) allocate( gamma_angle(no,nx,ny,nz))
+gamma_angle = zeroc
 do io=1,no
   in = delta_rho_k_angle(io,:,:,:)
-  call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, in)
-  gamma_angle(io,:,:,:) = in/real(nx*ny*nz,dp)
+  call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, out)
+  gamma_angle(io,:,:,:) = out/real(nx*ny*nz,dp)
 end do
 
 
-! ON TESTE QUE GAMMA(R,OMEGA) EST PUREMENT REEL
-! IF(ANY(IMAG(GAMMA_ANGLE)>1.D-8)) ERROR STOP "ANY @ IMAG(GAMMA) > 0"
-do iqz=1,nz
-  do iqy=1,ny
-    do iqx=1,nx
-      do io=1,no
-        if(IMAG(gamma_angle(io,iqx,iqy,iqz))>1.D-10)then
-           print*, "GAMMA(R,OMEGA) A UNE PARTIE IMAG A",iqx,iqy,iqz,io,gamma_angle(io,iqx,iqy,iqz)
-       end if
-      end do
-    end do
-  end do
+! On a maintenant notre gamma(r,omega). On veut testé qu'il soit purement réel.
+do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
+  if(imag(gamma_angle(io,iqx,iqy,iqz))>1.D-10) then
+    print*, "PROBELM     GAMMA(R,OMEGA) iqx,iqy,iqz,io",int([iqx,iqy,iqz,io],2),gamma_angle(io,iqx,iqy,iqz)
+    error stop
+  end if
 end do
-!
-! do io=1,no
-! print*, "ioio",io,gamma_angle(io,nx/2+1,ny/2+1,nz/2+1)
-! end do
-
-!
-!
-! POUR SI ON A CHINTÉ OZ ET DONC ON VERIFIE QU ON A BIEN FAIT UN ALLER RETOUR TOUT SIMPLE DE DELTA_RHO(R,OMEGA)
-! block
-!   complex(dp) :: a, b
-! do iqz=1,nz
-!   do iqy=1,ny
-!     do iqx=1,nx
-!       do io=1,no
-!         a = gamma_angle(io,iqx,iqy,iqz)
-!         b = cmplx(solvent(1)%xi(io,iqx,iqy,iqz)**2*rho0-rho0,0,dp)
-!         if(abs(a-b)>1.D-10) print*, "putain de merde"
-!       end do
-!     end do
-!   end do
-! end do
-! end block
-
-
 
 
 call cpu_time (time(3))
@@ -367,8 +283,53 @@ deallocate(in)
 deallocate(delta_rho_k_angle)
 
 df=df
-stop "toute fin de la routine energy_luc OK"
+stop "toute fin de la routine energy_luc OK. Tout va bien."
 end subroutine energy_luc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -384,6 +345,7 @@ end subroutine energy_luc
     CHARACTER(10) texte1
     COMPLEX(8)::xi_cmplx,auxi_cmplx,ck_cmplx,coeff_cmplx,coeff1_cmplx,coeff2_cmplx
     integer :: mmax
+    logical :: qz_was_negatif
     !
     !interface
     !subroutine proj_angl(f_proj,f_ang)
@@ -399,7 +361,6 @@ end subroutine energy_luc
     !end subroutine
     !END interface
     !
-    mmax = grid%mmax
     fac(0)=1.
     do k=1,50
       fac(k)=fac(k-1)*REAL(k)
@@ -418,7 +379,7 @@ end subroutine energy_luc
     ! PRINT*, '4 methodes differentes'
     ! PRINT*, '********************************************************************************'
     mnmax=grid%mmax
-    mnmax2=INT(mnmax/2)
+    mnmax2=mnmax/2
     ! PRINT*, 'Valeur de nmax --->', mnmax
     nbeta=grid%ntheta
     nphi=grid%nphi
@@ -496,7 +457,11 @@ end subroutine energy_luc
     qz=qvec(3)
     qq=SQRT(qx**2+qy**2+qz**2)
     ! PRINT*, 'Coordonnees x,y,z du vecteur q  (en A-1) --->',qx,qy,qz,'ce qui donne q --->',qq
-    if(abs(qx)+abs(q2)<=epsilon(1.)) then
+
+
+
+
+    if(abs(qx)+abs(qy)<=epsilon(1.)) then
       theta_q = 0.
       phi_q = 0.
     else
@@ -504,14 +469,47 @@ end subroutine energy_luc
       theta_q=ACOS(c_theta_q)
       s_theta_q=SIN(theta_q)
       c_phi_q=qx/qq/s_theta_q
-      if(abs(c_phi_q)-1<1.D-10) then
+      if(abs(c_phi_q-1)<epsilon(1.)) then
         phi_q=0.
+      else if(abs(c_phi_q+1)<epsilon(1.)) then
+        phi_q=acos(-1.d0)
       else
         phi_q=ACOS(c_phi_q)
         IF(qy<0.) phi_q=-phi_q
       end if
       s_phi_q=SIN(phi_q)
     end if
+
+block
+  use module_rotation, only: thetaofq, phiofq
+    theta_q = thetaofq(qx,qy,qz)
+    phi_q   = phiofq(qx,qy,qz)
+end block
+
+! block
+!   use module_rotation, only: thetaofq, phiofq
+!   print*, theta_q,phi_q, thetaofq(qx,qy,qz), phiofq(qx,qy,qz)
+! end block
+
+
+    ! if(abs(qx)+abs(qy)<=epsilon(1.)) then
+    !   theta_q = 0.
+    !   phi_q = 0.
+    ! else
+    !   c_theta_q=qz/qq                        ! angles theta,phi pour q
+    !   theta_q=ACOS(c_theta_q)
+    !   s_theta_q=SIN(theta_q)
+    !   c_phi_q=qx/qq/s_theta_q
+    !   if(abs(c_phi_q-1)<epsilon(1.)) then
+    !     phi_q=0.
+    !   else if(abs(c_phi_q+1)<epsilon(1.)) then
+    !     phi_q=acos(-1.d0)
+    !   else
+    !     phi_q=ACOS(c_phi_q)
+    !     IF(qy<0.) phi_q=-phi_q  !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    !   end if
+    !   s_phi_q=SIN(phi_q)
+    ! end if
 
 
     !           les elements Rllambda0(q)
@@ -522,6 +520,7 @@ end subroutine energy_luc
         harsph_q(l,lambda)=harm_sph(l,lambda,0,theta_q)*EXP(-xi_cmplx*lambda*phi_q)
       end do
     end do
+    if(any(harsph_q/=harsph_q)) error stop "problem detected in harsph_q"
     !                      les elements Rmmu'khi(q)          (psi(q)=0)
     if(.not.allocated(harsph1_q)) ALLOCATE(harsph1_q(0:mnmax,-mnmax:mnmax,-mnmax:mnmax))
     harsph1_q=0.
@@ -532,28 +531,31 @@ end subroutine energy_luc
         end do
       end do
     end do
+    if(any(harsph1_q/=harsph1_q)) error stop "problem detected in harsph1_q"
+
     !          test des R*R
-    do khi=-mnmax,mnmax
-      do m=0,mnmax
-        do n=0,mnmax
-          do l=-ABS(m-n),m+n
-            do nu1=-n,n
-              coeff_cmplx=0.
-              do mu1=-m,m
-                do lambda1=-l,l
-                  coeff_cmplx=coeff_cmplx+symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)*harsph1_q(m,mu1,khi)
-                end do
-              end do
-              coeff1_cmplx=(-1)**(nu1+khi)*symbol_3j(m,n,l,khi,-khi,0)*harsph1_q(n,-nu1,khi)
-              IF(ABS(coeff1_cmplx-coeff_cmplx)>1.d-10) then
-                PRINT*, m,n,l,nu1,khi,coeff_cmplx,coeff1_cmplx
-                error stop "test des R*R raté"
-              end if
-            end do
-          end do
-        end do
-      end do
-    end do
+    ! do khi=-mnmax,mnmax
+    !   do m=0,mnmax
+    !     do n=0,mnmax
+    !       do l=-ABS(m-n),m+n
+    !         do nu1=-n,n
+    !           coeff_cmplx=0.
+    !           do mu1=-m,m
+    !             do lambda1=-l,l
+    !               print*, coeff_cmplx, symbol_3j(m,n,l,mu1,nu1,lambda1),harsph_q(l,lambda1),harsph1_q(m,mu1,khi)
+    !               coeff_cmplx=coeff_cmplx+symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)*harsph1_q(m,mu1,khi)
+    !             end do
+    !           end do
+    !           coeff1_cmplx=(-1)**(nu1+khi)*symbol_3j(m,n,l,khi,-khi,0)*harsph1_q(n,-nu1,khi)
+    !           IF(ABS(coeff1_cmplx-coeff_cmplx)>1.d-10) then
+    !             PRINT*, m,n,l,nu1,khi,coeff_cmplx,coeff1_cmplx
+    !             error stop "test des R*R raté"
+    !           end if
+    !         end do
+    !       end do
+    !     end do
+    !   end do
+    ! end do
     !          fin de test
     !
     !                           on definit ou lit les projections de delta_rho de depart (complexes!)
@@ -605,7 +607,7 @@ end subroutine energy_luc
     ! PRINT*, 'nombre de lignes de baratin --->', n_baratin
     ialpmax=549
     ! PRINT*, 'Nombre de projections --->', ialpmax
-    if(.not.allocated(mm)) ALLOCATE(mm(ialpmax),nn(ialpmax),ll(ialpmax),mumu(ialpmax),nunu(ialpmax),ck(ialpmax))
+    if(.not.allocated(ck)) ALLOCATE(mm(ialpmax),nn(ialpmax),ll(ialpmax),mumu(ialpmax),nunu(ialpmax),ck(ialpmax))
     do i=1,n_baratin
       READ(7,*) texte
       ! PRINT*, texte
@@ -818,8 +820,8 @@ end subroutine energy_luc
             ! !          d'abord, je calcule les cmnmunu;khi     mis dans tab5(m,n,khi,mu,nu)
             ! !
             if(.not.allocated(tab3)) ALLOCATE (tab3(-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2),       &
-            tab4(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2),       &
-            tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
+                                               tab4(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2),       &
+                                               tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
             ! PRINT*, 'ckhi'
             !
             tab5=0.
@@ -852,7 +854,7 @@ end subroutine energy_luc
 
 
 
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             ! !         test a partir de tab6 , reussi
             ! GOTO 217                   ! je shunte les 2 tests a venir puisque reussis
             ! PRINT*, 'test a partir de tableaux a 5 entrees cmnmunu'
@@ -865,7 +867,7 @@ end subroutine energy_luc
             !           do l=0,2*mnmax
             !             coeff_cmplx=coeff_cmplx+symbol_3j(m,n,l,khi,-khi,0)*tab6(m,n,l,mu2,nu2)
             !           end do
-            !           IF(ABS(tab5(m,n,khi,mu2,nu2)-coeff_cmplx)>1.d-10) PRINT*, m,n,khi,2*mu2,2*nu2,coeff_cmplx,tab5(m,n,khi,mu2,nu2)
+            !       IF(ABS(tab5(m,n,khi,mu2,nu2)-coeff_cmplx)>1.d-10) PRINT*, m,n,khi,2*mu2,2*nu2,coeff_cmplx,tab5(m,n,khi,mu2,nu2)
             !         end do
             !       end do
             !     end do
@@ -1090,7 +1092,7 @@ end subroutine energy_luc
             end do                      ! fin mu'
     !
     !
-    !            Methode 4: projections mais en passant par le repere local
+    !            METHODE 4: projections mais en passant par le repere local
     !
     !
     ! PRINT*, '********************************************************************************'
@@ -1109,7 +1111,7 @@ end subroutine energy_luc
       end do
     end do
     ! test aller-retour  reussi donc shunte
-    GOTO 417
+    !GOTO 417
     ! PRINT*, 'test retour a deltarho_proj'
     gamma4_proj=0.
     do m=0,mnmax
@@ -1132,12 +1134,14 @@ end subroutine energy_luc
       do mu2=-mnmax2,mnmax2
         mu=2*mu2
         do m=MAX(ABS(khi),ABS(mu)),mnmax
+
           do nu2=-mnmax2,mnmax2
             nu=2*nu2
             do n=MAX(ABS(khi),ABS(nu)),mnmax
-              gamma4_proj1(m,khi,mu2)=gamma4_proj1(m,khi,mu2)+(-1)**khi*tab5(m,n,khi,mu2,nu2)*delta_rho_proj1(n,khi,-nu2)
+              gamma4_proj1(m,khi,mu2)=gamma4_proj1(m,khi,mu2)+(-1)**khi *tab5(m,n,khi,mu2,nu2) *delta_rho_proj1(n,khi,-nu2)
             end do
           end do
+
         end do
       end do
     end do
@@ -1152,8 +1156,9 @@ end subroutine energy_luc
         end do
       end do
     end do
-    if (any(gamma4_proj/=gamma4_proj)) error stop "je suis tristement triste"
     my_gamma_proj = gamma4_proj
+
+
 
     !
     !
@@ -1169,8 +1174,6 @@ end subroutine energy_luc
       do mu1=-m,m
         do mu2=-m2,m2
           mu=2*mu2
-          tmpc=gamma3_proj(m,mu1,mu2)-gamma4_proj(m,mu1,mu2)
-          if(abs(tmpc)>1.D-10)PRINT*, m,mu1,mu,abs(tmpc)
           ! PRINT*, m,mu1,mu,gamma1_proj(m,mu1,mu2),gamma2_proj(m,mu1,mu2),gamma3_proj(m,mu1,mu2),gamma4_proj(m,mu1,mu2)
           if(gamma4_proj(m,mu1,mu2)/=gamma4_proj(m,mu1,mu2)) then
             print*, qx,qy,qz

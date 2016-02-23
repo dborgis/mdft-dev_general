@@ -41,7 +41,10 @@ contains
         use module_energy_cs, only: energy_cs
         use module_energy_cdeltacd, only: energy_cdeltacd
         use module_energy_cproj_mrso, only: energy_cproj_mrso
+        use module_energy_cproj_no_symetry, only: energy_cproj_no_symetry
         use module_energy_ck_angular, only: energy_ck_angular
+        use module_energy_luc, only: energy_luc
+        use module_input, only: getinput
         ! use module_energy_cproj_slow, only: energy_cproj_slow
 
         implicit none
@@ -74,7 +77,6 @@ contains
 
         print*,
 
-        if( ff%pscheme_correction==-999._dp) call corrections
 
         do s=1,solvent(1)%nspec
             if (solvent(s)%do%id_and_ext) then
@@ -101,9 +103,12 @@ contains
             ! end if
             if (solvent(s)%do%exc_cproj) then
                 call cpu_time(t(7))
-                call energy_cproj_mrso (ff%exc_cproj, df)
+                ! call energy_cproj_mrso (ff%exc_cproj, df)
+                ! call energy_cproj_no_symetry (ff%exc_cproj, df)
+                call energy_luc ( ff%exc_cproj , df )
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
+                stop "energy_and_gradient after call to energy_luc"
                 ! print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
                 f = f + ff%exc_cproj
             end if
@@ -111,13 +116,17 @@ contains
             !     call cpu_time(t(9))
             !     call energy_ck_angular (ff%exc_ck_angular, df)
             !     call cpu_time(t(10))
-            !     print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec   <======= COMPTE DANS LA MINIMIZATION"
+            !     print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec"
             !     f = f + ff%exc_ck_angular
             ! end if
-                print*, "ff%pscheme corr   =", ff%pscheme_correction
-                f = f + ff%pscheme_correction
-                print*, "ff%pbc correction =", ff%pbc_correction
-                f = f + ff%pbc_correction
+
+            if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
+              if( ff%pscheme_correction==-999._dp) call corrections
+              print*, "ff%pscheme corr   =", ff%pscheme_correction
+              f = f + ff%pscheme_correction
+              print*, "ff%pbc correction =", ff%pbc_correction
+              f = f + ff%pbc_correction
+            end if
 
 
 

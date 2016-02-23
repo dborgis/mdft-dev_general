@@ -23,6 +23,7 @@ contains
         integer :: i, j, k, io, s, ios
         logical :: exists, vextq_is_allocated
         real(dp) :: v, threeshold_in_betav, betav
+        real(dp), allocatable :: xi_loc(:)
 
         ! Be sure the solvent is already initiated
         if (.not. allocated(solvent)) then
@@ -81,33 +82,61 @@ contains
         end select
 !        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
 
+        ! allocate (xi_loc(1:grid%no))
+        ! s=1
+        ! do k = 1, grid%nz
+        !   do j = 1, grid%ny
+        !     do i = 1, grid%nx
+        !
+        !       do io = 1, grid%no
+        !         if ( thermo%beta*solvent(1)%vext(io,i,j,k) >= threeshold_in_betav ) then
+        !           xi_loc(io) = 0._dp
+        !         else
+        !           xi_loc(io) = -sqrt(exp(-thermo%beta*solvent(1)%vext(io,i,j,k))) ! xi**2=rho/rho0=exp(-beta*v)
+        !         end if
+        !       end do
+        !       solvent(1)%xi(:,i,j,k) = xi_loc
+        !
+        !     end do
+        !   end do
+        ! end do
+        ! deallocate (xi_loc)
 
-        do concurrent (s=1: solvent(1)%nspec)
-            vextq_is_allocated = allocated (solvent(s)%vextq)
-                do k = 1, grid%nz
-                    do j = 1, grid%ny
-                        do i = 1, grid%nx
-                            do io = 1, grid%no
-
-                            ! if (vextq_is_allocated) then
-                            !     v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
-                            ! else
-                                v = solvent(s)%vext(io,i,j,k)
-                            ! end if
-
-                            betav = thermo%beta * v
-
-                            if ( betav >= threeshold_in_betav ) then
-                                solvent(s)%xi(io,i,j,k) = 0.0_dp ! highly repulsive potential induces zero density
-                            else
-                                solvent(s)%xi(io,i,j,k) = sqrt(exp(-betav)) ! xi**2=rho/rho0=exp(-beta*v)
-                            end if
-
-                        end do
-                    end do
-                end do
+        ! dans ce bloc, j'initialise la xi au profil du methane (neutre)
+        block
+          use module_solute, only: solute
+          integer, parameter :: N=10000
+          real(dp) :: g0(1:N), r
+          real(dp), parameter :: dr=0.010001_dp
+          integer :: ir, ix, iy, iz
+          open(33,file="input/fine_g0.dat")
+          do ir=1,N
+            read(33,*) r, g0(ir)
+          end do
+          if (any(g0<0)) then
+            error stop "The g(r) of methane that is used to init the density is negative somewhere! impossible"
+          end if
+          close(33)
+          do iz=1,grid%nz
+            do iy=1,grid%ny
+              do ix=1,grid%nx
+                r  = sqrt( (ix*grid%dx - solute%site(1)%r(1) )**2 &
+                         + (iy*grid%dy - solute%site(1)%r(2) )**2 &
+                         + (iz*grid%dz - solute%site(1)%r(3) )**2 )
+                ir = int(r/dr +0.5) +1
+                if (ir >N) ir=N
+                solvent(1)%xi(:,ix,iy,iz) = sqrt(g0(ir)) * 10*cos(grid%theta(:)) * sin(grid%phi(:)) * cos(grid%psi(:))
+              end do
             end do
-        end do
+          end do
+          pRINT*, "ATTTTTENTION ON A INIT LA DENSITE A UN TRUC BIZARRE QUI DEPEND DE THETA ET PHI ET PSI JUSTE POUR PAS QUE CONST"
+        end block
+
+        ! where (solvent(1)%vext > 100._dp)
+        !   solvent(1)%xi = 0._dp
+        ! else where
+        !   solvent(1)%xi = 1._dp
+        ! end where
 
     end subroutine init_density
 

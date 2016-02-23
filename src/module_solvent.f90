@@ -4,6 +4,7 @@ module module_solvent
     use system, only: site_type
     use module_input, only: getinput
     use module_grid, only: grid
+    use constants, only: qfact
 
     implicit none
     private
@@ -44,7 +45,7 @@ module module_solvent
         complex(dp), allocatable :: sigma_k(:,:,:,:) ! charge factor
         complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! molecule polarization factor
         real(dp), allocatable :: vext(:,:,:,:), vextq(:,:,:,:)
-        real(dp) :: vext_threeshold = 100._dp!36.04_dp ! 36.something is the maximum value of v so that exp(-beta.v) does not return underflow at 300 K
+        real(dp) :: vext_threeshold = qfact/2.0_dp !100._dp!36.04_dp ! 36.something is the maximum value of v so that exp(-beta.v) does not return underflow at 300 K
         type(do_type) :: do
         real(dp) :: mole_fraction = 1._dp
         type(correlationfunction_type) :: cs

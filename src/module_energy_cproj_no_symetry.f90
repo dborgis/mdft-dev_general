@@ -60,6 +60,7 @@ contains
     use module_grid, only: grid
     use module_thermo, only: thermo
     use module_solvent, only: solvent
+    use module_oz, only: oz
 
     implicit none
 
@@ -68,7 +69,7 @@ contains
     real(dp) :: dv, kT
     integer :: ix, iy, iz, ix_q, iy_q, iz_q, p
     integer :: nx, ny, nz, np, no, ns, mmax, na, nq, mrso
-    integer :: m, n, mu, nu, khi, mup, ia, ip, iq, io
+    integer :: m, n, mu, nu, khi, mup, ip, iq, io
     real(dp) :: q(3), lx, ly, lz, rho0
     real :: time(20)
     real(dp) :: vexc(grid%no), rho, xi
@@ -93,9 +94,10 @@ contains
     real(dp), allocatable ::    gamma(:,:,:,:) ! gamma dans l'espace réel, repère fixe, en orientations
 
     complex(dp) :: cfulltest(2002,200) ! DOIT ETRE VIRE DES QUE CA FONCTIONNE TODO
-    integer :: ptest(0:5,0:5,-5:5,-5:5,-5:5)  ! DOIT ETRE VIRE DES QUE CA FONCTIONNE TODO
-    integer :: iqtest
+    integer :: ptest(0:5,0:5,-5:5,-5:5,-5:5)  ! DOIT ETRE VIRE DES QUE CA FONCTIONNE TODO m n mu nu khi
+    integer :: iqtest, mu2
     complex(dp) :: a, b
+    logical :: resultat
 
     call cpu_time(time(12))
 
@@ -183,7 +185,7 @@ contains
     ! On testera ainsi deux choses : 1/ qu'on a bien en fin de cette routine un Ɣ(Ω,x,y,z) dont la partie imaginaire est nulle.
     ! ici on passe d'abord xi dans un tableau de complexes en k. On va travailler sans tenir compte de la symétrie hermitienne
     !
-    allocate( deltarho_k(no,nx,ny,nz), source=zeroc)
+    allocate( deltarho_k(no,nx,ny,nz), source=zeroc )
 
     !
     ! Transformée de Fourier 3D de Δρ(Ω,x,y,z)
@@ -205,57 +207,11 @@ contains
     call cpu_time(time(2))
     print*, "<<<<< FFT en",time(2)-time(1),"seconds"
 
-    !
-    ! Vérification de la symétrie dûe a la fonction de départ purement réelle
-    ! cf equations 1.15 de Luc
-    !
-    block
-      complex(dp) :: a, b
-      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
 
-      do iz_q=1,nz
-        do iy_q=1,ny
-          do ix_q=1,nx
-
-
-            if (ix_q == 1) then
-              ix_mq = ix_q
-            else if (ix_q == nx/2 +1) then
-              cycle
-            else
-              ix_mq = nx - ix_q + 2
-            end if
-
-            if (iy_q == 1) then
-              iy_mq = iy_q
-            else if (iy_q == ny/2 +1) then
-              cycle
-            else
-              iy_mq = ny - iy_q + 2
-            end if
-
-            if (iz_q == 1) then
-              iz_mq = iz_q
-            else if (iz_q == nz/2 +1) then
-              cycle
-            else
-              iz_mq = nz - iz_q + 2
-            end if
-
-            do io=1,no
-              a = deltarho_k(io,ix_q,iy_q,iz_q)
-              b = conjg(deltarho_k(io,ix_mq,iy_mq,iz_mq))
-              if (abs(a-b)>1.D-10) then
-                error stop "symetrie hermicienne non respectee pour deltarho_k"
-              end if
-            end do
-
-          end do
-        end do
-      end do
-    end block
-
-
+    do io=1,no
+      call verify_hermitian_symetry (deltarho_k(io,:,:,:), resultat) ! since deltarho is real
+      if (resultat.eqv..false.) error stop "Δρ(Ω,q) /= Δρ*(Ω,-q)"
+    end do
 
 
 
@@ -270,7 +226,9 @@ contains
 
 
     !
-    ! Passage en projections de Δρ(Ω,qx,qy,qz)
+    ! PASSAGE EN PROJECTIONS
+    !
+    ! for each vector q, Δρ(Ω) -> Δρ m mup mu
     !
     call cpu_time(time(1))
     allocate( deltarho_k_p(np,nx,ny,nz) ,source=zeroc )
@@ -296,6 +254,8 @@ contains
         end do
       end do
 !$OMP END PARALLEL DO
+
+
       !
       ! On verifie les symetries sur wigner_big_D
       !
@@ -313,47 +273,26 @@ contains
       ! On prend le conjugué de la R^m_mup_mu(\Omega) car c'est bien le conjugué qui doit être utilisé pour la projection
       !
       temp_wigner_big_D = conjg(temp_wigner_big_D)
-      do iz=1,nz
-        do iy=1,ny
-          do ix=1,nx
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
             do p=1,np
                ! les grid%w(1:no) sont les poids des quadratures angulaires. Pour rappel, la somme des poids fait 8 pi² ~ 79
-              deltarho_k_p(p,ix,iy,iz) = fm_of_p(p) * sum( deltarho_k(:,ix,iy,iz) * grid%w(:) * temp_wigner_big_D(:,p) )
-              if (mod(p3%mu(p),2)/=0 .and. abs(deltarho_k_p(p,ix,iy,iz))>1.D-10) error stop "deltarho_k_p va pas bien"
-              ! if(  mod(p3%mu(p) ,2)/=0  )  print*, "p,m,mup,mu",p,p3%m(p), p3%mup(p), p3%mu(p),deltarho_k_p(p,ix,iy,iz)
+              deltarho_k_p(p,ix_q,iy_q,iz_q) = fm_of_p(p) * sum( deltarho_k(:,ix_q,iy_q,iz_q) * grid%w(:) * temp_wigner_big_D(:,p) )
             end do
           end do
         end do
       end do
       deallocate (temp_wigner_big_D, fm_of_p)
+
     end block
     deallocate (deltarho_k)
     call cpu_time(time(2))
     print*, "<<<<< projection en r terminé en", time(2)-time(1), "seconds"
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    call verify_hermitian_symetry_of_projections(deltarho_k_p ,resultat)
+    if (resultat .eqv. .false.) error stop "see l. 294"
 
 
 
@@ -369,46 +308,19 @@ contains
       do iz_q=1,nz
         do iy_q=1,ny
           do ix_q=1,nx
-
             do p=1,np
 
-              m = p3%m(p)
-              mup = p3%mup(p)
-              mu = p3%mu(p)
-
-              !
-              ! on cherche le l'indice correspond à -q
-              !
-              if (ix_q == 1) then
-                ix_mq = ix_q
-              else if (ix_q == nx/2 +1) then
-                cycle
-              else
-                ix_mq = nx - ix_q + 2
-              end if
-
-              if (iy_q == 1) then
-                iy_mq = iy_q
-              else if (iy_q == ny/2 +1) then
-                cycle
-              else
-                iy_mq = ny - iy_q + 2
-              end if
-
-              if (iz_q == 1) then
-                iz_mq = iz_q
-              else if (iz_q == nz/2 +1) then
-                cycle
-              else
-                iz_mq = nz - iz_q + 2
-              end if
+              ix_mq = grid%ix_mq(ix_q)
+              iy_mq = grid%iy_mq(iy_q)
+              iz_mq = grid%iz_mq(iz_q)
+              if (ix_mq<=0 .or. iy_mq<=0 .or. iz_mq<=0) cycle
 
               a = deltarho_k_p (p3%p(m, mup, mu),ix_mq,iy_mq,iz_mq)
               a = conjg(a)*(-1)**(mup+mu)
               b = deltarho_k_p (p3%p(m,-mup,-mu),ix_q,iy_q,iz_q)
 
               if (abs(a-b)/=0) then
-                error stop "La symétrie 1.15 n'est pas vérifiée"
+                error stop "La symétrie 1.15 n'est pas vérifiée pour deltarho_k_p"
               end if
 
             end do
@@ -419,8 +331,46 @@ contains
     end block
 
 
+
+
+print*, "BLOCK OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ FINI"
+
+  block
+    ! use module_oz, only: OZ
+    logical :: foundbug
+
+    complex(dp) :: delta_rho_proj(0:mmax,-mmax:mmax,-mmax/2:mmax/2) ! je garde les noms de variables de Luc
+    delta_rho_proj = cmplx(0,0)
+
+
+    do m=0,mmax
+      do mup=-m,m
+        do mu2=-m/2,m/2
+          mu=mu2*2
+          delta_rho_proj(m,mup,mu) = deltarho_k_p(p3%p(m,mup,mu),ix_q,iy_q,iz_q)
+        end do
+      end do
+    end do
+
+
+    do iz_q=1,nz
+      do iy_q=1,ny
+        do ix_q=1,nx
+          q = [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
+          ! call OZ ( deltarho_k_p(1:np,ix_q,iy_q,iz_q), q, mmax, gamma_k_p(1:np,ix_q,iy_q,iz_q), foundbug )
+          if (foundbug) error stop "l.348"
+        end do
+      end do
+    end do
+  end block
+
+print*, "BLOCK OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ OZ FINI"
+stop
+
     !
-    ! Rotation vers repaire lié à q:  Δρ^m_µ'µ (qx,qy,qz)  => Δρ'^m_χ_µ (qx,qy,qz)
+    ! ROTATION VERS REPAIRE LIE A Q
+    !
+    ! Δρ^m_µ'µ  => Δρ'^m_χ_µ
     !
     call cpu_time(time(1))
     allocate( deltarho_prime_k_p(np,nx,ny,nz) ,source=zeroc )
@@ -428,7 +378,6 @@ contains
       use module_wigner_d, only: wigner_big_D
       use module_rotation, only: thetaofq, phiofq
       complex(dp), allocatable :: R(:,:,:) ! R^m_{mup,mu} (\hat{q})
-      complex(dp) :: a
       allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
       do iz_q=1,nz
         do iy_q=1,ny
@@ -508,7 +457,7 @@ contains
               b = deltarho_prime_k_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
 
               if (abs(a-b) >1.E-10 ) then
-                if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
+                ! if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
                 print*,
                 print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
                 print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
@@ -518,7 +467,7 @@ contains
                 print*, a
                 print*, b
                 print*, a-b
-                error stop "La symétrie 1.15 n'est pas vérifiée"
+                error stop "La symétrie 1.15 n'est pas vérifiée pour deltarho_prime_k_p"
               end if
 
             end do
@@ -528,6 +477,9 @@ contains
       end do
     end block
 
+
+p = p3%p(1,1,1)
+print*, "DELTARHO GRRR", deltarho_prime_k_p(p,2,3,4) ; stop "ok"
 
 
     !
@@ -557,7 +509,7 @@ contains
 
 
     block
-      integer :: p, m, n, mu, nu, khi
+      integer :: m, n, mu, nu, khi
       print*, "opening /home/levesque/Recherche/00__BELLONI/2016__02/reconstruction_des_ck_depuis_luc_ck_nmax5/ck_nmax5_max"
       open(89, file="/home/levesque/Recherche/00__BELLONI/2016__02/reconstruction_des_ck_depuis_luc_ck_nmax5/ck_nmax5_max")
         do khi=-mmax,mmax
@@ -578,6 +530,165 @@ contains
     end block
 
 
+
+    block
+      use module_wigner_d, only: symbol_3j
+      integer :: mmax2, khi, ialp, m, n, l, mu, nu, mu2, nu2, i, m2, n2, coeff
+      integer, parameter :: ialpmax = 549
+      integer, parameter :: n_baratin = 5
+      complex(dp) :: coeff_cmplx
+      complex(dp), parameter :: xi_cmplx=cmplx(0,1,dp)
+      integer, allocatable, dimension(:) :: mm, nn, ll, mumu, nunu
+      character(50) :: texte
+      character(10) :: texte1
+      double precision :: q
+      REAL(8), allocatable :: ck(:,:)
+      complex(dp), allocatable :: tab6(:,:,:,:,:   ,:) ! m n l mu2 nu2  iq
+      complex(dp), allocatable :: tab5(:,:,:,:,:   ,:) ! m n khi, mu2 nu2    iq
+      integer :: mnmax, mnmax2
+      integer, parameter :: nq=1024
+      mnmax=mmax
+      mmax2=mmax/2
+      mnmax2=mmax2
+      !
+      !                          on lit les projections mnlmunu de ck
+      !
+      PRINT*, '********************************************************************************'
+      PRINT*, 'Lecture des cmnlmunu(q) dans un fichier'
+      PRINT*, 'ce fichier contient apres quelques lignes de baratin la ligne des m puis celle des n...'
+      PRINT*, 'suivies des lignes de q,cmnlmunu(q) (on choisira le q le plus proche, par exces)'
+      PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
+      print*, "reading /home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt"
+      OPEN(7, file="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt", STATUS='old')
+      ALLOCATE(mm(ialpmax),nn(ialpmax),ll(ialpmax),mumu(ialpmax),nunu(ialpmax),ck(ialpmax,nq))
+      do i=1,n_baratin
+        READ(7,*) texte
+      end do
+      READ(7,*) texte1,mm
+      PRINT*, texte1,mm(1:10),"..."
+      READ(7,*) texte1,nn
+      PRINT*, texte1,nn(1:10),"..."
+      READ(7,*) texte1,ll
+      PRINT*, texte1,ll(1:10),"..."
+      READ(7,*) texte1,mumu
+      PRINT*, texte1,mumu(1:10),"..."
+      READ(7,*) texte1,nunu
+      PRINT*, texte1,nunu(1:10),"..."
+      ! do i=1,10000
+      do i=1,nq
+        READ(7,*) q,ck(:,i)
+      end do
+      CLOSE(7)
+      print*, "finished reading /home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt"
+      !   je construis en tableau a 5 entrees cmnlmunu pour tests ulterieurs
+      ALLOCATE (tab6(0:mmax,0:mmax,0:2*mmax,-mmax2:mmax2,-mmax2:mmax2,nq))
+      tab6=(0,0)
+      do iq=1,nq
+        do ialp=1,ialpmax
+          m=mm(ialp)
+          n=nn(ialp)
+          l=ll(ialp)
+          mu=mumu(ialp)
+          nu=nunu(ialp)
+          mu2=mu/2
+          nu2=nu/2
+          coeff_cmplx= ck(ialp,iq) ! ck est reel
+          IF((-1)**l==-1) coeff_cmplx=xi_cmplx*ck(ialp,iq)
+          tab6(m,n,l,mu2,nu2,iq)=coeff_cmplx
+          tab6(m,n,l,-mu2,-nu2,iq)=(-1)**(m+n+l)*coeff_cmplx
+          tab6(n,m,l,nu2,mu2,iq)=(-1)**(m+n)*coeff_cmplx
+          tab6(n,m,l,-nu2,-mu2,iq)=(-1)**l*coeff_cmplx
+        end do
+      end do
+    !
+    !   !
+    !   !                           on a donc tout ce qui nous faut pour calculer le produit de convolution
+      allocate (tab5(0:mmax,0:mmax,-mmax:mmax,-mmax2:mmax2,-mmax2:mmax2 ,nq))
+      tab5 = (0,0)
+      do iq=1,nq
+        do khi=0,mmax                ! que khi>=0 pour l'instant
+          do ialp=1,ialpmax
+            m=mm(ialp)
+            n=nn(ialp)
+            l=ll(ialp)
+            mu=mumu(ialp)
+            nu=nunu(ialp)
+            if ( khi > min(m,n) ) cycle
+            mu2=mu/2
+            nu2=nu/2
+            coeff_cmplx = symbol_3j(m,n,l,khi,-khi,0) * ck(ialp,iq)
+            IF((-1)**l==-1) coeff_cmplx = xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
+            tab5(m,n,khi,mu2,nu2,iq)=tab5(m,n,khi,mu2,nu2,iq)+coeff_cmplx                     ! tab5 est donc complexe
+            IF(mu/=0.or.nu/=0) tab5(m,n,khi,-mu2,-nu2,iq)=tab5(m,n,khi,-mu2,-nu2,iq)+(-1)**(m+n+l)*coeff_cmplx
+            IF(m/=n.or.ABS(mu)/=ABS(nu)) then
+              tab5(n,m,khi,nu2,mu2,iq)=tab5(n,m,khi,nu2,mu2,iq)+(-1)**(m+n)*coeff_cmplx
+              IF(mu/=0.or.nu/=0) tab5(n,m,khi,-nu2,-mu2,iq)=tab5(n,m,khi,-nu2,-mu2,iq)+(-1)**(l)*coeff_cmplx
+            end if
+          end do                           ! fin ialp
+        end do                             ! fin khi>=0
+      end do
+      !                            et je complete les khi<0 avec cmnmunu-khi=(-1)**(m+n)*cmnmunukhi*
+      do iq=1,nq
+        do m=0,mmax
+          m2=m/2
+          do n=0,mmax
+            n2=n/2
+            coeff=(-1)**(m+n)
+            do khi=-MIN(m,n),-1
+              tab5(m,n,khi,-m2:m2,-n2:n2, iq)=coeff*CONJG(tab5(m,n,-khi,-m2:m2,-n2:n2,iq))
+            end do
+          end do
+        end do
+      end do
+
+      ! PRINT*, 'test a partir de tableaux a 5 entrees cmnmunu'
+      !
+      ! do iq=1,nq
+      !   do m=0,mnmax
+      !     do n=0,mnmax
+      !       do khi=-mnmax,mnmax
+      !         do mu2=-mnmax2,mnmax2
+      !           do nu2=-mnmax2,mnmax2
+      !             coeff_cmplx=0.
+      !             do l=0,2*mnmax
+      !               coeff_cmplx=coeff_cmplx+symbol_3j(m,n,l,khi,-khi,0)*tab6(m,n,l,mu2,nu2,iq)
+      !             end do
+      !             IF(ABS(tab5(m,n,khi,mu2,nu2,iq)-coeff_cmplx)>1.d-10) &
+      !               PRINT*, m,n,khi,2*mu2,2*nu2,coeff_cmplx,tab5(m,n,khi,mu2,nu2,iq),"ERROR"
+      !           end do
+      !         end do
+      !       end do
+      !     end do
+      !   end do
+      ! end do
+
+
+    ! do iq=1,100
+    !   do khi=-mmax,mmax
+    !     do m=abs(khi),mmax
+    !       do mu=-m,m
+    !         do n=abs(khi),mmax
+    !           do nu=-n,n
+    !             if (mod(mu,2)/=0 .or. mod(nu,2)/=0) cycle
+    !             a = tab5(m,n,khi,mu/2,nu/2, iq) ! c m n mu nu khi reconstruit depuis c m n l mu nu de luc
+    !             b = cfulltest(ptest(m,n,mu,nu,khi),iq)
+    !   if (abs(a-b)>1.D-3) then
+    !     print*, iq, (iq-1)*(0.613592315E-01), m, n, mu, nu, khi, a, b, a-b
+    !   end if
+    !           end do
+    !         end do
+    !       end do
+    !     end do
+    !   end do
+    ! end do
+
+    end block
+
+
+
+
+
+
     !
     ! OZ
     !
@@ -596,11 +707,17 @@ contains
           do khi=-mmax,mmax
             do m=abs(khi),mmax
               do mu=-m,m
-                if (modulo(mu,2)/=0) cycle
+
+                p=p3%p(m,khi,mu)
+
+                if (mod(mu,2)/=0) cycle!then
+                !   gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = complex(0,0)
+                !
+                ! end if
 
                 do n=abs(khi),mmax
                   do nu=-n,n
-                    if (modulo(nu,2)/=0) cycle
+                    if (mod(nu,2)/=0) cycle
 
 
                     ! ia = cq%a(m,n,mu,nu,khi)
@@ -613,11 +730,12 @@ contains
   ! gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
   !                 + (-1)**(khi+nu) * ck(ia,iq) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
 
-  gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) &
+  gamma_prime_k_p(p,ix_q,iy_q,iz_q) = gamma_prime_k_p(p,ix_q,iy_q,iz_q) &
           + (-1)**(khi+nu) * cfulltest(ptest(m,n,mu,nu,khi),iqtest) * deltarho_prime_k_p(p3%p(n,khi,-nu),ix_q,iy_q,iz_q)
 
                   end do
                 end do
+
               end do
             end do
           end do
@@ -628,95 +746,99 @@ contains
     call cpu_time(time(2))
     print*, "<<<<< OZ en",time(2)-time(1),"seconds"
 !
-! !
-! do iz_q=1,nz
-!   do iy_q=1,ny
-!     do ix_q=1,nx
-!       do m=0,mmax
-!         do khi=-m,m
-!           do mu=-m,m
-!             print*,"q", ix_q, iy_q, iz_q,"m khi mu",m,khi,mu,"gamma", gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q)
-!           end do
-!         end do
-!       end do
-!     end do
-!   end do
-! end do
-
-
-    !
-    ! Vérification de la relation de symétrie 1.25, c'est à dire la meme que 1.15 en notation χ
-    !
-    block
-      complex(dp) :: a, b
-      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
-
-      do iz_q=1,nz
-        do iy_q=1,ny
-          do ix_q=1,nx
-
-            do p=1,np
-
-              m = p3%m(p)
-              khi = p3%mup(p)
-              mu = p3%mu(p)
-
-              !
-              ! on cherche le l'indice correspond à -q
-              !
-              if (ix_q == 1) then
-                ix_mq = ix_q
-              else if (ix_q == nx/2 +1) then
-                cycle
-              else
-                ix_mq = nx - ix_q + 2
-              end if
-
-              if (iy_q == 1) then
-                iy_mq = iy_q
-              else if (iy_q == ny/2 +1) then
-                cycle
-              else
-                iy_mq = ny - iy_q + 2
-              end if
-
-              if (iz_q == 1) then
-                iz_mq = iz_q
-              else if (iz_q == nz/2 +1) then
-                cycle
-              else
-                iz_mq = nz - iz_q + 2
-              end if
-
-
-              ! ATTENTION
-              ! ICI LA NOTION DE Q ET -Q DEVRAIENT CHANGER PHI EN PHI+PI DANS LE CAS DE Q SELON Z
-              a = gamma_prime_k_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
-              a = conjg(a)*(-1)**(m+mu+khi)
-              b = gamma_prime_k_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
-
-              !
-              ! if (abs(a-b) >1.E-10 ) then
-              !   if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
-              !   print*,
-              !   print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
-              !   print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
-              !   print*, "q", [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
-              !   print*, "mq", [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]
-              !   print*, "m,khi,mu=",m,khi,mu
-              !   print*, "conjg @ gamma_prime_k_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)*(-1)**(m+mu+khi),  gamma m khi -mu"
-              !   print*,a
-              !   print*,b
-              !   print*, "diff",a-b
-              !   error stop "La symétrie 1.15 n'est pas vérifiée pour gamma_prime_k_p"
-              ! end if
-
-            end do
-
+! verifie que toutes les projections à mu impairs sont nuls
+!
+do iz_q=1,nz
+  do iy_q=1,ny
+    do ix_q=1,nx
+      do m=0,mmax
+        do khi=-m,m
+          do mu=-m,m
+            a = gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q)
+            if (mod(mu,2)/=0 .and. abs(a)>1.D-10) then
+              print*,"q", ix_q, iy_q, iz_q,"m khi mu",m,khi,mu,"gammaOZ", gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q)
+              error stop "OZ faux"
+            end if
           end do
         end do
       end do
-    end block
+    end do
+  end do
+end do
+    !
+    ! Vérification de la relation de symétrie 1.25, c'est à dire la meme que 1.15 en notation χ
+    !
+    ! block
+    !   complex(dp) :: a, b
+    !   integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
+    !
+    !   do iz_q=1,nz
+    !     do iy_q=1,ny
+    !       do ix_q=1,nx
+    !
+    !         do p=1,np
+    !
+    !           m = p3%m(p)
+    !           khi = p3%mup(p)
+    !           mu = p3%mu(p)
+    !
+    !           !
+    !           ! on cherche le l'indice correspond à -q
+    !           !
+    !           if (ix_q == 1) then
+    !             ix_mq = ix_q
+    !           else if (ix_q == nx/2 +1) then
+    !             cycle
+    !           else
+    !             ix_mq = nx - ix_q + 2
+    !           end if
+    !
+    !           if (iy_q == 1) then
+    !             iy_mq = iy_q
+    !           else if (iy_q == ny/2 +1) then
+    !             cycle
+    !           else
+    !             iy_mq = ny - iy_q + 2
+    !           end if
+    !
+    !           if (iz_q == 1) then
+    !             iz_mq = iz_q
+    !           else if (iz_q == nz/2 +1) then
+    !             cycle
+    !           else
+    !             iz_mq = nz - iz_q + 2
+    !           end if
+    !
+    !
+    !           ! ATTENTION
+    !           ! ICI LA NOTION DE Q ET -Q DEVRAIENT CHANGER PHI EN PHI+PI DANS LE CAS DE Q SELON Z
+    !           a = gamma_prime_k_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)
+    !           a = conjg(a)*(-1)**(m+mu+khi)
+    !           b = gamma_prime_k_p (p3%p(m,khi,-mu),ix_q,iy_q,iz_q)
+    !
+    !           ! if (abs(a-b) >1.E-10 ) then
+    !             ! if (ix_q/=1 .and. iy_q/=1 .and. iz_q/=1 ) then!cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
+    !             print*,
+    !             print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
+    !             print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
+    !             print*, "q", [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
+    !             print*, "mq", [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]
+    !             print*, "m,khi,mu=",m,khi,mu
+    !             print*, "conjg @ gamma_prime_k_p (p3%p(m,khi,mu),ix_mq,iy_mq,iz_mq)*(-1)**(m+mu+khi),  gamma m khi -mu"
+    !             print*,a
+    !             print*,b
+    !             print*, "diff",a-b
+    !             ! error stop "La symétrie 1.15 n'est pas vérifiée pour gamma_prime_k_p"
+    !           ! end if!; end if
+    !
+    !         end do
+    !
+    !       end do
+    !     end do
+    !   end do
+    ! end block
+
+
 
     do iz_q=1,nz
       do iy_q=1,ny
@@ -740,7 +862,6 @@ end if
     ! Retour dans le repère fixe
     !
     call cpu_time(time(1))
-    allocate( gamma_k_p(np,nx,ny,nz) ,source=zeroc )
     block
       complex(dp), allocatable :: R(:,:,:) ! R^m_{mup,mu} (\hat{q})
       allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
@@ -853,7 +974,6 @@ end if
         end do
       end do
     end block
-stop "pokazd"
 
 
 
@@ -1172,5 +1292,138 @@ stop "pokazd"
       cq%isok=.true.
 
     end subroutine read_ck_nonzero
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    pure subroutine verify_hermitian_symetry (arrayofq, resultat)
+    !
+    ! Vérification de la symétrie hermitienne dûe a la fonction de départ réelle
+    !
+      implicit none
+      complex(dp), intent(in) :: arrayofq(:,:,:)
+      logical, intent(out) :: resultat
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, nx, ny, nz
+
+      resultat = .true.
+
+      nx=ubound(arrayofq,1)
+      ny=ubound(arrayofq,2)
+      nz=ubound(arrayofq,1)
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+
+            if (ix_q == 1) then
+              ix_mq = ix_q
+            else if (ix_q == nx/2 +1) then
+              cycle
+            else
+              ix_mq = nx - ix_q + 2
+            end if
+
+            if (iy_q == 1) then
+              iy_mq = iy_q
+            else if (iy_q == ny/2 +1) then
+              cycle
+            else
+              iy_mq = ny - iy_q + 2
+            end if
+
+            if (iz_q == 1) then
+              iz_mq = iz_q
+            else if (iz_q == nz/2 +1) then
+              cycle
+            else
+              iz_mq = nz - iz_q + 2
+            end if
+
+            a = arrayofq(ix_q,iy_q,iz_q)
+            b = conjg(arrayofq(ix_mq,iy_mq,iz_mq))
+
+            if (abs(a-b)>1.D-10) then
+              resultat = .false.
+            end if
+
+          end do
+        end do
+      end do
+
+    end subroutine verify_hermitian_symetry
+
+
+
+
+
+    pure subroutine verify_hermitian_symetry_of_projections(arrayp ,resultat)
+      !
+      ! Vérification de la symétrie dûe a la fonction de départ purement réelle
+      ! cf equations 1.15 de Luc
+      !
+      use module_grid, only: grid
+      implicit none
+      complex(dp), intent(in) :: arrayp(:,:,:,:)
+      logical, intent(out) :: resultat
+      complex(dp) :: a, b
+      integer :: ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, nx, ny, nz, p, m, mu, mup, np
+
+      np=ubound(arrayp,1)
+      nx=ubound(arrayp,2)
+      ny=ubound(arrayp,3)
+      nz=ubound(arrayp,4)
+
+
+      resultat=.true.
+
+      do iz_q=1,nz
+        do iy_q=1,ny
+          do ix_q=1,nx
+
+            do p=1,np
+
+              m = p3%m(p)
+              mup = p3%mup(p)
+              mu = p3%mu(p)
+
+              !
+              ! on cherche le l'indice correspond à -q
+              !
+              ix_mq = grid%ix_mq(ix_q)
+              iy_mq = grid%iy_mq(iy_q)
+              iz_mq = grid%iz_mq(iz_q)
+              if ( ix_mq<=0 .or. iy_mq <=0 .or. iz_mq <=0 ) cycle ! this covers the case of ix_q = nx/2 +1 which has no "-q"
+
+              a = arrayp (p3%p(m, mup, mu),ix_mq,iy_mq,iz_mq)
+              a = conjg(a)*(-1)**(mup+mu)
+              b = arrayp (p3%p(m,-mup,-mu),ix_q,iy_q,iz_q)
+
+              if (abs(a-b)/=0) then
+                resultat=.false.
+              end if
+
+            end do
+
+          end do
+        end do
+      end do
+    end subroutine verify_hermitian_symetry_of_projections
 
 end module module_energy_cproj_no_symetry

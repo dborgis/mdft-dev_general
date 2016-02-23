@@ -4,7 +4,8 @@ module module_energy_cproj_mrso
     use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
-    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu, harm_sph
+    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu
+    use module_wigner_d, only: wigner_small_d
 
     implicit none
     private
@@ -65,7 +66,7 @@ module module_energy_cproj_mrso
 
 
     type :: p3_type
-        real(dp), allocatable :: harm_sph(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
+        real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
         integer, allocatable :: p(:,:,:) ! index of the projection corresponding to m, mup, mu
         integer, allocatable :: m(:) ! m for projection 1 to np
         integer, allocatable :: mup(:) ! mup for projection 1 to np. mup corresponds to phi
@@ -119,6 +120,7 @@ contains
         real(dp), parameter :: fm(0:7) = [( sqrt(real(2*m+1,dp)) ,m=0,7 )]
         real(dp) :: vexc(grid%no), rho, xi
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
+        real(dp) :: accu_error_sur_q
 
 call cpu_time (time(1))
 
@@ -255,7 +257,7 @@ call cpu_time (time(3))
         wtheta=grid%wthetaofntheta
 
         !
-        ! Tabulate generalized spherical harmonics in array p3%harm_sph(theta,proj)
+        ! Tabulate generalized spherical harmonics in array p3%wigner_small_d(theta,proj)
         ! where theta can be any of the GaussLegendre integration roots for theta
         ! where proj is an index related to a tuple {m,mup,mu}
         ! Blum's notation :
@@ -265,15 +267,15 @@ call cpu_time (time(3))
         ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
         ! call test_routines_calcul_de_Rm_mup_mu_q
-        if (.not. allocated(p3%harm_sph)) then
-            allocate ( p3%harm_sph(1:ntheta, 1:np) ,source=0._dp)
+        if (.not. allocated(p3%wigner_small_d)) then
+            allocate ( p3%wigner_small_d(1:ntheta, 1:np) ,source=0._dp)
             do p=1,np
                 m = p3%m(p)
                 mup = p3%mup(p)
                 mu = p3%mu(p)
                 do i=1,ntheta
-                    ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la métohde de Wigner.
-                    p3%harm_sph(i,p) = harm_sph(m,mup,mu,theta(i))
+                    ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la méthode de Wigner.
+                    p3%wigner_small_d(i,p) = wigner_small_d(m,mup,mu,theta(i))
                 end do
             end do
         end if
@@ -312,12 +314,12 @@ call cpu_time (time(4))
 
         call cpu_time (time(5))
 
-        ! 2/ ON PROJETTE
+        ! 2/ ON PROJETTE delta_rho
 
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    deltarho_p(1:np,ix,iy,iz) = angl2proj( rho0*solvent(1)%xi(1:no,ix,iy,iz)**2-rho0 )
+                    deltarho_p(1:np,ix,iy,iz) = angl2proj( rho0*(solvent(1)%xi(1:no,ix,iy,iz)**2 -1._dp) )
                 end do
             end do
         end do
@@ -381,7 +383,7 @@ call cpu_time (time(4))
         call cpu_time (time(9))
 
         if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
-
+accu_error_sur_q=0
         !
         ! For all vectors q and -q handled simultaneously
         !
@@ -403,7 +405,7 @@ call cpu_time (time(4))
                     if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq,iz_mq) ) cycle
 
                     q = [qx(ix_q), qy(iy_q), qz(iz_q)]
-                    mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]
+                    ! mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]  ! <= c'est faux pour nx/2+1, ny/2+1 and nz/2+1 où nx, ny ou nz sont pairs.
 
                     if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then ! this should only happen for ix=1 and ix=nx/2
                         q_eq_mq=.true.
@@ -422,6 +424,22 @@ call cpu_time (time(4))
                     !
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax )
                     ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
+                    ! do m=0,mmax
+                    !   do mup=-m,m
+                    !     do khi=-m,m
+                    !       block
+                    !         complex(dp), allocatable :: R_mq(:,:,:)
+                    !         allocate ( R_mq(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
+                    !         R_mq = rotation_matrix_between_complex_spherical_harmonics_lu ( mq, mmax )
+                    !         print*,ix_q,iy_q,iz_q,m,mup,khi
+                    !         print*,R_mq(m,mup,khi)
+                    !         print*,(-1)**m *R(m,mup,-khi)
+                    !         print*,(-1)**(m+mup+khi)*conjg(R(m,-mup,khi))
+                    !         print*,
+                    !       end block
+                    !     end do
+                    !   end do
+                    ! end do
 
                     !
                     ! Rotation to molecular (q) frame
@@ -435,7 +453,7 @@ call cpu_time (time(4))
                                 ! Equation 1.22
                                 do mup=-m,m
                                     ip2=p3%p(m,mup,mu/mrso)
-                                    p3%foo_q(ip) = p3%foo_q(ip)  + deltarho_p_q(ip2)*R(m,mup,khi)
+                                    p3%foo_q(ip) = p3%foo_q(ip)  + deltarho_p_q(ip2)          *R(m,mup,khi)
                                     p3%foo_mq(ip) = p3%foo_mq(ip) + deltarho_p_mq(ip2)*(-1)**m*R(m,mup,-khi)
                                 end do
                             end do
@@ -445,12 +463,14 @@ call cpu_time (time(4))
                     deltarho_p_mq = p3%foo_mq
 
                     !
-                    ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for 200 values of |q|.
+                    ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for cq%nq values of |q|.
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = int( norm2(q) /cq%dq ) +1
+                    iq = int( norm2(q) /cq%dq +0.5) +1
                     if (iq >cq%nq) error stop "we need larger norm of q in Luc's cq"
+                    accu_error_sur_q = accu_error_sur_q + (norm2(q)- (iq-1)*cq%dq)**2
+
                     ! iq = min( int(norm2(q)/cq%dq)+1   ,nq)
 
                     !
@@ -487,15 +507,15 @@ call cpu_time (time(4))
                                         ip = p3%p(n,khi,abs(nu)/mrso)
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                                          IF(M<=1 .AND. N<=1) THEN
+                                          ! IF(M<=1 .AND. N<=1) THEN
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
-                                          END IF
+                                          ! END IF
                                         else
-                                          IF(M<=1 .AND. N<=1) THEN
+                                          ! IF(M<=1 .AND. N<=1) THEN
                                             gamma_m_khi_mu_q = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
-                                          END IF
+                                          ! END IF
                                         end if
 
                                     end do
@@ -525,8 +545,7 @@ call cpu_time (time(4))
                                 do khi=-m,m
                                     ip2=p3%p(m,khi,mu/mrso)
                                     p3%foo_q(ip) = p3%foo_q(ip)   + gamma_p_q(ip2)  *R(m,mup,khi)
-                                    p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
-                                    ! p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
+                                    p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)  ! == p3%foo_mq(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
                                 end do
                                 !
                             end do
@@ -549,7 +568,7 @@ call cpu_time (time(4))
                 end do
             end do
         end do
-
+print*, "accumulation d'erreur sur iq =",accu_error_sur_q
 call cpu_time(time(10))
 
         if (.not.all(gamma_p_isok.eqv..true.)) then
@@ -640,7 +659,7 @@ contains
             do mup=-m,m
                 do mu=0,m,mrso
                     ip = p3%p( m,mup,mu/mrso )
-                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%harm_sph(:,ip)*wtheta(:))*fm(m)
+                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%wigner_small_d(:,ip)*wtheta(:))*fm(m)
                 end do
             end do
         end do
@@ -660,7 +679,7 @@ contains
                     ip=p3%p(m,mup,mu/mrso)
                     do itheta=1,ntheta
                         foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
-                        +foo_p(ip)*p3%harm_sph(itheta,ip)*fm(m)
+                        +foo_p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
                     end do
                 end do
             end do
@@ -805,17 +824,17 @@ contains
         !                         do mup=-m,m
         !                             do mu=-m,m
         !                                 if (abs(&
-        !                                     Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))&
+        !                                     Rlu(m,mup,mu)-wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))&
         !                                         >1E-10) then
         !                                     print*, "dans test_routines_calcul_de_Rm_mup_mu_q on a Choi+Lu /= Wigner"
         !                                     print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
         !                                     print*, "qx qy qz", qx, qy, qz
         !                                     print*, "m, mup, mu", m, mup, mu
         !                                     print*, "Rlu(m,mup,mu)",Rlu(m,mup,mu)
-        !                                     print*, "harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))",&
-        !                                     harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))
+        !                                     print*, "wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))",&
+        !                                     wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))
         !                                     print*, "diff=",&
-        !                                     abs(Rlu(m,mup,mu)-harm_sph(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))
+        !                                     abs(Rlu(m,mup,mu)-wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))
         !                                     print*, "epsilon=",epsdp
         !                                     error stop "oihjkkhblkuyuiykjhbkjhg76"
         !                                 end if

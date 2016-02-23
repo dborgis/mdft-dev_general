@@ -6,11 +6,11 @@ module module_fastpoissonsolver
 
     real(dp), allocatable, dimension(:,:,:), protected :: sourcedistrib ! charge distribution that generates the electrostatic potential
     real(dp), allocatable, dimension(:,:,:), protected :: electric_potential ! electric_potential is the electrostatic potential
-    type :: psgrid_type
-        integer :: n(3)
-        real(dp) :: len(3)
-    end type psgrid_type
-    type (psgrid_type), protected :: psgrid
+    type :: electric_potential_grid_type
+        integer :: nx, ny, nz
+        real(dp) :: lx, ly, lz
+    end type electric_potential_grid_type
+    type (electric_potential_grid_type), protected :: electric_potential_grid
 
     public :: init_fastpoissonsolver
 
@@ -29,6 +29,8 @@ contains
         end type
         type (myerror_type) :: er
         real(dp), parameter :: epsdp=epsilon(1._dp)
+        integer :: nx, ny, nz
+        real(dp) :: lx, ly, lz
 
         !
         ! Check allocations and initializations
@@ -38,29 +40,41 @@ contains
             error stop
         end if
 
-        ! Pour l'instant, psgrid est exactement de la dimension de grid. L'objectif ici est de pouvoir résoudre poisson sur une meilleure grid
-        psgrid%n = grid%n_nodes
-        psgrid%len  = grid%length
+        ! Pour l'instant, electric_potential_grid est exactement de la dimension de grid. L'objectif ici est de pouvoir résoudre poisson sur une meilleure grid
+        electric_potential_grid%nx = grid%nx
+        electric_potential_grid%ny = grid%ny
+        electric_potential_grid%nz = grid%nz
+        electric_potential_grid%lx = grid%lx
+        electric_potential_grid%ly = grid%ly
+        electric_potential_grid%lz = grid%lz
 
-        allocate( sourcedistrib (psgrid%n(1),psgrid%n(2),psgrid%n(3)) ,SOURCE=0._dp, stat=er%i, errmsg=er%msg)
+        nx = electric_potential_grid%nx
+        ny = electric_potential_grid%ny
+        nz = electric_potential_grid%nz
+
+        lx = electric_potential_grid%lx
+        ly = electric_potential_grid%ly
+        lz = electric_potential_grid%lz
+
+        allocate( sourcedistrib (nx,ny,nz) ,source=0._dp, stat=er%i, errmsg=er%msg)
         if (er%i/=0) then
             print*, er%msg
             error stop "This problem arises in module fastPoissonSolver"
         end if
 
-        allocate( electric_potential (psgrid%n(1),psgrid%n(2),psgrid%n(3)) ,SOURCE=0._dp, stat=er%i, errmsg=er%msg)
+        allocate( electric_potential (nx,ny,nz) ,source=0._dp, stat=er%i, errmsg=er%msg)
         if (er%i/=0) then
             print*, er%msg
             error stop "This problem arises in module fastPoissonSolver"
         end if
 
-        call soluteChargeDensityFromSoluteChargeCoordinates (psgrid%n, psgrid%len, sourcedistrib)
+        call soluteChargeDensityFromSoluteChargeCoordinates ([nx,ny,nz], [lx,ly,lz], sourcedistrib)
 
         if (all(abs(sourcedistrib)<=epsdp)) then
             electric_potential = 0._dp
         end if
 
-        call poissonSolver (psgrid%n, psgrid%len, sourcedistrib, electric_potential)
+        call poissonSolver ( [nx,ny,nz], [lx,ly,lz], sourcedistrib, electric_potential)
 
 
         !
@@ -79,7 +93,7 @@ contains
         !     end do
         ! ! else ! this should be removed soon once we're used to this new construction
         ! !     print*,"BETTER POISSON SOLVER [OFF]"
-        ! !     call vext_q_from_v_c (psgrid%n, psgrid%len, electric_potential) ! defines Vext_q(i,j,k,o,p) that we used in the past for Poisson solver
+        ! !     call vext_q_from_v_c (electric_potential_grid%n, electric_potential_grid%len, electric_potential) ! defines Vext_q(i,j,k,o,p) that we used in the past for Poisson solver
         ! end if
 
 
