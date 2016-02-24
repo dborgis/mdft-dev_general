@@ -407,35 +407,36 @@ end subroutine energy_luc_fast
     ! !
     ! !          d'abord, je calcule les cmnmunu;khi     mis dans tab5(m,n,khi,mu,nu)
     ! !
-    if(.not.allocated(tab5)) ALLOCATE (tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
-    !
-    tab5=0.
-    do khi=0,mnmax                ! que khi>=0 pour l'instant
-      do ialp=1,ialpmax
-        m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
-        IF(khi>MIN(m,n)) cycle
-        mu2=mu/2; nu2=nu/2
-        coeff_cmplx=symbol_3j(m,n,l,khi,-khi,0)*ck(ialp)
-        IF((-1)**l==-1) coeff_cmplx=xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
-        tab5(m,n,khi,mu2,nu2)=tab5(m,n,khi,mu2,nu2)+coeff_cmplx                     ! tab5 est donc complexe
-        IF(mu/=0.or.nu/=0) tab5(m,n,khi,-mu2,-nu2)=tab5(m,n,khi,-mu2,-nu2)+(-1)**(m+n+l)*coeff_cmplx
-        IF(m/=n.or.ABS(mu)/=ABS(nu)) then
-          tab5(n,m,khi,nu2,mu2)=tab5(n,m,khi,nu2,mu2)+(-1)**(m+n)*coeff_cmplx
-          IF(mu/=0.or.nu/=0) tab5(n,m,khi,-nu2,-mu2)=tab5(n,m,khi,-nu2,-mu2)+(-1)**(l)*coeff_cmplx
-        endif
-      end do                           ! fin ialp
-    end do                             ! fin khi>=0
-    !                            et je complete les khi<0 avec cmnmunu-khi=(-1)**(m+n)*cmnmunukhi*
-    do m=0,mnmax
-      m2=m/2
-      do n=0,mnmax
-        n2=n/2
-        coeff=(-1)**(m+n)
-        do khi=-MIN(m,n),-1
-          tab5(m,n,khi,-m2:m2,-n2:n2)=coeff*CONJG(tab5(m,n,-khi,-m2:m2,-n2:n2))
+    if(.not.allocated(tab5)) then
+      ALLOCATE (tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
+      tab5=0.
+      do khi=0,mnmax                ! que khi>=0 pour l'instant
+        do ialp=1,ialpmax
+          m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
+          IF(khi>MIN(m,n)) cycle
+          mu2=mu/2; nu2=nu/2
+          coeff_cmplx=symbol_3j(m,n,l,khi,-khi,0)*ck(ialp)
+          IF((-1)**l==-1) coeff_cmplx=xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
+          tab5(m,n,khi,mu2,nu2)=tab5(m,n,khi,mu2,nu2)+coeff_cmplx                     ! tab5 est donc complexe
+          IF(mu/=0.or.nu/=0) tab5(m,n,khi,-mu2,-nu2)=tab5(m,n,khi,-mu2,-nu2)+(-1)**(m+n+l)*coeff_cmplx
+          IF(m/=n.or.ABS(mu)/=ABS(nu)) then
+            tab5(n,m,khi,nu2,mu2)=tab5(n,m,khi,nu2,mu2)+(-1)**(m+n)*coeff_cmplx
+            IF(mu/=0.or.nu/=0) tab5(n,m,khi,-nu2,-mu2)=tab5(n,m,khi,-nu2,-mu2)+(-1)**(l)*coeff_cmplx
+          endif
+        end do                           ! fin ialp
+      end do                             ! fin khi>=0
+      !                            et je complete les khi<0 avec cmnmunu-khi=(-1)**(m+n)*cmnmunukhi*
+      do m=0,mnmax
+        m2=m/2
+        do n=0,mnmax
+          n2=n/2
+          coeff=(-1)**(m+n)
+          do khi=-MIN(m,n),-1
+            tab5(m,n,khi,-m2:m2,-n2:n2)=coeff*CONJG(tab5(m,n,-khi,-m2:m2,-n2:n2))
+          end do
         end do
       end do
-    end do
+    end if
     !
     !
     !            METHODE 4: projections mais en passant par le repere local
