@@ -5,20 +5,12 @@ module tableaux_dft_3d_fast
   COMPLEX(8),DIMENSION(:),ALLOCATABLE::expiphi
   COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::expikhiphi
   REAL(8),DIMENSION(:),ALLOCATABLE::omeg
-  COMPLEX(8),DIMENSION(:),ALLOCATABLE::expiomeg
-  COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::expimuomeg
-  REAL(8),DIMENSION(:,:,:,:),ALLOCATABLE::harsph
-  COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::harsph_q
   COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::harsph1_q
   COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::delta_rho_proj,delta_rho,delta_rho_proj1,auxi_1,auxi_2
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::gamma1,gamma1_proj,gamma2,gamma2_proj,gamma3_proj,gamma4_proj,gamma4_proj1
+  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::gamma4_proj,gamma4_proj1
   INTEGER, DIMENSION(:),ALLOCATABLE:: mm,nn,ll,mumu,nunu
   REAL(8), DIMENSION(:),ALLOCATABLE:: ck
-  real(8), allocatable :: my_ck(:,:)
-  COMPLEX(8), DIMENSION(:,:,:,:,:,:),ALLOCATABLE:: ck_omega_omega
-  COMPLEX(8),DIMENSION(:,:,:,:,:),ALLOCATABLE:: tab5,tab6
-  COMPLEX(8),DIMENSION(:,:,:,:),ALLOCATABLE:: tab4,tab7
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: tab3
+  COMPLEX(8),DIMENSION(:,:,:,:,:,:),ALLOCATABLE:: tab5
 end module tableaux_dft_3d_fast
 !
 !
@@ -282,68 +274,9 @@ end subroutine energy_luc_fast
     nomeg=grid%npsi
     pi=4.d0*ATAN(1.d0)
     xi_cmplx=(0.,1.d0)
-    !                       theta (ou beta)
-    if(.not.allocated(beta)) then
-      ALLOCATE(beta(nbeta),cosbeta(nbeta),sinbeta(nbeta),wb(nbeta))
-      call gauleg(cosbeta,wb,nbeta)               ! cosbeta()=racines de Pnbeta(x), wb() le poids
-      beta=ACOS(cosbeta)
-      sinbeta=SIN(beta)
-    end if
-    !                       phi
-    if(.not.allocated(phi)) then
-      ALLOCATE(phi(nphi),cosphi(nphi),sinphi(nphi),expiphi(nphi))
-      phi=2.d0*pi* (/(i-0.5,i=1,nphi)/) /REAL(nphi)               ! sur 0-2pi
-      ! print*,"phi de luc",phi
-      ! print*,"phi de max",grid%phiofnphi
-      ! PHI=GRID%PHIOFNPHI
-      expiphi=EXP(xi_cmplx*phi)
-      cosphi=REAL(expiphi)
-      sinphi=AIMAG(expiphi)
-    end if
-
-    if(.not.allocated(expikhiphi)) then
-      ALLOCATE(expikhiphi(-mnmax:mnmax,nphi))
-      do khi=-mnmax,mnmax
-        expikhiphi(khi,:)=EXP(xi_cmplx*khi*phi(:))
-      end do
-    end if
-    !                        psi (ou omega)
-    if(.not.allocated(omeg)) then
-      ALLOCATE(omeg(nomeg),expiomeg(nomeg))
-      omeg=pi* (/(i-0.5,i=1,nomeg)/) /REAL(nomeg)                  ! sur 0-pi car H2O
-      ! print*,"psi de luc",omeg
-      ! print*,"psi de max",grid%psiofnpsi
-      ! OMEG=GRID%PSIOFNPSI
-      expiomeg=EXP(xi_cmplx*omeg)
-    end if
-
-    if(.not.allocated(expimuomeg)) then
-      ALLOCATE(expimuomeg(-mnmax2:mnmax2,nomeg))     ! et mu pair=2*mu2
-      do mu2=-mnmax2,mnmax2
-        mu=2*mu2
-        expimuomeg(mu2,:)=EXP(xi_cmplx*mu*omeg(:))
-      end do
-    end if
-
-    !                            rmmu'mu(theta)
-    if(.not.allocated(harsph)) then
-      ALLOCATE(harsph(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,nbeta))
-      harsph=0.
-      do khi=-mnmax,mnmax
-        do mu2=-mnmax2,mnmax2
-          mu=2*mu2
-          do m=MAX(ABS(khi),ABS(mu)),mnmax
-            do ibeta=1,nbeta
-              harsph(m,khi,mu2,ibeta)=harm_sph(m,khi,mu,beta(ibeta))
-            end do
-          end do
-        end do
-      end do
-    end if
     !
     !                           coordonnees du vecteur q (en A-1)
     !
-    ! PRINT*, '********************************************************************************'
     qx=qvec(1)
     qy=qvec(2)
     qz=qvec(3)
@@ -352,14 +285,6 @@ end subroutine energy_luc_fast
     theta_q = thetaofq(qx,qy,qz)
     phi_q   = phiofq(qx,qy,qz)
     !           les elements Rllambda0(q)
-    if(.not.allocated(harsph_q)) ALLOCATE(harsph_q(0:2*mnmax,-2*mnmax:2*mnmax))
-    harsph_q=0.
-    do l=0,2*mnmax
-      do lambda=-l,l
-        harsph_q(l,lambda)=harm_sph(l,lambda,0,theta_q)*EXP(-xi_cmplx*lambda*phi_q)
-      end do
-    end do
-    if(any(harsph_q/=harsph_q)) error stop "problem detected in harsph_q"
     !                      les elements Rmmu'khi(q)          (psi(q)=0)
     if(.not.allocated(harsph1_q)) ALLOCATE(harsph1_q(0:mnmax,-mnmax:mnmax,-mnmax:mnmax))
     harsph1_q=0.
@@ -370,7 +295,6 @@ end subroutine energy_luc_fast
         end do
       end do
     end do
-    if(any(harsph1_q/=harsph1_q)) error stop "problem detected in harsph1_q"
 
     !
     !                           on definit ou lit les projections de delta_rho de depart (complexes!)
@@ -387,62 +311,62 @@ end subroutine energy_luc_fast
     ! PRINT*, 'suivies des lignes de q,cmnlmunu(q) (on choisira le q le plus proche, par exces)'
     ! PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
     ! PRINT*, 'Nom du fichier --->'
-    OPEN(7,FILE="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old')
-    n_baratin=5
-    ialpmax=549
-    if(.not.allocated(ck)) ALLOCATE(mm(ialpmax),nn(ialpmax),ll(ialpmax),mumu(ialpmax),nunu(ialpmax),ck(ialpmax))
-    do i=1,n_baratin
-      READ(7,*) texte
-    end do
-    READ(7,*) texte1,mm
-    READ(7,*) texte1,nn
-    READ(7,*) texte1,ll
-    READ(7,*) texte1,mumu
-    READ(7,*) texte1,nunu
-    do i=1,10000
-      READ(7,*) q,ck
-      IF(q>=qq) exit
-    end do
-    CLOSE(7)
+    if(.not.allocated(tab5)) then
+      OPEN(7,FILE="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old')
+      ialpmax=549
+      ALLOCATE(mm(ialpmax),nn(ialpmax),ll(ialpmax),mumu(ialpmax),nunu(ialpmax),ck(ialpmax))
+      do i=1,5
+        READ(7,*) texte
+      end do
+      READ(7,*) texte1,mm
+      READ(7,*) texte1,nn
+      READ(7,*) texte1,ll
+      READ(7,*) texte1,mumu
+      READ(7,*) texte1,nunu
+      ALLOCATE (tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2,1024), source=zeroc)
+      do iq=1,1024
+        READ(7,*) q,ck(:)
+
+          do khi=0,mnmax                ! que khi>=0 pour l'instant
+            do ialp=1,ialpmax
+              m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
+              IF(khi>MIN(m,n)) cycle
+              mu2=mu/2; nu2=nu/2
+              coeff_cmplx=symbol_3j(m,n,l,khi,-khi,0)*ck(ialp)
+              IF((-1)**l==-1) coeff_cmplx=xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
+              tab5(m,n,khi,mu2,nu2,iq)=tab5(m,n,khi,mu2,nu2,iq)+coeff_cmplx                     ! tab5 est donc complexe
+              IF(mu/=0.or.nu/=0) tab5(m,n,khi,-mu2,-nu2,iq)=tab5(m,n,khi,-mu2,-nu2,iq)+(-1)**(m+n+l)*coeff_cmplx
+              IF(m/=n.or.ABS(mu)/=ABS(nu)) then
+                tab5(n,m,khi,nu2,mu2,iq)=tab5(n,m,khi,nu2,mu2,iq)+(-1)**(m+n)*coeff_cmplx
+                IF(mu/=0.or.nu/=0) tab5(n,m,khi,-nu2,-mu2,iq)=tab5(n,m,khi,-nu2,-mu2,iq)+(-1)**(l)*coeff_cmplx
+              endif
+            end do                           ! fin ialp
+          end do                             ! fin khi>=0
+          !                            et je complete les khi<0 avec cmnmunu-khi=(-1)**(m+n)*cmnmunukhi*
+          do m=0,mnmax
+            m2=m/2
+            do n=0,mnmax
+              n2=n/2
+              coeff=(-1)**(m+n)
+              do khi=-MIN(m,n),-1
+                tab5(m,n,khi,-m2:m2,-n2:n2,iq)=coeff*CONJG(tab5(m,n,-khi,-m2:m2,-n2:n2,iq))
+              end do
+            end do
+          end do
+
+      end do
+      CLOSE(7)
+      deallocate(ck)
+    end if
     ! !
     ! !          d'abord, je calcule les cmnmunu;khi     mis dans tab5(m,n,khi,mu,nu)
     ! !
-    if(.not.allocated(tab5)) then
-      ALLOCATE (tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
-      tab5=0.
-      do khi=0,mnmax                ! que khi>=0 pour l'instant
-        do ialp=1,ialpmax
-          m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
-          IF(khi>MIN(m,n)) cycle
-          mu2=mu/2; nu2=nu/2
-          coeff_cmplx=symbol_3j(m,n,l,khi,-khi,0)*ck(ialp)
-          IF((-1)**l==-1) coeff_cmplx=xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
-          tab5(m,n,khi,mu2,nu2)=tab5(m,n,khi,mu2,nu2)+coeff_cmplx                     ! tab5 est donc complexe
-          IF(mu/=0.or.nu/=0) tab5(m,n,khi,-mu2,-nu2)=tab5(m,n,khi,-mu2,-nu2)+(-1)**(m+n+l)*coeff_cmplx
-          IF(m/=n.or.ABS(mu)/=ABS(nu)) then
-            tab5(n,m,khi,nu2,mu2)=tab5(n,m,khi,nu2,mu2)+(-1)**(m+n)*coeff_cmplx
-            IF(mu/=0.or.nu/=0) tab5(n,m,khi,-nu2,-mu2)=tab5(n,m,khi,-nu2,-mu2)+(-1)**(l)*coeff_cmplx
-          endif
-        end do                           ! fin ialp
-      end do                             ! fin khi>=0
-      !                            et je complete les khi<0 avec cmnmunu-khi=(-1)**(m+n)*cmnmunukhi*
-      do m=0,mnmax
-        m2=m/2
-        do n=0,mnmax
-          n2=n/2
-          coeff=(-1)**(m+n)
-          do khi=-MIN(m,n),-1
-            tab5(m,n,khi,-m2:m2,-n2:n2)=coeff*CONJG(tab5(m,n,-khi,-m2:m2,-n2:n2))
-          end do
-        end do
-      end do
-    end if
+
     !
     !
     !            METHODE 4: projections mais en passant par le repere local
     !
     !
-    ! PRINT*, '********************************************************************************'
     ! PRINT*, 'Methode4: je combine les projections via le repere local!'
     if(.not.allocated(gamma4_proj)) ALLOCATE(gamma4_proj(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
     !     d'abord, passer des projections delta_rho a delta_rho'
@@ -459,6 +383,9 @@ end subroutine energy_luc_fast
     end do
     !               rappel: cmnmunu;khi est dans tab5
     !               faire alors OZ le plus simple!
+    dq=0.613592315E-01
+    iq=int(qq/dq +0.5) +1
+
     if(.not.allocated(gamma4_proj1)) ALLOCATE(gamma4_proj1(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
     gamma4_proj1=0.
     do khi=-mnmax,mnmax
@@ -469,7 +396,7 @@ end subroutine energy_luc_fast
           do nu2=-mnmax2,mnmax2
             nu=2*nu2
             do n=MAX(ABS(khi),ABS(nu)),mnmax
-              gamma4_proj1(m,khi,mu2)=gamma4_proj1(m,khi,mu2)+(-1)**khi *tab5(m,n,khi,mu2,nu2) *delta_rho_proj1(n,khi,-nu2)
+              gamma4_proj1(m,khi,mu2)=gamma4_proj1(m,khi,mu2)+(-1)**khi *tab5(m,n,khi,mu2,nu2,iq) *delta_rho_proj1(n,khi,-nu2)
             end do
           end do
 
@@ -498,85 +425,8 @@ end subroutine energy_luc_fast
 
 
 
-
-
-
-
-
-  !
-  subroutine proj_angl(f_proj,f_ang)
-    USE tableaux_dft_3d_fast, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,harsph,expikhiphi,expimuomeg
-    implicit real(8) (a-h,o-z)
-    !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
-    COMPLEX(8), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(in):: f_proj
-    COMPLEX(8), DIMENSION(nbeta,nphi,nomeg), intent(out):: f_ang
-    !
-    !             passe des projections a une fonction angulaire
-    !
-    !             d'abord, je transforme m en theta
-    auxi_1=0.
-    do mu2=-mnmax2,mnmax2
-      mu=2*mu2
-      do khi=-mnmax,mnmax
-        do m=MAX(ABS(khi),ABS(mu)),mnmax
-          auxi_1(1:nbeta,khi,mu2)=auxi_1(1:nbeta,khi,mu2)+SQRT(2.d0*m+1.d0)*f_proj(m,khi,mu2)*harsph(m,khi,mu2,1:nbeta)
-        end do
-      end do
-    end do
-    !            puis khi en phi
-    auxi_2=0.
-    do j=1,nphi
-      do khi=-mnmax,mnmax
-        auxi_2(:,j,:)=auxi_2(:,j,:)+auxi_1(:,khi,:)*expikhiphi(-khi,j)
-      end do
-    end do
-    !            et enfin mu2 en psi
-    f_ang=0.
-    do k=1,nomeg
-      do mu2=-mnmax2,mnmax2
-        f_ang(:,:,k)=f_ang(:,:,k)+auxi_2(:,:,mu2)*expimuomeg(-mu2,k)
-      end do
-    end do
-    !
-  end subroutine
   !
   !
-  subroutine angl_proj(f_ang,f_proj)
-    USE tableaux_dft_3d_fast, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,wb,harsph,expikhiphi,expimuomeg
-    implicit real(8) (a-h,o-z)
-    !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
-    COMPLEX(8), DIMENSION(nbeta,nphi,nomeg), intent(in):: f_ang
-    COMPLEX(8), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(out):: f_proj
-    !
-    !             passe de la fonction angulaire aux projections
-    !
-    !             d'abord, je transforme psi en mu2
-    auxi_2=0.
-    do mu2=-mnmax2,mnmax2
-      do k=1,nomeg
-        auxi_2(:,:,mu2)=auxi_2(:,:,mu2)+f_ang(:,:,k)*expimuomeg(mu2,k)
-      end do
-    end do
-    !            puis phi en khi
-    auxi_1=0.
-    do khi=-mnmax,mnmax
-      do j=1,nphi
-        auxi_1(:,khi,:)=auxi_1(:,khi,:)+auxi_2(:,j,:)*expikhiphi(khi,j)
-      end do
-    end do
-    auxi_1=auxi_1/(nphi*nomeg)
-    !            et enfin theta en m
-    f_proj=0.
-    do mu2=-mnmax2,mnmax2
-      mu=2*mu2
-      do khi=-mnmax,mnmax
-        do m=MAX(ABS(khi),ABS(mu)),mnmax
-          f_proj(m,khi,mu2)=f_proj(m,khi,mu2)+SQRT(2.d0*m+1.d0)*SUM(wb(:)*auxi_1(:,khi,mu2)*harsph(m,khi,mu2,:))
-        end do
-      end do
-    end do
-    !
-  end subroutine
   !
   !
   function symbol_3j(m,n,l,mu,nu,lu)
