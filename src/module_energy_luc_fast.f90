@@ -1,6 +1,3 @@
-
-!     Last change:  LB    1 Feb 2016   12:51 pm
-!
 module tableaux_dft_3d_fast
   INTEGER::mnmax,mnmax2,nbeta,nphi,nomeg
   REAL(8),DIMENSION(:),ALLOCATABLE::beta,cosbeta,sinbeta,wb
@@ -27,7 +24,9 @@ end module tableaux_dft_3d_fast
 !
 module module_energy_luc_fast
   real(8) :: fac(0:50)
-
+  complex(8), parameter :: zeroc=cmplx(0.d0,0.d0)
+  private
+  public :: energy_luc_fast
 contains
 
 
@@ -54,7 +53,8 @@ subroutine energy_luc_fast (ff,df)
   complex(dp), allocatable :: gamma_angle(:,:,:,:) ! omega, x y z
   real(dp) :: q(3), rho0
   complex(dp) :: a, b
-  integer :: imqx, imqy, imqz
+  integer :: imqx, imqy, imqz, ntheta, nphi, npsi
+  real(dp) :: fm(0:grid%mmax)
 
   ff=0
   no = grid%no
@@ -65,6 +65,10 @@ subroutine energy_luc_fast (ff,df)
   rho0 = solvent(1)%rho0
   mmax=grid%mmax
   mmax2=mmax/2
+  ntheta=grid%ntheta
+  nphi=grid%nphi
+  npsi=grid%npsi
+  fm(0:mmax) = [( sqrt(real(2*m+1,dp))  ,m=0,mmax  )]
   call cpu_time(time(1))
 
 
@@ -135,17 +139,101 @@ q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
 ! PASSAGE EN PROJECTIONS
 !
 !
-delta_rho_k_proj = cmplx(0,0)
+block
+  use module_wigner_d, only: wigner_small_d
+  integer :: itheta, iphi, ipsi, ntheta, nphi, npsi, io
+  complex(dp), allocatable :: in(:,:), out(:,:), delta_rho_theta_mup_mu(:,:,:), delta_rho_p(:,:,:)
+  complex(dp), parameter :: zeroc=cmplx(0,0)
+  type(c_ptr) :: planc2c2dplus
+  mmax   = grid%mmax
+  mmax2  = mmax/2
+  ntheta = grid%ntheta
+  nphi   = grid%nphi
+  npsi   = grid%npsi
+  allocate( in(nphi,npsi), out(nphi,npsi), source=zeroc)
+  allocate( delta_rho_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2), source=zeroc)
+  call dfftw_plan_dft_2d (planc2c2dplus, nphi, npsi, in, out, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+  do itheta=1,ntheta
+    in = zeroc
+    do concurrent( iphi=1:nphi, ipsi=1:npsi )
+      in(iphi,ipsi) = delta_rho_k_angle(grid%io(itheta,iphi,ipsi), iqx,iqy,iqz) /real(nphi*npsi)
+    end do
+    call dfftw_execute (planc2c2dplus, in, out)
+
+    do iphi=1,nphi
+      if (iphi <= nphi/2+1) then
+        mup = iphi-1
+      else
+        mup = iphi-1-nphi
+      end if
+      do ipsi=1,npsi
+        if(ipsi<=npsi/2+1) then
+          mu2=ipsi-1
+        else
+          mu2=ipsi-1-npsi
+        end if
+        delta_rho_theta_mup_mu(itheta,mup,mu2) = out(iphi,ipsi)
+      end do
+    end do
+  end do ! sur theta
+
+  allocate ( delta_rho_p(0:mmax,-mmax:mmax,-mmax2:mmax2), source=zeroc)
+
+  do m=0,mmax
+    m2 = m/2
+    do mup=-m,m
+      do mu2=-m2,m2
+        mu=2*mu2
+        do itheta=1,ntheta
+delta_rho_p(m,mup,mu2) = delta_rho_p(m,mup,mu2) + delta_rho_theta_mup_mu(itheta,mup,mu2)&
+         * wigner_small_d(m,mup,mu,grid%thetaofntheta(itheta)) * grid%wthetaofntheta(itheta) &
+         /sum(grid%wthetaofntheta) * fm(m)
+        end do
+      end do
+    end do
+  end do
+
+! ANCIENNE METHODE VERIFIEE OK
+  delta_rho_k_proj = cmplx(0,0)
+  do m=0,mmax
+    do mup=-m,m
+      do mu2=-m/2,m/2
+        mu=2*mu2
+        delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum( delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w *  &
+          [( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )]   )
+      end do
+    end do
+  end do
+
+! COMPARAISON
 do m=0,mmax
   do mup=-m,m
     do mu2=-m/2,m/2
       mu=2*mu2
-      delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum( delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w *  &
-        [( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )]   )
+      a = delta_rho_k_proj(m,mup,mu2)
+      b = delta_rho_p(m,mup,mu2)
+      ! if(abs(a-b)>1.D-10) print*, m,mup,mu,a, b, "le rapide est ",real(b)/real(a), "fois plus grand que b"
+      if(abs(a-b)>1.D-10 )  print*, iqx,iqy,iqz,m,mup,mu,"LucREF=",real(a),"LucFFT=",real(b)
     end do
   end do
 end do
+deallocate(in,out,delta_rho_p,delta_rho_theta_mup_mu)
+end block
+cycle
+stop "block projection fini"
 
+
+
+! delta_rho_k_proj = cmplx(0,0)
+! do m=0,mmax
+!   do mup=-m,m
+!     do mu2=-m/2,m/2
+!       mu=2*mu2
+!       delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum( delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w *  &
+!         [( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )]   )
+!     end do
+!   end do
+! end do
 
 !
 !
@@ -208,55 +296,10 @@ call cpu_time (time(3))
 deallocate(in)
 deallocate(delta_rho_k_angle)
 
+print*, "energy_luc took ",time(3)-time(1),"sec"
+print*, "ff luc fast =", ff
 
-
-print*,maxval(abs(gamma_angle)), maxval((df(:,:,:,:,1))), maxval(abs(gamma_angle-df(:,:,:,:,1)))
-
-
-stop "toute fin de la routine energy_luc_fast OK. Tout va bien."
 end subroutine energy_luc_fast
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -266,6 +309,7 @@ end subroutine energy_luc_fast
   subroutine luc_oz (qvec, my_delta_rho_proj, my_gamma_proj)
     USE lecture                                    ! pour lire des valeurs � la Luc
     USE tableaux_dft_3d_fast                            ! d�finit le type des tableaux de valeurs � partager
+    use module_rotation, only: thetaofq, phiofq
     use module_grid,only: grid
     implicit real(8) (a-h,o-z)
     real(8),    intent(in) :: qvec(3)
@@ -386,35 +430,34 @@ end subroutine energy_luc_fast
     qy=qvec(2)
     qz=qvec(3)
     qq=SQRT(qx**2+qy**2+qz**2)
+
+    theta_q = thetaofq(qx,qy,qz)
+    phi_q   = phiofq(qx,qy,qz)
+
     ! PRINT*, 'Coordonnees x,y,z du vecteur q  (en A-1) --->',qx,qy,qz,'ce qui donne q --->',qq
 
 
+    !
+    !
+    ! if(abs(qx)+abs(qy)<=epsilon(1.)) then
+    !   theta_q = 0.
+    !   phi_q = 0.
+    ! else
+    !   c_theta_q=qz/qq                        ! angles theta,phi pour q
+    !   theta_q=ACOS(c_theta_q)
+    !   s_theta_q=SIN(theta_q)
+    !   c_phi_q=qx/qq/s_theta_q
+    !   if(abs(c_phi_q-1)<epsilon(1.)) then
+    !     phi_q=0.
+    !   else if(abs(c_phi_q+1)<epsilon(1.)) then
+    !     phi_q=acos(-1.d0)
+    !   else
+    !     phi_q=ACOS(c_phi_q)
+    !     IF(qy<0.) phi_q=-phi_q
+    !   end if
+    !   s_phi_q=SIN(phi_q)
+    ! end if
 
-
-    if(abs(qx)+abs(qy)<=epsilon(1.)) then
-      theta_q = 0.
-      phi_q = 0.
-    else
-      c_theta_q=qz/qq                        ! angles theta,phi pour q
-      theta_q=ACOS(c_theta_q)
-      s_theta_q=SIN(theta_q)
-      c_phi_q=qx/qq/s_theta_q
-      if(abs(c_phi_q-1)<epsilon(1.)) then
-        phi_q=0.
-      else if(abs(c_phi_q+1)<epsilon(1.)) then
-        phi_q=acos(-1.d0)
-      else
-        phi_q=ACOS(c_phi_q)
-        IF(qy<0.) phi_q=-phi_q
-      end if
-      s_phi_q=SIN(phi_q)
-    end if
-
-block
-  use module_rotation, only: thetaofq, phiofq
-    theta_q = thetaofq(qx,qy,qz)
-    phi_q   = phiofq(qx,qy,qz)
-end block
 
 ! block
 !   use module_rotation, only: thetaofq, phiofq
@@ -560,23 +603,23 @@ end block
     ! PRINT*, 'ck= ',ck(1:MIN(10,ialpmax))
     CLOSE(7)
     !   je construis en tableau a 5 entrees cmnlmunu pour tests ulterieurs
-    if(.not.allocated(tab6)) ALLOCATE (tab6(0:mnmax,0:mnmax,0:2*mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
-    tab6=0.
-    do ialp=1,ialpmax
-      m=mm(ialp)
-      n=nn(ialp)
-      l=ll(ialp)
-      mu=mumu(ialp)
-      nu=nunu(ialp)
-      mu2=mu/2
-      nu2=nu/2
-      coeff_cmplx=ck(ialp)
-      IF((-1)**l==-1) coeff_cmplx=xi_cmplx*ck(ialp)
-      tab6(m,n,l,mu2,nu2)=coeff_cmplx
-      tab6(m,n,l,-mu2,-nu2)=(-1)**(m+n+l)*coeff_cmplx
-      tab6(n,m,l,nu2,mu2)=(-1)**(m+n)*coeff_cmplx
-      tab6(n,m,l,-nu2,-mu2)=(-1)**l*coeff_cmplx
-    END do
+    ! if(.not.allocated(tab6)) ALLOCATE (tab6(0:mnmax,0:mnmax,0:2*mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
+    ! tab6=0.
+    ! do ialp=1,ialpmax
+    !   m=mm(ialp)
+    !   n=nn(ialp)
+    !   l=ll(ialp)
+    !   mu=mumu(ialp)
+    !   nu=nunu(ialp)
+    !   mu2=mu/2
+    !   nu2=nu/2
+    !   coeff_cmplx=ck(ialp)
+    !   IF((-1)**l==-1) coeff_cmplx=xi_cmplx*ck(ialp)
+    !   tab6(m,n,l,mu2,nu2)=coeff_cmplx
+    !   tab6(m,n,l,-mu2,-nu2)=(-1)**(m+n+l)*coeff_cmplx
+    !   tab6(n,m,l,nu2,mu2)=(-1)**(m+n)*coeff_cmplx
+    !   tab6(n,m,l,-nu2,-mu2)=(-1)**l*coeff_cmplx
+    ! END do
             ! PRINT*, '********************************************************************************'
             ! !
             ! !                           on a donc tout ce qui nous faut pour calculer le produit de convolution
@@ -987,24 +1030,24 @@ end block
                   endif
                 end do                           ! fin ialp
                 !                  test en partant plutot de tab6  , reussi donc shunte
-                GOTO 317
-                tab7=0.
-                do mu2=-mnmax2,mnmax2
-                  mu=2*mu2
-                  do m=MAX(ABS(mu1),ABS(mu)),mnmax
-                    do nu2=-mnmax2,mnmax2
-                      nu=2*nu2
-                      do n=MAX(ABS(nu1),ABS(nu)),mnmax
-                        do l=ABS(m-n),m+n
-                      tab7(m,n,mu2,nu2)=tab7(m,n,mu2,nu2)+tab6(m,n,l,mu2,nu2)*symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)
-                        end do
-                  IF(ABS(tab7(m,n,mu2,nu2)-tab4(m,n,mu2,nu2))>1.d-10) PRINT*, mu1,nu1,m,n,mu,nu,tab7(m,n,mu2,nu2),tab4(m,n,mu2,nu2)
-                      end do
-                    end do
-                  end do
-                end do
-                !            fin test
-                317 continue
+                ! GOTO 317
+                ! tab7=0.
+                ! do mu2=-mnmax2,mnmax2
+                !   mu=2*mu2
+                !   do m=MAX(ABS(mu1),ABS(mu)),mnmax
+                !     do nu2=-mnmax2,mnmax2
+                !       nu=2*nu2
+                !       do n=MAX(ABS(nu1),ABS(nu)),mnmax
+                !         do l=ABS(m-n),m+n
+                !       tab7(m,n,mu2,nu2)=tab7(m,n,mu2,nu2)+tab6(m,n,l,mu2,nu2)*symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)
+                !         end do
+                !   IF(ABS(tab7(m,n,mu2,nu2)-tab4(m,n,mu2,nu2))>1.d-10) PRINT*, mu1,nu1,m,n,mu,nu,tab7(m,n,mu2,nu2),tab4(m,n,mu2,nu2)
+                !       end do
+                !     end do
+                !   end do
+                ! end do
+                ! !            fin test
+                ! 317 continue
                 !
                 do mu2=-mnmax2,mnmax2
                   mu=2*mu2
