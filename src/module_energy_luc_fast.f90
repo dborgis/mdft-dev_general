@@ -30,12 +30,12 @@ module module_energy_luc_fast
 contains
 
 
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine energy_luc_fast (ff,df)
   use iso_c_binding
   use module_grid, only: grid
   use module_solvent, only: solvent
-  use module_wigner_d, only: wigner_big_D
+  use module_wigner_d, only: wigner_big_D, wigner_small_d
   implicit none
   include 'fftw3.f03'
   integer, parameter :: dp=c_double
@@ -55,6 +55,8 @@ subroutine energy_luc_fast (ff,df)
   complex(dp) :: a, b
   integer :: imqx, imqy, imqz, ntheta, nphi, npsi
   real(dp) :: fm(0:grid%mmax)
+  complex(dp), allocatable :: in2d(:,:), delta_rho_theta_mup_mu(:,:,:)
+  type(c_ptr) :: planc2c2dplus, planc2c2dminus
 
   ff=0
   no = grid%no
@@ -64,7 +66,7 @@ subroutine energy_luc_fast (ff,df)
   np = grid%np
   rho0 = solvent(1)%rho0
   mmax=grid%mmax
-  mmax2=mmax/2
+  mmax2=mmax/grid%molrotsymorder
   ntheta=grid%ntheta
   nphi=grid%nphi
   npsi=grid%npsi
@@ -139,27 +141,18 @@ q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
 ! PASSAGE EN PROJECTIONS
 !
 !
-block
-  use module_wigner_d, only: wigner_small_d
-  integer :: itheta, iphi, ipsi, ntheta, nphi, npsi, io
-  complex(dp), allocatable :: in(:,:), out(:,:), delta_rho_theta_mup_mu(:,:,:), delta_rho_p(:,:,:)
-  complex(dp), parameter :: zeroc=cmplx(0,0)
-  type(c_ptr) :: planc2c2dplus
-  mmax   = grid%mmax
-  mmax2  = mmax/2
-  ntheta = grid%ntheta
-  nphi   = grid%nphi
-  npsi   = grid%npsi
-  allocate( in(nphi,npsi), out(nphi,npsi), source=zeroc)
-  allocate( delta_rho_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2), source=zeroc)
-  call dfftw_plan_dft_2d (planc2c2dplus, nphi, npsi, in, out, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+  if(.not.allocated(in2d)) then
+    allocate( in2d(nphi,npsi), source=zeroc)
+    allocate( delta_rho_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2), source=zeroc)
+    call dfftw_plan_dft_2d (planc2c2dplus, nphi, npsi, in2d, in2d, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+    call dfftw_plan_dft_2d (planc2c2dminus, nphi, npsi, in2d, in2d, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe - dans l'exponentiel
+  end if
   do itheta=1,ntheta
-    in = zeroc
+    in2d = zeroc
     do concurrent( iphi=1:nphi, ipsi=1:npsi )
-      in(iphi,ipsi) = delta_rho_k_angle(grid%io(itheta,iphi,ipsi), iqx,iqy,iqz) /real(nphi*npsi)
+      in2d(iphi,ipsi) = delta_rho_k_angle(grid%io(itheta,iphi,ipsi), iqx,iqy,iqz) /real(nphi*npsi)
     end do
-    call dfftw_execute (planc2c2dplus, in, out)
-
+    call dfftw_execute (planc2c2dplus, in2d, in2d)
     do iphi=1,nphi
       if (iphi <= nphi/2+1) then
         mup = iphi-1
@@ -172,20 +165,17 @@ block
         else
           mu2=ipsi-1-npsi
         end if
-        delta_rho_theta_mup_mu(itheta,mup,mu2) = out(iphi,ipsi)
+        delta_rho_theta_mup_mu(itheta,mup,mu2) = in2d(iphi,ipsi)
       end do
     end do
   end do ! sur theta
-
-  allocate ( delta_rho_p(0:mmax,-mmax:mmax,-mmax2:mmax2), source=zeroc)
-
   do m=0,mmax
     m2 = m/2
     do mup=-m,m
       do mu2=-m2,m2
         mu=2*mu2
         do itheta=1,ntheta
-delta_rho_p(m,mup,mu2) = delta_rho_p(m,mup,mu2) + delta_rho_theta_mup_mu(itheta,mup,mu2)&
+delta_rho_k_proj(m,mup,mu2) = delta_rho_k_proj(m,mup,mu2) + delta_rho_theta_mup_mu(itheta,mup,mu2)&
          * wigner_small_d(m,mup,mu,grid%thetaofntheta(itheta)) * grid%wthetaofntheta(itheta) &
          /sum(grid%wthetaofntheta) * fm(m)
         end do
@@ -193,47 +183,6 @@ delta_rho_p(m,mup,mu2) = delta_rho_p(m,mup,mu2) + delta_rho_theta_mup_mu(itheta,
     end do
   end do
 
-! ANCIENNE METHODE VERIFIEE OK
-  delta_rho_k_proj = cmplx(0,0)
-  do m=0,mmax
-    do mup=-m,m
-      do mu2=-m/2,m/2
-        mu=2*mu2
-        delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum( delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w *  &
-          [( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )]   )
-      end do
-    end do
-  end do
-
-! COMPARAISON
-do m=0,mmax
-  do mup=-m,m
-    do mu2=-m/2,m/2
-      mu=2*mu2
-      a = delta_rho_k_proj(m,mup,mu2)
-      b = delta_rho_p(m,mup,mu2)
-      ! if(abs(a-b)>1.D-10) print*, m,mup,mu,a, b, "le rapide est ",real(b)/real(a), "fois plus grand que b"
-      if(abs(a-b)>1.D-10 )  print*, iqx,iqy,iqz,m,mup,mu,"LucREF=",real(a),"LucFFT=",real(b)
-    end do
-  end do
-end do
-deallocate(in,out,delta_rho_p,delta_rho_theta_mup_mu)
-end block
-cycle
-stop "block projection fini"
-
-
-
-! delta_rho_k_proj = cmplx(0,0)
-! do m=0,mmax
-!   do mup=-m,m
-!     do mu2=-m/2,m/2
-!       mu=2*mu2
-!       delta_rho_k_proj(m,mup,mu2) = sqrt(real(2*m+1,dp)) /sum(grid%w) *sum( delta_rho_k_angle(:,iqx,iqy,iqz) *grid%w *  &
-!         [( conjg(wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)))  ,io=1,no )]   )
-!     end do
-!   end do
-! end do
 
 !
 !
