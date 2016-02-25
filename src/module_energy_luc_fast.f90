@@ -6,8 +6,8 @@ module tableaux_dft_3d_fast
   COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::expikhiphi
   REAL(8),DIMENSION(:),ALLOCATABLE::omeg
   COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::harsph1_q
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::delta_rho_proj,delta_rho,delta_rho_proj1,auxi_1,auxi_2
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::gamma4_proj,gamma4_proj1
+  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: delta_rho,delta_rho_proj1,auxi_1,auxi_2
+  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: gamma4_proj1
   INTEGER, DIMENSION(:),ALLOCATABLE:: mm,nn,ll,mumu,nunu
   REAL(8), DIMENSION(:),ALLOCATABLE:: ck
   COMPLEX(8),DIMENSION(:,:,:,:,:,:),ALLOCATABLE:: tab5
@@ -34,12 +34,11 @@ subroutine energy_luc_fast (ff,df)
   real(dp), intent(out) :: ff
   real(dp), intent(inout) :: df(:,:,:,:,:)
   type(c_ptr) :: plan_fft_c2c_3d_signe_plus, plan_fft_c2c_3d_signe_minus
-  complex(dp), allocatable :: in(:,:,:), out(:,:,:)
+  complex(dp), allocatable :: in(:,:,:)
   real :: time(0:20)
   integer :: io, no, nx, ny, nz, np, iqx, iqy, iqz, itheta, iphi, ipsi, mmax, mmax2, m, mup, mu, mu2, ix, iy ,iz, i, j, k, khi, m2
   complex(dp), parameter :: zeroc=cmplx(0,0,dp)
   complex(dp), allocatable :: delta_rho_k_angle(:,:,:,:), gamma_k_angle(:,:,:,:)
-  complex(dp), allocatable :: gamma_full(:,:,:,:) ! gamma(Ω,x,y,z)
   complex(dp), allocatable :: delta_rho_k_proj(:,:,:)
   complex(dp), allocatable :: gamma_k_proj(:,:,:) ! m mup mu2
   complex(dp), allocatable :: gamma_angle(:,:,:,:) ! omega, x y z
@@ -67,9 +66,8 @@ subroutine energy_luc_fast (ff,df)
 
 
 allocate ( in(nx,ny,nz), source=zeroc)
-allocate ( out(nx,ny,nz), source=zeroc)
-call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, out, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
-call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, out, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
+call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, in, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, in, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
 
 !
 !
@@ -80,39 +78,18 @@ call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, out, FFTW_F
 ! solvent(1)%xi = solvent(1)%xi * 10
 
 allocate ( delta_rho_k_angle(no,nx,ny,nz) , source=zeroc)
-allocate ( gamma_k_angle(no,nx,ny,nz) , source=zeroc)
 
 do io=1,no
   in = cmplx(solvent(1)%xi(io,:,:,:)**2*rho0-rho0,0,dp)  ! Δρ(Ω,x,y,z)
-  call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, out )
-  delta_rho_k_angle(io,:,:,:) = out  ! Δρ(Ω,qx,qy,qz)
+  call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, in )
+  delta_rho_k_angle(io,:,:,:) = in  ! Δρ(Ω,qx,qy,qz)
 end do
-
-
-!
-! on s'assure :
-! - la symétrie hermitienne est gardée
-! - surtout, on sait aller chercher q et -q dans les tableaux pour tous les q. Il n'y a pas d'exception, que nx, ny, nz soient pairs ou impairs.
-! Autrement dit, ce n'est pas vraiment la symétrie hermitienne qu'on teste, mais la fonction grid%ix_mq(ixq) qui a l'indice iqx trouve l'indice ix_mq correspondant à -q(ix_q)
-!
-goto 177
-do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
-  imqx = grid%ix_mq(iqx)
-  imqy = grid%iy_mq(iqy)
-  imqz = grid%iz_mq(iqz)
-  a = delta_rho_k_angle(io,iqx,iqy,iqz)
-  b = conjg(delta_rho_k_angle(io,imqx,imqy,imqz))
-  if (abs(a-b)>1.D-10)  error stop "raté pour la symétrie hermitienne de delta_rho_k_angle"
-end do
-177 continue
-
-
-
 
 
 
 
 allocate (delta_rho_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
+allocate (gamma_k_angle   (no,nx,ny,nz) , source=zeroc)
 allocate (gamma_k_proj    (0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
 
 
@@ -188,7 +165,6 @@ delta_rho_k_proj(m,mup,mu2) = delta_rho_k_proj(m,mup,mu2) + delta_rho_theta_mup_
 ! de l'équation 1.15 de Luc, c'est à dire entre delta_rho_alpha(q) et delta_rho_alpha'(-q)
 !
 call luc_oz (q, delta_rho_k_proj, gamma_k_proj)
-print*,iqx,iqy,iqz,norm2(abs(gamma_k_proj))
 
 
 !
@@ -229,8 +205,8 @@ if(.not.allocated(gamma_angle)) allocate( gamma_angle(no,nx,ny,nz))
 gamma_angle = zeroc
 do io=1,no
   in = delta_rho_k_angle(io,:,:,:)
-  call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, out)
-  gamma_angle(io,:,:,:) = out/real(nx*ny*nz,dp)
+  call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, in)
+  gamma_angle(io,:,:,:) = in/real(nx*ny*nz,dp)
 end do
 
 
@@ -248,19 +224,20 @@ end subroutine energy_luc_fast
 
 
 
-  subroutine luc_oz (qvec, my_delta_rho_proj, my_gamma_proj)
+  subroutine luc_oz (qvec, delta_rho_proj, gamma4_proj)
     USE lecture                                    ! pour lire des valeurs � la Luc
     USE tableaux_dft_3d_fast                            ! d�finit le type des tableaux de valeurs � partager
-    use module_rotation, only: thetaofq, phiofq
+    use module_rotation, only: thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu
     use module_grid,only: grid
+    use iso_c_binding, only: dp=>c_double
     implicit real(8) (a-h,o-z)
     real(8),    intent(in) :: qvec(3)
-    complex(8), intent(in) :: my_delta_rho_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
-    complex(8), intent(out) :: my_gamma_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
+    complex(8), intent(in) :: delta_rho_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
+    complex(8), intent(out) :: gamma4_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
     CHARACTER(50)::nomfic,texte
     CHARACTER(10) texte1
     COMPLEX(8)::xi_cmplx,auxi_cmplx,ck_cmplx,coeff_cmplx,coeff1_cmplx,coeff2_cmplx
-    integer :: mmax
+    integer :: mmax, mmax2
     logical, save :: first_time_here = .true.
     logical :: qz_was_negatif
     fac(0)=1.
@@ -269,6 +246,8 @@ end subroutine energy_luc_fast
     end do
     mnmax=grid%mmax
     mnmax2=mnmax/2
+    mmax=mnmax
+    mmax2=mnmax2
     nbeta=grid%ntheta
     nphi=grid%nphi
     nomeg=grid%npsi
@@ -282,25 +261,17 @@ end subroutine energy_luc_fast
     qz=qvec(3)
     qq=SQRT(qx**2+qy**2+qz**2)
 
-    theta_q = thetaofq(qx,qy,qz)
-    phi_q   = phiofq(qx,qy,qz)
     !           les elements Rllambda0(q)
     !                      les elements Rmmu'khi(q)          (psi(q)=0)
+
+
     if(.not.allocated(harsph1_q)) ALLOCATE(harsph1_q(0:mnmax,-mnmax:mnmax,-mnmax:mnmax))
-    harsph1_q=0.
-    do m=0,mnmax
-      do mu1=-m,m
-        do khi=-m,m
-          harsph1_q(m,mu1,khi)=harm_sph(m,mu1,khi,theta_q)*EXP(-xi_cmplx*mu1*phi_q)
-        end do
-      end do
-    end do
+    harsph1_q = rotation_matrix_between_complex_spherical_harmonics_lu (qvec,mnmax)
+
 
     !
     !                           on definit ou lit les projections de delta_rho de depart (complexes!)
     !
-    if(.not.allocated(delta_rho_proj)) ALLOCATE(delta_rho_proj(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
-    delta_rho_proj= my_delta_rho_proj
 
     !
     !                          on lit les projections mnlmunu de ck
@@ -311,6 +282,7 @@ end subroutine energy_luc_fast
     ! PRINT*, 'suivies des lignes de q,cmnlmunu(q) (on choisira le q le plus proche, par exces)'
     ! PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
     ! PRINT*, 'Nom du fichier --->'
+    dq=0.613592315E-01
     if(.not.allocated(tab5)) then
       OPEN(7,FILE="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old')
       ialpmax=549
@@ -323,8 +295,10 @@ end subroutine energy_luc_fast
       READ(7,*) texte1,ll
       READ(7,*) texte1,mumu
       READ(7,*) texte1,nunu
-      ALLOCATE (tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2,1024), source=zeroc)
-      do iq=1,1024
+      iqmax = int( sqrt(maxval(grid%kx)**2+maxval(grid%ky)**2+maxval(grid%kz)**2) / dq ) +2 ! +2 is surely useless
+      if(iqmax>1024) error stop "mon fichier de ck est trop restreint en valeurs de q for our nfft and L"
+      ALLOCATE (tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2,iqmax), source=zeroc)
+      do iq=1,iqmax
         READ(7,*) q,ck(:)
 
           do khi=0,mnmax                ! que khi>=0 pour l'instant
@@ -358,17 +332,12 @@ end subroutine energy_luc_fast
       CLOSE(7)
       deallocate(ck)
     end if
-    ! !
-    ! !          d'abord, je calcule les cmnmunu;khi     mis dans tab5(m,n,khi,mu,nu)
-    ! !
 
     !
     !
     !            METHODE 4: projections mais en passant par le repere local
     !
     !
-    ! PRINT*, 'Methode4: je combine les projections via le repere local!'
-    if(.not.allocated(gamma4_proj)) ALLOCATE(gamma4_proj(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
     !     d'abord, passer des projections delta_rho a delta_rho'
     if(.not.allocated(delta_rho_proj1)) ALLOCATE(delta_rho_proj1(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
     ! PRINT*, 'deltarho_proj'''
@@ -383,7 +352,6 @@ end subroutine energy_luc_fast
     end do
     !               rappel: cmnmunu;khi est dans tab5
     !               faire alors OZ le plus simple!
-    dq=0.613592315E-01
     iq=int(qq/dq +0.5) +1
 
     if(.not.allocated(gamma4_proj1)) ALLOCATE(gamma4_proj1(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
@@ -413,7 +381,6 @@ end subroutine energy_luc_fast
         end do
       end do
     end do
-    my_gamma_proj = gamma4_proj
   end subroutine
 
 
