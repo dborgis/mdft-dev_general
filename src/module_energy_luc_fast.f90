@@ -22,7 +22,6 @@ module module_energy_luc_fast
 contains
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine energy_luc_fast (ff,df)
   use iso_c_binding
   use module_grid, only: grid
@@ -48,6 +47,7 @@ subroutine energy_luc_fast (ff,df)
   real(dp) :: fm(0:grid%mmax)
   complex(dp), allocatable :: in2d(:,:), delta_rho_theta_mup_mu(:,:,:)
   type(c_ptr) :: planc2c2dplus, planc2c2dminus
+  integer, allocatable :: mupofiphi(:), mu2ofipsi(:)
 
   ff=0
   no = grid%no
@@ -65,7 +65,7 @@ subroutine energy_luc_fast (ff,df)
   call cpu_time(time(1))
 
 
-allocate ( in(nx,ny,nz), source=zeroc)
+if(.not.allocated(in)) allocate ( in(nx,ny,nz), source=zeroc)
 call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, in, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
 call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, in, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
 
@@ -74,11 +74,9 @@ call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, in, FFTW_FO
 ! 1. FOURIER TRANSFORM DELTA RHO
 !
 !
-! call random_number( solvent(1)%xi )
-! solvent(1)%xi = solvent(1)%xi * 10
+if(.not.allocated(delta_rho_k_angle)) allocate ( delta_rho_k_angle(no,nx,ny,nz))
 
-allocate ( delta_rho_k_angle(no,nx,ny,nz) , source=zeroc)
-
+delta_rho_k_angle = zeroc
 do io=1,no
   in = cmplx(solvent(1)%xi(io,:,:,:)**2*rho0-rho0,0,dp)  ! Δρ(Ω,x,y,z)
   call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, in )
@@ -87,67 +85,68 @@ end do
 
 
 
-
-allocate (delta_rho_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
-allocate (gamma_k_angle   (no,nx,ny,nz) , source=zeroc)
-allocate (gamma_k_proj    (0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
-
-
 !
 !
 ! FOR A GIVEN Q
 !
 !
+if(.not.allocated(delta_rho_k_proj)) allocate (delta_rho_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
+if(.not.allocated(gamma_k_angle)) allocate (gamma_k_angle   (no,nx,ny,nz) , source=zeroc)
+if(.not.allocated(gamma_k_proj)) allocate (gamma_k_proj    (0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
+if(.not.allocated(in2d)) then
+  allocate( in2d(nphi,npsi), source=zeroc)
+  allocate( delta_rho_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2), source=zeroc)
+  call dfftw_plan_dft_2d (planc2c2dplus,  nphi, npsi, in2d, in2d, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+  call dfftw_plan_dft_2d (planc2c2dminus, nphi, npsi, in2d, in2d, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe - dans l'exponentiel
+  allocate(mupofiphi(nphi))
+  allocate(mu2ofipsi(npsi))
+  do iphi=1,nphi
+    if (iphi <= nphi/2+1) then
+      mupofiphi(iphi) = iphi-1
+    else
+      mupofiphi(iphi) = iphi-1-nphi
+    end if
+  end do
+  do ipsi=1,npsi
+    if(ipsi<=npsi/2+1) then
+      mu2ofipsi(ipsi)=ipsi-1
+    else
+      mu2ofipsi(ipsi)=ipsi-1-npsi
+    end if
+  end do
+end if
+
 do iqz=1,nz
   print*, "... avancement ...",real(iqz)/real(nz)*100.,"%"
   do iqy=1,ny
     do iqx=1,nx
 
-q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
+      q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
 
 !
 !
 ! PASSAGE EN PROJECTIONS
 !
 !
-  if(.not.allocated(in2d)) then
-    allocate( in2d(nphi,npsi), source=zeroc)
-    allocate( delta_rho_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2), source=zeroc)
-    call dfftw_plan_dft_2d (planc2c2dplus, nphi, npsi, in2d, in2d, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
-    call dfftw_plan_dft_2d (planc2c2dminus, nphi, npsi, in2d, in2d, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe - dans l'exponentiel
-  end if
+
+  delta_rho_theta_mup_mu = zeroc
   do itheta=1,ntheta
     in2d = zeroc
     do concurrent( iphi=1:nphi, ipsi=1:npsi )
       in2d(iphi,ipsi) = delta_rho_k_angle(grid%io(itheta,iphi,ipsi), iqx,iqy,iqz) /real(nphi*npsi)
     end do
     call dfftw_execute (planc2c2dplus, in2d, in2d)
-    do iphi=1,nphi
-      if (iphi <= nphi/2+1) then
-        mup = iphi-1
-      else
-        mup = iphi-1-nphi
-      end if
-      do ipsi=1,npsi
-        if(ipsi<=npsi/2+1) then
-          mu2=ipsi-1
-        else
-          mu2=ipsi-1-npsi
-        end if
-        delta_rho_theta_mup_mu(itheta,mup,mu2) = in2d(iphi,ipsi)
-      end do
-    end do
-  end do ! sur theta
+    delta_rho_theta_mup_mu(itheta,mupofiphi(:),mu2ofipsi(:)) = in2d(:,:)
+  end do
   do m=0,mmax
-    m2 = m/2
-    do mup=-m,m
-      do mu2=-m2,m2
-        mu=2*mu2
-        do itheta=1,ntheta
-delta_rho_k_proj(m,mup,mu2) = delta_rho_k_proj(m,mup,mu2) + delta_rho_theta_mup_mu(itheta,mup,mu2)&
+    m2=m/2
+    do concurrent( mup=-m:m, mu2=-m2:m2 )
+      mu=2*mu2
+      do itheta=1,ntheta
+        delta_rho_k_proj(m,mup,mu2) = delta_rho_k_proj(m,mup,mu2) &
+         + delta_rho_theta_mup_mu(itheta,mup,mu2) &
          * wigner_small_d(m,mup,mu,grid%thetaofntheta(itheta)) * grid%wthetaofntheta(itheta) &
          /sum(grid%wthetaofntheta) * fm(m)
-        end do
       end do
     end do
   end do
@@ -172,18 +171,67 @@ call luc_oz (q, delta_rho_k_proj, gamma_k_proj)
 ! RETOUR EN ANGLES
 !
 !
-gamma_k_angle(:,iqx,iqy,iqz) = (0,0)
+gamma_k_angle(:,iqx,iqy,iqz) = zeroc
 do io=1,no
   do m=0,mmax
     do mup=-m,m
       do mu2=-m/2,m/2
         mu=mu2*2
         gamma_k_angle(io,iqx,iqy,iqz) = gamma_k_angle(io,iqx,iqy,iqz)   &
-         + sqrt(real(2*m+1,dp)) * wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)) * gamma_k_proj(m,mup,mu2)
+         + fm(m) * wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)) * gamma_k_proj(m,mup,mu2)
       end do
     end do
   end do
 end do
+
+
+block
+complex(dp) :: foo_o(no)
+complex(dp) :: foo_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2)
+foo_theta_mup_mu = zeroc
+
+foo_o = zeroc
+do mup=-mmax,mmax
+  do mu2=-mmax2,mmax2
+    mu=2*mu2
+    do m= max(abs(mup),abs(mu)), mmax
+      do itheta=1,ntheta
+        foo_theta_mup_mu(itheta,mup,mu2) = foo_theta_mup_mu(itheta,mup,mu2) &
+          + gamma_k_proj(m,mup,mu2) * wigner_small_d(m,mup,mu,grid%thetaofntheta(itheta))*fm(m)
+      end do
+    end do
+  end do
+end do
+do itheta=1,ntheta
+  do mup=-mmax,mmax
+    if(mup>=0) then
+      iphi = mup+1
+    else
+      iphi = mup+1+nphi
+    end if
+    do mu2=-mmax2,mmax2
+      if(mu2>=0) then
+        ipsi=mu2+1
+      else
+        ipsi=mu2+1+npsi
+      end if
+      in2d(iphi,ipsi) = foo_theta_mup_mu(itheta,mup,mu2)
+    end do
+  end do
+  call dfftw_execute( planc2c2dminus, in2d, in2d )
+  do iphi=1,nphi
+    do ipsi=1,npsi
+      foo_o (grid%io(itheta,iphi,ipsi)) = in2d(iphi,ipsi)
+      a = foo_o (grid%io(itheta,iphi,ipsi))
+      b = gamma_k_angle(grid%io(itheta,iphi,ipsi),iqx,iqy,iqz)
+      if(abs(a-b)>1.D-10) then
+        print*,a,b
+        stop "problem dans la fft inverse angulaire"
+      end if
+    end do
+  end do
+end do
+end block
 
 end do ! iqx
 end do ! iqy
