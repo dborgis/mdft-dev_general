@@ -1,11 +1,8 @@
 module tableaux_dft_3d_fast
-  INTEGER::mnmax,mnmax2,nbeta,nphi,nomeg
+  INTEGER::nbeta,nphi,nomeg
   REAL(8),DIMENSION(:),ALLOCATABLE::beta,cosbeta,sinbeta,wb
-  REAL(8),DIMENSION(:),ALLOCATABLE::phi,cosphi,sinphi
-  COMPLEX(8),DIMENSION(:),ALLOCATABLE::expiphi
-  COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::expikhiphi
   REAL(8),DIMENSION(:),ALLOCATABLE::omeg
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::harsph1_q
+  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: harsph1_q
   COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: delta_rho,delta_rho_proj1,auxi_1,auxi_2
   COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: gamma4_proj1
   INTEGER, DIMENSION(:),ALLOCATABLE:: mm,nn,ll,mumu,nunu
@@ -45,7 +42,7 @@ subroutine energy_luc_fast (ff,df)
   complex(dp) :: a, b
   integer :: imqx, imqy, imqz, ntheta, nphi, npsi
   real(dp) :: fm(0:grid%mmax)
-  complex(dp), allocatable :: in2d(:,:), delta_rho_theta_mup_mu(:,:,:)
+  complex(dp), allocatable :: in2d(:,:), foo_theta_mup_mu(:,:,:)
   type(c_ptr) :: planc2c2dplus, planc2c2dminus
   integer, allocatable :: mupofiphi(:), mu2ofipsi(:)
 
@@ -93,9 +90,9 @@ end do
 if(.not.allocated(delta_rho_k_proj)) allocate (delta_rho_k_proj(0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
 if(.not.allocated(gamma_k_angle)) allocate (gamma_k_angle   (no,nx,ny,nz) , source=zeroc)
 if(.not.allocated(gamma_k_proj)) allocate (gamma_k_proj    (0:mmax,-mmax:mmax,-mmax2:mmax2) , source=zeroc)
+if(.not.allocated(foo_theta_mup_mu)) allocate (foo_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2), source=zeroc)
 if(.not.allocated(in2d)) then
   allocate( in2d(nphi,npsi), source=zeroc)
-  allocate( delta_rho_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2), source=zeroc)
   call dfftw_plan_dft_2d (planc2c2dplus,  nphi, npsi, in2d, in2d, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
   call dfftw_plan_dft_2d (planc2c2dminus, nphi, npsi, in2d, in2d, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe - dans l'exponentiel
   allocate(mupofiphi(nphi))
@@ -116,12 +113,13 @@ if(.not.allocated(in2d)) then
   end do
 end if
 
-do iqz=1,nz
-  print*, "... avancement ...",real(iqz)/real(nz)*100.,"%"
-  do iqy=1,ny
-    do iqx=1,nx
 
-      q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
+
+do iqz=1,nz
+do iqy=1,ny
+do iqx=1,nx
+
+q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
 
 !
 !
@@ -129,14 +127,14 @@ do iqz=1,nz
 !
 !
 
-  delta_rho_theta_mup_mu = zeroc
+  foo_theta_mup_mu = zeroc
   do itheta=1,ntheta
     in2d = zeroc
     do concurrent( iphi=1:nphi, ipsi=1:npsi )
       in2d(iphi,ipsi) = delta_rho_k_angle(grid%io(itheta,iphi,ipsi), iqx,iqy,iqz) /real(nphi*npsi)
     end do
     call dfftw_execute (planc2c2dplus, in2d, in2d)
-    delta_rho_theta_mup_mu(itheta,mupofiphi(:),mu2ofipsi(:)) = in2d(:,:)
+    foo_theta_mup_mu(itheta,mupofiphi(:),mu2ofipsi(:)) = in2d(:,:)
   end do
   do m=0,mmax
     m2=m/2
@@ -144,13 +142,20 @@ do iqz=1,nz
       mu=2*mu2
       do itheta=1,ntheta
         delta_rho_k_proj(m,mup,mu2) = delta_rho_k_proj(m,mup,mu2) &
-         + delta_rho_theta_mup_mu(itheta,mup,mu2) &
+         + foo_theta_mup_mu(itheta,mup,mu2) &
          * wigner_small_d(m,mup,mu,grid%thetaofntheta(itheta)) * grid%wthetaofntheta(itheta) &
          /sum(grid%wthetaofntheta) * fm(m)
       end do
     end do
   end do
 
+
+!
+! ON TUE CERTAINES PROJECTIONS ...
+!
+if(iqx==0 .and. iqy==0 .and. iqz==0 .and. mmax>0) then
+  delta_rho_k_proj(1,0,0) = zeroc
+end if
 
 
 !
@@ -171,26 +176,8 @@ call luc_oz (q, delta_rho_k_proj, gamma_k_proj)
 ! RETOUR EN ANGLES
 !
 !
-gamma_k_angle(:,iqx,iqy,iqz) = zeroc
-do io=1,no
-  do m=0,mmax
-    do mup=-m,m
-      do mu2=-m/2,m/2
-        mu=mu2*2
-        gamma_k_angle(io,iqx,iqy,iqz) = gamma_k_angle(io,iqx,iqy,iqz)   &
-         + fm(m) * wigner_big_D(m,mup,mu,grid%theta(io),grid%phi(io),grid%psi(io)) * gamma_k_proj(m,mup,mu2)
-      end do
-    end do
-  end do
-end do
 
-
-block
-complex(dp) :: foo_o(no)
-complex(dp) :: foo_theta_mup_mu(ntheta,-mmax:mmax,-mmax2:mmax2)
 foo_theta_mup_mu = zeroc
-
-foo_o = zeroc
 do mup=-mmax,mmax
   do mu2=-mmax2,mmax2
     mu=2*mu2
@@ -219,30 +206,19 @@ do itheta=1,ntheta
     end do
   end do
   call dfftw_execute( planc2c2dminus, in2d, in2d )
-  do iphi=1,nphi
-    do ipsi=1,npsi
-      foo_o (grid%io(itheta,iphi,ipsi)) = in2d(iphi,ipsi)
-      a = foo_o (grid%io(itheta,iphi,ipsi))
-      b = gamma_k_angle(grid%io(itheta,iphi,ipsi),iqx,iqy,iqz)
-      if(abs(a-b)>1.D-10) then
-        print*,a,b
-        stop "problem dans la fft inverse angulaire"
-      end if
-    end do
+  do concurrent(iphi=1:nphi, ipsi=1:npsi)
+    gamma_k_angle(grid%io(itheta,iphi,ipsi),iqx,iqy,iqz) = in2d(iphi,ipsi)
   end do
 end do
-end block
+
 
 end do ! iqx
 end do ! iqy
 end do ! iqz
 
 
-
-
-
 deallocate (delta_rho_k_proj)
-deallocate (gamma_k_proj )
+deallocate (gamma_k_proj)
 
 !
 !
@@ -258,13 +234,44 @@ do io=1,no
 end do
 
 
+
+
+
+
+
+
+
+block
+  use module_thermo, only: thermo
+  real(dp) :: vexc(no), xi, rho, dv, kT
+  real(dp), parameter :: fourpisq=4*acos(-1._dp)**2
+  dv = grid%dv
+  kT = thermo%kBT
+ff=0._dp
+do iz=1,nz
+  do iy=1,ny
+    do ix=1,nx
+      vexc(1:no) = -kT*grid%w(1:no)*gamma_angle(:,ix,iy,iz) *fourpisq  /solvent(1)%n0  ! /0.0333 vient du c de luc qui est un n0.c
+      do io=1,no
+        xi = solvent(1)%xi(io,ix,iy,iz)
+        rho = xi**2*rho0
+        ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
+        df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
+      end do
+    end do
+  end do
+end do
+end block
+
+
+
+
+
 call cpu_time (time(3))
 deallocate(in)
 deallocate(delta_rho_k_angle)
 
 print*, "energy_luc took ",time(3)-time(1),"sec"
-print*, "ff luc fast =", ff
-
 end subroutine energy_luc_fast
 
 
@@ -285,20 +292,17 @@ end subroutine energy_luc_fast
     CHARACTER(50)::nomfic,texte
     CHARACTER(10) texte1
     COMPLEX(8)::xi_cmplx,auxi_cmplx,ck_cmplx,coeff_cmplx,coeff1_cmplx,coeff2_cmplx
-    integer :: mmax, mmax2
-    logical, save :: first_time_here = .true.
-    logical :: qz_was_negatif
+    integer :: mmax, mmax2, mmax_ck, mmax2_ck
     fac(0)=1.
     do k=1,50
       fac(k)=fac(k-1)*REAL(k)
     end do
-    mnmax=grid%mmax
-    mnmax2=mnmax/2
-    mmax=mnmax
-    mmax2=mnmax2
+    mmax=grid%mmax
+    mmax2=mmax
+    mmax_ck = 5
+    mmax2_ck = mmax_ck/2
     nbeta=grid%ntheta
     nphi=grid%nphi
-    nomeg=grid%npsi
     pi=4.d0*ATAN(1.d0)
     xi_cmplx=(0.,1.d0)
     !
@@ -313,8 +317,8 @@ end subroutine energy_luc_fast
     !                      les elements Rmmu'khi(q)          (psi(q)=0)
 
 
-    if(.not.allocated(harsph1_q)) ALLOCATE(harsph1_q(0:mnmax,-mnmax:mnmax,-mnmax:mnmax))
-    harsph1_q = rotation_matrix_between_complex_spherical_harmonics_lu (qvec,mnmax)
+    if(.not.allocated(harsph1_q)) ALLOCATE(harsph1_q(0:mmax,-mmax:mmax,-mmax:mmax))
+    harsph1_q = rotation_matrix_between_complex_spherical_harmonics_lu (qvec,mmax)
 
 
     !
@@ -331,6 +335,8 @@ end subroutine energy_luc_fast
     ! PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
     ! PRINT*, 'Nom du fichier --->'
     dq=0.613592315E-01
+    mmax_ck = 5
+    mmax2_ck = mmax_ck/2
     if(.not.allocated(tab5)) then
       OPEN(7,FILE="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old')
       ialpmax=549
@@ -345,11 +351,11 @@ end subroutine energy_luc_fast
       READ(7,*) texte1,nunu
       iqmax = int( sqrt(maxval(grid%kx)**2+maxval(grid%ky)**2+maxval(grid%kz)**2) / dq ) +2 ! +2 is surely useless
       if(iqmax>1024) error stop "mon fichier de ck est trop restreint en valeurs de q for our nfft and L"
-      ALLOCATE (tab5(0:mnmax,0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2,iqmax), source=zeroc)
+      ALLOCATE (tab5(0:mmax_ck,0:mmax_ck,-mmax_ck:mmax_ck,-mmax2_ck:mmax2_ck,-mmax2_ck:mmax2_ck,iqmax), source=zeroc)
       do iq=1,iqmax
         READ(7,*) q,ck(:)
 
-          do khi=0,mnmax                ! que khi>=0 pour l'instant
+          do khi=0,mmax_ck                ! que khi>=0 pour l'instant
             do ialp=1,ialpmax
               m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
               IF(khi>MIN(m,n)) cycle
@@ -365,9 +371,9 @@ end subroutine energy_luc_fast
             end do                           ! fin ialp
           end do                             ! fin khi>=0
           !                            et je complete les khi<0 avec cmnmunu-khi=(-1)**(m+n)*cmnmunukhi*
-          do m=0,mnmax
+          do m=0,mmax_ck
             m2=m/2
-            do n=0,mnmax
+            do n=0,mmax_ck
               n2=n/2
               coeff=(-1)**(m+n)
               do khi=-MIN(m,n),-1
@@ -387,10 +393,10 @@ end subroutine energy_luc_fast
     !
     !
     !     d'abord, passer des projections delta_rho a delta_rho'
-    if(.not.allocated(delta_rho_proj1)) ALLOCATE(delta_rho_proj1(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
+    if(.not.allocated(delta_rho_proj1)) ALLOCATE(delta_rho_proj1(0:mmax,-mmax:mmax,-mmax2:mmax2))
     ! PRINT*, 'deltarho_proj'''
     delta_rho_proj1=0.
-    do m=0,mnmax
+    do m=0,mmax
       m2=m/2
       do khi=-m,m
         do mu2=-m2,m2
@@ -402,17 +408,17 @@ end subroutine energy_luc_fast
     !               faire alors OZ le plus simple!
     iq=int(qq/dq +0.5) +1
 
-    if(.not.allocated(gamma4_proj1)) ALLOCATE(gamma4_proj1(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2))
+    if(.not.allocated(gamma4_proj1)) ALLOCATE(gamma4_proj1(0:mmax,-mmax:mmax,-mmax2:mmax2))
     gamma4_proj1=0.
-    do khi=-mnmax,mnmax
-      do mu2=-mnmax2,mnmax2
+    do khi=-mmax,mmax
+      do mu2=-mmax2,mmax2
         mu=2*mu2
-        do m=MAX(ABS(khi),ABS(mu)),mnmax
+        do m=MAX(ABS(khi),ABS(mu)),mmax
 
-          do nu2=-mnmax2,mnmax2
+          do nu2=-mmax2,mmax2
             nu=2*nu2
-            do n=MAX(ABS(khi),ABS(nu)),mnmax
-              gamma4_proj1(m,khi,mu2)=gamma4_proj1(m,khi,mu2)+(-1)**khi *tab5(m,n,khi,mu2,nu2,iq) *delta_rho_proj1(n,khi,-nu2)
+            do n=MAX(ABS(khi),ABS(nu)),mmax
+gamma4_proj1(m,khi,mu2)=gamma4_proj1(m,khi,mu2)+(-1)**khi *tab5(m,n,khi,mu2,nu2,iq) *delta_rho_proj1(n,khi,-nu2)
             end do
           end do
 
@@ -421,7 +427,7 @@ end subroutine energy_luc_fast
     end do
     !             et revenir des projections gamma' aux projections gamma
     gamma4_proj=cmplx(0.,0)
-    do m=0,mnmax
+    do m=0,mmax
       m2=m/2
       do mu1=-m,m
         do mu2=-m2,m2
