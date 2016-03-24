@@ -33,6 +33,7 @@ contains
         ! for computing the total energy and associated gradient
         ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
         ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
+
         use iso_c_binding, only: c_sizeof
         use precision_kinds, only: dp
         use module_solvent, only: solvent
@@ -106,13 +107,14 @@ contains
                 call cpu_time(t(7))
                 ! call energy_cproj_mrso (ff%exc_cproj, df)
                 ! call energy_cproj_no_symetry (ff%exc_cproj, df)
-                call energy_luc ( ff%exc_cproj , df )
+                ! call energy_luc ( ff%exc_cproj , df )
                 call energy_luc_fast ( ff%exc_cproj, df)
                 call cpu_time(t(8))
                 print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
-                stop "energy_and_gradient after call to energy_luc"
+                ! stop "energy_and_gradient after call to energy_luc"
                 ! print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
                 f = f + ff%exc_cproj
+                ! stop
             end if
             ! if (solvent(s)%do%exc_ck_angular) then
             !     call cpu_time(t(9))
@@ -141,9 +143,6 @@ contains
             ! if (solvent(s)%do%exc_hydro) call energy_hydro (ff%exc_hydro, df)
             ! if (solvent(s)%do%exc_nn_cs_plus_nbar) call energy_nn_cs_plus_nbar (ff%exc_nn_cs_plus_nbar, df)
             ! if (solvent(s)%do%exc_3b) call energy_threebody_faster (ff%exc_3d, df)
-
-
-
         end do
 
         ff%tot = f
@@ -163,9 +162,11 @@ contains
       ! Hunenberger's corrections
       !
       !... We use P-scheme instead of M-scheme for the electrostatics in MDFT.
-      ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 35 and 37 with Ri=0
+      ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 36 and 37 with the radius of the ion, R_i = 0
       ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
       ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
+      ! R_i should not be 0 in reality (see Hunenberger's paper) but (i) the contribution is small for small ions.
+      ! For bigger ions (ie charged molecules), what should one do ?
       !
       block
         use module_solvent, only: solvent
@@ -174,8 +175,7 @@ contains
           double precision :: gamma ! trace of the quadrupole moment
           gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
           solute_net_charge = sum(solute%site%q)
-          ! print*, "Hunenberger's P-scheme correction is solute net charge times", -gamma*solvent(1)%n0*2.909857E3
-          ff%pscheme_correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol   ! n0 of water is 0.0333
+          ff%pscheme_correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol
           open(79,file="output/Pscheme_correction")
           write(79,*) ff%pscheme_correction
           close(79)
@@ -183,7 +183,7 @@ contains
 
       !
       !   Type B correction of Hunenberger (due to lattice sums with periodic boundary conditions)
-      !   see J. Chem. Phys. 124, 224501 (2006), eq. 32 with R_I=0 (no ionic radius)
+      !   see J. Chem. Phys. 124, 224501 (2006), eq. 32 with R_i=0 (ionic radius = 0)
       !
       block
         use module_solute, only: solute
