@@ -98,9 +98,9 @@ contains
                 solvent(s)%do%exc_cproj=.true.
                 solvent(s)%do%exc_ck_angular=.true.
             case default
+                solvent(s)%do%exc_cproj=.true.
                 print*, "see module_solvent > functional decision tree"
                 print*, "mmax is trop grand"
-                error stop
             end select
 
             !

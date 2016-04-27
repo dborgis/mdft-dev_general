@@ -1,5 +1,8 @@
-boxnod = 64 64 64 
-boxlen = 30. 30. 30.
-mmax = 3
-bulk_density = 0.0333
-temperature = 300.
+#maximum_iteration_nbr = 35
+#restart = T
+direct_sum = T
+boxnod = 64 64 64
+boxlen = 25. 25. 25.  
+mmax = 1
+bulk_density = 0.033
+temperature = 298.15
