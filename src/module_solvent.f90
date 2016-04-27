@@ -4,22 +4,24 @@ module module_solvent
     use system, only: site_type
     use module_input, only: getinput
     use module_grid, only: grid
+    use constants, only: qfact
 
     implicit none
     private
 
     type :: do_type
         logical ::  id_and_ext = .false.,&
-        exc_cs = .false.,&
-        exc_cdeltacd = .false.,&
-        exc_cproj = .false.,&
-        exc_fmt = .false.,&
-        exc_wca = .false.,&
-        exc_3b = .false.,&
-        exc_multipolar_without_coupling_to_density = .false.,&
-        exc_multipolar_with_coupling_to_density = .false.,&
-        exc_hydro = .false.,&
-        exc_nn_cs_plus_nbar = .false.
+                    exc_cs = .false.,&
+                    exc_cdeltacd = .false.,&
+                    exc_cproj = .false.,&
+                    exc_fmt = .false.,&
+                    exc_wca = .false.,&
+                    exc_3b = .false.,&
+                    exc_multipolar_without_coupling_to_density = .false.,&
+                    exc_multipolar_with_coupling_to_density = .false.,&
+                    exc_hydro = .false.,&
+                    exc_nn_cs_plus_nbar = .false.,&
+                    exc_ck_angular = .false.
     end type
 
     type :: correlationfunction_type
@@ -36,19 +38,20 @@ module module_solvent
         integer :: nspec ! number of solvent species
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         real(dp) :: diameter ! hard sphere diameter, for instance
-        real(dp), allocatable :: density(:,:,:,:) ! ix, iy, iz, io
+        real(dp), allocatable :: xi(:,:,:,:) ! ix, iy, iz, io    xi**2=rho/rho0
         type (site_type), allocatable :: site(:)
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
         complex(dp), allocatable :: sigma_k(:,:,:,:) ! charge factor
         complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! molecule polarization factor
         real(dp), allocatable :: vext(:,:,:,:), vextq(:,:,:,:)
-        real(dp) :: vext_threeshold = 100._dp!36.04_dp ! 36.something is the maximum value of v so that exp(-beta.v) does not return underflow at 300 K
+        real(dp) :: vext_threeshold = qfact/2.0_dp !100._dp!36.04_dp ! 36.something is the maximum value of v so that exp(-beta.v) does not return underflow at 300 K
         type(do_type) :: do
         real(dp) :: mole_fraction = 1._dp
         type(correlationfunction_type) :: cs
         type(correlationfunction_type) :: cdelta
         type(correlationfunction_type) :: cd
+        complex(dp), allocatable :: ck_angular(:,:,:,:,:,:) ! TODO REMOVE THIS IS FOR TESTING PURPOSE ONLY!
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &
@@ -86,11 +89,14 @@ contains
             select case (grid%mmax)
             case (0)
                 solvent(s)%do%exc_cs=.true.
+                ! solvent(s)%do%exc_cdeltacd=.true.
                 solvent(s)%do%exc_cproj=.true.
+                solvent(s)%do%exc_ck_angular=.true.
             case (1:5)
                 solvent(s)%do%exc_cs=.true.
                 solvent(s)%do%exc_cdeltacd=.true.
                 solvent(s)%do%exc_cproj=.true.
+                solvent(s)%do%exc_ck_angular=.true.
             case default
                 solvent(s)%do%exc_cproj=.true.
                 print*, "see module_solvent > functional decision tree"

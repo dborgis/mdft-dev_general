@@ -9,8 +9,6 @@ module module_postprocessing
     type (correction_type) :: correction
     public :: init_postprocessing
 
-
-
 contains
 !
 !     !
@@ -35,62 +33,14 @@ contains
         ! print density
         !
         allocate (density(nx,ny,nz))
-        call grid%integrate_over_orientations( solvent(1)%density, density)
+        call grid%integrate_over_orientations( solvent(1)%xi**2*solvent(1)%rho0, density)
         filename = "output/density.cube"
         call write_to_cube_file (density ,filename)
 
-        print*, "===== Corrections to ΔG_MDFT ====="
-
-
-        !
-        ! Hunenberger's corrections
-        !
-        !... We use P-scheme instead of M-scheme for the electrostatics in MDFT.
-        ! See Kastenholz and Hunenberger, JCP 124, 124106 (2006), page 224501-8, equations 35, 35 and 37 with Ri=0
-        ! "To be applied if the solvent molecule is rigid and involves a single van der Waals interaction site M,
-        ! and that any scheme relying on molecular-cutoff truncation refers to this specific site for applying the truncation."
-        !
-        block
-            double precision :: solute_net_charge ! net charge of the solute
-            double precision :: gamma ! trace of the quadrupole moment
-            gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
-            solute_net_charge = sum(solute%site%q)
-            ! print*, "Hunenberger's P-scheme correction is solute net charge times", -gamma*solvent(1)%n0*2.909857E3
-            correction%pscheme = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol   ! n0 of water is 0.0333
-            write(*,'(A,F12.2,A)') "    P-scheme correction =", correction%pscheme, " kJ/mol"
-            open(79,file="output/Pscheme_correction")
-            write(79,*) correction%pscheme
-            close(79)
-        end block
-
-
-        !
-        !   Type B correction of Hunenberger (due to lattice sums with periodic boundary conditions)
-        !   see J. Chem. Phys. 124, 224501 (2006), eq. 32 with R_I=0 (no ionic radius)
-        !
-        block
-            double precision :: solute_net_charge, L
-            solute_net_charge = sum (solute%site%q)
-            if (.not. all(grid%length==grid%length(1))) then
-                print*, "The grid is not cubic."
-                print*, "The periodic boundary conditions correction is intended for cubic cells."
-                print*, "We use the average length sum(len)/3."
-                L = sum(grid%length)/3._dp
-            else
-                L = grid%length(1)
-            end if
-            if (L<=epsilon(1._dp)) then
-                print*, "somethings wrong in module postprocessing: L is <= 0"
-                error stop
-            end if
-            correction%pbc = -1949.0466_dp*solute_net_charge**2/L
-            write(*,'(A,F12.2,A)') "    PBC correction      =", correction%pbc, " kJ/mol"
-            open(79,file="output/PBC_correction")
-            write(79,*) correction%pbc
-            close(79)
-        end block
-
-        print*, "===== Corrections to ΔG_MDFT ====="
+        open(10,file='output/density.bin',form='unformatted')
+        write(10) solvent(1)%xi
+        close(10)
+        print*, "File written: output/density.bin"
 
 
 !         use system,             ONLY: thermocond
@@ -180,8 +130,13 @@ contains
 !
         filename = 'output/rdf.out'
         call output_rdf ( density/solvent(1)%n0 , filename ) ! Get radial distribution functions
+        print*, "New output file ", trim(adjustl(filename))
         call output_gsitesite
         call output_gOfRandCosTheta
+
+        filename = 'output/rdf-vext.out'
+        call output_rdf ( solvent(1)%vext(1,:,:,:), filename )
+        print*, "New output file ", trim(adjustl(filename))
         deallocate (density)
 !
 !         CALL adhoc_corrections_to_gsolv
@@ -324,7 +279,7 @@ contains
 !         implicit none
 !         integer, intent(in) :: s ! the solvent species of which we want the number density
 !         real(dp), intent(out) :: neq(:,:,:)
-!         call mean_over_orientations( solvent(solventspecies)%density , neq)
+!         call mean_over_orientations( solvent(solventspecies)%rho , neq)
 !     end subroutine get_final_density
 !
 !
@@ -357,7 +312,7 @@ contains
 !                         local_Py = 0.0_dp
 !                         local_Pz = 0.0_dp
 !                         DO io =1,grid%no
-!                             x = solvent(s)%density(i,j,k,io)
+!                             x = solvent(s)%rho(i,j,k,io)
 !                             local_Px = local_Px + grid%omx(io) * grid%w(io) * x
 !                             local_Py = local_Py + grid%omy(io) * grid%w(io) * x
 !                             local_Pz = local_Pz + grid%omz(io) * grid%w(io) * x

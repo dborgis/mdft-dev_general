@@ -1,10 +1,10 @@
 MODULE mathematica
+    use iso_c_binding, only: dp=>c_double
     ! This module implements several usefull functions of Mathematica
-    use precision_kinds     ,ONLY:dp,i2b
     IMPLICIT NONE
     PRIVATE
     PUBLIC :: chop, TriLinearInterpolation, UTest_TrilinearInterpolation, floorNode, UTest_floorNode, ceilingNode, &
-    UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode, factorial, deduce_optimal_histogram_properties, &
+    UTest_ceilingNode, distToFloorNode, UTest_distToFloorNode, deduce_optimal_histogram_properties, &
     splint, spline, akima_spline, fact
 
     real(dp), parameter :: fact(0:34) = [ 1.0000000000000000     ,&
@@ -133,8 +133,8 @@ END SUBROUTINE UTest_TrilinearInterpolation
 !===============================================================================================================================
 PURE FUNCTION floorNode(gridnode,gridlen,x,pbc)
     IMPLICIT NONE
-    INTEGER(i2b) :: floorNode(3)
-    INTEGER(i2b), INTENT(IN) :: gridnode(3)
+    INTEGER :: floorNode(3)
+    INTEGER, INTENT(IN) :: gridnode(3)
     REAL(dp), INTENT(IN) :: gridlen(3), x(3)
     LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
     if(pbc) floorNode = FLOOR(MODULO(x,gridlen)/(gridlen/REAL(gridnode))) +1
@@ -161,8 +161,8 @@ END SUBROUTINE UTest_floorNode
 !===============================================================================================================================
 PURE FUNCTION ceilingNode(gridnode,gridlen,x,pbc)
     IMPLICIT NONE
-    INTEGER(i2b) :: ceilingNode(3)
-    INTEGER(i2b), INTENT(IN) :: gridnode(3)
+    INTEGER :: ceilingNode(3)
+    INTEGER, INTENT(IN) :: gridnode(3)
     REAL(dp), INTENT(IN) :: gridlen(3), x(3)
     LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
     ceilingNode = MODULO( floorNode(gridnode,gridlen,x,pbc)  ,gridnode) +1
@@ -174,7 +174,7 @@ SUBROUTINE UTest_ceilingNode
     IMPLICIT NONE
     LOGICAL, SAVE :: alreadydone=.FALSE.
     REAL(dp), PARAMETER :: z=0._dp
-    INTEGER(i2b) :: gridnode(3)
+    INTEGER :: gridnode(3)
     REAL(dp) :: gridlen(3), x(3)
     IF (alreadydone) RETURN
 
@@ -216,7 +216,7 @@ PURE FUNCTION distToFloorNode(gridnode,gridlen,x,pbc)
     ! 0._dp <= distToFloorNode < 1._dp
     IMPLICIT NONE
     REAL(dp) :: distToFloorNode(3), xfloor(3)
-    INTEGER(i2b), INTENT(IN) :: gridnode(3)
+    INTEGER, INTENT(IN) :: gridnode(3)
     REAL(dp), INTENT(IN) :: gridlen(3), x(3)
     LOGICAL, INTENT(IN) :: pbc ! periodic boundary counditions
     if( pbc) xfloor = ABS(  x/(gridlen/REAL(gridnode)) - FLOOR(x/(gridlen/REAL(gridnode)))  )
@@ -230,6 +230,7 @@ END FUNCTION distToFloorNode
 
 !===============================================================================================================================
 SUBROUTINE UTest_distToFloorNode
+    implicit none
     REAL(dp), PARAMETER :: z=0._dp, o=1.0_dp
 
     IF( ANY(   distToFloorNode([10,10,10],[10._dp,10._dp,10._dp],[z,z,z],pbc=.TRUE.) /= [z,z,z] )) THEN
@@ -317,10 +318,9 @@ END SUBROUTINE UTest_distToFloorNode
 
 !=================================================================================================================================
 pure function factorial(n) ! computes the factorial of any integer n, i.e., n!
-    use precision_kinds, only: i2b
     implicit none
-    integer(i2b), intent(in) :: n
-    integer(i2b) :: i, factorial
+    integer, intent(in) :: n
+    integer :: i, factorial
     select case (n)
     case (0)
         factorial = 1
@@ -355,7 +355,7 @@ subroutine spline(x,y,n,yp1,ypn,y2)
     ! the corresponding boundary condition for a natural spline, with zero second derivative on
     ! that boundary.
     ! see http://www.haoli.org/nr/bookfpdf/f3-3.pdf
-    integer(i2b) :: i,k
+    integer :: i,k
     real(dp) :: p, qn, sig, un, u(n)
     if(yp1>0.99e30 .or. yp1==huge(1._dp)) then
         y2(1)=0._dp
@@ -416,7 +416,6 @@ end subroutine splint
 !   [Reference:] Akima, H., 1970: J. ACM, 17, 589-602.
 !-----------------------------------------------------------------------
 pure subroutine akima_spline(ndim,x,y,n,x5,y5)
-    use precision_kinds, only: dp
     implicit none
     integer,intent(in) :: ndim         ! number of grid points
     real(dp),intent(in) :: x(ndim) ! coordinate

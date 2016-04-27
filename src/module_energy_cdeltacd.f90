@@ -17,7 +17,7 @@ contains
         implicit none
         integer :: nx, ny, nz, no, ix, iy, iz, is, io, ik, ikmax
         real(dp), intent(out) :: Fexc
-        real(dp) :: kT, dv, ksq, k, dk, vexc, kmax, rho, rho0
+        real(dp) :: kT, dv, ksq, k, dk, vexc, kmax, xi, rho0
         complex(dp) :: kP
         real(dp) :: kx(grid%nx/2+1), ky(grid%ny), kz(grid%nz)
         real(dp) :: kxsq(grid%nx/2+1), kysq(grid%ny), kzsq(grid%nz)
@@ -42,7 +42,7 @@ contains
         !
         ! Now we should take care of cdelta(k) and cd(k). Do we already loaded them?
         !
-        if (.not. solvent(1)%cdelta%isok .or. .not. solvent(1)%cd%isok) call init_dcf ("cdeltacd")
+        if (.not. solvent(1)%cdelta%isok .or. .not. solvent(1)%cd%isok) call read_cdeltacd
 
         !
         ! We build the polarization vector field Px, Py, Pz
@@ -56,9 +56,9 @@ contains
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx
-                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*solvent(1)%density(:,ix,iy,iz))!/rho0
-                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*solvent(1)%density(:,ix,iy,iz))!/rho0
-                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*solvent(1)%density(:,ix,iy,iz))!/rho0
+                    Px(ix,iy,iz) =sum(grid%w(:)*grid%OMx(:)*solvent(1)%xi(:,ix,iy,iz)**2*rho0)
+                    Py(ix,iy,iz) =sum(grid%w(:)*grid%OMy(:)*solvent(1)%xi(:,ix,iy,iz)**2*rho0)
+                    Pz(ix,iy,iz) =sum(grid%w(:)*grid%OMz(:)*solvent(1)%xi(:,ix,iy,iz)**2*rho0)
                 end do
             end do
         end do
@@ -101,10 +101,7 @@ contains
         ! Since the distance between two points is constant in cs
         !
         dk = solvent(1)%cdelta%x(2) - solvent(1)%cdelta%x(1)
-        if (dk<=epsilon(1._dp)) then
-            print*, "In module_energy_cs, dk dans cdelta(k) <= eps machine"
-            error stop
-        end if
+        if (dk<=epsilon(1._dp)) error stop "In module_energy_cs, dk dans cdelta(k) <= eps machine"
         ikmax =size(solvent(1)%cdelta%x)
         kmax =solvent(1)%cdelta%x(ikmax)
 
@@ -146,17 +143,16 @@ contains
         allocate (Ez(nx,ny,nz), source=fftw3%out_backward/real(nx*ny*nz,dp))
 
 
-        rho0=solvent(1)%rho0
         fexc=0._dp
         is=1
         do ix=1,nx
             do iy=1,ny
                 do iz=1,nz
                     do io=1,no
-                        rho=solvent(1)%density(io,ix,iy,iz)
+                        xi=solvent(1)%xi(io,ix,iy,iz)
                         vexc=-kT*grid%w(io)*(grid%OMx(io)*Ex(ix,iy,iz)+grid%OMy(io)*Ey(ix,iy,iz)+grid%OMz(io)*Ez(ix,iy,iz))
-                        fexc=fexc+(rho-rho0)*0.5_dp*vexc*dv
-                        df(io,ix,iy,iz,is)=df(io,ix,iy,iz,is)+vexc*dv
+                        fexc=fexc+rho0*(xi**2-1._dp)*0.5_dp*vexc*dv
+                        df(io,ix,iy,iz,is)=df(io,ix,iy,iz,is)+vexc*2._dp*rho0*xi
                     end do
                 end do
             end do
@@ -165,4 +161,92 @@ contains
         deallocate (Ex,Ey,Ez)
 
     end subroutine energy_cdeltacd
+
+
+
+    subroutine read_cdeltacd
+        use precision_kinds, only: dp
+        use module_solvent, only: solvent
+        use module_input, only: n_linesInFile
+        implicit none
+        integer :: nk, i, ios
+        if (solvent(1)%nspec/=1) then
+            print*, "In read_cdeltacd, nspec>1 not implemented"
+            error stop
+        end if
+        if (solvent(1)%cd%isok .or. solvent(1)%cdelta%isok) then
+            print*, "In read_cdeltacd, cd and cdelta seem to be already ok solvent%cd%isok and solvent%cdelta%isok"
+            error stop
+        end if
+        select case (solvent(1)%name)
+        case ("spce")
+            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
+            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPCE/cd.in'
+        case ("spc")
+            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
+            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
+        case ("stockmayer")
+            solvent(1)%cdelta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
+            solvent(1)%cd%filename='input/direct_correlation_functions/stockmayer/cd.in'
+        case ("perso")
+            solvent(1)%cdelta%filename='input/cdelta.in'
+            solvent(1)%cd%filename='input/cd.in'
+        case default
+            print*, "In read_cdeltacd, solvent(1)%name=", solvent(1)%name
+            print*, "I don't know how to get cdelta(k) and cd(k) for this name"
+            error stop
+        end select
+        nk = n_linesInFile(solvent(1)%cdelta%filename)
+        if (nk /= n_linesInFile(solvent(1)%cd%filename)) then
+            print*, "In read_cdeltacd, these two files don't have the same number of points"
+            print*, solvent(1)%cdelta%filename, solvent(1)%cd%filename
+        end if
+        allocate (solvent(1)%cd%x(nk), solvent(1)%cd%y(nk), solvent(1)%cdelta%x(nk), solvent(1)%cdelta%y(nk), source=0._dp)
+
+        open (13, file=solvent(1)%cdelta%filename, iostat=ios)
+        IF (ios/=0) THEN
+            WRITE(*,*)'Cant open file ',solvent(1)%cdelta%filename,' in read_cdeltacd'
+            STOP
+        END IF
+        open( 30, file="./output/cdelta.in")
+        DO i = 1, size(solvent(1)%cdelta%x)
+            READ (13,*,IOSTAT=ios) solvent(1)%cdelta%x(i), solvent(1)%cdelta%y(i)
+            IF (ios/=0) THEN
+                WRITE(*,*)'Error while reading ',solvent(1)%cdelta%filename, 'in read_cdeltacd'
+                STOP
+            END IF
+            write(30,*) solvent(1)%cdelta%x(i) , solvent(1)%cdelta%y(i)
+        END DO
+        close (13)
+        close (30)
+
+        OPEN (13, FILE=solvent(1)%cd%filename, IOSTAT=ios)
+        IF (ios/=0) THEN
+            WRITE(*,*)'Cant open file ',solvent(1)%cd%filename,' in readPolarizationPolarizationCorrelationFunction'
+            STOP
+        END IF
+        open (30, file="./output/cd.in")
+        DO i = 1, size(solvent(1)%cd%x)
+            READ (13,*,IOSTAT=ios) solvent(1)%cd%x(i), solvent(1)%cd%y(i)
+            IF (ios/=0) THEN
+                WRITE(*,*)'Error while reading ',solvent(1)%cd%filename, 'in readPolarizationPolarizationCorrelationFunction (c_d)'
+                STOP
+            END IF
+            write(30,*) solvent(1)%cd%x(i) , solvent(1)%cd%y(i)
+        END DO
+        close (13)
+        close (30)
+
+        if (solvent(1)%cd%x(2)-solvent(1)%cd%x(1) /= solvent(1)%cdelta%x(2)-solvent(1)%cdelta%x(1)) then
+            print*, "In read_cdeltacd, the distance between two k points is not the same in files"
+            print*, solvent(1)%cd%filename, solvent(1)%cdelta%filename
+            print*, "It is:", solvent(1)%cd%x(2)-solvent(1)%cd%x(1), solvent(1)%cdelta%x(2)-solvent(1)%cdelta%x(1)
+            error stop
+        end if
+
+        solvent(1)%cdelta%isok = .true.
+        solvent(1)%cd%isok = .true.
+
+    end subroutine read_cdeltacd
+
 end module module_energy_cdeltacd

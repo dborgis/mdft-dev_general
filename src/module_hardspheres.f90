@@ -209,6 +209,8 @@ subroutine read_hard_sphere_radius
   ! Algo : one looks for line containing 'hard_sphere_radius'. Next solvent(1)%nspec lines contain the radius of each hard sphere species.
   ! If the radius is negative, the user means that the radius has to be calculated using the week chandler anderson model
   ! by reading the lennard jones sigma and epsilon values accordingly to integer species between 1 and solvent(1)%nspec
+error stop "uncomment following lines once you know what you're doing."
+! read hard sphere radius and if WCA the compute the WCA radius
   DO i= 1, SIZE(input_line)
     j = LEN( 'hard_sphere_radius' )
     IF ( input_line (i) (1:j) == 'hard_sphere_radius' ) THEN

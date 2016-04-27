@@ -23,8 +23,10 @@ enable_language(Fortran)
 #endif()
 
 # Build type :
-# - RELEASE (with optimization flags)
-# - DEBUG   (with debug flags)
+# - RELEASE (with optimization flags, without openmp)
+# - DEBUG   (with debug flags, without openmp)
+# - RELEASE_OPENMP
+# - DEBUG_OPENMP
 # make sure that the default is RELEASE
 if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE  RELEASE  CACHE STRING
@@ -52,8 +54,10 @@ SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # GNU fortran compiler
-  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffast-math -funroll-all-loops -fimplicit-none -ffree-line-length-none -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
+  set (CMAKE_Fortran_FLAGS_RELEASE_OPENMP "-mcmodel=large -fopenmp -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
+  set (CMAKE_Fortran_FLAGS_DEBUG_OPENMP   "-fopenmp -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # INTEL fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
@@ -70,8 +74,12 @@ endif()
 
 # set source files list
 set(mdft_SRCS
+  src/module_lecture.f90
+  src/module_energy_luc.f90
+  src/module_energy_luc_fast.f90
   src/module_rotation.f90
   src/module_energy_cproj_mrso.f90
+  src/module_energy_cproj_no_symetry.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90
@@ -82,7 +90,7 @@ set(mdft_SRCS
   src/convert_coordinate_into_icg.f90
   src/cs_of_k_hard_sphere.f90
   src/module_energy_and_gradient.f90
-  src/energy_ck_angular.f90
+  src/module_energy_ck_angular.f90
   src/module_energy_cs.f90
 #  src/energy_fmt.f90
   src/energy_hydro.f90
@@ -119,6 +127,7 @@ set(mdft_SRCS
   src/output_gsitesite.f90
   src/output_rdf.f90
   src/write_to_cube_file.f90
+  src/module_wigner_d.f90
 )
 
 if (UNIX)

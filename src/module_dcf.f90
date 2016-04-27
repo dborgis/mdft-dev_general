@@ -55,10 +55,6 @@ CONTAINS
         character(180) :: polarization
         if (present(tag)) then
             select case (tag)
-            case ("cs")
-                call read_cs
-            case ("cdeltacd")
-                call read_cdeltacd
             case default
                 print*, "in module_dcf > init_dcf, you ask for tag ",tag
                 print*, "it is not implemented yet"
@@ -108,31 +104,6 @@ CONTAINS
             end if
         end if
     end subroutine init_dcf
-
-    !-----------------------------------------------------------------------------------------------------------------------------------
-
-    !     SUBROUTINE read_ck_angular
-    !
-    !         use module_grid, only: grid
-    !         IMPLICIT NONE
-    !
-    !         INTEGER(i2b) :: num_symm ! psi is from 0 to pi for water, no other symetry is taken into account
-    !         LOGICAL :: exists
-    !
-    !         INQUIRE(FILE="input/ck_angular.in", EXIST=exists)
-    !         IF (.NOT. exists) STOP "FATAL ERROR: File input/ck_angular.in is not found."
-    !         OPEN(39,FILE="input/ck_angular.in",FORM='UNFORMATTED')
-    !             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm ! Note that psi is from 0 to pi for water, while no other symetry is taken into account
-    !             ALLOCATE(ck_angular(num_psi,num_psi,num_phi,num_cos,num_cos,nb_k))
-    !             REWIND(39)
-    !             READ(39) nb_k, delta_k_ck_angular, num_cos, num_phi, num_psi, num_symm, ck_angular
-    !             IF (num_symm /= grid%molRotSymOrder) THEN
-    !                 PRINT*, 'FATAL ERROR: molRotSymOrder defined as ', grid%molRotSymOrder, ' being different with num_symm ',num_symm
-    !                 STOP
-    !             END IF
-    !         CLOSE(39)
-    !
-    !     END SUBROUTINE read_ck_angular
     !
     ! !-----------------------------------------------------------------------------------------------------------------------------------
     !
@@ -452,92 +423,7 @@ CONTAINS
 
     END SUBROUTINE readTotalPolarizationCorrelationFunction
 
-    !===================================================================================================================================
 
-    subroutine read_cdeltacd
-        use precision_kinds, only: dp
-        use module_solvent, only: solvent
-        use module_input, only: n_linesInFile
-        implicit none
-        integer :: nk, i, ios
-        if (solvent(1)%nspec/=1) then
-            print*, "In read_cdeltacd, nspec>1 not implemented"
-            error stop
-        end if
-        if (solvent(1)%cd%isok .or. solvent(1)%cdelta%isok) then
-            print*, "In read_cdeltacd, cd and cdelta seem to be already ok solvent%cd%isok and solvent%cdelta%isok"
-            error stop
-        end if
-        select case (solvent(1)%name)
-        case ("spce")
-            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
-            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPCE/cd.in'
-        case ("spc")
-            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
-            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
-        case ("stockmayer")
-            solvent(1)%cdelta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
-            solvent(1)%cd%filename='input/direct_correlation_functions/stockmayer/cd.in'
-        case ("perso")
-            solvent(1)%cdelta%filename='input/cdelta.in'
-            solvent(1)%cd%filename='input/cd.in'
-        case default
-            print*, "In read_cdeltacd, solvent(1)%name=", solvent(1)%name
-            print*, "I don't know how to get cdelta(k) and cd(k) for this name"
-            error stop
-        end select
-        nk = n_linesInFile(solvent(1)%cdelta%filename)
-        if (nk /= n_linesInFile(solvent(1)%cd%filename)) then
-            print*, "In read_cdeltacd, these two files don't have the same number of points"
-            print*, solvent(1)%cdelta%filename, solvent(1)%cd%filename
-        end if
-        allocate (solvent(1)%cd%x(nk), solvent(1)%cd%y(nk), solvent(1)%cdelta%x(nk), solvent(1)%cdelta%y(nk), source=0._dp)
-
-        open (13, file=solvent(1)%cdelta%filename, iostat=ios)
-        IF (ios/=0) THEN
-            WRITE(*,*)'Cant open file ',solvent(1)%cdelta%filename,' in read_cdeltacd'
-            STOP
-        END IF
-        open( 30, file="./output/cdelta.in")
-        DO i = 1, size(solvent(1)%cdelta%x)
-            READ (13,*,IOSTAT=ios) solvent(1)%cdelta%x(i), solvent(1)%cdelta%y(i)
-            IF (ios/=0) THEN
-                WRITE(*,*)'Error while reading ',solvent(1)%cdelta%filename, 'in read_cdeltacd'
-                STOP
-            END IF
-            write(30,*) solvent(1)%cdelta%x(i) , solvent(1)%cdelta%y(i)
-        END DO
-        close (13)
-        close (30)
-
-        OPEN (13, FILE=solvent(1)%cd%filename, IOSTAT=ios)
-        IF (ios/=0) THEN
-            WRITE(*,*)'Cant open file ',solvent(1)%cd%filename,' in readPolarizationPolarizationCorrelationFunction'
-            STOP
-        END IF
-        open (30, file="./output/cd.in")
-        DO i = 1, size(solvent(1)%cd%x)
-            READ (13,*,IOSTAT=ios) solvent(1)%cd%x(i), solvent(1)%cd%y(i)
-            IF (ios/=0) THEN
-                WRITE(*,*)'Error while reading ',solvent(1)%cd%filename, 'in readPolarizationPolarizationCorrelationFunction (c_d)'
-                STOP
-            END IF
-            write(30,*) solvent(1)%cd%x(i) , solvent(1)%cd%y(i)
-        END DO
-        close (13)
-        close (30)
-
-        if (solvent(1)%cd%x(2)-solvent(1)%cd%x(1) /= solvent(1)%cdelta%x(2)-solvent(1)%cdelta%x(1)) then
-            print*, "In read_cdeltacd, the distance between two k points is not the same in files"
-            print*, solvent(1)%cd%filename, solvent(1)%cdelta%filename
-            print*, "It is:", solvent(1)%cd%x(2)-solvent(1)%cd%x(1), solvent(1)%cdelta%x(2)-solvent(1)%cdelta%x(1)
-            error stop
-        end if
-
-        solvent(1)%cdelta%isok = .true.
-        solvent(1)%cd%isok = .true.
-
-    end subroutine read_cdeltacd
 
     SUBROUTINE readPolarizationPolarizationCorrelationFunction ! c_delta, c_d
         implicit none
@@ -625,121 +511,5 @@ CONTAINS
 
 
     END SUBROUTINE readPolarizationPolarizationCorrelationFunction
-
-    !===================================================================================================================================
-    SUBROUTINE read_cs ! c(k)
-        use mathematica, only: spline, splint
-        use constants  , only: onedp, zerodp
-        implicit none
-        INTEGER(i2b) :: ios, i, is, s
-
-        if (.not. allocated(solvent)) then
-            print*, "In read_cs, solvent(:)% is not allocated"
-            print*, "It should be initiated before!"
-            stop
-        end if
-
-        do is=1,solvent(1)%nspec
-            if (solvent(1)%cs%isok) then
-                print*, "I am here in module_dcf > read_cs to read cs(k)"
-                print*, "but solvent(",s,")%cs%isok is already .true."
-                error stop
-            end if
-        end do
-
-        ! if (any(solvent%is_initiated.eq..false.))  then
-        !     print*, "In read_cs, solvent has already been initiated"
-        !     print*, "This is a bug"
-        !     stop
-        ! end if
-        do s=1,solvent(1)%nspec
-            if (.not.solvent(s)%is_initiated) then
-                print*, "In read_cs, solvent has already been initiated"
-                print*, "this is a bug"
-                stop
-            end if
-        end do
-
-        if (solvent(1)%nspec/=1) then
-            print*, "I am in read_cs"
-            print*, "This subroutine is valid for 1 solvent species at most"
-            print*, "You have ",solvent(1)%nspec,"species"
-            stop
-        end if
-
-        do is=1, solvent(1)%nspec
-            select case (solvent(is)%name)
-            case ("spce")
-                c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
-            case ("spc")
-                c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
-            case ("stockmayer")
-                c_s%filename = 'input/direct_correlation_functions/stockmayer/cs.in'
-            case ("perso")
-                c_s%filename = 'input/cs.in'
-            case default
-                print*, "solvent seems to be, from solvent.in", solvent(1)%name
-                stop "this is not understood by module_dcf"
-            end select
-
-            nb_k = n_linesInFile(c_s%filename)
-
-            allocate( c_s%x(nb_k) , source=zerodp)
-            allocate( c_s%y(nb_k) , source=zerodp)
-            allocate( c_s%y2(nb_k), source=zerodp)
-
-
-            ! read c(k) as given by user and print to output folder
-            OPEN (13, FILE=c_s%filename, IOSTAT=ios)
-            if (ios/=0) then
-                write(*,*) 'Cant open file ',c_s%filename,' in read_cs(c_s)'
-                error stop
-            end if
-            open (14, file='output/cs.in', iostat=ios)
-            if (ios/=0) stop 'Cant open file output/cs.in in read_cs(c_s)'
-            do i=1,nb_k
-                READ (13,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
-                IF (ios/=0) THEN
-                    WRITE(*,*)'Error while reading line',i,"of",c_s%filename, 'in read_cs(c_s)'
-                    STOP
-                END IF
-                WRITE(14,*,IOSTAT=ios) c_s%x(i), c_s%y(i)
-                if (ios/=0) then
-                    print*,'Something is wrong while writing c_s%x and c_s%y in read_cs'
-                    print*,'for i=',i
-                    print*,'c_s%x(i)=',c_s%x(i)
-                    print*,'and c_s%y(i)=',c_s%y(i)
-                    stop
-                end if
-            END DO
-            CLOSE(13)
-            close(14)
-
-            ! call spline( x=c_s%x, y=c_s%y, n=nb_k, yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
-
-            ! open(14,file="output/cs_spline.dat")
-            ! block
-            !     real(dp) :: x_loc, y_loc
-            !     do i=0,2000
-            !         x_loc = i*0.1
-            !         ! call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=nb_k, x=x_loc, y=y_loc)
-            !         write(14,*) x_loc, y_loc
-            !     end do
-            ! end block
-            ! close(14)
-
-            solvent(is)%cs%filename = c_s%filename
-            allocate (solvent(is)%cs%x(nb_k) ,source=c_s%x)
-            allocate (solvent(is)%cs%y(nb_k) ,source=c_s%y)
-            solvent(is)%cs%isok = .true.
-            ! allocate (solvent(is)%cs%y2(nb_k) ,source=c_s%y2)
-
-            deallocate(c_s%x)
-            deallocate(c_s%y)
-            deallocate(c_s%y2)
-
-        end do ! the loop over all solvent species
-
-    END SUBROUTINE read_cs
 
 END MODULE module_dcf

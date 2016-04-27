@@ -23,6 +23,7 @@ contains
         integer :: i, j, k, io, s, ios
         logical :: exists, vextq_is_allocated
         real(dp) :: v, threeshold_in_betav, betav
+        real(dp), allocatable :: xi_loc(:)
 
         ! Be sure the solvent is already initiated
         if (.not. allocated(solvent)) then
@@ -35,12 +36,12 @@ contains
             error stop
         end if
 
-        ! allocate the solvent density field for each solvent species
+        ! allocate the solvent density field for each solvent species. Remember : xi**2=rho/rho0
         do s=1,solvent(1)%nspec
-            if (.not. allocated( solvent(s)%density) ) then
-                allocate(solvent(s)%density(grid%no, grid%nx, grid%ny, grid%nz),   source=solvent(s)%rho0, stat=ios)
+            if (.not. allocated( solvent(s)%xi) ) then
+                allocate(solvent(s)%xi(grid%no, grid%nx, grid%ny, grid%nz),   source=1._dp, stat=ios)
                 if (ios /= 0) then
-                    print*, "solvent(s)%density(grid%nx,grid%ny,grid%nz,grid%no), source=0._dp: Allocation request denied"
+                    print*, "solvent(s)%xi(grid%no,grid%nx,grid%ny,grid%nz), source=0._dp: Allocation request denied"
                     print*, "for s =", s
                 end if
             end if
@@ -48,26 +49,27 @@ contains
 
         ! Read the density from a previous run
         if (getinput%log('restart', defaultvalue=.false.)) then
-            stop "LOOK AT MODULE_DENSITY"
-            INQUIRE (file='input/density.bin.in', EXIST=exists)
-            IF ( .NOT. exists) STOP "input/density.bin.in not found"
-            OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
+            inquire (file='input/density.bin', EXIST=exists)
+            if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
+            OPEN (10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
             IF ( ios /= 0 ) then
-                print *, 'problem while opening input/density.bin.in. bug at init_density.f90'
+                print *, 'problem while opening input/density.bin. bug at init_density.f90'
                 stop
             END IF
-            ! READ ( 10, iostat=ios ) cg_vect_new
+            READ ( 10, iostat=ios ) solvent(1)%xi
             IF ( ios<0 ) THEN
-                STOP "input/density.bin.in is empty"
+                error stop "input/density.bin is null"
             ELSE IF ( ios>0 ) THEN
-                STOP "problem while trying to read cg_vect_new in input/density.bin.in"
-            END IF
-            PRINT*, '*** RESTART ***'
-            CLOSE (10)
-            OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
-            ! WRITE ( 10 ) cg_vect_new
-            CLOSE (10)
-            RETURN
+                print*, "problem while trying to read solvent(1)%xi in input/density.bin"
+                print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
+                error stop
+            ELSE ! fine
+              print*,
+              print*, '*** RESTARTING from density.bin ***'
+              print*,
+            end if
+            close (10)
+            return
         end if
 
 
@@ -81,34 +83,62 @@ contains
         end select
 !        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
 
+        ! allocate (xi_loc(1:grid%no))
+        ! s=1
+        ! do k = 1, grid%nz
+        !   do j = 1, grid%ny
+        !     do i = 1, grid%nx
+        !
+        !       do io = 1, grid%no
+        !         if ( thermo%beta*solvent(1)%vext(io,i,j,k) >= threeshold_in_betav ) then
+        !           xi_loc(io) = 0._dp
+        !         else
+        !           xi_loc(io) = -sqrt(exp(-thermo%beta*solvent(1)%vext(io,i,j,k))) ! xi**2=rho/rho0=exp(-beta*v)
+        !         end if
+        !       end do
+        !       solvent(1)%xi(:,i,j,k) = xi_loc
+        !
+        !     end do
+        !   end do
+        ! end do
+        ! deallocate (xi_loc)
 
-        do concurrent (s=1: solvent(1)%nspec)
-            vextq_is_allocated = allocated (solvent(s)%vextq)
-                do k = 1, grid%nz
-                    do j = 1, grid%ny
-                        do i = 1, grid%nx
-                            do io = 1, grid%no
-
-                            if (vextq_is_allocated) then
-                                ! v = max( solvent(s)%vext(io,i,j,k), solvent(s)%vext(io,i,j,k) - solvent(s)%vextq(io,i,j,k) ) ! A VERIFIER
-                                v = solvent(s)%vext(io,i,j,k)
-                            else
-                                v = solvent(s)%vext(io,i,j,k)
-                            end if
-
-                            betav = thermo%beta * v
-
-                            if ( betav >= threeshold_in_betav ) then
-                                solvent(s)%density(io,i,j,k) = 0.0_dp
-                            else
-                                solvent(s)%density(io,i,j,k) = exp(-betav)*solvent(s)%rho0
-                            end if
-
-                        end do
-                    end do
-                end do
+        ! dans ce bloc, j'initialise la xi au profil du methane (neutre) HNC convergé (mmax5)
+        block
+          use module_solute, only: solute
+          use module_grid, only: grid
+          integer, parameter :: N=65
+          real(dp) :: g0(1:N), r, dr
+          integer :: ir, ix, iy, iz, io
+          open(33,file="input/fine_g0.dat")
+          do ir=1,N
+            read(33,*) r, g0(ir)
+            if (ir==2) dr=r
+          end do
+          g0(N) = 1._dp ! One imposes that g(r) is 1 after large distances
+          if (any(g0<0)) then
+            error stop "The g(r) of methane that is used to init the density is negative somewhere! impossible"
+          end if
+          close(33)
+          do concurrent( ix=1:grid%nx, iy=1:grid%ny, iz=1:grid%nz )
+            r  = sqrt( ((ix-1)*grid%dx - solute%site(1)%r(1) )**2 &
+                     + ((iy-1)*grid%dy - solute%site(1)%r(2) )**2 &
+                     + ((iz-1)*grid%dz - solute%site(1)%r(3) )**2 )
+            ir = int(r/dr +0.5) +1
+            if (ir >N) ir=N
+            do io=1,grid%no
+              solvent(1)%xi(io,ix,iy,iz) = sqrt(g0(ir))! * grid%theta(io) * grid%phi(io) * grid%psi(io)
             end do
-        end do
+          end do
+          ! pRINT*, "ATTTTTENTION ON A INIT LA DENSITE A UN TRUC BIZARRE QUI DEPEND DE THETA ET PHI ET PSI JUSTE POUR PAS QUE CONST"
+        end block
+
+        ! where (solvent(1)%vext > 100._dp)
+        !   solvent(1)%xi = 0._dp
+        ! else where
+        !   solvent(1)%xi = 1._dp
+        ! end where
+
     end subroutine init_density
 
 

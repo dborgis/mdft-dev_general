@@ -189,6 +189,26 @@ SUBROUTINE energy_ck_angular (Fexc_ck_angular)
 !
 ! !-----------------------------------------------------------------------------------------------------------------------------------
 !
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ! SUBROUTINE energy_ck_en_harm_sph! (Fexc_ck_angular)
 !
 !     STOP 'For computing energy by expansion on spherical harmonics with Luc''s full projections, to be developed.'
