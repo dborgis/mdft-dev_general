@@ -192,3 +192,12 @@ i.e.,
 ### solvent.in
 
 The structure is exactly the same than solute.in except that there is less parameter to use to describe the solvent, please see the description of paramaters in the description of solute.in above -->
+
+
+# Install
+
+For the development version, with all debug etc on, type
+```bash
+sudo apt-get install cmake fftw3-dev  
+cmake -DCMAKE_BUILD_TYPE=DEBUG
+```
