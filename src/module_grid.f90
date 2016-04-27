@@ -28,6 +28,7 @@ module module_grid
         real(dp), allocatable :: wphiofnphi(:)!(grid%nphi)
         real(dp), allocatable :: wpsiofnpsi(:)!(grid%npsi)
         integer, allocatable :: indo(:,:,:) ! table of index of orientations
+        integer, allocatable :: io(:,:,:)
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
     contains
@@ -114,13 +115,14 @@ contains
         allocate( grid%wpsiofnpsi(grid%npsi) ,source=0._dp)
         grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
         grid%wpsiofnpsi = 1._dp/real(grid%npsi*grid%molrotsymorder,dp)
-        PRINT*,'ATTENTION !!!!!!!!!!! JE PRENDS LA DEF DE LUC POUR PSI ET PHI'
+        PRINT*,'ATTENTION !!!!!!!!!!! JE PRENDS LA DEF DE MDFT POUR PSI ET PHI, pas celle de Luc'
         grid%psiofnpsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
         grid%phiofnphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
         call gauss_legendre( grid%ntheta, grid%thetaofntheta, grid%wthetaofntheta, err)
         if (err /= 0) error stop "problem in gauss_legendre"
         grid%thetaofntheta = acos(grid%thetaofntheta)
         allocate( grid%indo(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
+        allocate( grid%io(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
         io = 0
         do itheta = 1, grid%ntheta
             do iphi = 1, grid%nphi
@@ -129,7 +131,7 @@ contains
                     grid%theta(io) = grid%thetaofntheta(itheta)
                     grid%phi(io) = grid%phiofnphi(iphi)
                     grid%psi(io) = grid%psiofnpsi(ipsi)
-                    grid%indo(itheta,iphi,ipsi) = io
+                    grid%io(itheta,iphi,ipsi) = io
                     grid%wtheta(io) = grid%wthetaofntheta(itheta)
                     grid%wphi(io) = grid%wphiofnphi(iphi)
                     grid%wpsi(io) = grid%wpsiofnpsi(ipsi)
@@ -137,6 +139,7 @@ contains
                 end do
             end do
         end do
+        grid%indo = grid%io
 
 
         if (abs(sum(grid%w)-quadrature_norm/grid%molrotsymorder)>1.e-10) then

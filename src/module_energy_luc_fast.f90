@@ -149,13 +149,12 @@ q = [grid%kx(iqx), grid%ky(iqy), grid%kz(iqz)]
     end do
   end do
 
-
-!
-! ON TUE CERTAINES PROJECTIONS ...
-!
-if(iqx==0 .and. iqy==0 .and. iqz==0 .and. mmax>0) then
-  delta_rho_k_proj(1,0,0) = zeroc
-end if
+! !
+! ! ON TUE CERTAINES PROJECTIONS ...
+! !
+! if(iqx==0 .and. iqy==0 .and. iqz==0 .and. mmax>0) then
+!   delta_rho_k_proj(1,0,0) = zeroc
+! end if
 
 
 !
@@ -247,20 +246,20 @@ block
   real(dp), parameter :: fourpisq=4*acos(-1._dp)**2
   dv = grid%dv
   kT = thermo%kBT
-ff=0._dp
-do iz=1,nz
-  do iy=1,ny
-    do ix=1,nx
-      vexc(1:no) = -kT*grid%w(1:no)*gamma_angle(:,ix,iy,iz) *fourpisq  /solvent(1)%n0  ! /0.0333 vient du c de luc qui est un n0.c
-      do io=1,no
-        xi = solvent(1)%xi(io,ix,iy,iz)
-        rho = xi**2*rho0
-        ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
-        df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
+  ff = 0._dp
+  do iz=1,nz
+    do iy=1,ny
+      do ix=1,nx
+        vexc(1:no) = -kT*grid%w(1:no)*gamma_angle(:,ix,iy,iz) *fourpisq  /solvent(1)%n0  ! /0.0333 vient du c de luc qui est un n0.c
+        do io=1,no
+          xi = solvent(1)%xi(io,ix,iy,iz)
+          rho = xi**2*rho0
+          ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
+          df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
+        end do
       end do
     end do
   end do
-end do
 end block
 
 
@@ -335,10 +334,20 @@ end subroutine energy_luc_fast
     ! PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
     ! PRINT*, 'Nom du fichier --->'
     dq=0.613592315E-01
-    mmax_ck = 5
-    mmax2_ck = mmax_ck/2
+
     if(.not.allocated(tab5)) then
-      OPEN(7,FILE="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old')
+      select case (mmax_ck)
+      case (5)
+        open(7, file="/home/levesque/Recherche/00__BELLONI/2016__FEVRIER__OZ/ck_h2o39-3916_l.txt",STATUS='old')
+      case (3)
+        open(7, file="/home/levesque/Recherche/00__BELLONI/ck_solution_nmax3", status="old")
+      case (2)
+        open(7, file="/home/levesque/Recherche/00__BELLONI/ck_solution_nmax2", status="old")
+      case default
+        error stop "j'ai pas ce fichier de ck de luc pour ce mmax"
+      end select
+
+
       ialpmax=549
       ALLOCATE(mm(ialpmax),nn(ialpmax),ll(ialpmax),mumu(ialpmax),nunu(ialpmax),ck(ialpmax))
       do i=1,5
@@ -353,12 +362,16 @@ end subroutine energy_luc_fast
       if(iqmax>1024) error stop "mon fichier de ck est trop restreint en valeurs de q for our nfft and L"
       ALLOCATE (tab5(0:mmax_ck,0:mmax_ck,-mmax_ck:mmax_ck,-mmax2_ck:mmax2_ck,-mmax2_ck:mmax2_ck,iqmax), source=zeroc)
       do iq=1,iqmax
-        READ(7,*) q,ck(:)
+        read(7,*) q, ck(:)
 
           do khi=0,mmax_ck                ! que khi>=0 pour l'instant
             do ialp=1,ialpmax
-              m=mm(ialp); n=nn(ialp); l=ll(ialp); mu=mumu(ialp); nu=nunu(ialp)
-              IF(khi>MIN(m,n)) cycle
+              m=mm(ialp)
+              n=nn(ialp)
+              l=ll(ialp)
+              mu=mumu(ialp)
+              nu=nunu(ialp)
+              if ( khi>min(m,n) ) cycle
               mu2=mu/2; nu2=nu/2
               coeff_cmplx=symbol_3j(m,n,l,khi,-khi,0)*ck(ialp)
               IF((-1)**l==-1) coeff_cmplx=xi_cmplx*coeff_cmplx             ! imaginaire pur si l impair
@@ -386,6 +399,9 @@ end subroutine energy_luc_fast
       CLOSE(7)
       deallocate(ck)
     end if
+
+
+
 
     !
     !

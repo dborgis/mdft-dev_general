@@ -49,26 +49,27 @@ contains
 
         ! Read the density from a previous run
         if (getinput%log('restart', defaultvalue=.false.)) then
-            stop "LOOK AT MODULE_DENSITY"
-            INQUIRE (file='input/density.bin.in', EXIST=exists)
-            IF ( .NOT. exists) STOP "input/density.bin.in not found"
-            OPEN (10, file = 'input/density.bin.in' , form = 'unformatted' , iostat=ios, status='OLD' )
+            inquire (file='input/density.bin', EXIST=exists)
+            if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
+            OPEN (10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
             IF ( ios /= 0 ) then
-                print *, 'problem while opening input/density.bin.in. bug at init_density.f90'
+                print *, 'problem while opening input/density.bin. bug at init_density.f90'
                 stop
             END IF
-            ! READ ( 10, iostat=ios ) cg_vect_new
+            READ ( 10, iostat=ios ) solvent(1)%xi
             IF ( ios<0 ) THEN
-                STOP "input/density.bin.in is empty"
+                error stop "input/density.bin is null"
             ELSE IF ( ios>0 ) THEN
-                STOP "problem while trying to read cg_vect_new in input/density.bin.in"
-            END IF
-            PRINT*, '*** RESTART ***'
-            CLOSE (10)
-            OPEN (10, FILE = 'output/density.bin.in.out', FORM = 'unformatted')
-            ! WRITE ( 10 ) cg_vect_new
-            CLOSE (10)
-            RETURN
+                print*, "problem while trying to read solvent(1)%xi in input/density.bin"
+                print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
+                error stop
+            ELSE ! fine
+              print*,
+              print*, '*** RESTARTING from density.bin ***'
+              print*,
+            end if
+            close (10)
+            return
         end if
 
 
@@ -102,34 +103,34 @@ contains
         ! end do
         ! deallocate (xi_loc)
 
-        ! dans ce bloc, j'initialise la xi au profil du methane (neutre)
+        ! dans ce bloc, j'initialise la xi au profil du methane (neutre) HNC convergé (mmax5)
         block
           use module_solute, only: solute
-          integer, parameter :: N=10000
-          real(dp) :: g0(1:N), r
-          real(dp), parameter :: dr=0.010001_dp
-          integer :: ir, ix, iy, iz
+          use module_grid, only: grid
+          integer, parameter :: N=65
+          real(dp) :: g0(1:N), r, dr
+          integer :: ir, ix, iy, iz, io
           open(33,file="input/fine_g0.dat")
           do ir=1,N
             read(33,*) r, g0(ir)
+            if (ir==2) dr=r
           end do
+          g0(N) = 1._dp ! One imposes that g(r) is 1 after large distances
           if (any(g0<0)) then
             error stop "The g(r) of methane that is used to init the density is negative somewhere! impossible"
           end if
           close(33)
-          do iz=1,grid%nz
-            do iy=1,grid%ny
-              do ix=1,grid%nx
-                r  = sqrt( (ix*grid%dx - solute%site(1)%r(1) )**2 &
-                         + (iy*grid%dy - solute%site(1)%r(2) )**2 &
-                         + (iz*grid%dz - solute%site(1)%r(3) )**2 )
-                ir = int(r/dr +0.5) +1
-                if (ir >N) ir=N
-                solvent(1)%xi(:,ix,iy,iz) = sqrt(g0(ir)) * 10*cos(grid%theta(:)) * sin(grid%phi(:)) * cos(grid%psi(:))
-              end do
+          do concurrent( ix=1:grid%nx, iy=1:grid%ny, iz=1:grid%nz )
+            r  = sqrt( ((ix-1)*grid%dx - solute%site(1)%r(1) )**2 &
+                     + ((iy-1)*grid%dy - solute%site(1)%r(2) )**2 &
+                     + ((iz-1)*grid%dz - solute%site(1)%r(3) )**2 )
+            ir = int(r/dr +0.5) +1
+            if (ir >N) ir=N
+            do io=1,grid%no
+              solvent(1)%xi(io,ix,iy,iz) = sqrt(g0(ir))! * grid%theta(io) * grid%phi(io) * grid%psi(io)
             end do
           end do
-          pRINT*, "ATTTTTENTION ON A INIT LA DENSITE A UN TRUC BIZARRE QUI DEPEND DE THETA ET PHI ET PSI JUSTE POUR PAS QUE CONST"
+          ! pRINT*, "ATTTTTENTION ON A INIT LA DENSITE A UN TRUC BIZARRE QUI DEPEND DE THETA ET PHI ET PSI JUSTE POUR PAS QUE CONST"
         end block
 
         ! where (solvent(1)%vext > 100._dp)

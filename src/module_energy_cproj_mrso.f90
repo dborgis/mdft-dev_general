@@ -53,7 +53,6 @@ module module_energy_cproj_mrso
     type (fft3d_c_type) :: fft3d
 
     integer, allocatable :: tableof_ix_mq(:), tableof_iy_mq(:), tableof_iz_mq(:)
-    real(dp), allocatable :: qx(:), qy(:), qz(:) ! vector q and its components tabulated
 
     complex(dp), allocatable, target :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
     complex(dp), allocatable :: deltarho_p_q(:)
@@ -111,8 +110,8 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io
-        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
+        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, m2, mu2
+        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq, a
         real(dp) :: q(3), mq(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
@@ -153,14 +152,14 @@ call cpu_time (time(1))
         ns=solvent(1)%nspec
         rho0 = solvent(1)%rho0
 
-        !
-        ! Routine energy_cproj of mdft-dev is valid only for even numbers of nodes per direction
-        !
-        if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
-            print*, "mdft-dev wants even grid nodes"
-            print*, "nx,ny,nz=",nx,ny,nz
-            error stop
-        end if
+        ! !
+        ! ! Routine energy_cproj of mdft-dev is valid only for even numbers of nodes per direction
+        ! !
+        ! if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
+        !     print*, "mdft-dev wants even grid nodes"
+        !     print*, "nx,ny,nz=",nx,ny,nz
+        !     error stop
+        ! end if
 
         if (.not. allocated(p3%foo_q)) allocate ( p3%foo_q(1:np) )
         if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
@@ -324,6 +323,22 @@ call cpu_time (time(4))
             end do
         end do
 
+! do m=0,mmax
+!   m2=m/2
+!   do mup=-m,m
+!     do mu2=0,m2
+!       mu=2*mu2
+!       a =  deltarho_p(p3%p(m,mup,mu2),1,1,1)
+!       if(abs(a)>1.D-10) then
+!         print*, "MRSO:", m, mup, mu, deltarho_p(p3%p(m,mup,mu2),1,1,1)
+!       else
+!         print*, "MRSO:", m, mup, mu, (0,0)
+!       end if
+!     end do
+!   end do
+! end do
+! stop "bouche"
+
         call cpu_time (time(6))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -360,10 +375,8 @@ call cpu_time (time(4))
         ! First we tabulate the vector q (Fourier vector) corresponding to x, y and z
         ! This is specific to our FFTW's black box and how it expects indices to be ranged.
         ! See function kproj in module_grid
-        ! And the inverse index that gives vector -q
+        ! And the inverse index that gives vector -q: see function grid%ix_mq(ix_q) of module_grid
         !
-
-        call for_all_q_find_indices_of_mq
 
         call cpu_time (time(8))
 
@@ -383,13 +396,14 @@ call cpu_time (time(4))
         call cpu_time (time(9))
 
         if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
-accu_error_sur_q=0
+
+        ! accu_error_sur_q=0 ! this is a small accumulator on the error due to interpolating q in c(q)
         !
         ! For all vectors q and -q handled simultaneously
         !
         do ix_q=1,nx
             do iy_q=1,ny
-                do iz_q=1,nz
+                do iz_q=1,nz/2+1
 
                     !
                     ! cartesian coordinates of vector q  and mq (-q) in lab frame
@@ -398,14 +412,14 @@ accu_error_sur_q=0
                     !
                     ! Find ix_mq,iy_mq,iz_mq so that q(ix_mq,iy_mq,iz_mq)= -q(ix_q,iy_q,iz_q)
                     !
-                    ix_mq = tableof_ix_mq(ix_q)
-                    iy_mq = tableof_iy_mq(iy_q)
-                    iz_mq = tableof_iz_mq(iz_q)
+                    ix_mq = grid%ix_mq(ix_q)
+                    iy_mq = grid%iy_mq(iy_q)
+                    iz_mq = grid%iz_mq(iz_q)
 
                     if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq,iz_mq) ) cycle
 
-                    q = [qx(ix_q), qy(iy_q), qz(iz_q)]
-                    ! mq = [qx(ix_mq), qy(iy_mq), qz(iz_mq)]  ! <= c'est faux pour nx/2+1, ny/2+1 and nz/2+1 où nx, ny ou nz sont pairs.
+                    q = [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
+                    ! mq = [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]  ! <= c'est faux pour nx/2+1, ny/2+1 and nz/2+1 où nx, ny ou nz sont pairs.
 
                     if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then ! this should only happen for ix=1 and ix=nx/2
                         q_eq_mq=.true.
@@ -423,23 +437,8 @@ accu_error_sur_q=0
                     ! Prepare R^m_mup_khi(q)
                     !
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax )
-                    ! Eq. 1.23 We don't need to compute gshrot for -q. We do q and -q at the same time.
-                    ! do m=0,mmax
-                    !   do mup=-m,m
-                    !     do khi=-m,m
-                    !       block
-                    !         complex(dp), allocatable :: R_mq(:,:,:)
-                    !         allocate ( R_mq(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
-                    !         R_mq = rotation_matrix_between_complex_spherical_harmonics_lu ( mq, mmax )
-                    !         print*,ix_q,iy_q,iz_q,m,mup,khi
-                    !         print*,R_mq(m,mup,khi)
-                    !         print*,(-1)**m *R(m,mup,-khi)
-                    !         print*,(-1)**(m+mup+khi)*conjg(R(m,-mup,khi))
-                    !         print*,
-                    !       end block
-                    !     end do
-                    !   end do
-                    ! end do
+                    ! Eq. 1.23 We don't need to compute gshrot for -q since there are symetries between R(q) and R(-q).
+                    ! Thus, we do q and -q at the same time. That's the most important point in doing all q but half of mu.
 
                     !
                     ! Rotation to molecular (q) frame
@@ -462,6 +461,21 @@ accu_error_sur_q=0
                     deltarho_p_q = p3%foo_q
                     deltarho_p_mq = p3%foo_mq
 
+
+
+
+                    !
+                    ! Consider the case of Pz(k=0). In cdeltacd, we impose it is zeroc because it is non defined. Here we do
+                    ! the equivalent. One can show Pz(k=0) is equivalent to projection 100 of deltarho
+                    !
+                    if (mmax>0 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
+                      do m=1,2
+                        gamma_p_q ( p3%p(m,0,0) ) = zeroc
+                        gamma_p_mq( p3%p(m,0,0) ) = zeroc
+                      end do
+                    end if
+
+
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for cq%nq values of |q|.
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
@@ -469,18 +483,9 @@ accu_error_sur_q=0
                     !
                     iq = int( norm2(q) /cq%dq +0.5) +1
                     if (iq >cq%nq) error stop "we need larger norm of q in Luc's cq"
-                    accu_error_sur_q = accu_error_sur_q + (norm2(q)- (iq-1)*cq%dq)**2
+                    ! accu_error_sur_q = accu_error_sur_q + (norm2(q)- (iq-1)*cq%dq)**2
 
                     ! iq = min( int(norm2(q)/cq%dq)+1   ,nq)
-
-                    !
-                    ! Consider the case of Pz(k=0). In cdeltacd, we impose it is zeroc because it is non defined. Here we do
-                    ! the equivalent. One can show Pz(k=0) is equivalent to projection 100 of deltarho
-                    !
-                    if (mmax>=1 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
-                        deltarho_p_q ( p3%p(1,0,0) ) = zeroc
-                        deltarho_p_mq( p3%p(1,0,0) ) = zeroc
-                    end if
 
 
                     !
@@ -530,8 +535,10 @@ accu_error_sur_q=0
                     end do
 
 
+
+
                     !
-                    ! Rotation from molecular frame to fix laboratory (Fourier) frame
+                    ! Rotation from molecular frame to fix frame
                     !
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
 
@@ -568,7 +575,7 @@ accu_error_sur_q=0
                 end do
             end do
         end do
-print*, "accumulation d'erreur sur iq =",accu_error_sur_q
+! print*, "accumulation d'erreur sur iq =", sqrt(accu_error_sur_q)
 call cpu_time(time(10))
 
         if (.not.all(gamma_p_isok.eqv..true.)) then
@@ -593,6 +600,14 @@ call cpu_time(time(12))
         ! Gather projections into gamma
         ! Note that gamma==df
         !
+! block
+!   complex(dp) :: gamma_angle(1:no)
+! gamma_angle= proj2angl(deltarho_p(1:np,1,1,1))
+! do io=1,5
+!   print*,gamma_angle(io)
+! end do
+! error stop "mrso fuck you"
+! end block
         if (.not. allocated(gamma_o)) allocate (gamma_o(1:no) ,source=0._dp)
         ff=0._dp
         do iz=1,nz
@@ -619,7 +634,7 @@ call cpu_time(time(12))
             end do
           end do
         end do
-
+print*,"mrso ff=",ff
 call cpu_time(time(13))
 
 print*, "   > allocations                                                  ", time(2)-time(1),"sec"
@@ -663,7 +678,6 @@ contains
                 end do
             end do
         end do
-
     end function angl2proj
 
 
@@ -696,111 +710,6 @@ contains
         end do
     end function proj2angl
 
-
-
-    subroutine for_all_q_find_indices_of_mq
-        !
-        ! for each vector q, defined by its components qx(ix_q), qy(iy_q), qz(iz_q)
-        ! I am looking for the indices ix_mq, iy_mq, iz_mq for which
-        ! qx(ix_mq), qy(iy_mq), qz(iz_mq) defines vector -q
-        !
-        implicit none
-        integer :: i, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq
-        if ( allocated(tableof_ix_mq) .and. allocated(tableof_iy_mq) .and. allocated(tableof_iz_mq)) then
-            if ( size(tableof_ix_mq)==nx .and. size(tableof_iy_mq)==ny .and. size(tableof_iz_mq)==nz &
-                .and. allocated(qx) .and. size(qx)==nx .and. allocated(qy) .and. size(qy)==ny .and.&
-                    allocated(qz) .and. size(qz)==nz ) then
-                return
-            else
-                print*, "problem detected in the subroutine that allocates and defines all q and mq related arrays"
-                error stop
-            end if
-        end if
-
-        allocate (qx(nx), qy(ny), qz(nz), source=0._dp)
-        qx(1:nx) = grid%kx(1:nx)
-        qy(1:ny) = grid%ky(1:ny)
-        qz(1:nz) = grid%kz(1:nz)
-
-        allocate (tableof_ix_mq(nx), tableof_iy_mq(ny), tableof_iz_mq(nz) ,source=-huge(1))
-        i=0
-        do ix_q=1,nx
-            do ix_mq=1,nx
-              if (abs(qx(ix_q)+qx(ix_mq))<100*epsdp .or. abs(qx(ix_q)+2._dp*pi*nx/lx+qx(ix_mq))<100*epsdp ) then
-                  tableof_ix_mq(ix_q) = ix_mq
-                  i=i+1
-                  ! print*, "qx(ix_q), qx(ix_mq)", qx(ix_q), qx(ix_mq), "ix_q, iq_mq=", ix_q, ix_mq
-                  cycle
-              end if
-            end do
-            if (ix_mq==nx) error stop "FUCK YOU BITCH"
-        end do
-        if (i/=nx) then
-            print*, "I did not found all the -qx. Of",nx,", I found only",i
-            error stop
-        end if
-
-        i=0
-        do iy_q=1,ny
-            do iy_mq=1,ny
-              if (abs(qy(iy_q)+qy(iy_mq))<100*epsdp .or. abs(qy(iy_q)+2._dp*pi*ny/ly+qy(iy_mq))<100*epsdp ) then
-                  tableof_iy_mq(iy_q) = iy_mq
-                  i=i+1
-                  ! print*, "qy(iy_q), qy(iy_mq)", qy(iy_q), qy(iy_mq), "iy_q, iq_mq=", iy_q, iy_mq
-                  cycle
-              end if
-            end do
-        end do
-        if (i/=ny) then
-            print*, "I did not found all the -qy. Of",ny,", I found only",i
-            error stop
-        end if
-
-        i=0
-        do iz_q=1,nz
-            do iz_mq=1,nz
-              if (abs(qz(iz_q)+qz(iz_mq))<100*epsdp .or. abs(qz(iz_q)+2._dp*pi*nz/lz+qz(iz_mq))<100*epsdp ) then
-                  tableof_iz_mq(iz_q) = iz_mq
-                  i=i+1
-                  ! print*, "qz(iz_q), qz(iz_mq)", qz(iz_q), qz(iz_mq), "iz_q, iq_mq=", iz_q, iz_mq
-                  cycle
-              end if
-            end do
-        end do
-        if (i/=nz) then
-            print*, "I did not found all the -qz. Of",nz,", I found only",i
-            error stop
-        end if
-
-        ! Here I want to check that we really have q == -q but for the point in each direction at index 0 and nx/2+1
-        ! for odd numbers, please ask maximilien
-        if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
-            print*, "nx, ny ou nz est impair"
-            print*, "nx ny nz =", nx, ny, nz
-            print*, "that is not compatible with our energy_cproj for now"
-            error stop
-        end if
-        do ix_q=1,nx
-            do iy_q=1,ny
-                do iz_q=1,nz
-                    ix_mq = tableof_ix_mq(ix_q)
-                    iy_mq = tableof_iy_mq(iy_q)
-                    iz_mq = tableof_iz_mq(iz_q)
-                    if ( qx(ix_q)/=-qx(ix_mq) .or. qy(iy_q)/=-qy(iy_mq) .or. qz(iz_q)/=-qz(iz_mq) ) then
-                        if (ix_q==1 .or. iy_q==1 .or. iz_q==1 .or. ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1) then
-                            ! that is the expected behavior
-                        else
-                            print*,"q n'est pas l'opposé de mq dans la boucle de verification des q apres la recherche"
-                            print*, "des indices de mq"
-                            print*, "ix_q, iy_q, iz_q, q(ix_q, iy_q, iz_q)    =",ix_q, iy_q, iz_q, qx(ix_q), qy(iy_q), qz(iz_q)
-                            print*, "ix_mq, iy_mq, iz_mq, q(ix_mq,iy_mq,iz_mq)=",ix_mq,iy_mq,iz_mq,qx(ix_mq),qy(iy_mq),qz(iz_mq)
-                            error stop
-                        end if
-                    end if
-                end do
-            end do
-        end do
-        end subroutine for_all_q_find_indices_of_mq
 
         ! subroutine test_routines_calcul_de_Rm_mup_mu_q
         !     !
@@ -849,9 +758,8 @@ contains
         subroutine read_ck_nonzero
             use module_input, only: n_linesInFile
             implicit none
-            integer :: i, iq, m, n, mu, nu, khi, ia
+            integer :: i, iq, m, n, mu, nu, khi, ia, ufile, ios
             character(3) :: somechar
-            integer :: ufile, ios
             character(65) :: filename
             integer, parameter, dimension(0:5) :: nprojections_for_mmax = [1,6,75,252,877,2002]
             real(dp) :: qmax_effectif
@@ -883,23 +791,6 @@ contains
 
             if (.not.allocated(cq%normq)) allocate(cq%normq(cq%nq), source=0._dp)
 
-
-          ! i=(1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15
-          !  if (cq%na/=i) then
-          !      print*, "in read_ck_cproj nalpha est bizarre"
-          !      print*, "cq%na=",cq%na
-          !      print*, "it should be (1+mmax)*(1+2*mmax)*(3+2*mmax)*(5+4*mmax*(2+mmax))/15 =",i
-          !      ! error stop
-          !  end if
-
-          ! i=sum([([([([([( 1 ,nu=-n,n)] ,mu=-m,m)], n=abs(khi),mmax)] ,m=abs(khi),mmax)] ,khi=-mmax,mmax)]  )
-          !  if (cq%na/=i) then
-          !      print*, "in read ck cq%na /= nalpha"
-          !      print*, "cq%na=",cq%na
-          !      print*, "bruteforce=",i
-          !      ! error stop
-          !  end if
-
             if (allocated(ck) .and. .not.cq%isok) then
                 print*, "ck is already allocated but .not. cq%isok"
                 error stop
@@ -921,7 +812,7 @@ contains
             ! Skip 10 lines of comments
             !
             do i=1,10
-                read(ufile,*)
+              read(ufile,*)
             end do
 
             read(ufile,*) somechar

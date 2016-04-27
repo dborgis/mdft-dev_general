@@ -37,6 +37,10 @@ contains
         filename = "output/density.cube"
         call write_to_cube_file (density ,filename)
 
+        open(10,file='output/density.bin',form='unformatted')
+        write(10) solvent(1)%xi
+        close(10)
+        print*, "File written: output/density.bin"
 
 
 !         use system,             ONLY: thermocond

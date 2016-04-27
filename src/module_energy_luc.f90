@@ -58,6 +58,7 @@ subroutine energy_luc (ff,df)
   complex(dp), allocatable :: delta_rho_prime_k_proj_full(:,:,:,:,:,:)
   complex(dp) :: a, b
   integer :: imqx, imqy, imqz
+  logical :: erreur_trouvee
 
   ff=0
   no = grid%no
@@ -98,16 +99,16 @@ end do
 ! - surtout, on sait aller chercher q et -q dans les tableaux pour tous les q. Il n'y a pas d'exception, que nx, ny, nz soient pairs ou impairs.
 ! Autrement dit, ce n'est pas vraiment la symétrie hermitienne qu'on teste, mais la fonction grid%ix_mq(ixq) qui a l'indice iqx trouve l'indice ix_mq correspondant à -q(ix_q)
 !
-goto 177
+erreur_trouvee=.false.
 do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
   imqx = grid%ix_mq(iqx)
   imqy = grid%iy_mq(iqy)
   imqz = grid%iz_mq(iqz)
   a = delta_rho_k_angle(io,iqx,iqy,iqz)
   b = conjg(delta_rho_k_angle(io,imqx,imqy,imqz))
-  if (abs(a-b)>1.D-10)  error stop "raté pour la symétrie hermitienne de delta_rho_k_angle"
+  if (abs(a-b)>1.D-10) erreur_trouvee=.true.
 end do
-177 continue
+if(erreur_trouvee) error stop "raté pour la symétrie hermitienne de delta_rho_k_angle"
 
 
 
@@ -194,42 +195,45 @@ end do ! iqz
 
 
 
-! ! est ce qu'on a bien la symetrie hermitienne sur gamma_k_angle ?
-! do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
-!   imqx = grid%ix_mq(iqx)
-!   imqy = grid%iy_mq(iqy)
-!   imqz = grid%iz_mq(iqz)
-!   a = gamma_k_angle(io,iqx,iqy,iqz)
-!   b = conjg(gamma_k_angle(io,imqx,imqy,imqz))
-!   if (abs(a-b)>1.D-10)  print*, io,iqx,iqy,iqz,a,b
-! end do
-! stop "hermite"
+! est ce qu'on a bien la symetrie hermitienne sur gamma_k_angle ?
+
+erreur_trouvee = .false.
+do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
+  imqx = grid%ix_mq(iqx)
+  imqy = grid%iy_mq(iqy)
+  imqz = grid%iz_mq(iqz)
+  a = gamma_k_angle(io,iqx,iqy,iqz)
+  b = conjg(gamma_k_angle(io,imqx,imqy,imqz))
+  if (abs(a-b)>1.D-10)  erreur_trouvee = .true.
+end do
+if (erreur_trouvee) error stop "on n'a pas la symetrie hermitienne sur gamma_k_angle"
+
 !
 !
 ! ! on teste 1.15
-! i = 0
-! do concurrent( iqx=1:nx, iqy=1:ny, iqz=1:nz )
-!   imqx = grid%ix_mq(iqx)
-!   imqy = grid%iy_mq(iqy)
-!   imqz = grid%iz_mq(iqz)
-!   do m=0,mmax
-!     do mup=-m,m
-!       do mu2=-m/2,m/2
-!         mu = 2*mu2
-!         a =        gamma_k_proj_full(m,-mup,-mu2,iqx,iqy,iqz)
-!         b =  (-1)**(mup+mu)*conjg(gamma_k_proj_full(m, mup, mu2,imqx,imqy,imqz))
-!         if (abs(a)>1.D-10) i=i+1
-!         if (abs(a-b)>1.D-10) print*, iqx,iqy,iqz,m,mup,mu,a,b
-!       end do
-!     end do
-!   end do
-! end do
-! print*,i,nx*ny*nz*mmax**3/3
-! stop "1.15 sur delta_rho_proj tel que lu par luc"
-!
-!
-! ! on teste 1.25 sur delta_rho_k_proj_prime
-! i = 0
+erreur_trouvee = .false.
+do concurrent( iqx=1:nx, iqy=1:ny, iqz=1:nz )
+  imqx = grid%ix_mq(iqx)
+  imqy = grid%iy_mq(iqy)
+  imqz = grid%iz_mq(iqz)
+  do m=0,mmax
+    do mup=-m,m
+      do mu2=-m/2,m/2
+        mu = 2*mu2
+        a =        gamma_k_proj_full(m,-mup,-mu2,iqx,iqy,iqz)
+        b =  (-1)**(mup+mu)*conjg(gamma_k_proj_full(m, mup, mu2,imqx,imqy,imqz))
+        if (abs(a-b)>1.D-10) erreur_trouvee=.true.
+      end do
+    end do
+  end do
+end do
+if (erreur_trouvee) error stop "1.15 pas verifiee sur gamma_k_proj_full"
+
+
+
+
+! ! ! on teste 1.25 sur delta_rho_k_proj_prime
+! erreur_trouvee = .false.
 ! do concurrent( iqx=1:nx, iqy=1:ny, iqz=1:nz )
 !   imqx = grid%ix_mq(iqx)
 !   imqy = grid%iy_mq(iqy)
@@ -240,14 +244,15 @@ end do ! iqz
 !         mu = 2*mu2
 !         a = gamma_k_proj_full(m,khi,-mu2,iqx,iqy,iqz)
 !         b = conjg(gamma_k_proj_full(m, khi, mu2,imqx,imqy,imqz)) * (-1)**(m+khi+mu)
-!         if (abs(a)>1.D-10) i=i+1
-!         if (abs(a-b)>1.D-10) print*, iqx,iqy,iqz,m,khi,mu,a,b,real(a)/real(b),imag(a)/imag(b)
+!         if (abs(a-b)>1.D-10) then
+!           erreur_trouvee=.true.
+!           print*,iqx,iqy,iqz, m,khi,mu,a,b
+!         end if
 !       end do
 !     end do
 !   end do
 ! end do
-! print*,i
-! stop "1.25 stop"
+! if(erreur_trouvee) error stop "1.25 pas verifiee pour gamma_k_proj_full"
 
 
 deallocate (delta_rho_k_proj)
@@ -268,28 +273,41 @@ end do
 
 
 ! On a maintenant notre gamma(r,omega). On veut testé qu'il soit purement réel.
+erreur_trouvee=.false.
 do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
-  if(imag(gamma_angle(io,iqx,iqy,iqz))>1.D-10) then
-    print*, "PROBELM     GAMMA(R,OMEGA) iqx,iqy,iqz,io",int([iqx,iqy,iqz,io],2),gamma_angle(io,iqx,iqy,iqz)
-    error stop
-  end if
+  if (imag(gamma_angle(io,iqx,iqy,iqz))>1.D-10) erreur_trouvee=.true.
 end do
-
-
-
-!
-!
-! print dans un fichier pour comparer avec la suite
-!
-!
+if(erreur_trouvee) error stop "gamma(r,omega) n'est pas purement reel"
 
 
 call cpu_time (time(3))
 deallocate(in)
 deallocate(delta_rho_k_angle)
 
-df(:,:,:,:,1) = gamma_angle
 
+block
+use module_thermo, only: thermo
+real(dp) :: vexc(no), xi, rho, dv, kT
+real(dp), parameter :: fourpisq=4*acos(-1._dp)**2
+dv = grid%dv
+kT = thermo%kBT
+do iz=1,nz
+  do iy=1,ny
+    do ix=1,nx
+      vexc(1:no) = -kT*grid%w(1:no)*gamma_angle(:,ix,iy,iz) *fourpisq  /solvent(1)%n0
+      do io=1,no
+        xi = solvent(1)%xi(io,ix,iy,iz)
+        rho = xi**2*rho0
+        ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
+        df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
+      end do
+    end do
+  end do
+end do
+end block
+
+
+print*, "energy_luc took ",time(3)-time(1),"sec"
 end subroutine energy_luc
 
 
@@ -384,6 +402,8 @@ end subroutine energy_luc
     ! PRINT*, '(ces projections sont definies dans le repere fixe, z axe principal)'
     ! PRINT*, '4 methodes differentes'
     ! PRINT*, '********************************************************************************'
+    mmax=grid%mmax
+    mmax2=grid%mmax/2
     mnmax=grid%mmax
     mnmax2=mnmax/2
     ! PRINT*, 'Valeur de nmax --->', mnmax
@@ -636,23 +656,23 @@ end block
     ! PRINT*, 'ck= ',ck(1:MIN(10,ialpmax))
     CLOSE(7)
     !   je construis en tableau a 5 entrees cmnlmunu pour tests ulterieurs
-    if(.not.allocated(tab6)) ALLOCATE (tab6(0:mnmax,0:mnmax,0:2*mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
-    tab6=0.
-    do ialp=1,ialpmax
-      m=mm(ialp)
-      n=nn(ialp)
-      l=ll(ialp)
-      mu=mumu(ialp)
-      nu=nunu(ialp)
-      mu2=mu/2
-      nu2=nu/2
-      coeff_cmplx=ck(ialp)
-      IF((-1)**l==-1) coeff_cmplx=xi_cmplx*ck(ialp)
-      tab6(m,n,l,mu2,nu2)=coeff_cmplx
-      tab6(m,n,l,-mu2,-nu2)=(-1)**(m+n+l)*coeff_cmplx
-      tab6(n,m,l,nu2,mu2)=(-1)**(m+n)*coeff_cmplx
-      tab6(n,m,l,-nu2,-mu2)=(-1)**l*coeff_cmplx
-    END do
+    ! if(.not.allocated(tab6)) ALLOCATE (tab6(0:mnmax,0:mnmax,0:2*mnmax,-mnmax2:mnmax2,-mnmax2:mnmax2))
+    ! tab6=0.
+    ! do ialp=1,ialpmax
+    !   m=mm(ialp)
+    !   n=nn(ialp)
+    !   l=ll(ialp)
+    !   mu=mumu(ialp)
+    !   nu=nunu(ialp)
+    !   mu2=mu/2
+    !   nu2=nu/2
+    !   coeff_cmplx=ck(ialp)
+    !   IF((-1)**l==-1) coeff_cmplx=xi_cmplx*ck(ialp)
+    !   tab6(m,n,l,mu2,nu2)=coeff_cmplx
+    !   tab6(m,n,l,-mu2,-nu2)=(-1)**(m+n+l)*coeff_cmplx
+    !   tab6(n,m,l,nu2,mu2)=(-1)**(m+n)*coeff_cmplx
+    !   tab6(n,m,l,-nu2,-mu2)=(-1)**l*coeff_cmplx
+    ! END do
             ! PRINT*, '********************************************************************************'
             ! !
             ! !                           on a donc tout ce qui nous faut pour calculer le produit de convolution
@@ -1063,24 +1083,24 @@ end block
                   endif
                 end do                           ! fin ialp
                 !                  test en partant plutot de tab6  , reussi donc shunte
-                GOTO 317
-                tab7=0.
-                do mu2=-mnmax2,mnmax2
-                  mu=2*mu2
-                  do m=MAX(ABS(mu1),ABS(mu)),mnmax
-                    do nu2=-mnmax2,mnmax2
-                      nu=2*nu2
-                      do n=MAX(ABS(nu1),ABS(nu)),mnmax
-                        do l=ABS(m-n),m+n
-                      tab7(m,n,mu2,nu2)=tab7(m,n,mu2,nu2)+tab6(m,n,l,mu2,nu2)*symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)
-                        end do
-                  IF(ABS(tab7(m,n,mu2,nu2)-tab4(m,n,mu2,nu2))>1.d-10) PRINT*, mu1,nu1,m,n,mu,nu,tab7(m,n,mu2,nu2),tab4(m,n,mu2,nu2)
-                      end do
-                    end do
-                  end do
-                end do
-                !            fin test
-                317 continue
+                ! GOTO 317
+                ! tab7=0.
+                ! do mu2=-mnmax2,mnmax2
+                !   mu=2*mu2
+                !   do m=MAX(ABS(mu1),ABS(mu)),mnmax
+                !     do nu2=-mnmax2,mnmax2
+                !       nu=2*nu2
+                !       do n=MAX(ABS(nu1),ABS(nu)),mnmax
+                !         do l=ABS(m-n),m+n
+                !       tab7(m,n,mu2,nu2)=tab7(m,n,mu2,nu2)+tab6(m,n,l,mu2,nu2)*symbol_3j(m,n,l,mu1,nu1,lambda1)*harsph_q(l,lambda1)
+                !         end do
+                !   IF(ABS(tab7(m,n,mu2,nu2)-tab4(m,n,mu2,nu2))>1.d-10) PRINT*, mu1,nu1,m,n,mu,nu,tab7(m,n,mu2,nu2),tab4(m,n,mu2,nu2)
+                !       end do
+                !     end do
+                !   end do
+                ! end do
+                ! !            fin test
+                ! 317 continue
                 !
                 do mu2=-mnmax2,mnmax2
                   mu=2*mu2
@@ -1175,19 +1195,19 @@ end block
     !
     ! PRINT*, '********************************************************************************'
     ! PRINT*, 'RESULTATS comparatifs:'
-    do m=0,mnmax
-      m2=m/2
-      do mu1=-m,m
-        do mu2=-m2,m2
-          mu=2*mu2
-          ! PRINT*, m,mu1,mu,gamma1_proj(m,mu1,mu2),gamma2_proj(m,mu1,mu2),gamma3_proj(m,mu1,mu2),gamma4_proj(m,mu1,mu2)
-          if(gamma4_proj(m,mu1,mu2)/=gamma4_proj(m,mu1,mu2)) then
-            print*, qx,qy,qz
-            error stop "je suis triste"
-          end if
-        end do
-      end do
-    end do
+    ! do m=0,mnmax
+    !   m2=m/2
+    !   do mu1=-m,m
+    !     do mu2=-m2,m2
+    !       mu=2*mu2
+    !       ! PRINT*, m,mu1,mu,gamma1_proj(m,mu1,mu2),gamma2_proj(m,mu1,mu2),gamma3_proj(m,mu1,mu2),gamma4_proj(m,mu1,mu2)
+    !       if(gamma4_proj(m,mu1,mu2)/=gamma4_proj(m,mu1,mu2)) then
+    !         print*, qx,qy,qz
+    !         error stop "je suis triste"
+    !       end if
+    !     end do
+    !   end do
+    ! end do
 ! stop "RESULTATS comparatifs"
 
 
