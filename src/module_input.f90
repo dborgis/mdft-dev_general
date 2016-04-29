@@ -24,23 +24,23 @@ module module_input
     integer :: unit
     character :: name
     integer :: nline = -1
-  contains
-    procedure :: line_count => file_line_count
+    contains
+      procedure :: line_count => file_line_count
   end type
 
   public :: n_linesInFile, deltaAbscissa,&
   input_dp, input_int, input_log, input_char, input_dp2, input_dp3, input_int2, input_int3
 
   type, private :: getinput_type
-  contains
-    procedure, nopass :: log => input_log
-    procedure, nopass :: int => input_int
-    procedure, nopass :: int2 => input_int2
-    procedure, nopass :: int3 => input_int3
-    procedure, nopass :: char => input_char
-    procedure, nopass :: dp => input_dp
-    procedure, nopass :: dp2 => input_dp2
-    procedure, nopass :: dp3 => input_dp3
+    contains
+      procedure, nopass :: log => input_log
+      procedure, nopass :: int => input_int
+      procedure, nopass :: int2 => input_int2
+      procedure, nopass :: int3 => input_int3
+      procedure, nopass :: char => input_char
+      procedure, nopass :: dp => input_dp
+      procedure, nopass :: dp2 => input_dp2
+      procedure, nopass :: dp3 => input_dp3
   end type
   type(getinput_type), public :: getinput
 
