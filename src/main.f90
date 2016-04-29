@@ -9,12 +9,10 @@ program main
 
     implicit none
     integer(8) :: count0, count1, count_rate
-    real :: mdft_wholetime
+    real :: mdft_execution_time
 
     call system_clock (count0, count_rate)
-
-
-
+    if (count_rate == 0) error stop "Bug in main.f90, count_rate==0"
 
     call init_simu
     call energy_minimization
@@ -25,13 +23,19 @@ program main
     print*,"---"
 
     call system_clock (count1)
-    mdft_wholetime = real(count1-count0)/real(count_rate)
-    if( mdft_wholetime < 5*60 ) then ! less than 5 minutes
-        write(*,'(A,F12.2,A)') "MDFT finished in",mdft_wholetime," sec."
-    else if( mdft_wholetime < 5*60*60 ) then ! less than 5 h
-        write(*,'(A,F12.2,A)') "MDFT finished in",mdft_wholetime/60.," min."
-    else
-        write(*,'(A,F12.2,A)') "MDFT finished in",mdft_wholetime/60./60.," hours."
-    end if
+
+    block
+        real :: five_min = 5*60
+        real :: five_hours = 5*60*60
+        real :: mdft_execution_time
+        mdft_execution_time = real(count1-count0)/real(count_rate)
+        if(      mdft_execution_time < five_min ) then
+            write(*,'(A,F12.2,A)') "MDFT finished in", mdft_execution_time," sec."
+        else if( mdft_execution_time < five_hours ) then 
+            write(*,'(A,F12.2,A)') "MDFT finished in",mdft_execution_time/60.," min."
+        else
+            write(*,'(A,F12.2,A)') "MDFT finished in",mdft_execution_time/60./60.," hours."
+        end if
+    end block
 
 end program
