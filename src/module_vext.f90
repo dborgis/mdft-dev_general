@@ -67,6 +67,8 @@ contains
         CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
 
         if (any(solvent(1)%vext <= -solvent(1)%vext_threeshold)) then
+            print*, "OMG we should be calling this prevent_numerical_catastrophe..."
+            error stop
             ! call prevent_numerical_catastrophes
         end if
 
@@ -109,8 +111,8 @@ contains
 
         !
         ! Definitions:
-        ! The electrostatic potential, aka electric potential, is due to source charges only.
-        ! The electrostatic energy is the application of the electric potential on target charges.
+        ! The electrostatic potential, aka electric potential, is induced by the source (solute) charges only.
+        ! The electrostatic energy is the effect of the electric potential on target (solvent) charges.
         ! The electrostatic energy density is the electrostatic energy per volume unit. It is the one we call vextq
         !
         do s=1,solvent(1)%nspec
@@ -143,6 +145,8 @@ contains
         ! DIRECT SUMMATION, pot = sum of qq'/r
         if (is_direct) then
             print*, "  => Method : direct"
+            ! Implies M-summation scheme as called by Hunenberger and Reif
+            ! See the routine below for more information and biblio
             call compute_vcoul_as_sum_of_pointcharges
         end if
 
@@ -151,15 +155,6 @@ contains
             print*, "  => Method : FFT"
             call init_fastpoissonsolver
         end if
-
-        block
-          integer :: iz
-          open(39,file="output/vextq-z.dat")
-          do iz=0,grid%nz-1
-            write(39,*) iz*grid%dz, solvent(1)%vextq(1,1,1,iz+1)
-          end do
-          close(39)
-        end block
 
     end subroutine init_electrostatic_potential
 
@@ -681,7 +676,11 @@ contains
                                 if ( abs(solvent(s)%site(m)%q) < epsdp ) cycle
                                 do n=1,solute%nsite
                                     if( abs(solute%site(n)%q) < epsdp ) cycle
-                                    xv = xgrid + [xmod(m,io), ymod(m,io), zmod(m,io)]
+                                    xv = xgrid + [xmod(m,io), ymod(m,io), zmod(m,io)] ! xv may be out of the box.
+                                    ! This means that some component of xv may be >L or <0.
+                                    ! This correponds to the M-summation:
+                                    ! See fig. 3.5 of Hunenberger and Reif, Chapt.3 p 113 of their book
+                                    ! "Single-ion solvation: experimental and theoretical approaches to elusive thermodynamic quantities"
                                     xuv = xv - solute%site(n)%r
                                     xuv2 = SUM(xuv**2)
                                     IF (xuv2 < hardShellRadiusSQ) THEN

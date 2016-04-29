@@ -296,6 +296,8 @@ contains
                 DO CONCURRENT (m=1:solvent(1)%nsite, abs(solvent(s)%site(m)%q)>epsilon(1.0_dp))
 
                     x = (REAL([i,j,k],dp)-1.0_dp)*dl + [xmod(1,s,m,io),xmod(2,s,m,io),xmod(3,s,m,io)]! cartesian coordinate x of the solvent site m. May be outside the supercell.
+! This corresponds to the M-summation scheme of Hunenberger and Reif
+! See fig. 3.5, chapt.3 page 113 of their book "Single ion solvation"
                     x(1)=chop(x(1))
                     x(2)=chop(x(2))
                     x(3)=chop(x(3))
