@@ -1,10 +1,16 @@
 module module_energy_ideal_and_external
+
     implicit none
     private
     public :: energy_ideal_and_external
+
 contains
 
-    ! This SUBROUTINE computes the ideal part of the free energy functional.
+    !
+    ! This subroutine computes the ideal and external parts of the free energy functional.
+    ! We compute Fid and Fext together because they're one-body potential related.
+    !
+
     subroutine energy_ideal_and_external (fid, fext, df)
 
         use precision_kinds, only: dp
@@ -24,10 +30,10 @@ contains
 
         if (.not.allocated(solvent)) call print_solvent_not_allocated ("Look at subroutine energy_ideal_and_external")
 
-        ns = solvent(1)%nspec
+        ns = solvent(1)%nspec ! number of solvent species
         kT = thermo%kbT
         dv = grid%dv
-        mu = getinput%dp( 'imposed_chempot', defaultvalue=0._dp)
+        mu = getinput%dp( 'imposed_chempot', defaultvalue=0._dp )
         if ( mu/=0._dp) stop "mu /=0 in module_energy_ideal_and_external. That's implemented but for now shutitoff"
         if ( ns/=1 .AND. mu/=0._dp) STOP "Imposing a chemical potential is valid only for single-species solvent"
 
@@ -54,6 +60,7 @@ contains
                     df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) &
                       + grid%w(io)*2._dp*rho0*xi*(kT*log(rho/rho0)+solvent(1)%vext(io,ix,iy,iz))
                   else
+                    ! limit of Fid when rho->0 is not 0, it is:
                     fid = fid + kT*dv*grid%w(io)*  rho0
                   end if
 
