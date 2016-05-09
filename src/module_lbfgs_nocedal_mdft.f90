@@ -22,12 +22,9 @@ module module_lbfgs_nocedal_mdft
       logical                :: lsave(4)
       integer                :: isave(44)
       real(dp)               :: dsave(29)
-      ! integer,   allocatable :: nbd(:)
       integer,   allocatable :: iwa(:)
-      ! real(dp),  allocatable :: l(:)
       real(dp),  allocatable :: wa(:)
       ! real(dp), allocatable :: x(:)
-      ! real(dp),  allocatable :: u(:)
       ! real(dp), allocatable :: g(:)
       integer :: itermax=50
   contains
@@ -57,9 +54,6 @@ contains
       lbfgsb%n = grid%nx * grid%ny * grid%nz * grid%no * solvent(1)%nspec
       n=lbfgsb%n
       m=lbfgsb%m
-      ! allocate ( lbfgsb%nbd(n) )
-      ! allocate ( lbfgsb%l(n) )
-      ! allocate ( lbfgsb%u(n) )
       ! allocate !, lbfgsb%x(n), lbfgsb%g(n)
       allocate ( lbfgsb%iwa(3*n) )
       allocate ( lbfgsb%wa(2*m*n + 5*n + 11*m*m + 8*m) )
@@ -76,29 +70,6 @@ contains
           error stop
       end if
 
-      !
-      !   L-BFGS-B needs to know for each var to optimize if it is lower bounded (nbd=1), lower and upper bounded (nbd=2)
-      !   Give also the bounds (l and u)
-      !
-      ! icg=0
-      ! do is=1,solvent(1)%nspec
-      !     do iz=1,grid%nz
-      !         do iy=1,grid%ny
-      !             do ix=1,grid%nx
-      !                 do io=1,grid%no
-      !                     icg=icg+1
-      !                     lbfgsb%nbd(icg) = 0 ! non-bounded
-      !                 end do
-      !             end do
-      !         end do
-      !     end do
-      ! end do
-
-      ! if (icg /= lbfgsb%n) then
-      !     print*, "icg should be == lbfgsb%n in init of module_minimizer.f90 (l.174)"
-      !     stop
-      ! end if
-
       !     We start the iteration by initializing task.
       lbfgsb%task = 'START'
 
@@ -112,15 +83,12 @@ contains
         implicit none
       character(len=60)     task, csave
       logical          lsave(4)
-      integer          n, m, iprint, nbd(n), iwa(3*n), isave(44)
-      real(myprecision) :: f, factr, pgtol, x(n), l(n), u(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
+      integer          n, m, iprint, iwa(3*n), isave(44)
+      real(myprecision) :: f, factr, pgtol, x(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
 
 
       integer   lws,lr,lz,lt,ld,lxp,lwa,lwy,lsy,lss,lwt,lwn,lsnd
 
-      nbd=0
-      l=0.
-      u=0.
 
       if (task .eq. 'START') then
          isave(1)  = m*n
@@ -154,20 +122,20 @@ contains
       lxp  = isave(15)
       lwa  = isave(16)
 
-      call mainlb(n,m,x,l,u,nbd,f,g,factr,pgtol, wa(lws),wa(lwy),wa(lsy),wa(lss), wa(lwt),&
+      call mainlb(n,m,x,f,g,factr,pgtol, wa(lws),wa(lwy),wa(lsy),wa(lss), wa(lwt),&
        wa(lwn),wa(lsnd),wa(lz),wa(lr),wa(ld),wa(lt),wa(lxp),wa(lwa), iwa(1),iwa(n+1),iwa(2*n+1),task,iprint,&
        csave,lsave,isave(22),dsave)
 
 end subroutine setulb
 
 
-subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r, d, t, xp, wa,&
+subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r, d, t, xp, wa,&
   index, iwhere, indx2, task, iprint, csave, lsave, isave, dsave)
   implicit none
   character(len=60)     task, csave
   logical          lsave(4)
-  integer          n, m, iprint, nbd(n), index(n), iwhere(n), indx2(n), isave(23)
-  real(myprecision) f, factr, pgtol, x(n), l(n), u(n), g(n), z(n), r(n), d(n), t(n), xp(n), wa(8*m), &
+  integer          n, m, iprint,  index(n), iwhere(n), indx2(n), isave(23)
+  real(myprecision) f, factr, pgtol, x(n), g(n), z(n), r(n), d(n), t(n), xp(n), wa(8*m), &
   ws(n, m), wy(n, m), sy(m, m), ss(m, m),  wt(m, m), wn(2*m, 2*m), snd(2*m, 2*m), dsave(29)
 
 
@@ -229,7 +197,7 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
     endif
 
 
-    call errclb(n,m,factr,l,u,nbd,task,info,k)
+    call errclb(n,m,factr,task,info,k)
     if (task(1:5) .eq. 'ERROR') then
       call prn3lb(n,x,f,task,iprint,info,itfile, iter,nfgv,nintol,nskip,nact,sbgnrm,&
       zero,nseg,word,iback,stp,xstep,k,&
@@ -237,10 +205,10 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
       return
     endif
 
-    call prn1lb(n,m,l,u,x,iprint,itfile,epsmch)
+    call prn1lb(n,m,x,iprint,itfile,epsmch)
 
 
-    call active(n,l,u,nbd,x,iwhere,iprint,prjctd,cnstnd,boxed)
+    call active(n,x,iwhere,iprint,prjctd,cnstnd,boxed)
 
 
   else
@@ -307,7 +275,7 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
   nfgv = 1
 
 
-  call projgr(n,l,u,nbd,x,g,sbgnrm)
+  call projgr(n,x,g,sbgnrm)
 
   if (iprint .ge. 1) then
     write (6,1002) iter,f,sbgnrm
@@ -331,7 +299,7 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
 
 
   call cpu_time(cpu1)
-  call cauchy(n,x,l,u,nbd,g,indx2,iwhere,t,d,z, m,wy,ws,sy,wt,theta,col,head, wa(1),wa(2*m+1),wa(4*m+1),wa(6*m+1),nseg,&
+  call cauchy(n,x,g,indx2,iwhere,t,d,z, m,wy,ws,sy,wt,theta,col,head, wa(1),wa(2*m+1),wa(4*m+1),wa(6*m+1),nseg,&
   iprint, sbgnrm, info, epsmch)
   if (info .ne. 0) then
     if(iprint .ge. 1) write (6, 1005)
@@ -379,7 +347,7 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
   if (info .ne. 0) goto 444
 
 
-  call subsm( n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col, head, iword, wa, wn, iprint, info)
+  call subsm( n, m, nfree, index, z, r, xp, ws, wy, theta, x, g, col, head, iword, wa, wn, iprint, info)
   444  continue
   if (info .ne. 0) then
     if(iprint .ge. 1) write (6, 1005)
@@ -404,7 +372,7 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
     40  continue
     call cpu_time(cpu1)
     666  continue
-    call lnsrlb(n,l,u,nbd,x,f,fold,gd,gdold,g,d,r,t,z,stp,dnorm, dtd,xstep,stpmx,iter,ifun,iback,nfgv,info,task,&
+    call lnsrlb(n,x,f,fold,gd,gdold,g,d,r,t,z,stp,dnorm, dtd,xstep,stpmx,iter,ifun,iback,nfgv,info,task,&
     boxed,cnstnd,csave,isave(22),dsave(17))
     if (info .ne. 0 .or. iback .ge. 20) then
       call dcopy(n,t,1,x,1)
@@ -442,7 +410,7 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
       iter = iter + 1
 
 
-      call projgr(n,l,u,nbd,x,g,sbgnrm)
+      call projgr(n,x,g,sbgnrm)
 
 
       call prn2lb(n,x,f,g,iprint,itfile,iter,nfgv,nact,sbgnrm,nseg,word,iword,iback,stp,xstep)
@@ -567,70 +535,27 @@ subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn
 end subroutine mainlb
 
 
-      subroutine active(n, l, u, nbd, x, iwhere, iprint, prjctd, cnstnd, boxed)
-        implicit none
+subroutine active(n, x, iwhere, iprint, prjctd, cnstnd, boxed)
+      implicit none
       logical          prjctd, cnstnd, boxed
-      integer          n, iprint, nbd(n), iwhere(n)
-      real(myprecision) x(n), l(n), u(n)
-
-
+      integer          n, iprint, iwhere(n)
+      real(myprecision) x(n)
       integer          nbdd,i
       real(myprecision) zero
       parameter        (zero=0.0d0)
-
-
       nbdd = 0
       prjctd = .false.
       cnstnd = .false.
-      boxed = .true.
-
-
-      do 10 i = 1, n
-         if (nbd(i) .gt. 0) then
-            if (nbd(i) .le. 2 .and. x(i) .le. l(i)) then
-               if (x(i) .lt. l(i)) then
-                  prjctd = .true.
-                  x(i) = l(i)
-               endif
-               nbdd = nbdd + 1
-            else if (nbd(i) .ge. 2 .and. x(i) .ge. u(i)) then
-               if (x(i) .gt. u(i)) then
-                  prjctd = .true.
-                  x(i) = u(i)
-               endif
-               nbdd = nbdd + 1
-            endif
-         endif
-  10  continue
-
-
-      do 20 i = 1, n
-         if (nbd(i) .ne. 2) boxed = .false.
-         if (nbd(i) .eq. 0) then
-            iwhere(i) = -1
-
-         else
-            cnstnd = .true.
-            if (nbd(i) .eq. 2 .and. u(i) - l(i) .le. zero) then
-               iwhere(i) = 3
-            else
-               iwhere(i) = 0
-            endif
-         endif
-  20  continue
-
+      boxed = .false.
+      iwhere = -1
       if (iprint .ge. 0) then
          if (prjctd) write (6,*) 'The initial X is infeasible.  Restart with its projection.'
          if (.not. cnstnd) write (6,*) 'This problem is unconstrained.'
       endif
-
       if (iprint .gt. 0) write (6,1001) nbdd
-
  1001 format (/,'At X0 ',i9,' variables are exactly at the bounds')
-
       return
-
-      end
+end subroutine active
 
 
       subroutine bmv(m, sy, wt, col, v, p, info)
@@ -679,16 +604,17 @@ end subroutine mainlb
       end
 
 
-      subroutine cauchy(n, x, l, u, nbd, g, iorder, iwhere, t, d, xcp, m, wy, ws, sy, wt, theta, col, head, p, c, wbp,&
+      subroutine cauchy(n, x, g, iorder, iwhere, t, d, xcp, m, wy, ws, sy, wt, theta, col, head, p, c, wbp,&
                        v, nseg, iprint, sbgnrm, info, epsmch)
       implicit none
-      integer          n, m, head, col, nseg, iprint, info,  nbd(n), iorder(n), iwhere(n)
+      integer          n, m, head, col, nseg, iprint, info,  iorder(n), iwhere(n)
       real(myprecision) theta, epsmch,&
-                      x(n), l(n), u(n), g(n), t(n), d(n), xcp(n),&
+                      x(n), g(n), t(n), d(n), xcp(n),&
                      wy(n, col), ws(n, col), sy(m, m),&
                      wt(m, m), p(2*m), c(2*m), wbp(2*m), v(2*m)
 
-
+      real(myprecision), parameter :: l=0., u=0.
+      integer, parameter :: nbd=0
       logical          xlower,xupper,bnded
       integer          i,j,col2,nfree,nbreak,pointr,    ibp,nleft,ibkmin,iter
       real(myprecision) f1,f2,dt,dtm,tsum,dibp,zibp,dibp2,bkmin,tu,tl,wmc,wmp,wmw,tj,tj0,neggi,sbgnrm,f2_org!,ddot
@@ -719,11 +645,11 @@ end subroutine mainlb
       do 50 i = 1, n
          neggi = -g(i)
          if (iwhere(i) .ne. 3 .and. iwhere(i) .ne. -1) then
-            if (nbd(i) .le. 2) tl = x(i) - l(i)
-            if (nbd(i) .ge. 2) tu = u(i) - x(i)
+            if (nbd .le. 2) tl = x(i) - l
+            if (nbd .ge. 2) tu = u - x(i)
 
-            xlower = nbd(i) .le. 2 .and. tl .le. zero
-            xupper = nbd(i) .ge. 2 .and. tu .le. zero
+            xlower = nbd .le. 2 .and. tl .le. zero
+            xupper = nbd .ge. 2 .and. tu .le. zero
 
             iwhere(i) = 0
             if (xlower) then
@@ -745,7 +671,7 @@ end subroutine mainlb
                p(col + j) = p(col + j) + ws(i,pointr)*neggi
                pointr = mod(pointr,m) + 1
   40        continue
-            if (nbd(i) .le. 2 .and. nbd(i) .ne. 0  .and. neggi .lt. zero) then
+            if (nbd .le. 2 .and. nbd .ne. 0  .and. neggi .lt. zero) then
                nbreak = nbreak + 1
                iorder(nbreak) = i
                t(nbreak) = tl/(-neggi)
@@ -753,7 +679,7 @@ end subroutine mainlb
                   bkmin = t(nbreak)
                   ibkmin = nbreak
                endif
-            else if (nbd(i) .ge. 2 .and. neggi .gt. zero) then
+            else if (nbd.ge. 2 .and. neggi .gt. zero) then
                nbreak = nbreak + 1
                iorder(nbreak) = i
                t(nbreak) = tu/neggi
@@ -847,12 +773,12 @@ end subroutine mainlb
       dibp = d(ibp)
       d(ibp) = zero
       if (dibp .gt. zero) then
-         zibp = u(ibp) - x(ibp)
-         xcp(ibp) = u(ibp)
+         zibp = u - x(ibp)
+         xcp(ibp) = u
          iwhere(ibp) = 2
       else
-         zibp = l(ibp) - x(ibp)
-         xcp(ibp) = l(ibp)
+         zibp = l - x(ibp)
+         xcp(ibp) = l
          iwhere(ibp) = 1
       endif
       if (iprint .ge. 100) write (6,*) 'Variable  ',ibp,'  is fixed.'
@@ -978,41 +904,18 @@ end subroutine mainlb
       end
 
 
-      subroutine errclb(n, m, factr, l, u, nbd, task, info, k)
-        implicit none
+      subroutine errclb(n, m, factr, task, info, k)
+      implicit none
       character(len=60)     task
-      integer          n, m, info, k, nbd(n)
-      real(myprecision) factr, l(n), u(n)
-
-
+      integer          n, m, info, k
+      real(myprecision) factr
       integer          i
       real(myprecision) one,zero
       parameter        (one=1.0d0,zero=0.0d0)
-
-
       if (n .le. 0) task = 'ERROR: N .LE. 0'
       if (m .le. 0) task = 'ERROR: M .LE. 0'
       if (factr .lt. zero) task = 'ERROR: FACTR .LT. 0'
-
-
-      do 10 i = 1, n
-         if (nbd(i) .lt. 0 .or. nbd(i) .gt. 3) then
-            task = 'ERROR: INVALID NBD'
-            info = -6
-            k = i
-         endif
-         if (nbd(i) .eq. 2) then
-            if (l(i) .gt. u(i)) then
-               task = 'ERROR: NO FEASIBLE SOLUTION'
-               info = -7
-               k = i
-            endif
-         endif
-  10  continue
-
-      return
-
-      end
+      end subroutine errclb
 
 
       subroutine formk(n, nsub, ind, nenter, ileave, indx2, iupdat, updatd, wn, wn1, m, ws, wy, sy, theta, col, head, info)
@@ -1342,16 +1245,15 @@ end subroutine mainlb
       end
 
 
-      subroutine lnsrlb(n, l, u, nbd, x, f, fold, gd, gdold, g, d, r, t,&
+      subroutine lnsrlb(n, x, f, fold, gd, gdold, g, d, r, t,&
                        z, stp, dnorm, dtd, xstep, stpmx, iter, ifun,&
                        iback, nfgv, info, task, boxed, cnstnd, csave,&
                        isave, dsave)
       implicit none
       character(len=60)     task, csave
       logical          boxed, cnstnd
-      integer          n, iter, ifun, iback, nfgv, info,  nbd(n), isave(2)
-      real(myprecision) f, fold, gd, gdold, stp, dnorm, dtd, xstep, stpmx, x(n), l(n), u(n), g(n), d(n), r(n), t(n), z(n), dsave(13)
-
+      integer          n, iter, ifun, iback, nfgv, info, isave(2)
+      real(myprecision) f, fold, gd, gdold, stp, dnorm, dtd, xstep, stpmx, x(n), g(n), d(n), r(n), t(n), z(n), dsave(13)
       integer          i
       double           precision a1,a2!,ddot
       real(myprecision) one,zero,big
@@ -1372,23 +1274,6 @@ end subroutine mainlb
          else
             do 43 i = 1, n
                a1 = d(i)
-               if (nbd(i) .ne. 0) then
-                  if (a1 .lt. zero .and. nbd(i) .le. 2) then
-                     a2 = l(i) - x(i)
-                     if (a2 .ge. zero) then
-                        stpmx = zero
-                     else if (a1*stpmx .lt. a2) then
-                        stpmx = a2/a1
-                     endif
-                  else if (a1 .gt. zero .and. nbd(i) .ge. 2) then
-                     a2 = u(i) - x(i)
-                     if (a2 .le. zero) then
-                        stpmx = zero
-                     else if (a1*stpmx .gt. a2) then
-                        stpmx = a2/a1
-                     endif
-                  endif
-               endif
   43        continue
          endif
       endif
@@ -1492,10 +1377,10 @@ end subroutine mainlb
       end
 
 
-      subroutine prn1lb(n, m, l, u, x, iprint, itfile, epsmch)
+      subroutine prn1lb(n, m, x, iprint, itfile, epsmch)
         implicit none
       integer n, m, iprint, itfile
-      real(myprecision) epsmch, x(n), l(n), u(n)
+      real(myprecision) epsmch, x(n)
 
 
       integer i
@@ -1508,9 +1393,7 @@ end subroutine mainlb
             write (itfile,*)'N = ',n,'    M = ',m
             write (itfile,9001)
             if (iprint .gt. 100) then
-               write (6,1004) 'L =',(l(i),i = 1,n)
                write (6,1004) 'X0 =',(x(i),i = 1,n)
-               write (6,1004) 'U =',(u(i),i = 1,n)
             endif
          endif
       endif
@@ -1682,10 +1565,10 @@ end subroutine mainlb
       end
 
 
-      subroutine projgr(n, l, u, nbd, x, g, sbgnrm)
+      subroutine projgr(n, x, g, sbgnrm)
         implicit none
-      integer          n, nbd(n)
-      real(myprecision) sbgnrm, x(n), l(n), u(n), g(n)
+      integer          n
+      real(myprecision) sbgnrm, x(n), g(n)
 
 
       integer i
@@ -1696,13 +1579,6 @@ end subroutine mainlb
       sbgnrm = zero
       do 15 i = 1, n
         gi = g(i)
-        if (nbd(i) .ne. 0) then
-           if (gi .lt. zero) then
-              if (nbd(i) .ge. 2) gi = max((x(i)-u(i)),gi)
-           else
-              if (nbd(i) .le. 2) gi = min((x(i)-l(i)),gi)
-           endif
-        endif
         sbgnrm = max(sbgnrm,abs(gi))
   15  continue
 
@@ -1711,14 +1587,10 @@ end subroutine mainlb
       end
 
 
-      subroutine subsm ( n, m, nsub, ind, l, u, nbd, x, d, xp, ws, wy, theta, xx, gg, col, head, iword, wv, wn, iprint, info )
+      subroutine subsm ( n, m, nsub, ind, x, d, xp, ws, wy, theta, xx, gg, col, head, iword, wv, wn, iprint, info )
       implicit none
-      integer          n, m, nsub, col, head, iword, iprint, info, ind(nsub), nbd(n)
-      real(myprecision) theta, l(n), u(n), x(n), d(n), xp(n), xx(n), gg(n), ws(n, m), wy(n, m), wv(2*m), wn(2*m, 2*m)
-
-
-
-
+      integer          n, m, nsub, col, head, iword, iprint, info, ind(nsub)
+      real(myprecision) theta, x(n), d(n), xp(n), xx(n), gg(n), ws(n, m), wy(n, m), wv(2*m), wn(2*m, 2*m)
       integer          pointr,m2,col2,ibd,jy,js,i,j,k
       real(myprecision) alpha, xk, dk, temp1, temp2
       real(myprecision) one,zero
@@ -1774,25 +1646,7 @@ end subroutine mainlb
          k  = ind(i)
          dk = d(i)
          xk = x(k)
-         if ( nbd(k) .ne. 0 ) then
-            if ( nbd(k).eq.1 ) then          ! lower bounds only
-               x(k) = max( l(k), xk + dk )
-               if ( x(k).eq.l(k) ) iword = 1
-            else
-               if ( nbd(k).eq.2 ) then       ! upper and lower bounds
-                  xk   = max( l(k), xk + dk )
-                  x(k) = min( u(k), xk )
-                  if ( x(k).eq.l(k) .or. x(k).eq.u(k) ) iword = 1
-               else
-                  if ( nbd(k).eq.3 ) then    ! upper bounds only
-                     x(k) = min( u(k), xk + dk )
-                     if ( x(k).eq.u(k) ) iword = 1
-                  end if
-               end if
-            end if
-         else                                ! free variables
-            x(k) = xk + dk
-         end if
+         x(k) = xk + dk
  50   continue
       if ( iword.eq.0 ) then
          go to 911
@@ -1814,37 +1668,16 @@ end subroutine mainlb
       do 60 i = 1, nsub
          k = ind(i)
          dk = d(i)
-         if (nbd(k) .ne. 0) then
-            if (dk .lt. zero .and. nbd(k) .le. 2) then
-               temp2 = l(k) - x(k)
-               if (temp2 .ge. zero) then
-                  temp1 = zero
-               else if (dk*alpha .lt. temp2) then
-                  temp1 = temp2/dk
-               endif
-            else if (dk .gt. zero .and. nbd(k) .ge. 2) then
-               temp2 = u(k) - x(k)
-               if (temp2 .le. zero) then
-                  temp1 = zero
-               else if (dk*alpha .gt. temp2) then
-                  temp1 = temp2/dk
-               endif
-            endif
-            if (temp1 .lt. alpha) then
-               alpha = temp1
-               ibd = i
-            endif
-         endif
  60   continue
 
       if (alpha .lt. one) then
          dk = d(ibd)
          k = ind(ibd)
          if (dk .gt. zero) then
-            x(k) = u(k)
+            x(k) = 0
             d(ibd) = zero
          else if (dk .lt. zero) then
-            x(k) = l(k)
+            x(k) = 0
             d(ibd) = zero
          endif
       endif
