@@ -28,8 +28,6 @@ contains
         real(dp), parameter :: zerodp = 0._dp
         real(dp), parameter :: epsdp = epsilon(0._dp)
 
-        if (.not.allocated(solvent)) call print_solvent_not_allocated ("Look at subroutine energy_ideal_and_external")
-
         ns = solvent(1)%nspec ! number of solvent species
         kT = thermo%kbT
         dv = grid%dv
@@ -56,9 +54,9 @@ contains
 
                   if (rho > epsdp) then
                     fid = fid + kT*dv*grid%w(io)*( rho*log(rho/rho0)-rho+rho0 )
-                    fext = fext + dv*grid%w(io)*rho*solvent(1)%vext(io,ix,iy,iz)
+                    fext = fext + dv*grid%w(io)*rho*solvent(is)%vext(io,ix,iy,iz)
                     df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) &
-                      + grid%w(io)*2._dp*rho0*xi*(kT*log(rho/rho0)+solvent(1)%vext(io,ix,iy,iz))
+                      + grid%w(io)*2._dp*rho0*xi*(kT*log(rho/rho0)+solvent(is)%vext(io,ix,iy,iz))
                   else
                     ! limit of Fid when rho->0 is not 0, it is:
                     fid = fid + kT*dv*grid%w(io)*  rho0
