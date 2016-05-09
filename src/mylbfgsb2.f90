@@ -2081,103 +2081,35 @@
       return
       end
 
-      double precision function dnrm2(n,x,incx)
-      integer n,incx
-      double precision x(n)
-      integer i
-      double precision scale
-
-      dnrm2 = 0.0d0
-      scale = 0.0d0
-
-      do 10 i = 1, n, incx
-         scale = max(scale, abs(x(i)))
-   10 continue
-
-      if (scale .eq. 0.0d0) return
-
-      do 20 i = 1, n, incx
-         dnrm2 = dnrm2 + (x(i)/scale)**2
-   20 continue
-
-      dnrm2 = scale*sqrt(dnrm2)
 
 
-      return
-
-      end
 
 
-      subroutine daxpy(n,da,dx,incx,dy,incy)
-        implicit none
-      double precision dx(*),dy(*),da
-      integer i,ix,iy,m,mp1,n
-      integer, intent(in) :: incx, incy
-      if(n.le.0)return
-      if (da .eq. 0.0d0) return
-      if(incx.eq.1.and.incy.eq.1)go to 20
-
-      ix = 1
-      iy = 1
-      if(incx.lt.0)ix = (-n+1)*incx + 1
-      if(incy.lt.0)iy = (-n+1)*incy + 1
-      do  i = 1,n
-        dy(iy) = dy(iy) + da*dx(ix)
-        ix = ix + incx
-        iy = iy + incy
-      end do
-      return
-
-   20 m = mod(n,4)
-      if( m .eq. 0 ) go to 40
-      do i = 1,m
-        dy(i) = dy(i) + da*dx(i)
-      end do
-      if( n .lt. 4 ) return
-   40 mp1 = m + 1
-      do i = mp1,n,4
-        dy(i) = dy(i) + da*dx(i)
-        dy(i + 1) = dy(i + 1) + da*dx(i + 1)
-        dy(i + 2) = dy(i + 2) + da*dx(i + 2)
-        dy(i + 3) = dy(i + 3) + da*dx(i + 3)
-      end do
-      end subroutine daxpy
+pure subroutine daxpy(n,da,dx,incx,dy,incy)
+  implicit none
+  integer, intent(in) :: n, incx, incy
+  double precision, intent(in) :: da, dx(n)
+  double precision, intent(inout) :: dy(n)
+  if (n<=0) then
+    return
+  else
+    dy = dy + da*dx
+  end if
+end subroutine daxpy
 
 
-      subroutine dcopy(n,dx,incx,dy,incy)
-        implicit none
-      double precision dx(*),dy(*)
-      integer i,incx,incy,ix,iy,m,mp1,n
-      if(n.le.0)return
-      if(incx.eq.1.and.incy.eq.1)go to 20
-      ix = 1
-      iy = 1
-      if(incx.lt.0)ix = (-n+1)*incx + 1
-      if(incy.lt.0)iy = (-n+1)*incy + 1
-      do 10 i = 1,n
-        dy(iy) = dx(ix)
-        ix = ix + incx
-        iy = iy + incy
-   10 continue
-      return
-   20 m = mod(n,7)
-      if( m .eq. 0 ) go to 40
-      do 30 i = 1,m
-        dy(i) = dx(i)
-   30 continue
-      if( n .lt. 7 ) return
-   40 mp1 = m + 1
-      do 50 i = mp1,n,7
-        dy(i) = dx(i)
-        dy(i + 1) = dx(i + 1)
-        dy(i + 2) = dx(i + 2)
-        dy(i + 3) = dx(i + 3)
-        dy(i + 4) = dx(i + 4)
-        dy(i + 5) = dx(i + 5)
-        dy(i + 6) = dx(i + 6)
-   50 continue
-      return
-      end subroutine dcopy
+
+pure subroutine dcopy(n,dx,incx,dy,incy)
+  implicit none
+  integer, intent(in) :: n, incx, incy
+  double precision, intent(in) :: dx(n)
+  double precision, intent(inout) :: dy(n)
+  if (n<=0) then
+    return
+  else
+    dy = dx
+  end if
+end subroutine dcopy
 
 
       pure double precision function ddot(n,dx,incx,dy,incy)
