@@ -201,3 +201,10 @@ For the development version, with all debug etc on, type
 sudo apt-get install cmake fftw3-dev  
 cmake -DCMAKE_BUILD_TYPE=DEBUG
 ```
+You may replace DEBUG by
+- RELEASE (with optimization flags, without openmp)
+- DEBUG   (with debug flags, without openmp)
+- RELEASE_OPENMP
+- DEBUG_OPENMP
+The default is RELEASE
+
