@@ -101,7 +101,7 @@ set(mdft_SRCS
   src/energy_polarization_multi_with_nccoupling.f90
   src/energy_threebody_faster.f90
   src/get_final_polarization.f90
-  src/main.f90
+  src/main_test_vext.f90
   src/module_constants.f90
   src/module_dcf.f90
   src/module_density.f90
@@ -122,7 +122,7 @@ set(mdft_SRCS
   src/module_solvent.f90
   src/module_system.f90
   src/module_time.f90
-  src/mylbfgsb.f
+  src/mylbfgsb2.f90
   src/output_g-r-theta.f90
   src/output_gsitesite.f90
   src/output_rdf.f90
