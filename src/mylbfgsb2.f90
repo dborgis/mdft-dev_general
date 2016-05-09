@@ -2111,7 +2111,8 @@
       subroutine daxpy(n,da,dx,incx,dy,incy)
         implicit none
       double precision dx(*),dy(*),da
-      integer i,incx,incy,ix,iy,m,mp1,n
+      integer i,ix,iy,m,mp1,n
+      integer, intent(in) :: incx, incy
       if(n.le.0)return
       if (da .eq. 0.0d0) return
       if(incx.eq.1.and.incy.eq.1)go to 20
@@ -2179,11 +2180,12 @@
       end subroutine dcopy
 
 
-      double precision function ddot(n,dx,incx,dy,incy)
-        implicit none
-      double precision dx(*),dy(*),dtemp
-      integer i,incx,incy,ix,iy,m,mp1,n
-
+      pure double precision function ddot(n,dx,incx,dy,incy)
+      implicit none
+      double precision, intent(in) :: dx(*),dy(*)
+      double precision :: dtemp
+      integer, intent(in) :: n, incx, incy
+      integer i,ix,iy,m,mp1
       ddot = 0.0d0
       dtemp = 0.0d0
       if(n.le.0)return
@@ -2255,12 +2257,12 @@
             s = 0.0d0
             jm1 = j - 1
             if (jm1 .lt. 1) go to 20
-            do 10 k = 1, jm1
+            do k = 1, jm1
                t = a(k,j) - ddot(k-1,a(1,k),1,a(1,j),1)
                t = t/a(k,k)
                a(k,j) = t
                s = s + t*t
-   10       continue
+            end do
    20       continue
             s = a(j,j) - s
             if (s .le. 0.0d0) go to 40
