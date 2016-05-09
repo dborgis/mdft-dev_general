@@ -14,9 +14,17 @@ program main
     call system_clock (count0, count_rate)
     if (count_rate == 0) error stop "Bug in main.f90, count_rate==0"
 
+
+
+
+
     call init_simu
     call energy_minimization
     call init_postprocessing
+
+
+
+
 
     print*,
     print*,
@@ -31,7 +39,7 @@ program main
         mdft_execution_time = real(count1-count0)/real(count_rate)
         if(      mdft_execution_time < five_min ) then
             write(*,'(A,F12.2,A)') "MDFT finished in", mdft_execution_time," sec."
-        else if( mdft_execution_time < five_hours ) then 
+        else if( mdft_execution_time < five_hours ) then
             write(*,'(A,F12.2,A)') "MDFT finished in",mdft_execution_time/60.," min."
         else
             write(*,'(A,F12.2,A)') "MDFT finished in",mdft_execution_time/60./60.," hours."
