@@ -80,7 +80,7 @@
 
          epsmch = epsilon(one)
 
-         call timer(time1)
+         call cpu_time(time1)
 
          col    = 0
          head   = 1
@@ -227,7 +227,7 @@
       endif
 
 
-      call timer(cpu1)
+      call cpu_time(cpu1)
       call cauchy(n,x,l,u,nbd,g,indx2,iwhere,t,d,z, m,wy,ws,sy,wt,theta,col,head, wa(1),wa(2*m+1),wa(4*m+1),wa(6*m+1),nseg,&
                  iprint, sbgnrm, info, epsmch)
       if (info .ne. 0) then
@@ -238,11 +238,11 @@
          theta  = one
          iupdat = 0
          updatd = .false.
-         call timer(cpu2)
+         call cpu_time(cpu2)
          cachyt = cachyt + cpu2 - cpu1
          goto 222
       endif
-      call timer(cpu2)
+      call cpu_time(cpu2)
       cachyt = cachyt + cpu2 - cpu1
       nintol = nintol + nseg
 
@@ -255,7 +255,7 @@
 
       if (nfree .eq. 0 .or. col .eq. 0) goto 555
 
-      call timer(cpu1)
+      call cpu_time(cpu1)
 
 
       if (wrk) call formk(n,nfree,index,nenter,ileave,indx2,iupdat,updatd,wn,snd,m,ws,wy,sy,theta,col,head,info)
@@ -267,7 +267,7 @@
          theta  = one
          iupdat = 0
          updatd = .false.
-         call timer(cpu2)
+         call cpu_time(cpu2)
          sbtime = sbtime + cpu2 - cpu1
          goto 222
       endif
@@ -286,12 +286,12 @@
          theta  = one
          iupdat = 0
          updatd = .false.
-         call timer(cpu2)
+         call cpu_time(cpu2)
          sbtime = sbtime + cpu2 - cpu1
          goto 222
       endif
 
-      call timer(cpu2)
+      call cpu_time(cpu2)
       sbtime = sbtime + cpu2 - cpu1
  555  continue
 
@@ -299,7 +299,7 @@
       do 40 i = 1, n
          d(i) = z(i) - x(i)
   40  continue
-      call timer(cpu1)
+      call cpu_time(cpu1)
  666  continue
       call lnsrlb(n,l,u,nbd,x,f,fold,gd,gdold,g,d,r,t,z,stp,dnorm, dtd,xstep,stpmx,iter,ifun,iback,nfgv,info,task,&
                  boxed,cnstnd,csave,isave(22),dsave(17))
@@ -327,14 +327,14 @@
             iupdat = 0
             updatd = .false.
             task   = 'RESTART_FROM_LNSRCH'
-            call timer(cpu2)
+            call cpu_time(cpu2)
             lnscht = lnscht + cpu2 - cpu1
             goto 222
          endif
       else if (task(1:5) .eq. 'FG_LN') then
          goto 1000
       else
-         call timer(cpu2)
+         call cpu_time(cpu2)
          lnscht = lnscht + cpu2 - cpu1
          iter = iter + 1
 
@@ -408,7 +408,7 @@
 
       goto 222
  999  continue
-      call timer(time2)
+      call cpu_time(time2)
       time = time2 - time1
       call prn3lb(n,x,f,task,iprint,info,itfile, iter,nfgv,nintol,nskip,nact,sbgnrm, time,nseg,word,iback,stp,xstep,k,&
                  cachyt,sbtime,lnscht)
@@ -2267,11 +2267,6 @@ end subroutine dcopy
 
 
 
-      subroutine timer(ttime)
-        implicit none
-        double precision, intent(out) :: ttime
-        call cpu_time(ttime)
-      end subroutine timer
 
 
 ! end module module_lbfgs
