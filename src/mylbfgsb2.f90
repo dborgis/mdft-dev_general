@@ -1064,17 +1064,17 @@
          return
       endif
       col2 = 2*col
-      do 71 js = col+1 ,col2
+      do  js = col+1 ,col2
          call dtrsl(wn,m2,col,wn(1,js),11,info)
-  71  continue
+      end do
 
 
 
-      do 72 is = col+1, col2
-         do 74 js = is, col2
+      do is = col+1, col2
+        do js = is, col2
                wn(is,js) = wn(is,js) + ddot(col,wn(1,is),1,wn(1,js),1)
-  74        continue
-  72     continue
+        end do
+      end do
 
 
       call dpofa(wn(col+1,col+1),m2,col,info)
@@ -1101,18 +1101,18 @@
 
 
 
-      do 52 j = 1, col
+      do  j = 1, col
          wt(1,j) = theta*ss(1,j)
-  52  continue
+      end do
       do 55 i = 2, col
-         do 54 j = i, col
+         do  j = i, col
             k1 = min(i,j) - 1
             ddum  = zero
-            do 53 k = 1, k1
+            do k = 1, k1
                ddum  = ddum + sy(i,k)*sy(j,k)/sy(k,k)
-  53        continue
+            end do
             wt(i,j) = ddum + theta*ss(i,j)
-  54     continue
+        end do
   55  continue
 
 
@@ -2108,28 +2108,27 @@
       iy = 1
       if(incx.lt.0)ix = (-n+1)*incx + 1
       if(incy.lt.0)iy = (-n+1)*incy + 1
-      do 10 i = 1,n
+      do  i = 1,n
         dy(iy) = dy(iy) + da*dx(ix)
         ix = ix + incx
         iy = iy + incy
-   10 continue
+      end do
       return
 
    20 m = mod(n,4)
       if( m .eq. 0 ) go to 40
-      do 30 i = 1,m
+      do i = 1,m
         dy(i) = dy(i) + da*dx(i)
-   30 continue
+      end do
       if( n .lt. 4 ) return
    40 mp1 = m + 1
-      do 50 i = mp1,n,4
+      do i = mp1,n,4
         dy(i) = dy(i) + da*dx(i)
         dy(i + 1) = dy(i + 1) + da*dx(i + 1)
         dy(i + 2) = dy(i + 2) + da*dx(i + 2)
         dy(i + 3) = dy(i + 3) + da*dx(i + 3)
-   50 continue
-      return
-      end
+      end do
+      end subroutine daxpy
 
 
       subroutine dcopy(n,dx,incx,dy,incy)
@@ -2321,9 +2320,6 @@
 
 
       subroutine timer(ttime)
-      double precision, intent(out) :: ttime
-      call cpu_time(ttime)
-
-      return
-
-      end
+        double precision, intent(out) :: ttime
+        call cpu_time(ttime)
+      end subroutine timer
