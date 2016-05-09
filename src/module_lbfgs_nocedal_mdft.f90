@@ -81,9 +81,10 @@ contains
     ! subroutine setulb(n, m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave, dsave) MAX 9 MAI 2016 SINCE WE ALWAYS DO UNCONSTRAINED MINIMIZATION
       subroutine setulb(n, m, x,            f, g, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave, dsave)
         implicit none
-      character(len=60)     task, csave
-      logical          lsave(4)
-      integer          n, m, iprint, iwa(3*n), isave(44)
+      character(len=60), intent(inout) :: task, csave
+      logical, intent(inout) :: lsave(4)
+      integer, intent(in) :: n, m, iprint
+      integer, intent(inout) :: iwa(3*n), isave(44)
       real(myprecision) :: f, factr, pgtol, x(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
 
 
