@@ -74,6 +74,7 @@ endif()
 
 # set source files list
 set(mdft_SRCS
+  src/module_blas_etc.f90
   src/module_lecture.f90
   src/module_energy_luc.f90
   src/module_energy_luc_fast.f90
@@ -114,7 +115,6 @@ set(mdft_SRCS
   src/module_init_simu.f90
   src/module_input.f90
   src/module_mathematica.f90
-  src/module_minimizer.f90
   src/module_periodic_table.f90
   src/module_postprocessing.f90
   src/module_precision_kinds.f90
@@ -122,7 +122,7 @@ set(mdft_SRCS
   src/module_solvent.f90
   src/module_system.f90
   src/module_time.f90
-  src/mylbfgsb.f
+  src/module_lbfgs_nocedal_mdft.f90
   src/output_g-r-theta.f90
   src/output_gsitesite.f90
   src/output_rdf.f90
