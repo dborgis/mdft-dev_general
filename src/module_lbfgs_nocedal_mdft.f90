@@ -123,18 +123,18 @@ contains
       lwa  = isave(16)
 
       call mainlb(n,m,x,f,g,factr,pgtol, wa(lws),wa(lwy),wa(lsy),wa(lss), wa(lwt),&
-       wa(lwn),wa(lsnd),wa(lz),wa(lr),wa(ld),wa(lt),wa(lxp),wa(lwa), iwa(1),iwa(n+1),iwa(2*n+1),task,iprint,&
+       wa(lwn),wa(lsnd),wa(lz),wa(lr),wa(ld),wa(lt),wa(lxp),wa(lwa), iwa(1), iwa(2*n+1),task,iprint,&
        csave,lsave,isave(22),dsave)
 
 end subroutine setulb
 
 
 subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r, d, t, xp, wa,&
-  index, iwhere, indx2, task, iprint, csave, lsave, isave, dsave)
+  index, indx2, task, iprint, csave, lsave, isave, dsave)
   implicit none
   character(len=60)     task, csave
   logical          lsave(4)
-  integer          n, m, iprint,  index(n), iwhere(n), indx2(n), isave(23)
+  integer          n, m, iprint,  index(n), indx2(n), isave(23)
   real(myprecision) f, factr, pgtol, x(n), g(n), z(n), r(n), d(n), t(n), xp(n), wa(8*m), &
   ws(n, m), wy(n, m), sy(m, m), ss(m, m),  wt(m, m), wn(2*m, 2*m), snd(2*m, 2*m), dsave(29)
 
@@ -208,7 +208,7 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
     call prn1lb(n,m,x,iprint,itfile,epsmch)
 
 
-    call active(n,x,iwhere,iprint,prjctd,cnstnd,boxed)
+    call active(n,x,iprint,prjctd,cnstnd,boxed)
 
 
   else
@@ -299,7 +299,7 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
 
 
   call cpu_time(cpu1)
-  call cauchy(n,x,g,indx2,iwhere,t,d,z, m,wy,ws,sy,wt,theta,col,head, wa(1),wa(2*m+1),wa(4*m+1),wa(6*m+1),nseg,&
+  call cauchy(n,x,g,indx2,t,d,z, m,wy,ws,sy,wt,theta,col,head, wa(1),wa(2*m+1),wa(4*m+1),wa(6*m+1),nseg,&
   iprint, sbgnrm, info, epsmch)
   if (info .ne. 0) then
     if(iprint .ge. 1) write (6, 1005)
@@ -318,7 +318,7 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
   nintol = nintol + nseg
 
 
-  call freev(n,nfree,index,nenter,ileave,indx2,iwhere,wrk,updatd,cnstnd,iprint,iter)
+  call freev(n,nfree,index,nenter,ileave,indx2,wrk,updatd,cnstnd,iprint,iter)
   nact = n - nfree
 
   333  continue
@@ -535,10 +535,10 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
 end subroutine mainlb
 
 
-subroutine active(n, x, iwhere, iprint, prjctd, cnstnd, boxed)
+subroutine active(n, x, iprint, prjctd, cnstnd, boxed)
       implicit none
       logical          prjctd, cnstnd, boxed
-      integer          n, iprint, iwhere(n)
+      integer          n, iprint
       real(myprecision) x(n)
       integer          nbdd,i
       real(myprecision) zero
@@ -547,7 +547,6 @@ subroutine active(n, x, iwhere, iprint, prjctd, cnstnd, boxed)
       prjctd = .false.
       cnstnd = .false.
       boxed = .false.
-      iwhere = -1
       if (iprint .ge. 0) then
          if (prjctd) write (6,*) 'The initial X is infeasible.  Restart with its projection.'
          if (.not. cnstnd) write (6,*) 'This problem is unconstrained.'
@@ -604,10 +603,10 @@ end subroutine active
       end
 
 
-      subroutine cauchy(n, x, g, iorder, iwhere, t, d, xcp, m, wy, ws, sy, wt, theta, col, head, p, c, wbp,&
+      subroutine cauchy(n, x, g, iorder, t, d, xcp, m, wy, ws, sy, wt, theta, col, head, p, c, wbp,&
                        v, nseg, iprint, sbgnrm, info, epsmch)
       implicit none
-      integer          n, m, head, col, nseg, iprint, info,  iorder(n), iwhere(n)
+      integer          n, m, head, col, nseg, iprint, info,  iorder(n)
       real(myprecision) theta, epsmch,&
                       x(n), g(n), t(n), d(n), xcp(n),&
                      wy(n, col), ws(n, col), sy(m, m),&
@@ -644,26 +643,7 @@ end subroutine active
 
       do 50 i = 1, n
          neggi = -g(i)
-         if (iwhere(i) .ne. 3 .and. iwhere(i) .ne. -1) then
-            if (nbd .le. 2) tl = x(i) - l
-            if (nbd .ge. 2) tu = u - x(i)
-
-            xlower = nbd .le. 2 .and. tl .le. zero
-            xupper = nbd .ge. 2 .and. tu .le. zero
-
-            iwhere(i) = 0
-            if (xlower) then
-               if (neggi .le. zero) iwhere(i) = 1
-            else if (xupper) then
-               if (neggi .ge. zero) iwhere(i) = 2
-            else
-               if (abs(neggi) .le. zero) iwhere(i) = -3
-            endif
-         endif
          pointr = head
-         if (iwhere(i) .ne. 0 .and. iwhere(i) .ne. -1) then
-            d(i) = zero
-         else
             d(i) = neggi
             f1 = f1 - neggi*neggi
             do 40 j = 1, col
@@ -692,7 +672,6 @@ end subroutine active
                iorder(nfree) = i
                if (abs(neggi) .gt. zero) bnded = .false.
             endif
-         endif
   50  continue
 
 
@@ -775,11 +754,11 @@ end subroutine active
       if (dibp .gt. zero) then
          zibp = u - x(ibp)
          xcp(ibp) = u
-         iwhere(ibp) = 2
+        !  iwhere(ibp) = 2
       else
          zibp = l - x(ibp)
          xcp(ibp) = l
-         iwhere(ibp) = 1
+        !  iwhere(ibp) = 1
       endif
       if (iprint .ge. 100) write (6,*) 'Variable  ',ibp,'  is fixed.'
       if (nleft .eq. 0 .and. nbreak .eq. n) then
@@ -1129,9 +1108,9 @@ end subroutine active
       end
 
 
-      subroutine freev(n, nfree, index, nenter, ileave, indx2,  iwhere, wrk, updatd, cnstnd, iprint, iter)
+      subroutine freev(n, nfree, index, nenter, ileave, indx2,   wrk, updatd, cnstnd, iprint, iter)
         implicit none
-      integer n, nfree, nenter, ileave, iprint, iter,  index(n), indx2(n), iwhere(n)
+      integer n, nfree, nenter, ileave, iprint, iter,  index(n), indx2(n)
       logical wrk, updatd, cnstnd
 
 
@@ -1142,21 +1121,12 @@ end subroutine active
       if (iter .gt. 0 .and. cnstnd) then
          do 20 i = 1, nfree
             k = index(i)
-
-
-            if (iwhere(k) .gt. 0) then
-               ileave = ileave - 1
-               indx2(ileave) = k
-               if (iprint .ge. 100) write (6,*) 'Variable ',k,' leaves the set of free variables'
-            endif
   20     continue
          do 22 i = 1 + nfree, n
             k = index(i)
-            if (iwhere(k) .le. 0) then
                nenter = nenter + 1
                indx2(nenter) = k
                if (iprint .ge. 100) write (6,*) 'Variable ',k,' enters the set of free variables'
-            endif
   22     continue
          if (iprint .ge. 99) write (6,*)   n+1-ileave,' variables leave; ',nenter,' variables enter'
       endif
@@ -1166,13 +1136,8 @@ end subroutine active
       nfree = 0
       iact = n + 1
       do 24 i = 1, n
-         if (iwhere(i) .le. 0) then
             nfree = nfree + 1
             index(nfree) = i
-         else
-            iact = iact - 1
-            index(iact) = i
-         endif
   24  continue
       if (iprint .ge. 99) write (6,*)    nfree,' variables are free at GCP ',iter + 1
 
