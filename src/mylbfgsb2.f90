@@ -1,11 +1,21 @@
-      subroutine setulb(n, m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave, dsave)
+! module module_lbfgs
+!
+! contains
 
+    ! subroutine setulb(n, m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave, dsave) MAX 9 MAI 2016 SINCE WE ALWAYS DO UNCONSTRAINED MINIMIZATION
+      subroutine setulb(n, m, x,            f, g, factr, pgtol, wa, iwa, task, iprint, csave, lsave, isave, dsave)
+        implicit none
       character(len=60)     task, csave
       logical          lsave(4)
       integer          n, m, iprint, nbd(n), iwa(3*n), isave(44)
       double precision f, factr, pgtol, x(n), l(n), u(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
 
+
       integer   lws,lr,lz,lt,ld,lxp,lwa,lwy,lsy,lss,lwt,lwn,lsnd
+
+      nbd=0
+      l=0.
+      u=0.
 
       if (task .eq. 'START') then
          isave(1)  = m*n
@@ -43,9 +53,7 @@
        wa(lwn),wa(lsnd),wa(lz),wa(lr),wa(ld),wa(lt),wa(lxp),wa(lwa), iwa(1),iwa(n+1),iwa(2*n+1),task,iprint,&
        csave,lsave,isave(22),dsave)
 
-      return
-
-      end
+    end subroutine setulb
 
 
       subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy,&
@@ -468,7 +476,7 @@
 
 
       subroutine active(n, l, u, nbd, x, iwhere, iprint, prjctd, cnstnd, boxed)
-
+        implicit none
       logical          prjctd, cnstnd, boxed
       integer          n, iprint, nbd(n), iwhere(n)
       double precision x(n), l(n), u(n)
@@ -534,7 +542,7 @@
 
 
       subroutine bmv(m, sy, wt, col, v, p, info)
-
+        implicit none
       integer m, col, info
       double precision sy(m, m), wt(m, m), v(2*col), p(2*col)
 
@@ -838,7 +846,7 @@
 
 
       subroutine cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index,  theta, col, head, nfree, cnstnd, info)
-
+        implicit none
       logical          cnstnd
       integer          n, m, col, head, nfree, info, index(n)
       double precision theta, x(n), g(n), z(n), r(n), wa(4*m), ws(n, m), wy(n, m), sy(m, m), wt(m, m)
@@ -879,7 +887,7 @@
 
 
       subroutine errclb(n, m, factr, l, u, nbd, task, info, k)
-
+        implicit none
       character(len=60)     task
       integer          n, m, info, k, nbd(n)
       double precision factr, l(n), u(n)
@@ -916,7 +924,7 @@
 
 
       subroutine formk(n, nsub, ind, nenter, ileave, indx2, iupdat, updatd, wn, wn1, m, ws, wy, sy, theta, col, head, info)
-
+        implicit none
       integer          n, nsub, m, col, head, nenter, ileave, iupdat,  info, ind(n), indx2(n)
       double precision theta, wn(2*m, 2*m), wn1(2*m, 2*m),  ws(n, m), wy(n, m), sy(m, m)
       logical          updatd
@@ -1089,7 +1097,7 @@
 
 
       subroutine formt(m, wt, sy, ss, col, theta, info)
-
+        implicit none
       integer          m, col, info
       double precision theta, wt(m, m), sy(m, m), ss(m, m)
 
@@ -1127,7 +1135,7 @@
 
 
       subroutine freev(n, nfree, index, nenter, ileave, indx2,  iwhere, wrk, updatd, cnstnd, iprint, iter)
-
+        implicit none
       integer n, nfree, nenter, ileave, iprint, iter,  index(n), indx2(n), iwhere(n)
       logical wrk, updatd, cnstnd
 
@@ -1179,6 +1187,7 @@
 
 
       subroutine hpsolb(n, t, iorder, iheap)
+        implicit none
       integer          iheap, n, iorder(n)
       double precision t(n)
 
@@ -1245,7 +1254,7 @@
                        z, stp, dnorm, dtd, xstep, stpmx, iter, ifun,&
                        iback, nfgv, info, task, boxed, cnstnd, csave,&
                        isave, dsave)
-
+      implicit none
       character(len=60)     task, csave
       logical          boxed, cnstnd
       integer          n, iter, ifun, iback, nfgv, info,  nbd(n), isave(2)
@@ -1340,7 +1349,7 @@
 
 
       subroutine matupd(n, m, ws, wy, sy, ss, d, r, itail,  iupdat, col, head, theta, rr, dr, stp, dtd)
-
+        implicit none
       integer          n, m, itail, iupdat, col, head
       double precision theta, rr, dr, stp, dtd, d(n), r(n), ws(n, m), wy(n, m), sy(m, m), ss(m, m)
 
@@ -1392,7 +1401,7 @@
 
 
       subroutine prn1lb(n, m, l, u, x, iprint, itfile, epsmch)
-
+        implicit none
       integer n, m, iprint, itfile
       double precision epsmch, x(n), l(n), u(n)
 
@@ -1439,7 +1448,7 @@
 
 
       subroutine prn2lb(n, x, f, g, iprint, itfile, iter, nfgv, nact, sbgnrm, nseg, word, iword, iback, stp, xstep)
-
+        implicit none
       character(len=3)      word
       integer          n, iprint, itfile, iter, nfgv, nact, nseg, iword, iback
       double precision f, sbgnrm, stp, xstep, x(n), g(n)
@@ -1482,7 +1491,7 @@
                        iter, nfgv, nintol, nskip, nact, sbgnrm,&
                        time, nseg, word, iback, stp, xstep, k,&
                        cachyt, sbtime, lnscht)
-
+        implicit none
       character(len=60)     task
       character(len=3)      word
       integer          n, iprint, info, itfile, iter, nfgv, nintol,  nskip, nact, nseg, iback, k
@@ -1582,7 +1591,7 @@
 
 
       subroutine projgr(n, l, u, nbd, x, g, sbgnrm)
-
+        implicit none
       integer          n, nbd(n)
       double precision sbgnrm, x(n), l(n), u(n), g(n)
 
@@ -1763,6 +1772,7 @@
       end
 
       subroutine dcsrch(f,g,stp,ftol,gtol,xtol,stpmin,stpmax, task,isave,dsave)
+        implicit none
       character*(*) task
       integer isave(2)
       double precision f,g,stp,ftol,gtol,xtol,stpmin,stpmax
@@ -1936,6 +1946,7 @@
 
 
       subroutine dcstep(stx,fx,dx,sty,fy,dy,stp,fp,dp,brackt,  stpmin,stpmax)
+        implicit none
       logical brackt
       double precision stx,fx,dx,sty,fy,dy,stp,fp,dp,stpmin,stpmax
 
@@ -2098,6 +2109,7 @@
 
 
       subroutine daxpy(n,da,dx,incx,dy,incy)
+        implicit none
       double precision dx(*),dy(*),da
       integer i,incx,incy,ix,iy,m,mp1,n
       if(n.le.0)return
@@ -2132,7 +2144,7 @@
 
 
       subroutine dcopy(n,dx,incx,dy,incy)
-
+        implicit none
       double precision dx(*),dy(*)
       integer i,incx,incy,ix,iy,m,mp1,n
       if(n.le.0)return
@@ -2164,11 +2176,11 @@
         dy(i + 6) = dx(i + 6)
    50 continue
       return
-      end
+      end subroutine dcopy
 
 
       double precision function ddot(n,dx,incx,dy,incy)
-
+        implicit none
       double precision dx(*),dy(*),dtemp
       integer i,incx,incy,ix,iy,m,mp1,n
 
@@ -2199,11 +2211,11 @@
    50 continue
    60 ddot = dtemp
       return
-      end
+      end function ddot
 
 
       subroutine  dscal(n,da,dx,incx)
-
+        implicit none
       double precision da,dx(*)
       integer i,incx,m,mp1,n,nincx
       if( n.le.0 .or. incx.le.0 )return
@@ -2228,9 +2240,10 @@
         dx(i + 4) = da*dx(i + 4)
    50 continue
       return
-      end
+      end subroutine  dscal
 
       subroutine dpofa(a,lda,n,info)
+        implicit none
       integer lda,n,info
       double precision a(lda,*)
 
@@ -2256,10 +2269,11 @@
          info = 0
    40 continue
       return
-      end
+      end subroutine dpofa
 
 
       subroutine dtrsl(t,ldt,n,b,job,info)
+        implicit none
       integer ldt,n,job,info
       double precision t(ldt,*),b(*)
 
@@ -2315,11 +2329,15 @@
   140    continue
   150 continue
       return
-      end
+      end subroutine dtrsl
 
 
 
       subroutine timer(ttime)
+        implicit none
         double precision, intent(out) :: ttime
         call cpu_time(ttime)
       end subroutine timer
+
+
+! end module module_lbfgs
