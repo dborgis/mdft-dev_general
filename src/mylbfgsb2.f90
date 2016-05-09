@@ -1,12 +1,13 @@
 module module_blas_etc
+  use iso_c_binding, only: c_double, c_float
   implicit none
 contains
 
   pure subroutine daxpy(n,da,dx,incx,dy,incy)
     implicit none
     integer, intent(in) :: n, incx, incy
-    double precision, intent(in) :: da, dx(n)
-    double precision, intent(inout) :: dy(n)
+    real(c_double), intent(in) :: da, dx(n)
+    real(c_double), intent(inout) :: dy(n)
     if (n<=0) then
       return
     else
@@ -17,8 +18,8 @@ contains
   pure subroutine dcopy(n,dx,incx,dy,incy)
     implicit none
     integer, intent(in) :: n, incx, incy
-    double precision, intent(in) :: dx(n)
-    double precision, intent(inout) :: dy(n)
+    real(c_double), intent(in) :: dx(n)
+    real(c_double), intent(inout) :: dy(n)
     if (n<=0) then
       return
     else
@@ -28,10 +29,10 @@ contains
 
   pure function ddot(n,dx,incx,dy,incy)
     implicit none
-    double precision :: ddot
+    real(c_double) :: ddot
     integer, intent(in) :: n, incx, incy
-    double precision, intent(in) :: dx(n),dy(n)
-    double precision :: dtemp
+    real(c_double), intent(in) :: dx(n),dy(n)
+    real(c_double) :: dtemp
     integer i,ix,iy,m,mp1
     ddot = 0.0d0
     dtemp = 0.0d0
@@ -65,7 +66,7 @@ contains
 
         subroutine  dscal(n,da,dx,incx)
           implicit none
-        double precision da,dx(*)
+        real(c_double) da,dx(*)
         integer i,incx,m,mp1,n,nincx
         if( n.le.0 .or. incx.le.0 )return
         if(incx.eq.1)go to 20
@@ -95,10 +96,10 @@ contains
         subroutine dpofa(a,lda,n,info)
           implicit none
         integer lda,n,info
-        double precision a(lda,*)
+        real(c_double) a(lda,*)
 
-        double precision t!,ddot
-        double precision s
+        real(c_double) t!,ddot
+        real(c_double) s
         integer j,jm1,k
            do 30 j = 1, n
               info = j
@@ -126,9 +127,9 @@ contains
         implicit none
         integer, intent(in) :: ldt,n,job
         integer, intent(out) :: info
-        double precision, intent(in) :: t(ldt,n)
-        double precision, intent(out) :: b(n)
-        double precision temp!,ddot
+        real(c_double), intent(in) :: t(ldt,n)
+        real(c_double), intent(out) :: b(n)
+        real(c_double) temp!,ddot
         integer case,j,jj
            do 10 info = 1, n
               if (t(info,info) .eq. 0.0d0) go to 150
@@ -200,7 +201,7 @@ contains
       character(len=60)     task, csave
       logical          lsave(4)
       integer          n, m, iprint, nbd(n), iwa(3*n), isave(44)
-      double precision :: f, factr, pgtol, x(n), l(n), u(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
+      real(c_double) :: f, factr, pgtol, x(n), l(n), u(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
 
 
       integer   lws,lr,lz,lt,ld,lxp,lwa,lwy,lsy,lss,lwt,lwn,lsnd
@@ -256,16 +257,16 @@ contains
       character(len=60)     task, csave
       logical          lsave(4)
       integer          n, m, iprint, nbd(n), index(n), iwhere(n), indx2(n), isave(23)
-      double precision f, factr, pgtol, x(n), l(n), u(n), g(n), z(n), r(n), d(n), t(n), xp(n), wa(8*m), &
+      real(c_double) f, factr, pgtol, x(n), l(n), u(n), g(n), z(n), r(n), d(n), t(n), xp(n), wa(8*m), &
                       ws(n, m), wy(n, m), sy(m, m), ss(m, m),  wt(m, m), wn(2*m, 2*m), snd(2*m, 2*m), dsave(29)
 
 
       logical          prjctd,cnstnd,boxed,updatd,wrk
       character(len=3)      word
       integer          i,k,nintol,itfile,iback,nskip,head,col,iter,itail,iupdat,nseg,nfgv,info,ifun,iword,nfree,nact,ileave,nenter
-      double precision theta,fold,dr,rr,tol,xstep,sbgnrm,ddum,dnorm,dtd,epsmch,cpu1,cpu2,cachyt,sbtime,lnscht,time1,time2,&
+      real(c_double) theta,fold,dr,rr,tol,xstep,sbgnrm,ddum,dnorm,dtd,epsmch,cpu1,cpu2,cachyt,sbtime,lnscht,time1,time2,&
                       gd,gdold,stp,stpmx,time!,ddot
-      double precision one,zero
+      real(c_double) one,zero
       parameter        (one=1.0d0,zero=0.0d0)
 
       if (task .eq. 'START') then
@@ -671,11 +672,11 @@ contains
         implicit none
       logical          prjctd, cnstnd, boxed
       integer          n, iprint, nbd(n), iwhere(n)
-      double precision x(n), l(n), u(n)
+      real(c_double) x(n), l(n), u(n)
 
 
       integer          nbdd,i
-      double precision zero
+      real(c_double) zero
       parameter        (zero=0.0d0)
 
 
@@ -736,11 +737,11 @@ contains
       subroutine bmv(m, sy, wt, col, v, p, info)
         implicit none
       integer m, col, info
-      double precision sy(m, m), wt(m, m), v(2*col), p(2*col)
+      real(c_double) sy(m, m), wt(m, m), v(2*col), p(2*col)
 
 
       integer          i,k,i2
-      double precision sum
+      real(c_double) sum
 
       if (col .eq. 0) return
 
@@ -783,7 +784,7 @@ contains
                        v, nseg, iprint, sbgnrm, info, epsmch)
       implicit none
       integer          n, m, head, col, nseg, iprint, info,  nbd(n), iorder(n), iwhere(n)
-      double precision theta, epsmch,&
+      real(c_double) theta, epsmch,&
                       x(n), l(n), u(n), g(n), t(n), d(n), xcp(n),&
                      wy(n, col), ws(n, col), sy(m, m),&
                      wt(m, m), p(2*m), c(2*m), wbp(2*m), v(2*m)
@@ -791,8 +792,8 @@ contains
 
       logical          xlower,xupper,bnded
       integer          i,j,col2,nfree,nbreak,pointr,    ibp,nleft,ibkmin,iter
-      double precision f1,f2,dt,dtm,tsum,dibp,zibp,dibp2,bkmin,tu,tl,wmc,wmp,wmw,tj,tj0,neggi,sbgnrm,f2_org!,ddot
-      double precision one,zero
+      real(c_double) f1,f2,dt,dtm,tsum,dibp,zibp,dibp2,bkmin,tu,tl,wmc,wmp,wmw,tj,tj0,neggi,sbgnrm,f2_org!,ddot
+      real(c_double) one,zero
       parameter        (one=1.0d0,zero=0.0d0)
 
 
@@ -1041,11 +1042,11 @@ contains
         implicit none
       logical          cnstnd
       integer          n, m, col, head, nfree, info, index(n)
-      double precision theta, x(n), g(n), z(n), r(n), wa(4*m), ws(n, m), wy(n, m), sy(m, m), wt(m, m)
+      real(c_double) theta, x(n), g(n), z(n), r(n), wa(4*m), ws(n, m), wy(n, m), sy(m, m), wt(m, m)
 
 
       integer          i,j,k,pointr
-      double precision a1,a2
+      real(c_double) a1,a2
 
       if (.not. cnstnd .and. col .gt. 0) then
          do 26 i = 1, n
@@ -1082,11 +1083,11 @@ contains
         implicit none
       character(len=60)     task
       integer          n, m, info, k, nbd(n)
-      double precision factr, l(n), u(n)
+      real(c_double) factr, l(n), u(n)
 
 
       integer          i
-      double precision one,zero
+      real(c_double) one,zero
       parameter        (one=1.0d0,zero=0.0d0)
 
 
@@ -1118,13 +1119,13 @@ contains
       subroutine formk(n, nsub, ind, nenter, ileave, indx2, iupdat, updatd, wn, wn1, m, ws, wy, sy, theta, col, head, info)
         implicit none
       integer          n, nsub, m, col, head, nenter, ileave, iupdat,  info, ind(n), indx2(n)
-      double precision theta, wn(2*m, 2*m), wn1(2*m, 2*m),  ws(n, m), wy(n, m), sy(m, m)
+      real(c_double) theta, wn(2*m, 2*m), wn1(2*m, 2*m),  ws(n, m), wy(n, m), sy(m, m)
       logical          updatd
 
 
       integer          m2,ipntr,jpntr,iy,is,jy,js,is1,js1,k1,i,k, col2,pbegin,pend,dbegin,dend,upcl
-      double precision temp1,temp2,temp3,temp4!,ddot
-      double precision one,zero
+      real(c_double) temp1,temp2,temp3,temp4!,ddot
+      real(c_double) one,zero
       parameter        (one=1.0d0,zero=0.0d0)
 
 
@@ -1291,12 +1292,12 @@ contains
       subroutine formt(m, wt, sy, ss, col, theta, info)
         implicit none
       integer          m, col, info
-      double precision theta, wt(m, m), sy(m, m), ss(m, m)
+      real(c_double) theta, wt(m, m), sy(m, m), ss(m, m)
 
 
       integer          i,j,k,k1
-      double precision ddum
-      double precision zero
+      real(c_double) ddum
+      real(c_double) zero
       parameter        (zero=0.0d0)
 
 
@@ -1381,11 +1382,11 @@ contains
       subroutine hpsolb(n, t, iorder, iheap)
         implicit none
       integer          iheap, n, iorder(n)
-      double precision t(n)
+      real(c_double) t(n)
 
 
       integer          i,j,k,indxin,indxou
-      double precision ddum,out
+      real(c_double) ddum,out
 
       if (iheap .eq. 0) then
 
@@ -1450,13 +1451,13 @@ contains
       character(len=60)     task, csave
       logical          boxed, cnstnd
       integer          n, iter, ifun, iback, nfgv, info,  nbd(n), isave(2)
-      double precision f, fold, gd, gdold, stp, dnorm, dtd, xstep, stpmx, x(n), l(n), u(n), g(n), d(n), r(n), t(n), z(n), dsave(13)
+      real(c_double) f, fold, gd, gdold, stp, dnorm, dtd, xstep, stpmx, x(n), l(n), u(n), g(n), d(n), r(n), t(n), z(n), dsave(13)
 
       integer          i
       double           precision a1,a2!,ddot
-      double precision one,zero,big
+      real(c_double) one,zero,big
       parameter        (one=1.0d0,zero=0.0d0,big=1.0d+10)
-      double precision ftol,gtol,xtol
+      real(c_double) ftol,gtol,xtol
       parameter        (ftol=1.0d-3,gtol=0.9d0,xtol=0.1d0)
 
       if (task(1:5) .eq. 'FG_LN') goto 556
@@ -1543,12 +1544,12 @@ contains
       subroutine matupd(n, m, ws, wy, sy, ss, d, r, itail,  iupdat, col, head, theta, rr, dr, stp, dtd)
         implicit none
       integer          n, m, itail, iupdat, col, head
-      double precision theta, rr, dr, stp, dtd, d(n), r(n), ws(n, m), wy(n, m), sy(m, m), ss(m, m)
+      real(c_double) theta, rr, dr, stp, dtd, d(n), r(n), ws(n, m), wy(n, m), sy(m, m), ss(m, m)
 
 
       integer          j,pointr
-      ! double precision ddot
-      double precision one
+      ! real(c_double) ddot
+      real(c_double) one
       parameter        (one=1.0d0)
 
 
@@ -1595,7 +1596,7 @@ contains
       subroutine prn1lb(n, m, l, u, x, iprint, itfile, epsmch)
         implicit none
       integer n, m, iprint, itfile
-      double precision epsmch, x(n), l(n), u(n)
+      real(c_double) epsmch, x(n), l(n), u(n)
 
 
       integer i
@@ -1643,7 +1644,7 @@ contains
         implicit none
       character(len=3)      word
       integer          n, iprint, itfile, iter, nfgv, nact, nseg, iword, iback
-      double precision f, sbgnrm, stp, xstep, x(n), g(n)
+      real(c_double) f, sbgnrm, stp, xstep, x(n), g(n)
 
 
       integer i,imod
@@ -1687,7 +1688,7 @@ contains
       character(len=60)     task
       character(len=3)      word
       integer          n, iprint, info, itfile, iter, nfgv, nintol,  nskip, nact, nseg, iback, k
-      double precision f, sbgnrm, time, stp, xstep, cachyt, sbtime, lnscht, x(n)
+      real(c_double) f, sbgnrm, time, stp, xstep, cachyt, sbtime, lnscht, x(n)
 
 
       integer i
@@ -1785,12 +1786,12 @@ contains
       subroutine projgr(n, l, u, nbd, x, g, sbgnrm)
         implicit none
       integer          n, nbd(n)
-      double precision sbgnrm, x(n), l(n), u(n), g(n)
+      real(c_double) sbgnrm, x(n), l(n), u(n), g(n)
 
 
       integer i
-      double precision gi
-      double precision one,zero
+      real(c_double) gi
+      real(c_double) one,zero
       parameter        (one=1.0d0,zero=0.0d0)
 
       sbgnrm = zero
@@ -1814,16 +1815,16 @@ contains
       subroutine subsm ( n, m, nsub, ind, l, u, nbd, x, d, xp, ws, wy, theta, xx, gg, col, head, iword, wv, wn, iprint, info )
       implicit none
       integer          n, m, nsub, col, head, iword, iprint, info, ind(nsub), nbd(n)
-      double precision theta, l(n), u(n), x(n), d(n), xp(n), xx(n), gg(n), ws(n, m), wy(n, m), wv(2*m), wn(2*m, 2*m)
+      real(c_double) theta, l(n), u(n), x(n), d(n), xp(n), xx(n), gg(n), ws(n, m), wy(n, m), wv(2*m), wn(2*m, 2*m)
 
 
 
 
       integer          pointr,m2,col2,ibd,jy,js,i,j,k
-      double precision alpha, xk, dk, temp1, temp2
-      double precision one,zero
+      real(c_double) alpha, xk, dk, temp1, temp2
+      real(c_double) one,zero
       parameter        (one=1.0d0,zero=0.0d0)
-      double precision dd_p
+      real(c_double) dd_p
 
       if (nsub .le. 0) return
       if (iprint .ge. 99) write (6,1001)
@@ -1967,16 +1968,16 @@ contains
         implicit none
       character*(*) task
       integer isave(2)
-      double precision f,g,stp,ftol,gtol,xtol,stpmin,stpmax
-      double precision dsave(13)
-      double precision zero,p5,p66
+      real(c_double) f,g,stp,ftol,gtol,xtol,stpmin,stpmax
+      real(c_double) dsave(13)
+      real(c_double) zero,p5,p66
       parameter(zero=0.0d0,p5=0.5d0,p66=0.66d0)
-      double precision xtrapl,xtrapu
+      real(c_double) xtrapl,xtrapu
       parameter(xtrapl=1.1d0,xtrapu=4.0d0)
 
       logical brackt
       integer stage
-      double precision finit,ftest,fm,fx,fxm,fy,fym,ginit,gtest, gm,gx,gxm,gy,gym,stx,sty,stmin,stmax,width,width1
+      real(c_double) finit,ftest,fm,fx,fxm,fy,fym,ginit,gtest, gm,gx,gxm,gy,gym,stx,sty,stmin,stmax,width,width1
 
 
       if (task(1:5) .eq. 'START') then
@@ -2140,12 +2141,12 @@ contains
       subroutine dcstep(stx,fx,dx,sty,fy,dy,stp,fp,dp,brackt,  stpmin,stpmax)
         implicit none
       logical brackt
-      double precision stx,fx,dx,sty,fy,dy,stp,fp,dp,stpmin,stpmax
+      real(c_double) stx,fx,dx,sty,fy,dy,stp,fp,dp,stpmin,stpmax
 
-      double precision zero,p66,two,three
+      real(c_double) zero,p66,two,three
       parameter(zero=0.0d0,p66=0.66d0,two=2.0d0,three=3.0d0)
 
-      double precision gamma,p,q,r,s,sgnd,stpc,stpf,stpq,theta
+      real(c_double) gamma,p,q,r,s,sgnd,stpc,stpf,stpq,theta
 
       sgnd = dp*(dx/abs(dx))
 
