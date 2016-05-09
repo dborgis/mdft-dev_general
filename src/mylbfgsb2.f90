@@ -8,7 +8,7 @@
       character(len=60)     task, csave
       logical          lsave(4)
       integer          n, m, iprint, nbd(n), iwa(3*n), isave(44)
-      double precision f, factr, pgtol, x(n), l(n), u(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
+      double precision :: f, factr, pgtol, x(n), l(n), u(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
 
 
       integer   lws,lr,lz,lt,ld,lxp,lwa,lwy,lsy,lss,lwt,lwn,lsnd
@@ -2114,9 +2114,9 @@ end subroutine dcopy
 
       pure double precision function ddot(n,dx,incx,dy,incy)
       implicit none
-      double precision, intent(in) :: dx(*),dy(*)
-      double precision :: dtemp
       integer, intent(in) :: n, incx, incy
+      double precision, intent(in) :: dx(n),dy(n)
+      double precision :: dtemp
       integer i,ix,iy,m,mp1
       ddot = 0.0d0
       dtemp = 0.0d0
@@ -2176,6 +2176,7 @@ end subroutine dcopy
       return
       end subroutine  dscal
 
+
       subroutine dpofa(a,lda,n,info)
         implicit none
       integer lda,n,info
@@ -2207,10 +2208,11 @@ end subroutine dcopy
 
 
       subroutine dtrsl(t,ldt,n,b,job,info)
-        implicit none
-      integer ldt,n,job,info
-      double precision t(ldt,*),b(*)
-
+      implicit none
+      integer, intent(in) :: ldt,n,job
+      integer, intent(out) :: info
+      double precision, intent(in) :: t(ldt,n)
+      double precision, intent(out) :: b(n)
       double precision ddot,temp
       integer case,j,jj
          do 10 info = 1, n
@@ -2224,11 +2226,11 @@ end subroutine dcopy
    20    continue
             b(1) = b(1)/t(1,1)
             if (n .lt. 2) go to 40
-            do 30 j = 2, n
+            do j = 2, n
                temp = -b(j-1)
                call daxpy(n-j+1,temp,t(j,j-1),1,b(j),1)
                b(j) = b(j)/t(j,j)
-   30       continue
+            end do
    40       continue
          go to 140
    50    continue
