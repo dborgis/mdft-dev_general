@@ -1,10 +1,10 @@
 subroutine energy_minimization
 
     use precision_kinds, only : dp
-    use module_minimizer, only: lbfgsb
     use module_grid, only: grid
     use module_solvent, only: solvent
     use module_energy_and_gradient, only: energy_and_gradient
+    use module_lbfgs_nocedal_mdft, only: lbfgsb
 
     implicit none
 
@@ -35,10 +35,10 @@ call cpu_time(time(1))
 
         ! ATTENTION ici astuce de malade. Je passe le array (solvent%xi(:,:,:,:)) qui est un tableau à 4 colonnes.
         ! MAIS lbfgsb a besoin d'un vecteur, c'est à dire d'une seule colonne.
-        ! MAIS il est con et mon array est contigu en mémoire, donc je lui passe mon colonne à 4 colonnes dans le bon sens
-        ! et il ne s'en rend pas compte.
+        ! MAIS il est con et mon array est contigu en mémoire, donc je lui passe mon tableau à 4 colonnes dans le bon sens
+        ! et il ne s'en rend pas compte: c'est pour lui une seule colonne 4 fois plus grande. Joix du fortran dégueux :)
 
-        call setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%xi, 0._dp, 0._dp, [(0,i=1,lbfgsb%n)], f, df, &
+        call lbfgsb%setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%xi, f, df, &
         lbfgsb%factr, lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         lbfgsb%dsave )
 
