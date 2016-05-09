@@ -85,8 +85,10 @@ contains
       logical, intent(inout) :: lsave(4)
       integer, intent(in) :: n, m, iprint
       integer, intent(inout) :: iwa(3*n), isave(44)
-      real(myprecision) :: f, factr, pgtol, x(n), g(n), wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
-
+      real(myprecision), intent(inout) :: wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
+      real(myprecision), intent(inout) :: x(n)
+      real(myprecision), intent(out) :: f, g(n)
+      real(myprecision), intent(in) :: factr, pgtol
 
       integer   lws,lr,lz,lt,ld,lxp,lwa,lwy,lsy,lss,lwt,lwn,lsnd
 
