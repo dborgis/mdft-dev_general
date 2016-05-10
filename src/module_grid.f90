@@ -46,6 +46,7 @@ contains
     subroutine init
         use module_input, only: getinput
         implicit none
+        real(dp), parameter :: zero=0._dp
         real(dp), parameter :: twopi=2._dp*acos(-1._dp)
         integer :: io, m, mup, mu, mmax, err, i, itheta, iphi, ipsi
 
@@ -100,19 +101,19 @@ contains
         grid%np= sum( [( [( [( 1 ,  mu=0,m/2   )], mup=-m,m)], m=0,grid%mmax)] ) ! number of projections
 
         print*, "ATTENTION DANS MODULE_GRID j'AI MIS MU=-M,M,MRSO AU LIEU DE MU=0,M,MRSO POUR DEBUGGER SLT"
-        allocate( grid%theta(grid%no) , source=0._dp) ! io => theta
-        allocate( grid%phi(grid%no) , source=0._dp)
-        allocate( grid%psi(grid%no) , source=0._dp)
-        allocate( grid%wtheta(grid%no) , source=0._dp)
-        allocate( grid%wphi(grid%no) , source=0._dp)
-        allocate( grid%wpsi(grid%no) , source=0._dp)
-        allocate( grid%wthetaofntheta(grid%ntheta), source=0._dp)
-        allocate( grid%w(grid%no) , source=0._dp)
-        allocate( grid%thetaofntheta(grid%ntheta), source=0._dp) ! itheta => theta
-        allocate( grid%phiofnphi(grid%nphi) ,source=0._dp)
-        allocate( grid%psiofnpsi(grid%npsi) ,source=0._dp)
-        allocate( grid%wphiofnphi(grid%nphi) ,source=0._dp)
-        allocate( grid%wpsiofnpsi(grid%npsi) ,source=0._dp)
+        allocate( grid%theta(grid%no) , source=zero) ! io => theta
+        allocate( grid%phi(grid%no) , source=zero)
+        allocate( grid%psi(grid%no) , source=zero)
+        allocate( grid%wtheta(grid%no) , source=zero)
+        allocate( grid%wphi(grid%no) , source=zero)
+        allocate( grid%wpsi(grid%no) , source=zero)
+        allocate( grid%wthetaofntheta(grid%ntheta), source=zero)
+        allocate( grid%w(grid%no) , source=zero)
+        allocate( grid%thetaofntheta(grid%ntheta), source=zero) ! itheta => theta
+        allocate( grid%phiofnphi(grid%nphi) ,source=zero)
+        allocate( grid%psiofnpsi(grid%npsi) ,source=zero)
+        allocate( grid%wphiofnphi(grid%nphi) ,source=zero)
+        allocate( grid%wpsiofnpsi(grid%npsi) ,source=zero)
         grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
         grid%wpsiofnpsi = 1._dp/real(grid%npsi*grid%molrotsymorder,dp)
         PRINT*,'ATTENTION !!!!!!!!!!! JE PRENDS LA DEF DE MDFT POUR PSI ET PHI, pas celle de Luc'
@@ -215,18 +216,21 @@ contains
         nx = grid%nx
         ny = grid%ny
         nz = grid%nz
-        allocate ( grid%kx(nx), source=0._dp)
-        allocate ( grid%ky(ny), source=0._dp)
-        allocate ( grid%kz(nz), source=0._dp)
-        do concurrent ( l=1:nx )
-            grid%kx(l) = kproj(1,l)
-        end do
-        do concurrent ( l=1:ny )
-            grid%ky(l) = kproj(2,l)
-        end do
-        do concurrent ( l=1:nz )
-            grid%kz(l) = kproj(3,l)
-        end do
+        ! allocate ( grid%kx(nx), source=0._dp)
+        ! allocate ( grid%ky(ny), source=0._dp)
+        ! allocate ( grid%kz(nz), source=0._dp)
+        allocate ( grid%kx(nx), source= [(kproj(1,l),l=1,nx)] )
+        allocate ( grid%ky(ny), source= [(kproj(2,l),l=1,ny)] )
+        allocate ( grid%kz(nz), source= [(kproj(3,l),l=1,nz)] )
+        ! do concurrent ( l=1:nx )
+        !     grid%kx(l) = kproj(1,l)
+        ! end do
+        ! do concurrent ( l=1:ny )
+        !     grid%ky(l) = kproj(2,l)
+        ! end do
+        ! do concurrent ( l=1:nz )
+        !     grid%kz(l) = kproj(3,l)
+        ! end do
     END SUBROUTINE tabulate_kx_ky_kz
 
     !> This SUBROUTINE do the legendre integration over all orientations of any array (density, vext, ...)
