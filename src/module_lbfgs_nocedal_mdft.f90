@@ -136,7 +136,7 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
   index, indx2, task, iprint, csave, lsave, isave, dsave)
   implicit none
   character(len=60)     task, csave
-  logical          lsave(4)
+  logical, intent(inout) :: lsave(4)
   integer          n, m, iprint,  index(n), indx2(n), isave(23)
   real(myprecision) f, factr, pgtol, x(n), g(n), z(n), r(n), d(n), t(n), xp(n), wa(8*m), &
   ws(n, m), wy(n, m), sy(m, m), ss(m, m),  wt(m, m), wn(2*m, 2*m), snd(2*m, 2*m), dsave(29)
@@ -149,8 +149,6 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
   gd,gdold,stp,stpmx,time!,ddot
   real(myprecision) one,zero
   parameter        (one=1.0d0,zero=0.0d0)
-  REAL(MYPRECISION) :: XXXT(20)
-CALL CPU_TIME(XXXT(1))
   if (task .eq. 'START') then
 
     epsmch = epsilon(one)
@@ -209,14 +207,9 @@ CALL CPU_TIME(XXXT(1))
       return
     endif
 
-CALL CPU_TIME(XXXT(10))
     call prn1lb(n,m,x,iprint,itfile,epsmch)
-CALL CPU_TIME(XXXT(11))
 
-    call active(n,x,iprint,prjctd,cnstnd,boxed)
-CALL CPU_TIME(XXXT(12))
-PRINT*,"prn1lb=",XXXT(11)-XXXT(10)
-PRINT*,"active=",XXXT(12)-XXXT(11)
+    call active(iprint,prjctd,cnstnd,boxed)
 
   else
 
@@ -281,10 +274,7 @@ PRINT*,"active=",XXXT(12)-XXXT(11)
   111  continue
   nfgv = 1
 
-CALL CPU_TIME(XXXT(10))
   call projgr(n,x,g,sbgnrm)
-CALL CPU_TIME(XXXT(11))
-PRINT*,"PROJGR=",XXXT(11)-XXXT(10)
 
   if (iprint .ge. 1) then
     write (6,1002) iter,f,sbgnrm
@@ -323,15 +313,11 @@ PRINT*,"PROJGR=",XXXT(11)-XXXT(10)
     goto 222
   endif
   call cpu_time(cpu2)
-PRINT*,"CAUCHY =>>>>>>",cpu2-cpu1
 
   cachyt = cachyt + cpu2 - cpu1
   nintol = nintol + nseg
 
-CALL CPU_TIME(XXXT(9))
   call freev(n,nfree,index,nenter,ileave,indx2,wrk,updatd,cnstnd,iprint,iter)
-CALL CPU_TIME(XXXT(8))
-PRINT*,"freev",XXXT(9)-XXXT(8)
   nact = n - nfree
 
   333  continue
@@ -343,7 +329,6 @@ PRINT*,"freev",XXXT(9)-XXXT(8)
 
 
   if (wrk) call formk(n,nfree,index,nenter,ileave,indx2,iupdat,updatd,wn,snd,m,ws,wy,sy,theta,col,head,info)
-CALL CPU_TIME(XXXT(9))
   if (info .ne. 0) then
     if(iprint .ge. 1) write (6, 1006)
     info   = 0
@@ -356,14 +341,10 @@ CALL CPU_TIME(XXXT(9))
     sbtime = sbtime + cpu2 - cpu1
     goto 222
   endif
-print*,"mainlb > formk =", XXXT(9)-cpu1
   call cmprlb(n,m,x,g,ws,wy,sy,wt,z,r,wa,index,theta,col,head,nfree,cnstnd,info)
   if (info .ne. 0) goto 444
 
-CALL CPU_TIME(XXXT(10))
   call subsm( n, m, nfree, index, z, r, xp, ws, wy, theta, x, g, col, head, iword, wa, wn, iprint, info)
-CALL CPU_TIME(XXXT(11))
-PRINT*,"subsm",XXXT(11)-XXXT(10)
   444  continue
   if (info .ne. 0) then
     if(iprint .ge. 1) write (6, 1005)
@@ -425,15 +406,9 @@ PRINT*,"subsm",XXXT(11)-XXXT(10)
       lnscht = lnscht + cpu2 - cpu1
       iter = iter + 1
 
-      CALL CPU_TIME (XXXT(18))
       call projgr(n,x,g,sbgnrm)
-      CALL CPU_TIME (XXXT(19))
-      PRINT*,"projgr=",XXXT(19)-XXXT(18)
 
-      CALL CPU_TIME (XXXT(18))
       call prn2lb(n,x,f,g,iprint,itfile,iter,nfgv,nact,sbgnrm,nseg,word,iword,iback,stp,xstep)
-      CALL CPU_TIME (XXXT(19))
-      PRINT*,"prn2lb=",XXXT(19)-XXXT(18)
 
       goto 1000
     endif
@@ -462,10 +437,7 @@ PRINT*,"subsm",XXXT(11)-XXXT(10)
       ddum = -gdold
     else
       dr = (gd - gdold)*stp
-CALL CPU_TIME (XXXT(18))
       call dscal(n,stp,d,1)
-CALL CPU_TIME (XXXT(19))
-PRINT*,"dscal=",XXXT(19)-XXXT(18)
       ddum = -gdold*stp
     endif
 
@@ -479,13 +451,8 @@ PRINT*,"dscal=",XXXT(19)-XXXT(18)
     updatd = .true.
     iupdat = iupdat + 1
 
-CALL CPU_TIME (XXXT(18))
     call matupd(n,m,ws,wy,sy,ss,d,r,itail, iupdat,col,head,theta,rr,dr,stp,dtd)
-CALL CPU_TIME (XXXT(19))
     call formt(m,wt,sy,ss,col,theta,info)
-CALL CPU_TIME (XXXT(20))
-PRINT*,"MATUPD=",XXXT(19)-XXXT(18)
-PRINT*,"FORMT=",XXXT(20)-XXXT(19)
 
     if (info .ne. 0) then
       if(iprint .ge. 1) write (6, 1007)
@@ -504,11 +471,8 @@ PRINT*,"FORMT=",XXXT(20)-XXXT(19)
     999  continue
     call cpu_time(time2)
     time = time2 - time1
-CALL CPU_TIME (XXXT(19))
     call prn3lb(n,x,f,task,iprint,info,itfile, iter,nfgv,nintol,nskip,nact,sbgnrm, time,nseg,word,iback,stp,xstep,k,&
     cachyt,sbtime,lnscht)
-CALL CPU_TIME (XXXT(20))
-PRINT*,"PRN3LB=",XXXT(20)-XXXT(19)
     1000 continue
 
     lsave(1)  = prjctd
@@ -563,23 +527,14 @@ PRINT*,"PRN3LB=",XXXT(20)-XXXT(19)
     1008 format (/,&
       ' Bad direction in the line search;',/,&
       '   refresh the lbfgs memory and restart the iteration.')
-CALL CPU_TIME (XXXT(20))
 
-PRINT*, "FIN MAINLB"
-
-PRINT*," TOTAL", XXXT(20)-XXXT(1)
 end subroutine mainlb
 
 
-subroutine active(n, x, iprint, prjctd, cnstnd, boxed)
+subroutine active(iprint, prjctd, cnstnd, boxed)
       implicit none
       logical          prjctd, cnstnd, boxed
-      integer          n, iprint
-      real(myprecision) x(n)
-      integer          nbdd,i
-      real(myprecision) zero
-      parameter        (zero=0.0d0)
-      nbdd = 0
+      integer         iprint
       prjctd = .false.
       cnstnd = .false.
       boxed = .false.
@@ -587,9 +542,6 @@ subroutine active(n, x, iprint, prjctd, cnstnd, boxed)
          if (prjctd) write (6,*) 'The initial X is infeasible.  Restart with its projection.'
          if (.not. cnstnd) write (6,*) 'This problem is unconstrained.'
       endif
-      if (iprint .gt. 0) write (6,1001) nbdd
- 1001 format (/,'At X0 ',i9,' variables are exactly at the bounds')
-      return
 end subroutine active
 
 subroutine bmv(m, sy, wt, col, v, p, info)

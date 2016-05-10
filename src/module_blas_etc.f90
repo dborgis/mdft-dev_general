@@ -93,7 +93,7 @@ contains
         end subroutine  dscal
 
 
-        subroutine dpofa(a,lda,n,info)
+subroutine dpofa(a,lda,n,info)
           implicit none
         integer lda,n,info
         real(dp) a(lda,*)
@@ -114,29 +114,29 @@ contains
               end do
      20       continue
               s = a(j,j) - s
-              if (s .le. 0.0d0) go to 40
+              if (s .le. 0.0d0) return
               a(j,j) = sqrt(s)
      30    continue
            info = 0
-     40 continue
-        return
-        end subroutine dpofa
+end subroutine dpofa
 
-
-        subroutine dtrsl(t,ldt,n,b,job,info)
+!
+! linpack's dtrsl is the time-consuming routine of lbfgs
+!
+pure subroutine dtrsl(t,ldt,n,b,job,info)
         implicit none
         integer, intent(in) :: ldt,n,job
         integer, intent(out) :: info
         real(dp), intent(in) :: t(ldt,n)
-        real(dp), intent(out) :: b(n)
+        real(dp), intent(inout) :: b(n)
         real(dp) temp!,ddot
         integer case,j,jj
-           do 10 info = 1, n
-              if (t(info,info) .eq. 0.0d0) go to 150
-     10    continue
-           info = 0
-           case = 1
-           if (mod(job,10) .ne. 0) case = 2
+        do info = 1, n
+          if (t(info,info) .eq. 0.0d0) return
+        end do
+        info = 0
+        case = 1
+        if (mod(job,10) .ne. 0) case = 2
            if (mod(job,100)/10 .ne. 0) case = case + 2
            go to (20,50,80,110), case
      20    continue
@@ -181,6 +181,6 @@ contains
     140    continue
     150 continue
         return
-        end subroutine dtrsl
+end subroutine dtrsl
 
 end module module_blas_etc
