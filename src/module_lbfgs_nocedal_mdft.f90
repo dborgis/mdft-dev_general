@@ -149,7 +149,8 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
   gd,gdold,stp,stpmx,time!,ddot
   real(myprecision) one,zero
   parameter        (one=1.0d0,zero=0.0d0)
-
+  REAL(MYPRECISION) :: XXXT(20)
+CALL CPU_TIME(XXXT(1))
   if (task .eq. 'START') then
 
     epsmch = epsilon(one)
@@ -208,11 +209,14 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
       return
     endif
 
+CALL CPU_TIME(XXXT(10))
     call prn1lb(n,m,x,iprint,itfile,epsmch)
-
+CALL CPU_TIME(XXXT(11))
 
     call active(n,x,iprint,prjctd,cnstnd,boxed)
-
+CALL CPU_TIME(XXXT(12))
+PRINT*,"prn1lb=",XXXT(11)-XXXT(10)
+PRINT*,"active=",XXXT(12)-XXXT(11)
 
   else
 
@@ -277,8 +281,10 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
   111  continue
   nfgv = 1
 
-
+CALL CPU_TIME(XXXT(10))
   call projgr(n,x,g,sbgnrm)
+CALL CPU_TIME(XXXT(11))
+PRINT*,"PROJGR=",XXXT(11)-XXXT(10)
 
   if (iprint .ge. 1) then
     write (6,1002) iter,f,sbgnrm
@@ -317,11 +323,15 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
     goto 222
   endif
   call cpu_time(cpu2)
+PRINT*,"CAUCHY =>>>>>>",cpu2-cpu1
+
   cachyt = cachyt + cpu2 - cpu1
   nintol = nintol + nseg
 
-
+CALL CPU_TIME(XXXT(9))
   call freev(n,nfree,index,nenter,ileave,indx2,wrk,updatd,cnstnd,iprint,iter)
+CALL CPU_TIME(XXXT(8))
+PRINT*,"freev",XXXT(9)-XXXT(8)
   nact = n - nfree
 
   333  continue
@@ -333,6 +343,7 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
 
 
   if (wrk) call formk(n,nfree,index,nenter,ileave,indx2,iupdat,updatd,wn,snd,m,ws,wy,sy,theta,col,head,info)
+CALL CPU_TIME(XXXT(9))
   if (info .ne. 0) then
     if(iprint .ge. 1) write (6, 1006)
     info   = 0
@@ -345,12 +356,14 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
     sbtime = sbtime + cpu2 - cpu1
     goto 222
   endif
-
+print*,"mainlb > formk =", XXXT(9)-cpu1
   call cmprlb(n,m,x,g,ws,wy,sy,wt,z,r,wa,index,theta,col,head,nfree,cnstnd,info)
   if (info .ne. 0) goto 444
 
-
+CALL CPU_TIME(XXXT(10))
   call subsm( n, m, nfree, index, z, r, xp, ws, wy, theta, x, g, col, head, iword, wa, wn, iprint, info)
+CALL CPU_TIME(XXXT(11))
+PRINT*,"subsm",XXXT(11)-XXXT(10)
   444  continue
   if (info .ne. 0) then
     if(iprint .ge. 1) write (6, 1005)
@@ -372,13 +385,13 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
 
   do 40 i = 1, n
     d(i) = z(i) - x(i)
-    40  continue
-    call cpu_time(cpu1)
-    666  continue
-    call lnsrlb(n,x,f,fold,gd,gdold,g,d,r,t,z,stp,dnorm, dtd,xstep,stpmx,iter,ifun,iback,nfgv,info,task,&
-    boxed,cnstnd,csave,isave(22),dsave(17))
-    if (info .ne. 0 .or. iback .ge. 20) then
-      call dcopy(n,t,1,x,1)
+  40 continue
+  call cpu_time(cpu1)
+  666  continue
+  call lnsrlb(n,x,f,fold,gd,gdold,g,d,r,t,z,stp,dnorm, dtd,xstep,stpmx,iter,ifun,iback,nfgv,info,task,&
+  boxed,cnstnd,csave,isave(22),dsave(17))
+  if (info .ne. 0 .or. iback .ge. 20) then
+    call dcopy(n,t,1,x,1)
       call dcopy(n,r,1,g,1)
       f = fold
       if (col .eq. 0) then
@@ -412,11 +425,16 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
       lnscht = lnscht + cpu2 - cpu1
       iter = iter + 1
 
-
+      CALL CPU_TIME (XXXT(18))
       call projgr(n,x,g,sbgnrm)
+      CALL CPU_TIME (XXXT(19))
+      PRINT*,"projgr=",XXXT(19)-XXXT(18)
 
-
+      CALL CPU_TIME (XXXT(18))
       call prn2lb(n,x,f,g,iprint,itfile,iter,nfgv,nact,sbgnrm,nseg,word,iword,iback,stp,xstep)
+      CALL CPU_TIME (XXXT(19))
+      PRINT*,"prn2lb=",XXXT(19)-XXXT(18)
+
       goto 1000
     endif
     777  continue
@@ -444,7 +462,10 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
       ddum = -gdold
     else
       dr = (gd - gdold)*stp
+CALL CPU_TIME (XXXT(18))
       call dscal(n,stp,d,1)
+CALL CPU_TIME (XXXT(19))
+PRINT*,"dscal=",XXXT(19)-XXXT(18)
       ddum = -gdold*stp
     endif
 
@@ -458,8 +479,13 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
     updatd = .true.
     iupdat = iupdat + 1
 
+CALL CPU_TIME (XXXT(18))
     call matupd(n,m,ws,wy,sy,ss,d,r,itail, iupdat,col,head,theta,rr,dr,stp,dtd)
+CALL CPU_TIME (XXXT(19))
     call formt(m,wt,sy,ss,col,theta,info)
+CALL CPU_TIME (XXXT(20))
+PRINT*,"MATUPD=",XXXT(19)-XXXT(18)
+PRINT*,"FORMT=",XXXT(20)-XXXT(19)
 
     if (info .ne. 0) then
       if(iprint .ge. 1) write (6, 1007)
@@ -478,8 +504,11 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
     999  continue
     call cpu_time(time2)
     time = time2 - time1
+CALL CPU_TIME (XXXT(19))
     call prn3lb(n,x,f,task,iprint,info,itfile, iter,nfgv,nintol,nskip,nact,sbgnrm, time,nseg,word,iback,stp,xstep,k,&
     cachyt,sbtime,lnscht)
+CALL CPU_TIME (XXXT(20))
+PRINT*,"PRN3LB=",XXXT(20)-XXXT(19)
     1000 continue
 
     lsave(1)  = prjctd
@@ -534,7 +563,11 @@ subroutine mainlb(n, m, x, f, g, factr, pgtol, ws, wy, sy, ss, wt, wn, snd, z, r
     1008 format (/,&
       ' Bad direction in the line search;',/,&
       '   refresh the lbfgs memory and restart the iteration.')
+CALL CPU_TIME (XXXT(20))
 
+PRINT*, "FIN MAINLB"
+
+PRINT*," TOTAL", XXXT(20)-XXXT(1)
 end subroutine mainlb
 
 
@@ -559,8 +592,7 @@ subroutine active(n, x, iprint, prjctd, cnstnd, boxed)
       return
 end subroutine active
 
-
-      subroutine bmv(m, sy, wt, col, v, p, info)
+subroutine bmv(m, sy, wt, col, v, p, info)
         implicit none
       integer m, col, info
       real(myprecision) sy(m, m), wt(m, m), v(2*col), p(2*col)
@@ -600,13 +632,9 @@ end subroutine active
   50     continue
          p(i) = p(i) + sum
   60  continue
+end subroutine bmv
 
-      return
-
-      end
-
-
-      subroutine cauchy(n, x, g, iorder, t, d, xcp, m, wy, ws, sy, wt, theta, col, head, p, c, wbp,&
+subroutine cauchy(n, x, g, iorder, t, d, xcp, m, wy, ws, sy, wt, theta, col, head, p, c, wbp,&
                        v, nseg, iprint, sbgnrm, info, epsmch)
       implicit none
       integer          n, m, head, col, nseg, iprint, info,  iorder(n)
@@ -842,10 +870,10 @@ end subroutine active
 
       return
 
-      end
+end subroutine cauchy
 
 
-      subroutine cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index,  theta, col, head, nfree, cnstnd, info)
+subroutine cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index,  theta, col, head, nfree, cnstnd, info)
         implicit none
       logical          cnstnd
       integer          n, m, col, head, nfree, info, index(n)
@@ -883,7 +911,7 @@ end subroutine active
 
       return
 
-      end
+      end subroutine cmprlb
 
 
       subroutine errclb(n, m, factr, task, info, k)
@@ -972,56 +1000,55 @@ end subroutine active
       endif
 
       ipntr = head
-      do 45 iy = 1, upcl
-         is = m + iy
-         jpntr = head
-         do 40 jy = 1, iy
-            js = m + jy
-            temp1 = zero
-            temp2 = zero
-            temp3 = zero
-            temp4 = zero
-            do 35 k = 1, nenter
-               k1 = indx2(k)
-               temp1 = temp1 + wy(k1,ipntr)*wy(k1,jpntr)
-               temp2 = temp2 + ws(k1,ipntr)*ws(k1,jpntr)
-  35        continue
-            do 36 k = ileave, n
-               k1 = indx2(k)
-               temp3 = temp3 + wy(k1,ipntr)*wy(k1,jpntr)
-               temp4 = temp4 + ws(k1,ipntr)*ws(k1,jpntr)
-  36        continue
-            wn1(iy,jy) = wn1(iy,jy) + temp1 - temp3
-            wn1(is,js) = wn1(is,js) - temp2 + temp4
-            jpntr = mod(jpntr,m) + 1
-  40     continue
-         ipntr = mod(ipntr,m) + 1
-  45  continue
+      do iy = 1, upcl
+        is = m + iy
+        jpntr = head
+        do jy = 1, iy
+          js = m + jy
+          temp1 = zero
+          temp2 = zero
+          temp3 = zero
+          temp4 = zero
+          do k = 1, nenter
+            k1 = indx2(k)
+            temp1 = temp1 + wy(k1,ipntr)*wy(k1,jpntr)
+            temp2 = temp2 + ws(k1,ipntr)*ws(k1,jpntr)
+          end do
+          do k = ileave, n
+            k1 = indx2(k)
+            temp3 = temp3 + wy(k1,ipntr)*wy(k1,jpntr)
+            temp4 = temp4 + ws(k1,ipntr)*ws(k1,jpntr)
+          end do
+          wn1(iy,jy) = wn1(iy,jy) + temp1 - temp3
+          wn1(is,js) = wn1(is,js) - temp2 + temp4
+          jpntr = mod(jpntr,m) + 1
+        end do
+        ipntr = mod(ipntr,m) + 1
+      end do
 
       ipntr = head
-      do 60 is = m + 1, m + upcl
-         jpntr = head
-         do 55 jy = 1, upcl
-            temp1 = zero
-            temp3 = zero
-            do 50 k = 1, nenter
-               k1 = indx2(k)
-               temp1 = temp1 + ws(k1,ipntr)*wy(k1,jpntr)
-  50        continue
-            do 51 k = ileave, n
-               k1 = indx2(k)
-               temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
-  51        continue
-         if (is .le. jy + m) then
-               wn1(is,jy) = wn1(is,jy) + temp1 - temp3
-            else
-               wn1(is,jy) = wn1(is,jy) - temp1 + temp3
-            endif
-            jpntr = mod(jpntr,m) + 1
-  55     continue
-         ipntr = mod(ipntr,m) + 1
-  60  continue
-
+      do is = m + 1, m + upcl
+        jpntr = head
+        do jy = 1, upcl
+          temp1 = zero
+          temp3 = zero
+          do k = 1, nenter
+            k1 = indx2(k)
+            temp1 = temp1 + ws(k1,ipntr)*wy(k1,jpntr)
+          end do
+          do k = ileave, n
+            k1 = indx2(k)
+            temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
+          end do
+          if (is .le. jy + m) then
+            wn1(is,jy) = wn1(is,jy) + temp1 - temp3
+          else
+            wn1(is,jy) = wn1(is,jy) - temp1 + temp3
+          endif
+          jpntr = mod(jpntr,m) + 1
+        end do
+        ipntr = mod(ipntr,m) + 1
+      end do
 
       m2 = 2*m
       do 70 iy = 1, col
@@ -1555,74 +1582,67 @@ end subroutine active
       end
 
 
-      subroutine subsm ( n, m, nsub, ind, x, d, xp, ws, wy, theta, xx, gg, col, head, iword, wv, wn, iprint, info )
-      implicit none
-      integer          n, m, nsub, col, head, iword, iprint, info, ind(nsub)
-      real(myprecision) theta, x(n), d(n), xp(n), xx(n), gg(n), ws(n, m), wy(n, m), wv(2*m), wn(2*m, 2*m)
-      integer          pointr,m2,col2,ibd,jy,js,i,j,k
-      real(myprecision) alpha, xk, dk, temp1, temp2
-      real(myprecision) one,zero
-      parameter        (one=1.0d0,zero=0.0d0)
-      real(myprecision) dd_p
+subroutine subsm ( n, m, nsub, ind, x, d, xp, ws, wy, theta, xx, gg, col, head, iword, wv, wn, iprint, info )
+  implicit none
+  integer          n, m, nsub, col, head, iword, iprint, info, ind(nsub)
+  real(myprecision) theta, x(n), d(n), xp(n), xx(n), gg(n), ws(n, m), wy(n, m), wv(2*m), wn(2*m, 2*m)
+  integer          pointr,m2,col2,ibd,jy,js,i,j,k
+  real(myprecision) alpha, xk, dk, temp1, temp2
+  real(myprecision), parameter :: one=1.0d0, zero=0.d0
+  real(myprecision) dd_p
+  if (nsub .le. 0) return
+  if (iprint .ge. 99) write (6,1001)
+  pointr = head
+  do i = 1, col
+    temp1 = zero
+    temp2 = zero
+    do j = 1, nsub
+      k = ind(j)
+      temp1 = temp1 + wy(k,pointr)*d(j)
+      temp2 = temp2 + ws(k,pointr)*d(j)
+    end do
+    wv(i) = temp1
+    wv(col + i) = theta*temp2
+    pointr = mod(pointr,m) + 1
+  end do
+  m2 = 2*m
+  col2 = 2*col
+  call dtrsl(wn,m2,col2,wv,11,info)
+  if (info .ne. 0) return
+  do i = 1, col
+    wv(i) = -wv(i)
+  end do
+  call dtrsl(wn,m2,col2,wv,01,info)
+  if (info .ne. 0) return
 
-      if (nsub .le. 0) return
-      if (iprint .ge. 99) write (6,1001)
+  pointr = head
+  do jy = 1, col
+    js = col + jy
+    do i = 1, nsub
+      k = ind(i)
+      d(i) = d(i) + wy(k,pointr)*wv(jy)/theta   + ws(k,pointr)*wv(js)
+    end do
+    pointr = mod(pointr,m) + 1
+  end do
 
+  call dscal( nsub, one/theta, d, 1 )
 
-      pointr = head
-      do 20 i = 1, col
-         temp1 = zero
-         temp2 = zero
-         do 10 j = 1, nsub
-            k = ind(j)
-            temp1 = temp1 + wy(k,pointr)*d(j)
-            temp2 = temp2 + ws(k,pointr)*d(j)
-  10     continue
-         wv(i) = temp1
-         wv(col + i) = theta*temp2
-         pointr = mod(pointr,m) + 1
-  20  continue
+  iword = 0
 
-
-      m2 = 2*m
-      col2 = 2*col
-      call dtrsl(wn,m2,col2,wv,11,info)
-      if (info .ne. 0) return
-      do 25 i = 1, col
-         wv(i) = -wv(i)
-  25     continue
-      call dtrsl(wn,m2,col2,wv,01,info)
-      if (info .ne. 0) return
-
-
-      pointr = head
-      do 40 jy = 1, col
-         js = col + jy
-         do 30 i = 1, nsub
-            k = ind(i)
-            d(i) = d(i) + wy(k,pointr)*wv(jy)/theta   + ws(k,pointr)*wv(js)
-  30     continue
-         pointr = mod(pointr,m) + 1
-  40  continue
-
-      call dscal( nsub, one/theta, d, 1 )
-
-      iword = 0
-
-      call dcopy ( n, x, 1, xp, 1 )
-      do 50 i=1, nsub
-         k  = ind(i)
-         dk = d(i)
+  call dcopy ( n, x, 1, xp, 1 )
+    do i=1, nsub
+       k  = ind(i)
+       dk = d(i)
          xk = x(k)
          x(k) = xk + dk
- 50   continue
+    end do
       if ( iword.eq.0 ) then
          go to 911
       end if
       dd_p = zero
-      do 55 i=1, n
+      do  i=1, n
          dd_p  = dd_p + (x(i) - xx(i))*gg(i)
- 55   continue
+      end do
       if ( dd_p .gt.zero ) then
          call dcopy( n, xp, 1, x, 1 )
          write(6,*) ' Positive dir derivative in projection '
@@ -1633,36 +1653,34 @@ end subroutine active
       alpha = one
       temp1 = alpha
       ibd   = 0
-      do 60 i = 1, nsub
+      do  i = 1, nsub
          k = ind(i)
          dk = d(i)
- 60   continue
+      end do
 
-      if (alpha .lt. one) then
-         dk = d(ibd)
-         k = ind(ibd)
-         if (dk .gt. zero) then
-            x(k) = 0
-            d(ibd) = zero
-         else if (dk .lt. zero) then
-            x(k) = 0
-            d(ibd) = zero
-         endif
-      endif
-      do 70 i = 1, nsub
-         k    = ind(i)
-         x(k) = x(k) + alpha*d(i)
- 70   continue
- 911  continue
+  if (alpha .lt. one) then
+    dk = d(ibd)
+    k = ind(ibd)
+    if (dk .gt. zero) then
+      x(k) = 0
+      d(ibd) = zero
+    else if (dk .lt. zero) then
+      x(k) = 0
+      d(ibd) = zero
+    endif
+  endif
+  do i = 1, nsub
+    k    = ind(i)
+    x(k) = x(k) + alpha*d(i)
+  end do
+  911  continue
 
-      if (iprint .ge. 99) write (6,1004)
+  if (iprint .ge. 99) write (6,1004)
 
- 1001 format (/,'----------------SUBSM entered-----------------',/)
- 1004 format (/,'----------------exit SUBSM --------------------',/)
+  1001 format (/,'----------------SUBSM entered-----------------',/)
+  1004 format (/,'----------------exit SUBSM --------------------',/)
 
-      return
-
-      end
+end subroutine subsm
 
       subroutine dcsrch(f,g,stp,ftol,gtol,xtol,stpmin,stpmax, task,isave,dsave)
         implicit none
