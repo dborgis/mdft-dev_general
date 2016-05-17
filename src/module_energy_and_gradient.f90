@@ -40,8 +40,7 @@ contains
     ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
     ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
-    use iso_c_binding, only: c_sizeof
-    use precision_kinds, only: dp
+    use precision_kinds, only: dp, sp
     use module_solvent, only: solvent
     use module_grid, only: grid
     use module_energy_ideal_and_external, only: energy_ideal_and_external
@@ -62,7 +61,7 @@ contains
     ! real(dp) :: df_trash (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
 
     real(dp), parameter :: zerodp=0._dp
-    real :: t(10)
+    real(sp) :: t(10)
     real(dp) :: fold
     integer :: s, ns
 
@@ -95,8 +94,8 @@ contains
         call cpu_time(t(1))
         call energy_ideal_and_external (ff%id, ff%ext, df)
         call cpu_time(t(2))
-        print*, "ff%ext            =", ff%ext
-        print*, "ff%id             =", ff%id, " in",t(2)-t(1),"sec"
+        print*, "ff%ext            =", real(ff%ext)
+        print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
         f = f +ff%id +ff%ext
       end if
 
@@ -107,7 +106,7 @@ contains
         call cpu_time(t(3))
         call energy_cs (ff%exc_cs, df)
         call cpu_time(t(4))
-        print*, "ff%exc_cs         =", ff%exc_cs, " in",t(4)-t(3),"sec"
+        print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
         f = f + ff%exc_cs
       end if
 
@@ -118,7 +117,7 @@ contains
         call cpu_time(t(5))
         call energy_cdeltacd (ff%exc_cdeltacd, df)
         call cpu_time(t(6))
-        print*, "ff%exc_cdeltacd   =", ff%exc_cdeltacd, "in",t(6)-t(5),"sec"
+        print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
         f = f + ff%exc_cdeltacd
       end if
 
@@ -152,9 +151,9 @@ contains
       !
       if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
         if( ff%pscheme_correction==-999._dp) call corrections
-        print*, "ff%pscheme corr   =", ff%pscheme_correction
+        print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
         f = f + ff%pscheme_correction
-        print*, "ff%pbc correction =", ff%pbc_correction
+        print*, "ff%pbc correction =", real(ff%pbc_correction)
         f = f + ff%pbc_correction
       end if
 
@@ -173,8 +172,8 @@ contains
 
     ff%tot = f
 
-    print*, "-------------------------------------------------------------------------------"
-    print*, "TOTAL (FF) =", real(f), "|   Δf/f =", real((fold-ff%tot)/&
+    print*, "                     -----------"
+    print*, "TOTAL (FF)        =", real(f), "|   Δf/f =", real((fold-ff%tot)/&
              maxval([abs(fold),abs(f),1._dp])), "|  l2@df=",real(norm2(df))
     print*, "-------------------------------------------------------------------------------"
     print*,
