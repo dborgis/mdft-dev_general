@@ -150,11 +150,15 @@ contains
       ! adhoc corrections to the solvation free energy (Hunenberger, pressure etc.)
       !
       if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
-        if( ff%pscheme_correction==-999._dp) call corrections
-        print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
-        f = f + ff%pscheme_correction
-        print*, "ff%pbc correction =", real(ff%pbc_correction)
-        f = f + ff%pbc_correction
+
+          call typeB_corrections
+          print*, "ff%pbc correction =", real(ff%pbc_correction)
+          f = f + ff%pbc_correction
+
+          call typeC_corrections
+          print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
+          f = f + ff%pscheme_correction
+
       end if
 
 
@@ -173,10 +177,8 @@ contains
     ff%tot = f
 
     print*, "                     -----------"
-    print*, "TOTAL (FF)        =", real(f), "|   Δf/f =", real((fold-ff%tot)/&
+    print*, "TOTAL FF [kJ/mol] =", real(f), "|   Δf/f =", real((fold-ff%tot)/&
              maxval([abs(fold),abs(f),1._dp])), "|  l2@df=",real(norm2(df))
-    print*, "-------------------------------------------------------------------------------"
-    print*,
 
   end subroutine energy_and_gradient
 
@@ -184,12 +186,40 @@ contains
 
 
 
-
-
-
-
-  subroutine corrections
+  subroutine typeB_corrections
+    !
+    !   Type B correction of Hunenberger : finite size and periodicity (\propto q_{I}^{2}/L)
+    !   see J. Chem. Phys. 124, 224501 (2006), eq. 32 with R_i=0 (ionic radius = 0)
+    !   see also Hunenberger and McCammon, JCP 110, 1856 (1999), doi: 10.1063/1.477873
+    !
+    use precision_kinds, only: dp
+    use module_solute, only: solute
+    use module_grid, only: grid
     implicit none
+    real(dp) :: solute_net_charge, L
+    real(dp), parameter :: dielectric_constant_spce=71._dp
+    solute_net_charge = sum (solute%site%q)
+    if (.not. all(grid%length==grid%length(1))) then
+      print*, "The grid is not cubic."
+      print*, "The periodic boundary conditions correction is intended for cubic cells."
+      print*, "We use the average length sum(len)/3."
+      L = sum(grid%length)/3._dp
+    else
+      L = grid%lx
+    end if
+    if (L<=epsilon(1._dp)) then
+      error stop "sherY6S%hx6YYUJ"
+    end if
+    ! The dielectric constant of SPC/E water is 71. See Kusalik and Svishchev, "The Spatial Structure in Liquid Water", Science 265, 1219 (1994) doi:10.1126/science.265.5176.1219
+    ! The original SPC/E paper by Berendsen does not provide this information.
+    ! see https://www.wolframalpha.com/input/?i=-2.837297*(electron+charge)%5E2%2F(4*pi*vacuum+permittivity*2*angstroms)+to+kJ%2Fmol
+    ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant_spce)
+  end subroutine typeB_corrections
+
+
+
+
+  subroutine typeC_corrections
     !
     ! Hunenberger's corrections
     !
@@ -200,51 +230,15 @@ contains
     ! R_i should not be 0 in reality (see Hunenberger's paper) but (i) the contribution is small for small ions.
     ! For bigger ions (ie charged molecules), what should one do ?
     !
-    block
       use module_solvent, only: solvent
       use module_solute, only: solute
+      implicit none
       double precision :: solute_net_charge ! net charge of the solute
       double precision :: gamma ! trace of the quadrupole moment. Should be 0.848 e.nm² for SPCE and 0.820 for SPC water.
       gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
       solute_net_charge = sum(solute%site%q)
       ff%pscheme_correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol
-      open(79,file="output/Pscheme_correction")
-      write(79,*) ff%pscheme_correction
-      close(79)
-    end block
-
-    !
-    !   Type B correction of Hunenberger : finite size and periodicity (\propto q_{I}^{2}/L)
-    !   see J. Chem. Phys. 124, 224501 (2006), eq. 32 with R_i=0 (ionic radius = 0)
-    !   see also Hunenberger and McCammon, JCP 110, 1856 (1999), doi: 10.1063/1.477873
-    !
-    !
-    block
-      use module_solute, only: solute
-      use module_grid, only: grid
-      double precision :: solute_net_charge, L
-      double precision, parameter :: dielectric_constant_spce=71._dp
-      solute_net_charge = sum (solute%site%q)
-      if (.not. all(grid%length==grid%length(1))) then
-        print*, "The grid is not cubic."
-        print*, "The periodic boundary conditions correction is intended for cubic cells."
-        print*, "We use the average length sum(len)/3."
-        L = sum(grid%length)/3._dp
-      else
-        L = grid%lx
-      end if
-      if (L<=epsilon(1._dp)) then
-        error stop "sherY6S%hx6YYUJ"
-      end if
-      ! The dielectric constant of SPC/E water is 71. See Kusalik and Svishchev, "The Spatial Structure in Liquid Water", Science 265, 1219 (1994) doi:10.1126/science.265.5176.1219
-      ! The original SPC/E paper by Berendsen does not provide this information.
-      ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant_spce)
-      open(79,file="output/PBC_correction")
-      write(79,*) ff%pbc_correction
-      close(79)
-    end block
-
-  end subroutine corrections
+  end subroutine typeC_corrections
 
 
 end module module_energy_and_gradient
