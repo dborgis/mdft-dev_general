@@ -37,11 +37,16 @@ contains
         call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
         filename = "output/density.cube"
         call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
+        print*, "New file output/density.cube"
 
+        !
+        ! print binary file one can use as a restart point
+        !
         open(10,file='output/density.bin',form='unformatted')
         write(10) solvent(1)%xi
         close(10)
-        print*, "File written: output/density.bin"
+        print*, "New file output/density.bin"
+
 
 
 !         use system,             ONLY: thermocond
