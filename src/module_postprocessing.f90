@@ -23,6 +23,7 @@ contains
         character(len=80) :: filename
         real(dp), allocatable :: density(:,:,:)
         integer :: nx, ny, nz, ix, iy, iz
+        real(dp), parameter :: pi=acos(-1._dp)
 
         nx=grid%nx
         ny=grid%ny
@@ -30,10 +31,10 @@ contains
 
 
         !
-        ! print density
+        ! print density (in fact, rho/rho0)
         !
         allocate (density(nx,ny,nz))
-        call grid%integrate_over_orientations( solvent(1)%xi**2*solvent(1)%rho0, density)
+        call grid%integrate_over_orientations( solvent(1)%xi**2 /(4._dp*pi**2), density)
         filename = "output/density.cube"
         call write_to_cube_file (density ,filename)
 
