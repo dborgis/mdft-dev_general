@@ -234,7 +234,7 @@ contains
       if (L<=epsilon(1._dp)) then
         error stop "sherY6S%hx6YYUJ"
       end if
-      ff%pbc_correction = -1949.0466_dp*solute_net_charge**2/L
+      ff%pbc_correction = -1949.0466_dp*solute_net_charge**2/L ! see also Hunenberger and McCammon, JCP 110, 1856 (1999), doi: 10.1063/1.477873
       open(79,file="output/PBC_correction")
       write(79,*) ff%pbc_correction
       close(79)
