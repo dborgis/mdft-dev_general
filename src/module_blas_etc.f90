@@ -36,8 +36,8 @@ contains
     real(dp), intent(in) :: dx(n),dy(n)
     real(dp) :: dtemp
     integer i,ix,iy,m,mp1
-    ddot = 0.0d0
-    dtemp = 0.0d0
+    ddot = 0
+    dtemp = 0
     if(n.le.0)return
     if(incx.eq.1.and.incy.eq.1) go to 20
     ix = 1
@@ -102,7 +102,7 @@ contains
     integer j,jm1,k
     do 30 j = 1, n
       info = j
-      s = 0.0d0
+      s = 0.0
       jm1 = j - 1
       if (jm1 .lt. 1) go to 20
       do k = 1, jm1
@@ -113,7 +113,7 @@ contains
               end do
      20       continue
               s = a(j,j) - s
-              if (s .le. 0.0d0) return
+              if (s .le. 0.0) return
               a(j,j) = sqrt(s)
      30    continue
            info = 0
@@ -131,7 +131,7 @@ contains
     real(dp) temp!,ddot
     integer case,j,jj
     do info = 1, n
-      if (t(info,info) .eq. 0.0d0) return
+      if (t(info,info) .eq. 0.0) return
     end do
     info = 0
     case = 1

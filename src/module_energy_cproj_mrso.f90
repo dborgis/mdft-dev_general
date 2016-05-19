@@ -1,6 +1,7 @@
 module module_energy_cproj_mrso
 
-    use iso_c_binding
+    use iso_c_binding, only: C_PTR, C_INT, C_INT32_T, C_INTPTR_T, C_DOUBLE_COMPLEX, C_DOUBLE, C_FUNPTR, C_SIZE_T, C_FLOAT, &
+                             C_FLOAT_COMPLEX, C_CHAR
     use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
@@ -100,7 +101,8 @@ contains
 
     subroutine energy_cproj_mrso (ff,df)
         ! use ieee_arithmetic
-        use iso_c_binding, only: c_ptr, dp=>c_double
+        use iso_c_binding, only: c_ptr
+        use precision_kinds, only: dp
         use module_grid, only: grid
         use module_thermo, only: thermo
         implicit none

@@ -110,6 +110,7 @@ contains
 
     SUBROUTINE poissonSolver (gridnode, gridlength, sourcedistrib, electric_potential)
 
+        use iso_c_binding
         use precision_kinds, only: dp, i4b
         use constants, only: qfact
         use module_solvent, only: solvent
@@ -136,7 +137,7 @@ contains
         real(dp), parameter :: espdp=epsilon(1._dp)
         integer :: nx, ny, nz
 
-        include "fftw3.f"
+        include "fftw3.f03"
 
         nx = gridnode(1)
         ny = gridnode(2)
@@ -149,9 +150,16 @@ contains
         allocate ( fftw3outforward  (nx/2+1, ny,nz))
         allocate ( fftw3outbackward (nx    , ny,nz))
         allocate ( fftw3inbackward  (nx/2+1, ny,nz))
+
         ! prepare plans needed by fftw3
-        call dfftw_plan_dft_r2c_3d (fpspf, nx, ny, nz, fftw3inforward, fftw3outforward, fftw_estimate)
-        call dfftw_plan_dft_c2r_3d (fpspb, nx, ny, nz, fftw3inbackward, fftw3outbackward, fftw_estimate )
+        select case(dp)
+        case(c_double)
+            call dfftw_plan_dft_r2c_3d (fpspf, nx, ny, nz, fftw3inforward, fftw3outforward, fftw_estimate)
+            call dfftw_plan_dft_c2r_3d (fpspb, nx, ny, nz, fftw3inbackward, fftw3outbackward, fftw_estimate )
+        case(c_float)
+            call sfftw_plan_dft_r2c_3d (fpspf, nx, ny, nz, fftw3inforward, fftw3outforward, fftw_estimate)
+            call sfftw_plan_dft_c2r_3d (fpspb, nx, ny, nz, fftw3inbackward, fftw3outbackward, fftw_estimate )
+        end select
         ! note that since the fast poisson solver implies only 1 fft in each direction, it is useless to use fftw_measure or even
         ! more rigorous planning-flags. see http://www.fftw.org/doc/planner-flags.html
 
@@ -167,7 +175,12 @@ contains
 
         ! fourier transform of the solute charge density
         fftw3inforward = sourcedistrib
-        call dfftw_execute (fpspf)
+        select case(dp)
+        case(c_double)
+          call dfftw_execute(fpspf)
+        case(c_float)
+          call sfftw_execute(fpspf)
+        end select
         sourcedistrib_k = fftw3OutForward ! It is verified that at this point, FFT-1(sourcedistrib_k)/ (nfft1*nfft2*nfft3) = sourcedistrib
         ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
         ! V(k) = 4Pi rho(k) / k^2
@@ -212,7 +225,12 @@ contains
         if (getinput%log('better_poisson_solver', defaultvalue=.false.)) then
             ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
             fftw3InBackward = electric_potential_k
-            call dfftw_execute (fpspb)
+            select case(dp)
+            case(c_double)
+              call dfftw_execute (fpspb)
+            case(c_float)
+              call sfftw_execute (fpspb)
+            end select
             electric_potential = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
         else
             ! new construction
@@ -223,14 +241,25 @@ contains
                 end if
                 do io = 1, grid%no
                     fftw3InBackward = electric_potential_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
-                    call dfftw_execute (fpspb)
+                    select case(dp)
+                    case(c_double)
+                      call dfftw_execute(fpspb)
+                    case(c_float)
+                      call sfftw_execute(fpspb)
+                    end select
                     solvent(s)%vextq(io,:,:,:) = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
                 end do
             end do
         end if
 
-        call dfftw_destroy_plan (fpspf)
-        call dfftw_destroy_plan (fpspb)
+        select case(dp)
+        case(c_double)
+          call dfftw_destroy_plan (fpspf)
+          call dfftw_destroy_plan (fpspb)
+        case(c_float)
+          call sfftw_destroy_plan (fpspf)
+          call sfftw_destroy_plan (fpspb)
+        end select
 
         deallocate( sourcedistrib_k, electric_potential_k, fftw3InForward, fftw3OutForward, fftw3OutBackward, fftw3InBackward)
 

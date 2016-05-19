@@ -42,7 +42,6 @@ call cpu_time(time(1))
         lbfgsb%factr, lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         lbfgsb%dsave )
 
-
 call cpu_time(time(2))
 
         if (lbfgsb%task(1:2) == "FG") then

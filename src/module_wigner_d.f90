@@ -9,7 +9,7 @@ contains
       ! theta is the angle in radian.
       ! see http://pdg.lbl.gov/2015/reviews/rpp2014-rev-clebsch-gordan-coefs.pdf  <= we have the same normalization etc for d^m_{mu,mup}(theta)
       !
-      use iso_c_binding, only: dp => c_double
+      use precision_kinds, only: dp
       use mathematica, only: fact
       implicit none
       REAL(dp) :: wigner_small_d
@@ -60,7 +60,7 @@ contains
   end function wigner_small_d
 
   pure function wigner_big_D( m, mu, mup, theta, phi, psi )
-    use iso_c_binding, only: dp => c_double
+    use precision_kinds, only: dp
     implicit none
     real(dp), intent(in) :: theta, phi, psi
     integer, intent(in) :: m, mu, mup
@@ -70,10 +70,11 @@ contains
   end function
 
   pure function symbol_3j(m,n,l,mu,nu,lu)
+    use precision_kinds, only: dp
     use mathematica, only: fac=>fact
     implicit none
     integer, intent(in) :: m, n, l, mu, nu, lu
-    real(8) :: symbol_3j, som
+    real(dp) :: symbol_3j, som
     integer :: it
       ! COMMON/facto/fac(0:50)
     !

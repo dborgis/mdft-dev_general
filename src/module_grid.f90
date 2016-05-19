@@ -142,13 +142,12 @@ contains
         end do
         grid%indo = grid%io
 
-
-        if (abs(sum(grid%w)-quadrature_norm/grid%molrotsymorder)>1.e-10) then
+        if (nint(abs(sum(grid%w)/(quadrature_norm/grid%molrotsymorder)))/=1) then
             print*, "In module_grid.f90, I am checking the normalization of the angular quadrature"
             print*, "The sum of all quadrature weights is", sum(grid%w)
-            print*, "It should be ", quadrature_norm
+            print*, "It should be ", quadrature_norm/grid%molrotsymorder
             print*, "deviation to reference value is", abs(sum(grid%w)-quadrature_norm/grid%molrotsymorder)
-            print*, "I fixed the error acceptance to", 1.e-10
+            print*, "I fixed the error acceptance to", epsilon(1._dp)*10._dp
             error stop
         end if
 
