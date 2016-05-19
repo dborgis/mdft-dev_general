@@ -110,6 +110,7 @@ contains
 
     SUBROUTINE poissonSolver (gridnode, gridlength, sourcedistrib, electric_potential)
 
+        use iso_c_binding
         use precision_kinds, only: dp, i4b
         use constants, only: qfact
         use module_solvent, only: solvent
@@ -136,7 +137,7 @@ contains
         real(dp), parameter :: espdp=epsilon(1._dp)
         integer :: nx, ny, nz
 
-        include "fftw3.f"
+        include "fftw3.f03"
 
         nx = gridnode(1)
         ny = gridnode(2)
