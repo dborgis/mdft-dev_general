@@ -87,10 +87,12 @@ contains
     ! this SUBROUTINE initiates the plans needed by fftw3.
     ! it also allocates the input and output arrays of fftw3.
     SUBROUTINE init_fftw3_plans
+        use iso_c_binding
+        use precision_kinds, only: dp
         use module_grid, only: grid
         IMPLICIT NONE
         integer :: nx, ny, nz
-        INCLUDE "fftw3.f"
+        include "fftw3.f03"
         ! allocate the arrays needed as input for FFT (in_forward) or output for FFT (out_forward)
         ! or needed as input for inverse FFT (in_backward) etc.
         nx = grid%nx
