@@ -1,5 +1,5 @@
 module module_rotation
-    use iso_c_binding, only: dp=>c_double
+    use precision_kinds, only: dp
     implicit none
     private
     public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu

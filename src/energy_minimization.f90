@@ -25,7 +25,7 @@ subroutine energy_minimization
 
 time(:)=0
 call cpu_time(time(1))
-
+error stop "tralala l28"
         !
         !     This is the call to the L-BFGS-B code. It updates the one-column vector lbfgsb%x.
         !
@@ -42,7 +42,7 @@ call cpu_time(time(1))
         lbfgsb%factr, lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
         lbfgsb%dsave )
 
-
+ERROR STOP "POOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOpokazdpoakzdpokazdpokazdpokazd========================"
 call cpu_time(time(2))
 
         if (lbfgsb%task(1:2) == "FG") then

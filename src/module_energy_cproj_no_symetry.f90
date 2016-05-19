@@ -5,8 +5,9 @@
 
 module module_energy_cproj_no_symetry
 
-  use iso_c_binding
-  use precision_kinds, only: dp ! plus loin, dp veut dire "double precision"
+  use iso_c_binding, only: C_PTR, C_INT, C_INT32_T, C_INTPTR_T, C_DOUBLE_COMPLEX, C_DOUBLE, C_FUNPTR, C_SIZE_T, C_FLOAT, &
+                           C_FLOAT_COMPLEX, C_CHAR
+  use precision_kinds, only: dp
 
   implicit none
   private
@@ -54,7 +55,8 @@ contains
 
   subroutine energy_cproj_no_symetry (ff,df)
 
-    use iso_c_binding, only: c_ptr, dp=>c_double
+    use iso_c_binding, only: c_ptr
+    use precision_kinds, only: dp
     use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu
     use module_wigner_d, only: wigner_big_d
     use module_grid, only: grid

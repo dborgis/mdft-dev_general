@@ -19,6 +19,8 @@ program main
 
 
     call init_simu
+    ERROR STOP "MOUNTAINLOVE"
+
     call energy_minimization
     call init_postprocessing
 

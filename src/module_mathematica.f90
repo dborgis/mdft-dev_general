@@ -1,5 +1,5 @@
 MODULE mathematica
-    use iso_c_binding, only: dp=>c_double
+    use precision_kinds, only: dp
     ! This module implements several usefull functions of Mathematica
     IMPLICIT NONE
     PRIVATE

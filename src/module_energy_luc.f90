@@ -2,44 +2,48 @@
 !     Last change:  LB    1 Feb 2016   12:51 pm
 !
 module tableaux_dft_3d
+  use precision_kinds, only: dp
+  implicit none
   INTEGER::mnmax,mnmax2,nbeta,nphi,nomeg
-  REAL(8),DIMENSION(:),ALLOCATABLE::beta,cosbeta,sinbeta,wb
-  REAL(8),DIMENSION(:),ALLOCATABLE::phi,cosphi,sinphi
-  COMPLEX(8),DIMENSION(:),ALLOCATABLE::expiphi
-  COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::expikhiphi
-  REAL(8),DIMENSION(:),ALLOCATABLE::omeg
-  COMPLEX(8),DIMENSION(:),ALLOCATABLE::expiomeg
-  COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::expimuomeg
-  REAL(8),DIMENSION(:,:,:,:),ALLOCATABLE::harsph
-  COMPLEX(8),DIMENSION(:,:),ALLOCATABLE::harsph_q
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::harsph1_q
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::delta_rho_proj,delta_rho,delta_rho_proj1,auxi_1,auxi_2
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE::gamma1,gamma1_proj,gamma2,gamma2_proj,gamma3_proj,gamma4_proj,gamma4_proj1
+  real(dp),DIMENSION(:),ALLOCATABLE::beta,cosbeta,sinbeta,wb
+  real(dp),DIMENSION(:),ALLOCATABLE::phi,cosphi,sinphi
+  complex(dp),DIMENSION(:),ALLOCATABLE::expiphi
+  complex(dp),DIMENSION(:,:),ALLOCATABLE::expikhiphi
+  real(dp),DIMENSION(:),ALLOCATABLE::omeg
+  complex(dp),DIMENSION(:),ALLOCATABLE::expiomeg
+  complex(dp),DIMENSION(:,:),ALLOCATABLE::expimuomeg
+  real(dp),DIMENSION(:,:,:,:),ALLOCATABLE::harsph
+  complex(dp),DIMENSION(:,:),ALLOCATABLE::harsph_q
+  complex(dp),DIMENSION(:,:,:),ALLOCATABLE::harsph1_q
+  complex(dp),DIMENSION(:,:,:),ALLOCATABLE::delta_rho_proj,delta_rho,delta_rho_proj1,auxi_1,auxi_2
+  complex(dp),DIMENSION(:,:,:),ALLOCATABLE::gamma1,gamma1_proj,gamma2,gamma2_proj,gamma3_proj,gamma4_proj,gamma4_proj1
   INTEGER, DIMENSION(:),ALLOCATABLE:: mm,nn,ll,mumu,nunu
-  REAL(8), DIMENSION(:),ALLOCATABLE:: ck
-  real(8), allocatable :: my_ck(:,:)
-  COMPLEX(8), DIMENSION(:,:,:,:,:,:),ALLOCATABLE:: ck_omega_omega
-  COMPLEX(8),DIMENSION(:,:,:,:,:),ALLOCATABLE:: tab5,tab6
-  COMPLEX(8),DIMENSION(:,:,:,:),ALLOCATABLE:: tab4,tab7
-  COMPLEX(8),DIMENSION(:,:,:),ALLOCATABLE:: tab3
+  real(dp), DIMENSION(:),ALLOCATABLE:: ck
+  real(dp), allocatable :: my_ck(:,:)
+  complex(dp), DIMENSION(:,:,:,:,:,:),ALLOCATABLE:: ck_omega_omega
+  complex(dp),DIMENSION(:,:,:,:,:),ALLOCATABLE:: tab5,tab6
+  complex(dp),DIMENSION(:,:,:,:),ALLOCATABLE:: tab4,tab7
+  complex(dp),DIMENSION(:,:,:),ALLOCATABLE:: tab3
 end module tableaux_dft_3d
 !
 !
 module module_energy_luc
-  real(8) :: fac(0:50)
+  use precision_kinds, only: dp
+  real(dp) :: fac(0:50)
 
 contains
 
 
 
 subroutine energy_luc (ff,df)
-  use iso_c_binding
+  use iso_c_binding, only: C_PTR, C_INT, C_INT32_T, C_INTPTR_T, C_DOUBLE_COMPLEX, C_DOUBLE, C_FUNPTR, C_SIZE_T, C_FLOAT, &
+                           C_FLOAT_COMPLEX, C_CHAR
+  use precision_kinds, only: dp
   use module_grid, only: grid
   use module_solvent, only: solvent
   use module_wigner_d, only: wigner_big_D
   implicit none
   include 'fftw3.f03'
-  integer, parameter :: dp=c_double
   real(dp), intent(out) :: ff
   real(dp), intent(inout) :: df(:,:,:,:,:)
   type(c_ptr) :: plan_fft_c2c_3d_signe_plus, plan_fft_c2c_3d_signe_minus
@@ -361,27 +365,28 @@ end subroutine energy_luc
     USE lecture                                    ! pour lire des valeurs � la Luc
     USE tableaux_dft_3d                            ! d�finit le type des tableaux de valeurs � partager
     use module_grid,only: grid
-    implicit real(8) (a-h,o-z)
-    real(8),    intent(in) :: qvec(3)
-    complex(8), intent(in) :: my_delta_rho_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
-    complex(8), intent(out) :: my_gamma_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
-    CHARACTER(50)::nomfic,texte
-    CHARACTER(10) texte1
-    COMPLEX(8)::xi_cmplx,auxi_cmplx,ck_cmplx,coeff_cmplx,coeff1_cmplx,coeff2_cmplx
+    use precision_kinds, only: dp
+    implicit real(dp) (a-h,o-z)
+    real(dp),    intent(in) :: qvec(3)
+    complex(dp), intent(in) :: my_delta_rho_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
+    complex(dp), intent(out) :: my_gamma_proj(0:grid%mmax,-grid%mmax:grid%mmax,-grid%mmax/2:grid%mmax/2)
+    character(50)::nomfic,texte
+    character(10) texte1
+    complex(dp)::xi_cmplx,auxi_cmplx,ck_cmplx,coeff_cmplx,coeff1_cmplx,coeff2_cmplx
     integer :: mmax
     logical :: qz_was_negatif
     !
     !interface
     !subroutine proj_angl(f_proj,f_ang)
-    !!implicit real(8) (a-h,o-z)
-    !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
+    !!implicit real(dp) (a-h,o-z)
+    !complex(dp), DIMENSION(:,:,:):: f_proj,f_ang
     !end subroutine
     !END interface
     !
     !interface
     !subroutine angl_proj(f_ang,f_proj)
-    !!implicit real(8) (a-h,o-z)
-    !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
+    !!implicit real(dp) (a-h,o-z)
+    !complex(dp), DIMENSION(:,:,:):: f_proj,f_ang
     !end subroutine
     !END interface
     !
@@ -1233,10 +1238,10 @@ end block
   !
   subroutine proj_angl(f_proj,f_ang)
     USE tableaux_dft_3d, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,harsph,expikhiphi,expimuomeg
-    implicit real(8) (a-h,o-z)
-    !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
-    COMPLEX(8), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(in):: f_proj
-    COMPLEX(8), DIMENSION(nbeta,nphi,nomeg), intent(out):: f_ang
+    implicit real(dp) (a-h,o-z)
+    !complex(dp), DIMENSION(:,:,:):: f_proj,f_ang
+    complex(dp), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(in):: f_proj
+    complex(dp), DIMENSION(nbeta,nphi,nomeg), intent(out):: f_ang
     !
     !             passe des projections a une fonction angulaire
     !
@@ -1270,10 +1275,10 @@ end block
   !
   subroutine angl_proj(f_ang,f_proj)
     USE tableaux_dft_3d, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,wb,harsph,expikhiphi,expimuomeg
-    implicit real(8) (a-h,o-z)
-    !COMPLEX(8), DIMENSION(:,:,:):: f_proj,f_ang
-    COMPLEX(8), DIMENSION(nbeta,nphi,nomeg), intent(in):: f_ang
-    COMPLEX(8), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(out):: f_proj
+    implicit real(dp) (a-h,o-z)
+    !complex(dp), DIMENSION(:,:,:):: f_proj,f_ang
+    complex(dp), DIMENSION(nbeta,nphi,nomeg), intent(in):: f_ang
+    complex(dp), DIMENSION(0:mnmax,-mnmax:mnmax,-mnmax2:mnmax2), intent(out):: f_proj
     !
     !             passe de la fonction angulaire aux projections
     !
@@ -1307,7 +1312,7 @@ end block
   !
   !
   function symbol_3j(m,n,l,mu,nu,lu)
-    implicit REAL(8) (a-h,o-z)
+    implicit real(dp) (a-h,o-z)
     !
     !        symbole 3j
     !        Messiah page 910 eq.21
@@ -1336,12 +1341,12 @@ function itriangle(m,n,l)
 end
 !
 function delta(m,n,l)
-  implicit REAL(8) (a-h,o-z)
+  implicit real(dp) (a-h,o-z)
   delta=fac(m+n-l)*fac(n+l-m)*fac(l+m-n)/fac(m+n+l+1)
 end
 !
 function harm_sph(m,mu,mup,beta)
-  implicit real(8) (a-h,o-z)
+  implicit real(dp) (a-h,o-z)
   !
   !          pour harmonique spherique Rm,mu,mup(Omega=omega,beta,phi)
   !                                    =exp(-i*omega)*r(m)mu,mup*exp(-i*phi)
@@ -1383,7 +1388,7 @@ function harm_sph(m,mu,mup,beta)
       end
       !
       subroutine gauleg(x,w,n)
-        implicit REAL(8) (a-h,o-z)
+        implicit real(dp) (a-h,o-z)
         DIMENSION x(n),w(n)
         !
         !      calcule les abscisses x() (sur -1,1) et poids () de la quadrature gauss-legendre pour n points
