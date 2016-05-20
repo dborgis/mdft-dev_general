@@ -309,34 +309,27 @@ contains
     end subroutine vext_hard_walls
 
     subroutine vext_lennardjones
-        ! In module mod_lj, we compute the array Vext_lj that contains the lennard jones part of the external potential
-        ! It is perhaps not the best idea to have a module for that, but is simpler for me (Max) to code, at least at the beginning.
+        !
+        ! We compute the array Vext_lj that contains the lennard jones part of the external potential.
+        !
         use precision_kinds, only: dp
         use module_solute, only: solute
         use module_solvent, only: solvent
         use module_grid, only: grid
-        ! use module_input, only: input_line, verbose
-        use module_debug, only: debugmode
         implicit none
-        INTEGER :: nx, ny, nz, no, ns
-        REAL(dp) :: lx, ly, lz
+        integer :: nx, ny, nz, no, ns
+        real(dp) :: lx, ly, lz
         real(dp), parameter :: fourpi=4._dp*acos(-1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
-        INTEGER :: i,j,k,s,v,u,a,b,c,t, nsolutesite, nsolventsites_with_lj
+        integer :: i,j,k,s,v,u,a,b,c,t, nsolutesite, nsolventsites_with_lj
         real(dp), allocatable :: x(:), y(:), z(:)
-        REAL(dp) :: V_node, dx, dy, dz
-        LOGICAL :: fullpbc
+        real(dp) :: V_node, dx, dy, dz
+        logical :: fullpbc
         integer, allocatable :: index_of_lj_site_in_solvent(:)
         real(dp), allocatable :: siguv(:), epsuv(:)
 
-        if (.not. allocated(solvent)) then
-            print*, "solvent should be allocated in vext_lennardjones"
-            error stop
-        end if
-        if (.not. grid%isinitiated) then
-            print*, "grid is not isinitiated in vext_lennardjones"
-            error stop
-        end if
+        if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
+        if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
 
         nx = grid%nx
         ny = grid%ny
@@ -346,6 +339,7 @@ contains
         lz = grid%lz
         no = grid%no
         ns = solvent(1)%nspec
+        if(ns /= 1) error stop "Dans vext_lennardjones, je n'ai pas encore implemente le multi especes"
 
         ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species )
         ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER only TODO
@@ -360,7 +354,6 @@ contains
             end if
         end do
 
-
         ! Test if the supercell is big enough considering the LJ range (given by sigma).
         ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
         ! It would have no sense to have a box dimension < 2.5 sigma
@@ -373,15 +366,9 @@ contains
             fullpbc=.FALSE. ! much faster
         END IF
 
-        if (ns /= 1) then
-            print*, "Dans vext_lennardjones, je n'ai pas encore implemente le multi especes"
-            error stop
-        end if
-
         !
         ! For each solvent species, I want the index of the (unique) Lennard jones site
         !
-
         allocate (index_of_lj_site_in_solvent(ns), source=0)
         do s=1,ns
             do t=1,size(solvent(1)%site)
@@ -394,15 +381,6 @@ contains
         if (any(index_of_lj_site_in_solvent<=0)) then
             print*, "In module_vext, some site index is negative. Bisous"
             error stop
-        end if
-
-
-        if (debugmode) then
-            if ( abs(vlj(3._dp,5._dp,2._dp)-45752929.6875_dp) > 1._dp/10000._dp ) then
-                print*, "function vlj is incorrect in module_vext"
-                print*, "what did you do?"
-                error stop
-            end if
         end if
 
         !
@@ -613,15 +591,16 @@ contains
     ! Returns the direct sum of all qi*qj/rij
     ! That's very slow and does not consider periodic boundary conditions
     !
-    SUBROUTINE compute_vcoul_as_sum_of_pointcharges
-        use precision_kinds     ,only: dp
+    subroutine compute_vcoul_as_sum_of_pointcharges
+
+        use precision_kinds, only: dp
         use module_solute, only: solute
         use module_solvent, only: solvent
-        use constants           ,only: qfact
-        use module_input               ,only: verbose
+        use constants, only: qfact
+        use module_input, only: verbose
         use module_grid, only: grid
 
-        IMPLICIT NONE
+        implicit none
 
         INTEGER         :: i,j,k,m,n,s,io
         REAL(dp)        :: xgrid(3), xv(3), xuv(3), xuv2, V_psi
