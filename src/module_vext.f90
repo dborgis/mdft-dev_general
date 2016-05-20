@@ -849,15 +849,12 @@ subroutine vext_lennardjones_generic
 
             if(allocated(siguv)) deallocate(siguv)
             if(allocated(epsuv)) deallocate(epsuv)
-            allocate( siguv(size(solute%site),size(solvent(s)%site)) ,source=0._dp) ! size(solvent) := ns
-            allocate( epsuv(size(solute%site),size(solvent(s)%site)) ,source=0._dp)
-            do u=1,size(solute%site)
-              do v=1,size(solvent(s)%site)
+            allocate( siguv(size(solute%site),size(solvent(s)%site)) ) ! size(solvent) := ns
+            allocate( epsuv(size(solute%site),size(solvent(s)%site)) )
+            do concurrent( u=1:size(solute%site), v=1:size(solvent(s)%site) )
                 epsuv(u,v)=sqrt(solute%site(u)%eps * solvent(s)%site(v)%eps)
                 siguv(u,v)=(solute%site(u)%sig + solvent(s)%site(v)%sig)/2._dp
-              end do
             end do
-
             vloc=0._dp
             do ss=1,size(solvent(s)%site)
               if( solvent(s)%site(ss)%eps<=epsdp) cycle
@@ -869,7 +866,7 @@ subroutine vext_lennardjones_generic
               ! on calcule vlj(epsij,sigij,rsq)
               ! et on ajoute la contribution à v
               do u=1,size(solute%site)
-                if( solute%site(u)%eps <= epsdp .or. vloc > 1.E10) cycle ! if the solute site does not wear a Lennard-Jones contribution
+                if( solute%site(u)%eps <= epsdp .or. vloc > 1.e10 ) cycle ! if the solute site does not wear a Lennard-Jones contribution
                 dx =abs(xss-solute%site(u)%r(1)); do while(dx>lx/2._dp); dx=abs(dx-lx); end do
                 dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly/2._dp); dy=abs(dy-ly); end do
                 dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz/2._dp); dz=abs(dz-lz); end do
