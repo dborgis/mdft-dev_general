@@ -12,7 +12,7 @@ contains
     !T and one tag F for the electrostatic potential, if thera are 2 tags T, it is the last evaluation which counts, i.e Poisson solver.
 
     subroutine init_vext
-        use precision_kinds, only: dp, i2b
+        use precision_kinds, only: dp
         use module_input, only: getinput
         use module_solvent, only: solvent
         use module_grid, only: grid
@@ -237,7 +237,7 @@ contains
         ! step 3/ we read their thinkness (2*radius) in dft.in
         ! step 4/ we compute the external potential created by the walls, which depends upon the fluid radius
 
-        use precision_kinds, only: i2b, dp
+        use precision_kinds, only: dp
         use module_input, only: input_line
         use module_solvent, only: solvent
         use hardspheres, only: hs
@@ -311,7 +311,7 @@ contains
     subroutine vext_lennardjones
         ! In module mod_lj, we compute the array Vext_lj that contains the lennard jones part of the external potential
         ! It is perhaps not the best idea to have a module for that, but is simpler for me (Max) to code, at least at the beginning.
-        use precision_kinds, only: dp, i2b
+        use precision_kinds, only: dp
         use module_solute, only: solute
         use module_solvent, only: solvent
         use module_grid, only: grid
@@ -495,7 +495,7 @@ contains
     !
     SUBROUTINE compute_purely_repulsive_potential
         !
-        !     use precision_kinds     ,only: dp, i2b
+        !     use precision_kinds     ,only: dp
         !     use module_input               ,only: getinput%dp, verbose
         !     use system              ,only: thermoCond
         !     use module_solute, only: solute
@@ -507,8 +507,8 @@ contains
         !
         !     IMPLICIT NONE
         !
-        !     INTEGER(i2b):: i,j,k,o,p,m,n,s
-        !     INTEGER(i2b), POINTER :: nfft1=>grid%n_nodes(1), nfft2=>grid%n_nodes(2), nfft3=>grid%n_nodes(3)
+        !     INTEGER:: i,j,k,o,p,m,n,s
+        !     INTEGER, POINTER :: nfft1=>grid%n_nodes(1), nfft2=>grid%n_nodes(2), nfft3=>grid%n_nodes(3)
         !     REAL(dp):: x_grid,y_grid,z_grid ! coordinates of grid nodes
         !     REAL(dp):: x_m,y_m,z_m ! solvent sites coordinates
         !     REAL(dp):: x_nm,y_nm,z_nm ! coordinate of vecteur solute-solvent
@@ -614,7 +614,7 @@ contains
     ! That's very slow and does not consider periodic boundary conditions
     !
     SUBROUTINE compute_vcoul_as_sum_of_pointcharges
-        use precision_kinds     ,only: dp, i2b
+        use precision_kinds     ,only: dp
         use module_solute, only: solute
         use module_solvent, only: solvent
         use constants           ,only: qfact
