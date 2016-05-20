@@ -457,20 +457,6 @@ contains
                 solvent(s)%vext(:,i,j,k) = solvent(s)%vext(:,i,j,k) + V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
             end do ! x,y,z
         end do ! solvent species
-    contains
-        pure function vlj(eps,sig,rsq) ! I hope this function is inlined by the compiler
-            implicit none
-            real(dp) :: vlj
-            real(dp), intent(in) :: eps, sig, rsq
-            real(dp) :: div
-            real(dp), parameter :: epsdp=1._dp
-            if (rsq<=epsdp) then
-                vlj = huge(1._dp)
-            else
-                div = sig**6/rsq**3 ! rsq is a distance²
-                vlj = 4._dp*eps*div*(div-1._dp)
-            end if
-        end function vlj
     end subroutine vext_lennardjones
 
     ! ! This subroutine computes the external potential induced by purely repulsive r^-12 spheres at each solute sites. You may be interesed by Dzubiella and Hansen, J. Chem. Phys. 121 (2004)
@@ -727,7 +713,7 @@ contains
         !     END BLOCK
         ! END IF
 
-    END SUBROUTINE
+    END SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
 
     ! this subroutine gets the partial vext ( hard sphere + hard wall + hard cylinder + purely repulsive)
@@ -805,23 +791,10 @@ contains
 
     end subroutine vext_total_sum
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 subroutine vext_lennardjones_generic
   !
   ! We compute the array Vext_lj that contains the lennard jones part of the external potential.
+  ! This version of the routine is compatible with solvents wearing several LJ sites like the 3-site model for acetontrile.
   !
   use precision_kinds, only: dp
   use module_solute, only: solute
@@ -832,16 +805,13 @@ subroutine vext_lennardjones_generic
   real(dp) :: lx, ly, lz
   real(dp), parameter :: fourpi=4._dp*acos(-1._dp)
   real(dp), parameter :: epsdp = epsilon(1._dp)
-  integer :: i,j,k,s,v,u,a,b,c,t, io, ix, iy, iz, ss
+  integer :: i,j,k,s,v,u, io, ix, iy, iz, ss
   real(dp), allocatable :: x(:), y(:), z(:)
   real(dp) :: vloc, dx, dy, dz, xss, yss, zss
-  logical :: fullpbc
   real(dp), allocatable :: siguv(:,:), epsuv(:,:)
   real(dp), dimension(3) :: rotx, roty, rotz
-
   if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
   if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
-
   nx = grid%nx
   ny = grid%ny
   nz = grid%nz
@@ -849,31 +819,13 @@ subroutine vext_lennardjones_generic
   ly = grid%ly
   lz = grid%lz
   no = grid%no
-  ns = solvent(1)%nspec
+  ns = size(solvent)
   ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species )
   ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER only TODO
   ! test if this simplification is true and stop if not
   ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
   ! only if they're all zero but for first site
   if(ns>1) error stop "IN MODULE_VEXT ONLY 1 SOLVENT SPECIES IS ALLOWED FOR NOW"
-  allocate( siguv(size(solute%site),size(solvent(1)%site)) ,source=0._dp) ! size(solvent) := ns
-  allocate( epsuv(size(solute%site),size(solvent(1)%site)) ,source=0._dp)
-  do u=1,size(solute%site)
-    do v=1,size(solvent(1)%site)
-      epsuv(u,v)=sqrt(solute%site(u)%eps * solvent(1)%site(v)%eps)
-      siguv(u,v)=(solute%site(u)%sig + solvent(1)%site(v)%sig)/2._dp
-      if(siguv(u,v)<0._dp) then
-        print*, "le sigma_ij de l'une des interactions lennard jones est negatif."
-        print*, u,v,siguv(u,v)
-        error stop
-      end if
-      if (any(epsuv<0._dp)) then
-          print*, "le eps_ij de l'une des interactions lennard jones est negatif."
-          print*, u,v,epsuv(u,v)
-          error stop
-      end if
-    end do
-  end do
 
   allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
   allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
@@ -894,8 +846,20 @@ subroutine vext_lennardjones_generic
           ! pour chaque solvant
           ! on calcule la position de chaque site du solvant
           do s=1,ns
+
+            if(allocated(siguv)) deallocate(siguv)
+            if(allocated(epsuv)) deallocate(epsuv)
+            allocate( siguv(size(solute%site),size(solvent(s)%site)) ,source=0._dp) ! size(solvent) := ns
+            allocate( epsuv(size(solute%site),size(solvent(s)%site)) ,source=0._dp)
+            do u=1,size(solute%site)
+              do v=1,size(solvent(s)%site)
+                epsuv(u,v)=sqrt(solute%site(u)%eps * solvent(s)%site(v)%eps)
+                siguv(u,v)=(solute%site(u)%sig + solvent(s)%site(v)%sig)/2._dp
+              end do
+            end do
+
             vloc=0._dp
-            do ss=1,solvent(s)%nsite
+            do ss=1,size(solvent(s)%site)
               if( solvent(s)%site(ss)%eps<=epsdp) cycle
               xss=x(ix)+dot_product(rotx,solvent(s)%site(ss)%r)
               yss=y(iy)+dot_product(roty,solvent(s)%site(ss)%r)
@@ -904,15 +868,17 @@ subroutine vext_lennardjones_generic
               ! on calcule la distance entre le site de soluté et le site de solvant
               ! on calcule vlj(epsij,sigij,rsq)
               ! et on ajoute la contribution à v
-              do u=1,solute%nsite
-                if( solute%site(u)%eps <= epsdp ) cycle ! if the solute site does not wear a Lennard-Jones contribution
+              do u=1,size(solute%site)
+                if( solute%site(u)%eps <= epsdp .or. vloc > 1.E10) cycle ! if the solute site does not wear a Lennard-Jones contribution
                 dx =abs(xss-solute%site(u)%r(1)); do while(dx>lx/2._dp); dx=abs(dx-lx); end do
                 dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly/2._dp); dy=abs(dy-ly); end do
                 dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz/2._dp); dz=abs(dz-lz); end do
                 vloc = vloc + vlj( epsuv(u,ss), siguv(u,ss), dx**2+dy**2+dz**2)
               end do
             end do
+
             solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vloc
+
           end do
 
         end do
