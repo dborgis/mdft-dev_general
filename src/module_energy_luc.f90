@@ -29,7 +29,7 @@ end module tableaux_dft_3d
 !
 module module_energy_luc
   use precision_kinds, only: dp
-  real(dp) :: fac(0:50)
+  real(dp), allocatable :: fac(:)
 
 contains
 
@@ -45,7 +45,8 @@ subroutine energy_luc (ff,df)
   implicit none
   include 'fftw3.f03'
   real(dp), intent(out) :: ff
-  real(dp), intent(inout) :: df(:,:,:,:,:)
+  ! real(dp), intent(inout) :: df(:,:,:,:,:) ! (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
+  real(dp), intent(inout) :: df(grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
   type(c_ptr) :: plan_fft_c2c_3d_signe_plus, plan_fft_c2c_3d_signe_minus
   complex(dp), allocatable :: in(:,:,:), out(:,:,:)
   real :: time(0:20)
@@ -76,10 +77,16 @@ subroutine energy_luc (ff,df)
   call cpu_time(time(1))
 
 
-allocate ( in(nx,ny,nz), source=zeroc)
-allocate ( out(nx,ny,nz), source=zeroc)
-call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, out, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
-call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, out, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
+  allocate ( in(nx,ny,nz), source=zeroc)
+  allocate ( out(nx,ny,nz), source=zeroc)
+  select case (dp)
+  case(c_double)
+    call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, out, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+    call dfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, out, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
+  case(c_float)
+    call sfftw_plan_dft_3d (plan_fft_c2c_3d_signe_plus,  nx, ny, nz, in, out, FFTW_BACKWARD, FFTW_ESTIMATE) ! le tag FFTW_BACKWARD indique un signe + dans l'exponentiel
+    call sfftw_plan_dft_3d (plan_fft_c2c_3d_signe_minus, nx, ny, nz, in, out, FFTW_FORWARD, FFTW_ESTIMATE) ! le tag FFTW_FORWARD indique un signe - dans l'exponentiel
+  end select
 
 !
 !
@@ -92,7 +99,12 @@ allocate ( gamma_k_angle(no,nx,ny,nz) , source=zeroc)
 
 do io=1,no
   in = cmplx(solvent(1)%xi(io,:,:,:)**2*rho0-rho0,0,dp)  ! Δρ(Ω,x,y,z)
-  call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, out )
+  select case (dp)
+  case(c_double)
+    call dfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, out )
+  case(c_float)
+    call sfftw_execute_dft( plan_fft_c2c_3d_signe_plus, in, out )
+  end select
   delta_rho_k_angle(io,:,:,:) = out  ! Δρ(Ω,qx,qy,qz)
 end do
 
@@ -103,6 +115,9 @@ end do
 ! - surtout, on sait aller chercher q et -q dans les tableaux pour tous les q. Il n'y a pas d'exception, que nx, ny, nz soient pairs ou impairs.
 ! Autrement dit, ce n'est pas vraiment la symétrie hermitienne qu'on teste, mais la fonction grid%ix_mq(ixq) qui a l'indice iqx trouve l'indice ix_mq correspondant à -q(ix_q)
 !
+block
+real(dp) :: maxdiff, diff
+maxdiff=0._dp
 erreur_trouvee=.false.
 do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
   imqx = grid%ix_mq(iqx)
@@ -110,11 +125,13 @@ do concurrent (iqx=1:nx, iqy=1:ny, iqz=1:nz, io=1:no)
   imqz = grid%iz_mq(iqz)
   a = delta_rho_k_angle(io,iqx,iqy,iqz)
   b = conjg(delta_rho_k_angle(io,imqx,imqy,imqz))
-  if (abs(a-b)>1.D-10) erreur_trouvee=.true.
+  diff=abs(a-b)
+  if (diff>1.D-10) erreur_trouvee=.true.
+  if(diff>maxdiff) maxdiff=diff
 end do
 if(erreur_trouvee) error stop "raté pour la symétrie hermitienne de delta_rho_k_angle"
-
-
+print*,"maxdiff=",maxdiff
+end block
 
 
 
@@ -271,7 +288,12 @@ if(.not.allocated(gamma_angle)) allocate( gamma_angle(no,nx,ny,nz))
 gamma_angle = zeroc
 do io=1,no
   in = delta_rho_k_angle(io,:,:,:)
-  call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, out)
+  select case(dp)
+  case(c_double)
+    call dfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, out)
+  case(c_float)
+    call sfftw_execute_dft( plan_fft_c2c_3d_signe_minus, in, out)
+  end select
   gamma_angle(io,:,:,:) = out/real(nx*ny*nz,dp)
 end do
 
@@ -362,6 +384,7 @@ end subroutine energy_luc
 
 
   subroutine luc_oz (qvec, my_delta_rho_proj, my_gamma_proj)
+    use iso_c_binding, only: c_double, c_float
     USE lecture                                    ! pour lire des valeurs � la Luc
     USE tableaux_dft_3d                            ! d�finit le type des tableaux de valeurs � partager
     use module_grid,only: grid
@@ -390,10 +413,24 @@ end subroutine energy_luc
     !end subroutine
     !END interface
     !
-    fac(0)=1.
-    do k=1,50
-      fac(k)=fac(k-1)*REAL(k)
-    end do
+    if(.not.allocated(fac)) then
+      select case(dp)
+      case(c_double)
+        allocate(fac(0:50))
+        fac(0)=1.
+        do k=1,50
+          fac(k)=fac(k-1)*REAL(k,dp)
+        end do
+      case(c_float)
+        allocate(fac(0:34))
+        fac(0)=1.
+        do k=1,34
+          fac(k)=fac(k-1)*REAL(k,dp)
+        end do
+      end select
+    end if
+    stop "apres definition de fac"
+
     !
     !               pour test DFT_3D, calcul des projections de gamma a partir de celles de deltarho   (solute-solvant)
     !               dans l'espace de fourier pour un vecteur q donne
@@ -1142,8 +1179,8 @@ end block
       end do
     end do
     ! test aller-retour  reussi donc shunte
-    !GOTO 417
-    ! PRINT*, 'test retour a deltarho_proj'
+    ! GOTO 417
+    PRINT*, 'test retour a deltarho_proj'
     gamma4_proj=0.
     do m=0,mnmax
       m2=m/2
@@ -1236,7 +1273,7 @@ end block
 
 
   !
-  subroutine proj_angl(f_proj,f_ang)
+subroutine proj_angl(f_proj,f_ang)
     USE tableaux_dft_3d, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,harsph,expikhiphi,expimuomeg
     implicit real(dp) (a-h,o-z)
     !complex(dp), DIMENSION(:,:,:):: f_proj,f_ang
@@ -1270,10 +1307,10 @@ end block
       end do
     end do
     !
-  end subroutine
-  !
-  !
-  subroutine angl_proj(f_ang,f_proj)
+end subroutine proj_angl
+
+
+subroutine angl_proj(f_ang,f_proj)
     USE tableaux_dft_3d, ONLY: mnmax,mnmax2,nbeta,nphi,nomeg,auxi_1,auxi_2,wb,harsph,expikhiphi,expimuomeg
     implicit real(dp) (a-h,o-z)
     !complex(dp), DIMENSION(:,:,:):: f_proj,f_ang
@@ -1308,45 +1345,58 @@ end block
       end do
     end do
     !
-  end subroutine
-  !
-  !
-  function symbol_3j(m,n,l,mu,nu,lu)
-    implicit real(dp) (a-h,o-z)
+end subroutine angl_proj
+
+
+pure function symbol_3j(m,n,l,mu,nu,lu)
+  implicit real(dp) (a-h,o-z)
+  integer, intent(in) :: m, n, l, mu, nu, lu
+  real(dp) :: symbol_3j
     !
     !        symbole 3j
     !        Messiah page 910 eq.21
     !
-    IF(itriangle(m,n,l).eq.0.or.mu+nu+lu.NE.0.or.                                     &
+  IF(itriangle(m,n,l).eq.0.or.mu+nu+lu.NE.0.or.                                     &
     ABS(mu).gt.m.or.abs(nu).gt.n.or.abs(lu).gt.l) then
-    symbol_3j=0.
+    symbol_3j=0._dp
   else
-    som=0.
+    som=0._dp
     do it=MAX(0,n-l-mu,m-l+nu),MIN(m+n-l,m-mu,n+nu)
-      som=som+(-1)**it/(fac(it)*fac(l-n+it+mu)*fac(l-m+it-nu)*                          &
-      fac(m+n-l-it)*fac(m-it-mu)*fac(n-it+nu))
+      som=som+(-1)**it/(fac(it)*fac(l-n+it+mu)*fac(l-m+it-nu)*fac(m+n-l-it)*fac(m-it-mu)*fac(n-it+nu))
     end do
     symbol_3j=(-1)**(m-n-lu)*SQRT(delta(m,n,l))*                                       &
-    SQRT(fac(m+mu)*fac(m-mu)*fac(n+nu)*fac(n-nu)*fac(l+lu)*fac(l-lu))                 &
-    *som
-    IF(mu==0.and.nu==0.and.lu==0.and.2*((m+n+l)/2)/=m+n+l) symbol_3j=0.
+    SQRT(fac(m+mu)*fac(m-mu)*fac(n+nu)*fac(n-nu)*fac(l+lu)*fac(l-lu))*som
+    IF(mu==0.and.nu==0.and.lu==0.and.2*((m+n+l)/2)/=m+n+l) symbol_3j=0._dp
   endif
-end
-!
-function itriangle(m,n,l)
+end function symbol_3j
+
+
+pure function itriangle(m,n,l)
+  implicit none
+  integer :: itriangle
+  integer, intent(in) :: m, n, l
   !        nul sauf si |m-n|<l<m+n
   !        rq: ne depend pas de l'ordre des 3 entiers
   itriangle=0
   IF(l.ge.ABS(m-n).and.l.le.m+n) itriangle=1
-end
-!
-function delta(m,n,l)
+end function itriangle
+
+
+pure function delta(m,n,l)
+  use precision_kinds, only: dp
   implicit real(dp) (a-h,o-z)
+  integer, intent(in) :: m, n, l
   delta=fac(m+n-l)*fac(n+l-m)*fac(l+m-n)/fac(m+n+l+1)
-end
-!
-function harm_sph(m,mu,mup,beta)
+end function delta
+
+
+pure function harm_sph(m,mu,mup,beta)
+  use precision_kinds, only: dp
   implicit real(dp) (a-h,o-z)
+  real(dp) :: harm_sph
+  integer, intent(in) :: m, mu, mup
+  real(dp), intent(in) :: beta
+
   !
   !          pour harmonique spherique Rm,mu,mup(Omega=omega,beta,phi)
   !                                    =exp(-i*omega)*r(m)mu,mup*exp(-i*phi)
@@ -1355,68 +1405,84 @@ function harm_sph(m,mu,mup,beta)
   !          luc72p143
   !          si mu ou mup nul, formule de recurrence stable
   !
-  IF(ABS(mu)>m.or.ABS(mup)>m) THEN; harm_sph=0.; RETURN; endif
+  IF(ABS(mu)>m.or.ABS(mup)>m) THEN
+    harm_sph=0._dp
+    RETURN
+  endif
     !
-    IF(mu==0.or.mup==0) THEN                      ! mu=0 ou mup=0
+  IF(mu==0.or.mup==0) THEN                      ! mu=0 ou mup=0
       !
-      mu0=mu; beta0=beta
-      IF(mu==0) THEN; mu0=mup; beta0=-beta; ENDIF       ! je mets le 0 en second
+    mu0=mu; beta0=beta
+    IF(mu==0) THEN
+      mu0=mup
+      beta0=-beta
+    ENDIF       ! je mets le 0 en second
         !          si mu negatif, ca vaut (-1)**mu * valeur pour -mu
-        x=1.d0;
-        IF(mu0<0) THEN; x=(-1)**mu0; mu0=-mu0; endif
-          cc=COS(beta0)                            ! plut�t a partir d'une formule de recurrence stable
-          pm1=0.                                  ! des polynomes de Legendre associes Pl,m
-          pm=1.d0                                 ! luc73p96
-          do l=mu0+1,m
-            pm2=pm1
-            pm1=pm
-            pm=(cc*dble(2*l-1)*pm1-dble(l+mu0-1)*pm2)/DBLE(l-mu0)
-          end do
-          harm_sph=x*(-1)**mu0*SQRT(fac(m-mu0)/fac(m+mu0))*fac(2*mu0)/(2.d0**mu0*fac(mu0))*SIN(beta0)**mu0*pm
+    x=1._dp;
+    IF(mu0<0) THEN
+      x=(-1)**mu0
+      mu0=-mu0
+    endif
+    cc=COS(beta0)                            ! plut�t a partir d'une formule de recurrence stable
+    pm1=0._dp                                  ! des polynomes de Legendre associes Pl,m
+    pm=1._dp                                 ! luc73p96
+    do l=mu0+1,m
+      pm2=pm1
+      pm1=pm
+      pm=(cc*real(2*l-1,dp)*pm1-real(l+mu0-1,dp)*pm2)/real(l-mu0,dp)
+    end do
+    harm_sph=x*(-1)**mu0*SQRT(fac(m-mu0)/fac(m+mu0))*fac(2*mu0)/(2.d0**mu0*fac(mu0))*SIN(beta0)**mu0*pm
           !
-        else                  !   donc mu et mup non nuls, utiliser betement la formule de Wigner
+  else                  !   donc mu et mup non nuls, utiliser betement la formule de Wigner
           !
-          harm_sph=0.
-          cc=COS(0.5d0*beta)
-          ss=SIN(0.5d0*beta)
-          do it=MAX(0,mu-mup),MIN(m+mu,m-mup)
-            harm_sph=harm_sph+(-1)**it/(fac(m+mu-it)*fac(m-mup-it)*fac(it)*fac(it-mu+mup))*  &
-            cc**(2*m+mu-mup-2*it)*ss**(2*it-mu+mup)
-          end do
-          harm_sph=SQRT(fac(m+mu)*fac(m-mu)*fac(m+mup)*fac(m-mup))*harm_sph
-        endif
-      end
-      !
-      subroutine gauleg(x,w,n)
-        implicit real(dp) (a-h,o-z)
-        DIMENSION x(n),w(n)
-        !
-        !      calcule les abscisses x() (sur -1,1) et poids () de la quadrature gauss-legendre pour n points
-        !      luc74p85
-        !
-        pi=4.d0*ATAN(1.d0)
-        !
-        m=(n+1)/2                       ! racines symetriques par rapport a 0
-        do i=1,m                        ! on s'interesse au i�me zero du polynome Pn(x) de Legendre
-          xi=COS(pi*(i-0.25)/(n+0.5))     ! estimation de d�part qu'on va raffiner par NR
-          100 p1=1.d0
-          p2=0.
-          do j=1,n
-            p3=p2
-            p2=p1
-            p1=((2*j-1.d0)*xi*p2-(j-1.d0)*p3)/j    ! relation de r�currence entre les Pj
-          end do
-          pp=n*(xi*p1-p2)/(xi**2-1.d0)            ! donne Pn' en fonction de Pn et Pn-1
-          deltaxi=-p1/pp                          ! NR
-          xi=xi+deltaxi
-          IF(ABS(deltaxi)>1.d-13) GOTO 100
-          x(i)=xi
-          w(i)=1.d0/((1.d0-xi**2)*pp**2)         ! poids normalise a 1
-          x(n+1-i)=-xi
-          w(n+1-i)=w(i)
+    harm_sph=0.
+    cc=COS(0.5_dp*beta)
+    ss=SIN(0.5_dp*beta)
+    do it=MAX(0,mu-mup),MIN(m+mu,m-mup)
+      harm_sph=harm_sph+(-1)**it/(fac(m+mu-it)*fac(m-mup-it)*fac(it)*fac(it-mu+mup))*  &
+      cc**(2*m+mu-mup-2*it)*ss**(2*it-mu+mup)
+    end do
+    harm_sph=SQRT(fac(m+mu)*fac(m-mu)*fac(m+mup)*fac(m-mup))*harm_sph
+  endif
+end function harm_sph
+
+
+pure subroutine gauleg(x,w,n)
+    !
+    !      calcule les abscisses x() (sur -1,1) et poids () de la quadrature gauss-legendre pour n points
+    !      luc74p85
+    !
+    !
+    use precision_kinds, only: dp
+    ! implicit real(dp) (a-h,o-z)
+    implicit none
+    integer, intent(in) :: n
+    real(dp), intent(out) :: x(n), w(n)
+    real(dp), parameter :: pi=acos(-1._dp)
+    integer :: m, i, j
+    real(dp) :: xi, p1, p2, p3, pp, deltaxi
+    m=(n+1)/2                       ! racines symetriques par rapport a 0
+    do i=1,m                        ! on s'interesse au ieme zero du polynome Pn(x) de Legendre
+        xi=COS(pi*(i-0.25_dp)/(n+0.5_dp))     ! estimation de depart qu'on va raffiner par NR
+        deltaxi=huge(1._dp)
+        do while(abs(deltaxi)>1.d-13)
+            p1=1._dp
+            p2=0.
+            do j=1,n
+                p3=p2
+                p2=p1
+                p1=((2*j-1._dp)*xi*p2-(j-1._dp)*p3)/j    ! relation de recurrence entre les Pj
+            end do
+            pp=n*(xi*p1-p2)/(xi**2-1._dp)            ! donne Pn' en fonction de Pn et Pn-1
+            deltaxi=-p1/pp                          ! NR
+            xi=xi+deltaxi
         end do
-      end
-      !
+        x(i)=xi
+        w(i)=1._dp/((1._dp-xi**2)*pp**2)         ! poids normalise a 1
+        x(n+1-i)=-xi
+        w(n+1-i)=w(i)
+    end do
+end subroutine gauleg      !
 
 
-    end module
+end module
