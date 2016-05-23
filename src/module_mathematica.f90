@@ -444,24 +444,24 @@ pure subroutine akima_spline(ndim,x,y,n,x5,y5)
             do m=3,5
                 dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
             end do
-            dydx(2) = 2.0d0*dydx(3) - dydx(4)
-            dydx(1) = 2.0d0*dydx(2) - dydx(3)
+            dydx(2) = 2.0_dp*dydx(3) - dydx(4)
+            dydx(1) = 2.0_dp*dydx(2) - dydx(3)
         else if(i==3) then
             do m=2,5
                 dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
             end do
-            dydx(1) = 2.0d0*dydx(2) - dydx(3)
+            dydx(1) = 2.0_dp*dydx(2) - dydx(3)
         else if(i==ndim) then
             do m=1,3
                 dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
             end do
-            dydx(4) = 2.0d0*dydx(3) - dydx(2)
-            dydx(5) = 2.0d0*dydx(4) - dydx(3)
+            dydx(4) = 2.0_dp*dydx(3) - dydx(2)
+            dydx(5) = 2.0_dp*dydx(4) - dydx(3)
         else if(i==ndim-1) then
             do m=1,4
                 dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
             end do
-            dydx(5) = 2.0d0*dydx(4) - dydx(3)
+            dydx(5) = 2.0_dp*dydx(4) - dydx(3)
         else
             do m=1,5
                 dydx(m) = (y(i-3+m)-y(i-4+m)) / (x(i-3+m)-x(i-4+m))
@@ -473,7 +473,7 @@ pure subroutine akima_spline(ndim,x,y,n,x5,y5)
         do m=1,2
             wk = ddydx(m+2) + ddydx(m)
             if(wk == 0) then
-                t(m) = 0.0d0
+                t(m) = 0.0_dp
             else
                 t(m) = (ddydx(m+2)*dydx(m+1)+ddydx(m)*dydx(m+2))/wk
             end if
@@ -482,8 +482,8 @@ pure subroutine akima_spline(ndim,x,y,n,x5,y5)
         dx = x5(j) - x(i-1)
         y5(j) = y(i-1) &
         & + dx*t(1) &
-        & + dx*dx*(3.0d0*dydx(3)-2.0d0*t(1)-t(2))/dx21 &
-        & + dx*dx*dx*(t(1)+t(2)-2.0d0*dydx(3))/dx21/dx21
+        & + dx*dx*(3.0_dp*dydx(3)-2.0_dp*t(1)-t(2))/dx21 &
+        & + dx*dx*dx*(t(1)+t(2)-2.0_dp*dydx(3))/dx21/dx21
     end do tgt
 
 end subroutine akima_spline
