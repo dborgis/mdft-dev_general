@@ -820,16 +820,21 @@ subroutine vext_lennardjones_generic
   lz = grid%lz
   no = grid%no
   ns = size(solvent)
-  ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species )
-  ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER only TODO
-  ! test if this simplification is true and stop if not
-  ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
-  ! only if they're all zero but for first site
-  if(ns>1) error stop "IN MODULE_VEXT ONLY 1 SOLVENT SPECIES IS ALLOWED FOR NOW"
 
   allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
   allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
   allocate( z(nz) ,source= [(real(k-1,dp)*grid%dz, k=1,nz)] )
+
+
+  ! Allocate a table for epsuv and siguv, where u runs from 1 to the number of solute sites and
+  ! v runs from 1 to the maximum number of solvent sites of all the solvents species
+  block
+    integer :: umax, vmax
+    umax = size(solute%site)
+    vmax = maxval(  [ (size(solvent(i)%site) ,i=1,ns)]    )
+    allocate( siguv(umax,vmax) ,source=0._dp )
+    allocate( epsuv(umax,vmax) ,source=0._dp )
+  end block
 
   ! pour toutes les orientations
   ! et pour tous les noeuds de la grille spatiale
@@ -846,14 +851,11 @@ subroutine vext_lennardjones_generic
           ! pour chaque solvant
           ! on calcule la position de chaque site du solvant
           do s=1,ns
-
-            if(allocated(siguv)) deallocate(siguv)
-            if(allocated(epsuv)) deallocate(epsuv)
-            allocate( siguv(size(solute%site),size(solvent(s)%site)) ) ! size(solvent) := ns
-            allocate( epsuv(size(solute%site),size(solvent(s)%site)) )
-            do concurrent( u=1:size(solute%site), v=1:size(solvent(s)%site) )
+            do v=1,size(solvent(s)%site)
+              do u=1,size(solute%site)
                 epsuv(u,v)=sqrt(solute%site(u)%eps * solvent(s)%site(v)%eps)
                 siguv(u,v)=(solute%site(u)%sig + solvent(s)%site(v)%sig)/2._dp
+              end do
             end do
             vloc=0._dp
             do ss=1,size(solvent(s)%site)
