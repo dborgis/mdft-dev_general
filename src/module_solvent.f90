@@ -81,6 +81,7 @@ contains
         !   For now all species have the same functional.
         !
         do s=1,solvent(1)%nspec
+
             solvent(s)%do%id_and_ext = .true.
             solvent(s)%do%exc_fmt = getinput%log ('hard_sphere_fluid', defaultvalue=.false.)
             solvent(s)%do%exc_wca = getinput%log ('wca', defaultvalue=.false.)
@@ -98,9 +99,7 @@ contains
                 solvent(s)%do%exc_cproj=.true.
                 solvent(s)%do%exc_ck_angular=.true.
             case default
-                solvent(s)%do%exc_cproj=.true.
-                print*, "see module_solvent > functional decision tree"
-                print*, "mmax is trop grand"
+                error stop "mmax > maximum value in module_solvent"
             end select
 
             !
