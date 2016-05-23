@@ -57,7 +57,12 @@ contains
 
         CALL init_electrostatic_potential ! ELECTROSTATIC POTENTIAL
 
-        CALL vext_lennardjones ! LENNARD-JONES POTENTIAL
+        if(getinput%log('back_to_old_lj', defaultvalue=.false.)) then
+          call vext_lennardjones ! LENNARD-JONES POTENTIAL
+        else
+          call vext_lennardjones_generic
+        end if
+
 
         IF (getinput%log('purely_repulsive_solute', defaultvalue=.false.)) CALL compute_purely_repulsive_potential ! r^-12 only
         IF (getinput%log('hard_sphere_solute', defaultvalue=.false.)) CALL compute_vext_hard_sphere     ! hard sphere
@@ -452,20 +457,6 @@ contains
                 solvent(s)%vext(:,i,j,k) = solvent(s)%vext(:,i,j,k) + V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
             end do ! x,y,z
         end do ! solvent species
-    contains
-        pure function vlj(eps,sig,rsq) ! I hope this function is inlined by the compiler
-            implicit none
-            real(dp) :: vlj
-            real(dp), intent(in) :: eps, sig, rsq
-            real(dp) :: div
-            real(dp), parameter :: epsdp=1._dp
-            if (rsq<=epsdp) then
-                vlj = huge(1._dp)
-            else
-                div = sig**6/rsq**3 ! rsq is a distance²
-                vlj = 4._dp*eps*div*(div-1._dp)
-            end if
-        end function vlj
     end subroutine vext_lennardjones
 
     ! ! This subroutine computes the external potential induced by purely repulsive r^-12 spheres at each solute sites. You may be interesed by Dzubiella and Hansen, J. Chem. Phys. 121 (2004)
@@ -722,7 +713,7 @@ contains
         !     END BLOCK
         ! END IF
 
-    END SUBROUTINE
+    END SUBROUTINE compute_vcoul_as_sum_of_pointcharges
 
 
     ! this subroutine gets the partial vext ( hard sphere + hard wall + hard cylinder + purely repulsive)
@@ -799,5 +790,118 @@ contains
         ! END IF
 
     end subroutine vext_total_sum
+
+subroutine vext_lennardjones_generic
+  !
+  ! We compute the array Vext_lj that contains the lennard jones part of the external potential.
+  ! This version of the routine is compatible with solvents wearing several LJ sites like the 3-site model for acetontrile.
+  !
+  use precision_kinds, only: dp
+  use module_solute, only: solute
+  use module_solvent, only: solvent
+  use module_grid, only: grid
+  implicit none
+  integer :: nx, ny, nz, no, ns
+  real(dp) :: lx, ly, lz
+  real(dp), parameter :: fourpi=4._dp*acos(-1._dp)
+  real(dp), parameter :: epsdp = epsilon(1._dp)
+  integer :: i,j,k,s,v,u, io, ix, iy, iz, ss
+  real(dp), allocatable :: x(:), y(:), z(:)
+  real(dp) :: vloc, dx, dy, dz, xss, yss, zss
+  real(dp), allocatable :: siguv(:,:), epsuv(:,:)
+  real(dp), dimension(3) :: rotx, roty, rotz
+  if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
+  if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
+  nx = grid%nx
+  ny = grid%ny
+  nz = grid%nz
+  lx = grid%lx
+  ly = grid%ly
+  lz = grid%lz
+  no = grid%no
+  ns = size(solvent)
+
+  allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
+  allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
+  allocate( z(nz) ,source= [(real(k-1,dp)*grid%dz, k=1,nz)] )
+
+
+  ! Allocate a table for epsuv and siguv, where u runs from 1 to the number of solute sites and
+  ! v runs from 1 to the maximum number of solvent sites of all the solvents species
+  block
+    integer :: umax, vmax
+    umax = size(solute%site)
+    vmax = maxval(  [ (size(solvent(i)%site) ,i=1,ns)]    )
+    allocate( siguv(umax,vmax) ,source=0._dp )
+    allocate( epsuv(umax,vmax) ,source=0._dp )
+  end block
+
+  ! pour toutes les orientations
+  ! et pour tous les noeuds de la grille spatiale
+  do io=1,no
+
+    rotx=[grid%rotxx(io),grid%rotxy(io),grid%rotxz(io)]
+    roty=[grid%rotyx(io),grid%rotyy(io),grid%rotyz(io)]
+    rotz=[grid%rotzx(io),grid%rotzy(io),grid%rotzz(io)]
+
+    do ix=1,nx
+      do iy=1,ny
+        do iz=1,nz
+
+          ! pour chaque solvant
+          ! on calcule la position de chaque site du solvant
+          do s=1,ns
+            do v=1,size(solvent(s)%site)
+              do u=1,size(solute%site)
+                epsuv(u,v)=sqrt(solute%site(u)%eps * solvent(s)%site(v)%eps)
+                siguv(u,v)=(solute%site(u)%sig + solvent(s)%site(v)%sig)/2._dp
+              end do
+            end do
+            vloc=0._dp
+            do ss=1,size(solvent(s)%site)
+              if( solvent(s)%site(ss)%eps<=epsdp) cycle
+              xss=x(ix)+dot_product(rotx,solvent(s)%site(ss)%r)
+              yss=y(iy)+dot_product(roty,solvent(s)%site(ss)%r)
+              zss=z(iz)+dot_product(rotz,solvent(s)%site(ss)%r)
+              ! pour chaque site de soluté
+              ! on calcule la distance entre le site de soluté et le site de solvant
+              ! on calcule vlj(epsij,sigij,rsq)
+              ! et on ajoute la contribution à v
+              do u=1,size(solute%site)
+                if( solute%site(u)%eps <= epsdp .or. vloc > 1.e5 ) cycle ! if the solute site does not wear a Lennard-Jones contribution
+                dx =abs(xss-solute%site(u)%r(1)); do while(dx>lx/2._dp); dx=abs(dx-lx); end do
+                dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly/2._dp); dy=abs(dy-ly); end do
+                dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz/2._dp); dz=abs(dz-lz); end do
+                vloc = vloc + vlj( epsuv(u,ss), siguv(u,ss), dx**2+dy**2+dz**2)
+              end do
+            end do
+
+            solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vloc
+
+          end do
+
+        end do
+      end do
+    end do
+
+  end do
+end subroutine vext_lennardjones_generic
+
+
+
+pure function vlj(eps,sig,rsq) ! I hope this function is inlined by the compiler
+    use precision_kinds, only: dp
+    implicit none
+    real(dp) :: vlj
+    real(dp), intent(in) :: eps, sig, rsq
+    real(dp) :: div
+    real(dp), parameter :: epsdp=1._dp
+    if (rsq<=epsdp) then
+        vlj = huge(1._dp)
+    else
+        div = sig**6/rsq**3 ! rsq is a distance²
+        vlj = 4._dp*eps*div*(div-1._dp)
+    end if
+end function vlj
 
 end module module_vext
