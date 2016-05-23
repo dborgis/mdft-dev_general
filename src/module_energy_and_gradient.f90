@@ -4,22 +4,22 @@ module module_energy_and_gradient
   private
   type f_type
     real(dp) :: id = 0._dp,&
-    ext = 0._dp,&
-    exc_cs = 0._dp,&
-    exc_cdeltacd = 0._dp,&
-    exc_cproj = 0._dp,&
-    exc_ck_angular = 0._dp,&
-    exc_fmt = 0._dp,&
-    exc_wca = 0._dp,&
-    exc_3b = 0._dp,&
-    exc_dipolar = 0._dp,&
-    exc_multipolar_without_coupling_to_density = 0._dp,&
-    exc_multipolar_with_coupling_to_density = 0._dp,&
-    exc_hydro = 0._dp,&
-    exc_nn_cs_plus_nbar = 0._dp, &
-    tot=0._dp,&
-    pscheme_correction=-999._dp,&
-    pbc_correction=-999._dp
+                ext = 0._dp,&
+                exc_cs = 0._dp,&
+                exc_cdeltacd = 0._dp,&
+                exc_cproj = 0._dp,&
+                exc_ck_angular = 0._dp,&
+                exc_fmt = 0._dp,&
+                exc_wca = 0._dp,&
+                exc_3b = 0._dp,&
+                exc_dipolar = 0._dp,&
+                exc_multipolar_without_coupling_to_density = 0._dp,&
+                exc_multipolar_with_coupling_to_density = 0._dp,&
+                exc_hydro = 0._dp,&
+                exc_nn_cs_plus_nbar = 0._dp, &
+                tot=0._dp,&
+                pscheme_correction=-999._dp,&
+                pbc_correction=-999._dp
   end type
   type (f_type), public :: ff
   public :: energy_and_gradient
@@ -32,7 +32,7 @@ contains
 
 
 
-  subroutine energy_and_gradient (f, df)
+subroutine energy_and_gradient (f, df)
 
     ! In this subroutine one calls the different parts of the total energy
     ! This subroutine is the one called by the minimization stuff
@@ -63,7 +63,7 @@ contains
     real(dp), parameter :: zerodp=0._dp
     real(sp) :: t(10)
     real(dp) :: fold
-    integer :: s, ns
+    integer :: ns, s
 
     if (.not. allocated(solvent)) then
       print*, "in energy_and_gradient, solvent()% is not allocated"
@@ -82,84 +82,80 @@ contains
     df = zerodp
     ! df_trash = zerodp
 
-    print*,
+    !
+    ! Ideal and external free energy functionals
+    !
+    s=1
+    if (solvent(s)%do%id_and_ext) then
+      call cpu_time(t(1))
+      call energy_ideal_and_external (ff%id, ff%ext, df)
+      call cpu_time(t(2))
+      print*, "ff%ext            =", real(ff%ext)
+      print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
+      f = f +ff%id +ff%ext
+    end if
 
+    !
+    ! purely radial component, with c_s
+    !
+    if (solvent(s)%do%exc_cs) then
+      call cpu_time(t(3))
+      call energy_cs (ff%exc_cs, df)
+      call cpu_time(t(4))
+      print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
+      f = f + ff%exc_cs
+    end if
 
-    do s=1,solvent(1)%nspec
-
-      !
-      ! Ideal and external free energy functionals
-      !
-      if (solvent(s)%do%id_and_ext) then
-        call cpu_time(t(1))
-        call energy_ideal_and_external (ff%id, ff%ext, df)
-        call cpu_time(t(2))
-        print*, "ff%ext            =", real(ff%ext)
-        print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
-        f = f +ff%id +ff%ext
-      end if
-
-      !
-      ! purely radial component, with c_s
-      !
-      if (solvent(s)%do%exc_cs) then
-        call cpu_time(t(3))
-        call energy_cs (ff%exc_cs, df)
-        call cpu_time(t(4))
-        print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
-        f = f + ff%exc_cs
-      end if
-
-      !
-      ! with c_d and c_delta
-      !
-      if (solvent(s)%do%exc_cdeltacd) then
-        call cpu_time(t(5))
-        call energy_cdeltacd (ff%exc_cdeltacd, df)
-        call cpu_time(t(6))
-        print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
-        f = f + ff%exc_cdeltacd
-      end if
+    !
+    ! with c_d and c_delta
+    !
+    if (solvent(s)%do%exc_cdeltacd) then
+      call cpu_time(t(5))
+      call energy_cdeltacd (ff%exc_cdeltacd, df)
+      call cpu_time(t(6))
+      print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
+      f = f + ff%exc_cdeltacd
+    end if
 
 
 
 
-      ! if (solvent(s)%do%exc_cproj) then
-      !     call cpu_time(t(7))
-      !     ! call energy_cproj_mrso (ff%exc_cproj, df)
-      !     ! call energy_cproj_no_symetry (ff%exc_cproj, df)
-      !     ! call energy_luc ( ff%exc_cproj , df )
-      !     call energy_luc_fast ( ff%exc_cproj, df)
-      !     call cpu_time(t(8))
-      !     print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
-      !     ! stop "energy_and_gradient after call to energy_luc"
-      !     ! print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
-      !     f = f + ff%exc_cproj
-      !     ! stop
-      ! end if
+    ! if (solvent(s)%do%exc_cproj) then
+    !     call cpu_time(t(7))
+    !     ! call energy_cproj_mrso (ff%exc_cproj, df)
+    !     ! call energy_cproj_no_symetry (ff%exc_cproj, df)
+    !     ! call energy_luc ( ff%exc_cproj , df )
+    !     call energy_luc_fast ( ff%exc_cproj, df)
+    !     call cpu_time(t(8))
+    !     print*, "ff%exc_cproj      =", ff%exc_cproj,   "in",t(8)-t(7),"sec"
+    !     ! stop "energy_and_gradient after call to energy_luc"
+    !     ! print*, "ff%exc_cproj - (ff%exc_cs+ff%exc_cdeltacd) =", ff%exc_cproj-(ff%exc_cs + ff%exc_cdeltacd)
+    !     f = f + ff%exc_cproj
+    !     ! stop
+    ! end if
 
-      ! if (solvent(s)%do%exc_ck_angular) then
-      !     call cpu_time(t(9))
-      !     call energy_ck_angular (ff%exc_ck_angular, df)
-      !     call cpu_time(t(10))
-      !     print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec"
-      !     f = f + ff%exc_ck_angular
-      ! end if
+    ! if (solvent(s)%do%exc_ck_angular) then
+    !     call cpu_time(t(9))
+    !     call energy_ck_angular (ff%exc_ck_angular, df)
+    !     call cpu_time(t(10))
+    !     print*, "ff%exc_ck_angular =", ff%exc_ck_angular,"in",t(10)-t(9),"sec"
+    !     f = f + ff%exc_ck_angular
+    ! end if
 
-      !
-      ! adhoc corrections to the solvation free energy (Hunenberger, pressure etc.)
-      !
-      if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
+    !
+    ! adhoc corrections to the solvation free energy (Hunenberger, pressure etc.)
+    !
+    if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
 
-          call typeB_corrections
-          print*, "ff%pbc correction =", real(ff%pbc_correction)
-          f = f + ff%pbc_correction
+        call typeB_corrections
+        print*, "ff%pbc correction =", real(ff%pbc_correction)
+        f = f + ff%pbc_correction
 
-          call typeC_corrections
-          print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
-          f = f + ff%pscheme_correction
+        call typeC_corrections
+        print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
+        f = f + ff%pscheme_correction
 
-      end if
+    end if
 
 
 
@@ -172,7 +168,6 @@ contains
     ! if (solvent(s)%do%exc_hydro) call energy_hydro (ff%exc_hydro, df)
     ! if (solvent(s)%do%exc_nn_cs_plus_nbar) call energy_nn_cs_plus_nbar (ff%exc_nn_cs_plus_nbar, df)
     ! if (solvent(s)%do%exc_3b) call energy_threebody_faster (ff%exc_3d, df)
-    end do
 
     ff%tot = f
 
@@ -180,7 +175,7 @@ contains
     print*, "TOTAL FF [kJ/mol] =", real(f), "|   Δf/f =", real((fold-ff%tot)/&
              maxval([abs(fold),abs(f),1._dp])), "|  l2@df=",real(norm2(df))
 
-  end subroutine energy_and_gradient
+end subroutine energy_and_gradient
 
 
 
@@ -230,14 +225,15 @@ contains
     ! R_i should not be 0 in reality (see Hunenberger's paper) but (i) the contribution is small for small ions.
     ! For bigger ions (ie charged molecules), what should one do ?
     !
+      use precision_kinds, only: dp
       use module_solvent, only: solvent
       use module_solute, only: solute
       implicit none
-      double precision :: solute_net_charge ! net charge of the solute
-      double precision :: gamma ! trace of the quadrupole moment. Should be 0.848 e.nm² for SPCE and 0.820 for SPC water.
+      real(dp) :: solute_net_charge ! net charge of the solute
+      real(dp) :: gamma ! trace of the quadrupole moment. Should be 0.848 e.nm² for SPCE and 0.820 for SPC water.
       gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
       solute_net_charge = sum(solute%site%q)
-      ff%pscheme_correction = -gamma*solvent(1)%n0*2.909857E3*solute_net_charge ! in kJ/mol
+      ff%pscheme_correction = -gamma*solvent(1)%n0*2909.857_dp*solute_net_charge ! in kJ/mol
   end subroutine typeC_corrections
 
 
