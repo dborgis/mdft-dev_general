@@ -649,20 +649,20 @@ call cpu_time(time(12))
 call cpu_time(time(13))
 total_time_in_subroutine=time(13)-time(1)
 
-print*, "---------------------- exc projections avec toutes symétries"
-print*, "       - allocations                                                  ", time(2)-time(1)  ,"sec (",nint((time(2) -time(1 ))/total_time_in_subroutine*100),"%)"
-print*, "       - print projections to file                                    ", time(3)-time(2)  ,"sec (",nint((time(3) -time(2 ))/total_time_in_subroutine*100),"%)"
-print*, "       - tabulate spherical harmonics                                 ", time(4)-time(3)  ,"sec (",nint((time(4) -time(3 ))/total_time_in_subroutine*100),"%)"
-print*, "       - plan all ffts                                                ", time(5)-time(4)  ,"sec (",nint((time(5) -time(4 ))/total_time_in_subroutine*100),"%)"
-print*, "       - project delta rho                                            ", time(6)-time(5)  ,"sec (",nint((time(6) -time(5 ))/total_time_in_subroutine*100),"%)"
-print*, "       - FFT 3D of deltarho_p                                         ", time(7)-time(6)  ,"sec (",nint((time(7) -time(6 ))/total_time_in_subroutine*100),"%)"
-print*, "       - find correspondance between q and -q                         ", time(8)-time(7)  ,"sec (",nint((time(8) -time(7 ))/total_time_in_subroutine*100),"%)"
-print*, "       - read ck                                                      ", time(9)-time(8)  ,"sec (",nint((time(9) -time(8 ))/total_time_in_subroutine*100),"%)"
-print*, "       - rotation to molecular frame + OZ + rotation back to lab frame", time(10)-time(9) ,"sec (",nint((time(10)-time(9 ))/total_time_in_subroutine*100),"%)"
-print*, "       - check all q points have been used in OZ                      ", time(11)-time(10),"sec (",nint((time(11)-time(10))/total_time_in_subroutine*100),"%)"
-print*, "       - FFT-1 of deltarho_p                                          ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
-print*, "       - Fcproj: gather projections into gamma and sum                ", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
-print*, "----------------------"
+print*, "                  --------------- exc projections avec toutes symétries"
+print*, "                  - allocations                                  ", time(2)-time(1)  ,"sec (",nint((time(2) -time(1 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - print projections to file                    ", time(3)-time(2)  ,"sec (",nint((time(3) -time(2 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - tabulate spherical harmonics                 ", time(4)-time(3)  ,"sec (",nint((time(4) -time(3 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - plan all ffts                                ", time(5)-time(4)  ,"sec (",nint((time(5) -time(4 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - project delta rho                            ", time(6)-time(5)  ,"sec (",nint((time(6) -time(5 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - FFT 3D of deltarho_p                         ", time(7)-time(6)  ,"sec (",nint((time(7) -time(6 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - find correspondance between q and -q         ", time(8)-time(7)  ,"sec (",nint((time(8) -time(7 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - read ck                                      ", time(9)-time(8)  ,"sec (",nint((time(9) -time(8 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - rotation to molecular frame + OZ + inv rot   ", time(10)-time(9) ,"sec (",nint((time(10)-time(9 ))/total_time_in_subroutine*100),"%)"
+print*, "                  - check all q points have been used in OZ      ", time(11)-time(10),"sec (",nint((time(11)-time(10))/total_time_in_subroutine*100),"%)"
+print*, "                  - FFT-1 of deltarho_p                          ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
+print*, "                  - Fcproj: gather projections into gamma and sum", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
+print*, "                  ---------------"
 
 contains
 

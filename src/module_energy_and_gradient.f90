@@ -65,6 +65,8 @@ subroutine energy_and_gradient (f, df)
     real(dp) :: fold
     integer :: ns, s
 
+    ! print*, "IN MODULE_ENERGY_AND_GRADIENT, I USE A DF_TRASH TO TEST STUFF BUT IT USES LOTS OF MEMORY AND SHOULD BE REMOVED"
+
     if (.not. allocated(solvent)) then
       print*, "in energy_and_gradient, solvent()% is not allocated"
       error stop
@@ -81,11 +83,12 @@ subroutine energy_and_gradient (f, df)
     f  = zerodp
     df = zerodp
     ! df_trash = zerodp
+    s=1
+
 
     !
     ! Ideal and external free energy functionals
     !
-    s=1
     if (solvent(s)%do%id_and_ext) then
       call cpu_time(t(1))
       call energy_ideal_and_external (ff%id, ff%ext, df)
@@ -98,25 +101,41 @@ subroutine energy_and_gradient (f, df)
     !
     ! purely radial component, with c_s
     !
-    if (solvent(s)%do%exc_cs) then
-      call cpu_time(t(3))
-      call energy_cs (ff%exc_cs, df)
-      call cpu_time(t(4))
-      print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
-      f = f + ff%exc_cs
-    end if
+    ! if (solvent(s)%do%exc_cs) then
+    !   call cpu_time(t(3))
+    !   call energy_cs (ff%exc_cs, df)
+    !   call cpu_time(t(4))
+    !   print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
+    !   f = f + ff%exc_cs
+    ! end if
 
     !
     ! with c_d and c_delta
     !
-    if (solvent(s)%do%exc_cdeltacd) then
-      call cpu_time(t(5))
-      call energy_cdeltacd (ff%exc_cdeltacd, df)
-      call cpu_time(t(6))
-      print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
-      f = f + ff%exc_cdeltacd
-    end if
+    ! if (solvent(s)%do%exc_cdeltacd) then
+    !   call cpu_time(t(5))
+    !   call energy_cdeltacd (ff%exc_cdeltacd, df)
+    !   call cpu_time(t(6))
+    !   print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
+    !   f = f + ff%exc_cdeltacd
+    ! end if
 
+
+    !
+    ! with Luc's routine
+    !
+    if (solvent(s)%do%exc_cproj) then
+      ! call cpu_time(t(5))
+      ! call energy_luc( ff%exc_cproj, df)
+      ! call cpu_time(t(6))
+      ! print*, "ff%exc_cproj luc   =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+
+      call cpu_time(t(5))
+      call energy_cproj_mrso( ff%exc_cproj, df)
+      call cpu_time(t(6))
+      print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+      f = f + ff%exc_cproj
+    end if
 
 
 
@@ -171,9 +190,11 @@ subroutine energy_and_gradient (f, df)
 
     ff%tot = f
 
-    print*, "                     -----------"
-    print*, "TOTAL FF [kJ/mol] =", real(f), "|   Δf/f =", real((fold-ff%tot)/&
-             maxval([abs(fold),abs(f),1._dp])), "|  l2@df=",real(norm2(df))
+    print*, "                     ####################"
+    print*, "TOTAL FF [kJ/mol] =  #", real(f), "#"
+    print*, "                     ####################"
+    print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"objectif=",real(0.00001)
+    print*, "pgtol=", real(maxval(df)),"objectif=",real(0.001)
 
 end subroutine energy_and_gradient
 
