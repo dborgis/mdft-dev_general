@@ -98,9 +98,7 @@ contains
         grid%no = grid%ntheta*grid%nphi*grid%npsi   ! nombez d'orientations dans la representation Euler
         grid%dphi = twopi/real(grid%nphi,dp)
         grid%dpsi = twopi/real(grid%molrotsymorder,dp)/real(grid%npsi,dp)
-        grid%np= sum( [( [( [( 1 ,  mu=0,m/2   )], mup=-m,m)], m=0,grid%mmax)] ) ! number of projections
-
-        print*, "ATTENTION DANS MODULE_GRID j'AI MIS MU=-M,M,MRSO AU LIEU DE MU=0,M,MRSO POUR DEBUGGER SLT"
+        grid%np= sum( [( [( [( 1 ,  mu=0,m/grid%molrotsymorder   )], mup=-m,m)], m=0,grid%mmax)] ) ! number of projections
         allocate( grid%theta(grid%no) , source=zero) ! io => theta
         allocate( grid%phi(grid%no) , source=zero)
         allocate( grid%psi(grid%no) , source=zero)
