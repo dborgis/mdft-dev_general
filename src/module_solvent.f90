@@ -192,8 +192,6 @@ contains
         END DO
         CLOSE(5)
 
-        call read_mole_fractions
-
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
         do concurrent (s=1:size(solvent))
@@ -243,14 +241,6 @@ contains
             print*, "In module solvent you are looking for the bulk density for nspec>3. Not implemented yet"
             error stop
         end select
-
-        if (any (solvent%n0 <= 0._dp) ) then
-            print *,"You ask for negative densities!"
-            do s =1, solvent(1)%nspec
-                print *,"For species",s,"you want density (molecule/Ang^3):",solvent(s)%n0
-            end do
-            stop
-        end if
 
         solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/grid%molrotsymorder)
 
