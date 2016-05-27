@@ -242,14 +242,6 @@ contains
             error stop
         end select
 
-        if (any (solvent%n0 <= 0._dp) ) then
-            print *,"You ask for negative densities!"
-            do s =1, solvent(1)%nspec
-                print *,"For species",s,"you want density (molecule/Ang^3):",solvent(s)%n0
-            end do
-            stop
-        end if
-
         solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/grid%molrotsymorder)
 
         call read_mole_fractions
