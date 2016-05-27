@@ -29,7 +29,7 @@ Makefile
 gmon.out
 a.out
 mdft.out
-
+output*
 build
 .cproject
 .project
