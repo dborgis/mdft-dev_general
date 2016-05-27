@@ -62,7 +62,6 @@ contains
     use module_grid, only: grid
     use module_thermo, only: thermo
     use module_solvent, only: solvent
-    use module_oz, only: oz
 
     implicit none
 
