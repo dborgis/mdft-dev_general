@@ -123,7 +123,7 @@ contains
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
         real :: accu_error_sur_q, total_time_in_subroutine
 
-call cpu_time (time(1))
+        call cpu_time (time(1))
 
         ntheta=grid%ntheta
         nphi=grid%nphi
@@ -520,15 +520,11 @@ call cpu_time (time(4))
                                         ip = p3%p(n,khi,abs(nu)/mrso)
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                                          ! IF(M<=1 .AND. N<=1) THEN
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
-                                          ! END IF
                                         else
-                                          ! IF(M<=1 .AND. N<=1) THEN
                                             gamma_m_khi_mu_q = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
-                                          ! END IF
                                         end if
 
                                     end do
@@ -584,7 +580,7 @@ call cpu_time (time(4))
             end do
         end do
 ! print*, "accumulation d'erreur sur iq =", sqrt(accu_error_sur_q)
-call cpu_time(time(10))
+  call cpu_time(time(10))
 
         if (.not.all(gamma_p_isok.eqv..true.)) then
             print*, "not all gamma_p(projections,ix,iy,iz) have not been computed"
@@ -613,15 +609,6 @@ call cpu_time(time(12))
         ! Gather projections into gamma
         ! Note that gamma==df
         !
-! block
-!   complex(dp) :: gamma_angle(1:no)
-! gamma_angle= proj2angl(deltarho_p(1:np,1,1,1))
-! do io=1,5
-!   print*,gamma_angle(io)
-! end do
-! error stop "mrso fuck you"
-! end block
-        if (.not. allocated(gamma_o)) allocate (gamma_o(1:no) ,source=0._dp)
         ff=0._dp
         do iz=1,nz
           do iy=1,ny
@@ -632,17 +619,6 @@ call cpu_time(time(12))
                 rho = xi**2*rho0
                 ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
                 df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
-
-                ! 8 JANVIER 2016
-                ! gamma_o(1:no) = -kT*proj2angl(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)*real(nphi*npsi*ntheta,dp)
-                ! df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)*solvent(1)%xi(:,ix,iy,iz)*rho0*2._dp
-                ! ff = ff + sum( gamma_o*(solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*grid%w )/2._dp *dv
-
-
-                ! CE QUE J'UTILISE DEPUIS TRES LONGTEMPS :
-                ! gamma_o(1:no) = -kT*proj2angl(deltarho_p(1:np,ix,iy,iz))/0.0333_dp*grid%w(:)**2*real(nphi*npsi*ntheta,dp)
-                ! df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + gamma_o(:)*solvent(1)%xi(:,ix,iy,iz)*rho0*2._dp
-                ! ff = ff + sum( gamma_o*(solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0) )/2._dp *dv
               end do
             end do
           end do
