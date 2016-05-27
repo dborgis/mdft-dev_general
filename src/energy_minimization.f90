@@ -65,10 +65,10 @@ call cpu_time(time(4))
 call cpu_time(time(5))
 
         if (lbfgsb%task(1:2) == "FG") then
-            print*, "]=><=[ Time to setulb: ", time(2)-time(1)
-            print*, "]=><=[ Time to energy_and_gradient: ", time(4)-time(3)
-            print*, "]=><=[ Time to full cycle (evaluation + bfgs stuff): ", time(5)-time(1)
-            print*, "==============================================================================="
+            print*, "Timing of whole cycle (evaluation + bfgs stuff): ", time(5)-time(1)
+            print*,
+            print*, "                  -----------------"
+            print*,
             print*,
             print*,
         end if

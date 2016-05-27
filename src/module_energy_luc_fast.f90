@@ -275,7 +275,6 @@ call cpu_time (time(3))
 deallocate(in)
 deallocate(delta_rho_k_angle)
 
-print*, "energy_luc took ",time(3)-time(1),"sec"
 end subroutine energy_luc_fast
 
 
@@ -338,7 +337,7 @@ end subroutine energy_luc_fast
     ! PRINT*, 'suivies des lignes de q,cmnlmunu(q) (on choisira le q le plus proche, par exces)'
     ! PRINT*, 'attention: si l pair, fonction reelle; si l impair, fonction imaginaire pure donc i implicite!'
     ! PRINT*, 'Nom du fichier --->'
-    dq=0.613592315E-01
+    dq=0.0613592315E-01
 
     if(.not.allocated(tab5)) then
       select case (mmax_ck)
@@ -404,6 +403,9 @@ end subroutine energy_luc_fast
       CLOSE(7)
       deallocate(ck)
     end if
+
+
+tab5=conjg(tab5)
 
 
 

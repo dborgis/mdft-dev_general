@@ -121,7 +121,7 @@ contains
         real(dp), parameter :: fm(0:7) = [( sqrt(real(2*m+1,dp)) ,m=0,7 )]
         real(dp) :: vexc(grid%no), rho, xi
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
-        real(dp) :: accu_error_sur_q
+        real :: accu_error_sur_q, total_time_in_subroutine
 
 call cpu_time (time(1))
 
@@ -297,18 +297,32 @@ call cpu_time (time(4))
         ! 1/ ON PREPARE LES FFT
 
         if (.not. fft2d%isalreadyplanned) then
-            call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
-            call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+            select case(dp)
+            case(c_double)
+              call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
+              call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+            case(c_float)
+              call sfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
+              call sfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+            end select
             ! call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
             fft2d%isalreadyplanned =.true.
             ifft2d%isalreadyplanned =.true.
         end if
 
         if (.not. fft3d%plan_backward_ok) then
+          select case(dp)
+          case(c_double)
             call dfftw_plan_dft_3d (fft3d%plan_backward,&
                 nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
             call dfftw_plan_dft_3d( fft3d%plan_forward,&
                 nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
+          case(c_float)
+            call sfftw_plan_dft_3d (fft3d%plan_backward,&
+                nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
+            call sfftw_plan_dft_3d( fft3d%plan_forward,&
+                nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
+          end select
             fft3d%plan_backward_ok = .true.
             fft3d%plan_forward_ok = .true.
         end if
@@ -325,22 +339,6 @@ call cpu_time (time(4))
             end do
         end do
 
-! do m=0,mmax
-!   m2=m/2
-!   do mup=-m,m
-!     do mu2=0,m2
-!       mu=2*mu2
-!       a =  deltarho_p(p3%p(m,mup,mu2),1,1,1)
-!       if(abs(a)>1.D-10) then
-!         print*, "MRSO:", m, mup, mu, deltarho_p(p3%p(m,mup,mu2),1,1,1)
-!       else
-!         print*, "MRSO:", m, mup, mu, (0,0)
-!       end if
-!     end do
-!   end do
-! end do
-! stop "bouche"
-
         call cpu_time (time(6))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -354,7 +352,12 @@ call cpu_time (time(4))
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
         do ip=1,np
+          select case(dp)
+          case(c_double)
             call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
+          case(c_float)
+            call sfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
+          end select
         end do
 
         call cpu_time (time(7))
@@ -392,6 +395,7 @@ call cpu_time (time(4))
         !call read_ck_toutes_nmax( ck, normq)
         if (.not.cq%isok) then
             call read_ck_nonzero
+            ck=conjg(ck)
             cq%isok=.true.
         end if
 
@@ -592,7 +596,12 @@ call cpu_time(time(11))
         ! FFT3D from Fourier space to real space
         !
         do ip=1,np
+          select case(dp)
+          case(c_double)
             call dfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
+          case(c_float)
+            call sfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
+          end select
         end do
         deltarho_p=deltarho_p/real(nx*ny*nz,dp)
 
@@ -636,21 +645,24 @@ call cpu_time(time(12))
             end do
           end do
         end do
-print*,"mrso ff=",ff
-call cpu_time(time(13))
 
-print*, "   > allocations                                                  ", time(2)-time(1),"sec"
-print*, "   > print projections to file                                    ", time(3)-time(2),"sec"
-print*, "   > tabulate spherical harmonics                                 ", time(4)-time(3),"sec"
-print*, "   > plan all ffts                                                ", time(5)-time(4),"sec"
-print*, "   > project delta rho                                            ", time(6)-time(5),"sec"
-print*, "   > FFT 3D of deltarho_p                                         ", time(7)-time(6),"sec"
-print*, "   > find correspondance between q and -q                         ", time(8)-time(7),"sec"
-print*, "   > read ck                                                      ", time(9)-time(8),"sec"
-print*, "   > rotation to molecular frame + OZ + rotation back to lab frame", time(10)-time(9),"sec"
-print*, "   > check all q points have been used in OZ                      ", time(11)-time(10),"sec"
-print*, "   > FFT-1 of deltarho_p                                          ", time(12)-time(11),"sec"
-print*, "   > Fcproj: gather projections into gamma and sum                ", time(13)-time(12),"sec"
+call cpu_time(time(13))
+total_time_in_subroutine=time(13)-time(1)
+
+print*, "                  |"
+print*, "                  | allocations                                  ", time(2)-time(1)  ,"sec (",nint((time(2) -time(1 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | print projections to file                    ", time(3)-time(2)  ,"sec (",nint((time(3) -time(2 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | tabulate spherical harmonics                 ", time(4)-time(3)  ,"sec (",nint((time(4) -time(3 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | plan all ffts                                ", time(5)-time(4)  ,"sec (",nint((time(5) -time(4 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | project delta rho                            ", time(6)-time(5)  ,"sec (",nint((time(6) -time(5 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | FFT 3D of deltarho_p                         ", time(7)-time(6)  ,"sec (",nint((time(7) -time(6 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | find correspondance between q and -q         ", time(8)-time(7)  ,"sec (",nint((time(8) -time(7 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | read ck                                      ", time(9)-time(8)  ,"sec (",nint((time(9) -time(8 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | rotation to molecular frame + OZ + inv rot   ", time(10)-time(9) ,"sec (",nint((time(10)-time(9 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | check all q points have been used in OZ      ", time(11)-time(10),"sec (",nint((time(11)-time(10))/total_time_in_subroutine*100),"%)"
+print*, "                  | FFT-1 of deltarho_p                          ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
+print*, "                  | Fcproj: gather projections into gamma and sum", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
+print*, "                  |"
 
 contains
 
@@ -667,7 +679,12 @@ contains
                     fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
                 end do
             end do
-            call dfftw_execute (fft2d%plan)
+            select case(dp)
+            case(c_double)
+              call dfftw_execute (fft2d%plan)
+            case(c_float)
+              call sfftw_execute (fft2d%plan)
+            end select
             foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)
             foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
         end do
@@ -703,7 +720,12 @@ contains
         do itheta=1,ntheta
             ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
             ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
-            call dfftw_execute( ifft2d%plan )
+            select case(dp)
+            case(c_double)
+              call dfftw_execute( ifft2d%plan )
+            case(c_float)
+              call sfftw_execute( ifft2d%plan )
+            end select
             do iphi=1,nphi
                 do ipsi=1,npsi
                     foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi)
