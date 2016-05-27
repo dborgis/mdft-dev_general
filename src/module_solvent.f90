@@ -192,8 +192,6 @@ contains
         END DO
         CLOSE(5)
 
-        call read_mole_fractions
-
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
         do concurrent (s=1:size(solvent))
