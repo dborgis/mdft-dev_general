@@ -475,10 +475,12 @@ call cpu_time (time(4))
                     ! the equivalent. One can show Pz(k=0) is equivalent to projection 100 of deltarho
                     !
                     if (mmax>0 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
-                      do m=1,2
-                        gamma_p_q ( p3%p(m,0,0) ) = zeroc
-                        gamma_p_mq( p3%p(m,0,0) ) = zeroc
-                      end do
+                      gamma_p_q ( p3%p(1,0,0) ) = zeroc
+                      gamma_p_mq( p3%p(1,0,0) ) = zeroc
+                      if (mmax>1) then
+                        gamma_p_q ( p3%p(2,0,0) ) = zeroc
+                        gamma_p_mq( p3%p(2,0,0) ) = zeroc
+                      end if
                     end if
 
 
