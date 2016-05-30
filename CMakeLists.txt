@@ -38,8 +38,6 @@ endif (NOT CMAKE_BUILD_TYPE)
 # (e.g. FindFFTW)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-# external libraries dependencies
-find_package(FFTW REQUIRED)
 
 #
 # check compiler (gfortran, ifort, ...)
@@ -131,11 +129,14 @@ set(mdft_SRCS
   src/module_wigner_d.f90
 )
 
+
 if (UNIX)
+  include_directories("${CMAKE_SOURCE_DIR}/libs/fftw3/include")
   message(STATUS "Building on a UNIX-like platform")
   add_executable(mdft-dev ${mdft_SRCS})
-  set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}")
-  target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
+  target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3f.so")
+  target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3.so")
+  target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3l.so")
 elseif(WIN32)
   message(STATUS "WIN32 platform not yet supported...")
 endif()
