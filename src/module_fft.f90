@@ -68,16 +68,16 @@ contains
         use module_input, only: getinput
         implicit none
         integer :: iRet
-        fftw3%nthread = getinput%int('number_of_fftw3_threads',defaultvalue=1,assert=">0")
-        if (fftw3%nthread/=1) then
-            print*,"Number of threads for FFTW3:", fftw3%nthread
-        end if
-        call dfftw_init_threads(iRet)
-        if (iRet/=1) then
-            print*, "Problem in dfftw_init_threads(), returned value is ",iRet
-            stop
-        end if
-        call dfftw_plan_with_nthreads (fftw3%nthread)
+!        fftw3%nthread = getinput%int('number_of_fftw3_threads',defaultvalue=1,assert=">0")
+!        if (fftw3%nthread/=1) then
+!            print*,"Number of threads for FFTW3:", fftw3%nthread
+!        end if
+!        call dfftw_init_threads(iRet)
+!        if (iRet/=1) then
+!            print*, "Problem in dfftw_init_threads(), returned value is ",iRet
+!            stop
+!        end if
+!        call dfftw_plan_with_nthreads (fftw3%nthread)
     end subroutine
 
 
