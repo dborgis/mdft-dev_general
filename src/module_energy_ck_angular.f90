@@ -70,12 +70,12 @@ subroutine energy_ck_angular (ff, df)
   if (ck%is_initiated .eqv. .false.) then
     call read_ck_angular
     allocate( in_forward(nx,ny,nz), source=0._dp)
-    allocate( out_forward(nx/2+1,ny,nz), source=complex(0._dp,0._dp))
-    allocate( in_backward(nx/2+1,ny,nz), source=complex(0._dp,0._dp))
+    allocate( out_forward(nx/2+1,ny,nz), source=(0._dp,0._dp))
+    allocate( in_backward(nx/2+1,ny,nz), source=(0._dp,0._dp))
     allocate( out_backward(nx,ny,nz), source=0._dp)
     call dfftw_plan_dft_r2c_3d(  plan_forward,  nx,ny,nz, in_forward , out_forward , FFTW_MEASURE )
     call dfftw_plan_dft_c2r_3d(  plan_backward, nx,ny,nz, in_backward, out_backward, FFTW_MEASURE )
-    allocate (delta_rho_k(no,nx/2+1,ny,nz), source=complex(0._dp,0._dp))
+    allocate (delta_rho_k(no,nx/2+1,ny,nz), source=(0._dp,0._dp))
     allocate ( y(no,nx,ny,nz), source=0._dp)
     call gen_angleind
   end if
@@ -99,7 +99,7 @@ subroutine energy_ck_angular (ff, df)
 
   do io1=1,no
 
-    in_backward = complex(0._dp,0._dp)
+    in_backward = (0._dp,0._dp)
 !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(ck_angular,ang,grid,delta_rho_k,ck), REDUCTION(+:in_backward)
     do iz=1,nz
       do iy=1,ny
@@ -147,14 +147,14 @@ subroutine energy_ck_angular (ff, df)
   end do
   call cpu_time(t(6))
 
-  print*,
-  print*,
+  print*
+  print*
   print*, "init =>", t(2)-t(1)
   print*, "fft deltarho", t(3)-t(2)
   print*, "coeur =", t(5)-t(4)
   print*, "calcul ff df", t(6)-t(5)
-  print*,
-  print*,
+  print*
+  print*
 end subroutine energy_ck_angular
 
 
@@ -283,7 +283,7 @@ subroutine read_ck_angular
 
   open(myunit, file=filename, FORM='unformatted', action="read")
   read(myunit) ck%nk, ck%dk, ck%ncostheta, ck%nphi, ck%npsi, ck%molrotsymorder  ! Note that psi is from 0 to pi for water, while no other symetry is taken into account
-  print*,
+  print*
   print*,"==== ck_angular ==="
   print*,"ck%nk             =",ck%nk
   print*,"ck%dk             =",ck%dk
@@ -292,7 +292,7 @@ subroutine read_ck_angular
   print*,"ck%npsi           =",ck%npsi
   print*,"ck%molrotsymorder =",ck%molrotsymorder
   print*,"==== ck_angular ==="
-  print*,
+  print*
 
   if (ck%molrotsymorder /= grid%molrotsymorder) then
     print*, "llkjiuklhfsdkhukhfswilsfewjl le fichier ck_angular.in n'a pas molrotsymorder=2"
@@ -301,7 +301,7 @@ subroutine read_ck_angular
     error stop "987IUHKJN" ! unique tag to simplify bash greps to buggy source
   end if
 
-  allocate( ck_angular(ck%npsi,ck%npsi,ck%nphi,ck%ncostheta,ck%ncostheta,ck%nk)  ,source=complex(0._dp,0._dp) )
+  allocate( ck_angular(ck%npsi,ck%npsi,ck%nphi,ck%ncostheta,ck%ncostheta,ck%nk)  ,source=(0._dp,0._dp) )
 
   rewind(myunit)
   ! what follows is here just because ck_angular.in is a single precision binary. One can't read directly the complex(dp)

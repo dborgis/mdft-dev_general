@@ -13,8 +13,8 @@ subroutine energy_minimization
     real :: time(1:10)
     integer :: i
 
-    print*,
-    print*,
+    print*
+    print*
     print*, "===== Energy minimization ====="
 
     ! Init minimization process. From allocations to optimizer parameters to guess solution
@@ -66,11 +66,11 @@ call cpu_time(time(5))
 
         if (lbfgsb%task(1:2) == "FG") then
             print*, "Timing of whole cycle (evaluation + bfgs stuff): ", time(5)-time(1)
-            print*,
+            print*
             print*, "                  -----------------"
-            print*,
-            print*,
-            print*,
+            print*
+            print*
+            print*
         end if
     end do
 

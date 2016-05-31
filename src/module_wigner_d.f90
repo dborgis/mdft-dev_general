@@ -65,7 +65,7 @@ contains
     real(dp), intent(in) :: theta, phi, psi
     integer, intent(in) :: m, mu, mup
     complex(dp) :: wigner_big_D
-    complex(dp), parameter :: ii=complex(0._dp,1._dp)
+    complex(dp), parameter :: ii=(0._dp,1._dp)
     wigner_big_D = wigner_small_d( m, mu, mup, theta ) * exp(-ii*(mu*phi+mup*psi))
   end function
 

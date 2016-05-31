@@ -85,7 +85,7 @@ contains
         grid%dv = product(grid%dl)
 
         ! We now have a full description of the space grid
-        print*,
+        print*
         print*, "===== Grid ====="
         print*, "   lx, ly, lz :", real(grid%length)
         print*, "   nx, ny, nz :", grid%n_nodes

@@ -102,7 +102,7 @@ contains
         real(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: a,b,c,d
         real(dp), dimension(-1:2*mmax+1) :: rac
         real(dp), parameter :: zerodp=0._dp
-        complex(dp), parameter :: zeroc=complex(0._dp,0._dp)
+        complex(dp), parameter :: zeroc=(0._dp,0._dp)
 
         a=zerodp
         b=zerodp

@@ -261,7 +261,7 @@ contains
         integer :: i, j, k, n, s, io, d
         real(dp)     :: r(3), kr, kvec(3)
         complex(dp)  :: fac, X
-        complex(dp), parameter :: zeroc = complex(0._dp,0._dp), ic = complex(0._dp,1._dp)
+        complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
         type :: smoother_type
             real(dp) :: radius = 0.5_dp ! dramaticaly important

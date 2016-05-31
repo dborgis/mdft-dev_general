@@ -26,8 +26,8 @@ program main
 
 
 
-    print*,
-    print*,
+    print*
+    print*
     print*,"---"
 
     call system_clock (count1)
