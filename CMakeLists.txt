@@ -18,9 +18,9 @@ project("mdft-dev")
 enable_language(Fortran)
 
 ## guard against in-source builds
-#if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-#  message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. ")
-#endif()
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. Follow instructions in README.md.")
+endif()
 
 # Build type :
 # - RELEASE (with optimization flags, without openmp)
@@ -54,7 +54,7 @@ SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "mpif90.*")
   set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -Wall -Waliasing -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
 elseif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # GNU fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
@@ -138,12 +138,12 @@ set(mdft_SRCS
 
 if (UNIX)
   #include_directories("${CMAKE_SOURCE_DIR}/libs/fftw3/include")
-  include_directories(${MPI_INCLUDE_DIRS})
+#  include_directories(${MPI_INCLUDE_DIRS})
   message(STATUS "Building on a UNIX-like platform")
   add_executable(mdft-dev ${mdft_SRCS})
   set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
-  target_link_libraries(mdft-dev ${MPI_LIBRARIES})
+#  target_link_libraries(mdft-dev ${MPI_LIBRARIES})
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3f.so")
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3.so")
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3l.so")
