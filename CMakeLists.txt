@@ -132,8 +132,13 @@ set(mdft_SRCS
   src/output_rdf.f90
   src/write_to_cube_file.f90
   src/module_wigner_d.f90
-  src/module_mpi.f90
+  src/module_mpi.F90
 )
+
+
+
+EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/input" "${CMAKE_BINARY_DIR}/input")
+
 
 
 if (UNIX)
@@ -143,6 +148,19 @@ if (UNIX)
   add_executable(mdft-dev ${mdft_SRCS})
   set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
+
+  if("${MPI_Fortran_HAS_MODULE}")
+        set_property(TARGET  mdft-dev
+                APPEND PROPERTY
+                COMPILE_DEFINITIONS "MPI_FORTRAN_HAS_MODULE")
+  endif()
+
+  include_directories(${MPI_Fortran_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH})
+  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY COMPILE_FLAGS
+        " ${MPI_Fortran_COMPILE_FLAGS}  ${MPI_C_COMPILE_FLAGS} ")
+  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY LINK_FLAGS
+        " ${MPI_Fortran_LINK_FLAGS} ${MPI_C_LINK_FLAGS} ")
+  target_link_libraries(mdft-dev ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES})
 #  target_link_libraries(mdft-dev ${MPI_LIBRARIES})
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3f.so")
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3.so")
