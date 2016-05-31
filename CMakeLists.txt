@@ -18,9 +18,9 @@ project("mdft-dev")
 enable_language(Fortran)
 
 ## guard against in-source builds
-#if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-#  message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. ")
-#endif()
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. Follow instructions in README.md.")
+endif()
 
 # Build type :
 # - RELEASE (with optimization flags, without openmp)
@@ -38,7 +38,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 # (e.g. FindFFTW)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(FFTW REQUIRED)
-
+find_package(MPI REQUIRED)
 
 #
 # check compiler (gfortran, ifort, ...)
@@ -52,7 +52,10 @@ message(STATUS "Using compiler ${Fortran_COMPILER_NAME}")
 # Have the .mod files placed in the lib folder
 SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
-if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
+if (Fortran_COMPILER_NAME MATCHES "mpif90.*")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -Wall -Waliasing -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
+elseif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # GNU fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
   set (CMAKE_Fortran_FLAGS_DEBUG "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
@@ -129,15 +132,36 @@ set(mdft_SRCS
   src/output_rdf.f90
   src/write_to_cube_file.f90
   src/module_wigner_d.f90
+  src/module_mpi.F90
 )
+
+
+
+EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/input" "${CMAKE_BINARY_DIR}/input")
+
 
 
 if (UNIX)
   #include_directories("${CMAKE_SOURCE_DIR}/libs/fftw3/include")
+#  include_directories(${MPI_INCLUDE_DIRS})
   message(STATUS "Building on a UNIX-like platform")
   add_executable(mdft-dev ${mdft_SRCS})
-  set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}")
+  set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
+
+  if("${MPI_Fortran_HAS_MODULE}")
+        set_property(TARGET  mdft-dev
+                APPEND PROPERTY
+                COMPILE_DEFINITIONS "MPI_FORTRAN_HAS_MODULE")
+  endif()
+
+  include_directories(${MPI_Fortran_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH})
+  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY COMPILE_FLAGS
+        " ${MPI_Fortran_COMPILE_FLAGS}  ${MPI_C_COMPILE_FLAGS} ")
+  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY LINK_FLAGS
+        " ${MPI_Fortran_LINK_FLAGS} ${MPI_C_LINK_FLAGS} ")
+  target_link_libraries(mdft-dev ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES})
+#  target_link_libraries(mdft-dev ${MPI_LIBRARIES})
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3f.so")
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3.so")
   #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3l.so")
