@@ -37,6 +37,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 # allow cmake to use custom modules located in cmake subdir
 # (e.g. FindFFTW)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(FFTW REQUIRED)
 
 
 #
@@ -45,6 +46,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # set where fortran module files will be located
 #
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
+#SET (CMAKE_Fortran_COMPILER  gfortran)
 message(STATUS "Using compiler ${Fortran_COMPILER_NAME}")
 
 # Have the .mod files placed in the lib folder
@@ -53,9 +55,9 @@ SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # GNU fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
-  set (CMAKE_Fortran_FLAGS_RELEASE_OPENMP "-mcmodel=large -fopenmp -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
   set (CMAKE_Fortran_FLAGS_DEBUG "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
+  set (CMAKE_Fortran_FLAGS_RELEASE_OPENMP "-mcmodel=large -fopenmp -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
   set (CMAKE_Fortran_FLAGS_DEBUG_OPENMP   "-fopenmp -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # INTEL fortran compiler
@@ -131,12 +133,14 @@ set(mdft_SRCS
 
 
 if (UNIX)
-  include_directories("${CMAKE_SOURCE_DIR}/libs/fftw3/include")
+  #include_directories("${CMAKE_SOURCE_DIR}/libs/fftw3/include")
   message(STATUS "Building on a UNIX-like platform")
   add_executable(mdft-dev ${mdft_SRCS})
-  target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3f.so")
-  target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3.so")
-  target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3l.so")
+  set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}")
+  target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
+  #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3f.so")
+  #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3.so")
+  #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3l.so")
 elseif(WIN32)
   message(STATUS "WIN32 platform not yet supported...")
 endif()
