@@ -20,8 +20,8 @@ module module_energy_cproj_mrso
     ! Parameters
     !
     real(dp), parameter :: zero=0._dp
-    complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
-    complex(dp), parameter :: ii=complex(0._dp,1._dp)
+    complex(dp), parameter :: zeroc=(0._dp, 0._dp)
+    complex(dp), parameter :: ii=(0._dp,1._dp)
     real(dp), parameter :: epsdp=epsilon(1._dp)
     real(dp), parameter :: pi=acos(-1._dp)
     real(dp), parameter :: eightpisq=8._dp*pi**2
@@ -720,7 +720,7 @@ contains
         !     implicit none
         !         real(dp) :: qx, qy, qz
         !         complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax), Rlu(0:mmax,-mmax:mmax,-mmax:mmax)
-        !         complex(dp), parameter :: ii=complex(0._dp,1._dp)
+        !         complex(dp), parameter :: ii=(0._dp,1._dp)
         !         real(dp), parameter :: epsdp=epsilon(1._dp)
         !         integer :: ix_q, iy_q, iz_q, m, mup, mu
         !         do ix_q=1,nx

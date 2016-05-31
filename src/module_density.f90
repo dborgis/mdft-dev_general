@@ -64,9 +64,9 @@ contains
                 print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
                 error stop
             ELSE ! fine
-              print*,
+              print*
               print*, '*** RESTARTING from density.bin ***'
-              print*,
+              print*
             end if
             close (10)
             return

@@ -80,7 +80,7 @@ contains
             error stop
         end if
 
-        fftw3%in_backward = complex(0._dp,0._dp)
+        fftw3%in_backward = (0._dp,0._dp)
         do iz=1,nz
             do iy=1,ny
                 do ix=1,nx/2+1

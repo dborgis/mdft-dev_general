@@ -27,7 +27,7 @@ contains
         type (errType) :: er
         real(dp), parameter :: zerodp = 0._dp
 
-        print*,
+        print*
         print*,"===== External Potential ====="
 
         nx = grid%nx

@@ -21,7 +21,7 @@ module module_energy_cproj_no_symetry
   ! Parameters
   !
   real(dp), parameter :: zero=0._dp
-  complex(dp), parameter :: zeroc=complex(0._dp, 0._dp)
+  complex(dp), parameter :: zeroc=(0._dp, 0._dp)
 
 
   !
@@ -459,7 +459,7 @@ stop
 
               if (abs(a-b) >1.E-10 ) then
                 ! if (ix_q==1 .and. iy_q==1 ) cycle ! VOIR ATTENTION JUSTE AU DESSUS !!!!! TODO ASK LUC DANIEL LU
-                print*,
+                print*
                 print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
                 print*, "ix_mq, iy_mq, iz_mq", ix_mq, iy_mq,iz_mq
                 print*, "q", [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
@@ -491,7 +491,7 @@ print*, "DELTARHO GRRR", deltarho_prime_k_p(p,2,3,4) ; stop "ok"
     !   ix_q=1
     !   iy_q=1
     !   iz_q=1
-    !   deltarho_prime_k_p( p3%p(1:,0,0) ,ix_q,iy_q,iz_q) = complex(0,0)
+    !   deltarho_prime_k_p( p3%p(1:,0,0) ,ix_q,iy_q,iz_q) = (0,0)
     ! end if
 
 
@@ -712,7 +712,7 @@ print*, "DELTARHO GRRR", deltarho_prime_k_p(p,2,3,4) ; stop "ok"
                 p=p3%p(m,khi,mu)
 
                 if (mod(mu,2)/=0) cycle!then
-                !   gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = complex(0,0)
+                !   gamma_prime_k_p(p3%p(m,khi,mu),ix_q,iy_q,iz_q) = (0,0)
                 !
                 ! end if
 

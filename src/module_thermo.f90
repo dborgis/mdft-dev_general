@@ -22,7 +22,7 @@ contains
             use module_input        ,only: getinput
             use constants           ,only: boltz, navo
             implicit none
-            print*,
+            print*
             print*, "===== Thermodynamics ====="
             thermo%T = getinput%dp('temperature', defaultvalue=300._dp, assert=">0")
             thermo%kbT = Boltz * Navo * thermo%T * 1.0e-3_dp
@@ -32,7 +32,7 @@ contains
             print*, "   kT =", real(thermo%kbt),"kJ/mol"
             print*, "   β  = (kT)⁻¹ =", real(thermo%beta),"mol/kJ"
             print*, "===== Thermodynamics ====="
-            print*,
+            print*
         end subroutine init_thermo
 
 end module module_thermo

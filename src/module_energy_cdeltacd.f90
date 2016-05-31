@@ -112,7 +112,7 @@ contains
                     if (ksq>epsdp) then
                         kP=(kx(ix)*Px_k(ix,iy,iz)+ky(iy)*Py_k(ix,iy,iz)+kz(iz)*Pz_k(ix,iy,iz))/ksq
                     else
-                        kP=complex(0._dp,0._dp)
+                        kP=(0._dp,0._dp)
                     end if
                     k=sqrt(ksq)
                     ik=int(k/dk)+1
