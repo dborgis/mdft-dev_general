@@ -7,7 +7,7 @@
 #
 
 # require cmake 2.8.0
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0.0 FATAL_ERROR)
 
 ##################
 project("mdft-dev")
@@ -25,11 +25,9 @@ endif()
 # Build type :
 # - RELEASE (with optimization flags, without openmp)
 # - DEBUG   (with debug flags, without openmp)
-# - RELEASE_OPENMP
-# - DEBUG_OPENMP
 # make sure that the default is RELEASE
 if (NOT CMAKE_BUILD_TYPE)
-    set (CMAKE_BUILD_TYPE  RELEASE  CACHE STRING
+    set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -37,7 +35,6 @@ endif (NOT CMAKE_BUILD_TYPE)
 # allow cmake to use custom modules located in cmake subdir
 # (e.g. FindFFTW)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(FFTW REQUIRED)
 find_package(MPI REQUIRED)
 
 #
@@ -52,22 +49,14 @@ message(STATUS "Using compiler ${Fortran_COMPILER_NAME}")
 # Have the .mod files placed in the lib folder
 SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
-if (Fortran_COMPILER_NAME MATCHES "mpif90.*")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -Wall -Waliasing -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
-elseif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
-  # GNU fortran compiler
+if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
   set (CMAKE_Fortran_FLAGS_DEBUG "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
-  set (CMAKE_Fortran_FLAGS_RELEASE_OPENMP "-mcmodel=large -fopenmp -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG_OPENMP   "-fopenmp -g -fimplicit-none -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
-  # INTEL fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
-  # PGI fortran compiler
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 endif()
@@ -136,18 +125,54 @@ set(mdft_SRCS
 )
 
 
-
+#
+# Create a symlink to the input folder
+#
 EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/input" "${CMAKE_BINARY_DIR}/input")
+
+#
+# Build FFTW
+#
+include(ExternalProject)
+ExternalProject_Add(
+  fftw
+  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
+  BUILD_COMMAND make -j4
+  INSTALL_COMMAND make install -j4
+)
+ExternalProject_Add(
+  fftwf
+  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
+  BUILD_COMMAND make -j4
+  INSTALL_COMMAND make install -j4
+)
+SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
+SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
+#find_package(FFTW REQUIRED)
 
 
 
 if (UNIX)
-  #include_directories("${CMAKE_SOURCE_DIR}/libs/fftw3/include")
-#  include_directories(${MPI_INCLUDE_DIRS})
   message(STATUS "Building on a UNIX-like platform")
+
+
+  #link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
+
+  include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
-  set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
-  target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
+  target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
+
+  #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
+  #target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
+
+
+  # set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
+  # target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
+
 
   if("${MPI_Fortran_HAS_MODULE}")
         set_property(TARGET  mdft-dev
@@ -161,10 +186,7 @@ if (UNIX)
   set_property(TARGET  mdft-dev APPEND_STRING PROPERTY LINK_FLAGS
         " ${MPI_Fortran_LINK_FLAGS} ${MPI_C_LINK_FLAGS} ")
   target_link_libraries(mdft-dev ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES})
-#  target_link_libraries(mdft-dev ${MPI_LIBRARIES})
-  #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3f.so")
-  #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3.so")
-  #target_link_libraries(mdft-dev "${CMAKE_SOURCE_DIR}/libs/fftw3/lib/libfftw3l.so")
+
 elseif(WIN32)
   message(STATUS "WIN32 platform not yet supported...")
 endif()
