@@ -42,8 +42,8 @@ module module_energy_cproj_mrso
         real(dp), allocatable :: normq(:)
         integer, allocatable :: m(:), n(:), mu(:), nu(:), khi(:)
     end type
-    type (cq_type) :: cq
-    complex(dp), allocatable :: ck(:,:)
+    type (cq_type), protected :: cq
+    complex(dp), allocatable, protected :: ck(:,:)
 
     type :: fft3d_c_type
         type(c_ptr) :: plan_forward
@@ -51,18 +51,15 @@ module module_energy_cproj_mrso
         logical :: plan_forward_ok = .false.
         logical :: plan_backward_ok = .false.
     end type fft3d_c_type
-    type (fft3d_c_type) :: fft3d
+    type (fft3d_c_type), protected :: fft3d
 
-    integer, allocatable :: tableof_ix_mq(:), tableof_iy_mq(:), tableof_iz_mq(:)
+    complex(dp), allocatable, protected :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
+    complex(dp), allocatable, protected :: deltarho_p_q(:)
+    complex(dp), allocatable, protected :: deltarho_p_mq(:)
+    complex(dp), allocatable, protected :: gamma_p_q(:)
+    complex(dp), allocatable, protected :: gamma_p_mq(:)
 
-    complex(dp), allocatable, target :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
-    complex(dp), allocatable :: deltarho_p_q(:)
-    complex(dp), allocatable :: deltarho_p_mq(:)
-    complex(dp), allocatable :: gamma_p_q(:)
-    complex(dp), allocatable :: gamma_p_mq(:)
-    real(dp), allocatable :: gamma_o(:)
-
-    complex(dp), allocatable :: foo_theta_mu_mup(:,:,:)
+    complex(dp), allocatable, protected :: foo_theta_mu_mup(:,:,:)
 
 
     type :: p3_type
@@ -74,7 +71,7 @@ module module_energy_cproj_mrso
         complex(dp), allocatable :: foo_q(:) ! foo (:) is a temporary array of size np
         complex(dp), allocatable :: foo_mq(:) ! foo (:) is a temporary array of size np
     end type p3_type
-    type (p3_type) :: p3
+    type (p3_type), protected :: p3
 
 
     type :: fft2d_type
@@ -89,11 +86,10 @@ module module_energy_cproj_mrso
         real(dp), allocatable    :: out(:,:)
         logical :: isalreadyplanned
     end type
-    type(  fft2d_type ), save :: fft2d
-    type( ifft2d_type ), save :: ifft2d
+    type(  fft2d_type ), save, protected :: fft2d
+    type( ifft2d_type ), save, protected :: ifft2d
 
-    complex(dp), allocatable :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
-
+    complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
     public :: energy_cproj_mrso
 
@@ -120,7 +116,7 @@ contains
         real(dp), parameter :: fm(0:7) = [( sqrt(real(2*m+1,dp)) ,m=0,7 )]
         real(dp) :: vexc(grid%no), rho, xi
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
-        real :: accu_error_sur_q, total_time_in_subroutine
+        real :: total_time_in_subroutine
 
         call cpu_time (time(1))
 
@@ -153,18 +149,9 @@ contains
         ns=solvent(1)%nspec
         rho0 = solvent(1)%rho0
 
-        ! !
-        ! ! Routine energy_cproj of mdft-dev is valid only for even numbers of nodes per direction
-        ! !
-        ! if (mod(nx,2)/=0 .or. mod(ny,2)/=0 .or. mod(nz,2)/=0) then
-        !     print*, "mdft-dev wants even grid nodes"
-        !     print*, "nx,ny,nz=",nx,ny,nz
-        !     error stop
-        ! end if
 
         if (.not. allocated(p3%foo_q)) allocate ( p3%foo_q(1:np) )
         if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
-
 
         if (.not. allocated (deltarho_p) ) then
             allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
@@ -178,14 +165,14 @@ contains
 
 call cpu_time (time(2))
 
-        ! 1/ get deltarho = rho-rho0
-        ! 2/ project deltarho => deltarho_p (use FFT2D-R2C)
-        ! 3/ FFT3D-C2C deltarho_p(x) => deltarho_p(q)
-        ! 4/ rotate to q frame
-        ! 5/ OZ: deltarho_p(q) => gamma_p(q)
-        ! 6/ rotate back to fixed frame
-        ! 7/ FFT3D-C2D gamma_p(q) => gamma_p(r)
-        ! 8/ gather projections: gamma_p(r) => gamma(r)
+        ! 1/ get Δρ(r,ω)                   :    Δρ(r,ω)          =     ρ0·(ξ²-1)
+        ! 2/ projection                    :    Δρ(r,ω)          =>    Δρ^m_mup,mu(r)
+        ! 3/ FFT3D-C2C                     :    Δρ^m_mup,mu(r)   =>    Δρ^m_mup,mu(q)
+        ! 4/ rotate to q frame             :    Δρ^m_mup,mu(q)   =>    Δρ'^m_mup,mu(q)
+        ! 5/ OZ                            :    Δρ'^m_mup,mu(q)  =>    ɣ'^m_mup,mu(q)
+        ! 6/ rotate back to fixed frame    :    ɣ'^m_mup,mu(q)   =>    ɣ^m_mup,mu(q)
+        ! 7/ FFT3D-C2D                     :    ɣ^m_mup,mu(q)    =>    ɣ^m_mup,mu(r)
+        ! 8/ gather projections            :    ɣ^m_mup,mu(r)    =>    ɣ(r,ω)
 
 
         !
@@ -545,9 +532,15 @@ call cpu_time (time(4))
                     gamma_p_mq = p3%foo_mq
 
 
+                    !
+                    ! For vector q,
+                    !
                     deltarho_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
+                    !
+                    ! Again, pay attention to the singular mid-k point
+                    !
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
                         deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
                     else
