@@ -140,12 +140,21 @@ contains
             return
         end if
 
-        ! build q-frame
+        !
+        ! Build q-frame XYZ
+        !
+
+        !
+        ! Start by aligning the new Z along q
+        !
         if (q(1)==0._dp .and. q(2)==0._dp .and. q(3)==0._dp) then
             rmat3 = (/0._dp,0._dp,1._dp/)                            ! theta definied as zero.
         else
             rmat3 = q
         end if
+        !
+        ! Then deal with X and Y
+        !
         if (rmat3(1)/=0._dp .or. rmat3(2)/=0._dp) then       ! if rmat3 is along with axis z, the GSH is null, and we don't carre about phi.
             rmat2 = cross_product((/0._dp,0._dp,1._dp/),rmat3) ! in the MDFT definition of Omega, the rotation axes are z-y-z.
         else ! qx=qy=0
@@ -155,6 +164,9 @@ contains
                 rmat2 = -cross_product(rmat3,(/1._dp,0._dp,0._dp/))
             end if
         end if
+        !
+        ! Normalize
+        !
         rmat3 = rmat3 / norm2(rmat3)
         rmat2 = rmat2 / norm2(rmat2)       ! to avoid round up error if rmat3 is so closed to z.
         rmat1 = cross_product(rmat2,rmat3)

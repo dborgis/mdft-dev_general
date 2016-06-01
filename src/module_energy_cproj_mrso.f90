@@ -100,7 +100,6 @@ module module_energy_cproj_mrso
 contains
 
     subroutine energy_cproj_mrso (ff,df)
-        ! use ieee_arithmetic
         use iso_c_binding, only: c_ptr
         use precision_kinds, only: dp
         use module_grid, only: grid
@@ -313,15 +312,11 @@ call cpu_time (time(4))
         if (.not. fft3d%plan_backward_ok) then
           select case(dp)
           case(c_double)
-            call dfftw_plan_dft_3d (fft3d%plan_backward,&
-                nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
-            call dfftw_plan_dft_3d( fft3d%plan_forward,&
-                nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
+            call dfftw_plan_dft_3d (fft3d%plan_backward, nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
+            call dfftw_plan_dft_3d( fft3d%plan_forward, nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
           case(c_float)
-            call sfftw_plan_dft_3d (fft3d%plan_backward,&
-                nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
-            call sfftw_plan_dft_3d( fft3d%plan_forward,&
-                nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
+            call sfftw_plan_dft_3d (fft3d%plan_backward,nx, ny, nz, deltarho_p(1,:,:,:), deltarho_p(1,:,:,:), FFTW_BACKWARD, FFTW_MEASURE) ! TODO CHECK ESTIMATE VS REST & IS IT WORTH CHANGEING THE PLAN FLAG FOR DIFFERENT np ? Certainly!
+            call sfftw_plan_dft_3d( fft3d%plan_forward, nx, ny, nz, deltarho_p(1,1:nx,1:ny,1:nz), deltarho_p(1,1:nx,1:ny,1:nz), FFTW_FORWARD, FFTW_MEASURE )
           end select
             fft3d%plan_backward_ok = .true.
             fft3d%plan_forward_ok = .true.
@@ -397,36 +392,41 @@ call cpu_time (time(4))
             call read_ck_nonzero
             ck=conjg(ck)
             cq%isok=.true.
+            block
+                integer :: iqmax
+                iqmax = int(   norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))]) /cq%dq +0.5)  +1
+                if( iqmax > cq%nq) error stop "The file containing c^mn_munu,khi(q) has too low a resolution. See energy_cproj_mrso"
+            end block
         end if
 
         call cpu_time (time(9))
 
         if (.not. allocated(R) ) allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=zeroc)
 
-        ! accu_error_sur_q=0 ! this is a small accumulator on the error due to interpolating q in c(q)
         !
-        ! For all vectors q and -q handled simultaneously
+        ! For all vectors q and -q handled simultaneously.
+        ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
-        do ix_q=1,nx
+        do iz_q=1,nz/2+1
+            iz_mq = grid%iz_mq(iz_q)
             do iy_q=1,ny
-                do iz_q=1,nz/2+1
-
-                    !
-                    ! cartesian coordinates of vector q  and mq (-q) in lab frame
-                    !
-
-                    !
-                    ! Find ix_mq,iy_mq,iz_mq so that q(ix_mq,iy_mq,iz_mq)= -q(ix_q,iy_q,iz_q)
-                    !
+                iy_mq = grid%iy_mq(iy_q)
+                do ix_q=1,nx
                     ix_mq = grid%ix_mq(ix_q)
-                    iy_mq = grid%iy_mq(iy_q)
-                    iz_mq = grid%iz_mq(iz_q)
 
+                    !
+                    ! gamma_p_isok is a logical array. If gamma(ix_q,iy_q,iz_q) has already been calculated, it is .true.
+                    !
                     if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq,iz_mq) ) cycle
 
+                    !
+                    ! cartesian coordinates of vector q in lab frame
+                    !
                     q = [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
-                    ! mq = [grid%kx(ix_mq), grid%ky(iy_mq), grid%kz(iz_mq)]  ! <= c'est faux pour nx/2+1, ny/2+1 and nz/2+1 où nx, ny ou nz sont pairs.
 
+                    !
+                    ! pay attention to the special case(s) where q=-q
+                    !
                     if (ix_mq==ix_q .and. iy_mq==iy_q .and. iz_mq==iz_q) then ! this should only happen for ix=1 and ix=nx/2
                         q_eq_mq=.true.
                     else
@@ -468,33 +468,12 @@ call cpu_time (time(4))
                     deltarho_p_mq = p3%foo_mq
 
 
-
-
-                    !
-                    ! Consider the case of Pz(k=0). In cdeltacd, we impose it is zeroc because it is non defined. Here we do
-                    ! the equivalent. One can show Pz(k=0) is equivalent to projection 100 of deltarho
-                    !
-                    if (mmax>0 .and. ix_q==1 .and. iy_q==1 .and. iz_q==1) then
-                      gamma_p_q ( p3%p(1,0,0) ) = zeroc
-                      gamma_p_mq( p3%p(1,0,0) ) = zeroc
-                      if (mmax>1) then
-                        gamma_p_q ( p3%p(2,0,0) ) = zeroc
-                        gamma_p_mq( p3%p(2,0,0) ) = zeroc
-                      end if
-                    end if
-
-
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for cq%nq values of |q|.
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
                     iq = int( norm2(q) /cq%dq +0.5) +1
-                    if (iq >cq%nq) error stop "we need larger norm of q in Luc's cq"
-                    ! accu_error_sur_q = accu_error_sur_q + (norm2(q)- (iq-1)*cq%dq)**2
-
-                    ! iq = min( int(norm2(q)/cq%dq)+1   ,nq)
-
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -579,7 +558,7 @@ call cpu_time (time(4))
                 end do
             end do
         end do
-! print*, "accumulation d'erreur sur iq =", sqrt(accu_error_sur_q)
+
   call cpu_time(time(10))
 
         if (.not.all(gamma_p_isok.eqv..true.)) then
@@ -589,18 +568,20 @@ call cpu_time (time(4))
 
 call cpu_time(time(11))
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         !
         ! FFT3D from Fourier space to real space
         !
-        do ip=1,np
-          select case(dp)
-          case(c_double)
-            call dfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
-          case(c_float)
-            call sfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
-          end select
-        end do
+        select case(dp)
+        case(c_double)
+            do ip=1,np
+                call dfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
+            end do
+        case(c_float)
+            do ip=1,np
+                call sfftw_execute_dft( fft3d%plan_forward, deltarho_p(ip,1:nx,1:ny,1:nz), deltarho_p(ip,1:nx,1:ny,1:nz) )
+            end do
+        end select
         deltarho_p=deltarho_p/real(nx*ny*nz,dp)
 
 call cpu_time(time(12))
@@ -788,7 +769,7 @@ contains
             open(newunit=ufile, file=filename, iostat=ios, status="old", action="read")
             if ( ios /= 0 ) then
                 print*, "Cant open file", filename
-                error stop "in module_energy_cproj.f90"
+                error stop "in module_energy_cproj_mrso.f90"
             end if
 
             if (.not.allocated(cq%normq)) allocate(cq%normq(cq%nq), source=0._dp)
@@ -804,11 +785,9 @@ contains
                 allocate ( cq%mu (cq%na) ,source=-huge(1))
                 allocate ( cq%nu (cq%na) ,source=-huge(1))
                 allocate ( cq%khi(cq%na) ,source=-huge(1))
-                block
-                  integer :: mmax
-                  mmax = grid%mmax
-                  allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
-                end block
+                associate(mmax=>grid%mmax)
+                allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+                end associate
             end if
             !
             ! Skip 10 lines of comments
@@ -848,8 +827,8 @@ contains
             ! cette valuer maximum effective de |q| dans le code, on l'appelle qmax_effectif
             ! on appelle son indice : iqmax_effectif
             !
-            qmax_effectif = maxval ( sqrt(grid%kx**2 + grid%ky**2 + grid%kz**2)  )
-            iqmax_effectif = int( qmax_effectif / cq%dq  ) + 10 ! +10 is just to be safe. +1 suffit très certainement.
+            qmax_effectif = norm2([maxval(grid%kx(1:nx)),maxval(grid%ky(1:ny)),maxval(grid%kz(1:nz/2+1))])
+            iqmax_effectif = int( qmax_effectif / cq%dq  +0.5  ) + 1 ! +10 is just to be safe. +1 suffit très certainement.
             cq%nq = iqmax_effectif
             allocate( ck(cq%na, cq%nq), source=ck_full(1:cq%na,1:cq%nq))
             deallocate( ck_full )
