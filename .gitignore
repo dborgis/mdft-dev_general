@@ -1,13 +1,17 @@
 mdft
 mdft-dev
 *DS_Store*
+mod
 mod/
+mod/*
+*.mod
 input/solute/chloroform
 log
 *~
-*.mod
-*.o
+obj
 obj/
+obj/*
+*.o
 input/cdelta.in
 input/ck_angular.in
 input/ck_angular_daniel.in
@@ -31,5 +35,7 @@ a.out
 mdft.out
 output*
 build
+build/
+build/*
 .cproject
 .project
