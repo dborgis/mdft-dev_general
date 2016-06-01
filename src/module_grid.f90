@@ -32,7 +32,11 @@ module module_grid
         real(dp), allocatable, dimension(:) :: rotxx, rotxy, rotxz, rotyx, rotyy, rotyz, rotzx, rotzy, rotzz
         real(dp), allocatable, dimension(:) :: OMx, OMy, OMz
     contains
-        procedure, nopass :: init, integrate_over_orientations, ix_mq, iy_mq, iz_mq
+        procedure, nopass :: init
+        procedure, nopass :: integrate_over_orientations
+        procedure, nopass :: ix_mq
+        procedure, nopass :: iy_mq
+        procedure, nopass :: iz_mq
     end type somegrid
     type(somegrid), protected :: grid
     real(dp), parameter, private :: eightpisq=8._dp*acos(-1._dp)**2
