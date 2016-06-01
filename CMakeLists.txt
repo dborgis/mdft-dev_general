@@ -150,6 +150,8 @@ ExternalProject_Add(
   BUILD_COMMAND make -j4
   INSTALL_COMMAND make install -j4
 )
+SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
+SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
 #find_package(FFTW REQUIRED)
 
 
@@ -157,12 +159,15 @@ ExternalProject_Add(
 if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
 
-  link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
+  #link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
+
+  include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
+  target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
 
-  set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
-  target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
+  #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
+  #target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
 
   # set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
