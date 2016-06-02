@@ -47,10 +47,10 @@ subroutine energy_and_gradient (f, df)
     use module_energy_cs, only: energy_cs
     use module_energy_cdeltacd, only: energy_cdeltacd
     use module_energy_cproj_mrso, only: energy_cproj_mrso
-    use module_energy_cproj_no_symetry, only: energy_cproj_no_symetry
-    use module_energy_ck_angular, only: energy_ck_angular
-    use module_energy_luc, only: energy_luc
-    use module_energy_luc_fast, only: energy_luc_fast
+    ! use module_energy_cproj_no_symetry, only: energy_cproj_no_symetry
+    ! use module_energy_ck_angular, only: energy_ck_angular
+    ! use module_energy_luc, only: energy_luc
+    ! use module_energy_luc_fast, only: energy_luc_fast
     use module_input, only: getinput
     ! use module_energy_cproj_slow, only: energy_cproj_slow
 

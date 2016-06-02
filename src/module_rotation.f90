@@ -54,18 +54,22 @@ contains
     pure function rotation_matrix_from_lab_to_q_frame_lu (q) result (rmat)
         implicit none
         real(dp), intent(in) :: q(3)
-        real(dp) :: rmat(3,3), rmat1(3), rmat2(3), rmat3(3)
+        real(dp) :: rmat(3,3)
+        real(dp) :: rmat1(3), rmat2(3), rmat3(3)
+        real(dp) :: n2rmat3
         if (q(1)==0._dp .and. q(2)==0._dp .and. q(3)==0._dp) then
             rmat3 = (/0._dp,0._dp,1._dp/)                            ! theta definied as zero.
+            n2rmat3 = 1._dp
         else
             rmat3 = q
+            n2rmat3 = sqrt(q(1)**2+q(2)**2+q(3)**2)
         end if
         if (rmat3(1)/=0._dp .or. rmat3(2)/=0._dp) then       ! if rmat3 is along with axis z, the GSH is null, and we don't carre about phi.
             rmat2 = cross_product((/0._dp,0._dp,1._dp/),rmat3) ! in the MDFT definition of Omega, the rotation axes are z-y-z.
         else
             rmat2 = cross_product(rmat3,(/1._dp,0._dp,0._dp/)) ! cross product of rmat3 and axis x gives axis y, phi definied as zero.
         end if
-        rmat3 = rmat3 / norm2(rmat3)
+        rmat3 = rmat3 / n2rmat3
         rmat2 = rmat2 / norm2(rmat2)       ! to avoid round up error if rmat3 is so closed to z.
         rmat1 = cross_product(rmat2,rmat3)
         rmat(:,1) = rmat1
@@ -86,19 +90,19 @@ contains
         cross_product(3) = a(1)*b(2)-a(2)*b(1)
     end function cross_product
 
-     function rotation_matrix_between_complex_spherical_harmonics_lu(q,mmax) result(R)
+    pure function rotation_matrix_between_complex_spherical_harmonics_lu(q,mmax) result(R)
 
-        use precision_kinds, only : i2b,dp
+        use precision_kinds, only : dp
         implicit none
 
-        integer(i2b), intent(in) :: mmax
+        integer, intent(in) :: mmax
         real(dp), parameter :: rac2=sqrt(2._dp)
         real(dp), dimension(3), intent(in) :: q
         complex(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: R
         real(dp), dimension(3) :: rmat1,rmat2,rmat3
         real(dp), dimension(3,3) :: rmat
         real(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: f,g
-        integer(i2b) :: l,l1,m,m1,m1min,k
+        integer :: l,l1,m,m1,m1min,k
         real(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: a,b,c,d
         real(dp), dimension(-1:2*mmax+1) :: rac
         real(dp), parameter :: zerodp=0._dp
