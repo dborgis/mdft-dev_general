@@ -35,7 +35,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 # allow cmake to use custom modules located in cmake subdir
 # (e.g. FindFFTW)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(MPI REQUIRED)
+#find_package(MPI REQUIRED)
 
 #
 # check compiler (gfortran, ifort, ...)
@@ -121,7 +121,7 @@ set(mdft_SRCS
   src/output_rdf.f90
   src/write_to_cube_file.f90
   src/module_wigner_d.f90
-  src/module_mpi.F90
+#  src/module_mpi.F90
 )
 
 
@@ -174,18 +174,18 @@ if (UNIX)
   # target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
 
 
-  if("${MPI_Fortran_HAS_MODULE}")
-        set_property(TARGET  mdft-dev
-                APPEND PROPERTY
-                COMPILE_DEFINITIONS "MPI_FORTRAN_HAS_MODULE")
-  endif()
+#  if("${MPI_Fortran_HAS_MODULE}")
+#        set_property(TARGET  mdft-dev
+#                APPEND PROPERTY
+#                COMPILE_DEFINITIONS "MPI_FORTRAN_HAS_MODULE")
+#  endif()
 
-  include_directories(${MPI_Fortran_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH})
-  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY COMPILE_FLAGS
-        " ${MPI_Fortran_COMPILE_FLAGS}  ${MPI_C_COMPILE_FLAGS} ")
-  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY LINK_FLAGS
-        " ${MPI_Fortran_LINK_FLAGS} ${MPI_C_LINK_FLAGS} ")
-  target_link_libraries(mdft-dev ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES})
+#  include_directories(${MPI_Fortran_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH})
+#  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY COMPILE_FLAGS
+#        " ${MPI_Fortran_COMPILE_FLAGS}  ${MPI_C_COMPILE_FLAGS} ")
+#  set_property(TARGET  mdft-dev APPEND_STRING PROPERTY LINK_FLAGS
+#        " ${MPI_Fortran_LINK_FLAGS} ${MPI_C_LINK_FLAGS} ")
+#  target_link_libraries(mdft-dev ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES})
 
 elseif(WIN32)
   message(STATUS "WIN32 platform not yet supported...")
