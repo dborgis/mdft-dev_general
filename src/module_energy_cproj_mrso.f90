@@ -27,8 +27,6 @@ module module_energy_cproj_mrso
     real(dp), parameter :: eightpisq=8._dp*pi**2
     real(dp), parameter :: twopi=2._dp*pi
 
-
-
     !
     ! Direct correlation functions from Luc
     !
@@ -37,7 +35,7 @@ module module_energy_cproj_mrso
         real(dp) :: q
         integer :: na ! number of projections for the direct correlation function
         integer :: nq=1024 ! number of q points in c(q)
-        integer, allocatable :: a(:,:,:,:,:) ! index of m, n, mu, nu, khi => (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
+!        integer, allocatable :: a(:,:,:,:,:) ! index of m, n, mu, nu, khi => (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
         integer, allocatable :: a2(:,:,:,:,:) ! index of m, n, mu2, nu2, khi => (0:mmax,0:mmax,-mmax/mrso:mmax/mrso,-mmax/mrso:mmax/mrso,-mmax:mmax) ! m n mu nu khi
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
@@ -69,8 +67,8 @@ module module_energy_cproj_mrso
         integer, allocatable :: m(:) ! m for projection 1 to np
         integer, allocatable :: mup(:) ! mup for projection 1 to np. mup corresponds to phi
         integer, allocatable :: mu(:) ! mu for projection 1 to np. mu corresponds to psi
-        complex(dp), allocatable :: foo_q(:) ! foo (:) is a temporary array of size np
-        complex(dp), allocatable :: foo_mq(:) ! foo (:) is a temporary array of size np
+!        complex(dp), allocatable :: foo_q(:) ! foo (:) is a temporary array of size np
+!        complex(dp), allocatable :: foo_mq(:) ! foo (:) is a temporary array of size np
     end type p3_type
     type (p3_type), protected :: p3
 
@@ -97,6 +95,7 @@ module module_energy_cproj_mrso
 contains
 
     subroutine energy_cproj_mrso (ff,df)
+        use omp_lib
         use iso_c_binding, only: c_ptr
         use precision_kinds, only: dp
         use module_grid, only: grid
@@ -150,9 +149,6 @@ contains
         ns=solvent(1)%nspec
         rho0 = solvent(1)%rho0
 
-
-        if (.not. allocated(p3%foo_q)) allocate ( p3%foo_q(1:np) )
-        if (.not. allocated(p3%foo_mq)) allocate ( p3%foo_mq(1:np) )
 
         if (.not. allocated (deltarho_p) ) then
             allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
@@ -395,7 +391,8 @@ call cpu_time (time(4))
         ! For all vectors q and -q handled simultaneously.
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
-!        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,p3,cq,deltarho_p)
+
+        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck), PRIVATE(iz_q,iy_q,ix_q,R,ix_mq,iy_mq,iz_mq,q,q_eq_mq,deltarho_p_q,deltarho_p_mq,gamma_p_q,gamma_p_mq)
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
             do iy_q=1,ny
@@ -439,8 +436,8 @@ call cpu_time (time(4))
                     !
                     ! Rotation to molecular (q) frame
                     !
-                    p3%foo_q = zeroc
-                    p3%foo_mq = zeroc
+                    deltarho_p_q  = zeroc
+                    deltarho_p_mq = zeroc
                     do m=0,mmax
                         do khi=-m,m
                             do mu=0,m,mrso
@@ -448,15 +445,12 @@ call cpu_time (time(4))
                                 ! Equation 1.22
                                 do mup=-m,m
                                     ip2=p3%p(m,mup,mu/mrso)
-                                    p3%foo_q(ip) = p3%foo_q(ip)  + deltarho_p_q(ip2)          *R(m,mup,khi)
-                                    p3%foo_mq(ip) = p3%foo_mq(ip) + deltarho_p_mq(ip2)*(-1)**m*R(m,mup,-khi)
+                                    deltarho_p_q (ip) = deltarho_p_q (ip) + deltarho_p(ip2,ix_q,iy_q,iz_q)            *R(m,mup, khi)
+                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + deltarho_p(ip2,ix_mq,iy_mq,iz_mq) *(-1)**m*R(m,mup,-khi)
                                 end do
                             end do
                         end do
                     end do
-                    deltarho_p_q = p3%foo_q
-                    deltarho_p_mq = p3%foo_mq
-
 
                     !
                     ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for cq%nq values of |q|.
@@ -509,16 +503,13 @@ call cpu_time (time(4))
                         end do
                     end do
 
-
-
-
                     !
                     ! Rotation from molecular frame to fix frame
                     !
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
-
-                    p3%foo_q = zeroc
-                    p3%foo_mq = zeroc
+                    ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
+                    deltarho_p_q  = zeroc
+                    deltarho_p_mq = zeroc
                     do m=0,mmax
                         do mup=-m,m
                             do mu=0,m,mrso
@@ -526,15 +517,15 @@ call cpu_time (time(4))
                                 ! Equation 1.22
                                 do khi=-m,m
                                     ip2=p3%p(m,khi,mu/mrso)
-                                    p3%foo_q(ip) = p3%foo_q(ip)   + gamma_p_q(ip2)  *R(m,mup,khi)
-                                    p3%foo_mq(ip) = p3%foo_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)  ! == p3%foo_mq(ip) + gamma_p_mq(ip2)*gshrot_mq(m,mup,khi)
+                                    deltarho_p_q (ip) = deltarho_p_q (ip) + gamma_p_q(ip2)  *R(m,mup,khi)
+                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
                                 end do
                                 !
                             end do
                         end do
                     end do
-                    gamma_p_q = p3%foo_q
-                    gamma_p_mq = p3%foo_mq
+                    gamma_p_q = deltarho_p_q
+                    gamma_p_mq = deltarho_p_mq
 
 
                     !
@@ -556,7 +547,7 @@ call cpu_time (time(4))
                 end do
             end do
         end do
-        !            !$OMP END PARALLEL DO
+        !$OMP END PARALLEL DO
 
 
   call cpu_time(time(10))
