@@ -38,11 +38,12 @@ module module_energy_cproj_mrso
         integer :: na ! number of projections for the direct correlation function
         integer :: nq=1024 ! number of q points in c(q)
         integer, allocatable :: a(:,:,:,:,:) ! index of m, n, mu, nu, khi => (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
+        integer, allocatable :: a2(:,:,:,:,:) ! index of m, n, mu2, nu2, khi => (0:mmax,0:mmax,-mmax/mrso:mmax/mrso,-mmax/mrso:mmax/mrso,-mmax:mmax) ! m n mu nu khi
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
         integer, allocatable :: m(:), n(:), mu(:), nu(:), khi(:)
     end type
-    type (cq_type), protected :: cq
+    type(cq_type), protected :: cq
     complex(dp), allocatable, protected :: ck(:,:)
 
     type :: fft3d_c_type
@@ -102,12 +103,12 @@ contains
         use module_thermo, only: thermo
         implicit none
         real(dp), intent(out) :: ff
-        real(dp), intent(inout) :: df(:,:,:,:,:) ! x y z o s
+        real(dp), contiguous, intent(inout) :: df(:,:,:,:,:) ! x y z o s
         real(dp) :: dv, kT
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, m2, mu2
+        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, m2, mu2, nu2
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq, a
         real(dp) :: q(3), mq(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
@@ -394,6 +395,7 @@ call cpu_time (time(4))
         ! For all vectors q and -q handled simultaneously.
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
+!        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,p3,cq,deltarho_p)
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
             do iy_q=1,ny
@@ -432,6 +434,7 @@ call cpu_time (time(4))
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax )
                     ! Eq. 1.23 We don't need to compute gshrot for -q since there are symetries between R(q) and R(-q).
                     ! Thus, we do q and -q at the same time. That's the most important point in doing all q but half of mu.
+                    ! Lu decided to do all mu but half of q in her code
 
                     !
                     ! Rotation to molecular (q) frame
@@ -466,24 +469,26 @@ call cpu_time (time(4))
                     ! Ornstein-Zernike in the molecular frame
                     ! We do OZ for q and -q at the same time
                     !
-                    gamma_p_q(1:np) = zeroc
-                    gamma_p_mq(1:np) = zeroc
+                    gamma_p_q  = zeroc
+                    gamma_p_mq = zeroc !1:np
 
-                    do khi=-mmax,mmax
-                        do m=abs(khi),mmax
+                    do concurrent( khi=-mmax:mmax)
+                        do concurrent( m=abs(khi):mmax)
 
-                            do mu=0,m,mrso ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
+                            do concurrent( mu=0:m:mrso) ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
+                              mu2=mu/mrso
 
                                 gamma_m_khi_mu_q= zeroc
                                 gamma_m_khi_mu_mq = zeroc
 
-                                do n=abs(khi),mmax
+                                do concurrent(n=abs(khi):mmax)
 
-                                    do nu= -mrso*(n/mrso), mrso*(n/mrso), mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
+                                    do concurrent( nu= -mrso*(n/mrso): mrso*(n/mrso): mrso)   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
+                                      nu2=nu/mrso
 
-                                        ia = cq%a(m,n,mu,nu,khi) ! the index of the projection of c(q). 1<=ia<na
+                                        ia = cq%a2(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
 
-                                        ip = p3%p(n,khi,abs(nu)/mrso)
+                                        ip = p3%p(n,khi,abs(nu2))
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
@@ -496,7 +501,7 @@ call cpu_time (time(4))
                                     end do
                                 end do
 
-                                ip=p3%p(m,khi,mu/mrso)
+                                ip=p3%p(m,khi,mu2)
 
                                 gamma_p_q(ip)  = gamma_m_khi_mu_q
                                 gamma_p_mq(ip) = gamma_m_khi_mu_mq
@@ -551,6 +556,8 @@ call cpu_time (time(4))
                 end do
             end do
         end do
+        !            !$OMP END PARALLEL DO
+
 
   call cpu_time(time(10))
 
@@ -603,17 +610,14 @@ total_time_in_subroutine=time(13)-time(1)
 
 print*, "                  |"
 print*, "                  | allocations                                  ", time(2)-time(1)  ,"sec (",nint((time(2) -time(1 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | print projections to file                    ", time(3)-time(2)  ,"sec (",nint((time(3) -time(2 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | tabulate spherical harmonics                 ", time(4)-time(3)  ,"sec (",nint((time(4) -time(3 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | plan all ffts                                ", time(5)-time(4)  ,"sec (",nint((time(5) -time(4 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | project delta rho                            ", time(6)-time(5)  ,"sec (",nint((time(6) -time(5 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | FFT 3D of deltarho_p                         ", time(7)-time(6)  ,"sec (",nint((time(7) -time(6 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | find correspondance between q and -q         ", time(8)-time(7)  ,"sec (",nint((time(8) -time(7 ))/total_time_in_subroutine*100),"%)"
 print*, "                  | read ck                                      ", time(9)-time(8)  ,"sec (",nint((time(9) -time(8 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | tabulate spherical harmonics                 ", time(4)-time(3)  ,"sec (",nint((time(4) -time(3 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | plan FFTs                                    ", time(5)-time(4)  ,"sec (",nint((time(5) -time(4 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | angl2proj                                    ", time(6)-time(5)  ,"sec (",nint((time(6) -time(5 ))/total_time_in_subroutine*100),"%)"
+print*, "                  | FFT  @Δρ^m_mup_mu(k)                         ", time(7)-time(6)  ,"sec (",nint((time(7) -time(6 ))/total_time_in_subroutine*100),"%)"
 print*, "                  | rotation to molecular frame + OZ + inv rot   ", time(10)-time(9) ,"sec (",nint((time(10)-time(9 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | check all q points have been used in OZ      ", time(11)-time(10),"sec (",nint((time(11)-time(10))/total_time_in_subroutine*100),"%)"
-print*, "                  | FFT-1 of deltarho_p                          ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
-print*, "                  | Fcproj: gather projections into gamma and sum", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
+print*, "                  | FFT⁻¹@Δρ^m_mup_mu(k)                         ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
+print*, "                  | proj2angl + sum to ff and df                 ", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
 print*, "                  |"
 
 contains
@@ -621,7 +625,7 @@ contains
 
     function angl2proj (foo_o) result (foo_p)
         implicit none
-        real(dp), intent(in) :: foo_o(:) ! orientations from 1 to no
+        real(dp), contiguous, intent(in) :: foo_o(:) ! orientations from 1 to no
         complex(dp) :: foo_p(1:grid%np)
         integer :: itheta, iphi, ipsi, m, mup, mu, ip
         foo_theta_mu_mup = zeroc
@@ -655,7 +659,7 @@ contains
     function proj2angl (foo_p) result (foo_o)
         implicit none
         real(dp) :: foo_o (1:grid%no)
-        complex(dp), intent(in) :: foo_p(:) ! np
+        complex(dp), contiguous, intent(in) :: foo_p(:) ! np
         foo_theta_mu_mup = zeroc
         foo_o = 0._dp
         do mup=-mmax,mmax
@@ -686,50 +690,6 @@ contains
         end do
     end function proj2angl
 
-
-        ! subroutine test_routines_calcul_de_Rm_mup_mu_q
-        !     !
-        !     ! ici test de la routine de Choi
-        !     !
-        !     implicit none
-        !         real(dp) :: qx, qy, qz
-        !         complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax), Rlu(0:mmax,-mmax:mmax,-mmax:mmax)
-        !         complex(dp), parameter :: ii=(0._dp,1._dp)
-        !         real(dp), parameter :: epsdp=epsilon(1._dp)
-        !         integer :: ix_q, iy_q, iz_q, m, mup, mu
-        !         do ix_q=1,nx
-        !             do iy_q=1,ny
-        !                 do iz_q=1,nz
-        !                     qx=grid%kx(ix_q)
-        !                     qy=grid%ky(iy_q)
-        !                     qz=grid%kz(iz_q)
-        !                     R= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! exactement Luc
-        !                     Rlu= rotation_matrix_between_complex_spherical_harmonics_lu ([qx,qy,qz], mmax) ! Lu
-        !                     do m=0,mmax
-        !                         do mup=-m,m
-        !                             do mu=-m,m
-        !                                 if (abs(&
-        !                                     Rlu(m,mup,mu)-wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))&
-        !                                         >1E-10) then
-        !                                     print*, "dans test_routines_calcul_de_Rm_mup_mu_q on a Choi+Lu /= Wigner"
-        !                                     print*, "ix_q, iy_q, iz_q",ix_q, iy_q, iz_q
-        !                                     print*, "qx qy qz", qx, qy, qz
-        !                                     print*, "m, mup, mu", m, mup, mu
-        !                                     print*, "Rlu(m,mup,mu)",Rlu(m,mup,mu)
-        !                                     print*, "wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))",&
-        !                                     wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy))
-        !                                     print*, "diff=",&
-        !                                     abs(Rlu(m,mup,mu)-wigner_small_d(m,mup,mu,thetaofq(qx,qy,qz))*exp(-ii*mup*phiofq(qx,qy)))
-        !                                     print*, "epsilon=",epsdp
-        !                                     error stop "oihjkkhblkuyuiykjhbkjhg76"
-        !                                 end if
-        !                             end do
-        !                         end do
-        !                     end do
-        !                 end do
-        !             end do
-        !         end do
-        ! end subroutine test_routines_calcul_de_Rm_mup_mu_q
 
         subroutine read_ck_nonzero
             use module_input, only: n_linesInFile
@@ -779,7 +739,8 @@ contains
                 allocate ( cq%nu (cq%na) ,source=-huge(1))
                 allocate ( cq%khi(cq%na) ,source=-huge(1))
                 associate(mmax=>grid%mmax)
-                allocate ( cq%a(0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+                ! allocate ( cq%a (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
+                allocate ( cq%a2(0:mmax,0:mmax,-mmax/mrso:mmax/mrso,-mmax/mrso:mmax/mrso,-mmax:mmax), source=-huge(1)) ! m n mu nu khi. -huge is used to spot more easily bugs that may come after
                 end associate
             end if
             !
@@ -803,7 +764,8 @@ contains
                 mu = cq%mu(ia)
                 nu = cq%nu(ia)
                 khi = cq%khi(ia)
-                cq%a(m,n,mu,nu,khi) = ia
+                ! cq%a(m,n,mu,nu,khi) = ia
+                cq%a2(m,n,mu/mrso,nu/mrso,khi) = ia
             end do
 
 
@@ -826,7 +788,7 @@ contains
             allocate( ck(cq%na, cq%nq), source=ck_full(1:cq%na,1:cq%nq))
             deallocate( ck_full )
 
-            deallocate (cq%m, cq%n, cq%mu, cq%nu, cq%khi)
+            deallocate (cq%m, cq%n, cq%mu, cq%nu, cq%khi, cq%normq)
 
             ! tell the world the reading and allocating of the data structure for c(q) is ok
             cq%isok=.true.

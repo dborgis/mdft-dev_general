@@ -22,7 +22,7 @@ contains
         implicit none
 
         real(dp), intent(out) :: fid, fext
-        real(dp), intent(inout) :: df(:,:,:,:,:)
+        real(dp), intent(inout), contiguous :: df(:,:,:,:,:)
         integer :: is, io, ns, ix, iy, iz
         real(dp) :: xi, rho0, dv, kT, mu, rho
         real(dp), parameter :: zerodp = 0._dp

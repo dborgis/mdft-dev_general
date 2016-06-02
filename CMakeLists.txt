@@ -50,8 +50,9 @@ message(STATUS "Using compiler ${Fortran_COMPILER_NAME}")
 SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffast-math -ffree-line-length-none -O3 -pedantic -std=f2008 -fopenmp")
   set (CMAKE_Fortran_FLAGS_DEBUG "-mcmodel=large -march=native -ffast-math -funroll-all-loops -ffree-line-length-none -O3 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
+  #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
@@ -69,11 +70,11 @@ endif()
 set(mdft_SRCS
   src/module_blas_etc.f90
   src/module_lecture.f90
-  src/module_energy_luc.f90
-  src/module_energy_luc_fast.f90
+#  src/module_energy_luc.f90
+#  src/module_energy_luc_fast.f90
   src/module_rotation.f90
   src/module_energy_cproj_mrso.f90
-  src/module_energy_cproj_no_symetry.f90
+#  src/module_energy_cproj_no_symetry.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90
