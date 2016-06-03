@@ -392,7 +392,7 @@ call cpu_time (time(4))
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
 
-        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck), PRIVATE(iz_q,iy_q,ix_q,R,ix_mq,iy_mq,iz_mq,q,q_eq_mq,deltarho_p_q,deltarho_p_mq,gamma_p_q,gamma_p_mq)
+        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck) PRIVATE(iz_q,iy_q,ix_q,R,ix_mq,iy_mq,iz_mq,q,q_eq_mq,deltarho_p_q,deltarho_p_mq,gamma_p_q,gamma_p_mq)
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
             do iy_q=1,ny
@@ -418,12 +418,6 @@ call cpu_time (time(4))
                     else
                         q_eq_mq=.false.
                     end if
-
-                    !
-                    ! Move all projections for q and -q to a smaller temporary array: deltarho_p_q (for q) and deltarho_p_mq (for -q)
-                    !
-                    deltarho_p_q (1:np) = deltarho_p(1:np,ix_q,iy_q,iz_q)
-                    deltarho_p_mq(1:np) = deltarho_p(1:np,ix_mq,iy_mq,iz_mq)
 
                     !
                     ! Prepare R^m_mup_khi(q)
