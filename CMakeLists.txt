@@ -166,7 +166,7 @@ if (UNIX)
   include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
-
+  add_dependencies(mdft-dev fftw fftwf)
   #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
   #target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
