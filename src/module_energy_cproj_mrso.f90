@@ -392,7 +392,7 @@ call cpu_time (time(4))
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
 
-        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck) PRIVATE(iz_q,iy_q,ix_q,R,ix_mq,iy_mq,iz_mq,q,q_eq_mq,deltarho_p_q,deltarho_p_mq,gamma_p_q,gamma_p_mq)
+        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck)
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
             do iy_q=1,ny
