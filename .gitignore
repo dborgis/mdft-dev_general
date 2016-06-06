@@ -39,3 +39,4 @@ build/
 build/*
 .cproject
 .project
+input/density.bin
