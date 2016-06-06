@@ -43,9 +43,8 @@ contains
       ALLOCATE(solute%site(solute%nsite))
       READ (5,*)
       DO n = 1, solute%nsite
-        READ(5,*) i, solute%site(n)%q, solute%site(n)%sig, solute%site(n)%eps, &
-                  solute%site(n)%lambda1, solute%site(n)%lambda2, solute%site(n)%r, solute%site(n)%Z
-        END DO
+        READ(5,*) i, solute%site(n)%q, solute%site(n)%sig, solute%site(n)%eps, solute%site(n)%r, solute%site(n)%Z
+      END DO
       CLOSE (5)
       solute%site%q = solute%site%q * getinput%dp('solute_charges_scale_factor', defaultvalue=1._dp)
 
