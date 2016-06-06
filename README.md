@@ -25,9 +25,17 @@ The Molecular Density Functional Theory, by
 ## Requirements
 
 - Cmake
-- FFTW3
+- FFTW3 (but it's compiled from source with MDFT, don't worry about it)
 
-`Cmake` and `FFTW3` can often be install through *apt*, *yum*, *pacman*, *conda*, etc.
+`Cmake` can often be install through *apt*, *yum*, *pacman*, *conda*, etc.  
+
+We also recommend version 5 or 6 of gfortran, even if some late versions 4.x should work.  
+To install gfortran 6 :
+```sh
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install gfortran-6
+```
 
 ## Installation procedure
 
