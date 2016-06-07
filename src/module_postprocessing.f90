@@ -22,7 +22,7 @@ contains
         implicit none
         character(len=80) :: filename
         real(dp), allocatable :: density(:,:,:)
-        integer :: nx, ny, nz, ix, iy, iz
+        integer :: nx, ny, nz, ix, iy, iz, io, is
         real(dp), parameter :: pi=acos(-1._dp)
 
         nx=grid%nx
@@ -43,7 +43,18 @@ contains
         ! print binary file one can use as a restart point
         !
         open(10,file='output/density.bin',form='unformatted')
-        write(10) solvent(1)%xi
+        write(10) size(solvent)
+        write(10) grid%mmax
+        write(10) grid%no
+        write(10) grid%nx, grid%ny, grid%nz
+        write(10) grid%dx, grid%dy, grid%dz
+
+        do is=1,size(solvent)
+          print*, "is", is
+          do io=1,grid%no
+            write(10) solvent(1)%xi(io,1:nx,1:ny,1:nz)
+          enddo
+        enddo
         close(10)
         print*, "New file output/density.bin"
 

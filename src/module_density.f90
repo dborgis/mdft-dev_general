@@ -20,10 +20,19 @@ contains
 
         implicit none
 
-        integer :: i, j, k, io, s, ios
+        integer :: i, j, k, s, ios
         logical :: exists, vextq_is_allocated
         real(dp) :: v, threeshold_in_betav, betav
         real(dp), allocatable :: xi_loc(:)
+
+        real(dp), allocatable :: xi_tmp(:, :, :)
+        integer :: ix, iy, iz, ix_prev, iy_prev, iz_prev
+        integer :: ns_prev, no_prev, io, is, no, ns
+        integer :: mmax_prev, np_prev
+        integer :: nx_prev, ny_prev, nz_prev, nx, ny, nz
+        real(dp) :: dx_prev, dy_prev, dz_prev, dx, dy, dz
+        real(dp) :: x, y, z, x_prev, y_prev, z_prev
+        real(dp) :: x0, y0, z0, x1, y1, z1, xd, yd, zd, xi00, xi01, xi10, xi11, xi0, xi1
 
         ! Be sure the solvent is already initiated
         if (.not. allocated(solvent)) then
@@ -56,18 +65,82 @@ contains
                 print *, 'problem while opening input/density.bin. bug at init_density.f90'
                 stop
             END IF
-            READ ( 10, iostat=ios ) solvent(1)%xi
-            IF ( ios<0 ) THEN
-                error stop "input/density.bin is null"
-            ELSE IF ( ios>0 ) THEN
-                print*, "problem while trying to read solvent(1)%xi in input/density.bin"
-                print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
-                error stop
-            ELSE ! fine
-              print*
-              print*, '*** RESTARTING from density.bin ***'
-              print*
-            end if
+
+            READ ( 10, iostat=ios ) ns_prev
+            READ ( 10, iostat=ios ) mmax_prev
+            READ ( 10, iostat=ios ) no_prev
+            READ ( 10, iostat=ios ) nx_prev, ny_prev, nz_prev
+            READ ( 10, iostat=ios ) dx_prev, dy_prev, dz_prev
+
+            ! TODO: test si les ns sont les mêmes
+
+            allocate(xi_tmp(nx_prev, ny_prev, nz_prev))
+
+            dx=grid%dx
+            dy=grid%dy
+            dz=grid%dz
+            nx=grid%nx
+            ny=grid%ny
+            nz=grid%nz
+
+            ! https://en.wikipedia.org/wiki/Trilinear_interpolation
+            do is=1,ns_prev
+              do io=1,no_prev
+                READ ( 10, iostat=ios ) xi_tmp
+
+                do iz_prev=1,nz_prev-1
+                  z0 = (iz_prev-1)*dz_prev
+                  z1 = (iz_prev)*dz_prev
+                  do iy_prev=1,ny_prev-1
+                    y0 = (iy_prev-1)*dy_prev
+                    y1 = (iy_prev)*dy_prev
+                    do ix_prev=1,nx_prev-1
+                      x0 = (ix_prev-1)*dx_prev
+                      x1 = (ix_prev)*dx_prev
+
+                     iz=ceiling(z0/dz+1)
+                     do while(iz<=min(nz, floor(z1/dz+1)))
+                       iy=ceiling(y0/dy+1)
+                       do while(iy<=min(ny, floor(y1/dy+1)))
+                         ix=ceiling(x0/dx+1)
+                         do while(ix<=min(nx, floor(x1/dx+1)))
+
+
+                            z = (iz-1)*dz
+                            y = (iy-1)*dy
+                            x = (ix-1)*dx
+
+                            xd = (x-x0)/(x1-x0)
+                            yd = (x-x0)/(x1-x0)
+                            zd = (x-x0)/(x1-x0)
+
+!                            print *, x, x0, x1, xd
+
+                            xi00 = xi_tmp(ix_prev, iy_prev, iz_prev) * (1-xd) + xi_tmp(ix_prev+1, iy_prev, iz_prev) * xd
+                            xi01 = xi_tmp(ix_prev, iy_prev, iz_prev+1) * (1-xd) + xi_tmp(ix_prev+1, iy_prev, iz_prev+1) * xd
+                            xi10 = xi_tmp(ix_prev, iy_prev+1, iz_prev) * (1-xd) + xi_tmp(ix_prev+1, iy_prev+1, iz_prev) * xd
+                            xi11 = xi_tmp(ix_prev, iy_prev+1, iz_prev+1) * (1-xd) + xi_tmp(ix_prev+1, iy_prev+1, iz_prev+1) * xd
+
+                            xi0 = xi00 * (1-yd) + xi10 * yd
+                            xi1 = xi01 * (1-yd) + xi11 * yd
+!                            print*,  io, iz, iy, ix, xi0 * (1-zd) + xi1 * zd
+                            solvent(is)%xi(io,ix,iy,iz) = xi0 * (1-zd) + xi1 * zd
+
+                          ix = ix + 1
+                          end do
+                        iy = iy + 1
+                        end do
+                      iz = iz + 1
+                      end do
+
+                    end do
+                  end do
+                end do
+
+              end do
+
+            end do
+
             close (10)
             return
         end if
@@ -103,35 +176,6 @@ contains
         ! end do
         ! deallocate (xi_loc)
 
-        ! dans ce bloc, j'initialise la xi au profil du methane (neutre) HNC convergé (mmax5)
-        block
-          use module_solute, only: solute
-          use module_grid, only: grid
-          integer, parameter :: N=65
-          real(dp) :: g0(1:N), r, dr
-          integer :: ir, ix, iy, iz, io
-          open(33,file="input/fine_g0.dat")
-          do ir=1,N
-            read(33,*) r, g0(ir)
-            if (ir==2) dr=r
-          end do
-          g0(N) = 1._dp ! One imposes that g(r) is 1 after large distances
-          if (any(g0<0)) then
-            error stop "The g(r) of methane that is used to init the density is negative somewhere! impossible"
-          end if
-          close(33)
-          do concurrent( ix=1:grid%nx, iy=1:grid%ny, iz=1:grid%nz )
-            r  = sqrt( ((ix-1)*grid%dx - solute%site(1)%r(1) )**2 &
-                     + ((iy-1)*grid%dy - solute%site(1)%r(2) )**2 &
-                     + ((iz-1)*grid%dz - solute%site(1)%r(3) )**2 )
-            ir = int(r/dr +0.5) +1
-            if (ir >N) ir=N
-            do io=1,grid%no
-              solvent(1)%xi(io,ix,iy,iz) = sqrt(g0(ir))! * grid%theta(io) * grid%phi(io) * grid%psi(io)
-            end do
-          end do
-          ! pRINT*, "ATTTTTENTION ON A INIT LA DENSITE A UN TRUC BIZARRE QUI DEPEND DE THETA ET PHI ET PSI JUSTE POUR PAS QUE CONST"
-        end block
 
         ! where (solvent(1)%vext > 100._dp)
         !   solvent(1)%xi = 0._dp

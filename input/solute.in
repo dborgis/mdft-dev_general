@@ -1,4 +1,4 @@
 methane, Asthagiri et al.
 1
-#   charge   sigma(Ang) epsilon(kJ/mol)  lambda1_mol   lambda2_mol    x     y     z    Zatomic 
-1    0.0     3.73        1.23                0.0           0.0       0.0   0.0   0.0    16       
+#   charge   sigma(Ang) epsilon(kJ/mol)     x     y     z    Zatomic 
+1    0.0     3.73        1.23              0.0   0.0   0.0    16       
