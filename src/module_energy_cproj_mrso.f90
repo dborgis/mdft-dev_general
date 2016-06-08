@@ -117,6 +117,8 @@ contains
         real(dp) :: vexc(grid%no), rho, xi
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
         real :: total_time_in_subroutine
+        complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
+        integer :: ip2_loc(-5:5)
 
         call cpu_time (time(1))
 
@@ -430,18 +432,25 @@ call cpu_time (time(4))
                     !
                     ! Rotation to molecular (q) frame
                     !
-                    deltarho_p_q  = zeroc
-                    deltarho_p_mq = zeroc
+                    gamma_p_q = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
+                    gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq) ! this a temporary array
+                    ip=0
                     do m=0,mmax
                         do khi=-m,m
-                            do mu=0,m,mrso
-                                ip=p3%p(m,khi,mu/mrso)
+                            R_loc(-m:m)=R(m,-m:m,khi)
+                            do mu2=0,m/mrso
+                                ip=ip+1
+                                ip2_loc(-m:m)=p3%p(m,-m:m,mu2)  ! Optimization added 6th of June 2016. Makes the code ugly but improves locality... :-/
                                 ! Equation 1.22
+                                deltarho_p_q_loc  = (0._dp,0._dp)
+                                deltarho_p_mq_loc = (0._dp,0._dp)
                                 do mup=-m,m
-                                    ip2=p3%p(m,mup,mu/mrso)
-                                    deltarho_p_q (ip) = deltarho_p_q (ip) + deltarho_p(ip2,ix_q,iy_q,iz_q)            *R(m,mup, khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + deltarho_p(ip2,ix_mq,iy_mq,iz_mq) *(-1)**m*R(m,mup,-khi)
+                                    ip2=ip2_loc(mup)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q(ip2)  *R_loc(mup)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(ip2) *R_loc(mup)
                                 end do
+                                deltarho_p_q(ip) = deltarho_p_q_loc
+                                deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
                             end do
                         end do
                     end do
@@ -502,39 +511,43 @@ call cpu_time (time(4))
                     !
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
                     ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
-                    deltarho_p_q  = zeroc
-                    deltarho_p_mq = zeroc
+
+
+                    ip=0
                     do m=0,mmax
                         do mup=-m,m
-                            do mu=0,m,mrso
-                                ip=p3%p(m,mup,mu/mrso)
+                            R_loc(-m:m)=R(m,mup,-m:m) ! R_loc(khi)=R(m,mup,khi)
+                            do mu2=0,m/mrso
+                                ip=ip+1
                                 ! Equation 1.22
+                                ip2_loc(-m:m)=p3%p(m,-m:m,mu2) ! Optimization added 6th of June 2016. Makes the code ugly but improves locality... :-/
+                                deltarho_p_q_loc  = (0._dp,0._dp)
+                                deltarho_p_mq_loc = (0._dp,0._dp)
                                 do khi=-m,m
-                                    ip2=p3%p(m,khi,mu/mrso)
-                                    deltarho_p_q (ip) = deltarho_p_q (ip) + gamma_p_q(ip2)  *R(m,mup,khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
+                                    ip2=ip2_loc(khi)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q (ip2) *R_loc(khi)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(ip2) *R_loc(-khi)
                                 end do
                                 !
+                                deltarho_p_q(ip) = deltarho_p_q_loc
+                                deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
                             end do
                         end do
                     end do
-                    gamma_p_q = deltarho_p_q
-                    gamma_p_mq = deltarho_p_mq
-
 
                     !
                     ! For vector q,
                     !
-                    deltarho_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
+                    deltarho_p (:, ix_q, iy_q, iz_q) = deltarho_p_q
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
                     !
                     ! Again, pay attention to the singular mid-k point
                     !
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(deltarho_p_mq)
                     else
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = deltarho_p_mq
                     end if
                     gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
