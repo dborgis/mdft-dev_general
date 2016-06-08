@@ -69,6 +69,7 @@ contains
             READ ( 10, iostat=ios ) ns_prev
             READ ( 10, iostat=ios ) mmax_prev
             READ ( 10, iostat=ios ) no_prev
+            READ ( 10, iostat=ios ) np_prev
             READ ( 10, iostat=ios ) nx_prev, ny_prev, nz_prev
             READ ( 10, iostat=ios ) dx_prev, dy_prev, dz_prev
 
@@ -98,12 +99,12 @@ contains
                       x0 = (ix_prev-1)*dx_prev
                       x1 = (ix_prev)*dx_prev
 
-                     iz=ceiling(z0/dz+1)
-                     do while(iz<=min(nz, floor(z1/dz+1)))
-                       iy=ceiling(y0/dy+1)
-                       do while(iy<=min(ny, floor(y1/dy+1)))
-                         ix=ceiling(x0/dx+1)
-                         do while(ix<=min(nx, floor(x1/dx+1)))
+                      iz=ceiling(z0/dz+1)
+                      do while(iz<=min(nz, floor(z1/dz+1)))
+                        iy=ceiling(y0/dy+1)
+                        do while(iy<=min(ny, floor(y1/dy+1)))
+                          ix=ceiling(x0/dx+1)
+                          do while(ix<=min(nx, floor(x1/dx+1)))
 
 
                             z = (iz-1)*dz
@@ -111,10 +112,8 @@ contains
                             x = (ix-1)*dx
 
                             xd = (x-x0)/(x1-x0)
-                            yd = (x-x0)/(x1-x0)
-                            zd = (x-x0)/(x1-x0)
-
-!                            print *, x, x0, x1, xd
+                            yd = (y-y0)/(y1-y0)
+                            zd = (z-z0)/(z1-z0)
 
                             xi00 = xi_tmp(ix_prev, iy_prev, iz_prev) * (1-xd) + xi_tmp(ix_prev+1, iy_prev, iz_prev) * xd
                             xi01 = xi_tmp(ix_prev, iy_prev, iz_prev+1) * (1-xd) + xi_tmp(ix_prev+1, iy_prev, iz_prev+1) * xd

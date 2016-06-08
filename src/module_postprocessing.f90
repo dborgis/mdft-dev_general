@@ -46,11 +46,11 @@ contains
         write(10) size(solvent)
         write(10) grid%mmax
         write(10) grid%no
+        write(10) grid%np
         write(10) grid%nx, grid%ny, grid%nz
         write(10) grid%dx, grid%dy, grid%dz
 
         do is=1,size(solvent)
-          print*, "is", is
           do io=1,grid%no
             write(10) solvent(1)%xi(io,1:nx,1:ny,1:nz)
           enddo
