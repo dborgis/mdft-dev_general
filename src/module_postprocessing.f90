@@ -22,7 +22,7 @@ contains
         implicit none
         character(len=80) :: filename
         real(dp), allocatable :: density(:,:,:)
-        integer :: nx, ny, nz, ix, iy, iz, io, is
+        integer :: nx, ny, nz, ix, iy, iz, io, is, isite
         real(dp), parameter :: pi=acos(-1._dp)
 
         nx=grid%nx
@@ -49,6 +49,12 @@ contains
         write(10) grid%np
         write(10) grid%nx, grid%ny, grid%nz
         write(10) grid%dx, grid%dy, grid%dz
+        write(10) size(solute%site)
+
+        do isite=1,size(solute%site)
+          write(10) solute%site(isite)
+        enddo
+
 
         do is=1,size(solvent)
           do io=1,grid%no

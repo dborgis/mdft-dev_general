@@ -60,19 +60,23 @@ contains
     !
     subroutine read_restart_file
       use module_solvent, only: solvent
+      use module_solute, only: solute
       use module_grid, only: grid
+      use system, only: site_type
       implicit none
       logical :: exists
       integer :: ios
 
       real(dp), allocatable :: xi_tmp(:, :, :)
       integer :: ix, iy, iz, ix_prev, iy_prev, iz_prev
-      integer :: ns_prev, no_prev, io, is
+      integer :: ns_prev, no_prev, nsite_prev, isite, io, is
       integer :: mmax_prev, np_prev
       integer :: nx_prev, ny_prev, nz_prev, nx, ny, nz
+      type(site_type) :: tmp_site
       real(dp) :: dx_prev, dy_prev, dz_prev, dx, dy, dz
       real(dp) :: x, y, z
       real(dp) :: x0, y0, z0, x1, y1, z1, xd, yd, zd, xi00, xi01, xi10, xi11, xi0, xi1
+      real(dp) :: offset_x, offset_y, offset_z
       character(len("input/density.bin")), parameter :: filename="input/density.bin"
       inquire (file=filename, EXIST=exists)
       if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
@@ -88,6 +92,31 @@ contains
       read ( 10, iostat=ios ) np_prev
       read ( 10, iostat=ios ) nx_prev, ny_prev, nz_prev
       read ( 10, iostat=ios ) dx_prev, dy_prev, dz_prev
+      read ( 10, iostat=ios ) nsite_prev
+
+      offset_x = (grid%lx - dx_prev * nx_prev) / 2
+      offset_y = (grid%ly - dy_prev * ny_prev) / 2
+      offset_z = (grid%lz - dz_prev * nz_prev) / 2
+
+      print *, offset_x
+
+      if(nsite_prev .ne. size(solute%site) ) then
+        print*, "Error in restart. Solutes are differents"
+        stop
+      endif
+
+      do isite=1,nsite_prev
+        read ( 10, iostat=ios ) tmp_site
+        if( (solute%site(isite)%r(1) .ne. tmp_site%r(1)+offset_x) .or. &
+            (solute%site(isite)%r(2) .ne. tmp_site%r(2)+offset_y) .or. &
+            (solute%site(isite)%r(3) .ne. tmp_site%r(3)+offset_z) .or. &
+            (solute%site(isite)%q .ne. tmp_site%q) .or. &
+            (solute%site(isite)%sig .ne. tmp_site%sig) .or. &
+            (solute%site(isite)%eps .ne. tmp_site%eps) ) then
+          print*, "Error in restart. Solutes are differents"
+          stop
+        endif
+      enddo
 
       ! TODO: test si les ns sont les mêmes
 
@@ -106,20 +135,20 @@ contains
           read ( 10, iostat=ios ) xi_tmp
 
           do iz_prev=1,nz_prev-1
-            z0 = (iz_prev-1)*dz_prev
-            z1 = (iz_prev)*dz_prev
+            z0 = (iz_prev-1)*dz_prev+offset_z
+            z1 = (iz_prev)*dz_prev+offset_z
             do iy_prev=1,ny_prev-1
-              y0 = (iy_prev-1)*dy_prev
-              y1 = (iy_prev)*dy_prev
+              y0 = (iy_prev-1)*dy_prev+offset_y
+              y1 = (iy_prev)*dy_prev+offset_y
               do ix_prev=1,nx_prev-1
-                x0 = (ix_prev-1)*dx_prev
-                x1 = (ix_prev)*dx_prev
+                x0 = (ix_prev-1)*dx_prev+offset_x
+                x1 = (ix_prev)*dx_prev+offset_x
 
-                iz=ceiling(z0/dz+1)
+                iz=max(1, ceiling(z0/dz+1))
                 do while(iz<=min(nz, floor(z1/dz+1)))
-                  iy=ceiling(y0/dy+1)
+                  iy=max(1, ceiling(y0/dy+1))
                   do while(iy<=min(ny, floor(y1/dy+1)))
-                    ix=ceiling(x0/dx+1)
+                    ix=max(1, ceiling(x0/dx+1))
                     do while(ix<=min(nx, floor(x1/dx+1)))
 
                       z = (iz-1)*dz
