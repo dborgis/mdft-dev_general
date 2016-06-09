@@ -58,8 +58,6 @@ subroutine energy_and_gradient (f, df)
 
     real(dp), intent(out) :: f
     real(dp), intent(out) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
-    ! real(dp) :: df_trash (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
-
     real(dp), parameter :: zerodp=0._dp
     real(sp) :: t(10)
     real(dp) :: fold
@@ -95,40 +93,35 @@ subroutine energy_and_gradient (f, df)
     !
     ! purely radial component, with c_s
     !
-    ! if (solvent(s)%do%exc_cs) then
-    !   call cpu_time(t(3))
-    !   call energy_cs (ff%exc_cs, df)
-    !   call cpu_time(t(4))
-    !   print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
-    !   f = f + ff%exc_cs
-    ! end if
+    if (solvent(s)%do%exc_cs) then
+        call cpu_time(t(3))
+        call energy_cs (ff%exc_cs, df)
+        call cpu_time(t(4))
+        print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
+        f = f + ff%exc_cs
+    end if
 
     !
     ! with c_d and c_delta
     !
-    ! if (solvent(s)%do%exc_cdeltacd) then
-    !   call cpu_time(t(5))
-    !   call energy_cdeltacd (ff%exc_cdeltacd, df)
-    !   call cpu_time(t(6))
-    !   print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
-    !   f = f + ff%exc_cdeltacd
-    ! end if
+    if (solvent(s)%do%exc_cdeltacd) then
+        call cpu_time(t(5))
+        call energy_cdeltacd (ff%exc_cdeltacd, df)
+        call cpu_time(t(6))
+        print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
+        f = f + ff%exc_cdeltacd
+    end if
 
 
     !
     ! with Luc's routine
     !
     if (solvent(s)%do%exc_cproj) then
-      ! call cpu_time(t(5))
-      ! call energy_luc( ff%exc_cproj, df)
-      ! call cpu_time(t(6))
-      ! print*, "ff%exc_cproj luc   =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
-
-      call cpu_time(t(5))
-      call energy_cproj_mrso( ff%exc_cproj, df)
-      call cpu_time(t(6))
-      print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
-      f = f + ff%exc_cproj
+        call cpu_time(t(5))
+        call energy_cproj_mrso( ff%exc_cproj, df)
+        call cpu_time(t(6))
+        print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+        f = f + ff%exc_cproj
     end if
 
 

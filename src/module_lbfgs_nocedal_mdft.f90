@@ -6,7 +6,7 @@ module module_lbfgs_nocedal_mdft
 
   type lbfgsb_type
       !     Declare variables and parameters needed by mylbfgsb.f90>setulb
-      integer                :: n, m=1, iprint=1
+      integer                :: n, m=1, iprint=3
       real(mydp)               :: factr  = 0.0001_mydp/epsilon(1._mydp) ! The iteration will stop when
       ! real(dp)               :: factr  = 1.0d+12 ! The iteration will stop when
                                                  ! (f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr*epsmch
@@ -602,7 +602,7 @@ subroutine cauchy(n, x, g, iorder, t, d, xcp, m, wy, ws, sy, wt, theta, col, hea
 
       real(myprecision), parameter :: l=0., u=0.
       integer, parameter :: nbd=0
-      logical          xlower,xupper,bnded
+      logical          bnded
       integer          i,j,col2,nfree,nbreak,pointr,    ibp,nleft,ibkmin,iter
       real(myprecision) f1,f2,dt,dtm,tsum,dibp,zibp,dibp2,bkmin,tu,tl,wmc,wmp,wmw,tj,tj0,neggi,sbgnrm,f2_org!,ddot
       real(myprecision), parameter :: one=1.,zero=0.

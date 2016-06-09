@@ -82,25 +82,35 @@ contains
         !
         do s=1,solvent(1)%nspec
 
+            !
+            ! Always compute the ideal and external contributions
+            !
             solvent(s)%do%id_and_ext = .true.
-            solvent(s)%do%exc_fmt = getinput%log ('hard_sphere_fluid', defaultvalue=.false.)
-            solvent(s)%do%exc_wca = getinput%log ('wca', defaultvalue=.false.)
-            solvent(s)%do%exc_3b = getinput%log ('threebody', defaultvalue=.false. )
 
-            select case (grid%mmax)
-            case (0)
-                solvent(s)%do%exc_cs=.true.
-                ! solvent(s)%do%exc_cdeltacd=.true.
-                solvent(s)%do%exc_cproj=.true.
-                solvent(s)%do%exc_ck_angular=.true.
-            case (1:5)
-                solvent(s)%do%exc_cs=.true.
-                solvent(s)%do%exc_cdeltacd=.true.
-                solvent(s)%do%exc_cproj=.true.
-                solvent(s)%do%exc_ck_angular=.true.
-            case default
-                error stop "mmax > maximum value in module_solvent"
-            end select
+            !
+            ! You may want to minimize only with ideal and external contributions, for instance to restart later with a not-so-bad guess
+            !
+            if(.not.getinput%log('minimize_wrt_vext_only',defaultvalue=.false.)) then
+
+                if( grid%mmax>5 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
+                solvent(s)%do%exc_fmt = getinput%log ('hard_sphere_fluid', defaultvalue=.false.)
+                solvent(s)%do%exc_wca = getinput%log ('wca', defaultvalue=.false.)
+                solvent(s)%do%exc_3b  = getinput%log ('threebody', defaultvalue=.false. )
+                solvent(s)%do%exc_cs         = .false.
+                solvent(s)%do%exc_cdeltacd   = .false.
+                solvent(s)%do%exc_cproj      = .true.
+                solvent(s)%do%exc_ck_angular = .false.
+
+            else
+                write(*,*) "MINIMIZING WRT VEXT ONLY *************************"
+                solvent(s)%do%exc_fmt        = .false.
+                solvent(s)%do%exc_wca        = .false.
+                solvent(s)%do%exc_3b         = .false.
+                solvent(s)%do%exc_cs         = .false.
+                solvent(s)%do%exc_cdeltacd   = .false.
+                solvent(s)%do%exc_cproj      = .false.
+                solvent(s)%do%exc_ck_angular = .false.
+            end if
 
             !
             ! select case (getinput%char("polarization", defaultvalue="no"))
