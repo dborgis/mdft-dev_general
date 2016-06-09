@@ -1,31 +1,26 @@
 module module_density
-    use iso_c_binding, only: c_double, c_float
+
     use precision_kinds, only: dp
-    use module_solvent, only: solvent
     implicit none
     private
     public :: init_density
+
 contains
 
-    ! Init the density of each species as a function of position and orientation
-    ! it should be initiated to exp(-beta*vext) but
-    ! vextq is the electrostatic part of vext, and is pathologic (it sometimes diverges)
-    ! we thus init the density not using vext, but vext - vextq
+    !
+    ! Guess an initial density for the solvent, or read it from a restart file.
+    !
     subroutine init_density
-
-        use module_thermo, only: thermo
         use module_solvent, only: solvent
         use module_grid, only: grid
         use module_input, only: getinput
-
         implicit none
+        integer :: s, ios
 
-        integer :: i, j, k, io, s, ios
-        logical :: exists, vextq_is_allocated
-        real(dp) :: v, threeshold_in_betav, betav
-        real(dp), allocatable :: xi_loc(:)
-
-        ! Be sure the solvent is already initiated
+        !
+        ! Be sure the object containing all information about the solvent is initiated
+        ! Also, it should be the same for the grid.
+        !
         if (.not. allocated(solvent)) then
             print*, "Dans module_density, solvent n'est pas allocated"
             print*, "buggy. bisous"
@@ -47,112 +42,86 @@ contains
             end if
         end do
 
-        ! Read the density from a previous run
-        if (getinput%log('restart', defaultvalue=.false.)) then
-            inquire (file='input/density.bin', EXIST=exists)
-            if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
-            OPEN (10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
-            IF ( ios /= 0 ) then
-                print *, 'problem while opening input/density.bin. bug at init_density.f90'
-                stop
-            END IF
-            READ ( 10, iostat=ios ) solvent(1)%xi
-            IF ( ios<0 ) THEN
-                error stop "input/density.bin is null"
-            ELSE IF ( ios>0 ) THEN
-                print*, "problem while trying to read solvent(1)%xi in input/density.bin"
-                print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
-                error stop
-            ELSE ! fine
-              print*
-              print*, '*** RESTARTING from density.bin ***'
-              print*
-            end if
-            close (10)
-            return
-        end if
-
-
-        select case (dp)
-        case (c_double)
-            threeshold_in_betav = 36.04_dp
-        case (c_float)
-            threeshold_in_betav = 15.9_dp
-        case default
-            stop "In module_density the threeshold in the exponential before underflow is not given for the KIND of real you use"
+        !
+        ! Should we restart from a restart file or guess an initial density ?
+        !
+        select case( getinput%log('restart', defaultvalue=.false.))
+        case(.true.)
+          call read_restart_file
+        case(.false.)
+          call guess_density
         end select
-!        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
-
-        ! allocate (xi_loc(1:grid%no))
-        ! s=1
-        ! do k = 1, grid%nz
-        !   do j = 1, grid%ny
-        !     do i = 1, grid%nx
-        !
-        !       do io = 1, grid%no
-        !         if ( thermo%beta*solvent(1)%vext(io,i,j,k) >= threeshold_in_betav ) then
-        !           xi_loc(io) = 0._dp
-        !         else
-        !           xi_loc(io) = -sqrt(exp(-thermo%beta*solvent(1)%vext(io,i,j,k))) ! xi**2=rho/rho0=exp(-beta*v)
-        !         end if
-        !       end do
-        !       solvent(1)%xi(:,i,j,k) = xi_loc
-        !
-        !     end do
-        !   end do
-        ! end do
-        ! deallocate (xi_loc)
-
-        ! dans ce bloc, j'initialise la xi au profil du methane (neutre) HNC convergé (mmax5)
-        block
-          use module_solute, only: solute
-          use module_grid, only: grid
-          integer, parameter :: N=65
-          real(dp) :: g0(1:N), r, dr
-          integer :: ir, ix, iy, iz, io
-          open(33,file="input/fine_g0.dat")
-          do ir=1,N
-            read(33,*) r, g0(ir)
-            if (ir==2) dr=r
-          end do
-          g0(N) = 1._dp ! One imposes that g(r) is 1 after large distances
-          if (any(g0<0)) then
-            error stop "The g(r) of methane that is used to init the density is negative somewhere! impossible"
-          end if
-          close(33)
-          do concurrent( ix=1:grid%nx, iy=1:grid%ny, iz=1:grid%nz )
-            r  = sqrt( ((ix-1)*grid%dx - solute%site(1)%r(1) )**2 &
-                     + ((iy-1)*grid%dy - solute%site(1)%r(2) )**2 &
-                     + ((iz-1)*grid%dz - solute%site(1)%r(3) )**2 )
-            ir = int(r/dr +0.5) +1
-            if (ir >N) ir=N
-            do io=1,grid%no
-              solvent(1)%xi(io,ix,iy,iz) = sqrt(g0(ir))! * grid%theta(io) * grid%phi(io) * grid%psi(io)
-            end do
-          end do
-          ! pRINT*, "ATTTTTENTION ON A INIT LA DENSITE A UN TRUC BIZARRE QUI DEPEND DE THETA ET PHI ET PSI JUSTE POUR PAS QUE CONST"
-        end block
-
-        ! where (solvent(1)%vext > 100._dp)
-        !   solvent(1)%xi = 0._dp
-        ! else where
-        !   solvent(1)%xi = 1._dp
-        ! end where
 
     end subroutine init_density
 
 
-    pure function vmax_before_underflow_in_exp_minus_vmax ()
+    !
+    ! Determines the maximum value of x for which exp(-x) is numericaly computable, that is for which we don't have an IEEE-underflow
+    !
+    pure function vmax_before_underflow_in_exp_minus_vmax()
         implicit none
         integer :: i
         real(dp) :: v, vmax_before_underflow_in_exp_minus_vmax
-        do i=1,1000
-            v = real(i,dp)
+        do i=1,10000
+            v = real(i,dp)*0.1_dp
             if (exp(-v)<=epsilon(v)) then
-                vmax_before_underflow_in_exp_minus_vmax = v
+                vmax_before_underflow_in_exp_minus_vmax = v-0.1
                 exit
             end if
         end do
     end function vmax_before_underflow_in_exp_minus_vmax
+
+
+    !
+    ! Read the restart file
+    !
+    subroutine read_restart_file
+      use module_solvent, only: solvent
+      implicit none
+      logical :: exists
+      integer :: ios
+      character(len("input/density.bin")), parameter :: filename="input/density.bin"
+      inquire (FILE=filename, EXIST=exists)
+      if(.not.exists) error stop "You want to restart from a density file, but input/density.bin is not found"
+      open(10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
+      if(ios /= 0) error stop 'problem while opening input/density.bin. bug at init_density.f90'
+      read(10, iostat=ios ) solvent(1)%xi
+      if( ios<0 ) then
+          error stop "input/density.bin is null"
+      else if( ios>0 ) then
+          print*, "problem while trying to read solvent(1)%xi in input/density.bin"
+          print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
+          error stop
+      else
+        print*
+        print*, '*** RESTARTING from input/density.bin ***'
+        print*
+      end if
+      close (10)
+    end subroutine read_restart_file
+
+
+    !
+    ! Guess the init density since we don't have a restart file
+    !
+    subroutine guess_density
+      use module_solvent, only: solvent
+      use module_thermo, only: thermo
+      implicit none
+      real(dp) :: vextmax
+      integer :: s
+      !
+      ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
+      !
+      vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
+      do s=1,size(solvent)
+        where (solvent(s)%vext >= vextmax)
+          solvent(s)%xi = 0._dp
+        else where
+          solvent(s)%xi = 1._dp
+        end where
+      end do
+    end subroutine guess_density
+    
 
 end module module_density
