@@ -56,23 +56,6 @@ contains
 
 
     !
-    ! Determines the maximum value of x for which exp(-x) is numericaly computable, that is for which we don't have an IEEE-underflow
-    !
-    pure function vmax_before_underflow_in_exp_minus_vmax()
-        implicit none
-        integer :: i
-        real(dp) :: v, vmax_before_underflow_in_exp_minus_vmax
-        do i=1,10000
-            v = real(i,dp)*0.1_dp
-            if (exp(-v)<=epsilon(v)) then
-                vmax_before_underflow_in_exp_minus_vmax = v-0.1
-                exit
-            end if
-        end do
-    end function vmax_before_underflow_in_exp_minus_vmax
-
-
-    !
     ! Read the restart file
     !
     subroutine read_restart_file
@@ -113,7 +96,7 @@ contains
       !
       ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
       !
-      vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
+      vextmax = -log(epsilon(1.0))-0.05 * thermo%kbT
       do s=1,size(solvent)
         where (solvent(s)%vext >= vextmax)
           solvent(s)%xi = 0._dp
