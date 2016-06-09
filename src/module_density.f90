@@ -22,7 +22,7 @@ contains
 
         integer :: i, j, k, io, s, ios
         logical :: exists, vextq_is_allocated
-        real(dp) :: v, threeshold_in_betav, betav
+        real(dp) :: v, vextmax
         real(dp), allocatable :: xi_loc(:)
 
         ! Be sure the solvent is already initiated
@@ -72,84 +72,30 @@ contains
             return
         end if
 
-
-        select case (dp)
-        case (c_double)
-            threeshold_in_betav = 36.04_dp
-        case (c_float)
-            threeshold_in_betav = 15.9_dp
-        case default
-            stop "In module_density the threeshold in the exponential before underflow is not given for the KIND of real you use"
-        end select
-!        threeshold_in_betav = vmax_before_underflow_in_exp_minus_vmax() ! 15.9 en real, 36.04 en double precision
-
-        ! allocate (xi_loc(1:grid%no))
-        ! s=1
-        ! do k = 1, grid%nz
-        !   do j = 1, grid%ny
-        !     do i = 1, grid%nx
         !
-        !       do io = 1, grid%no
-        !         if ( thermo%beta*solvent(1)%vext(io,i,j,k) >= threeshold_in_betav ) then
-        !           xi_loc(io) = 0._dp
-        !         else
-        !           xi_loc(io) = -sqrt(exp(-thermo%beta*solvent(1)%vext(io,i,j,k))) ! xi**2=rho/rho0=exp(-beta*v)
-        !         end if
-        !       end do
-        !       solvent(1)%xi(:,i,j,k) = xi_loc
+        ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
         !
-        !     end do
-        !   end do
-        ! end do
-        ! deallocate (xi_loc)
-
-        ! dans ce bloc, j'initialise la xi au profil du methane (neutre) HNC convergé (mmax5)
-        block
-          use module_solute, only: solute
-          use module_grid, only: grid
-          integer, parameter :: N=65
-          real(dp) :: g0(1:N), r, dr
-          integer :: ir, ix, iy, iz, io
-          open(33,file="input/fine_g0.dat")
-          do ir=1,N
-            read(33,*) r, g0(ir)
-            if (ir==2) dr=r
-          end do
-          g0(N) = 1._dp ! One imposes that g(r) is 1 after large distances
-          if (any(g0<0)) then
-            error stop "The g(r) of methane that is used to init the density is negative somewhere! impossible"
-          end if
-          close(33)
-          do concurrent( ix=1:grid%nx, iy=1:grid%ny, iz=1:grid%nz )
-            r  = sqrt( ((ix-1)*grid%dx - solute%site(1)%r(1) )**2 &
-                     + ((iy-1)*grid%dy - solute%site(1)%r(2) )**2 &
-                     + ((iz-1)*grid%dz - solute%site(1)%r(3) )**2 )
-            ir = int(r/dr +0.5) +1
-            if (ir >N) ir=N
-            do io=1,grid%no
-              solvent(1)%xi(io,ix,iy,iz) = sqrt(g0(ir))! * grid%theta(io) * grid%phi(io) * grid%psi(io)
-            end do
-          end do
-          ! pRINT*, "ATTTTTENTION ON A INIT LA DENSITE A UN TRUC BIZARRE QUI DEPEND DE THETA ET PHI ET PSI JUSTE POUR PAS QUE CONST"
-        end block
-
-        ! where (solvent(1)%vext > 100._dp)
-        !   solvent(1)%xi = 0._dp
-        ! else where
-        !   solvent(1)%xi = 1._dp
-        ! end where
+        solvent(1)%xi=1._dp
+        vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
+        where (solvent(1)%vext >= vextmax)
+          solvent(1)%xi = 0._dp
+        else where
+          solvent(1)%xi = 1._dp
+        end where
 
     end subroutine init_density
 
-
-    pure function vmax_before_underflow_in_exp_minus_vmax ()
+    !
+    ! Determines the maximum value of x for which exp(-x) is numericaly computable, that is for which we don't have an IEEE-underflow
+    !
+    pure function vmax_before_underflow_in_exp_minus_vmax()
         implicit none
         integer :: i
         real(dp) :: v, vmax_before_underflow_in_exp_minus_vmax
-        do i=1,1000
-            v = real(i,dp)
+        do i=1,10000
+            v = real(i,dp)*0.1_dp
             if (exp(-v)<=epsilon(v)) then
-                vmax_before_underflow_in_exp_minus_vmax = v
+                vmax_before_underflow_in_exp_minus_vmax = v-0.1
                 exit
             end if
         end do
