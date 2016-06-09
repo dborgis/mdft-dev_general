@@ -48,8 +48,12 @@ contains
             end if
         end do
 
-        ! Read the density from a previous run
-        if (getinput%log('restart', defaultvalue=.false.)) then
+        !
+        ! Should we restart from a file or guess an initial density ?
+        !
+        select case( getinput%log('restart', defaultvalue=.false.))
+        case(.true.)
+
             inquire (file='input/density.bin', EXIST=exists)
             if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
             OPEN (10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
@@ -71,19 +75,22 @@ contains
             end if
             close (10)
             return
-        end if
 
-        !
-        ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
-        !
-        vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
-        do s=1,size(solvent)
-          where (solvent(s)%vext >= vextmax)
-            solvent(s)%xi = 0._dp
-          else where
-            solvent(s)%xi = 1._dp
-          end where
-        end do
+        case(.false.) ! then guess the initial density.
+
+            !
+            ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
+            !
+            vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
+            do s=1,size(solvent)
+              where (solvent(s)%vext >= vextmax)
+                solvent(s)%xi = 0._dp
+              else where
+                solvent(s)%xi = 1._dp
+              end where
+            end do
+
+        end select
 
     end subroutine init_density
 
