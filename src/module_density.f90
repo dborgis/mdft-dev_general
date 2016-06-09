@@ -11,17 +11,11 @@ contains
     ! Guess an initial density for the solvent, or read it from a restart file.
     !
     subroutine init_density
-
-        use module_thermo, only: thermo
         use module_solvent, only: solvent
         use module_grid, only: grid
         use module_input, only: getinput
-
         implicit none
-
-        integer :: i, s, ios
-        logical :: exists
-        real(dp) :: v, vextmax
+        integer :: s, ios
 
         !
         ! Be sure the object containing all information about the solvent is initiated
@@ -49,50 +43,17 @@ contains
         end do
 
         !
-        ! Should we restart from a file or guess an initial density ?
+        ! Should we restart from a restart file or guess an initial density ?
         !
         select case( getinput%log('restart', defaultvalue=.false.))
         case(.true.)
-
-            inquire (file='input/density.bin', EXIST=exists)
-            if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
-            OPEN (10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
-            IF ( ios /= 0 ) then
-                print *, 'problem while opening input/density.bin. bug at init_density.f90'
-                stop
-            END IF
-            READ ( 10, iostat=ios ) solvent(1)%xi
-            IF ( ios<0 ) THEN
-                error stop "input/density.bin is null"
-            ELSE IF ( ios>0 ) THEN
-                print*, "problem while trying to read solvent(1)%xi in input/density.bin"
-                print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
-                error stop
-            ELSE ! fine
-              print*
-              print*, '*** RESTARTING from density.bin ***'
-              print*
-            end if
-            close (10)
-            return
-
-        case(.false.) ! then guess the initial density.
-
-            !
-            ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
-            !
-            vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
-            do s=1,size(solvent)
-              where (solvent(s)%vext >= vextmax)
-                solvent(s)%xi = 0._dp
-              else where
-                solvent(s)%xi = 1._dp
-              end where
-            end do
-
+          call read_restart_file
+        case(.false.)
+          call guess_density
         end select
 
     end subroutine init_density
+
 
     !
     ! Determines the maximum value of x for which exp(-x) is numericaly computable, that is for which we don't have an IEEE-underflow
@@ -109,5 +70,58 @@ contains
             end if
         end do
     end function vmax_before_underflow_in_exp_minus_vmax
+
+
+    !
+    ! Read the restart file
+    !
+    subroutine read_restart_file
+      use module_solvent, only: solvent
+      implicit none
+      logical :: exists
+      integer :: ios
+      character(len("input/density.bin")), parameter :: filename="input/density.bin"
+      inquire (FILE=filename, EXIST=exists)
+      if(.not.exists) error stop "You want to restart from a density file, but input/density.bin is not found"
+      open(10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
+      if(ios /= 0) error stop 'problem while opening input/density.bin. bug at init_density.f90'
+      read(10, iostat=ios ) solvent(1)%xi
+      if( ios<0 ) then
+          error stop "input/density.bin is null"
+      else if( ios>0 ) then
+          print*, "problem while trying to read solvent(1)%xi in input/density.bin"
+          print*, "maybe you are reading a density with different nx,ny,nz,mmax?"
+          error stop
+      else
+        print*
+        print*, '*** RESTARTING from input/density.bin ***'
+        print*
+      end if
+      close (10)
+    end subroutine read_restart_file
+
+
+    !
+    ! Guess the init density since we don't have a restart file
+    !
+    subroutine guess_density
+      use module_solvent, only: solvent
+      use module_thermo, only: thermo
+      implicit none
+      real(dp) :: vextmax
+      integer :: s
+      !
+      ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
+      !
+      vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
+      do s=1,size(solvent)
+        where (solvent(s)%vext >= vextmax)
+          solvent(s)%xi = 0._dp
+        else where
+          solvent(s)%xi = 1._dp
+        end where
+      end do
+    end subroutine guess_density
+    
 
 end module module_density
