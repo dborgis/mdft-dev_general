@@ -98,8 +98,6 @@ contains
       offset_y = (grid%ly - dy_prev * ny_prev) / 2
       offset_z = (grid%lz - dz_prev * nz_prev) / 2
 
-      print *, offset_x
-
       if(nsite_prev .ne. size(solute%site) ) then
         print*, "Error in restart. Solutes are differents"
         stop
