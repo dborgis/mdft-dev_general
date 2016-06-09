@@ -122,7 +122,7 @@ contains
 
                             xi0 = xi00 * (1-yd) + xi10 * yd
                             xi1 = xi01 * (1-yd) + xi11 * yd
-!                            print*,  io, iz, iy, ix, xi0 * (1-zd) + xi1 * zd
+
                             solvent(is)%xi(io,ix,iy,iz) = xi0 * (1-zd) + xi1 * zd
 
                           ix = ix + 1
