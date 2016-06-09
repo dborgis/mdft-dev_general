@@ -77,15 +77,19 @@ contains
             ! call prevent_numerical_catastrophes
         end if
 
-        if (allocated(solvent(1)%vextq)) then
-            print*,"    minval(vextq) =",minval(solvent(1)%vextq)
-            print*,"    maxval(vextq) =",maxval(solvent(1)%vextq)
-        else
-            print*,"    no electrostatic potential"
-        end if
-        print*,"    minval(vext) =",minval(solvent(1)%vext)
-        print*,"    maxval(vext) =",maxval(solvent(1)%vext)
-        print*,"===== External Potential ====="
+        do s=1,ns
+            if (allocated(solvent(s)%vextq)) then
+                print*,"    minval(vextq) =",minval(solvent(1)%vextq)
+                print*,"    maxval(vextq) =",maxval(solvent(1)%vextq)
+                deallocate(solvent(s)%vextq)
+            else
+                print*,"    no electrostatic potential"
+            end if
+            print*,"    minval(vext) =",minval(solvent(1)%vext)
+            print*,"    maxval(vext) =",maxval(solvent(1)%vext)
+            print*,"===== External Potential ====="
+        end do
+
 
     end subroutine init_vext
 
@@ -746,7 +750,6 @@ contains
         do s=1,ns
             if (allocated(solvent(s)%vextq)) then
                 solvent(s)%vext = solvent(s)%vext + solvent(s)%vextq ! OMG HERE COMES THE PROBLEM WHEN VEXTQ DIVERGES TOWARD MINUX INFTY
-                deallocate (solvent(s)%vextq)
             end if
         end do
 
