@@ -74,9 +74,9 @@ contains
       real(dp) :: x, y, z
       real(dp) :: x0, y0, z0, x1, y1, z1, xd, yd, zd, xi00, xi01, xi10, xi11, xi0, xi1
       character(len("input/density.bin")), parameter :: filename="input/density.bin"
-      inquire (file='input/density.bin', EXIST=exists)
+      inquire (file=filename, EXIST=exists)
       if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
-      OPEN (10, file = 'input/density.bin' , form = 'unformatted' , iostat=ios, status='OLD' )
+      OPEN (10, file = filename , form = 'unformatted' , iostat=ios, status='OLD' )
       if ( ios /= 0 ) then
         print *, 'problem while opening input/density.bin. bug at init_density.f90'
         stop
@@ -175,7 +175,7 @@ contains
       !
       ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
       !
-      vextmax = -log(epsilon(1.0))-0.05 * thermo%kbT
+      vextmax = -log(epsilon(1.0)) * thermo%kbT
       do s=1,size(solvent)
         where (solvent(s)%vext >= vextmax)
           solvent(s)%xi = 0._dp
