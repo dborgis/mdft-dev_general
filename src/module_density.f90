@@ -1,16 +1,15 @@
 module module_density
-    use iso_c_binding, only: c_double, c_float
+
     use precision_kinds, only: dp
-    use module_solvent, only: solvent
     implicit none
     private
     public :: init_density
+
 contains
 
-    ! Init the density of each species as a function of position and orientation
-    ! it should be initiated to exp(-beta*vext) but
-    ! vextq is the electrostatic part of vext, and is pathologic (it sometimes diverges)
-    ! we thus init the density not using vext, but vext - vextq
+    !
+    ! Guess an initial density for the solvent, or read it from a restart file.
+    !
     subroutine init_density
 
         use module_thermo, only: thermo
@@ -20,12 +19,14 @@ contains
 
         implicit none
 
-        integer :: i, j, k, io, s, ios
-        logical :: exists, vextq_is_allocated
+        integer :: i, s, ios
+        logical :: exists
         real(dp) :: v, vextmax
-        real(dp), allocatable :: xi_loc(:)
 
-        ! Be sure the solvent is already initiated
+        !
+        ! Be sure the object containing all information about the solvent is initiated
+        ! Also, it should be the same for the grid.
+        !
         if (.not. allocated(solvent)) then
             print*, "Dans module_density, solvent n'est pas allocated"
             print*, "buggy. bisous"
@@ -75,13 +76,14 @@ contains
         !
         ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
         !
-        solvent(1)%xi=1._dp
         vextmax = vmax_before_underflow_in_exp_minus_vmax() * thermo%kbT
-        where (solvent(1)%vext >= vextmax)
-          solvent(1)%xi = 0._dp
-        else where
-          solvent(1)%xi = 1._dp
-        end where
+        do s=1,size(solvent)
+          where (solvent(s)%vext >= vextmax)
+            solvent(s)%xi = 0._dp
+          else where
+            solvent(s)%xi = 1._dp
+          end where
+        end do
 
     end subroutine init_density
 
