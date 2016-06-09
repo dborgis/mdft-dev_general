@@ -107,9 +107,9 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, m2, mu2, nu2
-        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq, a
-        real(dp) :: q(3), mq(3), lx, ly, lz, rho0
+        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, mu2, nu2
+        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
+        real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
