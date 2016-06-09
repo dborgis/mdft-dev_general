@@ -745,9 +745,8 @@ contains
         ! note that purely repulsive and hard potentials are already included in vext
         do s=1,ns
             if (allocated(solvent(s)%vextq)) then
-                where (solvent(s)%vext<solvent(s)%vext_threeshold)
-                    solvent(s)%vext = solvent(s)%vext + solvent(s)%vextq ! OMG HERE COMES THE PROBLEM WHEN VEXTQ DIVERGES TOWARD MINUX INFTY
-                end where
+                solvent(s)%vext = solvent(s)%vext + solvent(s)%vextq ! OMG HERE COMES THE PROBLEM WHEN VEXTQ DIVERGES TOWARD MINUX INFTY
+                deallocate (solvent(s)%vextq)
             end if
         end do
 
@@ -757,6 +756,13 @@ contains
             end if
         end do
 
+        ! passe haut filter
+        do s=1,ns
+            where (solvent(s)%vext > solvent(s)%vext_threeshold)
+                solvent(s)%vext = solvent(s)%vext_threeshold
+            end where
+        end do
+
         ! catch NaN and Inf
         do s=1,ns
             if ( any(solvent(s)%vext/=solvent(s)%vext) ) stop "there is a nan somewhere in vext_total"
@@ -764,12 +770,6 @@ contains
             if ( any(solvent(s)%vext<-huge(1._dp)) ) stop "there is a -Inf somewhere in solvent(s)%vext"
         end do
 
-        ! passe haut filter
-        do s=1,ns
-            where (solvent(s)%vext > solvent(s)%vext_threeshold)
-                solvent(s)%vext = solvent(s)%vext_threeshold
-            end where
-        end do
 
         ! IF (verbose) THEN
         !     BLOCK
