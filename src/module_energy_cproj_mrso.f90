@@ -658,36 +658,41 @@ contains
 
     function proj2angl (foo_p) result (foo_o)
         implicit none
-        real(dp) :: foo_o (1:grid%no)
+        real(dp) :: foo_o(1:grid%no)
         complex(dp), contiguous, intent(in) :: foo_p(:) ! np
-        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2
-        foo_theta_mu_mup = zeroc
-
-        do mup=-mmax,mmax
-            do mu2=0,mmax/mrso
-              mu=2*mu2
-              do itheta=1,ntheta
-                  do m= max(abs(mup),abs(mu)), mmax
-                    ip=p3%p(m,mup,mu2)
-                    foo_theta_mu_mup(itheta,mu2,mup) = foo_theta_mu_mup(itheta,mu2,mup) +foo_p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
-                  end do
-              end do
-            end do
-        end do
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2, abs_mup
+        complex(dp) :: foo_mu2_mup(0:mmax/mrso,-mmax:mmax)
+        real(dp) :: table_of_wigner_small_d_itheta(grid%np)
+        io=0
         do itheta=1,ntheta
-            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
-            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
-            select case(dp)
-            case(c_double)
-              call dfftw_execute( ifft2d%plan )
-            case(c_float)
-              call sfftw_execute( ifft2d%plan )
-            end select
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi)
-                end do
-            end do
+
+          foo_mu2_mup=(0._dp,0._dp)
+          table_of_wigner_small_d_itheta = p3%wigner_small_d(itheta,:)
+          do mup=-mmax,mmax
+              abs_mup=abs(mup)
+              do mu2=0,mmax/mrso
+                    do m= max(abs_mup,mrso*mu2), mmax ! should be max(abs(mup),abs(mu)) but mu is always positive in our derivation
+                      ip=p3%p(m,mup,mu2)
+                      foo_mu2_mup(mu2,mup) = foo_mu2_mup(mu2,mup) + table_of_wigner_small_d_itheta(ip)* foo_p(ip) * fm(m)
+                    end do
+              end do
+          end do
+
+          ifft2d%in(:,1:mmax+1) = CONJG( foo_mu2_mup(0:mmax/mrso,0:mmax)   )
+          ifft2d%in(:,mmax+2:)  = CONJG( foo_mu2_mup(0:mmax/mrso,-mmax:-1) )
+          select case(dp)
+          case(c_double)
+            call dfftw_execute( ifft2d%plan )
+          case(c_float)
+            call sfftw_execute( ifft2d%plan )
+          end select
+          do iphi=1,nphi
+              do ipsi=1,npsi
+                  io=io+1 ! grid%indo(itheta,iphi,ipsi)
+                  foo_o(io) = ifft2d%out(ipsi,iphi)
+              end do
+          end do
+
         end do
     end function proj2angl
 
