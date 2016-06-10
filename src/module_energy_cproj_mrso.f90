@@ -662,16 +662,16 @@ contains
         complex(dp), contiguous, intent(in) :: foo_p(:) ! np
         integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2
         foo_theta_mu_mup = zeroc
-        foo_o = 0._dp
+
         do mup=-mmax,mmax
-            do mu=0,mmax,mrso
-                do m= max(abs(mup),abs(mu)), mmax
-                    ip=p3%p(m,mup,mu/mrso)
-                    do itheta=1,ntheta
-                        foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
-                        +foo_p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
-                    end do
-                end do
+            do mu2=0,mmax/mrso
+              mu=2*mu2
+              do itheta=1,ntheta
+                  do m= max(abs(mup),abs(mu)), mmax
+                    ip=p3%p(m,mup,mu2)
+                    foo_theta_mu_mup(itheta,mu2,mup) = foo_theta_mu_mup(itheta,mu2,mup) +foo_p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
+                  end do
+              end do
             end do
         end do
         do itheta=1,ntheta
