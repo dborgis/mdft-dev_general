@@ -660,7 +660,7 @@ contains
         implicit none
         real(dp) :: foo_o(1:grid%no)
         complex(dp), contiguous, intent(in) :: foo_p(:) ! np
-        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2, abs_mup
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2, abs_mup, i
         complex(dp) :: foo_mu2_mup(0:mmax/mrso,-mmax:mmax)
         real(dp) :: table_of_wigner_small_d_itheta(grid%np)
         io=0
@@ -675,11 +675,17 @@ contains
                       ip=p3%p(m,mup,mu2)
                       foo_mu2_mup(mu2,mup) = foo_mu2_mup(mu2,mup) + table_of_wigner_small_d_itheta(ip)* foo_p(ip) * fm(m)
                     end do
+
+                    if( mup<0 ) then
+                        ifft2d%in(mu2+1,mup+2*mmax+2) = conjg(foo_mu2_mup(mu2,mup))
+                    else
+                        ifft2d%in(mu2+1,mup+1) = conjg(foo_mu2_mup(mu2,mup))
+                    end if
               end do
           end do
 
-          ifft2d%in(:,1:mmax+1) = CONJG( foo_mu2_mup(0:mmax/mrso,0:mmax)   )
-          ifft2d%in(:,mmax+2:)  = CONJG( foo_mu2_mup(0:mmax/mrso,-mmax:-1) )
+          ! ifft2d%in(:,1:mmax+1) = CONJG( foo_mu2_mup(0:mmax/mrso,0:mmax)   )
+          ! ifft2d%in(:,mmax+2:)  = CONJG( foo_mu2_mup(0:mmax/mrso,-mmax:-1) )
           select case(dp)
           case(c_double)
             call dfftw_execute( ifft2d%plan )
