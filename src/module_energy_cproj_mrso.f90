@@ -6,8 +6,7 @@ module module_energy_cproj_mrso
     use module_grid, only: grid
     use module_solvent, only: solvent
     use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu
-    use module_wigner_d, only: wigner_small_d
-    use module_orientation_projection_transform, only: angl2proj, proj2angl
+    use module_orientation_projection_transform, only: angl2proj, proj2angl, p3
 
     implicit none
     private
@@ -61,34 +60,6 @@ module module_energy_cproj_mrso
 
     complex(dp), allocatable, protected :: foo_theta_mu_mup(:,:,:)
 
-
-    type :: p3_type
-        real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
-        integer, allocatable :: p(:,:,:) ! index of the projection corresponding to m, mup, mu
-        integer, allocatable :: m(:) ! m for projection 1 to np
-        integer, allocatable :: mup(:) ! mup for projection 1 to np. mup corresponds to phi
-        integer, allocatable :: mu(:) ! mu for projection 1 to np. mu corresponds to psi
-!        complex(dp), allocatable :: foo_q(:) ! foo (:) is a temporary array of size np
-!        complex(dp), allocatable :: foo_mq(:) ! foo (:) is a temporary array of size np
-    end type p3_type
-    type (p3_type), protected :: p3
-
-
-    type :: fft2d_type
-        type(c_ptr) :: plan
-        real(dp), allocatable    :: in(:,:)
-        complex(dp), allocatable :: out(:,:)
-        logical :: isalreadyplanned
-    end type
-    type :: ifft2d_type
-        type(c_ptr) :: plan
-        complex(dp), allocatable :: in(:,:)
-        real(dp), allocatable    :: out(:,:)
-        logical :: isalreadyplanned
-    end type
-    type(  fft2d_type ), save, protected :: fft2d
-    type( ifft2d_type ), save, protected :: ifft2d
-
     complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
     public :: energy_cproj_mrso
@@ -124,11 +95,6 @@ contains
         ntheta=grid%ntheta
         nphi=grid%nphi
         npsi=grid%npsi
-
-        if (.not.allocated(fft2d%in)) allocate (fft2d%in(npsi,nphi))
-        if (.not.allocated(fft2d%out)) allocate (fft2d%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
-        if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
-        if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(npsi,nphi))
 
         mmax=grid%mmax
         mrso=grid%molrotsymorder
@@ -172,61 +138,6 @@ call cpu_time (time(2))
         ! 7/ FFT3D-C2D                     :    ɣ^m_mup,mu(q)    =>    ɣ^m_mup,mu(r)
         ! 8/ gather projections            :    ɣ^m_mup,mu(r)    =>    ɣ(r,ω)
 
-
-        !
-        ! Toutes les projections sont stockées dans un meme vecteur de taille np
-        ! p3%p(m,mup,mu) transforme le triplet (m,mup,mu) a l'indice de la projection, ip.
-        ! p3%m(ip) donne, inversement à p3%p(m,mup,mu), le m (de {m,mup,mu}) qui correspondant à l'indice ip dans le tableau des projections
-        ! On a donc p3%p(p3%m(p),p3%mup(p),p3%mu(p)) == p
-        !
-        ! On ne fait ce travail que la première fois qu'on passe dans cette routine.
-        ! Les fois suivantes, p3%p reste alloué, et donc le .not.allocated(p3%p) est skippé.
-        ! On utilise cette astuce de nombreuses fois dans cette routine.
-        !
-        if (.not.allocated(p3%p)) then
-            allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax/mrso) ,source=-huge(1)) ! Dans p3%p, on met mu2=2*mu, pas mu
-            allocate ( p3%m(np) ,source=-huge(1)) ! mettre des -huge comme valeur initiale permet de plus tard verifier que s'il reste un -huge qqpart, il y a un problème. Si on avait mis 0, on ne peut pas vérifier.
-            allocate ( p3%mup(np) ,source=-huge(1))
-            allocate ( p3%mu(np) ,source=-huge(1)) ! c'est bien mu qu'on met dans p3%mu(), pas mu2
-            ip=0
-            do m=0,mmax
-                do mup=-m,m
-                    !
-                    ! We chose to have p3%p and p3%mu to contain the true value of mu, not mu/molrotsymorder.
-                    ! Thus, we loop over mu with steps of molrotsymorder
-                    ! Thus, we have holes in p3%p, but all calls to p3%p and p3%mu should be done with this true mu
-                    ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to p3%p(m,mup,mu) with mu=1 will return -999
-                    ! Also, the array p3%mu only contains even values (des valeurs paires)
-                    !
-                    do mu=0,m,mrso
-                        ip=ip+1
-                        IF (ip > np) ERROR STOP "p > np at line 166"
-                        p3%p(m,mup,mu/mrso) = ip ! on met mu2 dans p3%p, pas mu
-                        p3%m(ip) = m
-                        p3%mup(ip) = mup
-                        p3%mu(ip) = mu ! c'est le vrai mu, pas mu2
-                    end do
-                end do
-            end do
-            if (ip /= np) error stop "ip /= np in energy_cproj"
-            if ( any(abs(p3%m)>mmax) .or. any(abs(p3%mup)>mmax) .or. any(abs(p3%mu)>mmax) ) then
-                print*, "tabulated m, mup or mu have incorrect values"
-                error stop
-            end if
-
-            !
-            ! Print all projections that will be kept in memory
-            !
-            open(11, file="output/nonzero-projections.out")
-            write(11,*)"Non-zero projections:"
-            write(11,*)"        index         m          mup          mu"
-            write(11,*)"        -----        ---         ---          --"
-            do ip=1,np
-                write(11,*) ip, p3%m(ip), p3%mup(ip), p3%mu(ip)
-            end do
-            close(11)
-        end if
-
 call cpu_time (time(3))
 
 
@@ -240,30 +151,6 @@ call cpu_time (time(3))
         !
         theta=grid%thetaofntheta
         wtheta=grid%wthetaofntheta
-
-        !
-        ! Tabulate generalized spherical harmonics in array p3%wigner_small_d(theta,proj)
-        ! where theta can be any of the GaussLegendre integration roots for theta
-        ! where proj is an index related to a tuple {m,mup,mu}
-        ! Blum's notation :
-        ! m is related to theta
-        ! mup is related to phi
-        ! mu is related to psi
-        ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
-        !
-        ! call test_routines_calcul_de_Rm_mup_mu_q
-        if (.not. allocated(p3%wigner_small_d)) then
-            allocate ( p3%wigner_small_d(1:ntheta, 1:np) ,source=0._dp)
-            do p=1,np
-                m = p3%m(p)
-                mup = p3%mup(p)
-                mu = p3%mu(p)
-                do i=1,ntheta
-                    ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la méthode de Wigner.
-                    p3%wigner_small_d(i,p) = wigner_small_d(m,mup,mu,theta(i))
-                end do
-            end do
-        end if
 
 call cpu_time (time(4))
 
@@ -279,20 +166,6 @@ call cpu_time (time(4))
         !
 
         ! 1/ ON PREPARE LES FFT
-
-        if (.not. fft2d%isalreadyplanned) then
-            select case(dp)
-            case(c_double)
-              call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
-              call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
-            case(c_float)
-              call sfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
-              call sfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
-            end select
-            ! call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
-            fft2d%isalreadyplanned =.true.
-            ifft2d%isalreadyplanned =.true.
-        end if
 
         if (.not. fft3d%plan_backward_ok) then
           select case(dp)

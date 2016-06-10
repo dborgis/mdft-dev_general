@@ -34,7 +34,7 @@ module module_orientation_projection_transform
 !        complex(dp), allocatable :: foo_q(:) ! foo (:) is a temporary array of size np
 !        complex(dp), allocatable :: foo_mq(:) ! foo (:) is a temporary array of size np
     end type p3_type
-    type (p3_type), protected :: p3
+    type (p3_type), public :: p3
 
 
     type :: fft2d_type

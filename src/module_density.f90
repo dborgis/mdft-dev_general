@@ -63,20 +63,26 @@ contains
       use module_solute, only: solute
       use module_grid, only: grid
       use system, only: site_type
+      use module_orientation_projection_transform, only: proj2angl
       implicit none
       logical :: exists
       integer :: ios
 
-      real(dp), allocatable :: xi_tmp(:, :, :)
       integer :: ix, iy, iz, ix_prev, iy_prev, iz_prev
-      integer :: ns_prev, no_prev, nsite_prev, isite, io, is
-      integer :: mmax_prev, np_prev
+      integer :: ns_prev, no_prev, nsite_prev, isite, is, no
+      integer :: mmax_prev, np_prev, io, mmax, np
       integer :: nx_prev, ny_prev, nz_prev, nx, ny, nz
       type(site_type) :: tmp_site
       real(dp) :: dx_prev, dy_prev, dz_prev, dx, dy, dz
       real(dp) :: x, y, z
-      real(dp) :: x0, y0, z0, x1, y1, z1, xd, yd, zd, xi00, xi01, xi10, xi11, xi0, xi1
+      real(dp) :: x0, y0, z0, x1, y1, z1, xd, yd, zd
+      real(dp) :: xi00, xi01, xi10, xi11, xi0, xi1
       real(dp) :: offset_x, offset_y, offset_z
+      real(dp) :: rho0
+      complex(dp), allocatable :: xi_prev(:,:,:,:), deltarho_p_prev(:,:,:,:)
+      real(dp), parameter :: zero=0._dp
+      complex(dp), parameter :: zeroc=(0._dp, 0._dp)
+
       character(len("input/density.bin")), parameter :: filename="input/density.bin"
       inquire (file=filename, EXIST=exists)
       if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
@@ -86,6 +92,16 @@ contains
         stop
       end if
 
+      dx=grid%dx
+      dy=grid%dy
+      dz=grid%dz
+      nx=grid%nx
+      ny=grid%ny
+      nz=grid%nz
+      np=grid%np
+      no=grid%no
+      mmax=grid%mmax
+
       read ( 10, iostat=ios ) ns_prev
       read ( 10, iostat=ios ) mmax_prev
       read ( 10, iostat=ios ) no_prev
@@ -93,6 +109,14 @@ contains
       read ( 10, iostat=ios ) nx_prev, ny_prev, nz_prev
       read ( 10, iostat=ios ) dx_prev, dy_prev, dz_prev
       read ( 10, iostat=ios ) nsite_prev
+
+
+      print*
+      print*, '*** RESTARTING from input/density.bin ***'
+      print*
+      print *,'previous state'
+      print *,'nx=', nx_prev,'  ny=', ny_prev,'  nz=', nz_prev
+      print *, "mmax=", mmax
 
       offset_x = (grid%lx - dx_prev * nx_prev) / 2
       offset_y = (grid%ly - dy_prev * ny_prev) / 2
@@ -118,19 +142,31 @@ contains
 
       ! TODO: test si les ns sont les mêmes
 
-      allocate(xi_tmp(nx_prev, ny_prev, nz_prev))
+      if (.not. allocated (xi_prev) ) allocate (xi_prev(no,nx_prev,ny_prev,nz_prev) ,source=zeroc)
+      if (.not. allocated (deltarho_p_prev) ) allocate (deltarho_p_prev(np,nx_prev,ny_prev,nz_prev) ,source=zeroc)
 
-      dx=grid%dx
-      dy=grid%dy
-      dz=grid%dz
-      nx=grid%nx
-      ny=grid%ny
-      nz=grid%nz
+      !load previous projections
+      do is=1,size(solvent)
+        ! read file
+        do iz_prev=1,nz_prev
+          do iy_prev=1,ny_prev
+            do ix_prev=1,nx_prev
+              read ( 10, iostat=ios ) deltarho_p_prev(1:np_prev,ix_prev,iy_prev,iz_prev)
+            end do
+          end do
+        end do
 
-      ! https://en.wikipedia.org/wiki/Trilinear_interpolation
-      do is=1,ns_prev
-        do io=1,no_prev
-          read ( 10, iostat=ios ) xi_tmp
+        !proj2angl
+        do iz_prev=1,nz_prev
+          do iy_prev=1,ny_prev
+            do ix_prev=1,nx_prev
+              xi_prev(1:no,ix_prev,iy_prev,iz_prev) = proj2angl(deltarho_p_prev(1:np,ix_prev,iy_prev,iz_prev))
+            end do
+          end do
+        end do
+
+        !interpolation
+        do io=1,no
 
           do iz_prev=1,nz_prev-1
             z0 = (iz_prev-1)*dz_prev+offset_z
@@ -157,10 +193,10 @@ contains
                       yd = (y-y0)/(y1-y0)
                       zd = (z-z0)/(z1-z0)
 
-                      xi00 = xi_tmp(ix_prev, iy_prev, iz_prev) * (1-xd) + xi_tmp(ix_prev+1, iy_prev, iz_prev) * xd
-                      xi01 = xi_tmp(ix_prev, iy_prev, iz_prev+1) * (1-xd) + xi_tmp(ix_prev+1, iy_prev, iz_prev+1) * xd
-                      xi10 = xi_tmp(ix_prev, iy_prev+1, iz_prev) * (1-xd) + xi_tmp(ix_prev+1, iy_prev+1, iz_prev) * xd
-                      xi11 = xi_tmp(ix_prev, iy_prev+1, iz_prev+1) * (1-xd) + xi_tmp(ix_prev+1, iy_prev+1, iz_prev+1) * xd
+                      xi00 = xi_prev(io, ix_prev, iy_prev, iz_prev) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev, iz_prev) * xd
+                      xi01 = xi_prev(io, ix_prev, iy_prev, iz_prev+1) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev, iz_prev+1) * xd
+                      xi10 = xi_prev(io, ix_prev, iy_prev+1, iz_prev) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev+1, iz_prev) * xd
+                      xi11 = xi_prev(io, ix_prev, iy_prev+1, iz_prev+1) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev+1, iz_prev+1) * xd
 
                       xi0 = xi00 * (1-yd) + xi10 * yd
                       xi1 = xi01 * (1-yd) + xi11 * yd
@@ -180,13 +216,14 @@ contains
 
         end do
 
+
       end do
 
       close (10)
 
-      print*
-      print*, '*** RESTARTING from input/density.bin ***'
-      print*
+      deallocate (deltarho_p_prev)
+      deallocate (xi_prev)
+
     end subroutine read_restart_file
 
 
