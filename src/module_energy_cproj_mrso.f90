@@ -7,6 +7,7 @@ module module_energy_cproj_mrso
     use module_solvent, only: solvent
     use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu
     use module_wigner_d, only: wigner_small_d
+    use module_orientation_projection_transform, only: angl2proj, proj2angl
 
     implicit none
     private
@@ -606,75 +607,6 @@ print*, "                  | proj2angl + sum to ff and df                 ", tim
 print*, "                  |"
 
 contains
-
-
-    function angl2proj (foo_o) result (foo_p)
-        implicit none
-        real(dp), contiguous, intent(in) :: foo_o(:) ! orientations from 1 to no
-        complex(dp) :: foo_p(1:grid%np)
-        integer :: itheta, iphi, ipsi, m, mup, mu, ip
-        foo_theta_mu_mup = zeroc
-        do itheta=1,ntheta
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
-                end do
-            end do
-            select case(dp)
-            case(c_double)
-              call dfftw_execute (fft2d%plan)
-            case(c_float)
-              call sfftw_execute (fft2d%plan)
-            end select
-            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)
-            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
-        end do
-        foo_p = zeroc
-        do m=0,mmax
-            do mup=-m,m
-                do mu=0,m,mrso
-                    ip = p3%p( m,mup,mu/mrso )
-                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%wigner_small_d(:,ip)*wtheta(:))*fm(m)
-                end do
-            end do
-        end do
-    end function angl2proj
-
-
-    function proj2angl (foo_p) result (foo_o)
-        implicit none
-        real(dp) :: foo_o (1:grid%no)
-        complex(dp), contiguous, intent(in) :: foo_p(:) ! np
-        foo_theta_mu_mup = zeroc
-        foo_o = 0._dp
-        do mup=-mmax,mmax
-            do mu=0,mmax,mrso
-                do m= max(abs(mup),abs(mu)), mmax
-                    ip=p3%p(m,mup,mu/mrso)
-                    do itheta=1,ntheta
-                        foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
-                        +foo_p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
-                    end do
-                end do
-            end do
-        end do
-        do itheta=1,ntheta
-            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
-            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
-            select case(dp)
-            case(c_double)
-              call dfftw_execute( ifft2d%plan )
-            case(c_float)
-              call sfftw_execute( ifft2d%plan )
-            end select
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi)
-                end do
-            end do
-        end do
-    end function proj2angl
-
 
         subroutine read_ck_nonzero
             use module_input, only: n_linesInFile
