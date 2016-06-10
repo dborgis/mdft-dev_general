@@ -625,12 +625,13 @@ contains
         implicit none
         real(dp), contiguous, intent(in) :: foo_o(:) ! orientations from 1 to no
         complex(dp) :: foo_p(1:grid%np)
-        integer :: itheta, iphi, ipsi, m, mup, mu, ip
-        foo_theta_mu_mup = zeroc
-        do itheta=1,ntheta
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2
+        io=0
+        do itheta=1,grid%ntheta
+            do iphi=1,grid%nphi
+                do ipsi=1,grid%npsi
+                    io=io+1 ! grid%indo(itheta,iphi,ipsi)
+                    fft2d%in(ipsi,iphi) = foo_o(io)
                 end do
             end do
             select case(dp)
@@ -639,15 +640,16 @@ contains
             case(c_float)
               call sfftw_execute (fft2d%plan)
             end select
-            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)
-            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
+            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)*wtheta(itheta)
+            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)*wtheta(itheta)
         end do
         foo_p = zeroc
+        ip=0
         do m=0,mmax
             do mup=-m,m
                 do mu=0,m,mrso
-                    ip = p3%p( m,mup,mu/mrso )
-                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%wigner_small_d(:,ip)*wtheta(:))*fm(m)
+                    ip=ip+1 ! p3%p( m,mup,mu/mrso )
+                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%wigner_small_d(:,ip))*fm(m)
                 end do
             end do
         end do
@@ -658,6 +660,7 @@ contains
         implicit none
         real(dp) :: foo_o (1:grid%no)
         complex(dp), contiguous, intent(in) :: foo_p(:) ! np
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2
         foo_theta_mu_mup = zeroc
         foo_o = 0._dp
         do mup=-mmax,mmax
