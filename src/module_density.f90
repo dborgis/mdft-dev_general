@@ -132,7 +132,6 @@ contains
         if( (solute%site(isite)%r(1) .ne. tmp_site%r(1)+offset_x) .or. &
             (solute%site(isite)%r(2) .ne. tmp_site%r(2)+offset_y) .or. &
             (solute%site(isite)%r(3) .ne. tmp_site%r(3)+offset_z) .or. &
-            (solute%site(isite)%q .ne. tmp_site%q) .or. &
             (solute%site(isite)%sig .ne. tmp_site%sig) .or. &
             (solute%site(isite)%eps .ne. tmp_site%eps) ) then
           print*, "Error in restart. Solutes are differents"
@@ -239,7 +238,7 @@ contains
       !
       ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
       !
-      vextmax = -log(epsilon(1.0)) * thermo%kbT
+      vextmax = (-log(epsilon(1.0_dp))-0.05) * thermo%kbT
       do s=1,size(solvent)
         where (solvent(s)%vext >= vextmax)
           solvent(s)%xi = 0._dp

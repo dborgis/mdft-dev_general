@@ -6,7 +6,7 @@ module module_energy_cproj_mrso
     use module_grid, only: grid
     use module_solvent, only: solvent
     use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu
-    use module_orientation_projection_transform, only: angl2proj, proj2angl, p3
+    use module_wigner_d, only: wigner_small_d
 
     implicit none
     private
@@ -60,6 +60,34 @@ module module_energy_cproj_mrso
 
     complex(dp), allocatable, protected :: foo_theta_mu_mup(:,:,:)
 
+
+    type :: p3_type
+        real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
+        integer, allocatable :: p(:,:,:) ! index of the projection corresponding to m, mup, mu
+        integer, allocatable :: m(:) ! m for projection 1 to np
+        integer, allocatable :: mup(:) ! mup for projection 1 to np. mup corresponds to phi
+        integer, allocatable :: mu(:) ! mu for projection 1 to np. mu corresponds to psi
+!        complex(dp), allocatable :: foo_q(:) ! foo (:) is a temporary array of size np
+!        complex(dp), allocatable :: foo_mq(:) ! foo (:) is a temporary array of size np
+    end type p3_type
+    type (p3_type), protected :: p3
+
+
+    type :: fft2d_type
+        type(c_ptr) :: plan
+        real(dp), allocatable    :: in(:,:)
+        complex(dp), allocatable :: out(:,:)
+        logical :: isalreadyplanned
+    end type
+    type :: ifft2d_type
+        type(c_ptr) :: plan
+        complex(dp), allocatable :: in(:,:)
+        real(dp), allocatable    :: out(:,:)
+        logical :: isalreadyplanned
+    end type
+    type(  fft2d_type ), save, protected :: fft2d
+    type( ifft2d_type ), save, protected :: ifft2d
+
     complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
     public :: energy_cproj_mrso
@@ -79,9 +107,9 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, m2, mu2, nu2
-        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq, a
-        real(dp) :: q(3), mq(3), lx, ly, lz, rho0
+        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, mu2, nu2
+        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
+        real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
@@ -89,12 +117,19 @@ contains
         real(dp) :: vexc(grid%no), rho, xi
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
         real :: total_time_in_subroutine
+        complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
+        integer :: ip2_loc(-5:5)
 
         call cpu_time (time(1))
 
         ntheta=grid%ntheta
         nphi=grid%nphi
         npsi=grid%npsi
+
+        if (.not.allocated(fft2d%in)) allocate (fft2d%in(npsi,nphi))
+        if (.not.allocated(fft2d%out)) allocate (fft2d%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
+        if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
+        if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(npsi,nphi))
 
         mmax=grid%mmax
         mrso=grid%molrotsymorder
@@ -138,6 +173,61 @@ call cpu_time (time(2))
         ! 7/ FFT3D-C2D                     :    ɣ^m_mup,mu(q)    =>    ɣ^m_mup,mu(r)
         ! 8/ gather projections            :    ɣ^m_mup,mu(r)    =>    ɣ(r,ω)
 
+
+        !
+        ! Toutes les projections sont stockées dans un meme vecteur de taille np
+        ! p3%p(m,mup,mu) transforme le triplet (m,mup,mu) a l'indice de la projection, ip.
+        ! p3%m(ip) donne, inversement à p3%p(m,mup,mu), le m (de {m,mup,mu}) qui correspondant à l'indice ip dans le tableau des projections
+        ! On a donc p3%p(p3%m(p),p3%mup(p),p3%mu(p)) == p
+        !
+        ! On ne fait ce travail que la première fois qu'on passe dans cette routine.
+        ! Les fois suivantes, p3%p reste alloué, et donc le .not.allocated(p3%p) est skippé.
+        ! On utilise cette astuce de nombreuses fois dans cette routine.
+        !
+        if (.not.allocated(p3%p)) then
+            allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax/mrso) ,source=-huge(1)) ! Dans p3%p, on met mu2=2*mu, pas mu
+            allocate ( p3%m(np) ,source=-huge(1)) ! mettre des -huge comme valeur initiale permet de plus tard verifier que s'il reste un -huge qqpart, il y a un problème. Si on avait mis 0, on ne peut pas vérifier.
+            allocate ( p3%mup(np) ,source=-huge(1))
+            allocate ( p3%mu(np) ,source=-huge(1)) ! c'est bien mu qu'on met dans p3%mu(), pas mu2
+            ip=0
+            do m=0,mmax
+                do mup=-m,m
+                    !
+                    ! We chose to have p3%p and p3%mu to contain the true value of mu, not mu/molrotsymorder.
+                    ! Thus, we loop over mu with steps of molrotsymorder
+                    ! Thus, we have holes in p3%p, but all calls to p3%p and p3%mu should be done with this true mu
+                    ! For instance, if molrotsymorder=2 (for water or any C2V molecule), any call to p3%p(m,mup,mu) with mu=1 will return -999
+                    ! Also, the array p3%mu only contains even values (des valeurs paires)
+                    !
+                    do mu=0,m,mrso
+                        ip=ip+1
+                        IF (ip > np) ERROR STOP "p > np at line 166"
+                        p3%p(m,mup,mu/mrso) = ip ! on met mu2 dans p3%p, pas mu
+                        p3%m(ip) = m
+                        p3%mup(ip) = mup
+                        p3%mu(ip) = mu ! c'est le vrai mu, pas mu2
+                    end do
+                end do
+            end do
+            if (ip /= np) error stop "ip /= np in energy_cproj"
+            if ( any(abs(p3%m)>mmax) .or. any(abs(p3%mup)>mmax) .or. any(abs(p3%mu)>mmax) ) then
+                print*, "tabulated m, mup or mu have incorrect values"
+                error stop
+            end if
+
+            !
+            ! Print all projections that will be kept in memory
+            !
+            open(11, file="output/nonzero-projections.out")
+            write(11,*)"Non-zero projections:"
+            write(11,*)"        index         m          mup          mu"
+            write(11,*)"        -----        ---         ---          --"
+            do ip=1,np
+                write(11,*) ip, p3%m(ip), p3%mup(ip), p3%mu(ip)
+            end do
+            close(11)
+        end if
+
 call cpu_time (time(3))
 
 
@@ -151,6 +241,30 @@ call cpu_time (time(3))
         !
         theta=grid%thetaofntheta
         wtheta=grid%wthetaofntheta
+
+        !
+        ! Tabulate generalized spherical harmonics in array p3%wigner_small_d(theta,proj)
+        ! where theta can be any of the GaussLegendre integration roots for theta
+        ! where proj is an index related to a tuple {m,mup,mu}
+        ! Blum's notation :
+        ! m is related to theta
+        ! mup is related to phi
+        ! mu is related to psi
+        ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
+        !
+        ! call test_routines_calcul_de_Rm_mup_mu_q
+        if (.not. allocated(p3%wigner_small_d)) then
+            allocate ( p3%wigner_small_d(1:ntheta, 1:np) ,source=0._dp)
+            do p=1,np
+                m = p3%m(p)
+                mup = p3%mup(p)
+                mu = p3%mu(p)
+                do i=1,ntheta
+                    ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la méthode de Wigner.
+                    p3%wigner_small_d(i,p) = wigner_small_d(m,mup,mu,theta(i))
+                end do
+            end do
+        end if
 
 call cpu_time (time(4))
 
@@ -166,6 +280,20 @@ call cpu_time (time(4))
         !
 
         ! 1/ ON PREPARE LES FFT
+
+        if (.not. fft2d%isalreadyplanned) then
+            select case(dp)
+            case(c_double)
+              call dfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
+              call dfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+            case(c_float)
+              call sfftw_plan_dft_r2c_2d(  fft2d%plan, npsi, nphi,  fft2d%in,  fft2d%out, FFTW_EXHAUSTIVE ) ! npsi est en premier indice
+              call sfftw_plan_dft_c2r_2d(  ifft2d%plan, npsi, nphi, ifft2d%in, ifft2d%out, FFTW_EXHAUSTIVE )
+            end select
+            ! call dfftw_plan_dft_2d (fft2d_c%plan, npsi, nphi, fft2d_c%in, fft2d_c%out, FFTW_BACKWARD, FFTW_EXHAUSTIVE)
+            fft2d%isalreadyplanned =.true.
+            ifft2d%isalreadyplanned =.true.
+        end if
 
         if (.not. fft3d%plan_backward_ok) then
           select case(dp)
@@ -304,18 +432,25 @@ call cpu_time (time(4))
                     !
                     ! Rotation to molecular (q) frame
                     !
-                    deltarho_p_q  = zeroc
-                    deltarho_p_mq = zeroc
+                    gamma_p_q = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
+                    gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq) ! this a temporary array
+                    ip=0
                     do m=0,mmax
                         do khi=-m,m
-                            do mu=0,m,mrso
-                                ip=p3%p(m,khi,mu/mrso)
+                            R_loc(-m:m)=R(m,-m:m,khi)
+                            do mu2=0,m/mrso
+                                ip=ip+1
+                                ip2_loc(-m:m)=p3%p(m,-m:m,mu2)  ! Optimization added 6th of June 2016. Makes the code ugly but improves locality... :-/
                                 ! Equation 1.22
+                                deltarho_p_q_loc  = (0._dp,0._dp)
+                                deltarho_p_mq_loc = (0._dp,0._dp)
                                 do mup=-m,m
-                                    ip2=p3%p(m,mup,mu/mrso)
-                                    deltarho_p_q (ip) = deltarho_p_q (ip) + deltarho_p(ip2,ix_q,iy_q,iz_q)            *R(m,mup, khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + deltarho_p(ip2,ix_mq,iy_mq,iz_mq) *(-1)**m*R(m,mup,-khi)
+                                    ip2=ip2_loc(mup)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q(ip2)  *R_loc(mup)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(ip2) *R_loc(mup)
                                 end do
+                                deltarho_p_q(ip) = deltarho_p_q_loc
+                                deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
                             end do
                         end do
                     end do
@@ -376,39 +511,43 @@ call cpu_time (time(4))
                     !
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
                     ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
-                    deltarho_p_q  = zeroc
-                    deltarho_p_mq = zeroc
+
+
+                    ip=0
                     do m=0,mmax
                         do mup=-m,m
-                            do mu=0,m,mrso
-                                ip=p3%p(m,mup,mu/mrso)
+                            R_loc(-m:m)=R(m,mup,-m:m) ! R_loc(khi)=R(m,mup,khi)
+                            do mu2=0,m/mrso
+                                ip=ip+1
                                 ! Equation 1.22
+                                ip2_loc(-m:m)=p3%p(m,-m:m,mu2) ! Optimization added 6th of June 2016. Makes the code ugly but improves locality... :-/
+                                deltarho_p_q_loc  = (0._dp,0._dp)
+                                deltarho_p_mq_loc = (0._dp,0._dp)
                                 do khi=-m,m
-                                    ip2=p3%p(m,khi,mu/mrso)
-                                    deltarho_p_q (ip) = deltarho_p_q (ip) + gamma_p_q(ip2)  *R(m,mup,khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
+                                    ip2=ip2_loc(khi)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q (ip2) *R_loc(khi)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(ip2) *R_loc(-khi)
                                 end do
                                 !
+                                deltarho_p_q(ip) = deltarho_p_q_loc
+                                deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
                             end do
                         end do
                     end do
-                    gamma_p_q = deltarho_p_q
-                    gamma_p_mq = deltarho_p_mq
-
 
                     !
                     ! For vector q,
                     !
-                    deltarho_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
+                    deltarho_p (:, ix_q, iy_q, iz_q) = deltarho_p_q
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
                     !
                     ! Again, pay attention to the singular mid-k point
                     !
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(deltarho_p_mq)
                     else
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = deltarho_p_mq
                     end if
                     gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
@@ -480,6 +619,89 @@ print*, "                  | proj2angl + sum to ff and df                 ", tim
 print*, "                  |"
 
 contains
+
+
+    function angl2proj (foo_o) result (foo_p)
+        implicit none
+        real(dp), intent(in) :: foo_o(grid%no)
+        complex(dp) :: foo_p(grid%np)
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2
+        io=0
+        do itheta=1,grid%ntheta
+            do iphi=1,grid%nphi
+                do ipsi=1,grid%npsi
+                    io=io+1 ! grid%indo(itheta,iphi,ipsi)
+                    fft2d%in(ipsi,iphi) = foo_o(io)
+                end do
+            end do
+            select case(dp)
+            case(c_double)
+              call dfftw_execute (fft2d%plan)
+            case(c_float)
+              call sfftw_execute (fft2d%plan)
+            end select
+            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)*wtheta(itheta)
+            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)*wtheta(itheta)
+        end do
+        foo_p = zeroc
+        ip=0
+        do m=0,mmax
+            do mup=-m,m
+                do mu2=0,m/mrso
+                    ip=ip+1 ! p3%p( m,mup,mu/mrso )
+                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu2,mup)*p3%wigner_small_d(:,ip))*fm(m)
+                end do
+            end do
+        end do
+    end function angl2proj
+
+
+    function proj2angl (foo_p) result (foo_o)
+        implicit none
+        real(dp) :: foo_o(grid%no)
+        complex(dp), intent(in) :: foo_p(grid%np)
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2, abs_mup
+        complex(dp) :: foo_mu2_mup
+        complex(dp) :: table_of_wigner_small_d_itheta_times_p(grid%np)
+        io=0
+        do itheta=1,ntheta
+
+          table_of_wigner_small_d_itheta_times_p = p3%wigner_small_d(itheta,:)*foo_p(:)
+          do mup=-mmax,mmax
+              abs_mup=abs(mup)
+              do mu2=0,mmax/mrso
+                    foo_mu2_mup=(0._dp,0._dp)
+                    do m= max(abs_mup,mrso*mu2), mmax ! should be max(abs(mup),abs(mu)) but mu is always positive in our derivation
+                      ip=p3%p(m,mup,mu2)
+                      foo_mu2_mup = foo_mu2_mup + table_of_wigner_small_d_itheta_times_p(ip) * fm(m)
+                    end do
+
+                    if( mup<0 ) then
+                        ifft2d%in(mu2+1,mup+2*mmax+2) = conjg(foo_mu2_mup)
+                    else
+                        ifft2d%in(mu2+1,mup+1) = conjg(foo_mu2_mup)
+                    end if
+
+              end do
+          end do
+
+          select case(dp)
+          case(c_double)
+            call dfftw_execute( ifft2d%plan )
+          case(c_float)
+            call sfftw_execute( ifft2d%plan )
+          end select
+
+          do iphi=1,nphi
+              do ipsi=1,npsi
+                  io=io+1 ! grid%indo(itheta,iphi,ipsi)
+                  foo_o(io) = ifft2d%out(ipsi,iphi)
+              end do
+          end do
+
+        end do
+    end function proj2angl
+
 
         subroutine read_ck_nonzero
             use module_input, only: n_linesInFile
@@ -554,7 +776,6 @@ contains
                 mu = cq%mu(ia)
                 nu = cq%nu(ia)
                 khi = cq%khi(ia)
-                ! cq%a(m,n,mu,nu,khi) = ia
                 cq%a2(m,n,mu/mrso,nu/mrso,khi) = ia
             end do
 
