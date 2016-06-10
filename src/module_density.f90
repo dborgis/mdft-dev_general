@@ -96,7 +96,7 @@ contains
       !
       ! If vext is high, the guessed starting density is 0. If vext is something else, the guessed density is the bulk density (xi==1).
       !
-      vextmax = -log(epsilon(1.0))-0.05 * thermo%kbT
+      vextmax = (-log(epsilon(1.0_dp))-0.05) * thermo%kbT
       do s=1,size(solvent)
         where (solvent(s)%vext >= vextmax)
           solvent(s)%xi = 0._dp
@@ -105,6 +105,6 @@ contains
         end where
       end do
     end subroutine guess_density
-    
+
 
 end module module_density
