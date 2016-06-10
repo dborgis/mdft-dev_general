@@ -623,9 +623,9 @@ contains
 
     function angl2proj (foo_o) result (foo_p)
         implicit none
-        real(dp), contiguous, intent(in) :: foo_o(:) ! orientations from 1 to no
-        complex(dp) :: foo_p(1:grid%np)
-        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2
+        real(dp), intent(in) :: foo_o(grid%no)
+        complex(dp) :: foo_p(grid%np)
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2
         io=0
         do itheta=1,grid%ntheta
             do iphi=1,grid%nphi
@@ -647,9 +647,9 @@ contains
         ip=0
         do m=0,mmax
             do mup=-m,m
-                do mu=0,m,mrso
+                do mu2=0,m/mrso
                     ip=ip+1 ! p3%p( m,mup,mu/mrso )
-                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%wigner_small_d(:,ip))*fm(m)
+                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu2,mup)*p3%wigner_small_d(:,ip))*fm(m)
                 end do
             end do
         end do
@@ -658,23 +658,22 @@ contains
 
     function proj2angl (foo_p) result (foo_o)
         implicit none
-        real(dp) :: foo_o(1:grid%no)
-        complex(dp), contiguous, intent(in) :: foo_p(:) ! np
-        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2, abs_mup, i
+        real(dp) :: foo_o(grid%no)
+        complex(dp), intent(in) :: foo_p(grid%np)
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2, abs_mup
         complex(dp) :: foo_mu2_mup
-        real(dp) :: table_of_wigner_small_d_itheta(grid%np)
+        complex(dp) :: table_of_wigner_small_d_itheta_times_p(grid%np)
         io=0
         do itheta=1,ntheta
 
-          table_of_wigner_small_d_itheta = p3%wigner_small_d(itheta,:)
+          table_of_wigner_small_d_itheta_times_p = p3%wigner_small_d(itheta,:)*foo_p(:)
           do mup=-mmax,mmax
               abs_mup=abs(mup)
               do mu2=0,mmax/mrso
                     foo_mu2_mup=(0._dp,0._dp)
                     do m= max(abs_mup,mrso*mu2), mmax ! should be max(abs(mup),abs(mu)) but mu is always positive in our derivation
                       ip=p3%p(m,mup,mu2)
-                      ! foo_mu2_mup(mu2,mup) = foo_mu2_mup(mu2,mup) + table_of_wigner_small_d_itheta(ip)* foo_p(ip) * fm(m)
-                      foo_mu2_mup = foo_mu2_mup + table_of_wigner_small_d_itheta(ip)* foo_p(ip) * fm(m)
+                      foo_mu2_mup = foo_mu2_mup + table_of_wigner_small_d_itheta_times_p(ip) * fm(m)
                     end do
 
                     if( mup<0 ) then
@@ -692,6 +691,7 @@ contains
           case(c_float)
             call sfftw_execute( ifft2d%plan )
           end select
+
           do iphi=1,nphi
               do ipsi=1,npsi
                   io=io+1 ! grid%indo(itheta,iphi,ipsi)
