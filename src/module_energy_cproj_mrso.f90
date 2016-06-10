@@ -661,31 +661,31 @@ contains
         real(dp) :: foo_o(1:grid%no)
         complex(dp), contiguous, intent(in) :: foo_p(:) ! np
         integer :: ip, io, itheta, iphi, ipsi, m, mup, mu, mu2, abs_mup, i
-        complex(dp) :: foo_mu2_mup(0:mmax/mrso,-mmax:mmax)
+        complex(dp) :: foo_mu2_mup
         real(dp) :: table_of_wigner_small_d_itheta(grid%np)
         io=0
         do itheta=1,ntheta
 
-          foo_mu2_mup=(0._dp,0._dp)
           table_of_wigner_small_d_itheta = p3%wigner_small_d(itheta,:)
           do mup=-mmax,mmax
               abs_mup=abs(mup)
               do mu2=0,mmax/mrso
+                    foo_mu2_mup=(0._dp,0._dp)
                     do m= max(abs_mup,mrso*mu2), mmax ! should be max(abs(mup),abs(mu)) but mu is always positive in our derivation
                       ip=p3%p(m,mup,mu2)
-                      foo_mu2_mup(mu2,mup) = foo_mu2_mup(mu2,mup) + table_of_wigner_small_d_itheta(ip)* foo_p(ip) * fm(m)
+                      ! foo_mu2_mup(mu2,mup) = foo_mu2_mup(mu2,mup) + table_of_wigner_small_d_itheta(ip)* foo_p(ip) * fm(m)
+                      foo_mu2_mup = foo_mu2_mup + table_of_wigner_small_d_itheta(ip)* foo_p(ip) * fm(m)
                     end do
 
                     if( mup<0 ) then
-                        ifft2d%in(mu2+1,mup+2*mmax+2) = conjg(foo_mu2_mup(mu2,mup))
+                        ifft2d%in(mu2+1,mup+2*mmax+2) = conjg(foo_mu2_mup)
                     else
-                        ifft2d%in(mu2+1,mup+1) = conjg(foo_mu2_mup(mu2,mup))
+                        ifft2d%in(mu2+1,mup+1) = conjg(foo_mu2_mup)
                     end if
+
               end do
           end do
 
-          ! ifft2d%in(:,1:mmax+1) = CONJG( foo_mu2_mup(0:mmax/mrso,0:mmax)   )
-          ! ifft2d%in(:,mmax+2:)  = CONJG( foo_mu2_mup(0:mmax/mrso,-mmax:-1) )
           select case(dp)
           case(c_double)
             call dfftw_execute( ifft2d%plan )
