@@ -7,7 +7,7 @@
 #
 
 # require cmake 2.8.0
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
 
 ##################
 project("mdft-dev")
@@ -50,8 +50,8 @@ message(STATUS "Using compiler ${Fortran_COMPILER_NAME}")
 SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffree-line-length-none -O3 -pedantic -std=f2008 -fopenmp")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-mcmodel=large -march=native -funroll-all-loops -ffree-line-length-none -O3 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008 -fopenmp")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-mcmodel=large -march=native -ffree-line-length-none -O3             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds -g")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
@@ -122,6 +122,7 @@ set(mdft_SRCS
   src/output_rdf.f90
   src/write_to_cube_file.f90
   src/module_wigner_d.f90
+  src/module_orientation_projection_transform.f90
 #  src/module_mpi.F90
 )
 

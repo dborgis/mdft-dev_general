@@ -71,12 +71,6 @@ subroutine energy_and_gradient (f, df)
     end if
     ns = solvent(1)%nspec
 
-    if (allocated (solvent(1)%vextq)) then
-      do s=1,ns
-        deallocate (solvent(s)%vextq)
-      end do
-    end if
-
     fold=f
     f  = zerodp
     df = zerodp

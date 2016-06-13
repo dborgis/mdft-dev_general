@@ -107,9 +107,9 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, m2, mu2, nu2
-        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq, a
-        real(dp) :: q(3), mq(3), lx, ly, lz, rho0
+        integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, mu2, nu2
+        complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
+        real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
@@ -117,6 +117,8 @@ contains
         real(dp) :: vexc(grid%no), rho, xi
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
         real :: total_time_in_subroutine
+        complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
+        integer :: ip2_loc(-5:5)
 
         call cpu_time (time(1))
 
@@ -430,18 +432,25 @@ call cpu_time (time(4))
                     !
                     ! Rotation to molecular (q) frame
                     !
-                    deltarho_p_q  = zeroc
-                    deltarho_p_mq = zeroc
+                    gamma_p_q = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
+                    gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq) ! this a temporary array
+                    ip=0
                     do m=0,mmax
                         do khi=-m,m
-                            do mu=0,m,mrso
-                                ip=p3%p(m,khi,mu/mrso)
+                            R_loc(-m:m)=R(m,-m:m,khi)
+                            do mu2=0,m/mrso
+                                ip=ip+1
+                                ip2_loc(-m:m)=p3%p(m,-m:m,mu2)  ! Optimization added 6th of June 2016. Makes the code ugly but improves locality... :-/
                                 ! Equation 1.22
+                                deltarho_p_q_loc  = (0._dp,0._dp)
+                                deltarho_p_mq_loc = (0._dp,0._dp)
                                 do mup=-m,m
-                                    ip2=p3%p(m,mup,mu/mrso)
-                                    deltarho_p_q (ip) = deltarho_p_q (ip) + deltarho_p(ip2,ix_q,iy_q,iz_q)            *R(m,mup, khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + deltarho_p(ip2,ix_mq,iy_mq,iz_mq) *(-1)**m*R(m,mup,-khi)
+                                    ip2=ip2_loc(mup)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q(ip2)  *R_loc(mup)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(ip2) *R_loc(mup)
                                 end do
+                                deltarho_p_q(ip) = deltarho_p_q_loc
+                                deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
                             end do
                         end do
                     end do
@@ -502,39 +511,43 @@ call cpu_time (time(4))
                     !
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
                     ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
-                    deltarho_p_q  = zeroc
-                    deltarho_p_mq = zeroc
+
+
+                    ip=0
                     do m=0,mmax
                         do mup=-m,m
-                            do mu=0,m,mrso
-                                ip=p3%p(m,mup,mu/mrso)
+                            R_loc(-m:m)=R(m,mup,-m:m) ! R_loc(khi)=R(m,mup,khi)
+                            do mu2=0,m/mrso
+                                ip=ip+1
                                 ! Equation 1.22
+                                ip2_loc(-m:m)=p3%p(m,-m:m,mu2) ! Optimization added 6th of June 2016. Makes the code ugly but improves locality... :-/
+                                deltarho_p_q_loc  = (0._dp,0._dp)
+                                deltarho_p_mq_loc = (0._dp,0._dp)
                                 do khi=-m,m
-                                    ip2=p3%p(m,khi,mu/mrso)
-                                    deltarho_p_q (ip) = deltarho_p_q (ip) + gamma_p_q(ip2)  *R(m,mup,khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(ip2) *(-1)**m*R(m,mup,-khi)
+                                    ip2=ip2_loc(khi)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q (ip2) *R_loc(khi)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(ip2) *R_loc(-khi)
                                 end do
                                 !
+                                deltarho_p_q(ip) = deltarho_p_q_loc
+                                deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
                             end do
                         end do
                     end do
-                    gamma_p_q = deltarho_p_q
-                    gamma_p_mq = deltarho_p_mq
-
 
                     !
                     ! For vector q,
                     !
-                    deltarho_p (1:np, ix_q, iy_q, iz_q) = gamma_p_q(1:np)
+                    deltarho_p (:, ix_q, iy_q, iz_q) = deltarho_p_q
                     gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
                     !
                     ! Again, pay attention to the singular mid-k point
                     !
                     if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(gamma_p_mq(1:np))
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(deltarho_p_mq)
                     else
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = gamma_p_mq(1:np)
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = deltarho_p_mq
                     end if
                     gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
@@ -610,14 +623,15 @@ contains
 
     function angl2proj (foo_o) result (foo_p)
         implicit none
-        real(dp), contiguous, intent(in) :: foo_o(:) ! orientations from 1 to no
-        complex(dp) :: foo_p(1:grid%np)
-        integer :: itheta, iphi, ipsi, m, mup, mu, ip
-        foo_theta_mu_mup = zeroc
-        do itheta=1,ntheta
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    fft2d%in(ipsi,iphi) = foo_o(grid%indo(itheta,iphi,ipsi))
+        real(dp), intent(in) :: foo_o(grid%no)
+        complex(dp) :: foo_p(grid%np)
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2
+        io=0
+        do itheta=1,grid%ntheta
+            do iphi=1,grid%nphi
+                do ipsi=1,grid%npsi
+                    io=io+1 ! grid%indo(itheta,iphi,ipsi)
+                    fft2d%in(ipsi,iphi) = foo_o(io)
                 end do
             end do
             select case(dp)
@@ -626,15 +640,16 @@ contains
             case(c_float)
               call sfftw_execute (fft2d%plan)
             end select
-            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)
-            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)
+            foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)*wtheta(itheta)
+            foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)*wtheta(itheta)
         end do
         foo_p = zeroc
+        ip=0
         do m=0,mmax
             do mup=-m,m
-                do mu=0,m,mrso
-                    ip = p3%p( m,mup,mu/mrso )
-                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu/mrso,mup)*p3%wigner_small_d(:,ip)*wtheta(:))*fm(m)
+                do mu2=0,m/mrso
+                    ip=ip+1 ! p3%p( m,mup,mu/mrso )
+                    foo_p(ip)= sum(foo_theta_mu_mup(:,mu2,mup)*p3%wigner_small_d(:,ip))*fm(m)
                 end do
             end do
         end do
@@ -643,35 +658,47 @@ contains
 
     function proj2angl (foo_p) result (foo_o)
         implicit none
-        real(dp) :: foo_o (1:grid%no)
-        complex(dp), contiguous, intent(in) :: foo_p(:) ! np
-        foo_theta_mu_mup = zeroc
-        foo_o = 0._dp
-        do mup=-mmax,mmax
-            do mu=0,mmax,mrso
-                do m= max(abs(mup),abs(mu)), mmax
-                    ip=p3%p(m,mup,mu/mrso)
-                    do itheta=1,ntheta
-                        foo_theta_mu_mup(itheta,mu/mrso,mup) = foo_theta_mu_mup(itheta,mu/mrso,mup)&
-                        +foo_p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
-                    end do
-                end do
-            end do
-        end do
+        real(dp) :: foo_o(grid%no)
+        complex(dp), intent(in) :: foo_p(grid%np)
+        integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2, abs_mup
+        complex(dp) :: foo_mu2_mup
+        complex(dp) :: table_of_wigner_small_d_itheta_times_p(grid%np)
+        io=0
         do itheta=1,ntheta
-            ifft2d%in(:,1:mmax+1) = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   )
-            ifft2d%in(:,mmax+2:)  = CONJG( foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) )
-            select case(dp)
-            case(c_double)
-              call dfftw_execute( ifft2d%plan )
-            case(c_float)
-              call sfftw_execute( ifft2d%plan )
-            end select
-            do iphi=1,nphi
-                do ipsi=1,npsi
-                    foo_o (grid%indo(itheta,iphi,ipsi)) = ifft2d%out(ipsi,iphi)
-                end do
-            end do
+
+          table_of_wigner_small_d_itheta_times_p = p3%wigner_small_d(itheta,:)*foo_p(:)
+          do mup=-mmax,mmax
+              abs_mup=abs(mup)
+              do mu2=0,mmax/mrso
+                    foo_mu2_mup=(0._dp,0._dp)
+                    do m= max(abs_mup,mrso*mu2), mmax ! should be max(abs(mup),abs(mu)) but mu is always positive in our derivation
+                      ip=p3%p(m,mup,mu2)
+                      foo_mu2_mup = foo_mu2_mup + table_of_wigner_small_d_itheta_times_p(ip) * fm(m)
+                    end do
+
+                    if( mup<0 ) then
+                        ifft2d%in(mu2+1,mup+2*mmax+2) = conjg(foo_mu2_mup)
+                    else
+                        ifft2d%in(mu2+1,mup+1) = conjg(foo_mu2_mup)
+                    end if
+
+              end do
+          end do
+
+          select case(dp)
+          case(c_double)
+            call dfftw_execute( ifft2d%plan )
+          case(c_float)
+            call sfftw_execute( ifft2d%plan )
+          end select
+
+          do iphi=1,nphi
+              do ipsi=1,npsi
+                  io=io+1 ! grid%indo(itheta,iphi,ipsi)
+                  foo_o(io) = ifft2d%out(ipsi,iphi)
+              end do
+          end do
+
         end do
     end function proj2angl
 
@@ -749,7 +776,6 @@ contains
                 mu = cq%mu(ia)
                 nu = cq%nu(ia)
                 khi = cq%khi(ia)
-                ! cq%a(m,n,mu,nu,khi) = ia
                 cq%a2(m,n,mu/mrso,nu/mrso,khi) = ia
             end do
 

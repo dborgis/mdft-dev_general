@@ -19,15 +19,17 @@ contains
         use module_solvent, only: solvent
         use module_solute, only: solute
         use module_grid, only: grid
+        use module_orientation_projection_transform, only: angl2proj
         implicit none
         character(len=80) :: filename
         real(dp), allocatable :: density(:,:,:)
-        integer :: nx, ny, nz, ix, iy, iz
+        integer :: nx, ny, nz, ix, iy, iz, io, is, isite, no
         real(dp), parameter :: pi=acos(-1._dp)
 
         nx=grid%nx
         ny=grid%ny
         nz=grid%nz
+        no=grid%no
 
 
         !
@@ -43,7 +45,29 @@ contains
         ! print binary file one can use as a restart point
         !
         open(10,file='output/density.bin',form='unformatted')
-        write(10) solvent(1)%xi
+        write(10) size(solvent)
+        write(10) grid%mmax
+        write(10) grid%no
+        write(10) grid%np
+        write(10) grid%nx, grid%ny, grid%nz
+        write(10) grid%dx, grid%dy, grid%dz
+        write(10) size(solute%site)
+
+        do isite=1,size(solute%site)
+          write(10) solute%site(isite)
+        enddo
+
+
+        do is=1,size(solvent)
+          do iz=1,nz
+            do iy=1,ny
+              do ix=1,nx
+                write(10) angl2proj( solvent(is)%xi(1:no,ix,iy,iz) )
+              end do
+            end do
+          end do
+        end do
+
         close(10)
         print*, "New file output/density.bin"
 

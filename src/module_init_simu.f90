@@ -19,11 +19,9 @@ contains
         use module_input, only: getinput
         use module_fft, only: init_fft => init
         use module_vext, only: init_vext
-        use module_debug, only: init_debug
         use module_thermo, only: init_thermo
         implicit none
         call print_header
-        call init_debug
         call grid%init
         call read_solute
         call init_thermo
