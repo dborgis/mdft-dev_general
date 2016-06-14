@@ -178,14 +178,7 @@ contains
     rho0 = solvent(1)%rho0
 
 
-    if (.not. allocated (deltarho_p) ) then
-      allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
-      ! allocate (deltarho_p_q(np) ,source=zeroc)
-      ! allocate (deltarho_p_mq(np) ,source=zeroc)
-      ! allocate (gamma_p_q(np), source=zeroc)
-      ! allocate (gamma_p_mq(np), source=zeroc)
-    end if
-
+    if (.not. allocated (deltarho_p) ) allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
     if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
 
     call cpu_time (time(2))
