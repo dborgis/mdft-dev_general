@@ -22,7 +22,7 @@ contains
         use module_orientation_projection_transform, only: angl2proj
         implicit none
         character(len=80) :: filename
-        real(dp), allocatable :: density(:,:,:), px(:,:,:,:), py(:,:,:,:), pz(:,:,:,:)
+        real(dp), allocatable :: density(:,:,:)!, px(:,:,:,:), py(:,:,:,:), pz(:,:,:,:)
         integer :: nx, ny, nz, ix, iy, iz, io, is, isite, no
         real(dp), parameter :: pi=acos(-1._dp)
 
@@ -44,18 +44,18 @@ contains
         !
         ! print polarization in each direction
         !
-        filename = "output/Px.cube"
-        allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
-        call get_final_polarization(px,py,pz)
-        filename = "output/Px.cube"
-        call write_to_cube_file(px,filename)
-        print*, "New file output/Px.cube"
-        filename = "output/Py.cube"
-        call write_to_cube_file(py,filename)
-        print*, "New file output/Py.cube"
-        filename = "output/Pz.cube"
-        call write_to_cube_file(pz,filename)
-        print*, "New file output/Pz.cube"
+        ! filename = "output/Px.cube"
+        ! allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
+        ! call get_final_polarization(px,py,pz)
+        ! filename = "output/Px.cube"
+        ! call write_to_cube_file(px,filename)
+        ! print*, "New file output/Px.cube"
+        ! filename = "output/Py.cube"
+        ! call write_to_cube_file(py,filename)
+        ! print*, "New file output/Py.cube"
+        ! filename = "output/Pz.cube"
+        ! call write_to_cube_file(pz,filename)
+        ! print*, "New file output/Pz.cube"
 
 
         !
