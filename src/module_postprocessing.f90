@@ -22,7 +22,7 @@ contains
         use module_orientation_projection_transform, only: angl2proj
         implicit none
         character(len=80) :: filename
-        real(dp), allocatable :: density(:,:,:)
+        real(dp), allocatable :: density(:,:,:), px(:,:,:,:), py(:,:,:,:), pz(:,:,:,:)
         integer :: nx, ny, nz, ix, iy, iz, io, is, isite, no
         real(dp), parameter :: pi=acos(-1._dp)
 
@@ -42,6 +42,23 @@ contains
         print*, "New file output/density.cube"
 
         !
+        ! print polarization in each direction
+        !
+        filename = "output/Px.cube"
+        allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
+        call get_final_polarization(px,py,pz)
+        filename = "output/Px.cube"
+        call write_to_cube_file(px,filename)
+        print*, "New file output/Px.cube"
+        filename = "output/Py.cube"
+        call write_to_cube_file(py,filename)
+        print*, "New file output/Py.cube"
+        filename = "output/Pz.cube"
+        call write_to_cube_file(pz,filename)
+        print*, "New file output/Pz.cube"
+
+
+        !
         ! print binary file one can use as a restart point
         !
         open(10,file='output/density.bin',form='unformatted')
@@ -52,12 +69,9 @@ contains
         write(10) grid%nx, grid%ny, grid%nz
         write(10) grid%dx, grid%dy, grid%dz
         write(10) size(solute%site)
-
         do isite=1,size(solute%site)
           write(10) solute%site(isite)
         enddo
-
-
         do is=1,size(solvent)
           do iz=1,nz
             do iy=1,ny
@@ -67,9 +81,10 @@ contains
             end do
           end do
         end do
-
         close(10)
         print*, "New file output/density.bin"
+
+
 
 
 
@@ -316,46 +331,46 @@ contains
 !
 !
 !
-!     SUBROUTINE get_final_polarization ( Px , Py , Pz )
-!
-!         use precision_kinds, only: dp, i2b
-!         use module_solvent, only: solvent
-!         use module_grid, only: grid
-!
-!         IMPLICIT NONE
-!         INTEGER(i2b) :: i, j, k, io, s
-!         REAL(dp) :: x, local_Px, local_Py, local_Pz
-!         REAL(dp), dimension(:,:,:,:), intent(out) :: Px, Py, Pz ! equilibrium polarization(r)
-!         integer :: nx, ny, nz, no, ns
-!         real(dp), parameter :: zerodp = 0._dp
-!
-!
-!         Px = zerodp
-!         Py = zerodp
-!         Pz = zerodp
-!
-!         DO s =1,solvent(1)%nspec
-!             DO i =1,grid%nx
-!                 DO j =1,grid%ny
-!                     DO k =1,grid%nz
-!                         local_Px = 0.0_dp
-!                         local_Py = 0.0_dp
-!                         local_Pz = 0.0_dp
-!                         DO io =1,grid%no
-!                             x = solvent(s)%rho(i,j,k,io)
-!                             local_Px = local_Px + grid%omx(io) * grid%w(io) * x
-!                             local_Py = local_Py + grid%omy(io) * grid%w(io) * x
-!                             local_Pz = local_Pz + grid%omz(io) * grid%w(io) * x
-!                         END DO
-!                         Px(i,j,k,s) = local_Px
-!                         Py(i,j,k,s) = local_Py
-!                         Pz(i,j,k,s) = local_Pz
-!                     END DO
-!                 END DO
-!             END DO
-!         END DO
-!
-!     END SUBROUTINE get_final_polarization
+    subroutine get_final_polarization ( Px , Py , Pz )
+
+        use precision_kinds, only: dp, i2b
+        use module_solvent, only: solvent
+        use module_grid, only: grid
+
+        IMPLICIT NONE
+        INTEGER(i2b) :: i, j, k, io, s
+        REAL(dp) :: x, local_Px, local_Py, local_Pz
+        REAL(dp), dimension(:,:,:,:), intent(out) :: Px, Py, Pz ! equilibrium polarization(r)
+        integer :: nx, ny, nz, no, ns
+        real(dp), parameter :: zerodp = 0._dp
+
+
+        Px = zerodp
+        Py = zerodp
+        Pz = zerodp
+
+        DO s =1,solvent(1)%nspec
+            DO i =1,grid%nx
+                DO j =1,grid%ny
+                    DO k =1,grid%nz
+                        local_Px = 0.0_dp
+                        local_Py = 0.0_dp
+                        local_Pz = 0.0_dp
+                        DO io =1,grid%no
+                            x = solvent(s)%xi(i,j,k,io)**2*solvent(s)%rho0
+                            local_Px = local_Px + grid%omx(io) * grid%w(io) * x
+                            local_Py = local_Py + grid%omy(io) * grid%w(io) * x
+                            local_Pz = local_Pz + grid%omz(io) * grid%w(io) * x
+                        END DO
+                        Px(i,j,k,s) = local_Px
+                        Py(i,j,k,s) = local_Py
+                        Pz(i,j,k,s) = local_Pz
+                    END DO
+                END DO
+            END DO
+        END DO
+
+    end subroutine get_final_polarization
 !
 !
 end module
