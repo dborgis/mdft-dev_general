@@ -94,7 +94,30 @@ module module_energy_cproj_mrso
 
 contains
 
-    subroutine energy_cproj_mrso (ff,df)
+    subroutine energy_cproj_mrso(ff,df)
+      use module_grid, only: grid
+      use module_solvent, only: solvent
+      implicit none
+      real(dp), intent(out) :: ff
+      real(dp), contiguous, intent(inout) :: df(:,:,:,:,:) ! x y z o s
+
+      select case( grid%mmax)
+!$SH  for mmax in $(seq 0 5); do
+      case(${mmax})
+          select case( grid%molrotsymorder)
+!$SH      for mrso in 1 2; do
+          case(${mrso})
+              call energy_cproj_mrso_${mmax}_${mrso}(ff,df)
+!$SH      done
+          end select
+!$SH  done
+      end select
+    end subroutine energy_cproj_mrso
+
+
+!$SH for mmax in $(seq 0 5); do
+!$SH for mrso in 1 2; do
+    subroutine energy_cproj_mrso_${mmax}_${mrso} (ff,df)
         use omp_lib
         use iso_c_binding, only: c_ptr
         use precision_kinds, only: dp
@@ -106,7 +129,8 @@ contains
         real(dp) :: dv, kT
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
-        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
+        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, na, nq
+        integer, parameter :: mmax=${mmax}, mrso=${mrso}
         integer :: m, n, mu, nu, khi, mup, ia, ip, ipsi, iphi, itheta, iq, io, mu2, nu2
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: q(3), lx, ly, lz, rho0
@@ -130,9 +154,6 @@ contains
         if (.not.allocated(fft2d%out)) allocate (fft2d%out(npsi/2+1,nphi)) ! pay attention, for fft2d we have psi as the first index, while it is the second index everywhere else.
         if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
         if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(npsi,nphi))
-
-        mmax=grid%mmax
-        mrso=grid%molrotsymorder
 
         if (.not. allocated( foo_theta_mu_mup) ) allocate ( foo_theta_mu_mup(1:ntheta,0:mmax/mrso,-mmax:mmax))
 
@@ -807,6 +828,8 @@ contains
         end subroutine read_ck_nonzero
 
 
-    end subroutine energy_cproj_mrso
+    end subroutine energy_cproj_mrso_${mmax}_${mrso}
+!$SH done
+!$SH done
 
 end module module_energy_cproj_mrso
