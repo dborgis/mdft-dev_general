@@ -118,6 +118,7 @@ contains
 !$SH for mmax in $(seq 1 5); do
 !$SH for mrso in 1 2; do
   subroutine energy_cproj_mrso_${mmax}_${mrso} (ff,df)
+
     use omp_lib
     use iso_c_binding, only: c_ptr
     use precision_kinds, only: dp
@@ -125,17 +126,9 @@ contains
     use module_thermo, only: thermo
     implicit none
 
-    ! integer, parameter :: ntheta=${mmax}+1
-    ! integer, parameter :: nphi=2*${mmax}+1
-    ! integer, parameter :: npsi=2*(${mmax}/${mrso})+1
-    ! integer, parameter :: no=nphi*ntheta*npsi
-    ! integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2, mu
-    ! integer, parameter :: np=sum( [( [( [( 1 ,  mu=0,m/${mrso}   )], mup=-m,m)], m=0,${mmax}  )] )
-    ! real(dp), parameter :: fm(0:${mmax}) = [( sqrt(real(2*m+1,dp)) ,m=0,${mmax} )]
-
     real(dp), intent(out) :: ff
     real(dp), contiguous, intent(inout) :: df(:,:,:,:,:) ! x y z o s
-    real(dp) :: dv, kT
+
     logical :: q_eq_mq
     integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
     integer :: nx, ny, nz, ns, na, nq
@@ -148,22 +141,18 @@ contains
     integer, parameter :: npsi=2*(${mmax}/${mrso})+1
     integer, parameter :: no=nphi*ntheta*npsi
     integer, parameter :: np=sum( [( [( [( 1 ,  mu=0,m/${mrso}   )], mup=-m,m)], m=0,${mmax}  )] )
-
-    complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
-
-    logical, allocatable :: gamma_p_isok(:,:,:)
-    real :: time(20)
     real(dp), parameter :: fm(0:${mmax}) = [( sqrt(real(2*m+1,dp)) ,m=0,${mmax} )]
     real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
 
-    real(dp) :: vexc(no), rho, xi, q(3), lx, ly, lz, rho0, theta(ntheta), wtheta(ntheta)
+    logical, allocatable :: gamma_p_isok(:,:,:)
+    real :: time(20)
 
+    real(dp) :: vexc(no), rho, xi, q(3), lx, ly, lz, rho0, theta(ntheta), wtheta(ntheta), dv, kT
     real :: total_time_in_subroutine
     complex(dp) :: R_loc(-mmax:mmax), deltarho_p_q_loc, deltarho_p_mq_loc
     integer :: ip2_loc(-mmax:mmax)
     complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax) ! Table of generalized spherical harmonics of m, mup, mu
-
-    complex(dp) :: gamma_p_q(np), gamma_p_mq(np), deltarho_p_q(np), deltarho_p_mq(np)
+    complex(dp) :: gamma_p_q(np), gamma_p_mq(np), deltarho_p_q(np), deltarho_p_mq(np), gamma_m_khi_mu_q, gamma_m_khi_mu_mq
 
 
     call cpu_time (time(1))
