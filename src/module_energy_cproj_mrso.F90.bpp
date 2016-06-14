@@ -336,7 +336,7 @@ contains
     do iz=1,nz
       do iy=1,ny
         do ix=1,nx
-          deltarho_p(1:np,ix,iy,iz) = angl2proj( rho0*(solvent(1)%xi(1:no,ix,iy,iz)**2 -1._dp) )
+          deltarho_p(1:np,ix,iy,iz) = angl2proj_${mmax}_${mrso}( rho0*(solvent(1)%xi(1:no,ix,iy,iz)**2 -1._dp) )
         end do
       end do
     end do
@@ -641,42 +641,56 @@ contains
 
   contains
 
-
-    function angl2proj (foo_o) result (foo_p)
-      implicit none
-      real(dp), intent(in) :: foo_o(grid%no)
-      complex(dp) :: foo_p(grid%np)
-      integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2
-      io=0
-      do itheta=1,grid%ntheta
-        do iphi=1,grid%nphi
-          do ipsi=1,grid%npsi
-            io=io+1 ! grid%indo(itheta,iphi,ipsi)
-            fft2d%in(ipsi,iphi) = foo_o(io)
-          end do
-        end do
-        select case(dp)
-        case(c_double)
-          call dfftw_execute (fft2d%plan)
-        case(c_float)
-          call sfftw_execute (fft2d%plan)
-        end select
-        foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )/real(nphi*npsi,dp)*wtheta(itheta)
-        foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:) )/real(nphi*npsi,dp)*wtheta(itheta)
-      end do
-      foo_p = zeroc
-      ip=0
-      do m=0,mmax
-        do mup=-m,m
-          do mu2=0,m/mrso
-            ip=ip+1 ! p3%p( m,mup,mu/mrso )
-            foo_p(ip)= sum(foo_theta_mu_mup(:,mu2,mup)*p3%wigner_small_d(:,ip))*fm(m)
-          end do
-        end do
-      end do
-    end function angl2proj
-
   end subroutine energy_cproj_mrso_${mmax}_${mrso}
+!$SH done
+!$SH done
+
+
+!$SH for mmax in $(seq 0 5); do
+!$SH for mrso in 1 2; do
+function angl2proj_${mmax}_${mrso} (foo_o) result (foo_p)
+  implicit none
+  integer, parameter :: mmax=${mmax}
+  integer, parameter :: mrso=${mrso}
+  integer, parameter :: ntheta=${mmax}+1
+  integer, parameter :: nphi=2*${mmax}+1
+  integer, parameter :: npsi=2*(${mmax}/${mrso})+1
+  integer, parameter :: no=nphi*ntheta*npsi
+  integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2, mu
+  integer, parameter :: np=sum( [( [( [( 1 ,  mu=0,m/${mrso}   )], mup=-m,m)], m=0,${mmax}  )] )
+  real(dp), parameter :: fm(0:${mmax}) = [( sqrt(real(2*m+1,dp)) ,m=0,${mmax} )]
+  real(dp), intent(in) :: foo_o(no)
+  complex(dp) :: foo_p(np)
+  real(dp) :: wtheta(ntheta)
+  wtheta=grid%wthetaofntheta/(nphi*npsi)
+  io=0
+  do itheta=1,ntheta
+    do iphi=1,nphi
+      do ipsi=1,npsi
+        io=io+1 ! grid%indo(itheta,iphi,ipsi)
+        fft2d%in(ipsi,iphi) = foo_o(io)
+      end do
+    end do
+    select case(dp)
+    case(c_double)
+      call dfftw_execute (fft2d%plan)
+    case(c_float)
+      call sfftw_execute (fft2d%plan)
+    end select
+    foo_theta_mu_mup(itheta,0:mmax/mrso,0:mmax)   = CONJG( fft2d%out(:,1:mmax+1) )*wtheta(itheta)
+    foo_theta_mu_mup(itheta,0:mmax/mrso,-mmax:-1) = CONJG( fft2d%out(:,mmax+2:)  )*wtheta(itheta)
+  end do
+  foo_p = zeroc
+  ip=0
+  do m=0,mmax
+    do mup=-m,m
+      do mu2=0,m/mrso
+        ip=ip+1 ! p3%p( m,mup,mu/mrso )
+        foo_p(ip)= sum(foo_theta_mu_mup(:,mu2,mup)*p3%wigner_small_d(:,ip))*fm(m)
+      end do
+    end do
+  end do
+end function angl2proj_${mmax}_${mrso}
 !$SH done
 !$SH done
 
@@ -694,7 +708,7 @@ function proj2angl_${mmax}_${mrso} (foo_p) result (foo_o)
   integer :: ip, io, itheta, iphi, ipsi, m, mup, mu2, abs_mup, mu
   integer, parameter :: np=sum( [( [( [( 1 ,  mu=0,m/${mrso}   )], mup=-m,m)], m=0,${mmax}  )] )
   real(dp) :: foo_o(no)
-  complex(dp), contiguous, intent(in) :: foo_p(np)
+  complex(dp), intent(in) :: foo_p(np)
   complex(dp) :: foo_mu2_mup
   complex(dp) :: table_of_wigner_small_d_itheta_times_p(np)
   real(dp), parameter :: fm(0:${mmax}) = [( sqrt(real(2*m+1,dp)) ,m=0,${mmax} )]
