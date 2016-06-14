@@ -5,7 +5,9 @@ module module_energy_cproj_mrso
   use precision_kinds, only: dp
   use module_grid, only: grid
   use module_solvent, only: solvent
-  use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu
+!$SH for mmax in $(seq 1 5); do
+  use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu_${mmax}
+!$SH done
   use module_wigner_d, only: wigner_small_d
 
   implicit none
@@ -58,7 +60,6 @@ module module_energy_cproj_mrso
   complex(dp), allocatable, protected :: gamma_p_q(:)
   complex(dp), allocatable, protected :: gamma_p_mq(:)
 
-  complex(dp), allocatable, protected :: foo_theta_mu_mup(:,:,:)
 
 
   type :: p3_type
@@ -101,7 +102,7 @@ contains
     real(dp), contiguous, intent(inout) :: df(:,:,:,:,:) ! x y z o s
 
     select case( grid%mmax)
-!$SH  for mmax in $(seq 0 5); do
+!$SH  for mmax in $(seq 1 5); do
     case(${mmax})
       select case( grid%molrotsymorder)
 !$SH      for mrso in 1 2; do
@@ -114,7 +115,7 @@ contains
   end subroutine energy_cproj_mrso
 
 
-!$SH for mmax in $(seq 0 5); do
+!$SH for mmax in $(seq 1 5); do
 !$SH for mrso in 1 2; do
   subroutine energy_cproj_mrso_${mmax}_${mrso} (ff,df)
     use omp_lib
@@ -162,6 +163,9 @@ contains
     integer :: ip2_loc(-mmax:mmax)
     complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax) ! Table of generalized spherical harmonics of m, mup, mu
 
+    complex(dp) :: gamma_p_q(np), gamma_p_mq(np), deltarho_p_q(np), deltarho_p_mq(np)
+
+
     call cpu_time (time(1))
 
 
@@ -170,7 +174,6 @@ contains
     if (.not.allocated(ifft2d%in)) allocate (ifft2d%in(npsi/2+1,nphi)) ! this is because of our choice of doing half of mu thanks to hermitian symetry
     if (.not.allocated(ifft2d%out)) allocate (ifft2d%out(npsi,nphi))
 
-    if (.not. allocated( foo_theta_mu_mup) ) allocate ( foo_theta_mu_mup(1:ntheta,0:mmax/mrso,-mmax:mmax))
 
     lx=grid%lx
     ly=grid%ly
@@ -188,10 +191,10 @@ contains
 
     if (.not. allocated (deltarho_p) ) then
       allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
-      allocate (deltarho_p_q(np) ,source=zeroc)
-      allocate (deltarho_p_mq(np) ,source=zeroc)
-      allocate (gamma_p_q(np), source=zeroc)
-      allocate (gamma_p_mq(np), source=zeroc)
+      ! allocate (deltarho_p_q(np) ,source=zeroc)
+      ! allocate (deltarho_p_mq(np) ,source=zeroc)
+      ! allocate (gamma_p_q(np), source=zeroc)
+      ! allocate (gamma_p_mq(np), source=zeroc)
     end if
 
     if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
@@ -366,14 +369,16 @@ contains
     ! On fait donc une FFT 3D pour chacune des projections.
     ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
     !
-    do ip=1,np
-      select case(dp)
-      case(c_double)
+    select case(dp)
+    case(c_double)
+      do ip=1,np
         call dfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
-      case(c_float)
+      end do
+    case(c_float)
+      do ip=1,np
         call sfftw_execute_dft( fft3d%plan_backward, deltarho_p(ip,:,:,:), deltarho_p(ip,:,:,:) )
-      end select
-    end do
+      end do
+    end select
 
     call cpu_time (time(7))
 
@@ -425,7 +430,7 @@ contains
     ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
     !
 
-    !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck)
+    !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck,p3)
     do iz_q=1,nz/2+1
       iz_mq = grid%iz_mq(iz_q)
       do iy_q=1,ny
@@ -455,7 +460,7 @@ contains
           !
           ! Prepare R^m_mup_khi(q)
           !
-          R = rotation_matrix_between_complex_spherical_harmonics_lu ( q, mmax )
+          R = rotation_matrix_between_complex_spherical_harmonics_lu_${mmax} (q)
           ! Eq. 1.23 We don't need to compute gshrot for -q since there are symetries between R(q) and R(-q).
           ! Thus, we do q and -q at the same time. That's the most important point in doing all q but half of mu.
           ! Lu decided to do all mu but half of q in her code
@@ -656,7 +661,7 @@ contains
 !$SH done
 
 
-!$SH for mmax in $(seq 0 5); do
+!$SH for mmax in $(seq 1 5); do
 !$SH for mrso in 1 2; do
 function angl2proj_${mmax}_${mrso} (foo_o) result (foo_p)
   implicit none
@@ -672,6 +677,7 @@ function angl2proj_${mmax}_${mrso} (foo_o) result (foo_p)
   real(dp), intent(in) :: foo_o(no)
   complex(dp) :: foo_p(np)
   real(dp) :: wtheta(ntheta)
+  complex(dp) :: foo_theta_mu_mup(1:ntheta,0:mmax/mrso,-mmax:mmax)
   wtheta=grid%wthetaofntheta/(nphi*npsi)
   io=0
   do itheta=1,ntheta
@@ -705,7 +711,7 @@ end function angl2proj_${mmax}_${mrso}
 !$SH done
 
 
-!$SH for mmax in $(seq 0 5); do
+!$SH for mmax in $(seq 1 5); do
 !$SH for mrso in 1 2; do
 function proj2angl_${mmax}_${mrso} (foo_p) result (foo_o)
   implicit none
