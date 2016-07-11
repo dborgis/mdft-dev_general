@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jube>
+    <parameterset name="compile_parameters">
+<!--      <parameter name="load_modules">GCC/5.3.0-2.26 ParaStationMPI/5.1.5-1 </parameter>-->
+      <parameter name="load_modules" mode="python">
+		  {"extrae" : "Intel IntelMPI"}.get("${compile_mode}","GCC/5.3.0-2.26 ParaStationMPI/5.1.5-1")
+      </parameter>
+      <parameter name="repo">/homea/eocoe/eocoe06/mdft-dev</parameter>
+      <parameter name="branch" tag="!test">dev</parameter>
+      <parameter name="branch" tag="test">test</parameter>
+      <parameter name="make_target"></parameter>
+    </parameterset>
+
+    <compilation_dos>
+      <use>systemParameter</use>
+      <do>echo "============= compilation : $compile_mode =========="</do>
+      <do>git clone $repo</do>
+      <do>echo "load modules $load_modules"</do>
+      <do>module purge</do>
+      <do>module load $load_modules</do>
+      <do>module load CMake</do>
+      <do active="$compile_scalasca">module load Scalasca</do>
+      <do active="$compile_scalasca">echo "load module scalasca"</do>
+      <do work_dir="mdft-dev">echo "checkout in test"</do>
+      <do work_dir="mdft-dev">git checkout $branch</do>
+      <do work_dir="mdft-dev">mkdir build</do>
+      <do work_dir="mdft-dev/build">$cmake_line</do>
+      <do work_dir="mdft-dev/build">make -j</do>
+    </compilation_dos>
+
+</jube>
+
+
+
