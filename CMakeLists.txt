@@ -17,6 +17,9 @@ project("mdft-dev")
 # note: string given to enable_language is case-sensitive
 enable_language(Fortran)
 
+#option to compile with memory footprint test on jureca
+option(JURECAMEM "option to compile with memory footprint test on jureca" OFF)
+
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. Follow instructions in README.md.")
@@ -161,6 +164,10 @@ SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE
 if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
 
+
+  if(JURECAMEM)
+    target_link_libraries(mdft-dev /homea/paj1561/paj15611/public/lib/libidrmem.a)
+  endif()
 
   #link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
