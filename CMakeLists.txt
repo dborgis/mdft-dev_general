@@ -18,7 +18,7 @@ project("mdft-dev")
 enable_language(Fortran)
 
 #option to compile with memory footprint test on jureca
-option(JURECAMEM "option to compile with memory footprint test on jureca" OFF)
+option(JURECA "option to compile with fftw3 on jureca" OFF)
 
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -139,24 +139,29 @@ EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR
 # Build FFTW
 #
 include(ExternalProject)
-ExternalProject_Add(
-  fftw
-  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
-  BUILD_COMMAND make -j4
-  INSTALL_COMMAND make install -j4
-)
-ExternalProject_Add(
-  fftwf
-  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
-  BUILD_COMMAND make -j4
-  INSTALL_COMMAND make install -j4
-)
-SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
-SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
+if(JURECA)
+	SET(FFTW_INCLUDES ${EBROOTFFTW}/include)
+	SET(FFTW_LIBRARIES ${EBROOTFFTW}/lib/libfftw3.a;${EBROOTFFTW}/lib/libfftw3f.a)
+else()
+	ExternalProject_Add(
+	  fftw
+	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
+	  BUILD_COMMAND make -j4
+	  INSTALL_COMMAND make install -j4
+	)
+	ExternalProject_Add(
+	  fftwf
+	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
+	  BUILD_COMMAND make -j4
+	  INSTALL_COMMAND make install -j4
+	)
+	SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
+	SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
+endif()
 #find_package(FFTW REQUIRED)
 
 

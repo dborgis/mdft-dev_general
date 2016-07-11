@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jube>
     <parameterset name="compile_parameters">
-      <parameter name="load_modules">Intel IntelMPI</parameter>
+      <parameter name="load_modules">Intel IntelMPI FFTW/3.3.4</parameter>
       <parameter name="repo">/homea/eocoe/eocoe06/old/mdft-dev</parameter>
       <parameter name="branch" tag="!test">dev</parameter>
       <parameter name="branch" tag="test">test</parameter>
