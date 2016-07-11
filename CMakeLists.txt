@@ -142,6 +142,7 @@ include(ExternalProject)
 if(JURECA)
 	SET(FFTW_INCLUDES ${EBROOTFFTW}/include)
 	SET(FFTW_LIBRARIES ${EBROOTFFTW}/lib/libfftw3.a;${EBROOTFFTW}/lib/libfftw3f.a)
+	message(STATUS "Compile with jureca fftw $FFTW_LIBRARIES")
 else()
 	ExternalProject_Add(
 	  fftw
@@ -180,8 +181,10 @@ if (UNIX)
     target_link_libraries(mdft-dev /homea/paj1561/paj15611/public/lib/libidrmem.a)
   endif()
 
+  message(STATUS "Compiling with fftw $FFTW_LIBRARIES")
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
-  if(NOT JURECA)
+
+  if(NOT JURECA) 
     add_dependencies(mdft-dev fftw fftwf)
   endif()
   #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
