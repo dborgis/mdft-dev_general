@@ -181,7 +181,9 @@ if (UNIX)
   endif()
 
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
-  add_dependencies(mdft-dev fftw fftwf)
+  if(NOT JURECA)
+    add_dependencies(mdft-dev fftw fftwf)
+  endif()
   #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
   #target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
