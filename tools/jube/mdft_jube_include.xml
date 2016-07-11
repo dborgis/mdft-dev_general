@@ -23,9 +23,12 @@
       <do work_dir="mdft-dev">mkdir build</do>
       <do work_dir="mdft-dev/build">$cmake_line</do>
       <do work_dir="mdft-dev/build">make -j VERBOSE=1</do>
-    </compilation_dos>
+    </compilation_dos>	
 
 </jube>
 
 
 
+
+
+export OMP_NUM_THREADS=

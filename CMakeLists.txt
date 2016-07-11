@@ -58,7 +58,7 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xhost")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
