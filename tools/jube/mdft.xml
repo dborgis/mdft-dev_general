@@ -42,10 +42,10 @@
       <parameter name="use_scalasca" mode="python">"${exec_mode}" == "scalasca"</parameter>
       <parameter name="use_extrae" mode="python">"${exec_mode}" == "extrae"</parameter>
       <parameter name="use_allinea" mode="python">"${exec_mode}" == "allinea"</parameter>
-      <parameter name="use_ref_mode" mode="python">"${exec_mode}" == "ref_mode"</parameter>
-      <parameter name="use_no_vec_mode" mode="python">"${exec_mode}" == "no_vec_mode"</parameter>
-      <parameter name="use_no_fma_mode" mode="python">"${exec_mode}" == "no_fma_mode"</parameter>
-      <parameter name="use_memory_mode" mode="python">"${exec_mode}" == "memory_mode"</parameter>
+      <parameter name="use_ref_mode" mode="python">"${exec_mode}" == "ref"</parameter>
+      <parameter name="use_no_vec_mode" mode="python">"${exec_mode}" == "no-vec"</parameter>
+      <parameter name="use_no_fma_mode" mode="python">"${exec_mode}" == "no-fma"</parameter>
+      <parameter name="use_memory_mode" mode="python">"${exec_mode}" == "memory"</parameter>
 
       <parameter name="exec_mode" mode="python">
 		  {"ref_compile" : ",".join([i for i in "${ref_mode} ${allinea_mode} ${memory_mode}".split(" ") if len(i) > 0])}.get("${compile_mode}","${compile_mode}")
