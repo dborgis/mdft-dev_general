@@ -61,14 +61,6 @@
       <parameter name="measurement" mode="python">
         {"memory" : '/usr/bin/time -f "Maximum resident set size of the process during its lifetime, in Kilobytes: %M"'}.get("${exec_mode}","/usr/bin/time -p")
       </parameter>
-      <parameter name="measurement">time -p</parameter>
-      <parameter name="starter" mode="python">
-        {"scalasca" : "scalasca -analyze",
-        "memory" : "/usr/bin/time -f "Maximum resident set size of the process during its lifetime, in Kilobytes: %M"",
-        "allinea" : "perf-report",
-        "extrae" : "./trace.sh"}.get("${exec_mode}","")
-      </parameter>
-
       <parameter name="env" mode="python">
         {"scalasca" : "module load $load_modules Scalasca",
          "allinea" : "module load $load_modules AllineaPerformanceReports",
