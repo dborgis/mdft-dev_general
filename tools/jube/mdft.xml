@@ -10,24 +10,24 @@
       <parameter name="extrae_mode" tag="extrae,all">extrae</parameter>
       <parameter name="scalasca_mode"></parameter>
       <parameter name="scalasca_mode" tag="scalasca,all">scalasca</parameter>
-      <parameter name="no-vec_mode"></parameter>
-      <parameter name="no-vec_mode" tag="no-vec,all">no-vec</parameter>
-      <parameter name="no-fma_mode"></parameter>
-      <parameter name="no-fma_mode" tag="no-fma,all">no-fma</parameter>
+      <parameter name="no_vec_mode"></parameter>
+      <parameter name="no_vec_mode" tag="no_vec,all">no-vec</parameter>
+      <parameter name="no_fma_mode"></parameter>
+      <parameter name="no_fma_mode" tag="no_fma,all">no-fma</parameter>
       <parameter name="memory_mode"></parameter>
       <parameter name="memory_mode" tag="memory,all">memory</parameter>
       <parameter name="ref_mode"></parameter>
-      <parameter name="ref_mode" tag="ref,all,no-vec,no-fma">ref</parameter>
+      <parameter name="ref_mode" tag="ref,all,no_vec,no_fma">ref</parameter>
       <parameter name="ref_compile"></parameter>
       <parameter name="ref_compile" tag="ref,allinea,memory,all">ref_compile</parameter>
   
       <parameter name="compile_scalasca" mode="python">"${compile_mode}" == "scalasca"</parameter>  
      
-      <parameter name="compile_mode" mode="python">",".join([i for i in "${ref_compile} ${extrae_mode} ${scalasca_mode} ${no-fma_mode} ${no-vec_mode}".split(" ") if len(i) > 0])</parameter>
+      <parameter name="compile_mode" mode="python">",".join([i for i in "${ref_compile} ${extrae_mode} ${scalasca_mode} ${no_fma_mode} ${no_vec_mode}".split(" ") if len(i) > 0])</parameter>
       <parameter name="cmake_line" mode="python">
 		  {"scalasca" : "cmake -DCMAKE_Fortran_COMPILER=scorep-ifort -DJURECA=ON ..",
-		   "no-vec":'cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
-		   "no-fma":'cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON ..")</parameter>
+		   "no_vec":'cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
+		   "no_fma":'cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON ..")</parameter>
     </parameterset>
 
 
@@ -43,8 +43,8 @@
       <parameter name="use_extrae" mode="python">"${exec_mode}" == "extrae"</parameter>
       <parameter name="use_allinea" mode="python">"${exec_mode}" == "allinea"</parameter>
       <parameter name="use_ref_mode" mode="python">"${exec_mode}" == "ref_mode"</parameter>
-      <parameter name="use_no-vec_mode" mode="python">"${exec_mode}" == "no-vec_mode"</parameter>
-      <parameter name="use_no-fma_mode" mode="python">"${exec_mode}" == "no-fma_mode"</parameter>
+      <parameter name="use_no_vec_mode" mode="python">"${exec_mode}" == "no_vec_mode"</parameter>
+      <parameter name="use_no_fma_mode" mode="python">"${exec_mode}" == "no_fma_mode"</parameter>
       <parameter name="use_memory_mode" mode="python">"${exec_mode}" == "memory_mode"</parameter>
 
       <parameter name="exec_mode" mode="python">
