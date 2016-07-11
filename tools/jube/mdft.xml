@@ -22,14 +22,14 @@
       <parameter name="compile_mode" mode="python">",".join([i for i in "${ref_mode} ${extrae_mode} ${scalasca_mode}".split(" ") if len(i) > 0])</parameter>
       <parameter name="cmake_line" mode="python">
 		  {"scalasca" : "cmake -DCMAKE_Fortran_COMPILER=scorep-ifort ..",
-		   "no_vec":'cmake --DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
-		   "no_fma":'cmake --DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake ..")</parameter>
+		   "no_vec":'cmake -DCMAKE_Fortran_COMPILER=ifort -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
+		   "no_fma":'cmake -DCMAKE_Fortran_COMPILER=ifort -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=ifort ..")</parameter>
     </parameterset>
 
 
     <fileset name="input_data">
-      <copy>/homea/eocoe/eocoe06/paraver/extrae.xml</copy>
-      <copy>/homea/eocoe/eocoe06/paraver/trace.sh</copy>
+      <copy>/homea/eocoe/eocoe06/old/paraver/extrae.xml</copy>
+      <copy>/homea/eocoe/eocoe06/old/paraver/trace.sh</copy>
     </fileset>
 
 

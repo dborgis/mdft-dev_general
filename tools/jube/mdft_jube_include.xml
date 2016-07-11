@@ -18,11 +18,11 @@
       <do>module load CMake</do>
       <do active="$compile_scalasca">module load Scalasca</do>
       <do active="$compile_scalasca">echo "load module scalasca"</do>
-      <do work_dir="mdft-dev">echo "checkout in test"</do>
+      <do work_dir="mdft-dev">echo "checkout in $branch"</do>
       <do work_dir="mdft-dev">git checkout $branch</do>
       <do work_dir="mdft-dev">mkdir build</do>
       <do work_dir="mdft-dev/build">$cmake_line</do>
-      <do work_dir="mdft-dev/build">make -j</do>
+      <do work_dir="mdft-dev/build">make -j VERBOSE=1</do>
     </compilation_dos>
 
 </jube>
