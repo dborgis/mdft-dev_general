@@ -25,7 +25,8 @@
       <parameter name="cmake_line" mode="python">
 		  {"scalasca" : "cmake -DCMAKE_Fortran_COMPILER=scorep-ifort ..",
 		   "no_vec":'cmake -DCMAKE_Fortran_COMPILER=ifort -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
-		   "no_fma":'cmake -DCMAKE_Fortran_COMPILER=ifort -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=ifort ..")</parameter>
+		   "no_fma":'cmake -DCMAKE_Fortran_COMPILER=ifort -DCMAKE_Fortran_FLAGS="-no-fma" ..',
+		   "memory":cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA_MEM=ON ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=ifort ..")</parameter>
     </parameterset>
 
 

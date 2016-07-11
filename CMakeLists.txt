@@ -165,14 +165,16 @@ if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
 
 
-  if(JURECAMEM)
-    target_link_libraries(mdft-dev /homea/paj1561/paj15611/public/lib/libidrmem.a)
-  endif()
-
   #link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
   include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
+
+  if(JURECA_MEM)
+	message(STATUS "Linking library for memory footprint on jureca")
+    target_link_libraries(mdft-dev /homea/paj1561/paj15611/public/lib/libidrmem.a)
+  endif()
+
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
   add_dependencies(mdft-dev fftw fftwf)
   #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
