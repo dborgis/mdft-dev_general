@@ -140,8 +140,8 @@ EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR
 #
 include(ExternalProject)
 if(JURECA)
-	SET(FFTW_INCLUDES ${EBROOTFFTW}/include)
-	SET(FFTW_LIBRARIES ${EBROOTFFTW}/lib/libfftw3.a;${EBROOTFFTW}/lib/libfftw3f.a)
+	SET(FFTW_INCLUDES $ENV{EBROOTFFTW}/include)
+	SET(FFTW_LIBRARIES $ENV{EBROOTFFTW}/lib/libfftw3.a;${EBROOTFFTW}/lib/libfftw3f.a)
 	message(STATUS "Compile with jureca fftw ${FFTW_LIBRARIES}")
 else()
 	ExternalProject_Add(
