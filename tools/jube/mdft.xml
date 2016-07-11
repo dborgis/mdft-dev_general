@@ -150,11 +150,11 @@
       <use>postprocessing_files</use>
       <use>executeset</use>
       <do>cp shuffle_json.py shared_dir</do>
-      <do>python extract_metrics.py -o shared_dir/metrics_${exec_mode}_time.json time -tag ${exec_mode} run/std.err</do>
+      <do>python extract_metrics.py -o shared_dir/metrics_${exec_mode}_time.json time -tag ${exec_mode} run/job.err</do>
       <do active="$use_scalasca">module load $load_modules Scalasca</do>
       <do active="$use_scalasca">scalasca -examine -s run/$trace_dir</do>
       <do active="$use_scalasca">python extract_metrics.py -o metrics_scalasca.json scalasca run/$trace_dir/profile.cubex; cp metrics_scalasca.json shared_dir</do>
-      <do active="$use_memory_mode">python extract_metrics.py -o metrics_mem.json mem_serialomp run/std.err; cp metrics_mem.json shared_dir</do>
+      <do active="$use_memory_mode">python extract_metrics.py -o metrics_mem.json mem_serialomp run/job.err; cp metrics_mem.json shared_dir</do>
       <do shared="true">python shuffle_json.py agg *.json</do>
       <do shared="true">python shuffle_json.py tex out.json</do>
       <do shared="true">mv out.tex ${jube_benchmark_home}/${jube_benchmark_id}_out.tex</do>
