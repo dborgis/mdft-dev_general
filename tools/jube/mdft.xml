@@ -59,7 +59,7 @@
       <parameter name="notification">FAIL</parameter>
       <parameter name="timelimit">00:30:00</parameter>
       <parameter name="measurement" mode="python">
-        {"memory" : '/usr/bin/time -f "Maximum resident set size of the process during its lifetime in Kilobytes: %M"'}.get("${exec_mode}","/usr/bin/time")
+        {"memory" : '/usr/bin/time -f "Maximum resident set size of the process during its lifetime in Kilobytes: %M"'}.get("${exec_mode}","time")
       </parameter>
       <parameter name="env" mode="python">
         {"scalasca" : "module load $load_modules Scalasca",
