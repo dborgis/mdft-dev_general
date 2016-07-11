@@ -2,7 +2,7 @@
 <jube>
     <parameterset name="compile_parameters">
       <parameter name="load_modules">Intel IntelMPI FFTW/3.3.4</parameter>
-      <parameter name="repo">/homea/eocoe/eocoe06/old/mdft-dev</parameter>
+      <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
       <parameter name="branch" tag="!test">dev</parameter>
       <parameter name="branch" tag="test">test</parameter>
       <parameter name="make_target"></parameter>
