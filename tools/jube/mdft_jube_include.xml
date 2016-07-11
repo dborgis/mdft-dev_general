@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jube>
     <parameterset name="compile_parameters">
-<!--      <parameter name="load_modules">GCC/5.3.0-2.26 ParaStationMPI/5.1.5-1 </parameter>-->
-      <parameter name="load_modules" mode="python">
-		  {"extrae" : "Intel IntelMPI"}.get("${compile_mode}","GCC/5.3.0-2.26 ParaStationMPI/5.1.5-1")
-      </parameter>
-      <parameter name="repo">/homea/eocoe/eocoe06/mdft-dev</parameter>
+      <parameter name="load_modules">Intel IntelMPI</parameter>
+      <parameter name="repo">/homea/eocoe/eocoe06/old/mdft-dev</parameter>
       <parameter name="branch" tag="!test">dev</parameter>
       <parameter name="branch" tag="test">test</parameter>
       <parameter name="make_target"></parameter>
