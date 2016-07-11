@@ -71,8 +71,9 @@
 
 
     <parameterset name="executeset" init_with="platform.xml">
+      <parameter name="trace_dir">scorep_mdft_trace</parameter>
       <parameter name="starter" mode="python">
-        {"scalasca" : "scalasca -analyze",
+        {"scalasca" : "scalasca -analyze -e $trace_dir",
         "allinea" : "perf-report",
         "extrae" : "./trace.sh"}.get("${exec_mode}","")
       </parameter>
@@ -137,10 +138,6 @@
 
 
 
-<!--
-
-
-
 
 
     <fileset name="postprocessing_files">
@@ -151,22 +148,19 @@
 
     <step name="postprocess" depend="run" shared="shared_dir">
       <use>postprocessing_files</use>
+      <use>executeset</use>
       <do>cp shuffle_json.py shared_dir</do>
-      <do>python extract_metrics.py -o shared_dir/metrics_${mode}_time.json time -tag ${mode} run/std.err</do>
+      <do>python extract_metrics.py -o shared_dir/metrics_${exec_mode}_time.json time -tag ${exec_mode} run/std.err</do>
       <do active="$use_scalasca">module load $load_modules Scalasca</do>
-      <do active="$use_scalasca">scalasca -examine -s run/scorep_*</do>
-      <do active="$use_scalasca">python extract_metrics.py -o metrics_scalasca.json scalasca run/scorep_metalwalls_scalasca_24_trace/trace.cubex; cp metrics_scalasca.json shared_dir</do>
-      <do active="$extract_mem">python extract_metrics.py -o metrics_mem.json mem run/std.err; cp metrics_mem.json shared_dir</do>
-      <do active="$use_darshan">module load $load_modules darshan-util</do>
-      <do active="$use_darshan">darshan-job-summary.pl run/darshan.log</do>
-      <do active="$use_darshan">python darshanparser_jube.py -f run/darshan.log -j</do>
-      <do active="$use_darshan">python extract_metrics.py -o metrics_darshan.json darshan darshan.jube; cp metrics_darshan.json shared_dir</do>
+      <do active="$use_scalasca">scalasca -examine -s run/$trace_dir</do>
+      <do active="$use_scalasca">python extract_metrics.py -o metrics_scalasca.json scalasca run/$trace_dir/profile.cubex; cp metrics_scalasca.json shared_dir</do>
+      <do active="$use_memory_mode">python extract_metrics.py -o metrics_mem.json mem_serialomp run/std.err; cp metrics_mem.json shared_dir</do>
       <do shared="true">python shuffle_json.py agg *.json</do>
       <do shared="true">python shuffle_json.py tex out.json</do>
       <do shared="true">mv out.tex ${jube_benchmark_home}/${jube_benchmark_id}_out.tex</do>
     </step>
 
-
+<!--
     <analyser name="scalasca_analyse">
       <use from="scalasca_in.xml">scalasca_pattern</use>
       <analyse step="postprocess">
