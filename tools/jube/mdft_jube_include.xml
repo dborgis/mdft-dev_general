@@ -36,7 +36,9 @@
       <parameter name="boxnod" tag="boxnod128">128</parameter>
       <parameter name="boxnod" tag="boxnod256">256</parameter>
       <parameter name="boxnod" tag="benchBoxnod">64,128,256</parameter>
-      <parameter name="boxlen">25.</parameter>
+      <parameter name="boxlen" mode="python">{64 :"25.",
+											  128:"50.",
+											  256:"100."}.get(${benchBoxnod}, "25.")</parameter>
       <parameter name="boxlen" tag="boxlen50">50.</parameter>
       <parameter name="bulkdensity">0.033</parameter>
       <parameter name="temperature">298.15</parameter>
