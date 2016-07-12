@@ -176,11 +176,6 @@ if (UNIX)
   include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
 
-  if(JURECA_MEM)
-	message(STATUS "Linking library for memory footprint on jureca")
-    target_link_libraries(mdft-dev /homea/paj1561/paj15611/public/lib/libidrmem.a)
-  endif()
-
   message(STATUS "Compiling with fftw ${FFTW_LIBRARIES}")
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
 
