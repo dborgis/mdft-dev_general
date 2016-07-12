@@ -27,14 +27,14 @@
 
     <parameterset name="inputParameter">
       <parameter name="soluteFile">input/solute.in.jube</parameter>
-      <parameter name="soluteFile" tag="lysozyme,target_report,prod_report">input/lysozyme.in.jube</parameter>
+      <parameter name="soluteFile" tag="lysozyme">input/lysozyme.in.jube</parameter>
       <parameter name="mmax">1</parameter>
-      <parameter name="mmax" tag="mmax3,prod_report">3</parameter>
-      <parameter name="mmax" tag="mmax5,target_report">5</parameter>
+      <parameter name="mmax" tag="mmax3">3</parameter>
+      <parameter name="mmax" tag="mmax5">5</parameter>
       <parameter name="mmax" tag="benchMmax">1,2,3</parameter>
       <parameter name="boxnod">64</parameter>
-      <parameter name="boxnod" tag="boxnod128,prod_report">128</parameter>
-      <parameter name="boxnod" tag="boxnod256,target_report">256</parameter>
+      <parameter name="boxnod" tag="boxnod128">128</parameter>
+      <parameter name="boxnod" tag="boxnod256">256</parameter>
       <parameter name="boxnod" tag="benchBoxnod">64,128,256</parameter>
       <parameter name="boxlen" mode="python">{"64" :"25.",
 											  "128":"50.",
