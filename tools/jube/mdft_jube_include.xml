@@ -31,9 +31,11 @@
       <parameter name="mmax">1</parameter>
       <parameter name="mmax" tag="mmax3">3</parameter>
       <parameter name="mmax" tag="mmax5">5</parameter>
+      <parameter name="mmax" tag="benchMmax">1,2,3,4,5</parameter>
       <parameter name="boxnod">64</parameter>
       <parameter name="boxnod" tag="boxnod128">128</parameter>
       <parameter name="boxnod" tag="boxnod256">256</parameter>
+      <parameter name="boxnod" tag="benchBoxnod">64,128,256</parameter>
       <parameter name="boxlen">25.</parameter>
       <parameter name="boxlen" tag="boxlen50">50.</parameter>
       <parameter name="bulkdensity">0.033</parameter>
