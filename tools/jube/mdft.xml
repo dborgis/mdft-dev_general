@@ -99,7 +99,7 @@
 
 
     <substituteset name="substituteDftFile">
- 	<iofile in="input/dft.in" out="input/dft.in" />
+ 	<iofile in="input/dft.in.jube" out="input/dft.in" />
         <sub source="#MMAX#" dest="$mmax" />
         <sub source="#MAXITERNUM#" dest="$maxiternum" />
         <sub source="#BOXNOD#" dest="$boxnod" />
