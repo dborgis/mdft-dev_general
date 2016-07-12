@@ -133,12 +133,7 @@
       <do done_file="${done_file}">${submit} --gres=mem1024 ${submit_script}</do>
     </step>
 
-
-
 <!--     POST-PROCESS         -->
-
-   
-
 
     <fileset name="postprocessing_files">
       <copy>extract_metrics.py</copy>
@@ -160,11 +155,7 @@
       <do shared="true">mv out.tex ${jube_benchmark_home}/${jube_benchmark_id}_out.tex</do>
     </step>
 
-
-
-
-
-
+<!--     ANALYSE         -->
 
   <patternset name="pattern">
       <pattern name="time_pat">MDFT finished in\ +(.+)$</pattern>
