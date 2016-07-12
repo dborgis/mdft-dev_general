@@ -31,12 +31,6 @@
     </parameterset>
 
 
-    <fileset name="input_data">
-      <copy>/homea/eocoe/eocoe06/old/paraver/extrae.xml</copy>
-      <copy>/homea/eocoe/eocoe06/old/paraver/trace.sh</copy>
-    </fileset>
-
-
     <parameterset name="systemParameter" init_with="platform.xml">
 
       <parameter name="use_scalasca" mode="python">"${exec_mode}" == "scalasca"</parameter>
@@ -49,7 +43,8 @@
 
       <parameter name="exec_mode" mode="python">
 		  {"ref_compile" : ",".join([i for i in "${ref_mode} ${allinea_mode} ${memory_mode}".split(" ") if len(i) > 0])}.get("${compile_mode}","${compile_mode}")
-		  </parameter>
+	  </parameter>
+
       <parameter name="nodes" type="int">1</parameter>
       <parameter name="taskspernode" type="int">1</parameter>
       <parameter name="threadspertask" type="int">1</parameter>
@@ -57,7 +52,8 @@
       <parameter name="executable">${exec_dir}/mdft-dev</parameter>
       <parameter name="mail">cedric.gageat@ens.fr</parameter>
       <parameter name="notification">FAIL</parameter>
-      <parameter name="timelimit">00:30:00</parameter>
+      <parameter name="timelimit" tag="lysozyme">04:00:00</parameter>
+      <parameter name="timelimit" tag="!lysozyme">00:10:00</parameter>
       <parameter name="measurement" mode="python">
         {"memory" : '/usr/bin/time -f "Maximum resident set size of the process during its lifetime in Kilobytes: %M"'}.get("${exec_mode}","time")
       </parameter>
@@ -94,6 +90,33 @@
     </substituteset>
 
 
+      
+    <fileset name="input_data">
+      <copy>paraver/extrae.xml</copy>
+      <copy>paraver/trace.sh</copy>
+      <copy>input</copy>
+    </fileset>
+
+
+    <substituteset name="substituteDftFile">
+ 	<iofile in="input/dft.in" out="input/dft.in" />
+        <sub source="#MMAX#" dest="$mmax" />
+        <sub source="#MAXITERNUM#" dest="$maxiternum" />
+        <sub source="#BOXNOD#" dest="$boxnod" />
+        <sub source="#BOXLEN#" dest="$boxlen" />
+        <sub source="#MMAX#" dest="$mmax" />
+        <sub source="#BULKDENSITY#" dest="$bulkdensity" />
+        <sub source="#TEMPERATURE#" dest="$temperature" />
+    </substituteset>
+
+
+    <substituteset name="substituteSoluteFile">
+		<iofile in="$soluteFile" out="input/solute.in" />
+    </substituteset>
+
+
+
+
     <step name="run" depend="compilation">
       <do>echo "============= run : $exec_mode based on compilation $compile_mode  =========="</do>
       
@@ -103,41 +126,17 @@
       <use>executesub</use>
       <use from="platform.xml">jobfiles</use>
       <use>input_data</use>
-      <do>ln -s ${exec_dir}/input</do>
+      <use>inputParameter</use>
+      <use>substituteDftFile</use>
+      <use>substituteSoluteFile</use>
       <do done_file="${done_file}">${submit} ${submit_script}</do>
     </step>
 
 
 
+<!--     POST-PROCESS         -->
 
-
-    <patternset name="pattern">
-      <pattern name="time_pat">MDFT finished in       (.+)$</pattern>
-      <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
-      <pattern name="iteration_pat">^\*\*\*\*\*[\ ]*([0-9\.D]*)[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*[0-9\.D\-\+]*</pattern>
-   </patternset>
-
-
-   <analyser name="analyse">
-      <analyse step="run">
-        <file use="pattern">job.out</file>
-      </analyse>
-    </analyser>
-
-    <result>
-      <use>analyse</use>
-      <table name="result" style="pretty" sort="mmax">
-        <column>compile_mode</column>
-        <column>exec_mode</column>
-        <column>time_pat</column>
-        <column>energy_pat</column>
-        <column>iteration_pat</column>
-      </table>
-    </result>
-
-
-
-
+   
 
 
     <fileset name="postprocessing_files">
@@ -160,34 +159,44 @@
       <do shared="true">mv out.tex ${jube_benchmark_home}/${jube_benchmark_id}_out.tex</do>
     </step>
 
-<!--
-    <analyser name="scalasca_analyse">
-      <use from="scalasca_in.xml">scalasca_pattern</use>
-      <analyse step="postprocess">
-        <file>metrics_scalasca.json</file>
-      </analyse>
-    </analyser>
-
-
-    <result tag="scalasca,all">
-      <use>scalasca_analyse</use>
-      <table name="result_scalasca" transpose="true" style="pretty" sort="exec_time">
-        <column title="jube_run_id">jube_wp_parent_run_id</column>
-        <column title="P2P_Calls[nb]">sca_comms_p2p</column>
-        <column title="Collective_Calls[nb]">sca_comms_coll</column>
-        <column format=".2f" title="Message_Size[kB]">sca_msg_size</column>
-        <column format=".2f" title="Load_Imbalance_MPI">sca_load_imbalance</column>
-        <column title="Collective_Calls[s]" format=".2f">sca_comms_coll_s</column>
-        <column format=".2f" title="Total_Time[s]">sca_time</column>
-        <column format=".2f" title="P2P_Calls[s]">sca_mpi_point2point</column>
-        <column format=".2f" title="Ratio_Synchro_Wait_OpenMP">sca_ratio_synchro_wait_omp</column>
-        <column format=".2f" title="Synchro_Wait_MPI[s]">sca_delay_mpi</column>
-        <column format=".2f" title="Ratio_Synchro_Wait_MPI">sca_ratio_synchro_wait_mpi</column>
-        <column format=".2f" title="Time_MPI[s]">sca_mpi</column>
-      </table>
-    </result>
-
--->
   </benchmark>
 
 </jube>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+  <patternset name="pattern">
+      <pattern name="time_pat">MDFT finished in       (.+)$</pattern>
+      <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
+      <pattern name="iteration_pat">^\*\*\*\*\*[\ ]*([0-9\.D]*)[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*[0-9\.D\-\+]*</pattern>
+   </patternset>
+   
+   <analyser name="analyse">
+      <analyse step="run">
+        <file use="pattern">job.out</file>
+      </analyse>
+    </analyser>
+
+    <result>
+      <use>analyse</use>
+      <table name="result" style="pretty" sort="mmax">
+        <column>compile_mode</column>
+        <column>exec_mode</column>
+        <column>time_pat</column>
+        <column>energy_pat</column>
+        <column>iteration_pat</column>
+      </table>
+    </result>
+-->

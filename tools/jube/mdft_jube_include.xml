@@ -25,4 +25,19 @@
       <do work_dir="mdft-dev/build">make -j VERBOSE=1</do>
     </compilation_dos>	
 
+    <parameterset name="inputParameter">
+      <parameter name="soluteFile" tag="!lysozyme">input/solute.in.jube</parameter>
+      <parameter name="soluteFile" tag="lysozyme">input/lysozyme.in.jube</parameter>
+      <parameter name="mmax">1</parameter>
+      <parameter name="mmax" tag="mmax3">3</parameter>
+      <parameter name="mmax" tag="mmax5">5</parameter>
+      <parameter name="boxnod">64</parameter>
+      <parameter name="boxnod" tag="boxnod128">128</parameter>
+      <parameter name="boxnod" tag="boxnod256">256</parameter>
+      <parameter name="boxlen">25.</parameter>
+      <parameter name="boxlen" tag="boxlen50">50.</parameter>
+      <parameter name="bulkdensity">0.033</parameter>
+      <parameter name="temperature">298.15</parameter>
+    </parameterset>
+
 </jube>
