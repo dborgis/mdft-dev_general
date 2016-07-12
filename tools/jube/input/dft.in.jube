@@ -1,0 +1,8 @@
+#maximum_iteration_nbr = 35
+#restart = T
+direct_sum = T
+boxnod = #BOXNOD# #BOXNOD# #BOXNOD#
+boxlen = #BOXLEN# #BOXLEN# #BOXLEN# 
+mmax = #MMAX#
+bulk_density = #BULKDENSITY#
+temperature = #TEMPERATURE#
