@@ -54,7 +54,7 @@
       <parameter name="notification">FAIL</parameter>
       <parameter name="timelimit" tag="lysozyme">23:59:59</parameter>
       <parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>
-      <parameter name="queue">mem1024</parameter>
+      <parameter name="queue">mem1024\n#SBATCH --gres=mem1024</parameter>
       <parameter name="measurement" mode="python">
         {"memory" : '/usr/bin/time -f "Maximum resident set size of the process during its lifetime in Kilobytes: %M"'}.get("${exec_mode}","time")
       </parameter>
