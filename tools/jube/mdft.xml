@@ -159,24 +159,12 @@
       <do shared="true">mv out.tex ${jube_benchmark_home}/${jube_benchmark_id}_out.tex</do>
     </step>
 
-  </benchmark>
-
-</jube>
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-<!--
   <patternset name="pattern">
       <pattern name="time_pat">MDFT finished in       (.+)$</pattern>
       <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
@@ -194,9 +182,31 @@
       <table name="result" style="pretty" sort="mmax">
         <column>compile_mode</column>
         <column>exec_mode</column>
+        <column>mmax</column>
+        <column>boxnod</column>
         <column>time_pat</column>
         <column>energy_pat</column>
         <column>iteration_pat</column>
       </table>
     </result>
--->
+
+
+
+  </benchmark>
+
+</jube>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
