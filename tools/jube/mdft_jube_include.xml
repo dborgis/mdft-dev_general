@@ -42,7 +42,6 @@
       <parameter name="boxlen" tag="boxlen50">50.</parameter>
       <parameter name="bulkdensity">0.033</parameter>
       <parameter name="temperature">298.15</parameter>
-      <parameter name="queue">mem1024</parameter>
     </parameterset>
 
 </jube>
