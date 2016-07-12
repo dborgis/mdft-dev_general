@@ -167,7 +167,7 @@
 
 
   <patternset name="pattern">
-      <pattern name="time_pat">MDFT finished in       (.+)$</pattern>
+      <pattern name="time_pat">MDFT finished in\ +(.+)$</pattern>
       <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
       <pattern name="iteration_pat">^\*\*\*\*\*[\ ]*([0-9\.D]*)[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*[0-9\.D\-\+]*</pattern>
    </patternset>
@@ -196,18 +196,3 @@
   </benchmark>
 
 </jube>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
