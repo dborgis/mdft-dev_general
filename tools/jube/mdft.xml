@@ -126,7 +126,7 @@
       <use>executesub</use>
       <use from="platform.xml">jobfiles</use>
       <use>input_data</use>
-      <use>inputParameter</use>
+      <use from="mdft_jube_include.xml">inputParameter</use>
       <use>substituteDftFile</use>
       <use>substituteSoluteFile</use>
       <do done_file="${done_file}">${submit} ${submit_script}</do>
