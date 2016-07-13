@@ -81,7 +81,8 @@ contains
         do u=1,size(solute%site)
           if( solute%site(u)%eps <= epsdp ) cycle ! if the solute site does not wear a Lennard-Jones contribution
 
-          !prepare table to loop over
+          ! prepare table to loop over
+          ! These tables allow to loop only on a cube with l=cutoff
           minx = floor(mod((solute%site(u)%r(1)-cutoff+lx), lx)/grid%dx)
           maxx = floor(mod((solute%site(u)%r(1)+cutoff   ), lx)/grid%dx)
           miny = floor(mod((solute%site(u)%r(2)-cutoff+ly), ly)/grid%dy)
@@ -91,24 +92,21 @@ contains
 
           if (minx<maxx) then
             xtab = (/ (I, I = minx, maxx) /)
-          else
+          else ! take into account PBC
             xtab = [(/ (I, I = 0, maxx) /), (/ (I, I = minx, nx) /)]
           end if
 
           if (miny<maxy) then
             ytab = (/ (I, I = miny, maxy) /)
-          else
+          else ! take into account PBC
             ytab = [(/ (I, I = 0, maxy) /), (/ (I, I = miny, ny) /)]
           end if
 
           if (minz<maxz) then
             ztab = (/ (I, I = minz, maxz) /)
-          else
+          else ! take into account PBC
             ztab = [(/ (I, I = 0, maxz) /), (/ (I, I = minz, nz) /)]
           end if
-
-
-
           !end of prepare table to loop over
 
 
@@ -118,9 +116,9 @@ contains
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
               siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)/2._dp)**6
 
-              do indextabz=1,ztabsize
-                iz = ztab(indextabz)
-                zgrid=z(iz)
+              do indextabz=1,ztabsize ! indextabz is the index in ztabsize
+                iz = ztab(indextabz)  ! iz is the index of the point in the grid
+                zgrid=z(iz)           ! zgrid is the z position of the point
 
                 do indextaby=1,ytabsize
                   iy = ytab(indextaby)
