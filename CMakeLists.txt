@@ -123,6 +123,7 @@ set(mdft_SRCS
   src/write_to_cube_file.f90
   src/module_wigner_d.f90
   src/module_orientation_projection_transform.f90
+  src/module_lennardjones.f90
 #  src/module_mpi.F90
 )
 
