@@ -58,9 +58,9 @@ contains
         block
           integer :: ssmax
           ssmax = maxval(  [ (size(solvent(i)%site) ,i=1,ns)]    )
-          allocate( xmod(ns,ssmax,no))
-          allocate( ymod(ns,ssmax,no))
-          allocate( zmod(ns,ssmax,no))
+          allocate( xmod(no,ssmax,ns))
+          allocate( ymod(no,ssmax,ns))
+          allocate( zmod(no,ssmax,ns))
         end block
 
 
