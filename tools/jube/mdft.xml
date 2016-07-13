@@ -54,7 +54,7 @@
       <parameter name="notification">FAIL</parameter>
       <parameter name="timelimit" tag="lysozyme">23:59:59</parameter>
       <parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>
-      <parameter name="queue">mem1024</parameter>
+<!--      <parameter name="queue">mem1024</parameter> -->
       <parameter name="measurement" mode="python">
         {"memory" : '/usr/bin/time -f "Maximum resident set size of the process during its lifetime in Kilobytes: %M"'}.get("${exec_mode}","time")
       </parameter>
@@ -108,7 +108,7 @@
         <sub source="#MMAX#" dest="$mmax" />
         <sub source="#BULKDENSITY#" dest="$bulkdensity" />
         <sub source="#TEMPERATURE#" dest="$temperature" />
-        <sub source="#QUEUE#" dest="$queue" />
+<!--        <sub source="#QUEUE#" dest="$queue" /> -->
     </substituteset>
 
     <substituteset name="substituteSoluteFile">
@@ -130,7 +130,8 @@
       <use from="mdft_jube_include.xml">inputParameter</use>
       <use>substituteDftFile</use>
       <use>substituteSoluteFile</use>
-      <do done_file="${done_file}">${submit} --gres=mem1024 ${submit_script}</do>
+<!--      <do done_file="${done_file}">${submit} --gres=mem1024 ${submit_script}</do>-->
+      <do done_file="${done_file}">${submit} ${submit_script}</do>
     </step>
 
 <!--     POST-PROCESS         -->
