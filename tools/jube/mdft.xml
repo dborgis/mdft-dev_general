@@ -131,7 +131,6 @@
       <use from="mdft_jube_include.xml">inputParameter</use>
       <use>substituteDftFile</use>
       <use>substituteSoluteFile</use>
-<!--      <do done_file="${done_file}">${submit} --gres=mem1024 ${submit_script}</do>-->
       <do done_file="${done_file}">${submit} ${submit_script}</do>
     </step>
 
