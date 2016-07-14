@@ -1,6 +1,6 @@
 #maximum_iteration_nbr = 35
 #restart = T
-direct_sum = T
+direct_sum = #DIRECTSUM#
 boxnod = #BOXNOD# #BOXNOD# #BOXNOD#
 boxlen = #BOXLEN# #BOXLEN# #BOXLEN# 
 mmax = #MMAX#
