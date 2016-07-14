@@ -17,6 +17,8 @@ contains
         use module_solvent, only: solvent
         use module_grid, only: grid
 
+        use module_lennardjones
+
         IMPLICIT NONE
 
         integer :: nx, ny, nz, no, ns, s
@@ -26,6 +28,7 @@ contains
         end type errType
         type (errType) :: er
         real(dp), parameter :: zerodp = 0._dp
+        real(dp) :: t(2)
 
         print*
         print*,"===== External Potential ====="
@@ -35,6 +38,7 @@ contains
         nz = grid%nz
         no = grid%no
         ns = solvent(1)%nspec
+
 
         if (.not. allocated(solvent)) then
             print*, "Impossible de continuer. Dans module_external_potential > init_external_potential,"
@@ -60,7 +64,12 @@ contains
         if(getinput%log('back_to_old_lj', defaultvalue=.false.)) then
           call vext_lennardjones ! LENNARD-JONES POTENTIAL
         else
-          call vext_lennardjones_generic
+            call cpu_time(t(1))
+            call calcul_lennardjones
+            call cpu_time(t(2))
+            print *
+            print *,"    lj calculated in ", t(2)-t(1),"sec"
+            print *
         end if
 
 
