@@ -2,6 +2,7 @@
 <jube>
     <parameterset name="compile_parameters">
       <parameter name="load_modules">Intel IntelMPI FFTW/3.3.4</parameter>
+      <parameter name="load_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.4</parameter>
       <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
       <parameter name="branch">Feature-jube</parameter>
       <parameter name="branch" tag="test">test</parameter>

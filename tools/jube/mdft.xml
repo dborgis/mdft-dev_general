@@ -24,10 +24,18 @@
       <parameter name="compile_scalasca" mode="python">"${compile_mode}" == "scalasca"</parameter>  
      
       <parameter name="compile_mode" mode="python">",".join([i for i in "${ref_compile} ${extrae_mode} ${scalasca_mode} ${no_fma_mode} ${no_vec_mode}".split(" ") if len(i) > 0])</parameter>
+
+
+      <parameter name="compiler" mode="python">{"scalasca" : "scorep-ifort"}.get("${compile_mode}","ifort")</parameter>
+      <parameter name="compiler" mode="python" tag="GFORTRAN">{"scalasca" : "scorep-gfortran"}.get("${compile_mode}","gfortran")</parameter>
+
+	  <parameter name="fftwOptions">"-DJURECA=ON"</parameter>
+	  <parameter name="fftwOptions" tag="compileFFT"></parameter>
+
       <parameter name="cmake_line" mode="python">
-		  {"scalasca" : "cmake -DCMAKE_Fortran_COMPILER=scorep-ifort -DJURECA=ON ..",
-		   "no_vec":'cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
-		   "no_fma":'cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=ifort -DJURECA=ON ..")</parameter>
+		  {"scalasca" : "cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..",
+		   "no_vec":'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
+		   "no_fma":'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..")</parameter>
     </parameterset>
 
 
