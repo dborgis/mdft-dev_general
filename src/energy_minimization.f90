@@ -28,11 +28,25 @@ contains
 
 subroutine minimization_using_steepest_descent
   use module_grid, only: grid
+  use module_input, only: getinput
   implicit none
-  integer :: ix,iy,iz,io
-  do while(lets_minimize_with_steepest_descent)
+  integer :: ix,iy,iz,io,itermax
+  real(dp),parameter :: stepsize=10.
+  real(dp) :: fold
+  real(dp), parameter :: factr=0.0001_dp/epsilon(1._dp)
+  itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
+  i=0
+  f=0._dp
+  do while(i<itermax)
+    print*,""
+    print*
+    print*
+    print*,"ITERATION", i
+    fold = f
     call energy_and_gradient(f, df)
-    solvent(1)%xi = solvent(1)%xi - df(:,:,:,:,1)
+    solvent(1)%xi = solvent(1)%xi - stepsize*df(:,:,:,:,1)
+    i=i+1
+    if( abs(f-fold) > factr ) exit
   end do
 end subroutine minimization_using_steepest_descent
 
