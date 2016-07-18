@@ -3,6 +3,7 @@ subroutine energy_minimization
     use precision_kinds, only : dp
     use module_grid, only: grid
     use module_solvent, only: solvent
+    use module_input, only: getinput
     use module_energy_and_gradient, only: energy_and_gradient
     use module_lbfgs_nocedal_mdft, only: lbfgsb
 
@@ -12,16 +13,14 @@ subroutine energy_minimization
     real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
     real :: time(1:10)
     integer :: i
-    logical, parameter :: lets_minimize_with_bfgs=.FALSE., lets_minimize_with_steepest_descent=.TRUE.
+    logical :: lets_minimize_with_bfgs, lets_minimize_with_steepest_descent
 
-    print*
-    print*
-    print*, "===== Energy minimization ====="
-
-    if( lets_minimize_with_bfgs) then
-      call minimization_using_lbfgs()
-    else if(lets_minimize_with_steepest_descent) then
+    if(getinput%log("minimize_with_steepest_descent", defaultvalue=.false.)) then
       call minimization_using_steepest_descent()
+      print*, "===== Functional minimization with steepest descent ====="
+    else
+      call minimization_using_lbfgs()
+      print*, "===== Functional minimization with L-BFGS-B ====="
     end if
 
 contains
@@ -33,7 +32,7 @@ subroutine minimization_using_steepest_descent
   integer :: ix,iy,iz,io,itermax,i,j
   real(dp) :: stepsize,stepsize_giving_minimum_f
   real(dp) :: fold,fmin
-  real(dp), parameter :: factr=0.0001_dp/epsilon(1._dp)
+  real(dp), parameter :: factr=0.00001_dp
   logical :: ich_continue
   itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
   i=0
@@ -41,6 +40,7 @@ subroutine minimization_using_steepest_descent
   fold=huge(1._dp)
   stepsize=0.1
   j=1
+  open(12,file="output/iterate.dat")
   do while(i<itermax)
     print*,""
     print*
@@ -50,15 +50,19 @@ subroutine minimization_using_steepest_descent
     call energy_and_gradient(f,df)
     fmin=f
     ich_continue=.true.
-    stepsize=0.1
-    stepsize_giving_minimum_f=0.1
+    stepsize=0.5
+    stepsize_giving_minimum_f=stepsize
     do while(ich_continue)
       solvent(1)%xi=solvent(1)%xi-stepsize*df(:,:,:,:,1)
       call energy_and_gradient(f)
       solvent(1)%xi=solvent(1)%xi+stepsize*df(:,:,:,:,1)
       if(f<fmin) then
         stepsize_giving_minimum_f=stepsize
-        stepsize=stepsize*50.
+        if(stepsize<50) then
+          stepsize=stepsize*5.
+        else
+          stepsize=stepsize+20
+        end if
         fmin=f
         ich_continue=.true.
       else
@@ -72,7 +76,8 @@ subroutine minimization_using_steepest_descent
     solvent(1)%xi=solvent(1)%xi-stepsize_giving_minimum_f*df(:,:,:,:,1)
     i=i+1
     j=j+1
-    if( abs(fmin-fold) < 0.0001 ) exit
+    write(12,*) i,fmin
+    if( abs(fmin-fold)/max(abs(fmin),abs(fold),1._dp) < factr ) exit
   end do
 end subroutine minimization_using_steepest_descent
 

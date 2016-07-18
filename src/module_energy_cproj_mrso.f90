@@ -94,7 +94,7 @@ module module_energy_cproj_mrso
 
 contains
 
-    subroutine energy_cproj_mrso (ff,df)
+    subroutine energy_cproj_mrso (ff,df, print_timers)
         use omp_lib
         use iso_c_binding, only: c_ptr
         use precision_kinds, only: dp
@@ -102,7 +102,8 @@ contains
         use module_thermo, only: thermo
         implicit none
         real(dp), intent(out) :: ff
-        real(dp), contiguous, intent(inout) :: df(:,:,:,:,:) ! x y z o s
+        real(dp), contiguous, intent(inout), optional :: df(:,:,:,:,:) ! x y z o s
+        logical, intent(in), optional :: print_timers
         real(dp) :: dv, kT
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
@@ -597,7 +598,7 @@ call cpu_time(time(12))
                 xi = solvent(1)%xi(io,ix,iy,iz)
                 rho = xi**2*rho0
                 ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
-                df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
+                if(present(df)) df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
               end do
             end do
           end do
@@ -606,6 +607,8 @@ call cpu_time(time(12))
 call cpu_time(time(13))
 total_time_in_subroutine=time(13)-time(1)
 
+if(present(print_timers)) then
+  if(print_timers.eqv. .true.) then
 print*, "                  |"
 print*, "                  | allocations                                  ", time(2)-time(1)  ,"sec (",nint((time(2) -time(1 ))/total_time_in_subroutine*100),"%)"
 print*, "                  | read ck                                      ", time(9)-time(8)  ,"sec (",nint((time(9) -time(8 ))/total_time_in_subroutine*100),"%)"
@@ -617,7 +620,8 @@ print*, "                  | rotation to molecular frame + OZ + inv rot   ", tim
 print*, "                  | FFT⁻¹@Δρ^m_mup_mu(k)                         ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
 print*, "                  | proj2angl + sum to ff and df                 ", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
 print*, "                  |"
-
+  end if
+end if
 contains
 
 
