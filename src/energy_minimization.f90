@@ -12,11 +12,32 @@ subroutine energy_minimization
     real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
     real :: time(1:10)
     integer :: i
+    logical, parameter :: lets_minimize_with_bfgs=.FALSE., lets_minimize_with_steepest_descent=.TRUE.
 
     print*
     print*
     print*, "===== Energy minimization ====="
 
+    if( lets_minimize_with_bfgs) then
+      call minimization_using_lbfgs()
+    else if(lets_minimize_with_steepest_descent) then
+      call minimization_using_steepest_descent()
+    end if
+
+contains
+
+subroutine minimization_using_steepest_descent
+  use module_grid, only: grid
+  implicit none
+  integer :: ix,iy,iz,io
+  do while(lets_minimize_with_steepest_descent)
+    call energy_and_gradient(f, df)
+    solvent(1)%xi = solvent(1)%xi - df(:,:,:,:,1)
+  end do
+end subroutine minimization_using_steepest_descent
+
+
+subroutine minimization_using_lbfgs
     ! Init minimization process. From allocations to optimizer parameters to guess solution
     call lbfgsb%init
 
@@ -73,5 +94,6 @@ call cpu_time(time(5))
             print*
         end if
     end do
+end subroutine minimization_using_lbfgs
 
 end subroutine energy_minimization
