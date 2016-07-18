@@ -144,6 +144,7 @@
       <use from="mdft_jube_include.xml">inputParameter</use>
       <use>substituteDftFile</use>
       <use>substituteSoluteFile</use>
+      <use>substituteScalascaFilterFile</use>
       <do done_file="${done_file}">${submit} ${submit_script}</do>
     </step>
 
