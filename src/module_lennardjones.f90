@@ -26,6 +26,8 @@ contains
         integer :: xtabsize, ytabsize, ztabsize
         integer :: indextabx, indextaby, indextabz
         real(dp) :: xgrid, ygrid, zgrid
+        real(dp) :: div, rsq
+        real(dp) :: vlj
 
         if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
         if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
@@ -139,7 +141,19 @@ contains
                       dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly/2._dp); dy=abs(dy-ly); end do
                       dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz/2._dp); dz=abs(dz-lz); end do
 
-                      solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vlj( epsuv, siguv6, dx**2+dy**2+dz**2, cutoffsq)
+
+                      rsq = dx**2+dy**2+dz**2
+
+                      if (rsq<=epsdp) then
+                        vlj = huge(1._dp)
+                      elseif (rsq>cutoffsq) then
+                        vlj = 0._dp
+                      else
+                        div = siguv6/rsq**3 ! rsq is a distance²
+                        vlj = 4._dp*epsuv*div*(div-1._dp)
+                      end if
+
+                      solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vlj
                     end do
                   end do
                 end do
