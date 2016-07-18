@@ -30,23 +30,49 @@ subroutine minimization_using_steepest_descent
   use module_grid, only: grid
   use module_input, only: getinput
   implicit none
-  integer :: ix,iy,iz,io,itermax
-  real(dp),parameter :: stepsize=10.
-  real(dp) :: fold
+  integer :: ix,iy,iz,io,itermax,i,j
+  real(dp) :: stepsize,stepsize_giving_minimum_f
+  real(dp) :: fold,fmin
   real(dp), parameter :: factr=0.0001_dp/epsilon(1._dp)
+  logical :: ich_continue
   itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
   i=0
   f=0._dp
+  fold=huge(1._dp)
+  stepsize=0.1
+  j=1
   do while(i<itermax)
     print*,""
     print*
     print*
-    print*,"ITERATION", i
-    fold = f
-    call energy_and_gradient(f, df)
-    solvent(1)%xi = solvent(1)%xi - stepsize*df(:,:,:,:,1)
+    print*,"ITERATION", j
+    if(i>0) fold=f
+    call energy_and_gradient(f,df)
+    fmin=f
+    ich_continue=.true.
+    stepsize=0.1
+    stepsize_giving_minimum_f=0.1
+    do while(ich_continue)
+      solvent(1)%xi=solvent(1)%xi-stepsize*df(:,:,:,:,1)
+      call energy_and_gradient(f)
+      solvent(1)%xi=solvent(1)%xi+stepsize*df(:,:,:,:,1)
+      if(f<fmin) then
+        stepsize_giving_minimum_f=stepsize
+        stepsize=stepsize*50.
+        fmin=f
+        ich_continue=.true.
+      else
+        ich_continue=.false.
+      end if
+      PRINT*,"AT ITERATION ",i,"BEST STEPSIZE TO DATE=",stepsize_giving_minimum_f,"F=",f,"FMIN=",fmin
+    end do
+    PRINT*,"AT ITERATION ",i,"I WILL USE STEPSIZE",stepsize_giving_minimum_f
+    PRINT*
+    PRINT*
+    solvent(1)%xi=solvent(1)%xi-stepsize_giving_minimum_f*df(:,:,:,:,1)
     i=i+1
-    if( abs(f-fold) > factr ) exit
+    j=j+1
+    if( abs(fmin-fold) < 0.0001 ) exit
   end do
 end subroutine minimization_using_steepest_descent
 
