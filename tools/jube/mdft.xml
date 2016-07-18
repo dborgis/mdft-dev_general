@@ -70,7 +70,7 @@
     <parameterset name="executeset" init_with="platform.xml">
       <parameter name="trace_dir">scorep_mdft_trace</parameter>
       <parameter name="starter" mode="python">
-        {"scalasca" : "scalasca -analyze -e $trace_dir",
+        {"scalasca" : "scalasca -analyze -e $trace_dir -f filter.txt",
         "allinea" : "perf-report",
         "extrae" : "./trace.sh"}.get("${exec_mode}","")
       </parameter>
@@ -110,6 +110,11 @@
         <sub source="#TEMPERATURE#" dest="$temperature" />
         <sub source="#DIRECTSUM#" dest="$directsum" />
 <!--        <sub source="#QUEUE#" dest="$queue" /> -->
+    </substituteset>
+
+    <substituteset name="substituteScalascaFilterFile">
+ 	<iofile in="scalasca/filter.txt.jube" out="filter.txt" />
+        <sub source="#SCALASCAFILTEREDFUNCTION#" dest="$scalascafilteredfunction" />
     </substituteset>
 
     <substituteset name="substituteSoluteFile">
