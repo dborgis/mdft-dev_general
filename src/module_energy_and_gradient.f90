@@ -53,17 +53,16 @@ subroutine energy_and_gradient (f, df)
     ! use module_energy_luc_fast, only: energy_luc_fast
     use module_input, only: getinput
     ! use module_energy_cproj_slow, only: energy_cproj_slow
+    use module_lbfgs_nocedal_mdft, only:lbfgsb
 
     implicit none
 
     real(dp), intent(out) :: f
-    real(dp), intent(out) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
+    real(dp), intent(out), optional :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
     real(dp), parameter :: zerodp=0._dp
     real(sp) :: t(10)
     real(dp) :: fold
     integer :: ns, s
-
-    ! print*, "IN MODULE_ENERGY_AND_GRADIENT, I USE A DF_TRASH TO TEST STUFF BUT IT USES LOTS OF MEMORY AND SHOULD BE REMOVED"
 
     if (.not. allocated(solvent)) then
       print*, "in energy_and_gradient, solvent()% is not allocated"
@@ -73,8 +72,7 @@ subroutine energy_and_gradient (f, df)
 
     fold=f
     f  = zerodp
-    df = zerodp
-    ! df_trash = zerodp
+    if(present(df)) df = zerodp
     s=1
 
 
@@ -82,45 +80,53 @@ subroutine energy_and_gradient (f, df)
     ! Ideal and external free energy functionals
     !
     if (solvent(s)%do%id_and_ext) then
-      call cpu_time(t(1))
-      call energy_ideal_and_external (ff%id, ff%ext, df)
-      call cpu_time(t(2))
-      print*, "ff%ext            =", real(ff%ext)
-      print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
+      if(present(df)) then
+        call cpu_time(t(1))
+        call energy_ideal_and_external (ff%id, ff%ext, df)
+        call cpu_time(t(2))
+        print*, "ff%ext            =", real(ff%ext)
+        print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
+      else
+        call energy_ideal_and_external (ff%id, ff%ext)
+      end if
       f = f +ff%id +ff%ext
     end if
 
     !
     ! purely radial component, with c_s
     !
-    if (solvent(s)%do%exc_cs) then
-        call cpu_time(t(3))
-        call energy_cs (ff%exc_cs, df)
-        call cpu_time(t(4))
-        print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
-        f = f + ff%exc_cs
-    end if
+    ! if (solvent(s)%do%exc_cs) then
+    !     call cpu_time(t(3))
+    !     call energy_cs (ff%exc_cs, df)
+    !     call cpu_time(t(4))
+    !     print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
+    !     f = f + ff%exc_cs
+    ! end if
 
     !
     ! with c_d and c_delta
     !
-    if (solvent(s)%do%exc_cdeltacd) then
-        call cpu_time(t(5))
-        call energy_cdeltacd (ff%exc_cdeltacd, df)
-        call cpu_time(t(6))
-        print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
-        f = f + ff%exc_cdeltacd
-    end if
+    ! if (solvent(s)%do%exc_cdeltacd) then
+    !     call cpu_time(t(5))
+    !     call energy_cdeltacd (ff%exc_cdeltacd, df)
+    !     call cpu_time(t(6))
+    !     print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
+    !     f = f + ff%exc_cdeltacd
+    ! end if
 
 
     !
     ! with Luc's routine
     !
     if (solvent(s)%do%exc_cproj) then
-        call cpu_time(t(5))
-        call energy_cproj_mrso( ff%exc_cproj, df)
-        call cpu_time(t(6))
-        print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+        if(present(df)) then
+          call cpu_time(t(5))
+          call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.false.)
+          call cpu_time(t(6))
+          print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+        else
+          call energy_cproj_mrso( ff%exc_cproj)
+        end if
         f = f + ff%exc_cproj
     end if
 
@@ -154,11 +160,11 @@ subroutine energy_and_gradient (f, df)
     if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
 
         call typeB_corrections
-        print*, "ff%pbc correction =", real(ff%pbc_correction)
+        if(present(df)) print*, "ff%pbc correction =", real(ff%pbc_correction)
         f = f + ff%pbc_correction
 
         call typeC_corrections
-        print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
+        if(present(df)) print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
         f = f + ff%pscheme_correction
 
     end if
@@ -177,11 +183,13 @@ subroutine energy_and_gradient (f, df)
 
     ff%tot = f
 
+if(present(df)) then
     print*, "                     ####################"
     print*, "TOTAL FF [kJ/mol] =  #", real(f), "#"
     print*, "                     ####################"
-    print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"objectif=",real(0.00001)
-    print*, "pgtol=", real(maxval(df)),"objectif=",real(0.001)
+    print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"target=",lbfgsb%factr*epsilon(1._dp)
+    print*, "pgtol=", real(maxval(df)),                                "target=",lbfgsb%pgtol
+end if
 
 end subroutine energy_and_gradient
 
