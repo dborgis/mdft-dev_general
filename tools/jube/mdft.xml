@@ -103,6 +103,7 @@
     <fileset name="input_data">
       <copy>paraver/extrae.xml</copy>
       <copy>paraver/trace.sh</copy>
+      <copy>scalasca/filter.txt.jube</copy>
       <copy>input</copy>
     </fileset>
 
@@ -121,7 +122,7 @@
     </substituteset>
 
     <substituteset name="substituteScalascaFilterFile">
- 	<iofile in="scalasca/filter.txt.jube" out="filter.txt" />
+ 	<iofile in="filter.txt.jube" out="filter.txt" />
         <sub source="#SCALASCAFILTEREDFUNCTION#" dest="$scalascafilteredfunction" />
     </substituteset>
 
