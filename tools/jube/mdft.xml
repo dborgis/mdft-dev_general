@@ -33,9 +33,9 @@
 	  <parameter name="fftwOptions" tag="compileFFT"></parameter>
 
       <parameter name="cmake_line" mode="python">
-		  {"scalasca" : "cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..",
-		   "no_vec":'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
-		   "no_fma":'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get("${compile_mode}","cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..")</parameter>
+		  {'scalasca' : 'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..',
+		   'no_vec':'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
+		   'no_fma':'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get('${compile_mode}','cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..')</parameter>
     </parameterset>
 
 
