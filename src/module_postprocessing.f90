@@ -2,11 +2,11 @@ module module_postprocessing
     use precision_kinds, only: dp
     implicit none
     private
-    type :: correction_type
-        real(dp) :: pscheme
-        real(dp) :: pbc
-    end type correction_type
-    type (correction_type) :: correction
+    ! type :: correction_type
+    !     real(dp) :: pscheme
+    !     real(dp) :: pbc
+    ! end type correction_type
+    ! type (correction_type) :: correction
     public :: init_postprocessing
 
 contains
@@ -23,7 +23,7 @@ contains
         implicit none
         character(len=80) :: filename
         real(dp), allocatable :: density(:,:,:), px(:,:,:,:), py(:,:,:,:), pz(:,:,:,:)
-        integer :: nx, ny, nz, ix, iy, iz, io, is, isite, no
+        integer :: nx, ny, nz, ix, iy, iz, is, isite, no
         real(dp), parameter :: pi=acos(-1._dp)
 
         nx=grid%nx
@@ -341,7 +341,6 @@ contains
         INTEGER(i2b) :: i, j, k, io, s
         REAL(dp) :: x, local_Px, local_Py, local_Pz
         REAL(dp), dimension(:,:,:,:), intent(out) :: Px, Py, Pz ! equilibrium polarization(r)
-        integer :: nx, ny, nz, no, ns
         real(dp), parameter :: zerodp = 0._dp
 
 
@@ -357,7 +356,7 @@ contains
                         local_Py = 0.0_dp
                         local_Pz = 0.0_dp
                         DO io =1,grid%no
-                            x = solvent(s)%xi(i,j,k,io)**2*solvent(s)%rho0
+                            x = solvent(s)%xi(io,i,j,k)**2*solvent(s)%rho0
                             local_Px = local_Px + grid%omx(io) * grid%w(io) * x
                             local_Py = local_Py + grid%omy(io) * grid%w(io) * x
                             local_Pz = local_Pz + grid%omz(io) * grid%w(io) * x
