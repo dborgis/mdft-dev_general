@@ -72,11 +72,11 @@ def extract_metrics_scalasca(args):
 
   dump_json(res, args.o)
   
-def extract_right_line(filename):
+def extract_right_line(filename, pattern='IdrisMemMPI'):
   f = open(filename, 'r')
   l = f.readlines()
   f.close()
-  pattern = re.compile('IdrisMemMPI')
+  pattern = re.compile(pattern)
   for i in reversed(l):
     res = pattern.search(i)
     if res != None:
@@ -122,6 +122,18 @@ def extract_mem(args):
     to_return = l.split(',')[2].split('=')[1].split(' ') 
     to_return = to_return[1] + ' ' + to_return[2]
     res[key] = to_return
+  else:
+    print 'Warning: No memory footprint information'
+  dump_json(res, args.o)
+
+def extract_mem_serialomp(args):
+  l = extract_right_line(args.stderr_file, 'Maximum resident')  
+  key = "mem"
+  res={key: 'Fail'}
+
+  if l != None:
+    to_return = float(l.split(':')[1])/1000.0
+    res[key] = str(to_return)
   else:
     print 'Warning: No memory footprint information'
   dump_json(res, args.o)
@@ -194,9 +206,14 @@ def build_parser():
   parser_time.set_defaults(func=extract_time2)
   
   # create the parser for the "mem" command
-  parser_mem = subparsers.add_parser('mem', help='Extracts memory ffotprint from the std.err file')
+  parser_mem = subparsers.add_parser('mem', help='Extracts memory footprint from the std.err file for MPI applications')
   parser_mem.add_argument('stderr_file', type=str, help='stderr file')
   parser_mem.set_defaults(func=extract_mem)
+
+  # create the parser for the "mem_serial-omp" command
+  parser_mem_serialomp = subparsers.add_parser('mem_serialomp', help='Extracts memory footprint from the std.err file for serial and OpenMP applications')
+  parser_mem_serialomp.add_argument('stderr_file', type=str, help='stderr file')
+  parser_mem_serialomp.set_defaults(func=extract_mem_serialomp)
 
   return parser
 

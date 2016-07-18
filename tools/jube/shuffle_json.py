@@ -84,7 +84,10 @@ def build_final_metrics(res):
 
   keys = ['mpi_collective','mpi_nxn_completion']
   if keys_here(keys, res):
-    res2['Collective Calls (s)'] = res[keys[0]] + res[keys[1]] #?
+    if res[keys[0]] != None and res[keys[1]] != none:
+      res2['Collective Calls (s)'] = res[keys[0]] + res[keys[1]] #?
+    else:
+      res2['Collective Calls (s)'] = 0.0
 
   keys = ['delay_mpi']
   if keys_here(keys, res):
