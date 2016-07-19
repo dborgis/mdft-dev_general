@@ -6,3 +6,4 @@ boxlen = #BOXLEN# #BOXLEN# #BOXLEN#
 mmax = #MMAX#
 bulk_density = #BULKDENSITY#
 temperature = #TEMPERATURE#
+solute_charges_scale_factor = #SOLUTECHARGESSCALEFACTOR#

@@ -118,6 +118,7 @@
         <sub source="#BULKDENSITY#" dest="$bulkdensity" />
         <sub source="#TEMPERATURE#" dest="$temperature" />
         <sub source="#DIRECTSUM#" dest="$directsum" />
+        <sub source="#SOLUTECHARGESSCALEFACTOR#" dest="$soluteChargesScaleFactor" />
 <!--        <sub source="#QUEUE#" dest="$queue" /> -->
     </substituteset>
 

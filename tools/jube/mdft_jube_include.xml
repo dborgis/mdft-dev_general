@@ -47,6 +47,8 @@
       <parameter name="directsum">F</parameter>
       <parameter name="directsum" tag="directsum">T</parameter>
       <parameter name="scalascafilteredfunction">module_lennardjones.vlj_</parameter>
+      <parameter name="soluteChargesScaleFactor" tag="nocharges">0</parameter>
+      <parameter name="soluteChargesScaleFactor">1</parameter>
     </parameterset>
 
 </jube>
