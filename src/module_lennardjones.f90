@@ -95,19 +95,19 @@ contains
           if (minx<maxx) then
             xtab = (/ (I, I = minx, maxx) /)
           else ! take into account PBC
-            xtab = [(/ (I, I = 0, maxx) /), (/ (I, I = minx, nx) /)]
+            xtab = [(/ (I, I = 1, maxx) /), (/ (I, I = minx, nx) /)]
           end if
 
           if (miny<maxy) then
             ytab = (/ (I, I = miny, maxy) /)
           else ! take into account PBC
-            ytab = [(/ (I, I = 0, maxy) /), (/ (I, I = miny, ny) /)]
+            ytab = [(/ (I, I = 1, maxy) /), (/ (I, I = miny, ny) /)]
           end if
 
           if (minz<maxz) then
             ztab = (/ (I, I = minz, maxz) /)
           else ! take into account PBC
-            ztab = [(/ (I, I = 0, maxz) /), (/ (I, I = minz, nz) /)]
+            ztab = [(/ (I, I = 1, maxz) /), (/ (I, I = minz, nz) /)]
           end if
           !end of prepare table to loop over
 
