@@ -46,8 +46,8 @@ subroutine energy_and_gradient (f, df)
     use module_solvent, only: solvent
     use module_grid, only: grid
     use module_energy_ideal_and_external, only: energy_ideal_and_external
-    use module_energy_cs, only: energy_cs
-    use module_energy_cdeltacd, only: energy_cdeltacd
+    ! use module_energy_cs, only: energy_cs
+    ! use module_energy_cdeltacd, only: energy_cdeltacd
     use module_energy_cproj_mrso, only: energy_cproj_mrso
     ! use module_energy_cproj_no_symetry, only: energy_cproj_no_symetry
     ! use module_energy_ck_angular, only: energy_ck_angular
@@ -123,7 +123,7 @@ subroutine energy_and_gradient (f, df)
     if (solvent(s)%do%exc_cproj) then
         if(present(df)) then
           call cpu_time(t(5))
-          call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.false.)
+          call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.true.)
           call cpu_time(t(6))
           print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
         else
