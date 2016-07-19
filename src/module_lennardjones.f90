@@ -116,7 +116,7 @@ contains
             do ss=1,size(solvent(s)%site)
               if( solvent(s)%site(ss)%eps<=epsdp ) cycle
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
-              siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)*2._dp)**6
+              siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)*0.5_dp)**6
 
               do indextabz=1,ztabsize ! indextabz is the index in ztabsize
                 iz = ztab(indextabz)  ! iz is the index of the point in the grid
