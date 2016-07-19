@@ -41,22 +41,6 @@ contains
         call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
         print*, "New file output/density.cube"
 
-        !
-        ! print polarization in each direction
-        !
-        filename = "output/Px.cube"
-        allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
-        call get_final_polarization(px,py,pz)
-        filename = "output/Px.cube"
-        call write_to_cube_file(px,filename)
-        print*, "New file output/Px.cube"
-        filename = "output/Py.cube"
-        call write_to_cube_file(py,filename)
-        print*, "New file output/Py.cube"
-        filename = "output/Pz.cube"
-        call write_to_cube_file(pz,filename)
-        print*, "New file output/Pz.cube"
-
 
         !
         ! print binary file one can use as a restart point
@@ -84,6 +68,23 @@ contains
         close(10)
         print*, "New file output/density.bin"
 
+
+
+        !
+        ! print polarization in each direction
+        !
+        filename = "output/Px.cube"
+        allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
+        call get_final_polarization(px,py,pz)
+        filename = "output/Px.cube"
+        call write_to_cube_file(px,filename)
+        print*, "New file output/Px.cube"
+        filename = "output/Py.cube"
+        call write_to_cube_file(py,filename)
+        print*, "New file output/Py.cube"
+        filename = "output/Pz.cube"
+        call write_to_cube_file(pz,filename)
+        print*, "New file output/Pz.cube"
 
 
 
