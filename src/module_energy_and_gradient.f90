@@ -1,4 +1,5 @@
 module module_energy_and_gradient
+  use iso_c_binding, only: c_float
   use precision_kinds, only: dp
   implicit none
   private
@@ -40,7 +41,8 @@ subroutine energy_and_gradient (f, df)
     ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
     ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
-    use precision_kinds, only: dp, sp
+    use iso_c_binding, only: c_float
+    use precision_kinds, only: dp
     use module_solvent, only: solvent
     use module_grid, only: grid
     use module_energy_ideal_and_external, only: energy_ideal_and_external
@@ -60,7 +62,7 @@ subroutine energy_and_gradient (f, df)
     real(dp), intent(out) :: f
     real(dp), intent(out), optional :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
     real(dp), parameter :: zerodp=0._dp
-    real(sp) :: t(10)
+    real(c_float) :: t(10)
     real(dp) :: fold
     integer :: ns, s
 
