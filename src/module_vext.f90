@@ -17,6 +17,8 @@ contains
         use module_solvent, only: solvent
         use module_grid, only: grid
 
+        use module_lennardjones, only: calcul_lennardjones
+
         IMPLICIT NONE
 
         integer :: nx, ny, nz, no, ns, s
@@ -26,6 +28,7 @@ contains
         end type errType
         type (errType) :: er
         real(dp), parameter :: zerodp = 0._dp
+        real(dp) :: t(3)
 
         print*
         print*,"===== External Potential ====="
@@ -35,6 +38,7 @@ contains
         nz = grid%nz
         no = grid%no
         ns = solvent(1)%nspec
+
 
         if (.not. allocated(solvent)) then
             print*, "Impossible de continuer. Dans module_external_potential > init_external_potential,"
@@ -55,13 +59,12 @@ contains
 
         if (getinput%int('vext_hard_walls', defaultvalue=0, assert=">=0") > 0) call vext_hard_walls
 
+        call cpu_time(t(1))
         CALL init_electrostatic_potential ! ELECTROSTATIC POTENTIAL
 
-        if(getinput%log('back_to_old_lj', defaultvalue=.false.)) then
-          call vext_lennardjones ! LENNARD-JONES POTENTIAL
-        else
-          call vext_lennardjones_generic
-        end if
+        call cpu_time(t(2))
+        call calcul_lennardjones
+        call cpu_time(t(3))
 
 
         IF (getinput%log('purely_repulsive_solute', defaultvalue=.false.)) CALL compute_purely_repulsive_potential ! r^-12 only
@@ -79,12 +82,16 @@ contains
 
         do s=1,ns
             if (allocated(solvent(s)%vextq)) then
+                print*
+                print*,"    electrostatic calculated in ", t(2)-t(1),"sec"
                 print*,"    minval(vextq) =",minval(solvent(1)%vextq)
                 print*,"    maxval(vextq) =",maxval(solvent(1)%vextq)
                 deallocate(solvent(s)%vextq)
             else
                 print*,"    no electrostatic potential"
             end if
+            print*
+            print*,"    lj calculated in ", t(3)-t(2),"sec"
             print*,"    minval(vext) =",minval(solvent(1)%vext)
             print*,"    maxval(vext) =",maxval(solvent(1)%vext)
             print*,"===== External Potential ====="
@@ -317,151 +324,6 @@ contains
         deallocate (thickness, normal_vec, norm2_normal_vec, oa, dot_product_normal_vec_oa)
     end subroutine vext_hard_walls
 
-    subroutine vext_lennardjones
-        !
-        ! We compute the array Vext_lj that contains the lennard jones part of the external potential.
-        !
-        use precision_kinds, only: dp
-        use module_solute, only: solute
-        use module_solvent, only: solvent
-        use module_grid, only: grid
-        implicit none
-        integer :: nx, ny, nz, no, ns
-        real(dp) :: lx, ly, lz
-        real(dp), parameter :: fourpi=4._dp*acos(-1._dp)
-        real(dp), parameter :: epsdp = epsilon(1._dp)
-        integer :: i,j,k,s,v,u,a,b,c,t, nsolutesite, nsolventsites_with_lj
-        real(dp), allocatable :: x(:), y(:), z(:)
-        real(dp) :: V_node, dx, dy, dz
-        logical :: fullpbc
-        integer, allocatable :: index_of_lj_site_in_solvent(:)
-        real(dp), allocatable :: siguv(:), epsuv(:)
-
-        if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
-        if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
-
-        nx = grid%nx
-        ny = grid%ny
-        nz = grid%nz
-        lx = grid%lx
-        ly = grid%ly
-        lz = grid%lz
-        no = grid%no
-        ns = solvent(1)%nspec
-        if(ns /= 1) error stop "Dans vext_lennardjones, je n'ai pas encore implemente le multi especes"
-
-        ! compute lennard jones potential at each position and for each orientation, for each species => Vext_lj ( i , j , k , omega , species )
-        ! we impose the simplification that only the first site of the solvent sites has a lennard jones WATER only TODO
-        ! test if this simplification is true and stop if not
-        ! the test is done over the sigma lj. they're positive, so that the sum over all sigma is the same as the sigma of first site
-        ! only if they're all zero but for first site
-        do s=1,ns
-            nsolventsites_with_lj = count( abs(solvent(s)%site(:)%eps) > epsdp)
-            if (nsolventsites_with_lj > 1) then
-                print*, "in vext_lennardjones, I have only implemented the special case where the solvent wears only 1 LJ site"
-                error stop
-            end if
-        end do
-
-        ! Test if the supercell is big enough considering the LJ range (given by sigma).
-        ! at 2.5*sigma, the lj potential is only 0.0163*epsilon. Almost zero.
-        ! It would have no sense to have a box dimension < 2.5 sigma
-        IF( MIN(lx,ly,lz)<= 2.5_dp*MAX(MAXVAL(solute%site%sig),MAXVAL(solvent(1)%site%sig))) THEN
-            PRINT*,'The supercell is small. We replicate it in all directions. Vext calculation will be long.'
-            fullpbc=.TRUE. ! much slower
-            !~                 STOP
-            STOP "in module_vext, vext_lennardjones, I have a small supercell and thus have full pbc"
-        ELSE
-            fullpbc=.FALSE. ! much faster
-        END IF
-
-        !
-        ! For each solvent species, I want the index of the (unique) Lennard jones site
-        !
-        allocate (index_of_lj_site_in_solvent(ns), source=0)
-        do s=1,ns
-            do t=1,size(solvent(1)%site)
-                if (solvent(1)%site(t)%eps > epsdp) then
-                    index_of_lj_site_in_solvent(s) = t
-                    cycle
-                end if
-            end do
-        end do
-        if (any(index_of_lj_site_in_solvent<=0)) then
-            print*, "In module_vext, some site index is negative. Bisous"
-            error stop
-        end if
-
-        !
-        ! The unique LJ solvent site must be (see loop below) on top of a grid node
-        !
-        do s=1,solvent(1)%nspec
-            t = index_of_lj_site_in_solvent(s)
-            if (norm2(solvent(s)%site(t)%r)>epsdp) then
-                print*, "Dans module_vext, vext_lennardjones, le calcul implique implicitement que l"
-                print*, "unique site LJ du solvant est sur un grid node"
-                print*, "on a ici comme coordonnées du site LJ du solvent:"
-                print*, solvent(s)%site(t)%r
-                print*, "qui est > epsdp"
-                error stop
-            end if
-        end do
-
-        nsolutesite = size(solute%site)
-        allocate (siguv(nsolutesite), source=0._dp)
-        allocate (epsuv(nsolutesite), source=0._dp)
-        v = index_of_lj_site_in_solvent(1)
-        ! pour tous les sites de soluté, tabule les eps et sig LJ avec l'unique site LJ du solvent
-        siguv(1:nsolutesite) = [((solvent(1)%site(v)%sig + solute%site(u)%sig)/2._dp , u=1,nsolutesite)]
-        epsuv(1:nsolutesite) = [(sqrt( solvent(1)%site(v)%eps * solute%site(u)%eps ) , u=1,nsolutesite)]
-        if (any(siguv<0._dp)) then
-            print*, "le sigma_ij de l'une des interactions lennard jones est negatif."
-            print*, "voici la liste des sigma_ij"
-            print*, siguv
-            error stop
-        end if
-        if (any(epsuv<0._dp)) then
-            print*, "le eps_ij de l'une des interactions lennard jones est negatif."
-            print*, "voici la liste des sigma_ij"
-            print*, epsuv
-            error stop
-        end if
-
-        allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
-        allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
-        allocate( z(nz) ,source= [(real(k-1,dp)*grid%dz, k=1,nz)] )
-
-        do concurrent (s=1:ns) ! solvent species
-            do concurrent (i=1:nx, j=1:ny, k=1:nz) ! grid node
-                v_node=0._dp
-                soluteloop: do u=1,nsolutesite
-                    IF (abs(solute%site(u)%eps) <= epsdp) CYCLE
-                    IF (fullpbc) THEN ! PARFAIT POUR OpenMPZ
-                        DO a=-1,1; DO b=-1,1; DO c=-1,1
-                            dx =x(i)-solute%site(u)%r(1)+a*lx ! we have implicitely the unique LJ site of the solvent that is on top of a grid node
-                            dy =y(j)-solute%site(u)%r(2)+b*ly
-                            dz =z(k)-solute%site(u)%r(3)+c*lz
-                            V_node =V_node + vlj( epsuv(u), siguv(u), dx**2+dy**2+dz**2)
-                            IF (V_node >= solvent(s)%vext_threeshold) THEN ! limit maximum value of Vlj to 100 TODO magic number
-                                V_node = solvent(s)%vext_threeshold
-                                EXIT soluteloop
-                            END IF
-                        END DO; END DO; END DO
-                    ELSE
-                        dx =ABS(x(i)-solute%site(u)%r(1)); DO WHILE (dx>lx/2._dp); dx =ABS(dx-lx); END DO
-                        dy =ABS(y(j)-solute%site(u)%r(2)); DO WHILE (dy>ly/2._dp); dy =ABS(dy-ly); END DO
-                        dz =ABS(z(k)-solute%site(u)%r(3)); DO WHILE (dz>lz/2._dp); dz =ABS(dz-lz); END DO
-                        V_node =V_node + vlj( epsuv(u), siguv(u), dx**2+dy**2+dz**2 )
-                        IF (V_node >= solvent(s)%vext_threeshold) THEN ! limit maximum value of Vlj to 100 TODO magic number
-                            V_node = solvent(s)%vext_threeshold
-                            EXIT soluteloop
-                        END IF
-                    END IF
-                end do soluteloop
-                solvent(s)%vext(:,i,j,k) = solvent(s)%vext(:,i,j,k) + V_node ! all angles are treated in the same time as the oxygen atom is not sensitive to rotation around omega and psi
-            end do ! x,y,z
-        end do ! solvent species
-    end subroutine vext_lennardjones
 
     ! ! This subroutine computes the external potential induced by purely repulsive r^-12 spheres at each solute sites. You may be interesed by Dzubiella and Hansen, J. Chem. Phys. 121 (2004)
     ! ! The potential has the form V(r)=kbT*(r-R0)^-(12)
@@ -793,118 +655,5 @@ contains
         ! END IF
 
     end subroutine vext_total_sum
-
-subroutine vext_lennardjones_generic
-  !
-  ! We compute the array Vext_lj that contains the lennard jones part of the external potential.
-  ! This version of the routine is compatible with solvents wearing several LJ sites like the 3-site model for acetontrile.
-  !
-  use precision_kinds, only: dp
-  use module_solute, only: solute
-  use module_solvent, only: solvent
-  use module_grid, only: grid
-  implicit none
-  integer :: nx, ny, nz, no, ns
-  real(dp) :: lx, ly, lz
-  real(dp), parameter :: fourpi=4._dp*acos(-1._dp)
-  real(dp), parameter :: epsdp = epsilon(1._dp)
-  integer :: i,j,k,s,v,u, io, ix, iy, iz, ss
-  real(dp), allocatable :: x(:), y(:), z(:)
-  real(dp) :: vloc, dx, dy, dz, xss, yss, zss
-  real(dp), allocatable :: siguv(:,:), epsuv(:,:)
-  real(dp), dimension(3) :: rotx, roty, rotz
-  if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
-  if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
-  nx = grid%nx
-  ny = grid%ny
-  nz = grid%nz
-  lx = grid%lx
-  ly = grid%ly
-  lz = grid%lz
-  no = grid%no
-  ns = size(solvent)
-
-  allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
-  allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
-  allocate( z(nz) ,source= [(real(k-1,dp)*grid%dz, k=1,nz)] )
-
-
-  ! Allocate a table for epsuv and siguv, where u runs from 1 to the number of solute sites and
-  ! v runs from 1 to the maximum number of solvent sites of all the solvents species
-  block
-    integer :: umax, vmax
-    umax = size(solute%site)
-    vmax = maxval(  [ (size(solvent(i)%site) ,i=1,ns)]    )
-    allocate( siguv(umax,vmax) ,source=0._dp )
-    allocate( epsuv(umax,vmax) ,source=0._dp )
-  end block
-
-  ! pour toutes les orientations
-  ! et pour tous les noeuds de la grille spatiale
-  do io=1,no
-
-    rotx=[grid%rotxx(io),grid%rotxy(io),grid%rotxz(io)]
-    roty=[grid%rotyx(io),grid%rotyy(io),grid%rotyz(io)]
-    rotz=[grid%rotzx(io),grid%rotzy(io),grid%rotzz(io)]
-
-    do ix=1,nx
-      do iy=1,ny
-        do iz=1,nz
-
-          ! pour chaque solvant
-          ! on calcule la position de chaque site du solvant
-          do s=1,ns
-            do v=1,size(solvent(s)%site)
-              do u=1,size(solute%site)
-                epsuv(u,v)=sqrt(solute%site(u)%eps * solvent(s)%site(v)%eps)
-                siguv(u,v)=(solute%site(u)%sig + solvent(s)%site(v)%sig)/2._dp
-              end do
-            end do
-            vloc=0._dp
-            do ss=1,size(solvent(s)%site)
-              if( solvent(s)%site(ss)%eps<=epsdp) cycle
-              xss=x(ix)+dot_product(rotx,solvent(s)%site(ss)%r)
-              yss=y(iy)+dot_product(roty,solvent(s)%site(ss)%r)
-              zss=z(iz)+dot_product(rotz,solvent(s)%site(ss)%r)
-              ! pour chaque site de soluté
-              ! on calcule la distance entre le site de soluté et le site de solvant
-              ! on calcule vlj(epsij,sigij,rsq)
-              ! et on ajoute la contribution à v
-              do u=1,size(solute%site)
-                if( solute%site(u)%eps <= epsdp .or. vloc > 1.e5 ) cycle ! if the solute site does not wear a Lennard-Jones contribution
-                dx =abs(xss-solute%site(u)%r(1)); do while(dx>lx/2._dp); dx=abs(dx-lx); end do
-                dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly/2._dp); dy=abs(dy-ly); end do
-                dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz/2._dp); dz=abs(dz-lz); end do
-                vloc = vloc + vlj( epsuv(u,ss), siguv(u,ss), dx**2+dy**2+dz**2)
-              end do
-            end do
-
-            solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vloc
-
-          end do
-
-        end do
-      end do
-    end do
-
-  end do
-end subroutine vext_lennardjones_generic
-
-
-
-pure function vlj(eps,sig,rsq) ! I hope this function is inlined by the compiler
-    use precision_kinds, only: dp
-    implicit none
-    real(dp) :: vlj
-    real(dp), intent(in) :: eps, sig, rsq
-    real(dp) :: div
-    real(dp), parameter :: epsdp=1._dp
-    if (rsq<=epsdp) then
-        vlj = huge(1._dp)
-    else
-        div = sig**6/rsq**3 ! rsq is a distance²
-        vlj = 4._dp*eps*div*(div-1._dp)
-    end if
-end function vlj
 
 end module module_vext

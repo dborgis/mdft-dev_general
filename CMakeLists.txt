@@ -62,6 +62,13 @@ elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 endif()
 
+
+add_subdirectory(vendor/bpp bpp EXCLUDE_FROM_ALL)
+
+bpp_preprocess(SRC_Bpp src/module_energy_cproj_mrso.F90.bpp src/module_rotation.F90.bpp)
+
+
+
 #############################
 # Now build mdft executable #
 #############################
@@ -72,8 +79,9 @@ set(mdft_SRCS
   src/module_lecture.f90
 #  src/module_energy_luc.f90
 #  src/module_energy_luc_fast.f90
-  src/module_rotation.f90
-  src/module_energy_cproj_mrso.f90
+  ${SRC_Bpp}
+#  src/module_rotation.f90
+#  src/module_energy_cproj_mrso.f90
 #  src/module_energy_cproj_no_symetry.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
@@ -123,6 +131,7 @@ set(mdft_SRCS
   src/write_to_cube_file.f90
   src/module_wigner_d.f90
   src/module_orientation_projection_transform.f90
+  src/module_lennardjones.f90
 #  src/module_mpi.F90
 )
 

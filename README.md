@@ -40,6 +40,5 @@ sudo apt-get install gfortran-6
 git clone https://github.com/maxlevesque/mdft-dev
 cd mdft-dev && mkdir build && cd build
 cmake ..
-make -j
-ln -s ../input
+make -j 4
 ```
