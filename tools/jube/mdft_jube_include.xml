@@ -5,8 +5,6 @@
       <parameter name="load_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.4</parameter>
       <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
       <parameter name="branch">Feature-jube</parameter>
-      <parameter name="branch" tag="test">test</parameter>
-      <parameter name="branch" tag="versionBeforeLj">8943cf6a8d8ccebbb5af38dc080b4fb57a8145a0</parameter>
       <parameter name="make_target"></parameter>
     </parameterset>
 
