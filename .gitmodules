@@ -1,0 +1,3 @@
+[submodule "vendor/bpp"]
+	path = vendor/bpp
+	url = https://gitlab.maisondelasimulation.fr/jbigot/bpp.git
