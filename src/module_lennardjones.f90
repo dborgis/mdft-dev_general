@@ -89,23 +89,29 @@ contains
           maxy = floor(mod((solute%site(u)%r(2)+cutoff   ), ly)/grid%dy)
           minz = floor(mod((solute%site(u)%r(3)-cutoff+lz), lz)/grid%dz)
           maxz = floor(mod((solute%site(u)%r(3)+cutoff   ), lz)/grid%dz)
+          if(minx<1)minx=1
+          if(miny<1)miny=1
+          if(minz<1)minz=1
+          if(maxx<nx)maxx=nx
+          if(maxy<ny)maxy=ny
+          if(maxz<nz)maxz=nz
 
           if (minx<maxx) then
             xtab = (/ (I, I = minx, maxx) /)
           else ! take into account PBC
-            xtab = [(/ (I, I = 0, maxx) /), (/ (I, I = minx, nx) /)]
+            xtab = [(/ (I, I = 1, maxx) /), (/ (I, I = minx, nx) /)]
           end if
 
           if (miny<maxy) then
             ytab = (/ (I, I = miny, maxy) /)
           else ! take into account PBC
-            ytab = [(/ (I, I = 0, maxy) /), (/ (I, I = miny, ny) /)]
+            ytab = [(/ (I, I = 1, maxy) /), (/ (I, I = miny, ny) /)]
           end if
 
           if (minz<maxz) then
             ztab = (/ (I, I = minz, maxz) /)
           else ! take into account PBC
-            ztab = [(/ (I, I = 0, maxz) /), (/ (I, I = minz, nz) /)]
+            ztab = [(/ (I, I = 1, maxz) /), (/ (I, I = minz, nz) /)]
           end if
           !end of prepare table to loop over
 
@@ -116,17 +122,23 @@ contains
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
               siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)/2._dp)**6
 
-              do indextabz=1,ztabsize ! indextabz is the index in ztabsize
-                iz = ztab(indextabz)  ! iz is the index of the point in the grid
-                zgrid=z(iz)           ! zgrid is the z position of the point
-
-                do indextaby=1,ytabsize
-                  iy = ytab(indextaby)
-                  ygrid=y(iy)
-
-                  do indextabx=1,xtabsize
-                    ix = xtab(indextabx)
-                    xgrid=x(ix)
+              ! do indextabz=1,ztabsize ! indextabz is the index in ztabsize
+              !   iz = ztab(indextabz)  ! iz is the index of the point in the grid
+              !   zgrid=z(iz)           ! zgrid is the z position of the point
+              !
+              !   do indextaby=1,ytabsize
+              !     iy = ytab(indextaby)
+              !     ygrid=y(iy)
+              !
+              !     do indextabx=1,xtabsize
+              !       ix = xtab(indextabx)
+              !       xgrid=x(ix)
+              do ix=1,nx
+                xgrid=(ix-1)*grid%dx
+                do iy=1,ny
+                  ygrid=(iy-1)*grid%dy
+                  do iz=1,nz
+                    zgrid=(iz-1)*grid%dz
 
                     do io=1,no !! sortir io des xyz !!! a voir avec les acces memoire vext!!!
                       if( solvent(s)%vext(io,ix,iy,iz) > 1.e5 ) cycle
@@ -172,6 +184,3 @@ contains
     end function vlj
 
 end module module_lennardjones
-
-
-

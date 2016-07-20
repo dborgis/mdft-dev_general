@@ -7,7 +7,7 @@ module module_lbfgs_nocedal_mdft
   type lbfgsb_type
       !     Declare variables and parameters needed by mylbfgsb.f90>setulb
       integer                :: n, m=1, iprint=3
-      real(mydp)               :: factr  = 0.00001_mydp/epsilon(1._mydp) ! The iteration will stop when
+      real(mydp)               :: factr  = 0.0001_mydp/epsilon(1._mydp) ! The iteration will stop when
       ! real(dp)               :: factr  = 1.0d+12 ! The iteration will stop when
                                                  ! (f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr*epsmch
                                                  ! where epsmch is the machine precision, which is automatically
@@ -15,7 +15,7 @@ module module_lbfgs_nocedal_mdft
                                                  ! low accuracy; 1.d+7 for moderate accuracy; 1.d+1 for extremely
                                                  ! high accuracy. On exit factr is unchanged.
                                                  ! epsmch dans lbfgsb.f = epsilon(1.)
-      real(mydp)               :: pgtol  = 0.00001_mydp ! The iteration will stop when max{|proj g_i | i = 1, ..., n} <= pgtol
+      real(mydp)               :: pgtol  = 0.0001_mydp ! The iteration will stop when max{|proj g_i | i = 1, ..., n} <= pgtol
       ! real(dp)               :: pgtol  = 1.0d-3 ! The iteration will stop when max{|proj g_i | i = 1, ..., n} <= pgtol
                                                 ! where pg_i is the ith component of the projected gradient.
       character(len=60)      :: task, csave

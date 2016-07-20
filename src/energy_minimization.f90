@@ -32,7 +32,7 @@ contains
     integer :: ix,iy,iz,io,itermax,i,j,k
     real(dp) :: stepsize,stepsize_giving_minimum_f
     real(dp) :: fold,fmin
-    real(dp), parameter :: factr=0.00001_dp
+    real(dp), parameter :: factr=0.0001_dp
     logical :: ich_continue
     integer :: stepsize_n(0:200)
     stepsize_n=0.5
