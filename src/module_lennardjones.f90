@@ -83,18 +83,18 @@ contains
 
           ! prepare table to loop over
           ! These tables allow to loop only on a cube with l=cutoff
-          minx = floor(mod((solute%site(u)%r(1)-cutoff+lx), lx)/grid%dx)
-          maxx = floor(mod((solute%site(u)%r(1)+cutoff   ), lx)/grid%dx)
-          miny = floor(mod((solute%site(u)%r(2)-cutoff+ly), ly)/grid%dy)
-          maxy = floor(mod((solute%site(u)%r(2)+cutoff   ), ly)/grid%dy)
-          minz = floor(mod((solute%site(u)%r(3)-cutoff+lz), lz)/grid%dz)
-          maxz = floor(mod((solute%site(u)%r(3)+cutoff   ), lz)/grid%dz)
-          if(minx<1)minx=1
-          if(miny<1)miny=1
-          if(minz<1)minz=1
-          if(maxx<nx)maxx=nx
-          if(maxy<ny)maxy=ny
-          if(maxz<nz)maxz=nz
+          minx = floor(mod((solute%site(u)%r(1)-cutoff+lx), lx)/grid%dx) + 1
+          maxx = floor(mod((solute%site(u)%r(1)+cutoff   ), lx)/grid%dx) + 1
+          miny = floor(mod((solute%site(u)%r(2)-cutoff+ly), ly)/grid%dy) + 1
+          maxy = floor(mod((solute%site(u)%r(2)+cutoff   ), ly)/grid%dy) + 1
+          minz = floor(mod((solute%site(u)%r(3)-cutoff+lz), lz)/grid%dz) + 1
+          maxz = floor(mod((solute%site(u)%r(3)+cutoff   ), lz)/grid%dz) + 1
+          if(minx<1) error stop "minx<1 in module_lennardjones"
+          if(miny<1) error stop "miny<1 in module_lennardjones"
+          if(minz<1) error stop "minz<1 in module_lennardjones"
+          if(maxx>nx) error stop "maxx>nx in module_lennardjones"
+          if(maxy>ny) error stop "maxy>ny in module_lennardjones"
+          if(maxz>nz) error stop "maxz>nz in module_lennardjones"
 
           if (minx<maxx) then
             xtab = (/ (I, I = minx, maxx) /)
