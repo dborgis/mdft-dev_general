@@ -85,12 +85,12 @@ contains
 
           ! prepare table to loop over
           ! These tables allow to loop only on a cube with l=cutoff
-          minx = floor(mod((solute%site(u)%r(1)-cutoff+lx), lx)/grid%dx)
-          maxx = floor(mod((solute%site(u)%r(1)+cutoff   ), lx)/grid%dx)
-          miny = floor(mod((solute%site(u)%r(2)-cutoff+ly), ly)/grid%dy)
-          maxy = floor(mod((solute%site(u)%r(2)+cutoff   ), ly)/grid%dy)
-          minz = floor(mod((solute%site(u)%r(3)-cutoff+lz), lz)/grid%dz)
-          maxz = floor(mod((solute%site(u)%r(3)+cutoff   ), lz)/grid%dz)
+          minx = floor(mod((solute%site(u)%r(1)-cutoff+lx), lx)/grid%dx) + 1
+          maxx = floor(mod((solute%site(u)%r(1)+cutoff   ), lx)/grid%dx) + 1
+          miny = floor(mod((solute%site(u)%r(2)-cutoff+ly), ly)/grid%dy) + 1
+          maxy = floor(mod((solute%site(u)%r(2)+cutoff   ), ly)/grid%dy) + 1
+          minz = floor(mod((solute%site(u)%r(3)-cutoff+lz), lz)/grid%dz) + 1
+          maxz = floor(mod((solute%site(u)%r(3)+cutoff   ), lz)/grid%dz) + 1
 
           if (minx<maxx) then
             xtab = (/ (I, I = minx, maxx) /)
