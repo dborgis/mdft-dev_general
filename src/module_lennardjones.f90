@@ -31,7 +31,11 @@ contains
         if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
 
 
-
+        !
+        ! by default, the Lennard-Jones potential has a cutoff of 10 Angstroms.
+        ! This is also the default in Gromacs 6.
+        ! The input tag rvdw of dft.in can change this behavior.
+        !
         cutoff = getinput%dp('rvdw', defaultvalue=10.0_dp, assert=">=0")
         cutoffsq = cutoff**2
         nx = grid%nx
@@ -43,14 +47,15 @@ contains
         no = grid%no
         ns = size(solvent)
 
-        print *, cutoff, lx
         if (cutoff .gt. lx*0.5_dp .or. cutoff .gt. ly*0.5_dp .or. cutoff .gt. lz*0.5_dp) then
-             error stop "cutoff must smallest than half of each size of the box"
+            print*, "ERROR: the cut off for the LJ potential is larger than half the box size"
+            print*, "lx, ly, lz=",lx,ly,lz,"and cutoff=",cutoff
+            error stop "see dft.in and src/module_lennardjones"
         end if
 
         xtabsize = floor(2*cutoff/grid%dx)+1
         ytabsize = floor(2*cutoff/grid%dy)+1
-        ztabsize = floor(2* cutoff/grid%dz)+1
+        ztabsize = floor(2*cutoff/grid%dz)+1
 
         allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
         allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
@@ -130,11 +135,11 @@ contains
               do indextabz=1,ztabsize ! indextabz is the index in ztabsize
                 iz = ztab(indextabz)  ! iz is the index of the point in the grid
                 zgrid=z(iz)           ! zgrid is the z position of the point
-              
+
                 do indextaby=1,ytabsize
                   iy = ytab(indextaby)
                   ygrid=y(iy)
-              
+
                   do indextabx=1,xtabsize
                     ix = xtab(indextabx)
                     xgrid=x(ix)
@@ -158,6 +163,8 @@ contains
             end do
           end do
         end do
+
+        deallocate(xmod, ymod, zmod, x, y, z, xtab, ytab, ztab)
 
     end subroutine calcul_lennardjones
 
