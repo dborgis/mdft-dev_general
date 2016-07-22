@@ -127,23 +127,17 @@ contains
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
               siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)/2._dp)**6
 
-              ! do indextabz=1,ztabsize ! indextabz is the index in ztabsize
-              !   iz = ztab(indextabz)  ! iz is the index of the point in the grid
-              !   zgrid=z(iz)           ! zgrid is the z position of the point
-              !
-              !   do indextaby=1,ytabsize
-              !     iy = ytab(indextaby)
-              !     ygrid=y(iy)
-              !
-              !     do indextabx=1,xtabsize
-              !       ix = xtab(indextabx)
-              !       xgrid=x(ix)
-              do ix=1,nx
-                xgrid=(ix-1)*grid%dx
-                do iy=1,ny
-                  ygrid=(iy-1)*grid%dy
-                  do iz=1,nz
-                    zgrid=(iz-1)*grid%dz
+              do indextabz=1,ztabsize ! indextabz is the index in ztabsize
+                iz = ztab(indextabz)  ! iz is the index of the point in the grid
+                zgrid=z(iz)           ! zgrid is the z position of the point
+              
+                do indextaby=1,ytabsize
+                  iy = ytab(indextaby)
+                  ygrid=y(iy)
+              
+                  do indextabx=1,xtabsize
+                    ix = xtab(indextabx)
+                    xgrid=x(ix)
 
                     do io=1,no !! sortir io des xyz !!! a voir avec les acces memoire vext!!!
                       if( solvent(s)%vext(io,ix,iy,iz) > 1.e5 ) cycle
