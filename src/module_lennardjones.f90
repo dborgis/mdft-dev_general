@@ -43,6 +43,11 @@ contains
         no = grid%no
         ns = size(solvent)
 
+        print *, cutoff, lx
+        if (cutoff .gt. lx*0.5_dp .or. cutoff .gt. ly*0.5_dp .or. cutoff .gt. lz*0.5_dp) then
+             error stop "cutoff must smallest than half of each size of the box"
+        end if
+
         xtabsize = floor(2*cutoff/grid%dx)+1
         ytabsize = floor(2*cutoff/grid%dy)+1
         ztabsize = floor(2* cutoff/grid%dz)+1
