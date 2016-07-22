@@ -29,8 +29,8 @@
       <parameter name="compiler" mode="python">{"scalasca" : "scorep-ifort"}.get("${compile_mode}","ifort")</parameter>
       <parameter name="compiler" mode="python" tag="GFORTRAN">{"scalasca" : "scorep-gfortran"}.get("${compile_mode}","gfortran")</parameter>
 
-	  <parameter name="fftwOptions">"-DJURECA=ON"</parameter>
-	  <parameter name="fftwOptions" tag="compileFFT"></parameter>
+	  <parameter name="fftwOptions"></parameter>
+	  <parameter name="fftwOptions" tag="compileFFT"> -DCOMPILE_FFTW=ON </parameter>
 
       <parameter name="cmake_line" mode="python">
 		  {'scalasca' : 'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..',

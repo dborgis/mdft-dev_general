@@ -17,8 +17,8 @@ project("mdft-dev")
 # note: string given to enable_language is case-sensitive
 enable_language(Fortran)
 
-#option to compile with memory footprint test on jureca
-option(JURECA "option to compile with fftw3 on jureca" OFF)
+#option to compile FFTW in same time as MDFT
+option(COMPILE_FFTW "compile fftw when compiling MDFT" OFF)
 
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -139,12 +139,8 @@ EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR
 #
 # Build FFTW
 #
-include(ExternalProject)
-if(JURECA)
-	SET(FFTW_INCLUDES $ENV{EBROOTFFTW}/include)
-	SET(FFTW_LIBRARIES $ENV{EBROOTFFTW}/lib/libfftw3.a;$ENV{EBROOTFFTW}/lib/libfftw3f.a)
-	message(STATUS "Compile with jureca fftw ${FFTW_LIBRARIES}")
-else()
+
+if(COMPILE_FFTW)
 	ExternalProject_Add(
 	  fftw
 	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
@@ -163,8 +159,9 @@ else()
 	)
 	SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
 	SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
+else()
+	find_package(FFTW REQUIRED)
 endif()
-#find_package(FFTW REQUIRED)
 
 
 
@@ -172,24 +169,15 @@ if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
 
 
-  #link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
-
   include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
 
   message(STATUS "Compiling with fftw ${FFTW_LIBRARIES}")
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
 
-  if(NOT JURECA) 
+  if(COMPILE_FFTW) 
     add_dependencies(mdft-dev fftw fftwf)
   endif()
-  #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
-  #target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
-
-
-  # set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
-  # target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
-
 
 #  if("${MPI_Fortran_HAS_MODULE}")
 #        set_property(TARGET  mdft-dev
