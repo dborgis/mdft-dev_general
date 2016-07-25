@@ -17,9 +17,6 @@ project("mdft-dev")
 # note: string given to enable_language is case-sensitive
 enable_language(Fortran)
 
-#option to compile FFTW in same time as MDFT
-option(COMPILE_FFTW "compile fftw when compiling MDFT" OFF)
-
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. Follow instructions in README.md.")
@@ -58,7 +55,7 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xhost")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
@@ -147,29 +144,26 @@ EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR
 #
 # Build FFTW
 #
-
-if(COMPILE_FFTW)
-	ExternalProject_Add(
-	  fftw
-	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
-	  BUILD_COMMAND make -j4
-	  INSTALL_COMMAND make install -j4
-	)
-	ExternalProject_Add(
-	  fftwf
-	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
-	  BUILD_COMMAND make -j4
-	  INSTALL_COMMAND make install -j4
-	)
-	SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
-	SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
-else()
-	find_package(FFTW REQUIRED)
-endif()
+include(ExternalProject)
+ExternalProject_Add(
+  fftw
+  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
+  BUILD_COMMAND make -j4
+  INSTALL_COMMAND make install -j4
+)
+ExternalProject_Add(
+  fftwf
+  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
+  BUILD_COMMAND make -j4
+  INSTALL_COMMAND make install -j4
+)
+SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
+SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
+#find_package(FFTW REQUIRED)
 
 
 
@@ -177,15 +171,19 @@ if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
 
 
+  #link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
+
   include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
-
-  message(STATUS "Compiling with fftw ${FFTW_LIBRARIES}")
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
+  add_dependencies(mdft-dev fftw fftwf)
+  #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
+  #target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
-  if(COMPILE_FFTW) 
-    add_dependencies(mdft-dev fftw fftwf)
-  endif()
+
+  # set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
+  # target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
+
 
 #  if("${MPI_Fortran_HAS_MODULE}")
 #        set_property(TARGET  mdft-dev
