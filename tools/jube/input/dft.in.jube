@@ -1,0 +1,9 @@
+#maximum_iteration_nbr = 35
+#restart = T
+direct_sum = #DIRECTSUM#
+boxnod = #BOXNOD# #BOXNOD# #BOXNOD#
+boxlen = #BOXLEN# #BOXLEN# #BOXLEN# 
+mmax = #MMAX#
+bulk_density = #BULKDENSITY#
+temperature = #TEMPERATURE#
+solute_charges_scale_factor = #SOLUTECHARGESSCALEFACTOR#
