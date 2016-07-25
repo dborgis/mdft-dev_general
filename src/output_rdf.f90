@@ -30,7 +30,6 @@ SUBROUTINE output_rdf (array,filename)
     ! integer, parameter :: sxs = 1000
     ! real(dp) :: xs(sxs) , rdfs(sxs), lastx
 
-
     if (.not. allocated(solvent)) then
         print*, "In output_rdf.f90, solvent derived type is not allocated"
         error stop
@@ -63,7 +62,6 @@ SUBROUTINE output_rdf (array,filename)
             xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
             write(10,*) xbin, real(chop(rdf(bin)))! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
         end do
-
         write(10,*)
 
         ! call akima_spline( nbins, x, rdf, size(xs), xs, rdfs )
@@ -74,7 +72,6 @@ SUBROUTINE output_rdf (array,filename)
         ! end do
         ! write(12,*)
     end do
-
     close(10)
     ! close(12)
 
