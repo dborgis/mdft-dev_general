@@ -1,0 +1,3 @@
+[submodule "tools/jube/perf_eval"]
+	path = tools/jube/perf_eval
+	url = git@gitlab.maisondelasimulation.fr:EOCOE/perf_eval.git

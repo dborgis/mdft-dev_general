@@ -153,8 +153,8 @@
 <!--     POST-PROCESS         -->
 
     <fileset name="postprocessing_files">
-      <copy>extract_metrics.py</copy>
-      <copy>shuffle_json.py</copy>
+      <copy>perf_eval/extraction/extract_metrics.py</copy>
+      <copy>perf_eval/extraction/shuffle_json.py</copy>
     </fileset>
 
 
