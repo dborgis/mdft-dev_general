@@ -1187,7 +1187,7 @@ end if
 
       if (cq%isok) return
 
-      write(filename,'(a,i0,a)') "input/direct_correlation_functions/water/SPCE/ck_nonzero_nmax",grid%mmax,"_ml"
+      write(filename,'(a,i0,a)') "input/dcf/water/SPCE/ck_nonzero_nmax",grid%mmax,"_ml"
 
       select case (grid%mmax)
       case (0,1,2,3,4,5)
