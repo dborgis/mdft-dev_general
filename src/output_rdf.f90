@@ -30,7 +30,6 @@ SUBROUTINE output_rdf (array,filename)
     ! integer, parameter :: sxs = 1000
     ! real(dp) :: xs(sxs) , rdfs(sxs), lastx
 
-    !print *, "in output_rdf" , filename
 
     if (.not. allocated(solvent)) then
         print*, "In output_rdf.f90, solvent derived type is not allocated"
@@ -38,14 +37,10 @@ SUBROUTINE output_rdf (array,filename)
     end if
     if (solvent(1)%nspec/=1) error stop "compute_rdf.f90 is written for 1 solvent species only."
 
-    !print *, "calcul rdfmaxrange"
     rdfmaxrange = minval(grid%length)/2._dp
-    !print *, "call deduce_optimal_histogram_properties"
     CALL deduce_optimal_histogram_properties( product(grid%n_nodes), rdfmaxrange, nbins, dr )
 
-    !print *, "allocate (rdf(nbins), source=0._dp)"
     allocate (rdf(nbins), source=0._dp)
-    !print *, "all Utest_histogram_3D"
     call UTest_histogram_3D
     !
     ! lastx = (real(nbins,dp)-0.5_dp)*dr
@@ -53,25 +48,21 @@ SUBROUTINE output_rdf (array,filename)
     !     xs(i) = real(i-1)/sxs * lastx
     ! end do
 
-    !print *, "open file"
     open (10, file=filename)
     ! open (12, file=trim(adjustl(filename))//"-spline")
     !
     ! Compute and print histogram (the rdf) for each solute site
     !
     do n=1, size(solute%site) ! loop over all sites of the solute
-        !print *, "call histogram_3d"
         call histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
 
         ! write to output/rdf.out
         write(10,*)'# solute site', n
         write(10,*) 0., 0. ! we impose
-        !print *, "loop over bins"
         do bin=1,nbins
             xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
             write(10,*) xbin, real(chop(rdf(bin)))! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
         end do
-            !print *, "aaa"
 
         write(10,*)
 
@@ -83,10 +74,8 @@ SUBROUTINE output_rdf (array,filename)
         ! end do
         ! write(12,*)
     end do
-   !print *, "close file"
 
     close(10)
-    !print *, "end of output_rdf"
     ! close(12)
 
 contains
