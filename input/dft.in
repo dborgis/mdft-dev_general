@@ -1,8 +1,8 @@
 #maximum_iteration_nbr = 35
 #restart = T
-direct_sum = T
+#direct_sum = T
 boxnod = 64 64 64
 boxlen = 25. 25. 25.  
-mmax = 1
+mmax = 2
 bulk_density = 0.033
 temperature = 298.15

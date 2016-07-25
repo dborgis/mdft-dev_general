@@ -33,7 +33,11 @@ contains
         if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
 
 
-
+        !
+        ! by default, the Lennard-Jones potential has a cutoff of 10 Angstroms.
+        ! This is also the default in Gromacs 6.
+        ! The input tag rvdw of dft.in can change this behavior.
+        !
         cutoff = getinput%dp('rvdw', defaultvalue=10.0_dp, assert=">=0")
         cutoffsq = cutoff**2
         nx = grid%nx
@@ -45,9 +49,15 @@ contains
         no = grid%no
         ns = size(solvent)
 
+        if (cutoff .gt. lx*0.5_dp .or. cutoff .gt. ly*0.5_dp .or. cutoff .gt. lz*0.5_dp) then
+            print*, "ERROR: the cut off for the LJ potential is larger than half the box size"
+            print*, "lx, ly, lz=",lx,ly,lz,"and cutoff=",cutoff
+            error stop "see dft.in and src/module_lennardjones"
+        end if
+
         xtabsize = floor(2*cutoff/grid%dx)+1
         ytabsize = floor(2*cutoff/grid%dy)+1
-        ztabsize = floor(2* cutoff/grid%dz)+1
+        ztabsize = floor(2*cutoff/grid%dz)+1
 
         allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
         allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
@@ -91,6 +101,12 @@ contains
           maxy = floor(mod((solute%site(u)%r(2)+cutoff   ), ly)/grid%dy) + 1
           minz = floor(mod((solute%site(u)%r(3)-cutoff+lz), lz)/grid%dz) + 1
           maxz = floor(mod((solute%site(u)%r(3)+cutoff   ), lz)/grid%dz) + 1
+          if(minx<1) error stop "minx<1 in module_lennardjones"
+          if(miny<1) error stop "miny<1 in module_lennardjones"
+          if(minz<1) error stop "minz<1 in module_lennardjones"
+          if(maxx>nx) error stop "maxx>nx in module_lennardjones"
+          if(maxy>ny) error stop "maxy>ny in module_lennardjones"
+          if(maxz>nz) error stop "maxz>nz in module_lennardjones"
 
           if (minx<maxx) then
             xtab = (/ (I, I = minx, maxx) /)
@@ -162,10 +178,9 @@ contains
           end do
         end do
 
+        deallocate(xmod, ymod, zmod, x, y, z, xtab, ytab, ztab)
+
     end subroutine calcul_lennardjones
 
 
 end module module_lennardjones
-
-
-

@@ -22,7 +22,7 @@ contains
         implicit none
 
         real(dp), intent(out) :: fid, fext
-        real(dp), intent(inout), contiguous :: df(:,:,:,:,:)
+        real(dp), intent(inout), contiguous, optional :: df(:,:,:,:,:)
         integer :: is, io, ns, ix, iy, iz
         real(dp) :: xi, rho0, dv, kT, mu, rho
         real(dp), parameter :: zerodp = 0._dp
@@ -55,7 +55,7 @@ contains
                   if (rho > epsdp) then
                     fid = fid + kT*dv*grid%w(io)*( rho*log(rho/rho0)-rho+rho0 )
                     fext = fext + dv*grid%w(io)*rho*solvent(is)%vext(io,ix,iy,iz)
-                    df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) &
+                    if(present(df)) df(io,ix,iy,iz,is) = df(io,ix,iy,iz,is) &
                       + grid%w(io)*2._dp*rho0*xi*(kT*log(rho/rho0)+solvent(is)%vext(io,ix,iy,iz))
                   else
                     ! limit of Fid when rho->0 is not 0, it is:
