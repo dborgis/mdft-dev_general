@@ -283,8 +283,8 @@ CONTAINS
         INTEGER(i2b) :: ios, n_k, i
 
 
-        file_l = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_l.in'
-        file_t = 'input/direct_correlation_functions/water/chi_SPCE_for_multi/chi_t.in'
+        file_l = 'input/dcf/water/chi_SPCE_for_multi/chi_l.in'
+        file_t = 'input/dcf/water/chi_SPCE_for_multi/chi_t.in'
         INQUIRE (FILE=file_l, EXIST=exists )
         IF (.NOT. exists) THEN
             WRITE(*,*) "chi_l not found in ", file_l
@@ -353,9 +353,9 @@ CONTAINS
         INTEGER(i2b) :: ios, i
 
 
-        file_nn = 'input/direct_correlation_functions/water/Cnn.dat'
-        file_nc = 'input/direct_correlation_functions/water/Cnc.dat'
-        file_cc = 'input/direct_correlation_functions/water/Ccc.dat'
+        file_nn = 'input/dcf/water/Cnn.dat'
+        file_nc = 'input/dcf/water/Cnc.dat'
+        file_cc = 'input/dcf/water/Ccc.dat'
 
         INQUIRE (FILE=file_nn, EXIST=exists )
         IF (.NOT. exists) THEN
@@ -430,14 +430,14 @@ CONTAINS
         integer :: ios, nk, i
         select case (solvent(1)%name)
         case ("spce")
-            c_delta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
-            c_d%filename='input/direct_correlation_functions/water/SPCE/cd.in'
+            c_delta%filename='input/dcf/water/SPCE/cdelta.in'
+            c_d%filename='input/dcf/water/SPCE/cd.in'
         case ("spc")
-            c_delta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
-            c_d%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
+            c_delta%filename='input/dcf/water/SPC_Lionel_Daniel/cdelta.in'
+            c_d%filename='input/dcf/water/SPC_Lionel_Daniel/cd.in'
         case ("stockmayer")
-            c_delta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
-            c_d%filename='input/direct_correlation_functions/stockmayer/cd.in'
+            c_delta%filename='input/dcf/stockmayer/cdelta.in'
+            c_d%filename='input/dcf/stockmayer/cd.in'
         case ("perso")
             c_delta%filename='input/cdelta.in'
             c_d%filename='input/cd.in'
