@@ -147,7 +147,7 @@ EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR
 #
 # Build FFTW
 #
-
+include(ExternalProject)
 if(COMPILE_FFTW)
 	ExternalProject_Add(
 	  fftw
