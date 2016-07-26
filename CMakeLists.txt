@@ -17,8 +17,8 @@ project("mdft-dev")
 # note: string given to enable_language is case-sensitive
 enable_language(Fortran)
 
-#option to compile FFTW in same time as MDFT
-option(COMPILE_FFTW "compile fftw when compiling MDFT" OFF)
+#option to build FFTW in same time as MDFT
+option(BUILD_FFTW "build fftw when compiling MDFT" OFF)
 
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -148,7 +148,7 @@ EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR
 # Build FFTW
 #
 include(ExternalProject)
-if(COMPILE_FFTW)
+if(BUILD_FFTW)
 	ExternalProject_Add(
 	  fftw
 	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
@@ -183,7 +183,7 @@ if (UNIX)
   message(STATUS "Compiling with fftw ${FFTW_LIBRARIES}")
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
 
-  if(COMPILE_FFTW) 
+  if(BUILD_FFTW) 
     add_dependencies(mdft-dev fftw fftwf)
   endif()
 
