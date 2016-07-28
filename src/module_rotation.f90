@@ -89,7 +89,7 @@ contains
         cross_product(3) = a(1)*b(2)-a(2)*b(1)
     end function cross_product
 
-     function rotation_matrix_between_complex_spherical_harmonics_lu (mmax, q) result(R)
+    pure function rotation_matrix_between_complex_spherical_harmonics_lu (mmax, q) result(R)
         use precision_kinds, only : dp
         implicit none
         integer, intent(in) :: mmax
@@ -245,7 +245,6 @@ contains
                 g(l,-m,-m1)=-(-1)**(m+m1)*g(l,m,m1)
             end do
         end do
-
         R = cmplx(f,g,dp)
     end function rotation_matrix_between_complex_spherical_harmonics_lu
 
