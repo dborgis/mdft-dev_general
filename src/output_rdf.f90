@@ -27,8 +27,7 @@ SUBROUTINE output_rdf (array,filename)
     END TYPE
     TYPE (errortype) :: error
     real(dp) :: xbin
-    ! integer, parameter :: sxs = 1000
-    ! real(dp) :: xs(sxs) , rdfs(sxs), lastx
+    logical :: dontPrintZeros
 
     if (solvent(1)%nspec/=1) error stop "compute_rdf.f90 is written for 1 solvent species only."
 
@@ -46,13 +45,28 @@ SUBROUTINE output_rdf (array,filename)
     ! to the grid nodes. Grid nodes are for instance oxygen sites of SPCE water
     ! since in input/solvent.in, oxygen sites are located at {0,0,0}.
     !
+    ! About: dontPrintZeros.
+    ! We have empty bins in the RDF:
+    ! - the ones in the core of the solute, for which we want to print rdf(x in core)=0.
+    ! - the ones that are empty because of lack of information, for x > beginning of the first peak.
+    ! These last ones we dont want to print.
+    ! We thus first print the zero, but as soon as we detect the rdf starts to be nonzero,
+    ! we dont print the zeros anymore.
+    !
+    !
     open (10, file=filename) ! filename is intent(in), typically "output/rdf.out"
     do n=1, size(solute%site) ! loop over all sites of the solute
         call histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
         write(10,*)'# solute site', n
+        dontPrintZeros = .false.
         do bin=1,nbins
             xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
-            write(10,*) xbin, rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
+            if( .not. dontPrintZeros ) then ! print the zeros
+                write(10,*) xbin, rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
+                if( rdf(bin)>0 ) dontPrintZeros = .true.
+            else if( dontPrintZeros ) then
+                if( rdf(bin)>0 ) write(10,*) xbin, rdf(bin)
+            end if
         end do
         write(10,*) ! skip a line between each solute site so that it appears nicely in xmgrace.
     end do
