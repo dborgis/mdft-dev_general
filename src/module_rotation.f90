@@ -17,10 +17,9 @@ contains
         end if
     end function thetaofq
 
-    pure function phiofq(qx,qy,qz)
+    pure function phiofq(qx,qy)
         implicit none
         real(dp), intent(in) :: qx, qy
-        real(dp), intent(in), optional :: qz
         real(dp) :: phiofq
         if (qx**2+qy**2>epsdp) then
             phiofq=angle(qx,qy)
