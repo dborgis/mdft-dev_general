@@ -28,6 +28,7 @@ SUBROUTINE output_rdf (array,filename)
     TYPE (errortype) :: error
     real(dp) :: xbin
     logical :: dontPrintZeros
+    character(len=6) :: string, string2
 
     if (solvent(1)%nspec/=1) error stop "compute_rdf.f90 is written for 1 solvent species only."
 
@@ -55,9 +56,19 @@ SUBROUTINE output_rdf (array,filename)
     !
     !
     open (10, file=filename) ! filename is intent(in), typically "output/rdf.out"
+    write(10,*) '@ xaxis label "Distance (\cE\C)"'
+    write(10,*) '@ yaxis label "Radial distribution function"'
+    write(10,*) '@TYPE xy'
+    write(10,*) '@ legend on'
+    write(10,*) '@ legend box on'
+    write(10,*) '@ legend loctype view'
+    write(10,*) '@ legend 0.78, 0.8'
+    write(10,*) '@ legend length 4'
     do n=1, size(solute%site) ! loop over all sites of the solute
         call histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
-        write(10,*)'# solute site', n
+        write(string,'(i5)') n-1
+        write(string2,'(i5)') n
+        write(10,*) '@ s'//trim(adjustl(string))//' legend "solute site '//trim(adjustl(string2))//'"'
         dontPrintZeros = .false.
         do bin=1,nbins
             xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
@@ -68,7 +79,6 @@ SUBROUTINE output_rdf (array,filename)
                 if( rdf(bin)>0 ) write(10,*) xbin, rdf(bin)
             end if
         end do
-        write(10,*) ! skip a line between each solute site so that it appears nicely in xmgrace.
     end do
     close(10)
 
