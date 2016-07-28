@@ -89,7 +89,7 @@ contains
         cross_product(3) = a(1)*b(2)-a(2)*b(1)
     end function cross_product
 
-    pure function rotation_matrix_between_complex_spherical_harmonics_lu (mmax, q) result(R)
+     function rotation_matrix_between_complex_spherical_harmonics_lu (mmax, q) result(R)
         use precision_kinds, only : dp
         implicit none
         integer, intent(in) :: mmax
@@ -105,6 +105,11 @@ contains
         real(dp), parameter :: zerodp=0._dp
         complex(dp), parameter :: zeroc=(0._dp,0._dp)
 
+        if (mmax == 0) then
+            R = (1._dp,0._dp)
+            return
+        end if
+
         a=zerodp
         b=zerodp
         c=zerodp
@@ -119,27 +124,21 @@ contains
             rac(k)=sqrt(real(k,dp))
         end do
 
-        if (mmax /= 0) then
-            do l=1,mmax; do m=-l,l
-                do m1=-l+1,l-1
-                    a(l,m,m1) = rac(l+m)*rac(l-m)/(rac(l+m1)*rac(l-m1))
-                    b(l,m,m1) = rac(l+m)*rac(l+m-1)/(rac2*rac(l+m1)*rac(l-m1))
-                end do
-                m1 = l
-                c(l,m,m1) = rac2*rac(l+m)*rac(l-m)/(rac(l+m1)*rac(l+m1-1))
-                d(l,m,m1) = rac(l+m)*rac(l+m-1)/(rac(l+m1)*rac(l+m1-1))
-            end do; end do
-        end if
-
+        do l=1,mmax
+          do m=-l,l
+            do m1=-l+1,l-1
+                a(l,m,m1) = rac(l+m)*rac(l-m)/(rac(l+m1)*rac(l-m1))
+                b(l,m,m1) = rac(l+m)*rac(l+m-1)/(rac2*rac(l+m1)*rac(l-m1))
+            end do
+            m1 = l
+            c(l,m,m1) = rac2*rac(l+m)*rac(l-m)/(rac(l+m1)*rac(l+m1-1))
+            d(l,m,m1) = rac(l+m)*rac(l+m-1)/(rac(l+m1)*rac(l+m1-1))
+          end do
+        end do
 
         ! mmax = 0
         f(0,0,0) = 1._dp
         g(0,0,0) = 0._dp
-
-        if (mmax == 0) then
-            R = cmplx(f,g,dp)
-            return
-        end if
 
         !
         ! Build q-frame XYZ
@@ -249,8 +248,5 @@ contains
 
         R = cmplx(f,g,dp)
     end function rotation_matrix_between_complex_spherical_harmonics_lu
-
-
-
 
 end module module_rotation
