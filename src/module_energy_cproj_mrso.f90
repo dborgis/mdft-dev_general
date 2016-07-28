@@ -426,6 +426,7 @@ call cpu_time (time(4))
                     ! Prepare R^m_mup_khi(q)
                     !
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( mmax, q)
+                    where( abs(R)<=epsdp ) R = (0._dp,0._dp)
                     ! Eq. 1.23 We don't need to compute gshrot for -q since there are symetries between R(q) and R(-q).
                     ! Thus, we do q and -q at the same time. That's the most important point in doing all q but half of mu.
                     ! Lu decided to do all mu but half of q in her code
