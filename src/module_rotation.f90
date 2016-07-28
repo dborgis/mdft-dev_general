@@ -2,10 +2,7 @@ module module_rotation
     use precision_kinds, only: dp
     implicit none
     private
-    public :: angle, thetaofq, phiofq
-!$SH for mmax in $(seq 1 5); do
-    public :: rotation_matrix_between_complex_spherical_harmonics_lu_${mmax}
-!$SH done
+    public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu
     real(dp), private :: epsdp=epsilon(1._dp)
 contains
 
@@ -93,15 +90,12 @@ contains
         cross_product(3) = a(1)*b(2)-a(2)*b(1)
     end function cross_product
 
-!$SH for mmax in $(seq 1 5); do
-    pure function rotation_matrix_between_complex_spherical_harmonics_lu_${mmax} (q) result(R)
-
+    pure function rotation_matrix_between_complex_spherical_harmonics_lu (mmax, q) result(R)
         use precision_kinds, only : dp
         implicit none
-
-        integer, parameter :: mmax=${mmax}
+        integer, intent(in) :: mmax
+        real(dp), intent(in) :: q(3)
         real(dp), parameter :: rac2=sqrt(2._dp)
-        real(dp), dimension(3), intent(in) :: q
         complex(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: R
         real(dp), dimension(3) :: rmat1,rmat2,rmat3
         real(dp), dimension(3,3) :: rmat
@@ -231,16 +225,8 @@ contains
                     end if
                     f(l,-m,-m1)=(-1)**(m+m1)*f(l,m,m1)
                     g(l,-m,-m1)=-(-1)**(m+m1)*g(l,m,m1)
-
-                    ! f(l,m,m1) = a(l,m,m1)*(f(1,0,0)*f(l1,m,m1)-g(1,0,0)*g(l1,m,m1))+         &
-                    ! b(l,m,m1)*(f(1,+1,0)*f(l1,m-1,m1)-g(1,+1,0)*g(l1,m-1,m1))+   &
-                    ! b(l,-m,m1)*(f(1,-1,0)*f(l1,m+1,m1)-g(1,-1,0)*g(l1,m+1,m1))
-                    ! g(l,m,m1) = a(l,m,m1)*(f(1,0,0)*g(l1,m,m1)+g(1,0,0)*f(l1,m,m1))+         &
-                    ! b(l,m,m1)*(f(1,+1,0)*g(l1,m-1,m1)+g(1,+1,0)*f(l1,m-1,m1))+   &
-                    ! b(l,-m,m1)*(f(1,-1,0)*g(l1,m+1,m1)+g(1,-1,0)*f(l1,m+1,m1))
-                    ! f(l,-m,-m1) = (-1)**(m+m1)*f(l,m,m1)
-                    ! g(l,-m,-m1) = -(-1)**(m+m1)*g(l,m,m1)
                 end do
+
                 m1 = l
                 if( m==-l) then
                     f(l,m,m1)=d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
@@ -259,22 +245,11 @@ contains
                 end if
                 f(l,-m,-m1)=(-1)**(m+m1)*f(l,m,m1)
                 g(l,-m,-m1)=-(-1)**(m+m1)*g(l,m,m1)
-
-                ! f(l,m,m1) = c(l,m,m1)*(f(1,0,+1)*f(l1,m,m1-1)-g(1,0,+1)*g(l1,m,m1-1))+         &
-                ! d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))+   &
-                ! d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
-                ! g(l,m,m1) = c(l,m,m1)*(f(1,0,+1)*g(l1,m,m1-1)+g(1,0,+1)*f(l1,m,m1-1))+         &
-                ! d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))+   &
-                ! d(l,-m,m1)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
-                ! f(l,-m,-m1) = (-1)**(m+m1)*f(l,m,m1)
-                ! g(l,-m,-m1) = -(-1)**(m+m1)*g(l,m,m1)
             end do
         end do
 
         R = cmplx(f,g,dp)
-
-    end function rotation_matrix_between_complex_spherical_harmonics_lu_${mmax}
-!$SH done
+    end function rotation_matrix_between_complex_spherical_harmonics_lu
 
 
 

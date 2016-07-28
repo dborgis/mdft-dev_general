@@ -66,9 +66,9 @@ elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
 endif()
 
 
-add_subdirectory(vendor/bpp bpp EXCLUDE_FROM_ALL)
-
-bpp_preprocess(SRC_Bpp src/module_energy_cproj_mrso.F90.bpp src/module_rotation.F90.bpp)
+#add_subdirectory(vendor/bpp bpp EXCLUDE_FROM_ALL)
+#
+#bpp_preprocess(SRC_Bpp src/module_energy_cproj_mrso.F90.bpp src/module_rotation.F90.bpp)
 
 
 
@@ -80,12 +80,9 @@ bpp_preprocess(SRC_Bpp src/module_energy_cproj_mrso.F90.bpp src/module_rotation.
 set(mdft_SRCS
   src/module_blas_etc.f90
   src/module_lecture.f90
-#  src/module_energy_luc.f90
-#  src/module_energy_luc_fast.f90
-  ${SRC_Bpp}
-#  src/module_rotation.f90
-#  src/module_energy_cproj_mrso.f90
-#  src/module_energy_cproj_no_symetry.f90
+#  ${SRC_Bpp}
+  src/module_rotation.f90
+  src/module_energy_cproj_mrso.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90

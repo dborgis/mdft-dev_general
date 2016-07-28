@@ -5,11 +5,6 @@ module module_orientation_projection_transform
     use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
-    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu_1
-    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu_2
-    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu_3
-    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu_4
-    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu_5
     use module_wigner_d, only: wigner_small_d
 
     implicit none
