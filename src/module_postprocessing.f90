@@ -174,13 +174,13 @@ contains
 !         END IF
 !
 !
-        filename = 'output/rdf.out'
+        filename = 'output/rdf.xvg'
         call output_rdf ( density/solvent(1)%n0 , filename ) ! Get radial distribution functions
         print*, "New output file ", trim(adjustl(filename))
         call output_gsitesite
         call output_gOfRandCosTheta
 
-        filename = 'output/rdf-vext.out'
+        filename = 'output/rdf-vext.xvg'
         call output_rdf ( solvent(1)%vext(1,:,:,:), filename )
         print*, "New output file ", trim(adjustl(filename))
         deallocate (density)
