@@ -8,10 +8,10 @@ SUBROUTINE output_rdf (array,filename)
 ! A much better (and more complicated) way of chosing this number would be to follow this publication:
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
-    use precision_kinds, only: dp, i2b, sp
+    use precision_kinds, only: dp
     use module_solute, only: solute
     use module_solvent, only: solvent
-    use mathematica, only: deduce_optimal_histogram_properties, chop
+    use mathematica, only: deduce_optimal_histogram_properties
     use module_grid, only: grid
 
     implicit none
@@ -20,66 +20,83 @@ SUBROUTINE output_rdf (array,filename)
     CHARACTER(50), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
-    INTEGER(i2b):: n,bin,nbins
+    INTEGER:: n,bin,nbins
     TYPE :: errortype
         LOGICAL :: found
         CHARACTER(180) :: msg
     END TYPE
     TYPE (errortype) :: error
-    real(sp) :: xbin
-    ! integer, parameter :: sxs = 1000
-    ! real(dp) :: xs(sxs) , rdfs(sxs), lastx
+    real(dp) :: xbin
+    logical :: dontPrintZeros
 
-
-    if (.not. allocated(solvent)) then
-        print*, "In output_rdf.f90, solvent derived type is not allocated"
-        error stop
-    end if
     if (solvent(1)%nspec/=1) error stop "compute_rdf.f90 is written for 1 solvent species only."
 
     rdfmaxrange = minval(grid%length)/2._dp
+    ! we dont use this anymore. Not suited to our "powder averaging" kind of grid results.
     CALL deduce_optimal_histogram_properties( product(grid%n_nodes), rdfmaxrange, nbins, dr )
+    dr = 0.01 ! Angstrom
+    nbins = int( rdfmaxrange/dr ) +1
 
     allocate (rdf(nbins), source=0._dp)
     call UTest_histogram_3D
-    !
-    ! lastx = (real(nbins,dp)-0.5_dp)*dr
-    ! do i = 1, sxs
-    !     xs(i) = real(i-1)/sxs * lastx
-    ! end do
 
-    open (10, file=filename)
-    ! open (12, file=trim(adjustl(filename))//"-spline")
     !
-    ! Compute and print histogram (the rdf) for each solute site
+    ! Compute and print the site-site radial distribution of each solute site
+    ! to the grid nodes. Grid nodes are for instance oxygen sites of SPCE water
+    ! since in input/solvent.in, oxygen sites are located at {0,0,0}.
     !
+    ! About: dontPrintZeros.
+    ! We have empty bins in the RDF:
+    ! - the ones in the core of the solute, for which we want to print rdf(x in core)=0.
+    ! - the ones that are empty because of lack of information, for x > beginning of the first peak.
+    ! These last ones we dont want to print.
+    ! We thus first print the zero, but as soon as we detect the rdf starts to be nonzero,
+    ! we dont print the zeros anymore.
+    !
+    !
+    open (10, file=filename) ! filename is intent(in), typically "output/rdf.out"
     do n=1, size(solute%site) ! loop over all sites of the solute
         call histogram_3d (array(:,:,:), solute%site(n)%r, rdf)
-
-        ! write to output/rdf.out
         write(10,*)'# solute site', n
-        write(10,*) 0., 0. ! we impose
+        dontPrintZeros = .false.
         do bin=1,nbins
             xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
-            write(10,*) xbin, real(chop(rdf(bin)))! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
+            if( .not. dontPrintZeros ) then ! print the zeros
+                write(10,*) xbin, rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
+                if( rdf(bin)>0 ) dontPrintZeros = .true.
+            else if( dontPrintZeros ) then
+                if( rdf(bin)>0 ) write(10,*) xbin, rdf(bin)
+            end if
         end do
-
-        write(10,*)
-
-        ! call akima_spline( nbins, x, rdf, size(xs), xs, rdfs )
-        !
-        ! write(12,*) "#solute site", n
-        ! do i = 1, size(xs)
-        !     write(12,*) real([ xs(i), chop(rdfs(i))  ])
-        ! end do
-        ! write(12,*)
+        write(10,*) ! skip a line between each solute site so that it appears nicely in xmgrace.
     end do
-
     close(10)
-    ! close(12)
 
 contains
 
+pure subroutine histogram (Y, X, H)
+  ! Y is an array of size N, it contains N values of type real one wants to build an histogram from.
+  ! X contains the bounds of the histogram. X(1) is the lower bound.
+  ! H contains the histogram. if  x(i)<=y(j)<(i+1)  then h(i) is incremented by 1.
+  implicit none
+  real, intent(in) :: Y(:)
+  real, intent(in) :: X(:)
+  integer, intent(out) :: H(:)
+  integer :: sizeY, sizeX, sizeH ! size of arrays Y, X and H
+  integer :: ix, iy, iz
+  sizeY = size(Y)
+  sizeX = size(X)
+  sizeH = size(H)
+  H = 0
+  Yvalues: do iY = 1, sizeY
+    do iX = 1, sizeX-1
+      if( X(iX) <= Y(iY) .and. Y(iY) < X(iX+1) ) then
+        H(iX) = H(iX)+1
+        cycle Yvalues
+      end if
+    end do
+  end do Yvalues
+end subroutine histogram
 
         !===========================================================================================================================
         SUBROUTINE histogram_3d (data, origin, rdf)
@@ -88,9 +105,9 @@ contains
             REAL(dp), intent(in) :: data(grid%nx,grid%ny,grid%nz)
             REAL(dp), intent(out) :: rdf(nbins)
             real(dp), intent(in) :: origin(3)
-            INTEGER(i2b), allocatable :: occurrence(:)
+            INTEGER, allocatable :: occurrence(:)
             REAL(dp) :: r,rsq,xisq,yisq,zisq
-            INTEGER(i2b) :: ibin, ix, iy, iz
+            INTEGER :: ibin, ix, iy, iz
 
             allocate( occurrence (nbins) ,source=0)
             rdf = 0._dp
