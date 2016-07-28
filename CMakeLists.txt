@@ -54,7 +54,7 @@ SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008 -fopenmp")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-mcmodel=large -march=native -ffree-line-length-none -O3             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds -g")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-mcmodel=large -march=native -ffree-line-length-none -O3             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=all -g")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
