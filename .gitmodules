@@ -1,6 +1,6 @@
 [submodule "tools/jube/perf_eval"]
 	path = tools/jube/perf_eval
 	url = git@gitlab.maisondelasimulation.fr:EOCOE/perf_eval.git
-[submodule "vendor/bpp"]
-	path = vendor/bpp
-	url = https://gitlab.maisondelasimulation.fr/jbigot/bpp.git
+#[submodule "vendor/bpp"]
+#	path = vendor/bpp
+#	url = https://gitlab.maisondelasimulation.fr/jbigot/bpp.git
