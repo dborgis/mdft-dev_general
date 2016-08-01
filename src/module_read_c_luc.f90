@@ -15,14 +15,17 @@ contains
          "input/dcf/water/SPCE/ck_nonzero_nmax3_ml",&
          "input/dcf/water/SPCE/ck_nonzero_nmax4_ml",&
          "input/dcf/water/SPCE/ck_nonzero_nmax5_ml" ]
-        integer, intent(out) :: np(0:5)
+        integer, intent(out) :: np
         integer, intent(in) :: mmax
         integer, intent(in) :: mrso ! Symetry of the main axis. For instance, mrso=2 for a molecule of symetry C2v (like water).
         integer, intent(out) :: nq
         real(dp), intent(in) :: qmaxwanted
         integer, intent(out), allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
+        integer, parameter :: npluc(0:5) = [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
+        ! c(mnmunukhi) should not be already allocated
+        if( allocated(cmnmunukhi)) error stop "c(m,n,mu,nu,khi) is already allocated in module_read_c_luc"
         ! Number of projections for mmax = 0 to 5
-        np(0:5) = [1,6,75,252,877,2002]
+        np = npluc(mmax)
         ! Inquire that the file exists
         block
             logical :: exist
@@ -35,7 +38,7 @@ contains
         block
             integer :: nline
             nline = n_linesInFile(filename(mmax)) -17 ! header contains 17 lines
-            if( nline /= nq) then
+            if( nline /= 1024) then
                 error stop "In module_read_c_luc/read_c_luc, filename does not contain 1024 values of q"
             end if
         end block
@@ -47,13 +50,11 @@ contains
         end block
         ! Prepare the arrays that will contain the value of m, n, mu, nu and khi
         block
-            integer :: npm
-            npm = np(mmax)
-            allocate( m(npm), source=-huge(1)) ! -huge(1) makes it easier to detect problems later.
-            allocate( n(npm), source=-huge(1)) ! since that's a huge out of bound.
-            allocate( mu(npm), source=-huge(1))
-            allocate( nu(npm), source=-huge(1))
-            allocate( khi(npm), source=-huge(1))
+            allocate( m(np), source=-huge(1)) ! -huge(1) makes it easier to detect problems later.
+            allocate( n(np), source=-huge(1)) ! since that's a huge out of bound.
+            allocate( mu(np), source=-huge(1))
+            allocate( nu(np), source=-huge(1))
+            allocate( khi(np), source=-huge(1))
             allocate( p(0:mmax,0:mmax,-mmax/mrso:mmax/mrso,-mmax/mrso:mmax/mrso,-mmax:mmax) , source=-huge(1))
         end block
         ! Skip 10 lines of comments
@@ -65,19 +66,19 @@ contains
         end block
         ! Read a comment line, then the whole arrays of m, n, mu, nu and khi, one per line.
         block
-            character(3) :: somechar
-            read(8,*) somechar
-            read(8,*) somechar, m ! m, n, mu, nu and khi are arrays of dimension np(mmax)
-            read(8,*) somechar, n
-            read(8,*) somechar, mu
-            read(8,*) somechar, nu
-            read(8,*) somechar, khi
-            read(8,*)
+            character(len=6) :: somechar
+            read(88,*) somechar
+            read(88,*) somechar, m(1:np) ! m, n, mu, nu and khi are arrays of dimension np(mmax)
+            read(88,*) somechar, n(1:np)
+            read(88,*) somechar, mu(1:np)
+            read(88,*) somechar, nu(1:np)
+            read(88,*) somechar, khi(1:np)
+            read(88,*)
         end block
         ! Fill the array that hash map from a projection index to m, n, mu, nu, khi
         block
             integer :: ip, im, in, imu, inu, ikhi
-            do ip=1,np(mmax)
+            do ip=1,np
                 im = m(ip)
                 in = n(ip)
                 imu = mu(ip) ! mu(:) and nu(:) contains the read value of mu and nu
@@ -89,16 +90,28 @@ contains
         ! Read q, cmnmunukhi(q)
         block
             integer, parameter  :: nqinfile = 1024
+            real(dp), parameter :: dq = 0.0613592315
+            real(dp) :: q
             integer :: iq
-            real(dp) :: q(nqinfile)
-            allocate( cmnmunukhi(np(mmax),nq) ,source=(0._dp,0._dp)  )
-            do iq=1,nq
-                read(88,*) q(iq), cmnmunukhi(np(mmax),iq)
-                if( q(iq)>qmaxwanted ) then
-                    nq = iq
-                    exit
-                end if
+            nq = int(qmaxwanted/dq)+1
+            if( nq>nqinfile) error stop "You want more values of q that are available in module_read_c_luc"
+            allocate( cmnmunukhi(np,nq) ,source=(0._dp,0._dp)  )
+            do iq=1,nq ! if you want more than available, use all that is available. If you need less, use less.
+                read(88,*) q, cmnmunukhi(1:np,iq)
+                if( q>qmaxwanted ) error stop "q>qmaxwanted in module_read_c_luc"
             end do
+            block
+                open(89,file="output/arraysinmemory_module_read_c_luc")
+                write(89,*)"From module_read_c_luc:"
+                write(89,*)"cmnmunukhi(np,nq)",size(cmnmunukhi)*storage_size(cmnmunukhi),"Bytes"
+                write(89,*)"m(np)",size(m)*storage_size(m),"Bytes"
+                write(89,*)"n(np)",size(n)*storage_size(n),"Bytes"
+                write(89,*)"mu(np)",size(mu)*storage_size(mu),"Bytes"
+                write(89,*)"nu(np)",size(nu)*storage_size(nu),"Bytes"
+                write(89,*)"khi(np)",size(khi)*storage_size(khi),"Bytes"
+                write(89,*)"p(0:mmax,0:mmax,-mmax/mrso:mmax/mrso,-mmax/mrso:mmax/mrso,0:mmax)",size(p)*storage_size(p),"Bytes"
+                close(89)
+            end block
         end block
         close(88)
     end subroutine read_c_luc
