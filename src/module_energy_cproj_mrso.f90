@@ -484,43 +484,89 @@ contains
                     gamma_p_q  = zeroc
                     gamma_p_mq = zeroc !1:np
 
-                    do khi=-mmax,mmax
-                        do m=abs(khi),mmax
-                            do mu=0,m,mrso ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
+                    block
+                        integer :: imkhimu, m, khi, mu, mu2, nu, nu2, ia, ip
+                        imkhimu=0
+                        do m=0,mmax
+                            do khi=-m,m
+                                do mu2=0,m/mrso ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
 
-                                mu2=mu/mrso
-                                gamma_m_khi_mu_q= zeroc
-                                gamma_m_khi_mu_mq = zeroc
+                                    imkhimu = imkhimu + 1
+                                    gamma_m_khi_mu_q= zeroc
+                                    gamma_m_khi_mu_mq = zeroc
 
-                                do n=abs(khi),mmax
-                                    do nu= -mrso*(n/mrso), mrso*(n/mrso), mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
-
-                                        nu2=nu/mrso
-                                        ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
-                                        ip = p3%p(n,khi,abs(nu2))
-
-                                        if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                                        else
+                                    do n=abs(khi),mmax
+                                        select case (n)
+                                        case(0, 1) ! nu2 == 0
+                                            ia = c%ip(m,n,mu2,0,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,0)
                                             gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
                                             gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
-                                        end if
-                                        ! < USELESS SINCE DELTARHO_P_Q and DELTARHO_P_MQ are prepared before MOZ
+                                        case(2, 3) ! nu2 = -1,0,1
+                                            ia = c%ip(m,n,mu2,-1,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,1)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                            ia = c%ip(m,n,mu2,0,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,0)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                            ia = c%ip(m,n,mu2,1,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,1)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                        case(4, 5) ! nu2 = -2,-1,0,1,2
+                                            ia = c%ip(m,n,mu2,-2,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,2)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                            ia = c%ip(m,n,mu2,-1,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,1)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                            ia = c%ip(m,n,mu2,0,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,0)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                            ia = c%ip(m,n,mu2,1,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,1)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                            ia = c%ip(m,n,mu2,2,khi) ! the index of the projection of c(q). 1<=ia<na
+                                            ip = p3%p(n,khi,2)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                        end select
 
-                                        ! gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                        ! gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+
+                                        ! do nu2= -n/mrso, n/mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
+                                        !
+                                        !     ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
+                                        !     ip = p3%p(n,khi,abs(nu2))
+                                        !
+                                        !     if (nu2<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
+                                        !         gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                        !         gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                        !     else
+                                        !         gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                        !         gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                        !     end if
+                                        !     ! < USELESS SINCE DELTARHO_P_Q and DELTARHO_P_MQ are prepared before MOZ
+                                        !
+                                        !     ! gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                        !     ! gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                        !
+                                        ! end do
 
                                     end do
+
+
+                                    gamma_p_q(imkhimu)  = gamma_m_khi_mu_q
+                                    gamma_p_mq(imkhimu) = gamma_m_khi_mu_mq
                                 end do
-
-                                ip=p3%p(m,khi,mu2)
-
-                                gamma_p_q(ip)  = gamma_m_khi_mu_q
-                                gamma_p_mq(ip) = gamma_m_khi_mu_mq
                             end do
                         end do
-                    end do
+                    end block
 
                     !
                     ! Rotation from molecular frame to fix frame
