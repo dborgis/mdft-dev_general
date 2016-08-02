@@ -357,6 +357,23 @@ contains
                 call read_c_luc(c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
             end block
             c%mnmunukhi_q=conjg(c%mnmunukhi_q) ! this is strange, but certainly due to some error or misunderstanding with Luc. It does not appear in Luc's document.
+            !
+            ! Move prefactors of MOZ inside the direct correlation function so that one does not need to compute, for instance,
+            !  (-1)**(khi+nu) inside the inner loop of MOZ
+            !
+            block
+                integer :: ip, n, nu, khi
+                do ip=1,c%np
+                    nu = c%nu(ip)
+                    if( nu<0 ) then
+                        khi = c%khi(ip)
+                        c%mnmunukhi_q(ip,:) = (-1)**(khi+nu) *c%mnmunukhi_q(ip,:)
+                    else
+                        n = c%n(ip)
+                        c%mnmunukhi_q(ip,:) = (-1)**(n) *c%mnmunukhi_q(ip,:)
+                    end if
+                end do
+            end block
             c%isok=.true.
         end if
 
@@ -448,34 +465,51 @@ contains
                     ! Ornstein-Zernike in the molecular frame
                     ! We do OZ for q and -q at the same time
                     !
+
+                    ! ! Prepare deltarho_p_q for MOZ
+                    ! block
+                    !     integer :: ip
+                    !     complex(dp) :: dummy4swap
+                    !     do ip=1,np
+                    !         if( p3%mu(ip)>=0 ) then
+                    !             dummy4swap        = conjg(deltarho_p_q(ip))
+                    !             deltarho_p_q(ip)  = conjg(deltarho_p_mq(ip))
+                    !             deltarho_p_mq(ip) = dummy4swap
+                    !         else
+                    !             stop "coucou"
+                    !         end if
+                    !     end do
+                    ! end block
+
                     gamma_p_q  = zeroc
                     gamma_p_mq = zeroc !1:np
 
                     do khi=-mmax,mmax
                         do m=abs(khi),mmax
-
                             do mu=0,m,mrso ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
-                              mu2=mu/mrso
 
+                                mu2=mu/mrso
                                 gamma_m_khi_mu_q= zeroc
                                 gamma_m_khi_mu_mq = zeroc
 
                                 do n=abs(khi),mmax
-
                                     do nu= -mrso*(n/mrso), mrso*(n/mrso), mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
-                                      nu2=nu/mrso
 
+                                        nu2=nu/mrso
                                         ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
-
                                         ip = p3%p(n,khi,abs(nu2))
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
                                         else
-                                            gamma_m_khi_mu_q = gamma_m_khi_mu_q  + (-1)**(n) *c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
                                         end if
+                                        ! < USELESS SINCE DELTARHO_P_Q and DELTARHO_P_MQ are prepared before MOZ
+
+                                        ! gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                        ! gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
 
                                     end do
                                 end do
