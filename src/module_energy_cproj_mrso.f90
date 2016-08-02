@@ -498,44 +498,26 @@ contains
                                     do n=abs(khi),mmax
                                         select case (n)
                                         case(0, 1) ! nu2 == 0
-                                            ia = c%ip(m,n,mu2,0,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,0)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0)))
                                         case(2, 3) ! nu2 = -1,0,1
-                                            ia = c%ip(m,n,mu2,-1,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,1)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                                            ia = c%ip(m,n,mu2,0,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,0)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
-                                            ia = c%ip(m,n,mu2,1,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,1)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1)))
                                         case(4, 5) ! nu2 = -2,-1,0,1,2
-                                            ia = c%ip(m,n,mu2,-2,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,2)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                                            ia = c%ip(m,n,mu2,-1,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,1)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                                            ia = c%ip(m,n,mu2,0,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,0)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
-                                            ia = c%ip(m,n,mu2,1,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,1)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
-                                            ia = c%ip(m,n,mu2,2,khi) ! the index of the projection of c(q). 1<=ia<na
-                                            ip = p3%p(n,khi,2)
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_q (p3%p(n,khi,2))  &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_mq(p3%p(n,khi,2))  &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
+                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,2)))
                                         end select
 
 
