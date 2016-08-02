@@ -79,7 +79,8 @@ contains
       real(dp) :: xi00, xi01, xi10, xi11, xi0, xi1
       real(dp) :: offset_x, offset_y, offset_z
       real(dp) :: rho0
-      complex(dp), allocatable :: xi_prev(:,:,:,:), deltarho_p_prev(:,:,:,:)
+      complex(dp), allocatable :: deltarho_p_prev(:,:,:,:)
+      real(dp), allocatable :: xi_prev(:,:,:,:)
       real(dp), parameter :: zero=0._dp
       complex(dp), parameter :: zeroc=(0._dp, 0._dp)
 
@@ -141,7 +142,7 @@ contains
 
       ! TODO: test si les ns sont les mêmes
 
-      if (.not. allocated (xi_prev) ) allocate (xi_prev(no,nx_prev,ny_prev,nz_prev) ,source=zeroc)
+      if (.not. allocated (xi_prev) ) allocate (xi_prev(no,nx_prev,ny_prev,nz_prev) ,source=0._dp)
       if (.not. allocated (deltarho_p_prev) ) allocate (deltarho_p_prev(np,nx_prev,ny_prev,nz_prev) ,source=zeroc)
 
       !load previous projections
