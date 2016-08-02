@@ -56,15 +56,20 @@ contains
         do isite=1,size(solute%site)
           write(10) solute%site(isite)
         enddo
-        do is=1,size(solvent)
-          do iz=1,nz
-            do iy=1,ny
-              do ix=1,nx
-                write(10) angl2proj( solvent(is)%xi(1:no,ix,iy,iz) )
-              end do
+        block
+            use module_grid, only: grid
+            complex(dp) :: xi_p(grid%np)
+            do is=1,size(solvent)
+                do iz=1,nz
+                    do iy=1,ny
+                        do ix=1,nx
+                            call angl2proj( solvent(is)%xi(:,ix,iy,iz), xi_p)
+                            write(10) xi_p
+                        end do
+                    end do
+                end do
             end do
-          end do
-        end do
+        end block
         close(10)
         print*, "New file output/density.bin"
 
