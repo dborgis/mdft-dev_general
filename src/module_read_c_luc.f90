@@ -3,23 +3,24 @@ module module_read_c_luc
     private
     public :: read_c_luc
 contains
-    subroutine read_c_luc( cmnmunukhi, mmax, mrso, qmaxwanted, np, nq, m, n, mu, nu, khi, p )
+    subroutine read_c_luc( cmnmunukhi, mmax, mrso, qmaxwanted, np, nq, dq, m, n, mu, nu, khi, p )
         use precision_kinds, only: dp
         use module_input, only: n_linesInFile
         implicit none
-        complex(dp), allocatable :: cmnmunukhi(:,:)
+        complex(dp), allocatable, intent(out) :: cmnmunukhi(:,:)
         character(len=40), parameter :: filename(0:5) = &
-        ["input/dcf/water/SPCE/ck_nonzero_nmax0_ml",&
-         "input/dcf/water/SPCE/ck_nonzero_nmax1_ml",&
-         "input/dcf/water/SPCE/ck_nonzero_nmax2_ml",&
-         "input/dcf/water/SPCE/ck_nonzero_nmax3_ml",&
-         "input/dcf/water/SPCE/ck_nonzero_nmax4_ml",&
-         "input/dcf/water/SPCE/ck_nonzero_nmax5_ml" ]
-        integer, intent(out) :: np
+            ["input/dcf/water/SPCE/ck_nonzero_nmax0_ml",&
+             "input/dcf/water/SPCE/ck_nonzero_nmax1_ml",&
+             "input/dcf/water/SPCE/ck_nonzero_nmax2_ml",&
+             "input/dcf/water/SPCE/ck_nonzero_nmax3_ml",&
+             "input/dcf/water/SPCE/ck_nonzero_nmax4_ml",&
+             "input/dcf/water/SPCE/ck_nonzero_nmax5_ml" ]
         integer, intent(in) :: mmax
         integer, intent(in) :: mrso ! Symetry of the main axis. For instance, mrso=2 for a molecule of symetry C2v (like water).
-        integer, intent(out) :: nq
         real(dp), intent(in) :: qmaxwanted
+        integer, intent(out) :: np
+        integer, intent(out) :: nq
+        real(dp), intent(out) :: dq
         integer, intent(out), allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
         integer, parameter :: npluc(0:5) = [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
         ! c(mnmunukhi) should not be already allocated
@@ -90,15 +91,15 @@ contains
         ! Read q, cmnmunukhi(q)
         block
             integer, parameter  :: nqinfile = 1024
-            real(dp), parameter :: dq = 0.0613592315
             real(dp) :: q
             integer :: iq
-            nq = int(qmaxwanted/dq)+1
+            dq = 0.0613592315
+            nq = int(qmaxwanted/dq +0.5)+1
             if( nq>nqinfile) error stop "You want more values of q that are available in module_read_c_luc"
             allocate( cmnmunukhi(np,nq) ,source=(0._dp,0._dp)  )
             do iq=1,nq ! if you want more than available, use all that is available. If you need less, use less.
                 read(88,*) q, cmnmunukhi(1:np,iq)
-                if( q>qmaxwanted ) error stop "q>qmaxwanted in module_read_c_luc"
+                if( q>(qmaxwanted+dq) ) error stop "q>qmaxwanted in module_read_c_luc" ! One needs a little bit of tolerance: We must have qmaxwanted within our bins.
             end do
             block
                 open(89,file="output/arraysinmemory_module_read_c_luc")

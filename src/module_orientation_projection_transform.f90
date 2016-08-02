@@ -179,9 +179,9 @@ contains
             end do
             select case(dp)
             case(c_double)
-                call dfftw_execute (fft%plan2dm)
+                call dfftw_execute (fft%plan2dm, r2d, c2d)
             case(c_float)
-                call sfftw_execute (fft%plan2dm)
+                call sfftw_execute (fft%plan2dm, r2d, c2d)
             end select
             c2d = conjg(c2d)/real(nphi*npsi,dp) ! we wanted plan with + in exponential but did not have choice since r2c is done with sign - in fftw.
             f_theta_mu2_mup(itheta,0:mmax/mrso,0:mmax)   = c2d(:,1:mmax+1)
@@ -223,9 +223,9 @@ contains
             c2d(:,mmax+2:)  = conjg( f_theta_mu2_mup(itheta,0:mmax/mrso,-mmax:-1) )
             select case(dp)
             case(c_double)
-                call dfftw_execute( fft%plan2dp )
+                call dfftw_execute( fft%plan2dp, c2d, r2d )
             case(c_float)
-                call sfftw_execute( fft%plan2dp )
+                call sfftw_execute( fft%plan2dp, c2d, r2d )
             end select
             do iphi=1,nphi
                 do ipsi=1,npsi

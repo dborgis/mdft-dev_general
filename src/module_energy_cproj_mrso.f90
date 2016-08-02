@@ -33,28 +33,24 @@ module module_energy_cproj_mrso
     !
     ! Direct correlation functions from Luc
     !
-    type :: cq_type
+    type :: c_type
         logical :: isok = .false.
         real(dp) :: q
-        integer :: na ! number of projections for the direct correlation function
-        integer :: nq=1024 ! number of q points in c(q)
-!        integer, allocatable :: a(:,:,:,:,:) ! index of m, n, mu, nu, khi => (0:mmax,0:mmax,-mmax:mmax,-mmax:mmax,-mmax:mmax) ! m n mu nu khi
-        integer, allocatable :: a2(:,:,:,:,:) ! index of m, n, mu2, nu2, khi => (0:mmax,0:mmax,-mmax/mrso:mmax/mrso,-mmax/mrso:mmax/mrso,-mmax:mmax) ! m n mu nu khi
+        integer :: np ! number of projections for the direct correlation function. Called alpha  by Luc
+        integer :: nq ! number of q points in c(q)
+        integer, allocatable :: ip(:,:,:,:,:) ! index of m, n, mu2, nu2, khi => (0:mmax,0:mmax,-mmax/mrso:mmax/mrso,-mmax/mrso:mmax/mrso,-mmax:mmax) ! m n mu nu khi
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
         integer, allocatable :: m(:), n(:), mu(:), nu(:), khi(:)
-    end type
-    type(cq_type), protected :: cq
-    complex(dp), allocatable, protected :: ck(:,:)
+        complex(dp), allocatable :: mnmunukhi_q(:,:)
+    end type c_type
+    type(c_type), protected :: c
 
     complex(dp), allocatable, protected :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
     complex(dp), allocatable, protected :: deltarho_p_q(:)
     complex(dp), allocatable, protected :: deltarho_p_mq(:)
     complex(dp), allocatable, protected :: gamma_p_q(:)
     complex(dp), allocatable, protected :: gamma_p_mq(:)
-
-    complex(dp), allocatable, protected :: foo_theta_mu_mup(:,:,:)
-
 
     type :: p3_type
         real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
@@ -70,11 +66,9 @@ module module_energy_cproj_mrso
         type(c_ptr) :: plan3dp, plan3dm ! plans for 2D and 3D FFTs with sign +(p) or -(m) in the exponential
     end type fft_type
     type(fft_type), protected :: fft
-    real(dp), allocatable :: r3d(:,:,:)
     complex(dp), allocatable :: c3d(:,:,:)
     complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
     complex(dp), allocatable, protected :: Rmmupmu(:) ! same as R(m,mup,mu) with only used values of m,mup and mu
-    real(dp), parameter :: fm(0:5) = [ 1._dp, sqrt(3._dp), sqrt(5._dp), sqrt(7._dp), sqrt(9._dp), sqrt(11._dp) ] ! sqrt(2m+1)
 
     public :: energy_cproj_mrso
 
@@ -92,9 +86,9 @@ contains
         logical, intent(in), optional :: print_timers
         real(dp) :: dv, kT
         logical :: q_eq_mq
-        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, i, p, ip2
-        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, na, nq, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, ip, iq, io, mu2, nu2
+        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, ip, ip2
+        integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, mrso
+        integer :: m, n, mu, nu, khi, mup, ia, iq, io, mu2, nu2
         complex(dp) :: gamma_m_khi_mu_q, gamma_m_khi_mu_mq
         real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
@@ -112,27 +106,25 @@ contains
         nphi   = grid%nphi
         npsi   = grid%npsi
         mmax   = grid%mmax
-        mrso   = grid%molrotsymorder
         ! In the case of C∞v or any symetry with ∞, the user enters 0 for ∞ in the input file in molrotsymorder.
         ! To ease the loops over all mu=-m/mrso,m/mrso, it is easier to make it large, like 100, so that m/mrso:=0.
         ! With this trick, we have the same loops as before, with only one value of mu, 0.
-        if(mrso==0) mrso=100
-
-        if (.not. allocated( foo_theta_mu_mup) ) allocate ( foo_theta_mu_mup(1:ntheta,0:mmax/mrso,-mmax:mmax))
-
-        lx=grid%lx
-        ly=grid%ly
-        lz=grid%lz
-        kT=thermo%kbT
-        dv=grid%dv
-        nx=grid%nx
-        ny=grid%ny
-        nz=grid%nz
-        np=grid%np
-        no=grid%no
-        na=cq%na
-        nq=cq%nq
-        ns=solvent(1)%nspec
+        if( grid%molrotsymorder == 0 ) then
+            mrso = 100
+        else
+            mrso = grid%molrotsymorder
+        end if
+        lx   = grid%lx
+        ly   = grid%ly
+        lz   = grid%lz
+        kT   = thermo%kbT
+        dv   = grid%dv
+        nx   = grid%nx
+        ny   = grid%ny
+        nz   = grid%nz
+        np   = grid%np
+        no   = grid%no
+        ns   = solvent(1)%nspec
         rho0 = solvent(1)%rho0
 
 
@@ -319,9 +311,9 @@ contains
                 c3d = deltarho_p(ip,:,:,:)
                 select case(dp);
                 case(c_double)
-                    call dfftw_execute_dft(fft%plan3dp)
+                    call dfftw_execute_dft(fft%plan3dp, c3d, c3d)
                 case(c_float)
-                    call sfftw_execute_dft(fft%plan3dp)
+                    call sfftw_execute_dft(fft%plan3dp, c3d, c3d)
                 end select
                 deltarho_p(ip,:,:,:) = c3d
             end do
@@ -357,28 +349,15 @@ contains
         ! in the intermolecular frame
         ! normq is norm of q, |q|, that correspond to the index iq in ck(ia,iq)
         !
-        !call read_ck_nmax (ck, normq)
-        !call read_ck_toutes_nmax( ck, normq)
-        if (.not.cq%isok) then
+        if (.not.c%isok) then
             block
                 use module_read_c_luc, only: read_c_luc
                 real(dp) :: qmaxnecessary
-                complex(dp), allocatable :: cmnmunukhi(:,:)
-                integer :: np
-                integer, allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
                 qmaxnecessary = norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))])
-                print*,mmax,mrso,qmaxnecessary,np,nq
-                call read_c_luc(cmnmunukhi,mmax,mrso,qmaxnecessary,np,nq,m,n,mu,nu,khi,p)
-                stop
+                call read_c_luc(c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
             end block
-            call read_ck_nonzero
-            ck=conjg(ck)
-            cq%isok=.true.
-            block
-                integer :: iqmax
-                iqmax = int(   norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))]) /cq%dq +0.5)  +1
-                if( iqmax > cq%nq) error stop "The file containing c^mn_munu,khi(q) has too low a resolution. See energy_cproj_mrso"
-            end block
+            c%mnmunukhi_q=conjg(c%mnmunukhi_q) ! this is strange, but certainly due to some error or misunderstanding with Luc. It does not appear in Luc's document.
+            c%isok=.true.
         end if
 
         call cpu_time (time(9))
@@ -394,7 +373,7 @@ contains
         !
         gamma_p_isok = .false.
 
-        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,cq,deltarho_p,grid,ck)
+        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,c,deltarho_p,grid,ck)
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
             do iy_q=1,ny
@@ -459,11 +438,11 @@ contains
                     end do
 
                     !
-                    ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for cq%nq values of |q|.
+                    ! c^{m,n}_{mu,nu,chi}(|q|) is tabulated for c%nq values of |q|.
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = int( norm2(q) /cq%dq +0.5) +1
+                    iq = int( norm2(q) /c%dq +0.5) +1
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -486,16 +465,16 @@ contains
                                     do nu= -mrso*(n/mrso), mrso*(n/mrso), mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
                                       nu2=nu/mrso
 
-                                        ia = cq%a2(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
+                                        ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
 
                                         ip = p3%p(n,khi,abs(nu2))
 
                                         if (nu<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_q(ip)
-                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *ck(ia,iq) *deltarho_p_mq(ip)
+                                            gamma_m_khi_mu_q  = gamma_m_khi_mu_q  + (-1)**(khi+nu) *c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                            gamma_m_khi_mu_mq = gamma_m_khi_mu_mq + (-1)**(khi+nu) *c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
                                         else
-                                            gamma_m_khi_mu_q = gamma_m_khi_mu_q  + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_mq(ip))
-                                            gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *ck(ia,iq) *conjg(deltarho_p_q(ip))
+                                            gamma_m_khi_mu_q = gamma_m_khi_mu_q  + (-1)**(n) *c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                            gamma_m_khi_mu_mq= gamma_m_khi_mu_mq + (-1)**(n) *c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
                                         end if
 
                                     end do
@@ -576,9 +555,9 @@ contains
                 c3d = deltarho_p(ip,:,:,:)
                 select case(dp)
                 case(c_double)
-                    call dfftw_execute_dft( fft%plan3dm )
+                    call dfftw_execute_dft( fft%plan3dm, c3d, c3d )
                 case(c_float)
-                    call sfftw_execute_dft( fft%plan3dm )
+                    call sfftw_execute_dft( fft%plan3dm, c3d, c3d )
                 end select
                 deltarho_p(ip,:,:,:) = c3d/real(nx*ny*nz,dp)
             end do
