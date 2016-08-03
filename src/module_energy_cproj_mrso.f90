@@ -434,6 +434,8 @@ contains
 
         block
             integer :: ip, m, khi, mu, mu2, nu, nu2, ia
+            complex(dp) :: ceff(c%np)
+
 
         !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,c,deltarho_p,grid,ck)
         do iz_q=1,nz/2+1
@@ -501,7 +503,18 @@ contains
                     ! Find the tabulated value that is closest to |q|. Its index is iq.
                     ! Note |q| = |-q| so iq is the same for both vectors.
                     !
-                    iq = int( norm2(q) /c%dq +0.5) +1
+                    ! iq = int( norm2(q) /c%dq +0.5) +1
+                    ! ceff(:) = c%mnmunukhi_q(:,iq)
+
+
+                    block
+                        real(dp) :: effectiveiq, alpha
+                        effectiveiq = norm2(q)/c%dq +1
+                        iq = int(effectiveiq)
+                        alpha = effectiveiq - iq
+                        ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
+                                 + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
+                    end block
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -534,27 +547,27 @@ contains
                             ia = ia +1
                             select case (n)
                             case(0, 1) ! nu2 == 0
-                                gamma_p_q(ip)  = gamma_p_q(ip)    + c%mnmunukhi_q(ia  ,iq) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
-                                gamma_p_mq(ip) = gamma_p_mq(ip)   + c%mnmunukhi_q(ia  ,iq) *conjg(deltarho_p_q (p3%p(n,khi,0)))
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *conjg(deltarho_p_q (p3%p(n,khi,0)))
                             case(2, 3) ! nu2 = -1,0,1
-                                gamma_p_q(ip)  = gamma_p_q(ip)    + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_q (p3%p(n,khi,1))  &
-                                                                  + c%mnmunukhi_q(ia+1,iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
-                                gamma_p_mq(ip) = gamma_p_mq(ip)   + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_mq(p3%p(n,khi,1))  &
-                                                                  + c%mnmunukhi_q(ia+1,iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_q (p3%p(n,khi,1)))
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                  + ceff(ia+1) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                  + ceff(ia+1) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_q (p3%p(n,khi,1)))
                                 ia = ia +2
                             case(4, 5) ! nu2 = -2,-1,0,1,2
-                                gamma_p_q(ip)  = gamma_p_q(ip)    + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_q (p3%p(n,khi,2))  &
-                                                                  + c%mnmunukhi_q(ia+1,iq) *      deltarho_p_q (p3%p(n,khi,1))  &
-                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                                                                  + c%mnmunukhi_q(ia+3,iq) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
-                                                                  + c%mnmunukhi_q(ia+4,iq) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
-                                gamma_p_mq(ip) = gamma_p_mq(ip)   + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_mq(p3%p(n,khi,2))  &
-                                                                  + c%mnmunukhi_q(ia+1,iq) *      deltarho_p_mq(p3%p(n,khi,1))  &
-                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                                                                  + c%mnmunukhi_q(ia+3,iq) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
-                                                                  + c%mnmunukhi_q(ia+4,iq) *conjg(deltarho_p_q (p3%p(n,khi,2)))
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,2))  &
+                                                                  + ceff(ia+1) *      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                  + ceff(ia+3) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
+                                                                  + ceff(ia+4) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,2))  &
+                                                                  + ceff(ia+1) *      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                  + ceff(ia+3) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
+                                                                  + ceff(ia+4) *conjg(deltarho_p_q (p3%p(n,khi,2)))
                                 ia = ia +4
                             end select
 
