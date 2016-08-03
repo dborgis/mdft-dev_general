@@ -353,9 +353,12 @@ contains
                 real(dp) :: qmaxnecessary
                 qmaxnecessary = norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))])
                 call read_c_luc(c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
-                ! ici j'ai un c(imnmunukhi,iq)
-                ! je vais construire un
-
+                ! The c(m,n,mu,nu,khi) that we read from Luc had 2 drawbacks:
+                ! - we read it the way Luc give it, not the optimal way for our loops
+                ! - it does not contain our use of the symetries, and here we decide to have mu>0.
+                ! We could have chosen, mu'>0 or to keep all mu and mu' but work for half q-points.
+                ! That's our choice, and we must thus change the representation of c() to make it fit our purpose.
+                ! That's what we do below.
                 block
                     integer :: np_new, i
                     integer, allocatable :: m_new(:), n_new(:), mu_new(:), nu_new(:), khi_new(:), ip_new(:,:,:,:,:)
@@ -394,10 +397,6 @@ contains
                     c%khi = khi_new
                     c%ip = ip_new
                 end block
-
-
-
-
             end block
             c%mnmunukhi_q=conjg(c%mnmunukhi_q) ! this is strange, but certainly due to some error or misunderstanding with Luc. It does not appear in Luc's document.
             !
