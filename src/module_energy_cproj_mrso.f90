@@ -354,6 +354,8 @@ contains
                 real(dp) :: qmaxnecessary
                 qmaxnecessary = norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))])
                 call read_c_luc(c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
+                ! ici j'ai un c(imnmunukhi,iq)
+                ! je vais construire un
             end block
             c%mnmunukhi_q=conjg(c%mnmunukhi_q) ! this is strange, but certainly due to some error or misunderstanding with Luc. It does not appear in Luc's document.
             !
@@ -388,6 +390,9 @@ contains
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
         gamma_p_isok = .false.
+
+        block
+            integer :: imkhimu, m, khi, mu, mu2, nu, nu2, ia, ip
 
         !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,c,deltarho_p,grid,ck)
         do iz_q=1,nz/2+1
@@ -483,72 +488,57 @@ contains
                     gamma_p_q  = zeroc
                     gamma_p_mq = zeroc !1:np
 
-                    block
-                        integer :: imkhimu, m, khi, mu, mu2, nu, nu2, ia, ip
-                        complex(dp) :: gamma_mkhimu2_q, gamma_mkhimu2_mq
-                        imkhimu=0
-                        do m=0,mmax
-                            do khi=-m,m
-                                do mu2=0,m/mrso ! not -m,m a cause des symetries ! EST CE QU'IL Y A UNE RAISON POUR QUE LES mu IMPAIRES SOIENT NON NULS ICI ?
-
-                                    imkhimu = imkhimu + 1
-                                    gamma_mkhimu2_q= zeroc
-                                    gamma_mkhimu2_mq = zeroc
-
-                                    do n=abs(khi),mmax
-                                        select case (n)
-                                        case(0, 1) ! nu2 == 0
-                                            gamma_mkhimu2_q  = gamma_mkhimu2_q    + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
-                                            gamma_mkhimu2_mq = gamma_mkhimu2_mq   + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0)))
-                                        case(2, 3) ! nu2 = -1,0,1
-                                            gamma_mkhimu2_q  = gamma_mkhimu2_q    + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
-                                            gamma_mkhimu2_mq = gamma_mkhimu2_mq   + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1)))
-                                        case(4, 5) ! nu2 = -2,-1,0,1,2
-                                            gamma_mkhimu2_q  = gamma_mkhimu2_q    + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_q (p3%p(n,khi,2))  &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
-                                            gamma_mkhimu2_mq = gamma_mkhimu2_mq   + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_mq(p3%p(n,khi,2))  &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
-                                                                                  + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,2)))
-                                        end select
+                    do imkhimu = 1, np
+                        m   = p3%m(imkhimu)       ! m=0,mmax
+                        khi = p3%mup(imkhimu)     ! khi=-m,m
+                        mu2 = p3%mu(imkhimu)/mrso ! mu2=-m/mrso,m/mrso
+                        do n = abs(khi), mmax
+                            select case (n)
+                            case(0, 1) ! nu2 == 0
+                                gamma_p_q(imkhimu)  = gamma_p_q(imkhimu)    + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
+                                gamma_p_mq(imkhimu) = gamma_p_mq(imkhimu)   + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0)))
+                            case(2, 3) ! nu2 = -1,0,1
+                                gamma_p_q(imkhimu)  = gamma_p_q(imkhimu)    + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
+                                gamma_p_mq(imkhimu) = gamma_p_mq(imkhimu)   + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1)))
+                            case(4, 5) ! nu2 = -2,-1,0,1,2
+                                gamma_p_q(imkhimu)  = gamma_p_q(imkhimu)    + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_q (p3%p(n,khi,2))  &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
+                                gamma_p_mq(imkhimu) = gamma_p_mq(imkhimu)   + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_mq(p3%p(n,khi,2))  &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
+                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,2)))
+                            end select
 
 
-                                        ! do nu2= -n/mrso, n/mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
-                                        !
-                                        !     ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
-                                        !     ip = p3%p(n,khi,abs(nu2))
-                                        !
-                                        !     if (nu2<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                                        !         gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                        !         gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                                        !     else
-                                        !         gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                                        !         gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
-                                        !     end if
-                                        !     ! < USELESS SINCE DELTARHO_P_Q and DELTARHO_P_MQ are prepared before MOZ
-                                        !
-                                        !     ! gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                                        !     ! gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                                        !
-                                        ! end do !nu2
+                                    ! do nu2= -n/mrso, n/mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
+                                    !
+                                    !     ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
+                                    !     ip = p3%p(n,khi,abs(nu2))
+                                    !
+                                    !     if (nu2<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
+                                    !         gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                    !         gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                    !     else
+                                    !         gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                    !         gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                    !     end if
+                                    !     ! < USELESS SINCE DELTARHO_P_Q and DELTARHO_P_MQ are prepared before MOZ
+                                    !
+                                    !     ! gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                    !     ! gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                    !
+                                    ! end do !nu2
 
-                                    end do
-
-
-                                    gamma_p_q(imkhimu)  = gamma_mkhimu2_q
-                                    gamma_p_mq(imkhimu) = gamma_mkhimu2_mq
-                                end do
-                            end do
                         end do
-                    end block
+                    end do
 
                     !
                     ! Rotation from molecular frame to fix frame
@@ -597,6 +587,7 @@ contains
             end do
         end do
         !$OMP END PARALLEL DO
+    end block
 
 
         call cpu_time(time(10))
