@@ -68,7 +68,6 @@ module module_energy_cproj_mrso
     type(fft_type), protected :: fft
     complex(dp), allocatable :: c3d(:,:,:)
     complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
-    complex(dp), allocatable, protected :: Rmmupmu(:) ! same as R(m,mup,mu) with only used values of m,mup and mu
 
     public :: energy_cproj_mrso
 
@@ -356,6 +355,49 @@ contains
                 call read_c_luc(c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
                 ! ici j'ai un c(imnmunukhi,iq)
                 ! je vais construire un
+
+                block
+                    integer :: np_new, i
+                    integer, allocatable :: m_new(:), n_new(:), mu_new(:), nu_new(:), khi_new(:), ip_new(:,:,:,:,:)
+                    complex(dp), allocatable :: cnu2nmu2khim_q_new(:,:)
+                    np_new = 0
+                    do m=0,mmax; do khi=-m,m; do mu2=0,m/mrso; do n=abs(khi),mmax; do nu2=-n/mrso,n/mrso
+                        np_new = np_new +1
+                    end do; end do; end do; end do; end do
+                    allocate( cnu2nmu2khim_q_new(np_new,c%nq) )
+                    allocate( m_new(np_new) )
+                    allocate( n_new(np_new) )
+                    allocate( mu_new(np_new) )
+                    allocate( nu_new(np_new) )
+                    allocate( khi_new(np_new) )
+                    allocate( ip_new(-mmax:mmax,0:mmax,0:mmax/mrso,-mmax:mmax,-mmax:mmax), source=-huge(1) )
+                    i=0
+                    do m=0,mmax; do khi=-m,m; do mu2=0,m/mrso; do n=abs(khi),mmax; do nu2=-n/mrso,n/mrso
+                        i=i+1
+                        m_new(i)=m
+                        n_new(i)=n
+                        mu_new(i)=mu2*mrso
+                        nu_new(i)=nu2*mrso
+                        khi_new(i)=khi
+                        ip_new(nu2,n,mu2,khi,m)=i
+                        cnu2nmu2khim_q_new(i,:) = c%mnmunukhi_q(c%ip(m,n,mu2,nu2,khi),:)
+                    end do; end do; end do; end do; end do
+                    deallocate( c%m,c%n,c%mu,c%nu,c%khi,c%ip, c%mnmunukhi_q)
+                    c%np = np_new
+                    allocate( c%m(c%np),c%n(c%np),c%mu(c%np),c%nu(c%np),c%khi(c%np),c%ip(-mmax:mmax,0:mmax,0:mmax/mrso,-mmax:mmax,-mmax:mmax) )
+                    allocate( c%mnmunukhi_q(c%np,c%nq), source=cnu2nmu2khim_q_new )
+                    deallocate(cnu2nmu2khim_q_new)
+                    c%m = m_new
+                    c%n = n_new
+                    c%mu = mu_new
+                    c%nu = nu_new
+                    c%khi = khi_new
+                    c%ip = ip_new
+                end block
+
+
+
+
             end block
             c%mnmunukhi_q=conjg(c%mnmunukhi_q) ! this is strange, but certainly due to some error or misunderstanding with Luc. It does not appear in Luc's document.
             !
@@ -382,7 +424,6 @@ contains
 
         if (.not. allocated(R) ) then
             allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=(0._dp,0._dp) )
-            allocate( Rmmupmu(np), source=(0._dp,0._dp))
         end if
 
         !
@@ -392,25 +433,23 @@ contains
         gamma_p_isok = .false.
 
         block
-            integer :: imkhimu, m, khi, mu, mu2, nu, nu2, ia, ip
+            integer :: ip, m, khi, mu, mu2, nu, nu2, ia
 
         !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,c,deltarho_p,grid,ck)
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
+            q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
             do iy_q=1,ny
                 iy_mq = grid%iy_mq(iy_q)
+                q(2) = grid%ky(iy_q) ! cartesian coordinates of vector q in lab frame
                 do ix_q=1,nx
                     ix_mq = grid%ix_mq(ix_q)
+                    q(1) = grid%kx(ix_q) ! cartesian coordinates of vector q in lab frame
 
                     !
                     ! gamma_p_isok is a logical array. If gamma(ix_q,iy_q,iz_q) has already been calculated, it is .true.
                     !
                     if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq,iz_mq) ) cycle
-
-                    !
-                    ! cartesian coordinates of vector q in lab frame
-                    !
-                    q = [grid%kx(ix_q), grid%ky(iy_q), grid%kz(iz_q)]
 
                     !
                     ! pay attention to the special case(s) where q=-q
@@ -426,7 +465,6 @@ contains
                     !
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( mmax, q)
                     where( abs(R)<=epsdp ) R = (0._dp,0._dp)
-                    Rmmupmu(1:np) = [(    R(p3%m(ip),p3%mup(ip),p3%mu(ip))   ,ip=1,np    )]
 
                     ! Eq. 1.23 We don't need to compute gshrot for -q since there are symetries between R(q) and R(-q).
                     ! Thus, we do q and -q at the same time. That's the most important point in doing all q but half of mu.
@@ -449,8 +487,8 @@ contains
                                 deltarho_p_mq_loc = (0._dp,0._dp)
                                 do mup=-m,m
                                     ip2=ip2_loc(mup)
-                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q(ip2)  *R_loc(mup)
-                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(ip2) *R_loc(mup)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q(p3%p(m,mup,mu2))  *R_loc(mup)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(p3%p(m,mup,mu2)) *R_loc(mup)
                                 end do
                                 deltarho_p_q(ip) = deltarho_p_q_loc
                                 deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
@@ -487,34 +525,37 @@ contains
 
                     gamma_p_q  = zeroc
                     gamma_p_mq = zeroc !1:np
-
-                    do imkhimu = 1, np
-                        m   = p3%m(imkhimu)       ! m=0,mmax
-                        khi = p3%mup(imkhimu)     ! khi=-m,m
-                        mu2 = p3%mu(imkhimu)/mrso ! mu2=-m/mrso,m/mrso
+                    ia = 0
+                    do ip = 1, np
+                        m   = p3%m(ip)       ! m=0,mmax
+                        khi = p3%mup(ip)     ! khi=-m,m
+                        mu2 = p3%mu(ip)/mrso ! mu2=-m/mrso,m/mrso
                         do n = abs(khi), mmax
+                            ia = ia +1
                             select case (n)
                             case(0, 1) ! nu2 == 0
-                                gamma_p_q(imkhimu)  = gamma_p_q(imkhimu)    + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
-                                gamma_p_mq(imkhimu) = gamma_p_mq(imkhimu)   + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0)))
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + c%mnmunukhi_q(ia  ,iq) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + c%mnmunukhi_q(ia  ,iq) *conjg(deltarho_p_q (p3%p(n,khi,0)))
                             case(2, 3) ! nu2 = -1,0,1
-                                gamma_p_q(imkhimu)  = gamma_p_q(imkhimu)    + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
-                                gamma_p_mq(imkhimu) = gamma_p_mq(imkhimu)   + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1)))
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                  + c%mnmunukhi_q(ia+1,iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                  + c%mnmunukhi_q(ia+1,iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_q (p3%p(n,khi,1)))
+                                ia = ia +2
                             case(4, 5) ! nu2 = -2,-1,0,1,2
-                                gamma_p_q(imkhimu)  = gamma_p_q(imkhimu)    + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_q (p3%p(n,khi,2))  &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_q (p3%p(n,khi,1))  &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
-                                gamma_p_mq(imkhimu) = gamma_p_mq(imkhimu)   + c%mnmunukhi_q(c%ip(m,n,mu2,-2,khi),iq)*      deltarho_p_mq(p3%p(n,khi,2))  &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,-1,khi),iq)*      deltarho_p_mq(p3%p(n,khi,1))  &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,0,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,1,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
-                                                                      + c%mnmunukhi_q(c%ip(m,n,mu2,2,khi),iq) *conjg(deltarho_p_q (p3%p(n,khi,2)))
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_q (p3%p(n,khi,2))  &
+                                                                  + c%mnmunukhi_q(ia+1,iq) *      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                  + c%mnmunukhi_q(ia+3,iq) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
+                                                                  + c%mnmunukhi_q(ia+4,iq) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + c%mnmunukhi_q(ia  ,iq) *      deltarho_p_mq(p3%p(n,khi,2))  &
+                                                                  + c%mnmunukhi_q(ia+1,iq) *      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                  + c%mnmunukhi_q(ia+2,iq) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                  + c%mnmunukhi_q(ia+3,iq) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
+                                                                  + c%mnmunukhi_q(ia+4,iq) *conjg(deltarho_p_q (p3%p(n,khi,2)))
+                                ia = ia +4
                             end select
 
 
@@ -544,7 +585,6 @@ contains
                     ! Rotation from molecular frame to fix frame
                     !
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
-                    Rmmupmu =  conjg(Rmmupmu)
                     ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
 
 
@@ -558,7 +598,6 @@ contains
                                 ! Equation 1.22
                                 do khi=-m,m
                                     ip2=p3%p(m,khi,mu2)
-                                    ! Rmmupmu( p3%p(m,mup,khi) )
                                     deltarho_p_q(ip)  = deltarho_p_q(ip)  + gamma_p_q (ip2) *R(m,mup,khi)
                                     deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(ip2) *R(m,mup,khi)
                                 end do
