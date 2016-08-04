@@ -30,8 +30,6 @@ contains
         real(dp), parameter :: zerodp = 0._dp
         real(dp) :: t(3)
 
-        print*
-        print*,"===== External Potential ====="
 
         nx = grid%nx
         ny = grid%ny
@@ -80,22 +78,34 @@ contains
             ! call prevent_numerical_catastrophes
         end if
 
-        do s=1,ns
-            if (allocated(solvent(s)%vextq)) then
-                print*
-                print*,"    electrostatic calculated in ", t(2)-t(1),"sec"
-                print*,"    minval(vextq) =",minval(solvent(1)%vextq)
-                print*,"    maxval(vextq) =",maxval(solvent(1)%vextq)
-                deallocate(solvent(s)%vextq)
-            else
-                print*,"    no electrostatic potential"
+        block
+            real(dp) :: time
+            character(100) :: method
+            real(dp) :: minvc, maxvc
+            integer :: n
+            if( allocated(solvent(1)%vextq)) then
+                minvc = minval(solvent(1)%vextq)
+                maxvc = maxval(solvent(1)%vextq)
+                time =  t(2)-t(1)
+                if(getinput%log('direct_sum', defaultvalue=.false.)) then
+                    method = "direct summation"
+                else
+                    method = "FFT"
+                end if
+                write(*,"(A,F9.2,A,2F9.2)") "Coulomb potential calculated by "//trim(adjustl(method))//" in ",time," sec. Min,Max= ",minvc,maxvc
+                do n=1,solvent(1)%nspec
+                    deallocate(solvent(n)%vextq)
+                end do
             end if
-            print*
-            print*,"    lj calculated in ", t(3)-t(2),"sec"
-            print*,"    minval(vext) =",minval(solvent(1)%vext)
-            print*,"    maxval(vext) =",maxval(solvent(1)%vext)
-            print*,"===== External Potential ====="
-        end do
+        end block
+        block
+            real(dp) :: time
+            real(dp) :: minvc, maxvc
+            minvc = minval(solvent(1)%vext)
+            maxvc = maxval(solvent(1)%vext)
+            time =  t(2)-t(1)
+            write(*,"(A,F9.2,A,2F9.2)") "LJ potential calculated in ",time," sec. Min,Max= ",minvc,maxvc
+        end block
 
 
     end subroutine init_vext
@@ -160,7 +170,6 @@ contains
 
         ! DIRECT SUMMATION, pot = sum of qq'/r
         if (is_direct) then
-            print*, "  => Method : direct"
             ! Implies M-summation scheme as called by Hunenberger and Reif
             ! See the routine below for more information and biblio
             call compute_vcoul_as_sum_of_pointcharges
@@ -168,7 +177,6 @@ contains
 
         ! FAST POISSON SOLVER, -laplacian(pot) = solute charge density
         if (is_poisson) then
-            print*, "  => Method : FFT"
             call init_fastpoissonsolver
         end if
 
