@@ -140,14 +140,14 @@ contains
 
       call cpu_time(time(5))
 
-      if (lbfgsb%task(1:2) == "FG") then
-        print*, "Timing of whole cycle (evaluation + bfgs stuff): ", time(5)-time(1)
-        print*
-        print*, "                  -----------------"
-        print*
-        print*
-        print*
-      end if
+    !   if (lbfgsb%task(1:2) == "FG") then
+    !     print*, "Timing of whole cycle (evaluation + bfgs stuff): ", time(5)-time(1)
+    !     print*
+    !     print*, "                  -----------------"
+    !     print*
+    !     print*
+    !     print*
+    !   end if
     end do
   end subroutine minimization_using_lbfgs
 
