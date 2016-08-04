@@ -103,7 +103,7 @@ contains
             real(dp) :: minvc, maxvc
             minvc = minval(solvent(1)%vext)
             maxvc = maxval(solvent(1)%vext)
-            time =  t(2)-t(1)
+            time =  t(3)-t(2)
             write(*,"(A,F9.2,A,2F9.2)") "LJ potential calculated in ",time," sec. Min,Max= ",minvc,maxvc
         end block
 
