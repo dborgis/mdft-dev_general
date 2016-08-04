@@ -37,21 +37,18 @@ contains
     !.
     subroutine print_header
 
-        use git
+        use git, only: commit
 
         character(8)  :: date
         character(10) :: time
         call date_and_time ( DATE=date,TIME=time)
         print*,' ******************************************************************'
         print*,' ******************************************************************'
-        print*,' **             *************************   ',date(1:4),'/',date(5:6),'/',date(7:8),'   **********'
-        print*,' **   M D F T   *************************                **********'
-        print*,' **             *************************    ',time(1:2),'h',time(3:4),'m',time(5:6),'    **********'
+        print*,' **             ******    ',date(1:4),'/',date(5:6),'/',date(7:8),'   ',time(1:2),'h',time(3:4),'m',time(5:6),'                  **'
+        print*,' **   M D F T   ******                                           **'
+        print*,' **             ******    commit     ', commit(1:10),'                  **'
         print*,' ******************************************************************'
         print*,' ******************************************************************'
-
-        print*
-        print*,' commit: ', commit
         print*
 
     end subroutine print_header
