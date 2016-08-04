@@ -171,7 +171,11 @@ else()
 	find_package(FFTW REQUIRED)
 endif()
 
-
+#get git commit
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+configure_file("${PROJECT_SOURCE_DIR}/src/module_git.f90.in" "git_module/module_git.f90")
+list(APPEND mdft_SRCS "git_module/module_git.f90")
 
 if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
