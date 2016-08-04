@@ -36,6 +36,9 @@ contains
     !   Print a header to stdout to welcome the user
     !.
     subroutine print_header
+
+        use git
+
         character(8)  :: date
         character(10) :: time
         call date_and_time ( DATE=date,TIME=time)
@@ -46,6 +49,11 @@ contains
         print*,' **             *************************    ',time(1:2),'h',time(3:4),'m',time(5:6),'    **********'
         print*,' ******************************************************************'
         print*,' ******************************************************************'
+
+        print*
+        print*,' commit: ', commit
+        print*
+
     end subroutine print_header
 
 
