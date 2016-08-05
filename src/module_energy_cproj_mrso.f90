@@ -20,17 +20,6 @@ module module_energy_cproj_mrso
     include 'fftw3.f03'
 
     !
-    ! Parameters
-    !
-    real(dp), parameter :: zero=0._dp
-    complex(dp), parameter :: zeroc=(0._dp, 0._dp)
-    complex(dp), parameter :: ii=(0._dp,1._dp)
-    real(dp), parameter :: epsdp=epsilon(1._dp)
-    real(dp), parameter :: pi=acos(-1._dp)
-    real(dp), parameter :: eightpisq=8._dp*pi**2
-    real(dp), parameter :: twopi=2._dp*pi
-
-    !
     ! Direct correlation functions from Luc
     !
     type :: c_type
@@ -93,10 +82,10 @@ contains
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
         real(dp) :: vexc(grid%no), rho, xi
-        real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
         real :: total_time_in_subroutine
         complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
         integer :: ip2_loc(-5:5)
+        complex(dp), parameter :: zeroc=(0._dp, 0._dp)
 
         call cpu_time (time(1))
 
@@ -465,7 +454,7 @@ contains
                     ! Prepare R^m_mup_khi(q)
                     !
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( mmax, q)
-                    where( abs(R)<=epsdp ) R = (0._dp,0._dp)
+                    where( abs(R)<=epsilon(1._dp) ) R = (0._dp,0._dp)
 
                     ! Eq. 1.23 We don't need to compute gshrot for -q since there are symetries between R(q) and R(-q).
                     ! Thus, we do q and -q at the same time. That's the most important point in doing all q but half of mu.
@@ -508,9 +497,9 @@ contains
 
                     block
                         real(dp) :: effectiveiq, alpha
-                        effectiveiq = norm2(q)/c%dq +1
-                        iq = int(effectiveiq)
-                        alpha = effectiveiq - iq
+                        effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
+                        iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
+                        alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
                         ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
                                  + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
                     end block
@@ -673,37 +662,38 @@ contains
         ! Gather projections into gamma
         ! Note that gamma==df
         !
-        if(present(df)) then
-            ff=0._dp
-            do iz=1,nz
-                do iy=1,ny
-                    do ix=1,nx
-                        call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
-                        vexc = -kT*grid%w*vexc*fourpisq  /solvent(1)%n0  ! /0.0333 vient du c de luc qui est un n0.c
-                        do io=1,no
-                            xi = solvent(1)%xi(io,ix,iy,iz)
-                            rho = xi**2*rho0
-                            ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
-                            df(io,ix,iy,iz,1) = df(io,ix,iy,iz,1) + 2._dp*vexc(io)*rho0*xi
+        block
+            real(dp) :: prefactor
+            real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
+            prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
+            if(present(df)) then
+                ff=0._dp
+                do iz=1,nz
+                    do iy=1,ny
+                        do ix=1,nx
+                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
+                            vexc = prefactor*grid%w*vexc
+                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
+                            df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + 2._dp*rho0*solvent(1)%xi(:,ix,iy,iz)*vexc
                         end do
                     end do
                 end do
-            end do
-        else
-            ff=0._dp
-            do iz=1,nz
-                do iy=1,ny
-                    do ix=1,nx
-                        call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
-                        vexc = -kT*grid%w*vexc*fourpisq  /solvent(1)%n0  ! /0.0333 vient du c de luc qui est un n0.c
-                        do io=1,no
-                            rho = solvent(1)%xi(io,ix,iy,iz)**2*rho0
-                            ff = ff + (rho-rho0)*0.5_dp*vexc(io)*dv
+                ff = ff*0.5_dp*dv
+            else
+                ff=0._dp
+                prefactor = -kT*fourpisq  /solvent(1)%n0! /0.0333 vient du c de luc qui est un n0.c
+                do iz=1,nz
+                    do iy=1,ny
+                        do ix=1,nx
+                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
+                            vexc = prefactor*grid%w*vexc
+                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
                         end do
                     end do
                 end do
-            end do
-        end if
+                ff = ff*0.5_dp*dv
+            end if
+        end block
         call cpu_time(time(13))
 
         total_time_in_subroutine = time(13)-time(1)
