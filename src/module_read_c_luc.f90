@@ -94,12 +94,12 @@ contains
             real(dp) :: q
             integer :: iq
             dq = 0.0613592315
-            nq = int(qmaxwanted/dq +0.5)+1
+            nq = int(qmaxwanted/dq +0.5)+2
             if( nq>nqinfile) error stop "You want more values of q that are available in module_read_c_luc"
             allocate( cmnmunukhi(np,nq) ,source=(0._dp,0._dp)  )
             do iq=1,nq ! if you want more than available, use all that is available. If you need less, use less.
                 read(88,*) q, cmnmunukhi(1:np,iq)
-                if( q>(qmaxwanted+dq) ) error stop "q>qmaxwanted in module_read_c_luc" ! One needs a little bit of tolerance: We must have qmaxwanted within our bins.
+                if( q>(qmaxwanted+2._dp*dq) ) error stop "q>qmaxwanted in module_read_c_luc" ! One needs a little bit of tolerance: We must have qmaxwanted within our bins.
             end do
             block
                 open(89,file="output/arraysinmemory_module_read_c_luc")
