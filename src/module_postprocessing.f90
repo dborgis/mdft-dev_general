@@ -78,7 +78,6 @@ contains
         !
         ! print polarization in each direction
         !
-        filename = "output/Px.cube"
         allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
         call get_final_polarization(px,py,pz)
         filename = "output/Px.cube"
@@ -90,7 +89,9 @@ contains
         filename = "output/Pz.cube"
         call write_to_cube_file(pz,filename)
         print*, "New file output/Pz.cube"
-
+        filename = 'output/pnorm.xvg'
+        call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
+        print*, "New output file ", trim(adjustl(filename))
 
 
 
@@ -179,8 +180,9 @@ contains
 !         END IF
 !
 !
+        density = density / solvent(1)%n0
         filename = 'output/rdf.xvg'
-        call output_rdf ( density/solvent(1)%n0 , filename ) ! Get radial distribution functions
+        call output_rdf ( density , filename ) ! Get radial distribution functions
         print*, "New output file ", trim(adjustl(filename))
         call output_gsitesite
         call output_gOfRandCosTheta
