@@ -167,6 +167,9 @@ subroutine energy_and_gradient (f, df)
         f = f + ff%pbc_correction
         call typeC_corrections
         f = f + ff%pscheme_correction
+    else
+        ff%pbc_correction=0._dp
+        ff%pscheme_correction=0._dp
     end if
 
 
