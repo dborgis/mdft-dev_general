@@ -130,7 +130,7 @@ subroutine energy_and_gradient (f, df)
           call cpu_time(t(6))
         !   print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
         else
-          call energy_cproj_mrso( ff%exc_cproj)
+          call energy_cproj_mrso( ff%exc_cproj, print_timers=.false.)
         end if
         f = f + ff%exc_cproj
     end if
