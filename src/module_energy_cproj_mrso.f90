@@ -463,6 +463,10 @@ contains
                     !
                     ! Rotation to molecular (q) frame
                     !
+
+!  on  a       deltarho_p_q(m,khi,mu2) =  sum/mup  @   gamma_p_q(m,mup,mu2) * R(m,mup,khi)
+         !=>                                            gamma_p_q(mup,m,mu2) * R(mup,m,khi)
+
                     gamma_p_q = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
                     gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq) ! this a temporary array
                     ip=0
