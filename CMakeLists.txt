@@ -6,19 +6,15 @@
 # - https://github.com/SethMMorton/cmake_fortran_template
 #
 
-# require cmake 2.8.0
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
-
-##################
+cmake_minimum_required(VERSION 2.8.0 FATAL_ERROR) # require cmake 2.8.0
 project("mdft-dev")
-##################
 
 # Fortran is disabled by default, so we need to wake-up
 # note: string given to enable_language is case-sensitive
 enable_language(Fortran)
 
 #option to build FFTW-3.3.4 with MDFT
-option(BUILD_FFTW "build FFTW-3.3.4 with MDFT" OFF)
+option(BUILD_FFTW "build FFTW-3.3.4 with MDFT" ON)
 
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -70,12 +66,6 @@ elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
 endif()
 
 
-#add_subdirectory(vendor/bpp bpp EXCLUDE_FROM_ALL)
-#
-#bpp_preprocess(SRC_Bpp src/module_energy_cproj_mrso.F90.bpp src/module_rotation.F90.bpp)
-
-
-
 #############################
 # Now build mdft executable #
 #############################
@@ -85,7 +75,6 @@ set(mdft_SRCS
   src/module_blas_etc.f90
   src/module_lecture.f90
   src/module_read_c_luc.f90
-#  ${SRC_Bpp}
   src/module_rotation.f90
   src/module_energy_cproj_mrso.f90
   src/module_energy_cdeltacd.f90
@@ -147,38 +136,49 @@ set(mdft_SRCS
 EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/input" "${CMAKE_BINARY_DIR}/input")
 
 #
-# Build FFTW
+# FFTW
 #
-include(ExternalProject)
-if(BUILD_FFTW)
-	ExternalProject_Add(
-	  fftw
-	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
-	  BUILD_COMMAND make -j4
-	  INSTALL_COMMAND make install -j4
-	)
-	ExternalProject_Add(
-	  fftwf
-	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
-	  BUILD_COMMAND make -j4
-	  INSTALL_COMMAND make install -j4
-	)
-	SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
-	SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
-else()
-	find_package(FFTW REQUIRED)
+include (ExternalProject)
+find_package (FFTW REQUIRED)
+if ( ${FFTW_FOUND} )
+    # FFTW is already installed. 
+elseif ( NOT(${FFTW_FOUND}) AND BUILD_FFTW )
+    # FFTW is not present. Let's build it.
+    ExternalProject_Add(
+        fftw
+        URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+        CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
+        BUILD_COMMAND make -j4
+        INSTALL_COMMAND make install -j4
+    )
+    ExternalProject_Add(
+        fftwf
+        URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+        CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
+        BUILD_COMMAND make -j4
+        INSTALL_COMMAND make install -j4
+    )
+    SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
+    SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
+else ()
+    message (FATAL_ERROR "FFTW is not present and you dont want to build it, but it is required.")
 endif()
 
-#get git commit
+
+
+#
+# git commit in sources
+#
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 configure_file("${PROJECT_SOURCE_DIR}/src/module_git.f90.in" "git_module/module_git.f90")
 list(APPEND mdft_SRCS "git_module/module_git.f90")
 
+#
+# Build
+#
 if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
 
@@ -189,7 +189,7 @@ if (UNIX)
   message(STATUS "Compiling with fftw ${FFTW_LIBRARIES}")
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
 
-  if(BUILD_FFTW) 
+  if(NOT(${FFTW_FOUND}) AND BUILD_FFTW) 
     add_dependencies(mdft-dev fftw fftwf)
   endif()
 
