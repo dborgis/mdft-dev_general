@@ -17,8 +17,8 @@ project("mdft-dev")
 # note: string given to enable_language is case-sensitive
 enable_language(Fortran)
 
-#option to build FFTW in same time as MDFT
-option(BUILD_FFTW "build fftw when compiling MDFT" OFF)
+#option to build FFTW-3.3.4 with MDFT
+option(BUILD_FFTW "build FFTW-3.3.4 with MDFT" OFF)
 
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
