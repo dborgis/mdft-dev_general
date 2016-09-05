@@ -485,20 +485,27 @@ contains
     INTEGER :: n_linesInFile
     CHARACTER(*), INTENT(IN) :: filename
     INTEGER :: ios
-    OPEN (77, FILE=filename)
-    n_linesInFile = 0
-    DO WHILE (.true.)
-      READ (77,*,IOSTAT=ios)
-      IF (ios>0) THEN
-        WRITE(*,*)'Error in file:',filename
-        STOP
-      ELSE IF (ios<0) THEN ! end of file reached
-        EXIT
-      ELSE
-        n_linesInFile = n_linesInFile +1
-      END IF
-    END DO
-    CLOSE (77)
+    logical :: exist
+    inquire( file=filename, exist=exist)
+    if(exist) then
+      OPEN (77, FILE=filename, action="read",status="old")
+      n_linesInFile = 0
+      DO WHILE (.true.)
+        READ (77,*,IOSTAT=ios)
+        IF (ios>0) THEN
+          WRITE(*,*)'Error in file:',filename
+          STOP
+        ELSE IF (ios<0) THEN ! end of file reached
+          EXIT
+        ELSE
+          n_linesInFile = n_linesInFile +1
+        END IF
+      END DO
+      CLOSE (77)
+    else if (.not. exist) then
+      print*, "Error while trying to open file: ", filename
+      error stop
+    end if
   END FUNCTION n_linesInFile
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

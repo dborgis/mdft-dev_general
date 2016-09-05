@@ -6,7 +6,7 @@ module module_lbfgs_nocedal_mdft
 
   type lbfgsb_type
       !     Declare variables and parameters needed by mylbfgsb.f90>setulb
-      integer                :: n, m=1, iprint=3
+      integer                :: n, m=1, iprint=-1 ! 3 if you want some information to be printed on screen
       real(mydp)               :: factr  = 0.00001_mydp/epsilon(1._mydp) ! The iteration will stop when
       ! real(dp)               :: factr  = 1.0d+12 ! The iteration will stop when
                                                  ! (f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr*epsmch

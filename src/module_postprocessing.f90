@@ -56,15 +56,20 @@ contains
         do isite=1,size(solute%site)
           write(10) solute%site(isite)
         enddo
-        do is=1,size(solvent)
-          do iz=1,nz
-            do iy=1,ny
-              do ix=1,nx
-                write(10) angl2proj( solvent(is)%xi(1:no,ix,iy,iz) )
-              end do
+        block
+            use module_grid, only: grid
+            complex(dp) :: xi_p(grid%np)
+            do is=1,size(solvent)
+                do iz=1,nz
+                    do iy=1,ny
+                        do ix=1,nx
+                            call angl2proj( solvent(is)%xi(:,ix,iy,iz), xi_p)
+                            write(10) xi_p
+                        end do
+                    end do
+                end do
             end do
-          end do
-        end do
+        end block
         close(10)
         print*, "New file output/density.bin"
 
@@ -73,7 +78,6 @@ contains
         !
         ! print polarization in each direction
         !
-        filename = "output/Px.cube"
         allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
         call get_final_polarization(px,py,pz)
         filename = "output/Px.cube"
@@ -85,7 +89,9 @@ contains
         filename = "output/Pz.cube"
         call write_to_cube_file(pz,filename)
         print*, "New file output/Pz.cube"
-
+        filename = 'output/pnorm.xvg'
+        call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
+        print*, "New output file ", trim(adjustl(filename))
 
 
 
@@ -174,15 +180,16 @@ contains
 !         END IF
 !
 !
+        density = density / solvent(1)%n0
         filename = 'output/rdf.xvg'
-        call output_rdf ( density/solvent(1)%n0 , filename ) ! Get radial distribution functions
+        call output_rdf ( density , filename ) ! Get radial distribution functions
         print*, "New output file ", trim(adjustl(filename))
         call output_gsitesite
         call output_gOfRandCosTheta
 
-        filename = 'output/rdf-vext.xvg'
-        call output_rdf ( solvent(1)%vext(1,:,:,:), filename )
-        print*, "New output file ", trim(adjustl(filename))
+        ! filename = 'output/rdf-vext.xvg'
+        ! call output_rdf ( solvent(1)%vext(1,:,:,:), filename )
+        ! print*, "New output file ", trim(adjustl(filename))
         deallocate (density)
 !
 !         CALL adhoc_corrections_to_gsolv

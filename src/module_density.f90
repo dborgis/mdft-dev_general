@@ -160,7 +160,9 @@ contains
         do iz_prev=1,nz_prev
           do iy_prev=1,ny_prev
             do ix_prev=1,nx_prev
-              xi_prev(1:no,ix_prev,iy_prev,iz_prev) = proj2angl(deltarho_p_prev(1:np,ix_prev,iy_prev,iz_prev))
+                call proj2angl( &
+                    deltarho_p_prev(1:np,ix_prev,iy_prev,iz_prev) ,&
+                    xi_prev(1:no,ix_prev,iy_prev,iz_prev) )
             end do
           end do
         end do

@@ -21,6 +21,7 @@ module module_energy_and_gradient
                 tot=0._dp,&
                 pscheme_correction=-999._dp,&
                 pbc_correction=-999._dp
+    integer :: ieval=0
   end type
   type (f_type), public :: ff
   public :: energy_and_gradient
@@ -66,6 +67,8 @@ subroutine energy_and_gradient (f, df)
     real(dp) :: fold
     integer :: ns, s
 
+    ff%ieval = ff%ieval +1
+
     if (.not. allocated(solvent)) then
       print*, "in energy_and_gradient, solvent()% is not allocated"
       error stop
@@ -86,8 +89,8 @@ subroutine energy_and_gradient (f, df)
         call cpu_time(t(1))
         call energy_ideal_and_external (ff%id, ff%ext, df)
         call cpu_time(t(2))
-        print*, "ff%ext            =", real(ff%ext)
-        print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
+        ! print*, "ff%ext            =", real(ff%ext)
+        ! print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
       else
         call energy_ideal_and_external (ff%id, ff%ext)
       end if
@@ -123,11 +126,11 @@ subroutine energy_and_gradient (f, df)
     if (solvent(s)%do%exc_cproj) then
         if(present(df)) then
           call cpu_time(t(5))
-          call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.true.)
+          call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.false.)
           call cpu_time(t(6))
-          print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+        !   print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
         else
-          call energy_cproj_mrso( ff%exc_cproj)
+          call energy_cproj_mrso( ff%exc_cproj, print_timers=.false.)
         end if
         f = f + ff%exc_cproj
     end if
@@ -160,15 +163,13 @@ subroutine energy_and_gradient (f, df)
     ! adhoc corrections to the solvation free energy (Hunenberger, pressure etc.)
     !
     if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
-
         call typeB_corrections
-        if(present(df)) print*, "ff%pbc correction =", real(ff%pbc_correction)
         f = f + ff%pbc_correction
-
         call typeC_corrections
-        if(present(df)) print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
         f = f + ff%pscheme_correction
-
+    else
+        ff%pbc_correction=0._dp
+        ff%pscheme_correction=0._dp
     end if
 
 
@@ -185,13 +186,29 @@ subroutine energy_and_gradient (f, df)
 
     ff%tot = f
 
-if(present(df)) then
-    print*, "                     ####################"
-    print*, "TOTAL FF [kJ/mol] =  #", real(f), "#"
-    print*, "                     ####################"
-    print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"target=",lbfgsb%factr*epsilon(1._dp)
-    print*, "pgtol=", real(maxval(df)),                                "target=",lbfgsb%pgtol
-end if
+
+
+    block
+        logical, save :: printheader = .true.
+        if(printheader) then
+            write(*,'(A5,11A14)') "#eval","Ftot","Fext","Fid","Fexc","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
+            printheader = .false.
+        end if
+    end block
+    block
+        real(dp) :: reldf, Texc, Ttot, Textid, pgtol
+        Texc = t(6)-t(5)
+        Textid = t(2)-t(1)
+        Ttot = Texc+Textid
+        pgtol = real(maxval(df))
+        reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
+        write(*,"(I5,11F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
+    end block
+
+! if(present(df)) then
+!     print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"target=",lbfgsb%factr*epsilon(1._dp)
+!     print*, "pgtol=", real(maxval(df)),                                "target=",lbfgsb%pgtol
+! end if
 
 end subroutine energy_and_gradient
 
