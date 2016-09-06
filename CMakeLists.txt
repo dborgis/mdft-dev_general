@@ -150,6 +150,17 @@ EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR
 # Build FFTW
 #
 include(ExternalProject)
+
+
+if(NOT BUILD_FFTW)
+	find_package(FFTW QUIET)
+    if(NOT FFTW_FOUND)
+		message(STATUS "WARNING: FFTW not found! FFTW-3.3.4 will be compile before MDFT.")
+		set(BUILD_FFTW ON)
+    endif()
+endif()
+
+
 if(BUILD_FFTW)
 	ExternalProject_Add(
 	  fftw
@@ -169,8 +180,6 @@ if(BUILD_FFTW)
 	)
 	SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
 	SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
-else()
-	find_package(FFTW REQUIRED)
 endif()
 
 #get git commit
