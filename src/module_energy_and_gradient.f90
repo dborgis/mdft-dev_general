@@ -161,16 +161,21 @@ subroutine energy_and_gradient (f, df)
 
     !
     ! adhoc corrections to the solvation free energy (Hunenberger, pressure etc.)
+    ! if you use systems with non-zero net charge (like one ion in water)
+    ! and you use lattice schemes (FFT based) methods for computing the external potential
     !
-    if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
-        call typeB_corrections
-        f = f + ff%pbc_correction
-        call typeC_corrections
-        f = f + ff%pscheme_correction
-    else
-        ff%pbc_correction=0._dp
-        ff%pscheme_correction=0._dp
-    end if
+    block
+        use module_solute, only: solute
+        if ( .not. getinput%log('direct_sum', defaultvalue=.false.) .and. abs(sum(solute%site%q))>1.E-10 ) then
+            call typeB_corrections
+            f = f + ff%pbc_correction
+            call typeC_corrections
+            f = f + ff%pscheme_correction
+        else
+            ff%pbc_correction=0._dp
+            ff%pscheme_correction=0._dp
+        end if
+    end block
 
 
 
