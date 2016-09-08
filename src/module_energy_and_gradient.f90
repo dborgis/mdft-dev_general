@@ -166,7 +166,7 @@ subroutine energy_and_gradient (f, df)
     !
     block
         use module_solute, only: solute
-        if ( .not. getinput%log('direct_sum', defaultvalue=.false.) .and. abs(sum(solute%site%q))>1.E-10 ) then
+        if ( .not. getinput%log('direct_sum', defaultvalue=.false.) .and. abs(sum(solute%site%q))>1.E-7 ) then
             call typeB_corrections
             f = f + ff%pbc_correction
             call typeC_corrections
@@ -234,21 +234,25 @@ end subroutine energy_and_gradient
     real(dp) :: solute_net_charge, L
     real(dp), parameter :: dielectric_constant_spce=71._dp
     solute_net_charge = sum (solute%site%q)
-    if (.not. all(grid%length==grid%length(1))) then
-      print*, "The grid is not cubic."
-      print*, "The periodic boundary conditions correction is intended for cubic cells."
-      print*, "We use the average length sum(len)/3."
-      L = sum(grid%length)/3._dp
+    if( abs(solute_net_charge)<1.E-7 ) then
+      ff%pbc_correction = 0._dp
     else
-      L = grid%lx
+      if (.not. all(grid%length==grid%length(1))) then
+        print*, "The grid is not cubic."
+        print*, "The periodic boundary conditions correction is intended for cubic cells."
+        print*, "We use the average length sum(len)/3."
+        L = sum(grid%length)/3._dp
+      else
+        L = grid%lx
+      end if
+      if (L<=epsilon(1._dp)) then
+        error stop "sherY6S%hx6YYUJ"
+      end if
+      ! The dielectric constant of SPC/E water is 71. See Kusalik and Svishchev, "The Spatial Structure in Liquid Water", Science 265, 1219 (1994) doi:10.1126/science.265.5176.1219
+      ! The original SPC/E paper by Berendsen does not provide this information.
+      ! see https://www.wolframalpha.com/input/?i=-2.837297*(electron+charge)%5E2%2F(4*pi*vacuum+permittivity*2*angstroms)+to+kJ%2Fmol
+      ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant_spce)
     end if
-    if (L<=epsilon(1._dp)) then
-      error stop "sherY6S%hx6YYUJ"
-    end if
-    ! The dielectric constant of SPC/E water is 71. See Kusalik and Svishchev, "The Spatial Structure in Liquid Water", Science 265, 1219 (1994) doi:10.1126/science.265.5176.1219
-    ! The original SPC/E paper by Berendsen does not provide this information.
-    ! see https://www.wolframalpha.com/input/?i=-2.837297*(electron+charge)%5E2%2F(4*pi*vacuum+permittivity*2*angstroms)+to+kJ%2Fmol
-    ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant_spce)
   end subroutine typeB_corrections
 
 
