@@ -54,7 +54,7 @@ SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # Require gfortran to be version > 4.9
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
+  if(CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
     message(FATAL_ERROR "To build MDFT, gfortran version must be at least 4.9")
   endif()
   set (CMAKE_Fortran_FLAGS_RELEASE "-mcmodel=large -march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008")
