@@ -27,7 +27,7 @@ contains
         call init_thermo
         call init_solvent
         if (getinput%log('hard_sphere_fluid', defaultvalue=.false.)) call compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
-        call execute_command_line ("cp input/dft.in input/solvent.in output/.")
+        call execute_command_line ("cp input/solvent.in output/.")
         call init_fft
         call init_vext
         call init_density
