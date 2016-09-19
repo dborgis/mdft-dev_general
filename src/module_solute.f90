@@ -30,13 +30,15 @@ contains
 
     !  call init_periodic_table
       ! print *, ptable ( 1 ) % name
-      ! open and test if input/solute.in is ok
+      ! open and test if solute.in is ok
 
-      open (5, FILE='input/solute.in', STATUS='old', IOSTAT=stat)
+      open (5, FILE='solute.in', STATUS='old', IOSTAT=stat, action="read")
       IF (stat /= 0) THEN
         PRINT*,'solute.in cannot be opened ! => STOP !'
         STOP
       END IF
+      ! copy solute.in in the output folder for further reference
+      call execute_command_line ("cp solute.in output/.")
 
       READ (5,*) ! comment line
       READ (5,*) solute%nsite ! total number of atom sites of the solute
