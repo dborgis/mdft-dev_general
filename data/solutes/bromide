@@ -1,0 +1,4 @@
+Br- as used in Zhao et al. J Chem Phys 132, 194102 (2011), shuangliang
+1   1
+#    charge     sigma     epsilon  lambda1_mol       lambda2_mol     x            y           z      Zatomic   Atom Name  Surname
+1     -1.0      4.581      0.45        0.00              0.00       0.00          0.00        0.00       53        I          I-1 

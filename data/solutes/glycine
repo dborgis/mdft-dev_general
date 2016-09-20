@@ -1,0 +1,13 @@
+Glycine with config from http://chemistry.gsu.edu/Glactone/PDB/Amino_Acids/aa.html  charge from Journal of Molecular Structure: THEOCHEM, Volume 617, Issues 1–3 and charmm param
+10 10
+#    charge     sigma            epsilon     lambda1_mol   lambda2_mol     x            y           z      Zatomic   Atom Name  Surname
+1    -0.852      3.29633       0.8368          30.0          30.0        -1.606        0.811      0.361        7          N      NH2    
+2     0.615      3.56359       0.29288          0.0           0.0        -0.692       -0.283      0.748        6          C      C
+3    -0.401      3.87541       0.23012          0.0           0.0         0.549       -0.235     -0.103        6          C      CT2
+4    -0.535      3.02906       0.50208         30.0          30.0         1.674       -0.229      0.370        8          O      OB
+5     0.411      0.400014      0.192464         0.0           0.0        -1.135        1.772      0.518        1          H      H   
+6    -0.656      3.02906       0.50208         30.0          30.0         0.350       -0.203     -1.418        8          O      OB
+7     0.400      0.400014      0.192464         0.0           0.0        -2.523        0.762      0.933        1          H      H
+8     0.227      0.400014      0.192464         0.0           0.0        -0.426       -0.206      1.816        1          H      H
+9     0.235      0.400014      0.192464         0.0           0.0        -1.188       -1.253      0.581        1          H      H
+10     0.556      0.400014      0.192464         0.0           0.0         1.189       -0.176     -1.863        1          H      H

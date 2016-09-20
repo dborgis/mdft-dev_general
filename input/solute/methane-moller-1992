@@ -1,4 +1,0 @@
-Methane, Moller et al., Mol. Phys. 75, 363 (1992) - http://www.tandfonline.com/doi/abs/10.1080/00268979200100291
-1 1
-#    charge     sigma     epsilon    lambda1_mol   lambda2_mol   x            y           z      Zatomic   Atom Name  Surname
-1      0.0      3.7327    1.24651      0.0           0.0       0.0         0.0          0.0       6         C         CH4     

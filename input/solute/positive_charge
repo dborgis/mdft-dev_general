@@ -1,4 +1,0 @@
-+1 charged solute for debugging the poisson solver
-1	1
-#	charge	sigma	epsilon	x	y	z	Zatomic	Atom-Name	Surname
-1	1.0	0.0	0.0	0.0	0.0	0.0	1	H		H
