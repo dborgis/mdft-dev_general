@@ -9,12 +9,12 @@ contains
         implicit none
         complex(dp), allocatable, intent(out) :: cmnmunukhi(:,:)
         character(len=40), parameter :: filename(0:5) = &
-            ["input/dcf/water/SPCE/ck_nonzero_nmax0_ml",&
-             "input/dcf/water/SPCE/ck_nonzero_nmax1_ml",&
-             "input/dcf/water/SPCE/ck_nonzero_nmax2_ml",&
-             "input/dcf/water/SPCE/ck_nonzero_nmax3_ml",&
-             "input/dcf/water/SPCE/ck_nonzero_nmax4_ml",&
-             "input/dcf/water/SPCE/ck_nonzero_nmax5_ml" ]
+            ["data/dcf/spce-ck_nonzero_nmax0_ml",&
+             "data/dcf/spce-ck_nonzero_nmax1_ml",&
+             "data/dcf/spce-ck_nonzero_nmax2_ml",&
+             "data/dcf/spce-ck_nonzero_nmax3_ml",&
+             "data/dcf/spce-ck_nonzero_nmax4_ml",&
+             "data/dcf/spce-ck_nonzero_nmax5_ml" ]
         integer, intent(in) :: mmax
         integer, intent(in) :: mrso ! Symetry of the main axis. For instance, mrso=2 for a molecule of symetry C2v (like water).
         real(dp), intent(in) :: qmaxwanted
