@@ -92,7 +92,9 @@ subroutine energy_and_gradient (f, df)
         ! print*, "ff%ext            =", real(ff%ext)
         ! print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
       else
+        call cpu_time(t(1))
         call energy_ideal_and_external (ff%id, ff%ext)
+        call cpu_time(t(2))
       end if
       f = f +ff%id +ff%ext
     end if
@@ -130,7 +132,9 @@ subroutine energy_and_gradient (f, df)
           call cpu_time(t(6))
         !   print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
         else
+          call cpu_time(t(5))
           call energy_cproj_mrso( ff%exc_cproj, print_timers=.false.)
+          call cpu_time(t(6))
         end if
         f = f + ff%exc_cproj
     end if
@@ -205,7 +209,11 @@ subroutine energy_and_gradient (f, df)
         Texc = t(6)-t(5)
         Textid = t(2)-t(1)
         Ttot = Texc+Textid
-        pgtol = real(maxval(df))
+        if (present(df)) then
+            pgtol = real(maxval(df))
+        else
+            pgtol = 0
+        end if
         reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
         write(*,"(I5,11F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
     end block
