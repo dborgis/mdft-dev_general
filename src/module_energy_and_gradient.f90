@@ -210,7 +210,6 @@ subroutine energy_and_gradient (f, df)
         else
             pgtol = 0
         end if
-        pgtol = real(maxval(df))
         reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
         write(*,"(I5,11F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
     end block
