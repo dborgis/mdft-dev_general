@@ -205,6 +205,11 @@ subroutine energy_and_gradient (f, df)
         Texc = t(6)-t(5)
         Textid = t(2)-t(1)
         Ttot = Texc+Textid
+        if (present(df)) then
+            pgtol = real(maxval(df))
+        else
+            pgtol = 0
+        end if
         pgtol = real(maxval(df))
         reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
         write(*,"(I5,11F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
