@@ -92,7 +92,9 @@ subroutine energy_and_gradient (f, df)
         ! print*, "ff%ext            =", real(ff%ext)
         ! print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
       else
+        call cpu_time(t(1))
         call energy_ideal_and_external (ff%id, ff%ext)
+        call cpu_time(t(2))
       end if
       f = f +ff%id +ff%ext
     end if
@@ -130,7 +132,9 @@ subroutine energy_and_gradient (f, df)
           call cpu_time(t(6))
         !   print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
         else
+          call cpu_time(t(5))
           call energy_cproj_mrso( ff%exc_cproj, print_timers=.false.)
+          call cpu_time(t(6))
         end if
         f = f + ff%exc_cproj
     end if
