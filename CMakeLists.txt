@@ -144,7 +144,6 @@ set(mdft_SRCS
 #
 # Create a symlink to the input and data folders
 #
-EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/input" "${CMAKE_BINARY_DIR}/input")
 EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/data"  "${CMAKE_BINARY_DIR}/data")
 
 #
