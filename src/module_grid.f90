@@ -62,7 +62,7 @@ contains
         grid%length = getinput%dp3( "boxlen" , defaultvalue=[128._dp,128._dp,128._dp], assert=">0" )
         if (ANY( grid%length  <= 0._dp ) ) THEN
             PRINT*,'The supercell cannot have negative length.'
-            PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',grid%length
+            PRINT*,'Here are your Lx, Ly and Lz as defined in dft.in :',grid%length
             STOP "in module_grid> init_grid"
         end if
         grid%l(1:3) = grid%length(1:3)

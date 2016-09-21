@@ -15,7 +15,7 @@ module module_input
   ! everything is private by default
   private
 
-  character(len=12), parameter :: inputfilename="input/dft.in"
+  character(len=12), parameter :: inputfilename="dft.in"
 
   character(len=100), public, allocatable, protected :: input_line(:) ! array containing all input lines
   logical, public, protected :: verbose
@@ -630,6 +630,7 @@ contains
 
     ! print what has been considered as input by the parser, that is what is contained by input_line(), to output dir.
     call execute_command_line("mkdir -p output", WAIT=.TRUE.)  ! just create folder. If it already exists, nothing happens.
+    call execute_command_line ("cp dft.in output/.")
     open(10, FILE='output/inputfile.out' )
     block
       integer :: i
