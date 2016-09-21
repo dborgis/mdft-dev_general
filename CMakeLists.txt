@@ -138,6 +138,7 @@ set(mdft_SRCS
   src/module_orientation_projection_transform.f90
   src/module_lennardjones.f90
 #  src/module_mpi.F90
+  src/module_pressure_correction.f90
 )
 
 
