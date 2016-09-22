@@ -592,7 +592,8 @@ contains
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
                     ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
                     where(abs(R)<epsilon(1._dp)) R=(0,0) ! used to prevent underflow in gamma_p_ * R if gamma_p is very low
-
+                    where(abs(gamma_p_q)<epsilon(1._dp)) gamma_p_q=(0,0)
+                    where(abs(gamma_p_mq)<epsilon(1._dp)) gamma_p_mq=(0,0)
 
                     deltarho_p_q = (0._dp,0._dp)
                     deltarho_p_mq = (0._dp,0._dp)
