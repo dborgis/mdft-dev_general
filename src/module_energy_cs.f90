@@ -170,11 +170,11 @@ contains
         do is=1, solvent(1)%nspec
             select case (solvent(is)%name)
             case ("spce")
-                c_s%filename = 'input/direct_correlation_functions/water/SPCE/cs.in'
+                c_s%filename = 'input/dcf/water/SPCE/cs.in'
             case ("spc")
-                c_s%filename = 'input/direct_correlation_functions/water/SPC_Lionel_Daniel/cs.in'
+                c_s%filename = 'input/dcf/water/SPC_Lionel_Daniel/cs.in'
             case ("stockmayer")
-                c_s%filename = 'input/direct_correlation_functions/stockmayer/cs.in'
+                c_s%filename = 'input/dcf/stockmayer/cs.in'
             case ("perso")
                 c_s%filename = 'input/cs.in'
             case default

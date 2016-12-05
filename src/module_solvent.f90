@@ -38,7 +38,7 @@ module module_solvent
         integer :: nspec ! number of solvent species
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         real(dp) :: diameter ! hard sphere diameter, for instance
-        real(dp), allocatable :: xi(:,:,:,:) ! ix, iy, iz, io    xi**2=rho/rho0
+        real(dp), allocatable :: xi(:,:,:,:) ! io, ix, iy, iz    xi**2=rho/rho0
         type (site_type), allocatable :: site(:)
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
@@ -169,8 +169,9 @@ contains
         use mathematica, only: chop
         use module_input, only: getinput
         implicit none
-        integer :: n, ios, i, j, k, l, s
+        integer :: n, ios, i, j, k, l, s, ncomma
         character(180) :: polarization
+        character(180) :: someline
 
         if (allocated(solvent)) then
             print*, "bug dans read_solvent. Le 21 octobre 2015, j'ai transféré l'allocation de allocate_from_input a read_solvent"
@@ -179,28 +180,55 @@ contains
             stop "dans module_solvent/read_solvent"
         end if
 
-
-        s = getinput%int('nb_implicit_species', defaultvalue=1, assert=">0") ! get the number of implicit solvant species
+        !
+        ! How many solvent species are there ?
+        !
+        ncomma = scan( getinput%char('solvent') ,",") ! returns the number of occurences of "," in getinput%char('solvent')
+        select case (ncomma)
+        case(0)
+            s=1
+        case default
+            s=ncomma+1 ! 1 comma means 2 solvents, 2 comma means 3 solvens
+            error stop "the initialization of the solvent species in module_solvent is valid only for 1 species"
+        end select
         allocate( solvent(s) )
         solvent(:)%nspec = s
 
+        !
+        ! Get the information about the solvent
+        !
+        solvent(1)%name = getinput%char('solvent') ! This wont be valid anymore when several solvents will be used.
+        select case (solvent(1)%name)
+        case ("spce")
+            solvent(1)%nsite = 3
+            solvent(1)%molrotsymorder = 2
+            allocate( solvent(1)%site(3) )
+            solvent(1)%site(1:3)%q = [-0.8476, 0.4238, 0.4238]
+            solvent(1)%site(1:3)%sig = [3.166, 0., 0.]
+            solvent(1)%site(1:3)%eps = [0.65, 0., 0.]
+            solvent(1)%site(1)%r = [0., 0., 0.]
+            solvent(1)%site(2)%r = [0.816495, 0.0, 0.5773525]
+            solvent(1)%site(3)%r = [-0.816495, 0.0, 0.5773525]
+            solvent(1)%site(1:3)%Z = [8, 1, 1]
+            solvent(1)%n0 = 0.0332891
+            solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+        case ("acetonitrile")
+            solvent(1)%nsite = 3 ! ---Me---C--N--->z
+            solvent(1)%molrotsymorder = 1000
+            allocate( solvent(1)%site(3) )
+            solvent(1)%site(1:3)%q = [0.269, 0.129, -0.398]
+            solvent(1)%site(1:3)%sig = [3.6, 3.4, 3.3]
+            solvent(1)%site(1:3)%eps = [1.59, 0.416, 0.416]
+            solvent(1)%site(1)%r = [0., 0., -1.46]
+            solvent(1)%site(2)%r = [0., 0., 0.]
+            solvent(1)%site(3)%r = [0., 0., 1.17]
+            solvent(1)%site(1:3)%Z = [9, 6, 7] ! CH3
+            solvent(1)%n0 = 0.0289
+            solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+        case default
+            error stop "Solvent unkown"
+        end select
 
-        OPEN(5, FILE= 'input/solvent.in', STATUS= 'old', IOSTAT= ios )! open input/solvent.in and check if it is readable
-        IF ( ios/=0 ) STOP 'ERROR: solvent.in can not be opened.'
-        READ (5,*) solvent(1)%name
-        READ (5,*) solvent(1)%nsite!, solvent(1)%molrotsymorder
-        i = solvent(1)%nsite
-        allocate (solvent(1)%site(i), stat=ios)
-        if (ios /= 0) stop "ERROR: wrong allocate of solvent%site in read_solvent.f90"
-        READ(5,*) ! comment line
-        DO n = 1 , size(solvent(1)%site)
-            READ(5,*) i, solvent(1)%site(n)%q, solvent(1)%site(n)%sig, solvent(1)%site(n)%eps, solvent(1)%site(n)%r
-            if (i/=n) then
-                print*, "in solvent.in, index in first column is very strange for site number", n
-                stop "have a look at read_solvent.f90"
-            end if
-        END DO
-        CLOSE(5)
 
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
@@ -239,21 +267,6 @@ contains
             call chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
         end select
 
-        ! look for bulk density of the reference solvent fluid. for instance 0.0332891 for H2O and 0.0289 for Stockmayer
-        select case (solvent(1)%nspec)
-        case (1)
-            solvent(1)%n0= getinput%dp("bulk_density", assert=">0")
-        case (2)
-            solvent(1:2)%n0= getinput%dp2("bulk_density", assert=">0")
-        case (3)
-            solvent(1:3)%n0= getinput%dp3("bulk_density", assert=">0")
-        case default
-            print*, "In module solvent you are looking for the bulk density for nspec>3. Not implemented yet"
-            error stop
-        end select
-
-        solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/grid%molrotsymorder)
-
         call read_mole_fractions
         call functional_decision_tree
 
@@ -266,6 +279,7 @@ contains
     !into energy_polarization_..._.f90 to compute the (multipolar) polarization Free energy.
 
     subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
+        use module_grid, only: grid
         implicit none
         integer :: nx, ny, nz, no, ns
         integer :: i, j, k, n, s, io, d

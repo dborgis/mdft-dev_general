@@ -30,13 +30,15 @@ contains
 
     !  call init_periodic_table
       ! print *, ptable ( 1 ) % name
-      ! open and test if input/solute.in is ok
+      ! open and test if solute.in is ok
 
-      open (5, FILE='input/solute.in', STATUS='old', IOSTAT=stat)
+      open (5, FILE='solute.in', STATUS='old', IOSTAT=stat, action="read")
       IF (stat /= 0) THEN
         PRINT*,'solute.in cannot be opened ! => STOP !'
         STOP
       END IF
+      ! copy solute.in in the output folder for further reference
+      call execute_command_line ("cp solute.in output/.")
 
       READ (5,*) ! comment line
       READ (5,*) solute%nsite ! total number of atom sites of the solute
@@ -75,26 +77,45 @@ contains
 
     ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
     subroutine mv_solute_to_center
+        use precision_kinds, only: dp
         use module_input  ,only: getinput
         use module_grid, only: grid
         implicit none
-        integer :: i
+        integer :: i, d
+        real(dp) :: coo_midbox_x, coo_midbox_y, coo_midbox_z
+        real(dp) :: solute_mean_x, solute_mean_y, solute_mean_z
         if (.not.grid%isinitiated) then
             print*, "The derived type grid is not allocated in mv_solute_to_center (in module_solute). It should"
             stop "in module_solute, line 87"
         end if
         if( getinput%log( 'translate_solute_to_center', defaultvalue=.true. )) then
-            solute%site%r(1) = solute%site%r(1) + grid%length(1)/2.0_dp
-            solute%site%r(2) = solute%site%r(2) + grid%length(2)/2.0_dp
-            solute%site%r(3) = solute%site%r(3) + grid%length(3)/2.0_dp
+            ! what are the coordinates of the middle of the simulation box ?
+            coo_midbox_x = grid%lx/2._dp
+            coo_midbox_y = grid%ly/2._dp
+            coo_midbox_z = grid%lz/2._dp
+            ! what are the coordinates of the center of mass of the solute?
+            ! we don't now the mass of the sites as of mdft-dev 2016-07-20.
+            ! we'll thus say all sites have the same mass.
+            ! Thus, the coordinates of the center of mass is the mean coordinate
+            solute_mean_x = sum(solute%site(:)%r(1)) / real(solute%nsite,dp)
+            solute_mean_y = sum(solute%site(:)%r(2)) / real(solute%nsite,dp)
+            solute_mean_z = sum(solute%site(:)%r(3)) / real(solute%nsite,dp)
+            ! Now, we translate this center of mass to the center of the box
+            ! by shifting all coordinates (and thus the center of mass).
+            ! Removing solute_mean_x, y and z translates the center of mass to coordinate 0,0,0
+            ! Then add coo_midbox_x, y and z to translate the center of mass to center of the box.
+            solute%site%r(1) = solute%site%r(1) + coo_midbox_x - solute_mean_x
+            solute%site%r(2) = solute%site%r(2) + coo_midbox_y - solute_mean_y
+            solute%site%r(3) = solute%site%r(3) + coo_midbox_z - solute_mean_z
+            ! solute%site%r(1) = solute%site%r(1) + grid%length(1)/2.0_dp
+            ! solute%site%r(2) = solute%site%r(2) + grid%length(2)/2.0_dp
+            ! solute%site%r(3) = solute%site%r(3) + grid%length(3)/2.0_dp
         end if
         ! check if some positions are out of the supercell
         !j is a test tag. We loop over this test until every atom is in the box.
         ! This allows for instance, if a site is two boxes too far to still be ok.
-        do concurrent( i=1:solute%nsite )
-            solute%site(i)%r(1) = MODULO ( solute%site(i)%r(1) , grid%length(1) )
-            solute%site(i)%r(2) = MODULO ( solute%site(i)%r(2) , grid%length(2) )
-            solute%site(i)%r(3) = MODULO ( solute%site(i)%r(3) , grid%length(3) )
+        do concurrent( i=1:solute%nsite, d=1:3 )
+            solute%site(i)%r(d) = MODULO ( solute%site(i)%r(d) , grid%length(d) )
         end do
     end subroutine mv_solute_to_center
 

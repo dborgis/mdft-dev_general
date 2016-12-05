@@ -1,4 +1,5 @@
 module module_energy_and_gradient
+  use iso_c_binding, only: c_float
   use precision_kinds, only: dp
   implicit none
   private
@@ -20,6 +21,7 @@ module module_energy_and_gradient
                 tot=0._dp,&
                 pscheme_correction=-999._dp,&
                 pbc_correction=-999._dp
+    integer :: ieval=0
   end type
   type (f_type), public :: ff
   public :: energy_and_gradient
@@ -40,12 +42,13 @@ subroutine energy_and_gradient (f, df)
     ! FF is the TOTAL ENERGY of the system, it is thus the functional of the density that is minimized by solver
     ! dF_new is the gradient of FF with respect to all coordinates. Remember it is of the kind dF_new ( number of variables over density (ie angles etc))
 
-    use precision_kinds, only: dp, sp
+    use iso_c_binding, only: c_float
+    use precision_kinds, only: dp
     use module_solvent, only: solvent
     use module_grid, only: grid
     use module_energy_ideal_and_external, only: energy_ideal_and_external
-    use module_energy_cs, only: energy_cs
-    use module_energy_cdeltacd, only: energy_cdeltacd
+    ! use module_energy_cs, only: energy_cs
+    ! use module_energy_cdeltacd, only: energy_cdeltacd
     use module_energy_cproj_mrso, only: energy_cproj_mrso
     ! use module_energy_cproj_no_symetry, only: energy_cproj_no_symetry
     ! use module_energy_ck_angular, only: energy_ck_angular
@@ -53,17 +56,18 @@ subroutine energy_and_gradient (f, df)
     ! use module_energy_luc_fast, only: energy_luc_fast
     use module_input, only: getinput
     ! use module_energy_cproj_slow, only: energy_cproj_slow
+    use module_lbfgs_nocedal_mdft, only:lbfgsb
 
     implicit none
 
     real(dp), intent(out) :: f
-    real(dp), intent(out) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
+    real(dp), intent(out), optional :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec)
     real(dp), parameter :: zerodp=0._dp
-    real(sp) :: t(10)
+    real(c_float) :: t(10)
     real(dp) :: fold
     integer :: ns, s
 
-    ! print*, "IN MODULE_ENERGY_AND_GRADIENT, I USE A DF_TRASH TO TEST STUFF BUT IT USES LOTS OF MEMORY AND SHOULD BE REMOVED"
+    ff%ieval = ff%ieval +1
 
     if (.not. allocated(solvent)) then
       print*, "in energy_and_gradient, solvent()% is not allocated"
@@ -73,8 +77,7 @@ subroutine energy_and_gradient (f, df)
 
     fold=f
     f  = zerodp
-    df = zerodp
-    ! df_trash = zerodp
+    if(present(df)) df = zerodp
     s=1
 
 
@@ -82,45 +85,57 @@ subroutine energy_and_gradient (f, df)
     ! Ideal and external free energy functionals
     !
     if (solvent(s)%do%id_and_ext) then
-      call cpu_time(t(1))
-      call energy_ideal_and_external (ff%id, ff%ext, df)
-      call cpu_time(t(2))
-      print*, "ff%ext            =", real(ff%ext)
-      print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
+      if(present(df)) then
+        call cpu_time(t(1))
+        call energy_ideal_and_external (ff%id, ff%ext, df)
+        call cpu_time(t(2))
+        ! print*, "ff%ext            =", real(ff%ext)
+        ! print*, "ff%id             =", real(ff%id), " in",t(2)-t(1),"sec"
+      else
+        call cpu_time(t(1))
+        call energy_ideal_and_external (ff%id, ff%ext)
+        call cpu_time(t(2))
+      end if
       f = f +ff%id +ff%ext
     end if
 
     !
     ! purely radial component, with c_s
     !
-    if (solvent(s)%do%exc_cs) then
-        call cpu_time(t(3))
-        call energy_cs (ff%exc_cs, df)
-        call cpu_time(t(4))
-        print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
-        f = f + ff%exc_cs
-    end if
+    ! if (solvent(s)%do%exc_cs) then
+    !     call cpu_time(t(3))
+    !     call energy_cs (ff%exc_cs, df)
+    !     call cpu_time(t(4))
+    !     print*, "ff%exc_cs         =", real(ff%exc_cs), " in",t(4)-t(3),"sec"
+    !     f = f + ff%exc_cs
+    ! end if
 
     !
     ! with c_d and c_delta
     !
-    if (solvent(s)%do%exc_cdeltacd) then
-        call cpu_time(t(5))
-        call energy_cdeltacd (ff%exc_cdeltacd, df)
-        call cpu_time(t(6))
-        print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
-        f = f + ff%exc_cdeltacd
-    end if
+    ! if (solvent(s)%do%exc_cdeltacd) then
+    !     call cpu_time(t(5))
+    !     call energy_cdeltacd (ff%exc_cdeltacd, df)
+    !     call cpu_time(t(6))
+    !     print*, "ff%exc_cdeltacd   =", real(ff%exc_cdeltacd), " in",t(6)-t(5),"sec"
+    !     f = f + ff%exc_cdeltacd
+    ! end if
 
 
     !
     ! with Luc's routine
     !
     if (solvent(s)%do%exc_cproj) then
-        call cpu_time(t(5))
-        call energy_cproj_mrso( ff%exc_cproj, df)
-        call cpu_time(t(6))
-        print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+        if(present(df)) then
+          call cpu_time(t(5))
+          call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.false.)
+          call cpu_time(t(6))
+        !   print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
+        else
+          call cpu_time(t(5))
+          call energy_cproj_mrso( ff%exc_cproj, print_timers=.false.)
+          call cpu_time(t(6))
+        end if
         f = f + ff%exc_cproj
     end if
 
@@ -150,18 +165,21 @@ subroutine energy_and_gradient (f, df)
 
     !
     ! adhoc corrections to the solvation free energy (Hunenberger, pressure etc.)
+    ! if you use systems with non-zero net charge (like one ion in water)
+    ! and you use lattice schemes (FFT based) methods for computing the external potential
     !
-    if (.not. getinput%log('direct_sum', defaultvalue=.false.)) then
-
-        call typeB_corrections
-        print*, "ff%pbc correction =", real(ff%pbc_correction)
-        f = f + ff%pbc_correction
-
-        call typeC_corrections
-        print*, "ff%pscheme corr   =", real(ff%pscheme_correction)
-        f = f + ff%pscheme_correction
-
-    end if
+    block
+        use module_solute, only: solute
+        if ( .not. getinput%log('direct_sum', defaultvalue=.false.) .and. abs(sum(solute%site%q))>1.E-7 ) then
+            call typeB_corrections
+            f = f + ff%pbc_correction
+            call typeC_corrections
+            f = f + ff%pscheme_correction
+        else
+            ff%pbc_correction=0._dp
+            ff%pscheme_correction=0._dp
+        end if
+    end block
 
 
 
@@ -177,11 +195,33 @@ subroutine energy_and_gradient (f, df)
 
     ff%tot = f
 
-    print*, "                     ####################"
-    print*, "TOTAL FF [kJ/mol] =  #", real(f), "#"
-    print*, "                     ####################"
-    print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"objectif=",real(0.00001)
-    print*, "pgtol=", real(maxval(df)),"objectif=",real(0.001)
+
+
+    block
+        logical, save :: printheader = .true.
+        if(printheader) then
+            write(*,'(A5,11A14)') "#eval","Ftot","Fext","Fid","Fexc","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
+            printheader = .false.
+        end if
+    end block
+    block
+        real(dp) :: reldf, Texc, Ttot, Textid, pgtol
+        Texc = t(6)-t(5)
+        Textid = t(2)-t(1)
+        Ttot = Texc+Textid
+        if (present(df)) then
+            pgtol = real(maxval(df))
+        else
+            pgtol = 0
+        end if
+        reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
+        write(*,"(I5,11F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
+    end block
+
+! if(present(df)) then
+!     print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"target=",lbfgsb%factr*epsilon(1._dp)
+!     print*, "pgtol=", real(maxval(df)),                                "target=",lbfgsb%pgtol
+! end if
 
 end subroutine energy_and_gradient
 
@@ -202,21 +242,25 @@ end subroutine energy_and_gradient
     real(dp) :: solute_net_charge, L
     real(dp), parameter :: dielectric_constant_spce=71._dp
     solute_net_charge = sum (solute%site%q)
-    if (.not. all(grid%length==grid%length(1))) then
-      print*, "The grid is not cubic."
-      print*, "The periodic boundary conditions correction is intended for cubic cells."
-      print*, "We use the average length sum(len)/3."
-      L = sum(grid%length)/3._dp
+    if( abs(solute_net_charge)<1.E-7 ) then
+      ff%pbc_correction = 0._dp
     else
-      L = grid%lx
+      if (.not. all(grid%length==grid%length(1))) then
+        print*, "The grid is not cubic."
+        print*, "The periodic boundary conditions correction is intended for cubic cells."
+        print*, "We use the average length sum(len)/3."
+        L = sum(grid%length)/3._dp
+      else
+        L = grid%lx
+      end if
+      if (L<=epsilon(1._dp)) then
+        error stop "sherY6S%hx6YYUJ"
+      end if
+      ! The dielectric constant of SPC/E water is 71. See Kusalik and Svishchev, "The Spatial Structure in Liquid Water", Science 265, 1219 (1994) doi:10.1126/science.265.5176.1219
+      ! The original SPC/E paper by Berendsen does not provide this information.
+      ! see https://www.wolframalpha.com/input/?i=-2.837297*(electron+charge)%5E2%2F(4*pi*vacuum+permittivity*2*angstroms)+to+kJ%2Fmol
+      ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant_spce)
     end if
-    if (L<=epsilon(1._dp)) then
-      error stop "sherY6S%hx6YYUJ"
-    end if
-    ! The dielectric constant of SPC/E water is 71. See Kusalik and Svishchev, "The Spatial Structure in Liquid Water", Science 265, 1219 (1994) doi:10.1126/science.265.5176.1219
-    ! The original SPC/E paper by Berendsen does not provide this information.
-    ! see https://www.wolframalpha.com/input/?i=-2.837297*(electron+charge)%5E2%2F(4*pi*vacuum+permittivity*2*angstroms)+to+kJ%2Fmol
-    ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant_spce)
   end subroutine typeB_corrections
 
 

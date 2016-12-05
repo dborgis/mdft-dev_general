@@ -180,14 +180,14 @@ contains
         end if
         select case (solvent(1)%name)
         case ("spce")
-            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPCE/cdelta.in'
-            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPCE/cd.in'
+            solvent(1)%cdelta%filename='input/dcf/water/SPCE/cdelta.in'
+            solvent(1)%cd%filename='input/dcf/water/SPCE/cd.in'
         case ("spc")
-            solvent(1)%cdelta%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cdelta.in'
-            solvent(1)%cd%filename='input/direct_correlation_functions/water/SPC_Lionel_Daniel/cd.in'
+            solvent(1)%cdelta%filename='input/dcf/water/SPC_Lionel_Daniel/cdelta.in'
+            solvent(1)%cd%filename='input/dcf/water/SPC_Lionel_Daniel/cd.in'
         case ("stockmayer")
-            solvent(1)%cdelta%filename='input/direct_correlation_functions/stockmayer/cdelta.in'
-            solvent(1)%cd%filename='input/direct_correlation_functions/stockmayer/cd.in'
+            solvent(1)%cdelta%filename='input/dcf/stockmayer/cdelta.in'
+            solvent(1)%cd%filename='input/dcf/stockmayer/cd.in'
         case ("perso")
             solvent(1)%cdelta%filename='input/cdelta.in'
             solvent(1)%cd%filename='input/cd.in'

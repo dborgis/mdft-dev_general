@@ -62,7 +62,7 @@ contains
         grid%length = getinput%dp3( "boxlen" , defaultvalue=[128._dp,128._dp,128._dp], assert=">0" )
         if (ANY( grid%length  <= 0._dp ) ) THEN
             PRINT*,'The supercell cannot have negative length.'
-            PRINT*,'Here are your Lx, Ly and Lz as defined in input/dft.in :',grid%length
+            PRINT*,'Here are your Lx, Ly and Lz as defined in dft.in :',grid%length
             STOP "in module_grid> init_grid"
         end if
         grid%l(1:3) = grid%length(1:3)
@@ -89,12 +89,7 @@ contains
         grid%dv = product(grid%dl)
 
         ! We now have a full description of the space grid
-        print*
-        print*, "===== Grid ====="
-        print*, "   lx, ly, lz :", real(grid%length)
-        print*, "   nx, ny, nz :", grid%n_nodes
-        print*, "   dx, dy, dz :", real(grid%dl)
-
+        write(*,'(A,3F7.3,A,3I3,A,3F7.4)') "Grid: lx,ly,lz= ",grid%length," | nx,ny,nz= ",grid%n_nodes," | dx,dy,dz =",grid%dl
         grid%mmax = getinput%int("mmax", defaultvalue=0, assert=">=0")
         grid%ntheta = grid%mmax+1
         grid%nphi = 2*grid%mmax+1
@@ -118,7 +113,7 @@ contains
         allocate( grid%wpsiofnpsi(grid%npsi) ,source=zero)
         grid%wphiofnphi = 1._dp/real(grid%nphi,dp)
         grid%wpsiofnpsi = 1._dp/real(grid%npsi*grid%molrotsymorder,dp)
-        PRINT*,'ATTENTION !!!!!!!!!!! JE PRENDS LA DEF DE MDFT POUR PSI ET PHI, pas celle de Luc'
+        ! PRINT*,'ATTENTION !!!!!!!!!!! JE PRENDS LA DEF DE MDFT POUR PSI ET PHI, pas celle de Luc'
         grid%psiofnpsi = [(   real(i-1,dp)*grid%dpsi   , i=1,grid%npsi )]
         grid%phiofnphi = [(   real(i-1,dp)*grid%dphi   , i=1,grid%nphi )]
         call gauss_legendre( grid%ntheta, grid%thetaofntheta, grid%wthetaofntheta, err)
@@ -161,13 +156,13 @@ contains
         close(56)
 
         mmax=grid%mmax
-        print*, "   mmax =",int(grid%mmax,1)
-        print*, "   =>",(mmax+1)*(2*mmax+1)**2,"orientations and", &
-            sum( [( [( [( 1 ,mu=-m,m)], mup=-m,m)], m=0,grid%mmax)] ), "projections"
-        print*, "   molrotsymorder =",int(grid%molrotsymorder,1)
-        print*, "   =>",grid%no,"orientations and",grid%np,"projections"
-        print*, "   θ φ ψ:",int([grid%ntheta,grid%nphi,grid%npsi],1)
-        print*, "===== Grid ====="
+        block
+            integer :: nowithoutmrso, npwithoutmrso
+            nowithoutmrso = (mmax+1)*(2*mmax+1)**2
+            npwithoutmrso = sum( [( [( [( 1 ,mu=-m,m)], mup=-m,m)], m=0,grid%mmax)] )
+            write(*,*) "mmax=",grid%mmax," => no,np,=",nowithoutmrso,npwithoutmrso
+            write(*,*) "but mrso=",grid%molrotsymorder," => no,np,=",grid%no,grid%np,"with θ φ ψ:",int([grid%ntheta,grid%nphi,grid%npsi],1)
+        end block
 
         allocate( grid%rotxx(grid%no) , grid%rotxy(grid%no), grid%rotxz(grid%no), source=0._dp)
         allocate( grid%rotyx(grid%no) , grid%rotyy(grid%no), grid%rotyz(grid%no), source=0._dp)

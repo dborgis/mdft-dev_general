@@ -1,0 +1,7 @@
+module git ! fondamental_constants
+
+    implicit none
+
+    CHARACTER (LEN=*),parameter :: commit = "${GIT_SHA1}"
+
+END MODULE git

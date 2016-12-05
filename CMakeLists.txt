@@ -17,6 +17,9 @@ project("mdft-dev")
 # note: string given to enable_language is case-sensitive
 enable_language(Fortran)
 
+#option to build FFTW-3.3.4 with MDFT
+option(BUILD_FFTW "build FFTW-3.3.4 with MDFT" OFF)
+
 ## guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. Follow instructions in README.md.")
@@ -55,12 +58,19 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xhost")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 endif()
+
+
+#add_subdirectory(vendor/bpp bpp EXCLUDE_FROM_ALL)
+#
+#bpp_preprocess(SRC_Bpp src/module_energy_cproj_mrso.F90.bpp src/module_rotation.F90.bpp)
+
+
 
 #############################
 # Now build mdft executable #
@@ -70,11 +80,10 @@ endif()
 set(mdft_SRCS
   src/module_blas_etc.f90
   src/module_lecture.f90
-#  src/module_energy_luc.f90
-#  src/module_energy_luc_fast.f90
+  src/module_read_c_luc.f90
+#  ${SRC_Bpp}
   src/module_rotation.f90
   src/module_energy_cproj_mrso.f90
-#  src/module_energy_cproj_no_symetry.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90
@@ -123,58 +132,72 @@ set(mdft_SRCS
   src/write_to_cube_file.f90
   src/module_wigner_d.f90
   src/module_orientation_projection_transform.f90
+  src/module_lennardjones.f90
 #  src/module_mpi.F90
+  src/module_pressure_correction.f90
 )
 
 
 #
-# Create a symlink to the input folder
+# Create a symlink to the input and data folders
 #
-EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/input" "${CMAKE_BINARY_DIR}/input")
+EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${CMAKE_SOURCE_DIR}/data"  "${CMAKE_BINARY_DIR}/data")
 
 #
 # Build FFTW
 #
 include(ExternalProject)
-ExternalProject_Add(
-  fftw
-  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
-  BUILD_COMMAND make -j4
-  INSTALL_COMMAND make install -j4
-)
-ExternalProject_Add(
-  fftwf
-  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
-  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
-  BUILD_COMMAND make -j4
-  INSTALL_COMMAND make install -j4
-)
-SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
-SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
-#find_package(FFTW REQUIRED)
 
 
+if(NOT BUILD_FFTW)
+	find_package(FFTW QUIET)
+    if(NOT FFTW_FOUND)
+		message(STATUS "WARNING: FFTW not found! FFTW-3.3.4 will be compile before MDFT.")
+		set(BUILD_FFTW ON)
+    endif()
+endif()
+
+
+if(BUILD_FFTW)
+	ExternalProject_Add(
+	  fftw
+	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
+	  BUILD_COMMAND make -j4
+	  INSTALL_COMMAND make install -j4
+	)
+	ExternalProject_Add(
+	  fftwf
+	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
+	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
+	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
+	  BUILD_COMMAND make -j4
+	  INSTALL_COMMAND make install -j4
+	)
+	SET(FFTW_INCLUDES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include)
+	SET(FFTW_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3.a;${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib/libfftw3f.a)
+endif()
+
+#get git commit
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+configure_file("${PROJECT_SOURCE_DIR}/src/module_git.f90.in" "git_module/module_git.f90")
+list(APPEND mdft_SRCS "git_module/module_git.f90")
 
 if (UNIX)
   message(STATUS "Building on a UNIX-like platform")
 
 
-  #link_directories(${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
-
   include_directories(${FFTW_INCLUDES})
   add_executable(mdft-dev ${mdft_SRCS})
+
+  message(STATUS "Compiling with fftw ${FFTW_LIBRARIES}")
   target_link_libraries(mdft-dev ${FFTW_LIBRARIES})
-  add_dependencies(mdft-dev fftw fftwf)
-  #set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/include")
-  #target_link_libraries(mdft-dev ${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3/lib)
 
-
-  # set_target_properties(mdft-dev PROPERTIES COMPILE_FLAGS "-I${FFTW_INCLUDES}" )
-  # target_link_libraries(mdft-dev ${FFTW_LIBRARIES} m)
-
+  if(BUILD_FFTW) 
+    add_dependencies(mdft-dev fftw fftwf)
+  endif()
 
 #  if("${MPI_Fortran_HAS_MODULE}")
 #        set_property(TARGET  mdft-dev
