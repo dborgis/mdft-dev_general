@@ -123,18 +123,18 @@ contains
       offset_y = (grid%ly - dy_prev * ny_prev) / 2
       offset_z = (grid%lz - dz_prev * nz_prev) / 2
 
-      if(nsite_prev .ne. size(solute%site) ) then
+      if(nsite_prev /= size(solute%site) ) then
         print*, "Error in restart. Solutes are differents"
         stop
       endif
 
       do isite=1,nsite_prev
         read ( 10, iostat=ios ) tmp_site
-        if( (solute%site(isite)%r(1) .ne. tmp_site%r(1)+offset_x) .or. &
-            (solute%site(isite)%r(2) .ne. tmp_site%r(2)+offset_y) .or. &
-            (solute%site(isite)%r(3) .ne. tmp_site%r(3)+offset_z) .or. &
-            (solute%site(isite)%sig .ne. tmp_site%sig) .or. &
-            (solute%site(isite)%eps .ne. tmp_site%eps) ) then
+        if( (solute%site(isite)%r(1) /= tmp_site%r(1)+offset_x) .or. &
+            (solute%site(isite)%r(2) /= tmp_site%r(2)+offset_y) .or. &
+            (solute%site(isite)%r(3) /= tmp_site%r(3)+offset_z) .or. &
+            (solute%site(isite)%sig /= tmp_site%sig) .or. &
+            (solute%site(isite)%eps /= tmp_site%eps) ) then
           print*, "Error in restart. Solutes are differents"
           stop
         endif
