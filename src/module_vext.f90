@@ -70,7 +70,7 @@ contains
         IF (getinput%log('hard_cylinder_solute', defaultvalue=.false.)) CALL compute_vext_hard_cylinder ! hard cylinder
         ! IF (getinput%char('other_predefined_vext')=='vextdef0') CALL vextdef0
 
-        CALL vext_total_sum ! compute total Vext(i,j,k,omega,s), the one used in the free energy functional
+        CALL vext_total_sum ! compute total solvent(s)%vext(orientation,i,j,k) that is used in the functional
 
         if (any(solvent(1)%vext <= -solvent(1)%vext_threeshold)) then
             print*, "OMG we should be calling this prevent_numerical_catastrophe..."
