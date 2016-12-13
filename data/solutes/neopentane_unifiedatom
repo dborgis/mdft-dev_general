@@ -1,4 +1,4 @@
 NEOPENTANE    doi:10.1063/1.3655672
 1
-#    charge     sigma(Ang)  epsilon(kJ/mol)    lambda1_mol   lambda2_mol    x      y      z      Zatomic   Atom Name  Surname
-1     0.0        6.15         3.496               0.0          0.0         0.0    0.0    0.0        12      !         C(CH3)4
+#    charge     sigma(Ang)  epsilon(kJ/mol)    x      y      z      Zatomic   Atom Name  Surname
+1     0.0        6.15         3.496           0.0    0.0    0.0        12      !         C(CH3)4

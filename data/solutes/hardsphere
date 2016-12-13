@@ -1,4 +1,4 @@
 #    Hard    sphere 
-1 1
-#    charge     sigma     epsilon    lambda1_mol   lambda2_mol   x            y           z      Zatomic   Atom Name  Surname
-1    0.00000    0.00000  0.0000000  0.0000000000  0.00000    0.1000   0.10000000 0.0000000    16         HS   HS
+1
+#    charge     sigma     epsilon       x      y    z   Zatomic   Atom Name  Surname
+1    0.00000    0.00000  0.0000000     0.1   0.10  0.0    16        HS   HS
