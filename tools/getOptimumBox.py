@@ -41,5 +41,5 @@ ly=ny/numberOfPointByA
 lz=nz/numberOfPointByA
 
 
-print "boxnod = "+str(nx)+" "+str(ny)+" "+str(nz)
+print "boxnod = "+str(int(nx))+" "+str(int(ny))+" "+str(int(nz))
 print "boxlen = "+str(lx)+" "+str(ly)+" "+str(lz)
