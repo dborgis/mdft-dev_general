@@ -212,6 +212,19 @@ contains
             solvent(1)%site(1:3)%Z = [8, 1, 1]
             solvent(1)%n0 = 0.0332891
             solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+        case ("tip3p")
+            solvent(1)%nsite = 3
+            solvent(1)%molrotsymorder = 2
+            allocate( solvent(1)%site(3) )
+            solvent(1)%site(1:3)%q = [-0.834, 0.417, 0.417]
+            solvent(1)%site(1:3)%sig = [3.15061, 0., 0.]
+            solvent(1)%site(1:3)%eps = [0.636386, 0., 0.]
+            solvent(1)%site(1)%r = [0., 0., 0.]
+            solvent(1)%site(2)%r = [0.756950, 0.0, 0.585882]
+            solvent(1)%site(3)%r = [-0.756950, 0.0, 0.585882] 
+            solvent(1)%site(1:3)%Z = [8, 1, 1]
+            solvent(1)%n0 = 0.03349459
+            solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
         case ("acetonitrile")
             solvent(1)%nsite = 3 ! ---Me---C--N--->z
             solvent(1)%molrotsymorder = 1000

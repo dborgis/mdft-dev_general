@@ -6,15 +6,11 @@ contains
     subroutine read_c_luc( cmnmunukhi, mmax, mrso, qmaxwanted, np, nq, dq, m, n, mu, nu, khi, p )
         use precision_kinds, only: dp
         use module_input, only: n_linesInFile
+        use module_solvent, only: solvent
         implicit none
         complex(dp), allocatable, intent(out) :: cmnmunukhi(:,:)
-        character(len=40), parameter :: filename(0:5) = &
-            ["data/dcf/spce-ck_nonzero_nmax0_ml",&
-             "data/dcf/spce-ck_nonzero_nmax1_ml",&
-             "data/dcf/spce-ck_nonzero_nmax2_ml",&
-             "data/dcf/spce-ck_nonzero_nmax3_ml",&
-             "data/dcf/spce-ck_nonzero_nmax4_ml",&
-             "data/dcf/spce-ck_nonzero_nmax5_ml" ]
+        character(len=4) :: endOfFilename
+        character(len=100) :: filename
         integer, intent(in) :: mmax
         integer, intent(in) :: mrso ! Symetry of the main axis. For instance, mrso=2 for a molecule of symetry C2v (like water).
         real(dp), intent(in) :: qmaxwanted
@@ -23,6 +19,11 @@ contains
         real(dp), intent(out) :: dq
         integer, intent(out), allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
         integer, parameter :: npluc(0:5) = [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
+
+
+        write (endOfFilename, "(I1,A3)") mmax,"_ml"
+        filename = "data/dcf/" // trim(solvent(1)%name) // "/" // trim(solvent(1)%name) // "-ck_nonzero_nmax" // trim(endOfFilename)
+		
         ! c(mnmunukhi) should not be already allocated
         if( allocated(cmnmunukhi)) error stop "c(m,n,mu,nu,khi) is already allocated in module_read_c_luc"
         ! Number of projections for mmax = 0 to 5
@@ -30,7 +31,7 @@ contains
         ! Inquire that the file exists
         block
             logical :: exist
-            inquire(file=filename(mmax), exist=exist)
+            inquire(file=filename, exist=exist)
             if( .not. exist) then
                 error stop "In module_read_c_luc/read_c_luc, filename does not exist"
             end if
@@ -38,15 +39,16 @@ contains
         ! Verify it contains 1024 values of q
         block
             integer :: nline
-            nline = n_linesInFile(filename(mmax)) -17 ! header contains 17 lines
+            nline = n_linesInFile(filename) -17 ! header contains 17 lines
             if( nline /= 1024) then
-                error stop "In module_read_c_luc/read_c_luc, filename does not contain 1024 values of q"
+				print*, "WARNING:!!!!! len of c file not verified here !!!!!!      module_read_c_luc.f90 at line 44"
+                !error stop "In module_read_c_luc/read_c_luc, filename does not contain 1024 values of q"
             end if
         end block
         ! Open the file. Its unit will be 88.
         block
             integer :: ios
-            open(88, file=filename(mmax), iostat=ios, status="old", action="read")
+            open(88, file=filename, iostat=ios, status="old", action="read")
             if( ios/=0) error stop "Cant open file in module_read_c_luc"
         end block
         ! Prepare the arrays that will contain the value of m, n, mu, nu and khi

@@ -238,9 +238,20 @@ end subroutine energy_and_gradient
     use precision_kinds, only: dp
     use module_solute, only: solute
     use module_grid, only: grid
+    use module_solvent, only: solvent
     implicit none
     real(dp) :: solute_net_charge, L
-    real(dp), parameter :: dielectric_constant_spce=71._dp
+    real(dp) :: dielectric_constant
+	select case (solvent(1)%name)
+        case ("spce")
+			dielectric_constant=71._dp
+        case ("tip3p")
+			dielectric_constant=82._dp
+        case default
+            error stop "Solvent dielectric constant unkown"
+        end select
+        
+        
     solute_net_charge = sum (solute%site%q)
     if( abs(solute_net_charge)<1.E-7 ) then
       ff%pbc_correction = 0._dp
@@ -259,7 +270,7 @@ end subroutine energy_and_gradient
       ! The dielectric constant of SPC/E water is 71. See Kusalik and Svishchev, "The Spatial Structure in Liquid Water", Science 265, 1219 (1994) doi:10.1126/science.265.5176.1219
       ! The original SPC/E paper by Berendsen does not provide this information.
       ! see https://www.wolframalpha.com/input/?i=-2.837297*(electron+charge)%5E2%2F(4*pi*vacuum+permittivity*2*angstroms)+to+kJ%2Fmol
-      ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant_spce)
+      ff%pbc_correction = -1971.01_dp*solute_net_charge**2/L*(1-1._dp/dielectric_constant)
     end if
   end subroutine typeB_corrections
 
