@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jube>
     <parameterset name="compile_parameters">
-      <parameter name="load_modules">Intel IntelMPI FFTW/3.3.4</parameter>
-      <parameter name="load_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.4</parameter>
+      <parameter name="load_modules">Intel IntelMPI FFTW/3.3.5</parameter>
+      <parameter name="load_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.5</parameter>
       <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
       <parameter name="branch">dev</parameter>
       <parameter name="make_target"></parameter>
@@ -13,15 +13,18 @@
       <do>echo "============= compilation : $compile_mode =========="</do>
       <do>echo "clone repo $repo in $branch"</do>
       <do>git clone -b $branch --recursive $repo</do>
+
       <do>echo "load modules $load_modules"</do>
       <do>module purge</do>
       <do>module load $load_modules</do>
       <do>module load CMake</do>
+
       <do active="$compile_scalasca">module load Scalasca</do>
       <do active="$compile_scalasca">echo "load module scalasca"</do>
+
       <do work_dir="mdft-dev">mkdir build</do>
       <do work_dir="mdft-dev/build">$cmake_line</do>
-      <do work_dir="mdft-dev/build">make -j VERBOSE=1</do>
+      <do work_dir="mdft-dev/build">make -j 4</do>
     </compilation_dos>	
 
     <parameterset name="inputParameter">
@@ -35,9 +38,7 @@
       <parameter name="boxnod" tag="boxnod128">128</parameter>
       <parameter name="boxnod" tag="boxnod256">256</parameter>
       <parameter name="boxnod" tag="benchBoxnod">64,128,256</parameter>
-      <parameter name="boxlen" mode="python">{"64" :"25.",
-											  "128":"50.",
-											  "256":"100."}.get("${boxnod}", "25.")</parameter>
+      <parameter name="boxlen" mode="python">{"64" :"25.", "128":"50.", "256":"100."}.get("${boxnod}", "25.")</parameter>
       <parameter name="boxlen" tag="boxlen50">50.</parameter>
       <parameter name="bulkdensity">0.033</parameter>
       <parameter name="temperature">298.15</parameter>
