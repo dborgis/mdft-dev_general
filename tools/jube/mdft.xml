@@ -111,13 +111,12 @@
       <copy>paraver/extrae.xml</copy>
       <copy>paraver/trace.sh</copy>
       <copy>scalasca/filter.txt.jube</copy>
-      <copy>data/dft.in</copy>
-      <copy>data/solute.in</copy>
+      <copy>input</copy>
     </fileset>
 
 
     <substituteset name="substituteDftFile">
-      <iofile in="input/dft.in.jube" out="input/dft.in" />
+      <iofile in="input/dft.in.jube" out="dft.in" />
         <sub source="#MMAX#" dest="$mmax" />
         <sub source="#MAXITERNUM#" dest="$maxiternum" />
         <sub source="#BOXNOD#" dest="$boxnod" />
@@ -136,7 +135,7 @@
     </substituteset>
     
     <substituteset name="substituteSoluteFile">
-      <iofile in="$soluteFile" out="input/solute.in" />
+      <iofile in="$soluteFile" out="solute.in" />
     </substituteset>
 
 
