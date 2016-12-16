@@ -52,6 +52,7 @@ module module_solvent
         type(correlationfunction_type) :: cdelta
         type(correlationfunction_type) :: cd
         complex(dp), allocatable :: ck_angular(:,:,:,:,:,:) ! TODO REMOVE THIS IS FOR TESTING PURPOSE ONLY!
+        real(dp) :: relativePermittivity ! relative permittivity == static dielectric constant = dielectric constant = coonstante diélectrique
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &
@@ -211,7 +212,27 @@ contains
             solvent(1)%site(3)%r = [-0.816495, 0.0, 0.5773525]
             solvent(1)%site(1:3)%Z = [8, 1, 1]
             solvent(1)%n0 = 0.0332891
-            solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            solvent(1)%relativePermittivity = 71._dp
+        case ("tip3p")
+            ! cf 
+            solvent(1)%nsite = 3
+            solvent(1)%molrotsymorder = 2
+            allocate( solvent(1)%site(3) )
+            solvent(1)%site(1:3)%q = [-0.834, 0.417, 0.417]
+            solvent(1)%site(1:3)%sig = [3.15061, 0., 0.]
+            solvent(1)%site(1:3)%eps = [0.636386, 0., 0.]
+            solvent(1)%site(1)%r = [0., 0., 0.]
+            solvent(1)%site(2)%r = [0.756950, 0.0, 0.585882]
+            solvent(1)%site(3)%r = [-0.756950, 0.0, 0.585882] 
+            solvent(1)%site(1:3)%Z = [8, 1, 1]
+            solvent(1)%n0 = 0.03349459
+            solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            solvent(1)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
+            ! Je connais ce site. C'est bizarre, la ref.3 pour epsilon(tip3p) n'a pas fait tip3p!
+            ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
+            ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
+            ! Luc
         case ("acetonitrile")
             solvent(1)%nsite = 3 ! ---Me---C--N--->z
             solvent(1)%molrotsymorder = 1000
@@ -224,7 +245,8 @@ contains
             solvent(1)%site(3)%r = [0., 0., 1.17]
             solvent(1)%site(1:3)%Z = [9, 6, 7] ! CH3
             solvent(1)%n0 = 0.0289
-            solvent%rho0 = solvent%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            solvent(1)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
         case default
             error stop "Solvent unkown"
         end select
