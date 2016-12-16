@@ -111,8 +111,6 @@
       <copy>paraver/extrae.xml</copy>
       <copy>paraver/trace.sh</copy>
       <copy>scalasca/filter.txt.jube</copy>
-      <copy>data/examples/dft.in</copy>
-      <copy>data/examples/solute.in</copy>
     </fileset>
 
 
