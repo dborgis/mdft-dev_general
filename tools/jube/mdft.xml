@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jube>
   <benchmark name="mdft_bench" outpath="bench_run">
+    <!-- <benchmark name="mdft_bench" outpath="$WORK/mdft_runs/jube_perf_analysis"> -->
+
     <comment>first jube script</comment>
 
     <parameterset name="compile_parameters" init_with="mdft_jube_include.xml">
@@ -25,17 +27,22 @@
      
       <parameter name="compile_mode" mode="python">",".join([i for i in "${ref_compile} ${extrae_mode} ${scalasca_mode} ${no_fma_mode} ${no_vec_mode}".split(" ") if len(i) > 0])</parameter>
 
-
       <parameter name="compiler" mode="python">{"scalasca" : "scorep-ifort"}.get("${compile_mode}","ifort")</parameter>
       <parameter name="compiler" mode="python" tag="GFORTRAN">{"scalasca" : "scorep-gfortran"}.get("${compile_mode}","gfortran")</parameter>
 
-	  <parameter name="fftwOptions"></parameter>
-	  <parameter name="fftwOptions" tag="compileFFT"> -DCOMPILE_FFTW=ON </parameter>
+      <parameter name="fftwOptions"></parameter>
+      <parameter name="fftwOptions" tag="compileFFT"> -DCOMPILE_FFTW=ON </parameter>
+      
+      <parameter name="opt_flags"> -O2 -xHost </parameter>
+      <parameter name="opt_flags" tag="GFORTRAN"> -O2 -march=native </parameter> 
 
-      <parameter name="cmake_line" mode="python">
-		  {'scalasca' : 'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..',
-		   'no_vec':'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-simd -no-vec" ..',
-		   'no_fma':'cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="-no-fma" ..'}.get('${compile_mode}','cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions ..')</parameter>
+      <parameter name="fortran_flags" mode="python">
+	{'no_vec':'$opt_flags -no-simd -no-vec',
+	'no_fma': '$opt_flags -no-fma'}.get('${compile_mode}','$opt_flags')
+      </parameter>
+
+      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" .. </parameter>
+
     </parameterset>
 
 
@@ -50,9 +57,9 @@
       <parameter name="use_memory_mode" mode="python">"${exec_mode}" == "memory"</parameter>
 
       <parameter name="exec_mode" mode="python">
-		  {"ref_compile" : ",".join([i for i in "${ref_mode} ${allinea_mode} ${memory_mode}".split(" ") if len(i) > 0])}.get("${compile_mode}","${compile_mode}")
-	  </parameter>
-
+	{"ref_compile" : ",".join([i for i in "${ref_mode} ${allinea_mode} ${memory_mode}".split(" ") if len(i) > 0])}.get("${compile_mode}","${compile_mode}")
+      </parameter>
+      
       <parameter name="nodes" type="int">1</parameter>
       <parameter name="taskspernode" type="int">1</parameter>
       <parameter name="threadspertask" type="int">1</parameter>
@@ -110,7 +117,7 @@
 
 
     <substituteset name="substituteDftFile">
- 	<iofile in="input/dft.in.jube" out="input/dft.in" />
+      <iofile in="input/dft.in.jube" out="input/dft.in" />
         <sub source="#MMAX#" dest="$mmax" />
         <sub source="#MAXITERNUM#" dest="$maxiternum" />
         <sub source="#BOXNOD#" dest="$boxnod" />
@@ -124,12 +131,12 @@
     </substituteset>
 
     <substituteset name="substituteScalascaFilterFile">
- 	<iofile in="filter.txt.jube" out="filter.txt" />
-        <sub source="#SCALASCAFILTEREDFUNCTION#" dest="$scalascafilteredfunction" />
+      <iofile in="filter.txt.jube" out="filter.txt" />
+      <sub source="#SCALASCAFILTEREDFUNCTION#" dest="$scalascafilteredfunction" />
     </substituteset>
-
+    
     <substituteset name="substituteSoluteFile">
-		<iofile in="$soluteFile" out="input/solute.in" />
+      <iofile in="$soluteFile" out="input/solute.in" />
     </substituteset>
 
 
@@ -175,13 +182,13 @@
 
 <!--     ANALYSE         -->
 
-  <patternset name="pattern">
+    <patternset name="pattern">
       <pattern name="time_pat">MDFT finished in\ +(.+)$</pattern>
       <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
       <pattern name="iteration_pat">^\*\*\*\*\*[\ ]*([0-9\.D]*)[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*[0-9\.D\-\+]*</pattern>
-   </patternset>
-   
-   <analyser name="analyse">
+    </patternset>
+
+    <analyser name="analyse">
       <analyse step="run">
         <file use="pattern">job.out</file>
       </analyse>
@@ -199,8 +206,6 @@
         <column>iteration_pat</column>
       </table>
     </result>
-
-
 
   </benchmark>
 
