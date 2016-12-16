@@ -33,7 +33,10 @@ contains
             logical :: exist
             inquire(file=filename, exist=exist)
             if( .not. exist) then
-                error stop "In module_read_c_luc/read_c_luc, filename does not exist"
+                print*, "Entering module_read_c_luc/read_c_luc. You're looking for file:", filename
+                print*, "But this filename does not exists"
+                print*, "For TIP3P REMEMBER YOU CAN ONLY USE MMAX5 FOR NOW. DONT LOOK FOR FILENAME WITH NMAX 3 FOR INSTANCE"
+                ERROR STOP
             end if
         end block
         ! Verify it contains 1024 values of q
