@@ -104,7 +104,8 @@
       <copy>paraver/extrae.xml</copy>
       <copy>paraver/trace.sh</copy>
       <copy>scalasca/filter.txt.jube</copy>
-      <copy>input</copy>
+      <copy>data/dft.in</copy>
+      <copy>data/solute.in</copy>
     </fileset>
 
 
