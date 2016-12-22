@@ -454,7 +454,8 @@ contains
                     ! Prepare R^m_mup_khi(q)
                     !
                     R = rotation_matrix_between_complex_spherical_harmonics_lu ( mmax, q)
-                    where( abs(R)<=epsilon(1._dp) ) R = (0._dp,0._dp)
+                    where( abs(real(R)) < epsilon(1.) )  R = cmplx( 0., aimag(R) )
+                    where( abs(aimag(R)) < epsilon(1.) ) R = cmplx( real(R), 0.)
 
                     ! Eq. 1.23 We don't need to compute gshrot for -q since there are symetries between R(q) and R(-q).
                     ! Thus, we do q and -q at the same time. That's the most important point in doing all q but half of mu.
@@ -464,8 +465,8 @@ contains
                     ! Rotation to molecular (q) frame
                     !
 
-!  on  a       deltarho_p_q(m,khi,mu2) =  sum/mup  @   gamma_p_q(m,mup,mu2) * R(m,mup,khi)
-         !=>                                            gamma_p_q(mup,m,mu2) * R(mup,m,khi)
+                    !  on  a       deltarho_p_q(m,khi,mu2) =  sum/mup  @   gamma_p_q(m,mup,mu2) * R(m,mup,khi)
+                    !=>              gamma_p_q(mup,m,mu2) * R(mup,m,khi)
 
                     gamma_p_q = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
                     gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq) ! this a temporary array
@@ -591,9 +592,15 @@ contains
                     !
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
                     ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
-                    where(abs(R)<epsilon(1._dp)) R=(0,0) ! used to prevent underflow in gamma_p_ * R if gamma_p is very low
-                    where(abs(gamma_p_q)<epsilon(1._dp)) gamma_p_q=(0,0)
-                    where(abs(gamma_p_mq)<epsilon(1._dp)) gamma_p_mq=(0,0)
+                    
+                    !
+                    ! prevent underflow in gamma_p_q/mq * R if gamma_p is very low
+                    !
+                    where( abs(real(gamma_p_q)) < epsilon(1.) ) gamma_p_q = cmplx( 0., aimag(gamma_p_q) )
+                    where( abs(real(gamma_p_mq)) < epsilon(1.) ) gamma_p_mq = cmplx( 0., aimag(gamma_p_mq) )
+                    where( abs(aimag(gamma_p_q)) < epsilon(1.) ) gamma_p_q = cmplx( real(gamma_p_q), 0. )
+                    where( abs(aimag(gamma_p_mq)) < epsilon(1.) ) gamma_p_mq = cmplx( real(gamma_p_mq), 0. )
+                    
 
                     deltarho_p_q = (0._dp,0._dp)
                     deltarho_p_mq = (0._dp,0._dp)
