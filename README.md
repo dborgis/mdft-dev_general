@@ -54,12 +54,7 @@ downloads it from the FFTW3 website and compiles it, which takes 4 minutes on my
 
 ## Input files
 
-You should still be in the build dir, that is `mdft-dev/build`. There you need lots of input files that should be transparent to you as a user. Two files should nevertheless be created by you: `dft.in` and `solute.in`.
-
-The minimal `dft.in` can be found in `data/reference/dft.in`.  
-
-The minimal `solute.in` can be found in `data/reference/solute.in`.  
-
+You should still be in the build dir, that is `mdft-dev/build`. There you need lots of input files that should be transparent to you as a user. Two files should nevertheless be created by you: `dft.in` and `solute.in`. Minimal examples are found in  `data/examples/`.  
 
 ## Use mdft
 
