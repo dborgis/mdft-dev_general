@@ -44,7 +44,7 @@ contains
             integer :: nline
             nline = n_linesInFile(filename) -17 ! header contains 17 lines
             if( nline /= 1024) then
-				print*, "WARNING:!!!!! len of c file not verified here !!!!!!      module_read_c_luc.f90 at line 44"
+                print*, "WARNING:!!!!! len of c file not verified here !!!!!!      module_read_c_luc.f90 at line 44"
                 !error stop "In module_read_c_luc/read_c_luc, filename does not contain 1024 values of q"
             end if
         end block
