@@ -4,7 +4,7 @@
       <parameter name="load_modules">Intel IntelMPI FFTW/3.3.5</parameter>
       <parameter name="load_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.5</parameter>
       <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
-      <parameter name="branch">dev</parameter>
+      <parameter name="branch">Feature-clearJubeRepository</parameter>
       <parameter name="make_target"></parameter>
     </parameterset>
 
