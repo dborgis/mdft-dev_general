@@ -198,7 +198,7 @@ contains
         !
         ! Get the information about the solvent
         !
-        solvent(1)%name = getinput%char('solvent') ! This wont be valid anymore when several solvents will be used.
+        solvent(1)%name = getinput%char('solvent', defaultvalue="spce") ! This wont be valid anymore when several solvents will be used.
         select case (solvent(1)%name)
         case ("spce")
             solvent(1)%nsite = 3
