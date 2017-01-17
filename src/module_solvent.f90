@@ -184,7 +184,7 @@ contains
         !
         ! How many solvent species are there ?
         !
-        ncomma = scan( getinput%char('solvent') ,",") ! returns the number of occurences of "," in getinput%char('solvent')
+        ncomma = scan( getinput%char('solvent', defaultvalue="spce") ,",") ! returns the number of occurences of "," in getinput%char('solvent')
         select case (ncomma)
         case(0)
             s=1
