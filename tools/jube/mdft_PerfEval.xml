@@ -1,0 +1,309 @@
+<jube>
+  <benchmark name="MDFT" outpath="$WORK/mdft_runs/mdft_PerfEval">
+    <comment>MDFT full JUBE performance Evaluation - add specifics</comment>
+    
+    <!-- modules -->
+    <parameterset name="modules_param">
+      <parameter name="basic_modules">Intel IntelMPI FFTW/3.3.5</parameter>
+      <parameter name="basic_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.5</parameter>
+      <parameter name="scalasca_modules">Scalasca</parameter>
+      <parameter name="darshan_modules">darshan-runtime/3.1.2 darshan-util/3.1.2</parameter>
+      <parameter name="papi_modules">PAPI</parameter>
+      <parameter name="python_modules">SciPy-Stack/2016b-Python-2.7.12</parameter>
+    </parameterset>
+    
+    <parameterset name="git_param">
+      <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
+      <parameter name="branch">dev</parameter>
+      <parameter name="make_target"></parameter>
+    </parameterset>
+    
+    <parameterset name="sub_sources_params">
+      <parameter name="main_mpi_init" separator="|"> 
+! automatic insertion 1
+#ifdef WITH_MPI  ! For darshan IO analysis
+#warning "use MPI!"
+    include 'mpif.h'
+    integer ierr
+    call MPI_INIT(ierr)
+#endif
+    
+    call system_clock (count0, count_rate)
+      </parameter>
+      <parameter name="main_mpi_fin">
+! automatic insertion 2
+#ifdef WITH_MPI
+    call MPI_FINALIZE(ierr)
+#endif
+
+end program
+      </parameter>
+    </parameterset>    
+
+    <!-- compile parametrisation -->
+    
+    <!-- load tag mode handling for the compile step -->
+    <!-- modified for the darshan mode -->
+    <parameterset name="compile_modes" init_with="eocoe_jube.xml">
+      <!-- adding darshan to the compilation modes list -->
+      <parameter name="run_ref" mode="python">
+	"ref" if "${ref_mode}" == "ref" or ("${mem_mode}" == "mem" and "${mem_mode_compile}" == "") or "${scatter_mode}" == "scatter" or "${compact_mode}" == "compact"  or \
+        ("${ref_mode}${darshan_mode}${scalasca_mode}${no_vec_mode}${no_fma_mode}${papi_mode}${mem_mode_compile}" == "") else "" 
+      </parameter>
+      
+      <parameter name="compile_mode" mode="python">
+	",".join([i for i in "${run_ref} ${run_scalasca} <!--${darshan_mode}--> ${no_vec_mode} ${no_fma_mode} ${mem_mode_compile}".split(" ") if len(i) > 0])
+      </parameter>
+
+    </parameterset>
+
+    <parameterset name="compile_param">
+      <parameter name="module_list">
+        module purge 
+        module load $basic_modules
+      </parameter>
+      <parameter name="compiler" mode="python">
+	{"scalasca" : "scorep-ifort",
+	"darshan" : "mpif90"}.get("${compile_mode}","ifort")
+      </parameter>
+      <parameter name="compiler" mode="python" tag="GFORTRAN">
+	{"scalasca" : "scorep-gfortran",
+	"darshan" : "mpif90"}.get("${compile_mode}","gfortran")
+      </parameter>
+      <parameter name="fftwOptions"></parameter>
+      <parameter name="fftwOptions" tag="compileFFT"> -DCOMPILE_FFTW=ON </parameter>
+      <parameter name="opt_flags"> -O2 -xHost </parameter>
+      <parameter name="opt_flags" tag="GFORTRAN"> -O2 -march=native </parameter>
+
+      <parameter name="omp_flags">-qopenmp</parameter>
+      <parameter name="omp_flags" tag="GFORTRAN">-fopenmp</parameter>
+      <parameter name="omp_flags" tag="NO_OMP"></parameter>
+
+      <parameter name="fortran_flags" mode="python">
+        {'no-vec':'$opt_flags -no-simd -no-vec -fpp $omp_flags',
+        'no-fma': '$opt_flags -no-fma -fpp $omp_flags',
+	'darshan': '$opt_flags -DWITH_MPI -fpp $omp_flags'}.get('${compile_mode}','$opt_flags -fpp $omp_flags')
+      </parameter>
+      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" files/mdft-dev/. </parameter>
+    </parameterset>
+
+    <!-- files copy -->
+    <!-- By default, uses git, unless COPY_FILES tag is defined -->
+    <fileset name="copy_sources">
+      <copy> ../../src </copy>
+      <copy> ../../CMakeLists.txt </copy>
+      <copy> ../../cmake </copy>
+      <prepare>mkdir mdft-dev</prepare>
+      <prepare>mv src/ mdft-dev/</prepare>
+      <prepare>mv CMakeLists.txt mdft-dev/</prepare>
+      <prepare>mv cmake/ mdft-dev/</prepare>
+    </fileset>
+
+    <fileset name="clone_sources">
+      <prepare>git clone -b $branch --recursive $repo</prepare>
+    </fileset>
+
+
+    <substituteset name="sub_sources">
+      <iofile in="mdft-dev/src/main.f90" out="mdft-dev/src/main.f90" />
+      <sub source="call system_clock (count0, count_rate)" dest="$main_mpi_init" />
+      <sub source="end program" dest="$main_mpi_fin" />
+    </substituteset>
+
+    
+    <step name="files" export="true">
+      <use>git_param</use>
+      <use>sub_sources_params</use>
+      <use tag="!COPY_FILES">clone_sources</use>
+      <use tag="COPY_FILES">copy_sources</use>
+      <use>sub_sources</use>
+    </step>
+
+    <!-- compilation -->
+    <step name="compile" suffix="$compile_mode" depend="files">
+      <use>compile_modes</use>
+      <use>modules_param</use>
+      <use>compile_param</use>
+      <do>echo "============= compile $compile_mode mode =========="</do>
+      <do>$module_list</do>
+      <do>module load CMake</do>
+      <do active="'$compile_mode' == 'scalasca'">module load $scalasca_modules</do>
+      <do>$cmake_line</do>
+      <do>make -j 4</do>
+    </step>
+
+    <!-- 888888888888888888888888888888888888888888888888888888888888888888888888888 -->
+
+    <!-- load tag mode handling for the execute step -->
+    <!-- modified for the darshan mode -->
+    <parameterset name="execute_modes" init_with="eocoe_jube.xml">
+      <parameter name="mode" mode="python">                                                                                                                
+	{"ref" : ",".join([i for i in "${default_mode} ${ref_mode} ${ref_for_mem_mode} ${scatter_mode} ${compact_mode}".split(" ") if len(i) > 0]), 
+	"scalasca" : ",".join([i for i in "${scalasca_mode} ${papi_mode}".split(" ") if len(i) > 0])}.get("${compile_mode}","${compile_mode}")            
+      </parameter>
+    </parameterset>
+
+    <!-- set job specific parameter by overwritting the platform default configuration-->
+    <parameterset name="systemParameter" init_with="platform.xml">
+      <parameter name="nodes" type="int">1</parameter>
+      <parameter name="taskspernode" type="int">1</parameter>
+
+      <parameter name="threadspertask" type="int">12</parameter>      
+      <parameter name="threadspertask" type="int" tag="NO_OMP">1</parameter>      
+
+      <parameter name="executable">compile/mdft-dev</parameter>
+      <parameter name="notification">FAIL</parameter>
+      <parameter name="timelimit" tag="lysozyme">23:59:59</parameter>
+      <parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>
+
+      <parameter name="env" mode="python" separator=";">                                              
+        {"darshan": """
+        ${module_list}
+        module load $darshan_modules
+        """,                                                                              
+        "papi": """
+        ${module_list}
+        module load $scalasca_modules
+        export SCOREP_TOTAL_MEMORY=500MB
+        export SCOREP_MPI_MAX_COMMUNICATORS=5000
+        export SCOREP_METRIC_PAPI_PER_PROCESS=PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L3_TCA,PAPI_L3_TCM  
+        """,
+        "scalasca": """
+        ${module_list}
+        module load Scalasca
+        ###unset SCAN_TRACE_FILESYS
+        export SCOREP_TOTAL_MEMORY=500MB
+        ###export SCOREP_MPI_MAX_COMMUNICATORS=5000
+        export SCAN_ANALYZE_OPTS=--time-correct
+        """}.get("${mode}","""${module_list}""")
+      </parameter>
+      
+      <parameter name="preprocess" mode="python" separator="|">
+	{"compact" : "export OMP_NUM_THREADS=${threadspertask}; export KMP_AFFINITY=verbose,granularity=fine,proclist=[0,1,2,3,4,5,6,7,8,9,10,11],explicit",
+	"scatter" : "export OMP_NUM_THREADS=${threadspertask}; export KMP_AFFINITY=verbose,granularity=fine,proclist=[0,2,4,6,8,10,12,14,16,18,20,22],explicit"
+	}.get("${mode}","export OMP_NUM_THREADS=${threadspertask};")
+      </parameter>
+      
+
+      <parameter name="measurement" mode="python">                                                    
+        {"scalasca" : "time scalasca -analyze -t -f filter.txt",                                
+        "papi"     : "time scalasca -analyse -f filter.txt",                                   
+        "darshan"  : "time LD_PRELOAD=$$EBROOTDARSHANMINRUNTIME/lib/libdarshan.so DARSHAN_LOG_PATH=.\
+	DARSHAN_LOGFILE=darshan.log"}.get("$mode","time")                                                    
+      </parameter>
+    </parameterset>
+
+    <parameterset name="executeset" init_with="platform.xml"/>
+    
+    <substituteset name="substituteDftFile">
+      <iofile in="input/dft.in.jube" out="dft.in" />
+        <sub source="#MMAX#" dest="$mmax" />
+        <sub source="#MAXITERNUM#" dest="$maxiternum" />
+        <sub source="#BOXNOD#" dest="$boxnod" />
+        <sub source="#BOXLEN#" dest="$boxlen" />
+        <sub source="#MMAX#" dest="$mmax" />
+        <sub source="#BULKDENSITY#" dest="$bulkdensity" />
+        <sub source="#TEMPERATURE#" dest="$temperature" />
+        <sub source="#DIRECTSUM#" dest="$directsum" />
+        <sub source="#SOLUTECHARGESSCALEFACTOR#" dest="$soluteChargesScaleFactor" />
+<!--        <sub source="#QUEUE#" dest="$queue" /> -->
+    </substituteset>
+
+    <substituteset name="substituteSoluteFile">
+      <iofile in="$soluteFile" out="solute.in" />
+    </substituteset>
+
+
+    <!-- needed input datasets -->
+    <fileset name="inputs">
+      <link>../../data</link>
+      <copy>input</copy>
+      <copy active="'$mode' == 'scalasca'">scalasca/filter.txt</copy>
+      <copy active="'$mode' == 'papi'">scalasca/filter.txt</copy>
+    </fileset>
+
+    <!-- job execution -->
+    <step name="execute" suffix="$mode" depend="compile">
+      <use>execute_modes</use>
+      <use>modules_param</use>
+      <use>executeset</use>
+      <use from="platform.xml">executesub</use>
+      <use from="platform.xml">jobfiles</use>
+      <use>inputs</use>
+      <use>systemParameter</use>
+      <use from="mdft_input_parameters.xml">inputParameter</use>
+      <use>substituteDftFile</use>
+      <use>substituteSoluteFile</use>
+      <do done_file="$done_file">$submit $submit_script</do>
+    </step>
+
+    <!-- 888888888888888888888888888888888888888888888888888888888888888888888888888 -->
+
+    <!-- postprocess metric extraction configuration -->
+    <parameterset name="postprocessing_parameter" init_with="eocoe_jube.xml">
+      <parameter name="darshan_log_file_path">execute/darshan.log</parameter>
+      <parameter name="scorep_folder_path">execute/scorep_*</parameter>
+      <parameter name="scorep_trace_file_path">execute/scorep_*/trace.cubex</parameter>
+      <parameter name="scorep_profile_file_path">execute/scorep_*/profile.cubex</parameter>
+      <parameter name="time_information_file_path">execute/${errlogfile}</parameter>
+      <parameter name="time_format">cmd</parameter>
+      <parameter name="mem_information_file_path">execute/stdout</parameter>
+      <parameter name="mem_format">slurm</parameter>
+      <parameter name="postprocessing_scalasca_modules">
+	module load $basic_modules
+	module load $scalasca_modules
+      </parameter>
+      <parameter name="postprocessing_darshan_modules">
+	module load $basic_modules                                                                    
+        module load $darshan_modules $python_modules
+      </parameter>
+    </parameterset>
+
+
+    <fileset name="postprocessing_files" init_with="eocoe_jube.xml"/>
+
+    <!-- load postprocessing step -->
+    <include from="eocoe_jube.xml" path="step[@name='postprocess']" />
+
+
+    <!-- postprocessing step proper to mdft -->
+    <patternset name="my_pattern">
+      <pattern name="time_pat">MDFT finished in\ +(.+)$</pattern>
+      <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\
+\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
+      <pattern name="iteration_pat">^\*\*\*\*\*[\ ]*([0-9\.D]*)[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\\
+.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*[0-9\.D\-\+]*</pattern>
+    </patternset>
+
+    <analyser name="my_analysis">
+      <analyse step="execute">
+        <file use="my_pattern">job.out</file>
+      </analyse>
+    </analyser>
+
+    <result name="my_results">
+      <use>my_analysis</use>
+      <table name="my_results" style="pretty" sort="mmax">
+        <column>compile_mode</column>
+        <column>mode</column>
+        <column>mmax</column>
+        <column>boxnod</column>
+        <column>time_pat</column>
+        <column>energy_pat</column>
+        <column>iteration_pat</column>
+      </table>
+    </result>
+
+    <!-- 888888888888888888888888888888888888888888888888888888888888888888888888888 -->
+
+    <!-- load metric extraction pattern -->
+    <patternset name="eocoe_metrics" init_with="eocoe_jube.xml" />
+
+    <!-- load analyser -->
+    <include from="eocoe_jube.xml" path="analyser" />
+
+    <!-- load result table -->
+    <include from="eocoe_jube.xml" path="result" />
+
+  </benchmark>
+</jube>

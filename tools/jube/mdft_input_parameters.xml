@@ -1,32 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jube>
-    <parameterset name="compile_parameters">
-      <parameter name="load_modules">Intel IntelMPI FFTW/3.3.5</parameter>
-      <parameter name="load_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.5</parameter>
-      <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
-      <parameter name="branch">dev</parameter>
-      <parameter name="make_target"></parameter>
-    </parameterset>
-
-    <compilation_dos>
-      <use>systemParameter</use>
-      <do>echo "============= compilation : $compile_mode =========="</do>
-      <do>echo "clone repo $repo in $branch"</do>
-      <do>git clone -b $branch --recursive $repo</do>
-
-      <do>echo "load modules $load_modules"</do>
-      <do>module purge</do>
-      <do>module load $load_modules</do>
-      <do>module load CMake</do>
-
-      <do active="$compile_scalasca">module load Scalasca</do>
-      <do active="$compile_scalasca">echo "load module scalasca"</do>
-
-      <do work_dir="mdft-dev">mkdir build</do>
-      <do work_dir="mdft-dev/build">$cmake_line</do>
-      <do work_dir="mdft-dev/build">make -j 4</do>
-    </compilation_dos>	
-
     <parameterset name="inputParameter">
       <parameter name="soluteFile">input/solute.in.jube</parameter>
       <parameter name="soluteFile" tag="lysozyme">input/lysozyme.in.jube</parameter>

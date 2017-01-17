@@ -1,0 +1,19 @@
+main MDFT perf eval JUBE script : mdft_PerfEval.xml
+Possible tags : 
+ref : reference run
+scalasca : score-p trace collection run, scalasca analysis
+papi : score-p profiling with papi metrics (look in the script for more details)
+darshan : de-activated for the moment. reason : parsing bugs
+no-vec : de-activated SIMD
+no-fma : de-activated FMA
+scatter : scatters openmp threads on 2 sockets
+gather : gathers openmp threads on one socket
+memory : performs memory profiling
+
+all : performs all compile/run modes above!
+
+COPY_FILES : to copy and compile the local source files. The default behaviour, without this flag, is to git clone the files from the github repo. 
+NO_OMP : deactivates OpenMP, runs on 1 thread instead of 12.
+
+Known issues : 
+bug on OpenMP level. It runs only with NO_OMP tag.

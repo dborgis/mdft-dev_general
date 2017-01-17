@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jube>
-  <benchmark name="mdft_bench" outpath="bench_run">
-    <!-- <benchmark name="mdft_bench" outpath="$WORK/mdft_runs/jube_perf_analysis"> -->
+  <!--  <benchmark name="mdft_bench" outpath="bench_run">-->
+  <benchmark name="mdft_bench" outpath="$WORK/mdft_runs/jube_mdft_workshop"> 
 
     <comment>first jube script</comment>
 
-    <parameterset name="compile_parameters" init_with="mdft_jube_include.xml">
+    <parameterset name="compile_parameters">
+
+      <parameter name="load_modules">Intel IntelMPI FFTW/3.3.5</parameter>
+      <parameter name="load_modules" tag="GFORTRAN">GCC ParaStationMPI FFTW/3.3.5</parameter>
+      <parameter name="repo">git@github.com:maxlevesque/mdft-dev.git</parameter>
+      <parameter name="branch">dev</parameter>
+      <parameter name="make_target"></parameter>
+
       <parameter name="allinea_mode"></parameter>
       <parameter name="allinea_mode" tag="allinea,all">allinea</parameter>
       <parameter name="extrae_mode"></parameter>
@@ -41,10 +48,9 @@
 	'no_fma': '$opt_flags -no-fma'}.get('${compile_mode}','$opt_flags')
       </parameter>
 
-      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" .. </parameter>
+      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" files/mdft-dev/. </parameter>
 
     </parameterset>
-
 
     <parameterset name="systemParameter" init_with="platform.xml">
 
@@ -63,9 +69,9 @@
       <parameter name="nodes" type="int">1</parameter>
       <parameter name="taskspernode" type="int">1</parameter>
       <parameter name="threadspertask" type="int">1</parameter>
-      <parameter name="exec_dir">compilation/mdft-dev/build</parameter>
+      <parameter name="exec_dir">compilation/</parameter>
       <parameter name="executable">${exec_dir}/mdft-dev</parameter>
-      <parameter name="mail">cedric.gageat@ens.fr</parameter>
+      <parameter name="mail"></parameter>
       <parameter name="notification">FAIL</parameter>
       <parameter name="timelimit" tag="lysozyme">23:59:59</parameter>
       <parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>
@@ -81,7 +87,6 @@
 
     </parameterset>
 
-
     <parameterset name="executeset" init_with="platform.xml">
       <parameter name="trace_dir">scorep_mdft_trace</parameter>
       <parameter name="starter" mode="python">
@@ -91,10 +96,31 @@
       </parameter>
     </parameterset>
 
+    <step name="files" export="true">
+      <use>compile_parameters</use>
+      <do>git clone -b $branch --recursive $repo</do>
+    </step>
+
     <!-- commands -->
-    <step name="compilation" export="true">
+    <step name="compilation" export="true" depend="files">
       <use>compile_parameters</use> <!-- use existing parameterset -->
-      <include from="mdft_jube_include.xml" path="compilation_dos/do"/>
+      <use>systemParameter</use>
+      <do>echo "============= compilation : $compile_mode =========="</do>
+      <do>echo "load modules $load_modules"</do>
+      <do>module purge</do>
+      <do>module load $load_modules</do>
+      <do>module load CMake</do>
+      
+      <do active="$compile_scalasca">module load Scalasca</do>
+      <do active="$compile_scalasca">echo "load module scalasca"</do>
+      <!--      
+	   <do work_dir="mdft-dev">mkdir build</do>
+	   <do work_dir="mdft-dev/build">$cmake_line</do>
+	   <do work_dir="mdft-dev/build">make -j 4</do>
+      -->
+      <do>mkdir build</do>
+      <do>$cmake_line</do>
+      <do>make -j 4</do>
     </step>
 
 <!--     EXECUTION             -->
@@ -151,7 +177,7 @@
       <use>executesub</use>
       <use from="platform.xml">jobfiles</use>
       <use>input_data</use>
-      <use from="mdft_jube_include.xml">inputParameter</use>
+      <use from="mdft_input_parameters.xml">inputParameter</use>
       <use>substituteDftFile</use>
       <use>substituteSoluteFile</use>
       <use>substituteScalascaFilterFile</use>
@@ -162,7 +188,7 @@
 
     <fileset name="postprocessing_files">
       <copy>perf_eval/extraction/extract_metrics.py</copy>
-      <copy>perf_eval/extraction/shuffle_json.py</copy>
+      <!--<copy>perf_eval/extraction/shuffle_json.py</copy>-->
     </fileset>
 
 
