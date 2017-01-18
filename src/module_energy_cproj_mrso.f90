@@ -425,7 +425,6 @@ contains
             complex(dp) :: ceff(c%np)
 
 
-        !$OMP PARALLEL DO DEFAULT(FIRSTPRIVATE) SHARED(gamma_p_isok,c,deltarho_p,grid,ck)
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
             q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
@@ -639,7 +638,6 @@ contains
                 end do
             end do
         end do
-        !$OMP END PARALLEL DO
     end block
 
 
