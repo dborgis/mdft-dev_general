@@ -79,11 +79,23 @@ end program
       <parameter name="omp_flags" tag="GFORTRAN">-fopenmp</parameter>
       <parameter name="omp_flags" tag="NO_OMP"></parameter>
 
-      <parameter name="fortran_flags" mode="python">
-        {'no-vec':'$opt_flags -no-simd -no-vec -fpp $omp_flags',
-        'no-fma': '$opt_flags -no-fma -fpp $omp_flags',
-	'darshan': '$opt_flags -DWITH_MPI -fpp $omp_flags'}.get('${compile_mode}','$opt_flags -fpp $omp_flags')
+      <parameter name="pp"> -fpp </parameter>
+      <parameter name="pp" tag="GFORTRAN"> -cpp </parameter>
+
+      <parameter name="mode_specific_flags" mode="python">
+        {'no-vec':'-no-simd -no-vec',
+        'no-fma': '-no-fma',
+	'darshan': '-DWITH_MPI'}.get('${compile_mode}','')
       </parameter>
+      <parameter name="mode_specific_flags" mode="python" tag="GFORTRAN">
+        {'no-vec':'-fno-tree-vectorize',
+        'no-fma': '',
+	'darshan': '-DWITH_MPI'}.get('${compile_mode}','')
+      </parameter>      
+
+      <parameter name="fortran_flags"> $opt_flags $mode_specific_flags $pp $omp_flags </parameter>
+
+      
       <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" files/mdft-dev/. </parameter>
     </parameterset>
 
@@ -220,6 +232,10 @@ end program
       <copy>input</copy>
       <copy active="'$mode' == 'scalasca'">scalasca/filter.txt</copy>
       <copy active="'$mode' == 'papi'">scalasca/filter.txt</copy>
+      <copy active="'$mode' == 'scalasca'" tag="GFORTRAN">scalasca/filter_GFORTRAN.txt</copy>
+      <copy active="'$mode' == 'papi'" tag="GFORTRAN">scalasca/filter_GFORTRAN.txt</copy>
+      <prepare active="'$mode' == 'scalasca'" tag="GFORTRAN">cp filter_GFORTRAN.txt filter.txt</prepare>
+      <prepare active="'$mode' == 'papi'" tag="GFORTRAN">cp filter_GFORTRAN.txt filter.txt</prepare>
     </fileset>
 
     <!-- job execution -->

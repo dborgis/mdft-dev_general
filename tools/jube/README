@@ -16,4 +16,9 @@ COPY_FILES : to copy and compile the local source files. The default behaviour, 
 NO_OMP : deactivates OpenMP, runs on 1 thread instead of 12.
 
 Known issues : 
-bug on OpenMP level. It runs only with NO_OMP tag.
+1 - bug on OpenMP level. For the moment, the PerfEval runs only with NO_OMP tag.
+2 - darshan mode failing because of post processing errors (new darshan version = new keywords to parse). It has been deactivated from the tag "all"
+3 - no-fma mode dull with GFORTRAN :  the compilation flag -mno-fmaf deactivated because it fails the compilation.  
+4 - scatter and gather modes dull with NO_OMP, as not possible with only 1 thread.
+Warning : 
+indentation of some parameters is important. do not auto-indent. 

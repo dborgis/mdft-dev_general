@@ -1,0 +1,10 @@
+SCOREP_REGION_NAMES_BEGIN
+EXCLUDE
+module_lennardjones.vlj_
+module_orientation_projection_transform::angl2proj
+module_rotation::cross_product
+module_orientation_projection_transform::proj2angl
+module_grid::ix_mq
+module_rotation::rotation_matrix_between_complex_spherical_harmonics_lu
+
+
