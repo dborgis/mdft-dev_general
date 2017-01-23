@@ -10,6 +10,7 @@
       <parameter name="darshan_modules">darshan-runtime/3.1.2 darshan-util/3.1.2</parameter>
       <parameter name="papi_modules">PAPI</parameter>
       <parameter name="python_modules">SciPy-Stack/2016b-Python-2.7.12</parameter>
+      <parameter name="vtune_modules">VTune</parameter>
     </parameterset>
     
     <parameterset name="git_param">
@@ -43,18 +44,21 @@ end program
     <!-- compile parametrisation -->
     
     <!-- load tag mode handling for the compile step -->
-    <!-- modified for the darshan mode -->
+    <!-- modified for the darshan mode-->
     <parameterset name="compile_modes" init_with="eocoe_jube.xml">
-      <!-- adding darshan to the compilation modes list -->
+      <!-- adding vtune compile&run -->
+      <parameter name="vtune_mode"></parameter>
+      <parameter name="vtune_mode" tag="vtune">vtune</parameter>
+      
+      <!--adding darshan compile (with mpi directives) and vtune (with -g)-->
       <parameter name="run_ref" mode="python">
 	"ref" if "${ref_mode}" == "ref" or ("${mem_mode}" == "mem" and "${mem_mode_compile}" == "") or "${scatter_mode}" == "scatter" or "${compact_mode}" == "compact"  or \
-        ("${ref_mode}${darshan_mode}${scalasca_mode}${no_vec_mode}${no_fma_mode}${papi_mode}${mem_mode_compile}" == "") else "" 
+        ("${ref_mode}${darshan_mode}${scalasca_mode}${no_vec_mode}${no_fma_mode}${papi_mode}${mem_mode_compile}${vtune_mode}" == "") else "" 
       </parameter>
       
       <parameter name="compile_mode" mode="python">
-	",".join([i for i in "${run_ref} ${run_scalasca} <!--${darshan_mode}--> ${no_vec_mode} ${no_fma_mode} ${mem_mode_compile}".split(" ") if len(i) > 0])
+	",".join([i for i in "${run_ref} ${run_scalasca} <!--${darshan_mode}--> ${no_vec_mode} ${no_fma_mode} ${mem_mode_compile} ${vtune_mode}".split(" ") if len(i) > 0])
       </parameter>
-
     </parameterset>
 
     <parameterset name="compile_param">
@@ -85,17 +89,17 @@ end program
       <parameter name="mode_specific_flags" mode="python">
         {'no-vec':'-no-simd -no-vec',
         'no-fma': '-no-fma',
-	'darshan': '-DWITH_MPI'}.get('${compile_mode}','')
+	'darshan': '-DWITH_MPI',
+	'vtune' : '-g'}.get('${compile_mode}','')
       </parameter>
       <parameter name="mode_specific_flags" mode="python" tag="GFORTRAN">
         {'no-vec':'-fno-tree-vectorize',
         'no-fma': '',
-	'darshan': '-DWITH_MPI'}.get('${compile_mode}','')
-      </parameter>      
+	'darshan': '-DWITH_MPI',
+        'vtune' : '-g'}.get('${compile_mode}','')
+      </parameter>
 
-      <parameter name="fortran_flags"> $opt_flags $mode_specific_flags $pp $omp_flags </parameter>
-
-      
+      <parameter name="fortran_flags"> $opt_flags $mode_specific_flags $pp $omp_flags </parameter> 
       <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" files/mdft-dev/. </parameter>
     </parameterset>
 
@@ -153,6 +157,10 @@ end program
 	{"ref" : ",".join([i for i in "${default_mode} ${ref_mode} ${ref_for_mem_mode} ${scatter_mode} ${compact_mode}".split(" ") if len(i) > 0]), 
 	"scalasca" : ",".join([i for i in "${scalasca_mode} ${papi_mode}".split(" ") if len(i) > 0])}.get("${compile_mode}","${compile_mode}")            
       </parameter>
+      <parameter name="first_mode" mode="python">
+	"$mode" == [i for i in "${ref_mode} ${mem_mode} ${darshan_mode} ${scatter_mode} ${compact_mode} ${scalasca_mode} ${papi_mode} ${no_vec_mode} ${no_fma_mode} ${vtune_mode} ref".split(" ") if len(i) > 0][0]
+      </parameter>      
+      
     </parameterset>
 
     <!-- set job specific parameter by overwritting the platform default configuration-->
@@ -187,7 +195,11 @@ end program
         export SCOREP_TOTAL_MEMORY=500MB
         ###export SCOREP_MPI_MAX_COMMUNICATORS=5000
         export SCAN_ANALYZE_OPTS=--time-correct
-        """}.get("${mode}","""${module_list}""")
+        """,
+	"vtune": """
+	${module_list}
+	module load $vtune_modules
+	"""}.get("${mode}","""${module_list}""")
       </parameter>
       
       <parameter name="preprocess" mode="python" separator="|">
@@ -200,12 +212,14 @@ end program
       <parameter name="measurement" mode="python">                                                    
         {"scalasca" : "time scalasca -analyze -t -f filter.txt",                                
         "papi"     : "time scalasca -analyse -f filter.txt",                                   
-        "darshan"  : "time LD_PRELOAD=$$EBROOTDARSHANMINRUNTIME/lib/libdarshan.so DARSHAN_LOG_PATH=.\
-	DARSHAN_LOGFILE=darshan.log"}.get("$mode","time")                                                    
+        "darshan"  : "time LD_PRELOAD=$$EBROOTDARSHANMINRUNTIME/lib/libdarshan.so DARSHAN_LOG_PATH=. DARSHAN_LOGFILE=darshan.log"}.get("$mode","time")
       </parameter>
     </parameterset>
 
-    <parameterset name="executeset" init_with="platform.xml"/>
+    <parameterset name="executeset" init_with="platform.xml">
+      <parameter name="starter" mode="python">
+      {"vtune" : "srun amplxe-cl -collect hotspots --result-dir vtune_mdft -- "}.get("$mode","srun")</parameter>
+    </parameterset>
     
     <substituteset name="substituteDftFile">
       <iofile in="input/dft.in.jube" out="dft.in" />
@@ -279,8 +293,7 @@ end program
     <fileset name="postprocessing_files" init_with="eocoe_jube.xml"/>
 
     <!-- load postprocessing step -->
-    <include from="eocoe_jube.xml" path="step[@name='postprocess']" />
-
+    <include from="eocoe_jube.xml" path="step[@name='postprocess']" />    
 
     <!-- postprocessing step proper to mdft -->
     <patternset name="my_pattern">
