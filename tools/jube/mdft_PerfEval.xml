@@ -77,7 +77,7 @@ end program
       <parameter name="fftwOptions"></parameter>
       <parameter name="fftwOptions" tag="compileFFT"> -DCOMPILE_FFTW=ON </parameter>
       <parameter name="opt_flags"> -O2 -xHost </parameter>
-      <parameter name="opt_flags" tag="GFORTRAN"> -O2 -march=native </parameter>
+      <parameter name="opt_flags" tag="GFORTRAN">-O2 -march=native</parameter>
 
       <parameter name="omp_flags">-qopenmp</parameter>
       <parameter name="omp_flags" tag="GFORTRAN">-fopenmp</parameter>
@@ -168,7 +168,7 @@ end program
       <parameter name="nodes" type="int">1</parameter>
       <parameter name="taskspernode" type="int">1</parameter>
 
-      <parameter name="threadspertask" type="int">12</parameter>      
+      <parameter name="threadspertask" type="int">24</parameter>      
       <parameter name="threadspertask" type="int" tag="NO_OMP">1</parameter>      
 
       <parameter name="executable">compile/mdft-dev</parameter>
@@ -185,8 +185,8 @@ end program
         ${module_list}
         module load $scalasca_modules
         export SCOREP_TOTAL_MEMORY=500MB
-        export SCOREP_MPI_MAX_COMMUNICATORS=5000
-        export SCOREP_METRIC_PAPI_PER_PROCESS=PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L3_TCA,PAPI_L3_TCM  
+        <!--export SCOREP_MPI_MAX_COMMUNICATORS=5000-->
+        export SCOREP_METRIC_PAPI=PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L3_TCA,PAPI_L3_TCM  
         """,
         "scalasca": """
         ${module_list}

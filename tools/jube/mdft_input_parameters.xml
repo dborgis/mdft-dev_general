@@ -4,12 +4,12 @@
       <parameter name="soluteFile">input/solute.in.jube</parameter>
       <parameter name="soluteFile" tag="lysozyme">input/lysozyme.in.jube</parameter>
       <parameter name="mmax">1</parameter>
-      <parameter name="mmax" tag="mmax3">3</parameter>
-      <parameter name="mmax" tag="mmax5">5</parameter>
+      <parameter name="mmax" tag="mmax3,middlecase">3</parameter>
+      <parameter name="mmax" tag="mmax5,bigcase">5</parameter>
       <parameter name="mmax" tag="benchMmax">1,2,3</parameter>
       <parameter name="boxnod">64</parameter>
-      <parameter name="boxnod" tag="boxnod128">128</parameter>
-      <parameter name="boxnod" tag="boxnod256">256</parameter>
+      <parameter name="boxnod" tag="boxnod128,middlecase">128</parameter>
+      <parameter name="boxnod" tag="boxnod256,bigcase">256</parameter>
       <parameter name="boxnod" tag="benchBoxnod">64,128,256</parameter>
       <parameter name="boxlen" mode="python">{"64" :"25.", "128":"50.", "256":"100."}.get("${boxnod}", "25.")</parameter>
       <parameter name="boxlen" tag="boxlen50">50.</parameter>
@@ -17,7 +17,6 @@
       <parameter name="temperature">298.15</parameter>
       <parameter name="directsum">F</parameter>
       <parameter name="directsum" tag="directsum">T</parameter>
-      <parameter name="scalascafilteredfunction">module_lennardjones.vlj_</parameter>
       <parameter name="soluteChargesScaleFactor" tag="!nocharges">1</parameter>
       <parameter name="soluteChargesScaleFactor" tag="nocharges">0</parameter>
     </parameterset>
