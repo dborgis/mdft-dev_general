@@ -9,14 +9,16 @@ The Molecular Density Functional Theory, by
 - Volodymyr Sergiievskyi, postdoctoral researcher (2013-2014), now in Univ. XXX
 - Lu Ding, PhD student (2013-), works on the resolution of the molecular Ornstein-Zernike equations as projected on a basis of rotational invariants.
 - Cédric Gageat, PhD student (2015-), works on core developments and biomolecular applications.
+- Yacine Ould-Rouis, engineer in high performance computing (2017-), works on openmp implementation and vectorization.
 
-## Our git workflow
+## Git, github, issues etc.
 
 [A successful git branching model](http://nvie.com/posts/a-successful-git-branching-model/)
 
-## How to Report Bugs Effectively
+[How to reports bugs effectively](http://www.chiark.greenend.org.uk/~sgtatham/bugs.html)
 
-[A blogpost by Simon Tatham](http://www.chiark.greenend.org.uk/~sgtatham/bugs.html)
+[How to write a git commit message](http://chris.beams.io/posts/git-commit/)
+
 
 ## Requirements
 
