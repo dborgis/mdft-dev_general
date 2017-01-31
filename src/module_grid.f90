@@ -89,7 +89,8 @@ contains
         grid%dv = product(grid%dl)
 
         ! We now have a full description of the space grid
-        write(*,'(A,3F7.3,A,3I3,A,3F7.4)') "Grid: lx,ly,lz= ",grid%length," | nx,ny,nz= ",grid%n_nodes," | dx,dy,dz =",grid%dl
+        write(*,'(A)') "Grid:"
+        write(*,'(A,3F7.2,A,3I4,A,3F5.2)') "  lx,ly,lz= ",grid%length," | nx,ny,nz= ",grid%nx,grid%ny,grid%nz," | dx,dy,dz =",grid%dx,grid%dy,grid%dz
         grid%mmax = getinput%int("mmax", defaultvalue=0, assert=">=0")
         grid%ntheta = grid%mmax+1
         grid%nphi = 2*grid%mmax+1
@@ -160,8 +161,8 @@ contains
             integer :: nowithoutmrso, npwithoutmrso
             nowithoutmrso = (mmax+1)*(2*mmax+1)**2
             npwithoutmrso = sum( [( [( [( 1 ,mu=-m,m)], mup=-m,m)], m=0,grid%mmax)] )
-            write(*,*) "mmax=",grid%mmax," => no,np,=",nowithoutmrso,npwithoutmrso
-            write(*,*) "but mrso=",grid%molrotsymorder," => no,np,=",grid%no,grid%np,"with θ φ ψ:",int([grid%ntheta,grid%nphi,grid%npsi],1)
+            write(*,'(A,I2,A,I5,A,I5,A)') "  mnmax=",grid%mmax," thus we can have up to",nowithoutmrso," orientations and",npwithoutmrso," projections"
+            write(*,'(A,I2,A,I5,A,I5,A,3I3)') "  but since mrso=",grid%molrotsymorder," we have",grid%no," orientations and",grid%np," projections, with nθ nφ nψ=",int([grid%ntheta,grid%nphi,grid%npsi],1)
         end block
 
         allocate( grid%rotxx(grid%no) , grid%rotxy(grid%no), grid%rotxz(grid%no), source=0._dp)
