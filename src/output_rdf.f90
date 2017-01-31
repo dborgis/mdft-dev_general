@@ -39,7 +39,6 @@ SUBROUTINE output_rdf (array,filename)
     nbins = int( rdfmaxrange/dr ) +1
 
     allocate (rdf(nbins), source=0._dp)
-    call UTest_histogram_3D
 
     !
     ! Compute and print the site-site radial distribution of each solute site
@@ -93,7 +92,7 @@ pure subroutine histogram (Y, X, H)
   real, intent(in) :: X(:)
   integer, intent(out) :: H(:)
   integer :: sizeY, sizeX, sizeH ! size of arrays Y, X and H
-  integer :: ix, iy, iz
+  integer :: ix, iy
   sizeY = size(Y)
   sizeX = size(X)
   sizeH = size(H)
@@ -109,7 +108,7 @@ pure subroutine histogram (Y, X, H)
 end subroutine histogram
 
         !===========================================================================================================================
-        SUBROUTINE histogram_3d (data, origin, rdf)
+        SUBROUTINE histogram_3d (data, origin, rdf) 
         !===========================================================================================================================
             implicit none
             REAL(dp), intent(in) :: data(grid%nx,grid%ny,grid%nz)
@@ -157,40 +156,8 @@ end subroutine histogram
                 rdf = 0.0_dp
             end where
 
+            deallocate( occurrence )
+
         end subroutine histogram_3d
-
-        SUBROUTINE UTest_histogram_3D
-            IMPLICIT NONE
-            REAL(dp), ALLOCATABLE :: nullarray3D (:,:,:)
-            REAL(dp), ALLOCATABLE :: rdfUT(:)
-            real(dp), parameter :: zerodp=0._dp
-            real(dp), parameter :: zerodp3(3)=[zerodp,zerodp,zerodp]
-            real(dp), parameter :: epsdp=epsilon(1._dp)
-
-            ALLOCATE (nullarray3D (grid%nx,grid%ny,grid%nz) ,SOURCE=0._dp)
-            ALLOCATE (rdfUT(nbins),source=0._dp)
-
-            ! Test 1
-            nullarray3D = 0._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(abs(rdfUT)>epsdp)) error stop "Test 1 in UTest_histogram_3D not passed."
-
-            ! Test 2
-            nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(rdfUT<0._dp)) STOP "Test 2 in UTest_histogram_3D not passed."
-
-            ! Test 3
-            nullarray3D = -1._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(rdfUT>0._dp)) STOP "Test 3 in UTest_histogram_3D not passed."
-
-            ! Test 4
-            nullarray3D = 100._dp
-            CALL histogram_3d (nullarray3D, zerodp3, rdfUT)
-            IF (ANY(rdfUT>100._dp)) STOP "Test 4 in UTest_histogram_3D not passed."
-
-            DEALLOCATE (nullarray3D, rdfUT)
-        END SUBROUTINE UTest_histogram_3D
 
 END SUBROUTINE output_rdf
