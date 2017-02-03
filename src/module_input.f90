@@ -427,13 +427,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION input_char (tag, defaultvalue)
+  FUNCTION input_char (tag, defaultvalue, validValues)
     IMPLICIT NONE
-    CHARACTER(50) :: input_char
     CHARACTER(*), INTENT(IN) :: tag
     character(*), intent(in), optional :: defaultvalue
-    INTEGER :: i,lentag,imax,iostatint
-    logical :: tag_is_found
+    character(*), intent(in), optional :: validValues(:)
+    CHARACTER(50) :: input_char
+    INTEGER :: i, lentag, imax, iostatint, input_char_length
+    logical :: tag_is_found, inputcharIsValid
     tag_is_found = .false.
     if (.not. allocated(input_line) ) call put_input_in_character_array
     lentag=LEN(tag)
@@ -445,7 +446,7 @@ contains
         READ(input_line(i)(lentag+4:lentag+50),*,IOSTAT=iostatint) input_char
         tag_is_found = .true.
         IF (iostatint/=0) THEN
-          PRINT*,"I have a problem in reading input line:"
+          PRINT*,"I have a problem while reading input line:"
           PRINT*,TRIM(ADJUSTL(input_line(i)))
           IF (TRIM(ADJUSTL(input_line(i)(lentag+4:lentag+50)))=='') PRINT*,"I found nothing after sign ="
           STOP
@@ -453,30 +454,51 @@ contains
         EXIT
       END IF
     END DO
+    
     if (tag_is_found) then
-      IF (LEN(TRIM(ADJUSTL(input_char)))==0) THEN
-        print*, "Problem while looking for input tag: ", tag
-        print*, "The first input character is a whitespace"
-        print*, "input_line(:) reads: ", input_line
-        print*, "input_char(:) reads: ", input_char
-        stop
-      else IF (input_char(1:1)==' ') THEN
-        print*, "Problem while looking for input tag: ", tag
-        print*, "input_line(:) reads: ", input_line
-        print*, "input_char(:) reads: ", input_char
-        print*, "I only read white spaces!"
-        stop
-      end if
-    else
-      if (present(defaultvalue)) then
+        IF (LEN(TRIM(ADJUSTL(input_char)))==0) THEN
+            print*, "Problem while looking for input tag: ", tag
+            print*, "The first input character is a whitespace"
+            print*, "input_line(:) reads: ", input_line
+            print*, "input_char(:) reads: ", input_char
+            stop
+        else IF (input_char(1:1)==' ') THEN
+            print*, "Problem while looking for input tag: ", tag
+            print*, "input_line(:) reads: ", input_line
+            print*, "input_char(:) reads: ", input_char
+            print*, "I only read white spaces!"
+            stop
+        end if
+
+    else if( .not. tag_is_found .and. present(defaultvalue) ) then
         input_char = defaultvalue
-      else
+    else if( .not. tag_is_found .and. .not. present(defaultvalue) ) then
         print*, "Failed to find the keyword for input tag: ", tag
         print*, "No default values have been given by developers."
         stop
-      end if
     end if
-  end function input_char
+
+    !
+    ! Check that the string entered by the user is one of the valid values.
+    ! The string entered by the user is in "input_char".
+    ! The input tag string looked for by the program is "tag".
+    ! Acceptable, valid, values are optional. If present, they are in the array of strings "validValues".
+    !
+    if( present( validValues )) then
+        inputcharIsValid = .false.
+        do i = 1, size( validValues )
+            if( trim(adjustl(input_char)) == validValues(i) ) inputcharIsValid = .true.
+        end do
+        if( inputcharIsValid .eqv. .false.) then
+            print*, "For the input tag, ", tag
+            print*, "You have entered the input character: ", trim(adjustl(input_char))
+            print*, "Which is not part of accepted values: ", validValues(:)
+            stop
+        end if
+    end if
+
+
+end function input_char
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
