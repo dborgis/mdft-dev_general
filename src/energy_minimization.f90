@@ -12,7 +12,6 @@ subroutine energy_minimization
   real(dp) :: f ! functional to minimize
   real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
   real :: time(1:10)
-  integer :: i
   character(80) :: minimizerName
 
   
@@ -53,10 +52,9 @@ subroutine minimization_using_benchmark()
 end subroutine
 
   subroutine minimization_using_steepest_descent
-    use module_grid, only: grid
     use module_input, only: getinput
     implicit none
-    integer :: ix,iy,iz,io,itermax,i,j,k
+    integer :: itermax, i, j, k
     real(dp) :: stepsize,stepsize_giving_minimum_f
     real(dp) :: fold,fmin
     real(dp), parameter :: factr=0.00001_dp
