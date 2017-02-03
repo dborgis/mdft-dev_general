@@ -1,4 +1,4 @@
 boxnod = 48 48 48    
-boxlen = 25. 25. 25.
+boxlen = 20. 20. 20.
 mmax = 3
 temperature = 298.15

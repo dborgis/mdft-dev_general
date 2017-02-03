@@ -2,3 +2,4 @@ boxnod = 256 256 256
 boxlen = 25. 25. 25.
 mmax = 5
 temperature = 298.15
+minimizer = benchmark

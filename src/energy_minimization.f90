@@ -13,17 +13,44 @@ subroutine energy_minimization
   real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
   real :: time(1:10)
   integer :: i
-  logical :: lets_minimize_with_bfgs, lets_minimize_with_steepest_descent
+  character(80) :: minimizerName
 
-  if(getinput%log("minimize_with_steepest_descent", defaultvalue=.false.)) then
-    call minimization_using_steepest_descent()
-    print*, "===== Functional minimization with steepest descent ====="
-  else
-    call minimization_using_lbfgs()
-    print*, "===== Functional minimization with L-BFGS-B ====="
+  
+  minimizerName = getinput%char( "minimizer", defaultvalue = "lbfgs", validValues = ["sd       ",&
+                                                                                     "lbfgs    ",&
+                                                                                     "benchmark"] )
+  
+  ! keep the old tag "minimize_with_steepest_descent" valid
+  if( getinput%log( "minimize_with_steepest_descent", defaultvalue=.false. ) ) then
+      minimizerName = "sd"
   end if
 
+  select case( trim(adjustl(minimizerName)) )
+  case( "sd" )
+      print*, "===== Functional minimization by steepest descent ====="
+      call minimization_using_steepest_descent()
+  case( "benchmark" )
+      print*, "===== Functional minimization canceled. We're benchmarking MDFT. Loop and don't minimize ====="
+      call minimization_using_benchmark()
+  case default
+      print*, "===== Functional minimization by L-BFGS-B ====="
+      call minimization_using_lbfgs()
+  end select
+      
 contains
+
+subroutine minimization_using_benchmark()
+    ! In this mode, we don't try to minimize our functional.
+    ! It is dedicated to making itermax evaluations of the functional.
+    ! As such, this mode is intended to benchmarking.
+    use module_input, only: getinput
+    implicit none
+    integer :: itermax, i
+    itermax = getinput%int( "maximum_iteration_nbr", defaultvalue=30, assert=">0" )
+    do i = 1, itermax
+        call energy_and_gradient( f, df )
+    end do
+end subroutine
 
   subroutine minimization_using_steepest_descent
     use module_grid, only: grid
