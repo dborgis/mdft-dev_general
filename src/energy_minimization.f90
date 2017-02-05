@@ -34,7 +34,7 @@ contains
     real(dp) :: fold,fmin
     real(dp), parameter :: factr=0.00001_dp
     logical :: ich_continue
-    integer :: stepsize_n(0:200)
+    real(dp) :: stepsize_n(0:200)
     stepsize_n=0.5
     itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
     i=0
