@@ -458,15 +458,15 @@ contains
     if (tag_is_found) then
         IF (LEN(TRIM(ADJUSTL(input_char)))==0) THEN
             print*, "Problem while looking for input tag: ", tag
-            print*, "The first input character is a whitespace"
-            print*, "input_line(:) reads: ", input_line
-            print*, "input_char(:) reads: ", input_char
-            stop
-        else IF (input_char(1:1)==' ') THEN
-            print*, "Problem while looking for input tag: ", tag
             print*, "input_line(:) reads: ", input_line
             print*, "input_char(:) reads: ", input_char
             print*, "I only read white spaces!"
+            stop
+        else IF (input_char(1:1)==' ') THEN
+            print*, "Problem while looking for input tag: ", tag
+            print*, "The first input character is a whitespace"
+            print*, "input_line(:) reads: ", input_line
+            print*, "input_char(:) reads: ", input_char
             stop
         end if
 
