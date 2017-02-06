@@ -49,7 +49,7 @@ contains
       implicit none
       integer :: n, m
 
-      lbfgsb%itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
+      lbfgsb%itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
 
       lbfgsb%n = grid%nx * grid%ny * grid%nz * grid%no * solvent(1)%nspec
       n=lbfgsb%n

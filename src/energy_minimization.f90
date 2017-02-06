@@ -45,7 +45,7 @@ subroutine minimization_using_benchmark()
     use module_input, only: getinput
     implicit none
     integer :: itermax, i
-    itermax = getinput%int( "maximum_iteration_nbr", defaultvalue=30, assert=">0" )
+    itermax = getinput%int( "maximum_iteration_nbr", defaultvalue=35, assert=">0" )
     do i = 1, itermax
         call energy_and_gradient( f, df )
     end do
@@ -61,7 +61,7 @@ end subroutine
     logical :: ich_continue
     real(dp) :: stepsize_n(0:200)
     stepsize_n=0.5
-    itermax = getinput%int("maximum_iteration_nbr", defaultvalue=50, assert=">0")
+    itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
     i=0
     f=0._dp
     fold=huge(1._dp)
