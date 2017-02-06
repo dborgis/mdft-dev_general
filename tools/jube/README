@@ -12,21 +12,20 @@ memory : performs memory profiling
 
 all : performs all compile/run modes above!
 
+GFORTRAN : use gnu compilation environment. Otherwise the default is intel. 
 COPY_FILES : to copy and compile the local source files. The default behaviour, without this flag, is to git clone the files from the github repo. 
 NO_OMP : deactivates OpenMP, runs on 1 thread instead of 24.
-boxnod64, boxnod256 : model size parameter flags
+boxnod128, boxnod256 : model size parameter flags
 mmax3, mmax5 : model size parameter flags
+uselbfgs : Activates lbfgs minimization. Otherwise the default benchmark runs a predetermined number of simulations (30). 
 
 Known issues : 
-1 - darshan mode failing because of post processing errors (new darshan version = new keywords to parse). It has been deactivated from the tag "all"
-2 - no-fma mode dull with GFORTRAN :  the compilation flag -mno-fmaf deactivated because it fails the compilation.  
-3 - the run with boxnod256 and mmax5 fails with gfortran, causing an integer overflow in the lbfgs method.
+1 - no-fma mode dull with GFORTRAN :  the compilation flag -mno-fmaf deactivated because it fails the compilation.  
+2 - the run with boxnod256 and mmax5 fails with gfortran, causing an integer overflow in the lbfgs method.
 
 Warning : 
 indentation of some parameters is important. do not auto-indent. 
 
-Commands examples : 
-
-big case :
-jube run mdft_PerfEval.xml --tag all vtune boxnod256 mmax5 COPY_FILES NO_OMP 
-jube run mdft_PerfEval.xml --tag all vtune boxnod256 mmax5 COPY_FILES GFORTRAN NO_OMP
+Commands examples : (recommended benchmark)
+jube run mdft_PerfEval.xml --tag all vtune boxnod128 mmax3 COPY_FILES
+jube run mdft_PerfEval.xml --tag all vtune boxnod128 mmax3 COPY_FILES GFORTRAN
