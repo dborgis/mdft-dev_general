@@ -76,12 +76,12 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, ip, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, mrso
-        integer :: m, n, mu, nu, khi, mup, ia, iq, io, mu2, nu2
+        integer :: m, n, khi, mup, iq, mu2, nu2
         real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
-        real(dp) :: vexc(grid%no), rho, xi
+        real(dp) :: vexc(grid%no)
         real :: total_time_in_subroutine
         complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
         integer :: ip2_loc(-5:5)
@@ -421,7 +421,7 @@ contains
         gamma_p_isok = .false.
 
         block
-            integer :: ip, m, khi, mu, mu2, nu, nu2, ia
+            integer :: ip, m, khi, mu2, ia
             complex(dp) :: ceff(c%np)
 
 

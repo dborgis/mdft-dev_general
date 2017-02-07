@@ -9,7 +9,6 @@ program main
 
     implicit none
     integer(8) :: count0, count1, count_rate
-    real :: mdft_execution_time
 
     call system_clock (count0, count_rate)
     if (count_rate == 0) error stop "Bug in main.f90, count_rate==0"

@@ -170,9 +170,8 @@ contains
         use mathematica, only: chop
         use module_input, only: getinput
         implicit none
-        integer :: n, ios, i, j, k, l, s, ncomma
+        integer :: i, j, k, l, s, ncomma
         character(180) :: polarization
-        character(180) :: someline
 
         if (allocated(solvent)) then
             print*, "bug dans read_solvent. Le 21 octobre 2015, j'ai transféré l'allocation de allocate_from_input a read_solvent"

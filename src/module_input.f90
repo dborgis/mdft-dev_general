@@ -433,7 +433,7 @@ contains
     character(*), intent(in), optional :: defaultvalue
     character(*), intent(in), optional :: validValues(:)
     CHARACTER(50) :: input_char
-    INTEGER :: i, lentag, imax, iostatint, input_char_length
+    INTEGER :: i, lentag, imax, iostatint
     logical :: tag_is_found, inputcharIsValid
     tag_is_found = .false.
     if (.not. allocated(input_line) ) call put_input_in_character_array

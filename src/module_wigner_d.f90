@@ -76,26 +76,25 @@ contains
     integer, intent(in) :: m, n, l, mu, nu, lu
     real(dp) :: symbol_3j, som
     integer :: it
-      ! COMMON/facto/fac(0:50)
+    ! COMMON/facto/fac(0:50)
     !
     !        symbole 3j
     !        Messiah page 910 eq.21
     !
-    IF(itriangle(m,n,l)==0.or.mu+nu+lu/=0.or.                                     &
-    ABS(mu).gt.m.or.abs(nu).gt.n.or.abs(lu).gt.l) then
-    symbol_3j=0.
-  else
-    som=0.
-    do it=MAX(0,n-l-mu,m-l+nu),MIN(m+n-l,m-mu,n+nu)
-      som=som+(-1)**it/(fac(it)*fac(l-n+it+mu)*fac(l-m+it-nu)*                          &
-      fac(m+n-l-it)*fac(m-it-mu)*fac(n-it+nu))
-    end do
-    symbol_3j=(-1)**(m-n-lu)*SQRT(delta(m,n,l))*                                       &
-    SQRT(fac(m+mu)*fac(m-mu)*fac(n+nu)*fac(n-nu)*fac(l+lu)*fac(l-lu))                 &
-    *som
-    IF(mu==0.and.nu==0.and.lu==0.and.2*((m+n+l)/2)/=m+n+l) symbol_3j=0.
-  endif
-  end
+    if( itriangle(m,n,l)==0 .or. mu+nu+lu/=0 .or. ABS(mu)>m .or. abs(nu)>n .or. abs(lu)>l ) then
+        symbol_3j=0.
+    else
+        if( mu==0.and.nu==0.and.lu==0.and.2*((m+n+l)/2)/=m+n+l) then
+            symbol_3j=0.
+        else
+            som=0.
+            do it=MAX(0,n-l-mu,m-l+nu),MIN(m+n-l,m-mu,n+nu)
+                som=som+(-1)**it/(fac(it)*fac(l-n+it+mu)*fac(l-m+it-nu)*fac(m+n-l-it)*fac(m-it-mu)*fac(n-it+nu))
+            end do
+            symbol_3j=(-1)**(m-n-lu)*SQRT(delta(m,n,l))*SQRT(fac(m+mu)*fac(m-mu)*fac(n+nu)*fac(n-nu)*fac(l+lu)*fac(l-lu))*som
+        end if
+    end if
+  end function symbol_3j
   !
   pure function itriangle(m,n,l)
     implicit none
@@ -103,8 +102,11 @@ contains
     integer :: itriangle
     !        nul sauf si |m-n|<l<m+n
     !        rq: ne depend pas de l'ordre des 3 entiers
-    itriangle=0
-    IF(l>=ABS(m-n).and.l<=m+n) itriangle=1
+    IF(l>=ABS(m-n).and.l<=m+n) then
+        itriangle=1
+    else
+        itriangle=0
+    end if
   end
   !
   pure function delta(m,n,l)
