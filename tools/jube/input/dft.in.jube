@@ -1,5 +1,6 @@
-#maximum_iteration_nbr = 35
+#maximum_iteration_nbr = #ITERMAX#
 #restart = T
+#minimizer = #MINIMIZER#
 solvent = spce
 direct_sum = #DIRECTSUM#
 boxnod = #BOXNOD# #BOXNOD# #BOXNOD#

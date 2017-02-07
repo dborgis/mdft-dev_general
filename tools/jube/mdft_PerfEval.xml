@@ -1,5 +1,5 @@
 <jube>
-  <benchmark name="MDFT" outpath="$WORK/mdft_runs/mdft_PerfEval">
+  <benchmark name="MDFT" outpath="$WORK/mdft_PerfEval">
     <comment>MDFT full JUBE performance Evaluation - add specifics</comment>
     
     <!-- modules -->
@@ -44,7 +44,7 @@ end program
     <!-- compile parametrisation -->
     
     <!-- load tag mode handling for the compile step -->
-    <!-- modified for the darshan mode-->
+    <!-- modified for the darshan and vtune modes-->
     <parameterset name="compile_modes" init_with="eocoe_jube.xml">
       <!-- adding vtune compile&run -->
       <parameter name="vtune_mode"></parameter>
@@ -57,7 +57,7 @@ end program
       </parameter>
       
       <parameter name="compile_mode" mode="python">
-	",".join([i for i in "${run_ref} ${run_scalasca} <!--${darshan_mode}--> ${no_vec_mode} ${no_fma_mode} ${mem_mode_compile} ${vtune_mode}".split(" ") if len(i) > 0])
+	",".join([i for i in "${run_ref} ${run_scalasca} ${darshan_mode} ${no_vec_mode} ${no_fma_mode} ${mem_mode_compile} ${vtune_mode}".split(" ") if len(i) > 0])
       </parameter>
     </parameterset>
 
@@ -76,9 +76,12 @@ end program
       </parameter>
       <parameter name="fftwOptions"></parameter>
       <parameter name="fftwOptions" tag="compileFFT"> -DCOMPILE_FFTW=ON </parameter>
-      <parameter name="opt_flags"> -O2 -xHost </parameter>
+      <parameter name="opt_flags"> -O2 -xHost</parameter>
       <parameter name="opt_flags" tag="GFORTRAN">-O2 -march=native</parameter>
-
+      <!--
+      <parameter name="opt_flags" separator="|"> -O2 -xHost -g -traceback -check bounds -check format -check uninit</parameter>
+      <parameter name="opt_flags" tag="GFORTRAN" separator="|">-O2 -march=native -g -fbacktrace -Wall -fcheck=bounds,do,mem,pointer  </parameter>
+      -->
       <parameter name="omp_flags">-qopenmp</parameter>
       <parameter name="omp_flags" tag="GFORTRAN">-fopenmp</parameter>
       <parameter name="omp_flags" tag="NO_OMP"></parameter>
@@ -95,7 +98,7 @@ end program
       <parameter name="mode_specific_flags" mode="python" tag="GFORTRAN">
         {'no-vec':'-fno-tree-vectorize',
         'no-fma': '',
-	'darshan': '-DWITH_MPI',
+        'darshan': '-DWITH_MPI -ffree-line-length-none',
         'vtune' : '-g'}.get('${compile_mode}','')
       </parameter>
 
@@ -198,7 +201,7 @@ end program
         """,
 	"vtune": """
 	${module_list}
-	module load $vtune_modules
+        module load $vtune_modules
 	"""}.get("${mode}","""${module_list}""")
       </parameter>
       
@@ -219,12 +222,15 @@ end program
     <parameterset name="executeset" init_with="platform.xml">
       <parameter name="starter" mode="python">
       {"vtune" : "srun amplxe-cl -collect hotspots --result-dir vtune_mdft -- "}.get("$mode","srun")</parameter>
+      <parameter name="maxiternum">50</parameter>
+      <parameter name="maxiternum" tag="maxiter20">20</parameter>
     </parameterset>
     
     <substituteset name="substituteDftFile">
       <iofile in="input/dft.in.jube" out="dft.in" />
         <sub source="#MMAX#" dest="$mmax" />
-        <sub source="#MAXITERNUM#" dest="$maxiternum" />
+        <sub source="#maximum_iteration_nbr = #ITERMAX#" dest="maximum_iteration_nbr = 30" tag="!uselbfgs"/>
+        <sub source="#minimizer = #MINIMIZER#" dest="minimizer = benchmark" tag="!uselbfgs"/>
         <sub source="#BOXNOD#" dest="$boxnod" />
         <sub source="#BOXLEN#" dest="$boxlen" />
         <sub source="#MMAX#" dest="$mmax" />
@@ -281,10 +287,10 @@ end program
       <parameter name="mem_format">slurm</parameter>
       <parameter name="postprocessing_scalasca_modules">
 	module load $basic_modules
-	module load $scalasca_modules
+        module load $scalasca_modules
       </parameter>
       <parameter name="postprocessing_darshan_modules">
-	module load $basic_modules                                                                    
+	module load $basic_modules
         module load $darshan_modules $python_modules
       </parameter>
     </parameterset>
@@ -297,6 +303,7 @@ end program
 
     <!-- postprocessing step proper to mdft -->
     <patternset name="my_pattern">
+      <pattern name="n_iter">\n[\s]+${jube_pat_int} </pattern>
       <pattern name="time_pat">MDFT finished in\ +(.+)$</pattern>
       <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\
 \ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
@@ -318,6 +325,7 @@ end program
         <column>mmax</column>
         <column>boxnod</column>
         <column>time_pat</column>
+        <column>n_iter_last</column>
         <column>energy_pat</column>
         <column>iteration_pat</column>
       </table>
