@@ -76,7 +76,7 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, ip, ip2
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, mrso
-        integer :: m, n, khi, mup, iq, mu2, nu2
+        integer :: m, n, mu, khi, mup, iq, mu2, nu2
         real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
