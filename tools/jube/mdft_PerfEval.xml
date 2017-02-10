@@ -76,7 +76,7 @@ end program
       </parameter>
       <parameter name="fftwOptions"></parameter>
       <parameter name="fftwOptions" tag="compileFFT"> -DCOMPILE_FFTW=ON </parameter>
-      <parameter name="opt_flags"> -O2 -xHost</parameter>
+      <parameter name="opt_flags"> -O2 -xHost </parameter>
       <parameter name="opt_flags" tag="GFORTRAN">-O2 -march=native</parameter>
       <!--
       <parameter name="opt_flags" separator="|"> -O2 -xHost -g -traceback -check bounds -check format -check uninit</parameter>
@@ -86,9 +86,11 @@ end program
       <parameter name="omp_flags" tag="GFORTRAN">-fopenmp</parameter>
       <parameter name="omp_flags" tag="NO_OMP"></parameter>
 
-      <parameter name="pp"> -fpp </parameter>
-      <parameter name="pp" tag="GFORTRAN"> -cpp </parameter>
-
+      <parameter name="other_flags"> -fpp </parameter>
+      <parameter name="other_flags" tag="GFORTRAN" mode="python"> 
+      {'darshan':'-cpp -pedantic -ffree-line-length-none'}.get('${compile_mode}','-cpp -pedantic -std=f2008 -ffree-line-length-none')</parameter>
+      <parameter name="other_flags" tag="GFORTRAN,darshan">-cpp -ffree-line-length-none -pedantic</parameter>
+      
       <parameter name="mode_specific_flags" mode="python">
         {'no-vec':'-no-simd -no-vec',
         'no-fma': '-no-fma',
@@ -98,12 +100,14 @@ end program
       <parameter name="mode_specific_flags" mode="python" tag="GFORTRAN">
         {'no-vec':'-fno-tree-vectorize',
         'no-fma': '',
-        'darshan': '-DWITH_MPI -ffree-line-length-none',
+        'darshan': '-DWITH_MPI',
         'vtune' : '-g'}.get('${compile_mode}','')
       </parameter>
 
-      <parameter name="fortran_flags"> $opt_flags $mode_specific_flags $pp $omp_flags </parameter> 
-      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" files/mdft-dev/. </parameter>
+      <parameter name="fortran_flags"> $opt_flags $mode_specific_flags $omp_flags </parameter> 
+<!--      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler -DCMAKE_BUILD_TYPE=NONE $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" files/mdft-dev/. </parameter>-->
+      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" -DCMAKE_Fortran_FLAGS_RELEASE="$other_flags" files/mdft-dev/. </parameter>
+
     </parameterset>
 
     <!-- files copy -->
@@ -148,7 +152,7 @@ end program
       <do>module load CMake</do>
       <do active="'$compile_mode' == 'scalasca'">module load $scalasca_modules</do>
       <do>$cmake_line</do>
-      <do>make -j 4</do>
+      <do>make VERBOSE=1 -j 4</do>
     </step>
 
     <!-- 888888888888888888888888888888888888888888888888888888888888888888888888888 -->
