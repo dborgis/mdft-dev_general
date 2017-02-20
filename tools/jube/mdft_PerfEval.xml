@@ -11,6 +11,7 @@
       <parameter name="papi_modules">PAPI</parameter>
       <parameter name="python_modules">SciPy-Stack/2016b-Python-2.7.12</parameter>
       <parameter name="vtune_modules">VTune</parameter>
+      <parameter name="valgrind_modules">Valgrind/3.12.0</parameter>
     </parameterset>
     
     <parameterset name="git_param">
@@ -50,6 +51,9 @@ end program
       <parameter name="vtune_mode"></parameter>
       <parameter name="vtune_mode" tag="vtune">vtune</parameter>
       
+      <parameter name="valgrind_mode"></parameter>
+      <parameter name="valgrind_mode" tag="valgrind">valgrind</parameter>
+
       <!--adding darshan compile (with mpi directives) and vtune (with -g)-->
       <parameter name="run_ref" mode="python">
 	"ref" if "${ref_mode}" == "ref" or ("${mem_mode}" == "mem" and "${mem_mode_compile}" == "") or "${scatter_mode}" == "scatter" or "${compact_mode}" == "compact"  or \
@@ -57,7 +61,7 @@ end program
       </parameter>
       
       <parameter name="compile_mode" mode="python">
-	",".join([i for i in "${run_ref} ${run_scalasca} ${darshan_mode} ${no_vec_mode} ${no_fma_mode} ${mem_mode_compile} ${vtune_mode}".split(" ") if len(i) > 0])
+	",".join([i for i in "${run_ref} ${run_scalasca} ${darshan_mode} ${no_vec_mode} ${no_fma_mode} ${mem_mode_compile} ${vtune_mode} ${valgrind_mode}".split(" ") if len(i) > 0])
       </parameter>
     </parameterset>
 
@@ -89,24 +93,25 @@ end program
       <parameter name="other_flags"> -fpp </parameter>
       <parameter name="other_flags" tag="GFORTRAN" mode="python"> 
       {'darshan':'-cpp -pedantic -ffree-line-length-none'}.get('${compile_mode}','-cpp -pedantic -std=f2008 -ffree-line-length-none')</parameter>
-      <parameter name="other_flags" tag="GFORTRAN,darshan">-cpp -ffree-line-length-none -pedantic</parameter>
       
       <parameter name="mode_specific_flags" mode="python">
         {'no-vec':'-no-simd -no-vec',
         'no-fma': '-no-fma',
 	'darshan': '-DWITH_MPI',
-	'vtune' : '-g'}.get('${compile_mode}','')
+	'vtune' : '-g', 
+	'valgrind' : '-g -O1'}.get('${compile_mode}','')
       </parameter>
       <parameter name="mode_specific_flags" mode="python" tag="GFORTRAN">
         {'no-vec':'-fno-tree-vectorize',
         'no-fma': '',
         'darshan': '-DWITH_MPI',
-        'vtune' : '-g'}.get('${compile_mode}','')
+        'vtune' : '-g',
+	'valgrind' : '-g -O1'}.get('${compile_mode}','')
       </parameter>
 
       <parameter name="fortran_flags"> $opt_flags $mode_specific_flags $omp_flags </parameter> 
 <!--      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler -DCMAKE_BUILD_TYPE=NONE $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" files/mdft-dev/. </parameter>-->
-      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" -DCMAKE_Fortran_FLAGS_RELEASE="$other_flags" files/mdft-dev/. </parameter>
+      <parameter name="cmake_line"> cmake -DCMAKE_Fortran_COMPILER=$compiler $fftwOptions -DCMAKE_Fortran_FLAGS="$fortran_flags" -DCustom_Fortran_FLAGS_RELEASE="$other_flags" files/mdft-dev/.</parameter>
 
     </parameterset>
 
@@ -167,7 +172,6 @@ end program
       <parameter name="first_mode" mode="python">
 	"$mode" == [i for i in "${ref_mode} ${mem_mode} ${darshan_mode} ${scatter_mode} ${compact_mode} ${scalasca_mode} ${papi_mode} ${no_vec_mode} ${no_fma_mode} ${vtune_mode} ref".split(" ") if len(i) > 0][0]
       </parameter>      
-      
     </parameterset>
 
     <!-- set job specific parameter by overwritting the platform default configuration-->
@@ -182,7 +186,6 @@ end program
       <parameter name="notification">FAIL</parameter>
       <parameter name="timelimit" tag="lysozyme">23:59:59</parameter>
       <parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>
-
       <parameter name="env" mode="python" separator=";">                                              
         {"darshan": """
         ${module_list}
@@ -206,7 +209,11 @@ end program
 	"vtune": """
 	${module_list}
         module load $vtune_modules
-	"""}.get("${mode}","""${module_list}""")
+	""",
+	"valgrind": """
+        ${module_list}
+        module load ${valgrind_modules}
+        """}.get("${mode}","""${module_list}""")
       </parameter>
       
       <parameter name="preprocess" mode="python" separator="|">
@@ -225,7 +232,8 @@ end program
 
     <parameterset name="executeset" init_with="platform.xml">
       <parameter name="starter" mode="python">
-      {"vtune" : "srun amplxe-cl -collect hotspots --result-dir vtune_mdft -- "}.get("$mode","srun")</parameter>
+      {"vtune" : "srun amplxe-cl -collect hotspots --result-dir vtune_mdft -- ",
+      "valgrind" : "time valgrind  --tool=memcheck --leak-check=full --show-reachable=yes --max-stackframe=704643072"}.get("$mode","srun")</parameter>
       <parameter name="maxiternum">50</parameter>
       <parameter name="maxiternum" tag="maxiter20">20</parameter>
     </parameterset>

@@ -53,23 +53,25 @@ message(STATUS "Using compiler ${Fortran_COMPILER_NAME}")
 SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
-  if (NOT CMAKE_Fortran_FLAGS_RELEASE)
-     set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008 -fopenmp")
-  endif() 
-  
+  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008 -fopenmp")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-march=native -ffree-line-length-none -O0             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds -g -fopenmp")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
-
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
-  if (NOT CMAKE_Fortran_FLAGS_RELEASE)     
-     set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xhost")
-  endif()
+  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xhost" )
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 elseif (Fortran_COMPILER_NAME MATCHES "pgf90")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 endif()
+
+if (DEFINED Custom_Fortran_FLAGS_RELEASE)
+  set (CMAKE_Fortran_FLAGS_RELEASE "${Custom_Fortran_FLAGS_RELEASE}")
+endif()
+
+message(STATUS "CMAKE_Fortran_FLAGS set to ${CMAKE_Fortran_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS_RELEASE set to ${CMAKE_Fortran_FLAGS_RELEASE}")
+message(STATUS "CMAKE_Fortran_FLAGS_DEBUG set to ${CMAKE_Fortran_FLAGS_DEBUG}")
 
 
 #add_subdirectory(vendor/bpp bpp EXCLUDE_FROM_ALL)
