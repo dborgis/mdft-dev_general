@@ -5,7 +5,8 @@ module module_rotation
     public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu, init
     real(dp), private :: epsdp=epsilon(1._dp)
     integer, parameter, private :: mmax_max = 5 ! we will never have mmax > 5
-    real(dp), dimension(2:mmax_max,-mmax_max:mmax_max,-mmax_max:mmax_max), private :: a, b, c, d
+    real(dp), dimension(2:mmax_max,-mmax_max:mmax_max,-mmax_max:mmax_max), private :: a, b
+    real(dp), dimension(2:mmax_max,-mmax_max:mmax_max), private :: c, d
 
 contains
 
@@ -26,8 +27,8 @@ contains
                 b(l,m,m1) = sqrtof(l+m)*sqrtof(l+m-1)/(sqrt2*sqrtof(l+m1)*sqrtof(l-m1))
             end do
             m1 = l
-            c(l,m,m1) = sqrt2*sqrtof(l+m)*sqrtof(l-m)/(sqrtof(l+m1)*sqrtof(l+m1-1))
-            d(l,m,m1) = sqrtof(l+m)*sqrtof(l+m-1)/(sqrtof(l+m1)*sqrtof(l+m1-1))
+            c(l,m) = sqrt2*sqrtof(l+m)*sqrtof(l-m)/(sqrtof(l+m1)*sqrtof(l+m1-1))
+            d(l,m) = sqrtof(l+m)*sqrtof(l+m-1)/(sqrtof(l+m1)*sqrtof(l+m1-1))
           end do
         end do
     end subroutine init
@@ -228,19 +229,19 @@ contains
 
                 m1 = l
                 if( m==-l) then
-                    f(l,m,m1)=d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
-                    g(l,m,m1)=d(l,-m,m1)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
+                    f(l,m,m1)=d(l,-m)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
+                    g(l,m,m1)=d(l,-m)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
                 else if( m==l) then
-                    f(l,m,m1)=d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))
-                    g(l,m,m1)=d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))
+                    f(l,m,m1)=d(l,m)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))
+                    g(l,m,m1)=d(l,m)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))
                 else
-                    f(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*f(l1,m,m1-1)-g(1,0,+1)*g(l1,m,m1-1))+   &
-                              d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))+   &
-                              d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
+                    f(l,m,m1)=c(l,m) *(f(1,0,+1)*f(l1,m,m1-1)-g(1,0,+1)*g(l1,m,m1-1))+   &
+                              d(l,m) *(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))+   &
+                              d(l,-m)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
 
-                    g(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*g(l1,m,m1-1)+g(1,0,+1)*f(l1,m,m1-1))+   &
-                              d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))+   &
-                              d(l,-m,m1)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
+                    g(l,m,m1)=c(l,m)*(f(1,0,+1)*g(l1,m,m1-1)+g(1,0,+1)*f(l1,m,m1-1))+   &
+                              d(l,m)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))+   &
+                              d(l,-m)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
                 end if
                 f(l,-m,-m1)=(-1)**(m+m1)*f(l,m,m1)
                 g(l,-m,-m1)=-(-1)**(m+m1)*g(l,m,m1)
