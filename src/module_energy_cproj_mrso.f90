@@ -55,7 +55,7 @@ module module_energy_cproj_mrso
         type(c_ptr) :: plan3dp, plan3dm ! plans for 2D and 3D FFTs with sign +(p) or -(m) in the exponential
     end type fft_type
     type(fft_type), protected :: fft
-    complex(dp), allocatable :: c3d(:,:,:)
+    complex(dp), allocatable :: c3d(:,:,:), buf(:,:,:)
     complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
     public :: energy_cproj_mrso
@@ -86,6 +86,7 @@ contains
         complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
         integer :: ip2_loc(-5:5)
         complex(dp), parameter :: zeroc=(0._dp, 0._dp)
+        integer :: ierr
 
         call cpu_time (time(1))
 
@@ -116,14 +117,22 @@ contains
 
 
         if (.not. allocated (deltarho_p) ) then
-            allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
-            allocate (deltarho_p_q(np) ,source=zeroc)
-            allocate (deltarho_p_mq(np) ,source=zeroc)
-            allocate (gamma_p_q(np), source=zeroc)
-            allocate (gamma_p_mq(np), source=zeroc)
+            allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc, stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate deltarho_p returns error ",ierr            
+            allocate (deltarho_p_q(np) ,source=zeroc, stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate deltarho_p_q returns error ",ierr
+            allocate (deltarho_p_mq(np) ,source=zeroc, stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate deltarho_p_mq returns error ",ierr
+            allocate (gamma_p_q(np), source=zeroc, stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate gamma_p_q returns error ",ierr
+            allocate (gamma_p_mq(np), source=zeroc, stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate gamma_p_mq returns error ",ierr
         end if
 
-        if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
+        if (.not. allocated (gamma_p_isok) ) then 
+           allocate (gamma_p_isok(nx,ny,nz), source=.false., stat=ierr)
+           if (ierr/=0) PRINT*,"Allocate gamma_p_isok returns error ",ierr
+        end if
 
         call cpu_time (time(2))
 
@@ -267,19 +276,23 @@ contains
         call cpu_time (time(5))
 
         ! 2/ ON PROJETTE delta_rho
+        print*,"no = ",no
+        print*,"np = ",np
 
         block
-            real(dp) :: o(no)
-            do iz=1,nz
-                do iy=1,ny
-                    do ix=1,nx
-                        o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
-                        call angl2proj( o, deltarho_p(:,ix,iy,iz) )
-                    end do
+          real(dp) :: o(no)
+          
+          do iz=1,nz
+             do iy=1,ny
+                do ix=1,nx
+                   o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
+                   call angl2proj( o, deltarho_p(:,ix,iy,iz) )
                 end do
-            end do
+             end do
+          end do
+          
         end block
-
+        
         call cpu_time (time(6))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -289,22 +302,50 @@ contains
         !
         ! On a les projections sur la grille cartesienne
         ! On veut passer dans l'espace de Fourier pour calculer les convolutions spatiales
-        ! On fait donc une FFT 3D pour chacune des projections.
+        ! On fait dallocate( c3d(nx,ny,nz)onc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        block
-            integer :: ip
-            do ip=1,np
-                c3d = deltarho_p(ip,:,:,:)
-                select case(dp);
-                case(c_double)
-                    call dfftw_execute_dft(fft%plan3dp, c3d, c3d)
-                case(c_float)
-                    call sfftw_execute_dft(fft%plan3dp, c3d, c3d)
-                end select
-                deltarho_p(ip,:,:,:) = c3d
-            end do
-        end block
+!        block
+!            integer :: ip
+            
+            !$omp parallel private ( ip, buf )
+            allocate(buf(nx,ny,nz), stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate buf returns error ",ierr
+
+            select case(dp);
+            case(c_double)
+               !$omp do
+               do ip=1,np
+                  buf=deltarho_p(ip,:,:,:)
+                  call dfftw_execute_dft(fft%plan3dp, buf, buf)
+                  deltarho_p(ip,:,:,:)=buf
+               end do
+               !$omp end do
+            case(c_float)
+               !$omp do
+               do ip=1,np
+                  buf=deltarho_p(ip,:,:,:)
+                  call sfftw_execute_dft(fft%plan3dp, buf, buf)
+                  deltarho_p(ip,:,:,:)=buf
+               end do
+               !$omp end do
+            end select
+            deallocate(buf)
+            !$omp end parallel
+
+
+          ! YOR old loop (line 297) replaced with omp loop above
+          ! do ip=1,np
+          !     c3d = deltarho_p(ip,:,:,:)
+          !     select case(dp);
+          !     case(c_double)
+          !         call dfftw_execute_dft(fft%plan3dp, c3d, c3d)
+          !     case(c_float)
+          !         call sfftw_execute_dft(fft%plan3dp, c3d, c3d)
+          !     end select
+          !     deltarho_p(ip,:,:,:) = c3d
+          ! end do
+!        end block
         call cpu_time (time(7))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -423,7 +464,7 @@ contains
         block
             integer :: ip, m, khi, mu2, ia
             complex(dp) :: ceff(c%np)
-
+            real(dp) :: effectiveiq, alpha
 
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
@@ -499,14 +540,14 @@ contains
                     ! ceff(:) = c%mnmunukhi_q(:,iq)
 
 
-                    block
-                        real(dp) :: effectiveiq, alpha
+!                    block
+!                        real(dp) :: effectiveiq, alpha
                         effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
                         iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
                         alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
                         ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
                                  + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
-                    end block
+!                    end block
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -646,7 +687,7 @@ contains
         if (.not.all(gamma_p_isok.eqv..true.)) then
             error stop "not all gamma_p(projections,ix,iy,iz) have not been computed"
         end if
-
+        deallocate(gamma_p_isok)
         call cpu_time(time(11))
 
 
@@ -654,17 +695,46 @@ contains
         ! FFT3D from Fourier space to real space
         !
         block
-            integer :: ip
-            do ip=1,np
-                c3d = deltarho_p(ip,:,:,:)
-                select case(dp)
-                case(c_double)
-                    call dfftw_execute_dft( fft%plan3dm, c3d, c3d )
-                case(c_float)
-                    call sfftw_execute_dft( fft%plan3dm, c3d, c3d )
-                end select
-                deltarho_p(ip,:,:,:) = c3d/real(nx*ny*nz,dp)
-            end do
+          real(dp) :: cst
+            
+            !$omp parallel private ( ip, cst, buf )
+            allocate(buf(nx,ny,nz), stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate buf returns error ",ierr
+
+            cst=1._dp/real(nx*ny*nz,dp)
+            
+            select case(dp)
+            case(c_double)
+               !$omp do
+               do ip=1,np
+                  buf = deltarho_p(ip,:,:,:) 
+                  call dfftw_execute_dft( fft%plan3dm, buf, buf)
+                  deltarho_p(ip,:,:,:) = buf*cst
+               end do
+               !$omp end do
+            case(c_float)
+               !$omp do
+               do ip=1,np
+                  buf = deltarho_p(ip,:,:,:)
+                  call sfftw_execute_dft( fft%plan3dm, buf, buf)
+                  deltarho_p(ip,:,:,:) = buf*cst
+               end do
+               !$omp end do
+            end select
+            deallocate(buf)
+            !$omp end parallel
+
+            ! YOR old loop (L659) replaced with omp loop above
+            ! do ip=1,np
+            !     c3d = deltarho_p(ip,:,:,:)
+            !     select case(dp)
+            !     case(c_double)
+            !         call dfftw_execute_dft( fft%plan3dm, c3d, c3d )
+            !     case(c_float)
+            !         call sfftw_execute_dft( fft%plan3dm, c3d, c3d )
+            !     end select
+            !     deltarho_p(ip,:,:,:) = c3d/real(nx*ny*nz,dp)
+            ! end do
         end block
 
         call cpu_time(time(12))
