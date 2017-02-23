@@ -280,19 +280,17 @@ contains
         print*,"np = ",np
 
         block
-          real(dp) :: o(no)
-          
-          do iz=1,nz
-             do iy=1,ny
-                do ix=1,nx
-                   o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
-                   call angl2proj( o, deltarho_p(:,ix,iy,iz) )
-                end do
-             end do
-          end do
-          
+            real(dp) :: o(no)
+            do iz=1,nz
+               do iy=1,ny
+                  do ix=1,nx
+                     o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
+                     call angl2proj( o, deltarho_p(:,ix,iy,iz) )
+                  end do
+               end do
+            end do
         end block
-        
+
         call cpu_time (time(6))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -302,7 +300,7 @@ contains
         !
         ! On a les projections sur la grille cartesienne
         ! On veut passer dans l'espace de Fourier pour calculer les convolutions spatiales
-        ! On fait dallocate( c3d(nx,ny,nz)onc une FFT 3D pour chacune des projections.
+        ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
 !        block
@@ -332,19 +330,6 @@ contains
             end select
             deallocate(buf)
             !$omp end parallel
-
-
-          ! YOR old loop (line 297) replaced with omp loop above
-          ! do ip=1,np
-          !     c3d = deltarho_p(ip,:,:,:)
-          !     select case(dp);
-          !     case(c_double)
-          !         call dfftw_execute_dft(fft%plan3dp, c3d, c3d)
-          !     case(c_float)
-          !         call sfftw_execute_dft(fft%plan3dp, c3d, c3d)
-          !     end select
-          !     deltarho_p(ip,:,:,:) = c3d
-          ! end do
 !        end block
         call cpu_time (time(7))
 
@@ -723,18 +708,6 @@ contains
             end select
             deallocate(buf)
             !$omp end parallel
-
-            ! YOR old loop (L659) replaced with omp loop above
-            ! do ip=1,np
-            !     c3d = deltarho_p(ip,:,:,:)
-            !     select case(dp)
-            !     case(c_double)
-            !         call dfftw_execute_dft( fft%plan3dm, c3d, c3d )
-            !     case(c_float)
-            !         call sfftw_execute_dft( fft%plan3dm, c3d, c3d )
-            !     end select
-            !     deltarho_p(ip,:,:,:) = c3d/real(nx*ny*nz,dp)
-            ! end do
         end block
 
         call cpu_time(time(12))
