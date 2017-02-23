@@ -276,18 +276,16 @@ contains
         call cpu_time (time(5))
 
         ! 2/ ON PROJETTE delta_rho
-        print*,"no = ",no
-        print*,"np = ",np
 
         block
             real(dp) :: o(no)
             do iz=1,nz
-               do iy=1,ny
-                  do ix=1,nx
-                     o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
-                     call angl2proj( o, deltarho_p(:,ix,iy,iz) )
-                  end do
-               end do
+                do iy=1,ny
+                    do ix=1,nx
+                        o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
+                        call angl2proj( o, deltarho_p(:,ix,iy,iz) )
+                    end do
+                end do
             end do
         end block
 
