@@ -5,7 +5,7 @@ module module_energy_cproj_mrso
     use precision_kinds, only: dp
     use module_grid, only: grid
     use module_solvent, only: solvent
-    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu
+    use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu, init_module_rotation => init
 
     implicit none
 
@@ -68,24 +68,29 @@ contains
         use module_grid, only: grid
         use module_thermo, only: thermo
         use module_orientation_projection_transform, only: angl2proj, proj2angl
+        use module_wigner_d, only: wigner_small_d
+
         implicit none
         real(dp), intent(out) :: ff
         real(dp), contiguous, intent(inout), optional :: df(:,:,:,:,:) ! x y z o s
         logical, intent(in), optional :: print_timers
         real(dp) :: dv, kT
         logical :: q_eq_mq
-        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, ip, ip2
+        integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, ip
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, mrso
-        integer :: m, n, mu, khi, mup, iq, mu2, nu2
+        integer :: m, n, mu, nu, khi, mup, iq, mu2, nu2, p, i, ia
         real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
         logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
         real(dp) :: vexc(grid%no)
         real :: total_time_in_subroutine
-        complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
-        integer :: ip2_loc(-5:5)
+        complex(dp) :: deltarho_p_q_loc, deltarho_p_mq_loc
         complex(dp), parameter :: zeroc=(0._dp, 0._dp)
+        real(dp) :: effectiveiq, alpha
+        complex(dp), allocatable :: ceff(:)
+        real(dp) :: prefactor
+        real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
 
         call cpu_time (time(1))
 
@@ -96,11 +101,7 @@ contains
         ! In the case of C∞v or any symetry with ∞, the user enters 0 for ∞ in the input file in molrotsymorder.
         ! To ease the loops over all mu=-m/mrso,m/mrso, it is easier to make it large, like 100, so that m/mrso:=0.
         ! With this trick, we have the same loops as before, with only one value of mu, 0.
-        if( grid%molrotsymorder == 0 ) then
-            mrso = 100
-        else
-            mrso = grid%molrotsymorder
-        end if
+        mrso = grid%molrotsymorder
         lx   = grid%lx
         ly   = grid%ly
         lz   = grid%lz
@@ -123,7 +124,10 @@ contains
             allocate (gamma_p_mq(np), source=zeroc)
         end if
 
-        if (.not. allocated (gamma_p_isok) ) allocate (gamma_p_isok(nx,ny,nz), source=.false.)
+        if (.not. allocated (gamma_p_isok) ) then
+            allocate( gamma_p_isok(nx,ny,nz), source=.false., stat=i)
+            if( i/= 0) error stop "Problem allocating gamma_p_isok in module_energy_cproj_mrso"
+        end if
 
         call cpu_time (time(2))
 
@@ -188,6 +192,11 @@ contains
                 write(11,*) ip, p3%m(ip), p3%mup(ip), p3%mu(ip)
             end do
             close(11)
+
+            !
+            ! Prepare all callings to spherical harmonics generations
+            !
+            call init_module_rotation
         end if
 
         call cpu_time (time(3))
@@ -201,8 +210,8 @@ contains
         ! - le deuxième, grid%theta, est de taille le nombre total d'angle. Il retourne le theta qui correspond à l'indice de chaque angle.
         ! Si on veut la liste de tous les theta, on utilisera donc le tableau grid%thetaofntheta.
         !
-        theta=grid%thetaofntheta
-        wtheta=grid%wthetaofntheta
+        theta  = grid%thetaofntheta
+        wtheta = grid%wthetaofntheta
 
         !
         ! Tabulate generalized spherical harmonics in array p3%wigner_small_d(theta,proj)
@@ -216,20 +225,16 @@ contains
         !
         ! call test_routines_calcul_de_Rm_mup_mu_q
         if (.not. allocated(p3%wigner_small_d)) then
-            block
-                use module_wigner_d, only: wigner_small_d
-                integer :: p,m,mup,mu,i
-                allocate ( p3%wigner_small_d(1:ntheta, 1:np) ,source=0._dp)
-                do p=1,np
-                    m = p3%m(p)
-                    mup = p3%mup(p)
-                    mu = p3%mu(p)
-                    do i=1,ntheta
-                        ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la méthode de Wigner.
-                        p3%wigner_small_d(i,p) = wigner_small_d(m,mup,mu,theta(i))
-                    end do
+            allocate( p3%wigner_small_d(1:ntheta, 1:np) ,source=0._dp)
+            do p = 1, np
+                m = p3%m(p)
+                mup = p3%mup(p)
+                mu = p3%mu(p)
+                do i=1,ntheta
+                    ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la méthode de Wigner.
+                    p3%wigner_small_d(i,p) = wigner_small_d(m,mup,mu,theta(i))
                 end do
-            end block
+            end do
         end if
 
         call cpu_time (time(4))
@@ -266,19 +271,17 @@ contains
 
         call cpu_time (time(5))
 
+        !
         ! 2/ ON PROJETTE delta_rho
-
-        block
-            real(dp) :: o(no)
-            do iz=1,nz
-                do iy=1,ny
-                    do ix=1,nx
-                        o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
-                        call angl2proj( o, deltarho_p(:,ix,iy,iz) )
-                    end do
+        !
+        do iz=1,nz
+            do iy=1,ny
+                do ix=1,nx
+                    call angl2proj( rho0*(solvent(1)%xi(1:no,ix,iy,iz)**2 -1._dp) , &
+                                    deltarho_p(1:np,ix,iy,iz) )
                 end do
             end do
-        end block
+        end do
 
         call cpu_time (time(6))
 
@@ -292,19 +295,17 @@ contains
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        block
-            integer :: ip
-            do ip=1,np
-                c3d = deltarho_p(ip,:,:,:)
-                select case(dp);
-                case(c_double)
-                    call dfftw_execute_dft(fft%plan3dp, c3d, c3d)
-                case(c_float)
-                    call sfftw_execute_dft(fft%plan3dp, c3d, c3d)
-                end select
-                deltarho_p(ip,:,:,:) = c3d
-            end do
-        end block
+        do ip = 1, np
+            c3d = deltarho_p(ip,:,:,:)
+            select case(dp);
+            case(c_double)
+                call dfftw_execute_dft(fft%plan3dp, c3d, c3d)
+            case(c_float)
+                call sfftw_execute_dft(fft%plan3dp, c3d, c3d)
+            end select
+            deltarho_p(ip,:,:,:) = c3d
+        end do
+
         call cpu_time (time(7))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -392,26 +393,29 @@ contains
             ! Move prefactors of MOZ inside the direct correlation function so that one does not need to compute, for instance,
             !  (-1)**(khi+nu) inside the inner loop of MOZ
             !
-            block
-                integer :: ip, n, nu, khi
-                do ip=1,c%np
-                    nu = c%nu(ip)
-                    if( nu<0 ) then
-                        khi = c%khi(ip)
-                        c%mnmunukhi_q(ip,:) = (-1)**(khi+nu) *c%mnmunukhi_q(ip,:)
-                    else
-                        n = c%n(ip)
-                        c%mnmunukhi_q(ip,:) = (-1)**(n) *c%mnmunukhi_q(ip,:)
-                    end if
-                end do
-            end block
+            do ip=1,c%np
+                nu = c%nu(ip)
+                if( nu<0 ) then
+                    khi = c%khi(ip)
+                    c%mnmunukhi_q(ip,:) = (-1)**(khi+nu) *c%mnmunukhi_q(ip,:)
+                else
+                    n = c%n(ip)
+                    c%mnmunukhi_q(ip,:) = (-1)**(n) *c%mnmunukhi_q(ip,:)
+                end if
+            end do
             c%isok=.true.
         end if
 
         call cpu_time (time(9))
 
         if (.not. allocated(R) ) then
-            allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=(0._dp,0._dp) )
+            allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=(0._dp,0._dp) , stat = i)
+            if( i /= 0) error stop "Problem while allocating R in energy_cproj_mrso"
+        end if
+
+        if( .not. allocated( ceff )) then
+            allocate( ceff(c%np), source = (0._dp,0._dp), stat=i )
+            if( i /= 0) error stop "Problem while allocating ceff in energy_cproj_mrso"
         end if
 
         !
@@ -419,11 +423,6 @@ contains
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
         gamma_p_isok = .false.
-
-        block
-            integer :: ip, m, khi, mu2, ia
-            complex(dp) :: ceff(c%np)
-
 
         do iz_q=1,nz/2+1
             iz_mq = grid%iz_mq(iz_q)
@@ -467,22 +466,19 @@ contains
                     !  on  a       deltarho_p_q(m,khi,mu2) =  sum/mup  @   gamma_p_q(m,mup,mu2) * R(m,mup,khi)
                     !=>              gamma_p_q(mup,m,mu2) * R(mup,m,khi)
 
-                    gamma_p_q = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
+                    gamma_p_q  = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
                     gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq) ! this a temporary array
                     ip=0
                     do m=0,mmax
                         do khi=-m,m
-                            R_loc(-m:m)=R(m,-m:m,khi)
                             do mu2=0,m/mrso
                                 ip=ip+1
-                                ip2_loc(-m:m)=p3%p(m,-m:m,mu2)  ! Optimization added 6th of June 2016. Makes the code ugly but improves locality... :-/
                                 ! Equation 1.22
                                 deltarho_p_q_loc  = (0._dp,0._dp)
                                 deltarho_p_mq_loc = (0._dp,0._dp)
                                 do mup=-m,m
-                                    ip2=ip2_loc(mup)
-                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q(p3%p(m,mup,mu2))  *R_loc(mup)
-                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(p3%p(m,mup,mu2)) *R_loc(mup)
+                                    deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q (p3%p(m,mup,mu2)) * R(m,mup,khi)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(p3%p(m,mup,mu2)) * R(m,mup,khi)
                                 end do
                                 deltarho_p_q(ip) = deltarho_p_q_loc
                                 deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
@@ -499,14 +495,11 @@ contains
                     ! ceff(:) = c%mnmunukhi_q(:,iq)
 
 
-                    block
-                        real(dp) :: effectiveiq, alpha
-                        effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
-                        iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
-                        alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
-                        ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
-                                 + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
-                    end block
+                    effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
+                    iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
+                    alpha = effectiveiq - real(iq,dp) ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
+                    ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
+                             + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -592,6 +585,7 @@ contains
                     R = conjg(R) ! le passage retour au repaire fixe se fait avec simplement le conjugue complexe de l'harm sph generalisee
                     ! we use deltarho_p_q and deltarho_p_mq as temp arrays since they're not used after MOZ
                     
+
                     !
                     ! prevent underflow in gamma_p_q/mq * R if gamma_p is very low
                     !
@@ -610,40 +604,42 @@ contains
                                 ip=ip+1
                                 ! Equation 1.22
                                 do khi=-m,m
-                                    ip2=p3%p(m,khi,mu2)
-                                    deltarho_p_q(ip)  = deltarho_p_q(ip)  + gamma_p_q (ip2) *R(m,mup,khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(ip2) *R(m,mup,khi)
+                                    deltarho_p_q(ip)  = deltarho_p_q(ip)  + gamma_p_q (p3%p(m,khi,mu2)) *R(m,mup,khi)
+                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(p3%p(m,khi,mu2)) *R(m,mup,khi)
                                 end do
                                 deltarho_p_mq(ip) = deltarho_p_mq(ip) *(-1)**m
                             end do
                         end do
                     end do
 
-                    !
-                    ! For vector q,
-                    !
-                    deltarho_p (:, ix_q, iy_q, iz_q) = deltarho_p_q
-                    gamma_p_isok(ix_q,iy_q,iz_q)=.true.
 
                     !
-                    ! Again, pay attention to the singular mid-k point
+                    ! Move the result for this given vector q to the big array containing all results.
+                    ! First, for q,
                     !
-                    if( q_eq_mq .and. (ix_q==nx/2+1.or.iy_q==ny/2+1.or.iz_q==nz/2+1)) then
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(deltarho_p_mq)
+                    deltarho_p(1:np, ix_q, iy_q, iz_q) = deltarho_p_q(1:np)
+                    !
+                    ! Then, for -q. Again, pay attention to the singular mid-k point
+                    !
+                    if( q_eq_mq .and. (ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1)) then
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(deltarho_p_mq(1:np))
                     else
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = deltarho_p_mq
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = deltarho_p_mq(1:np)
                     end if
+                    !
+                    ! And store you have already done the job
+                    !
+                    gamma_p_isok(ix_q,iy_q,iz_q)=.true.
                     gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
                 end do
             end do
         end do
-    end block
 
 
         call cpu_time(time(10))
 
-        if (.not.all(gamma_p_isok.eqv..true.)) then
+        if ( any(gamma_p_isok .eqv. .false.) ) then
             error stop "not all gamma_p(projections,ix,iy,iz) have not been computed"
         end if
 
@@ -653,19 +649,16 @@ contains
         !
         ! FFT3D from Fourier space to real space
         !
-        block
-            integer :: ip
-            do ip=1,np
-                c3d = deltarho_p(ip,:,:,:)
-                select case(dp)
-                case(c_double)
-                    call dfftw_execute_dft( fft%plan3dm, c3d, c3d )
-                case(c_float)
-                    call sfftw_execute_dft( fft%plan3dm, c3d, c3d )
-                end select
-                deltarho_p(ip,:,:,:) = c3d/real(nx*ny*nz,dp)
-            end do
-        end block
+        do ip=1,np
+            c3d = deltarho_p(ip,:,:,:)
+            select case(dp)
+            case(c_double)
+                call dfftw_execute_dft( fft%plan3dm, c3d, c3d )
+            case(c_float)
+                call sfftw_execute_dft( fft%plan3dm, c3d, c3d )
+            end select
+            deltarho_p(ip,:,:,:) = c3d/real(nx*ny*nz,dp)
+        end do
 
         call cpu_time(time(12))
 
@@ -673,54 +666,50 @@ contains
         ! Gather projections into gamma
         ! Note that gamma==df
         !
-        block
-            real(dp) :: prefactor
-            real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
-            prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
-            if(present(df)) then
-                ff=0._dp
-                do iz=1,nz
-                    do iy=1,ny
-                        do ix=1,nx
-                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
-                            vexc = prefactor*grid%w*vexc
-                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
-                            df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + 2._dp*rho0*solvent(1)%xi(:,ix,iy,iz)*vexc
-                        end do
+        prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
+        if(present(df)) then
+            ff=0._dp
+            do iz=1,nz
+                do iy=1,ny
+                    do ix=1,nx
+                        call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
+                        vexc = prefactor*grid%w*vexc
+                        ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
+                        df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + 2._dp*rho0*solvent(1)%xi(:,ix,iy,iz)*vexc
                     end do
                 end do
-                ff = ff*0.5_dp*dv
-            else
-                ff=0._dp
-                prefactor = -kT*fourpisq  /solvent(1)%n0! /0.0333 vient du c de luc qui est un n0.c
-                do iz=1,nz
-                    do iy=1,ny
-                        do ix=1,nx
-                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
-                            vexc = prefactor*grid%w*vexc
-                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
-                        end do
+            end do
+            ff = ff*0.5_dp*dv
+        else
+            ff=0._dp
+            do iz=1,nz
+                do iy=1,ny
+                    do ix=1,nx
+                        call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
+                        vexc = prefactor*grid%w*vexc
+                        ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
                     end do
                 end do
-                ff = ff*0.5_dp*dv
-            end if
-        end block
+            end do
+            ff = ff*0.5_dp*dv
+        end if
+
         call cpu_time(time(13))
 
         total_time_in_subroutine = time(13)-time(1)
 
         if(present(print_timers)) then
             if( print_timers) then
-print*, "                  |"
-print*, "                  | read ck                                      ", time(9)-time(8)  ,"sec (",nint((time(9) -time(8 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | tabulate spherical harmonics                 ", time(4)-time(3)  ,"sec (",nint((time(4) -time(3 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | plan FFTs                                    ", time(5)-time(4)  ,"sec (",nint((time(5) -time(4 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | angl2proj                                    ", time(6)-time(5)  ,"sec (",nint((time(6) -time(5 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | FFT  @Δρ^m_mup_mu(k)                         ", time(7)-time(6)  ,"sec (",nint((time(7) -time(6 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | rotation to molecular frame + OZ + inv rot   ", time(10)-time(9) ,"sec (",nint((time(10)-time(9 ))/total_time_in_subroutine*100),"%)"
-print*, "                  | FFT⁻¹@Δρ^m_mup_mu(k)                         ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
-print*, "                  | proj2angl + sum to ff and df                 ", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
-print*, "                  |"
+                print*, "                  |"
+                print*, "                  | read ck                                      ", time(9)-time(8)  ,"sec (",nint((time(9) -time(8 ))/total_time_in_subroutine*100),"%)"
+                print*, "                  | tabulate spherical harmonics                 ", time(4)-time(3)  ,"sec (",nint((time(4) -time(3 ))/total_time_in_subroutine*100),"%)"
+                print*, "                  | plan FFTs                                    ", time(5)-time(4)  ,"sec (",nint((time(5) -time(4 ))/total_time_in_subroutine*100),"%)"
+                print*, "                  | angl2proj                                    ", time(6)-time(5)  ,"sec (",nint((time(6) -time(5 ))/total_time_in_subroutine*100),"%)"
+                print*, "                  | FFT  @Δρ^m_mup_mu(k)                         ", time(7)-time(6)  ,"sec (",nint((time(7) -time(6 ))/total_time_in_subroutine*100),"%)"
+                print*, "                  | rotation to molecular frame + OZ + inv rot   ", time(10)-time(9) ,"sec (",nint((time(10)-time(9 ))/total_time_in_subroutine*100),"%)"
+                print*, "                  | FFT⁻¹@Δρ^m_mup_mu(k)                         ", time(12)-time(11),"sec (",nint((time(12)-time(11))/total_time_in_subroutine*100),"%)"
+                print*, "                  | proj2angl + sum to ff and df                 ", time(13)-time(12),"sec (",nint((time(13)-time(12))/total_time_in_subroutine*100),"%)"
+                print*, "                  |"
             end if
         end if
 
