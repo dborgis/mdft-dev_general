@@ -1,5 +1,5 @@
 <jube>
-  <benchmark name="MDFT" outpath="$WORK/mdft_PerfEval">
+  <benchmark name="MDFT" outpath="$WORK/mdft_PerfEval_DP">
     <comment>MDFT full JUBE performance Evaluation - add specifics</comment>
     
     <!-- modules -->
@@ -138,6 +138,10 @@ end program
       <sub source="end program" dest="$main_mpi_fin" />
     </substituteset>
 
+    <substituteset name="sub_dp">
+      <iofile in="mdft-dev/src/module_precision_kinds.f90" out="mdft-dev/src/module_precision_kinds.f90" />
+      <sub source="dp = C_FLOAT" dest="dp = C_DOUBLE" />
+    </substituteset>
     
     <step name="files" export="true">
       <use>git_param</use>
@@ -145,6 +149,7 @@ end program
       <use tag="!COPY_FILES">clone_sources</use>
       <use tag="COPY_FILES">copy_sources</use>
       <use>sub_sources</use>
+      <use>sub_dp</use>
     </step>
 
     <!-- compilation -->
