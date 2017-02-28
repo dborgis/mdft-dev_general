@@ -7,7 +7,7 @@ The Molecular Density Functional Theory, by
 - Guillaume Jeanmairet, as a PhD student (2011-2014), worked on the nP functional for water.
 - Ljiljana Stojanovitch, as a postdoctoral researcher (2013-2014), worked on reference MD, PMFs and hydrophobicity.
 - Volodymyr Sergiievskyi, as a postdoctoral researcher (2013-2014), worked on pressure corrections and hard sphere bridges.
-- Lu Ding, as a PhD student (2013-), works on the resolution of the molecular Ornstein-Zernike equations as projected on a basis of rotational invariants.
+- Lu Ding, as a PhD student (2013-2017), works on the resolution of the molecular Ornstein-Zernike equations as projected on a basis of rotational invariants.
 - Cédric Gageat, as a PhD student (2015-), works on core developments and biomolecular applications.
 - Yacine Ould-Rouis, as an engineer in high performance computing (2017-), works on openmp implementation and vectorization.
 
