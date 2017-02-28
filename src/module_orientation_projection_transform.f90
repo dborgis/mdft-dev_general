@@ -35,7 +35,7 @@ module module_orientation_projection_transform
     real(dp), parameter :: fm(0:5) = [ 1._dp, sqrt(3._dp), sqrt(5._dp), sqrt(7._dp), sqrt(9._dp), sqrt(11._dp) ] ! sqrt(2m+1)
     logical :: is_init = .false.
 
-    public :: angl2proj, proj2angl
+    public :: angl2proj, proj2angl, init_module_orientation_projection_transform
 
 contains
 
@@ -160,42 +160,66 @@ contains
         is_init = .true.
     end subroutine init
 
+    subroutine init_module_orientation_projection_transform
+      call init
+    end subroutine init_module_orientation_projection_transform
+
+
 
     subroutine angl2proj(o,p)
         implicit none
         real(dp), intent(in) :: o(:) ! orientations from 1 to no
         complex(dp), intent(out) :: p(:) ! projections from 1 to no
         integer :: itheta, iphi, ipsi, m, mup, mu2, ip, io
+        
+        complex(dp), allocatable :: my_f_theta_mu2_mup(:,:,:)
+        real(dp), dimension(npsi,nphi) :: my_r2d
+        complex(dp), dimension(npsi/2+1,nphi) :: my_c2d
+!        real(dp), allocatable :: my_r2d(:,:)
+!        complex(dp), allocatable :: my_c2d(:,:)
+        integer :: ierr
+
         if( .not. is_init) call init
-        p = (0._dp,0._dp)
-        f_theta_mu2_mup = (0._dp,0._dp)
+
+        allocate( my_f_theta_mu2_mup(ntheta,0:mmax/mrso,-mmax:mmax), stat=ierr )        
+        if (ierr/=0) PRINT*,"Allocate my_f_theta_mu2_mup returns error ",ierr
+!        allocate( my_r2d(npsi,nphi), stat=ierr )
+!        if (ierr/=0) PRINT*,"Allocate my_r2d returns error ",ierr
+!        allocate( my_c2d(npsi/2+1,nphi), stat=ierr )
+!        if (ierr/=0) PRINT*,"Allocate my_c2d returns error ",ierr
+        
+        p = (0._dp,0._dp) !YOR! Useful?
+        my_f_theta_mu2_mup = (0._dp,0._dp) !YOR! Useful?
         io=0
         do itheta=1,ntheta
             do iphi=1,nphi
                 do ipsi=1,npsi
                     io=io+1
-                    r2d(ipsi,iphi) = o(io)
+                    my_r2d(ipsi,iphi) = o(io)
                 end do
             end do
             select case(dp)
             case(c_double)
-                call dfftw_execute (fft%plan2dm, r2d, c2d)
+                call dfftw_execute_dft_r2c (fft%plan2dm, my_r2d, my_c2d)
             case(c_float)
-                call sfftw_execute (fft%plan2dm, r2d, c2d)
+                call sfftw_execute_dft_r2c (fft%plan2dm, my_r2d, my_c2d)
             end select
-            c2d = conjg(c2d)/real(nphi*npsi,dp) ! we wanted plan with + in exponential but did not have choice since r2c is done with sign - in fftw.
-            f_theta_mu2_mup(itheta,0:mmax/mrso,0:mmax)   = c2d(:,1:mmax+1)
-            f_theta_mu2_mup(itheta,0:mmax/mrso,-mmax:-1) = c2d(:,mmax+2:)
+            my_c2d = conjg(my_c2d)/real(nphi*npsi,dp) ! we wanted plan with + in exponential but did not have choice since r2c is done with sign - in fftw.
+            my_f_theta_mu2_mup(itheta,0:mmax/mrso,0:mmax)   = my_c2d(:,1:mmax+1)
+            my_f_theta_mu2_mup(itheta,0:mmax/mrso,-mmax:-1) = my_c2d(:,mmax+2:)
         end do
         ip=0
         do m=0,mmax
             do mup=-m,m
                 do mu2=0,m/mrso
                     ip=ip+1
-                    p(ip)= sum(f_theta_mu2_mup(:,mu2,mup)*p3%wigner_small_d(:,ip)*wtheta(:))*fm(m)
+                    p(ip)= sum(my_f_theta_mu2_mup(:,mu2,mup)*p3%wigner_small_d(:,ip)*wtheta(:))*fm(m)
                 end do
             end do
         end do
+        deallocate(my_f_theta_mu2_mup)
+!        deallocate(my_r2d)
+!        deallocate(my_c2d)
     end subroutine angl2proj
 
 
@@ -204,37 +228,47 @@ contains
         complex(dp), intent(in) :: p(:) ! np
         real(dp), intent(out) :: o(:) ! no
         integer :: itheta, iphi, ipsi, m, mup, mu2, ip, io
+
+        complex(dp), allocatable :: my_f_theta_mu2_mup(:,:,:)
+        real(dp), dimension(npsi,nphi) :: my_r2d
+        complex(dp), dimension(npsi/2+1,nphi) :: my_c2d
+
         if(.not.is_init) call init
-        o = 0._dp
-        f_theta_mu2_mup = (0._dp,0._dp)
+
+        allocate( my_f_theta_mu2_mup(ntheta,0:mmax/mrso,-mmax:mmax), stat=ierr )        
+        if (ierr/=0) PRINT*,"Allocate my_f_theta_mu2_mup returns error ",ierr
+        
+        o = 0._dp !YOR! useful?
+        my_f_theta_mu2_mup = (0._dp,0._dp) !YOR! useful?
         do mup=-mmax,mmax
             do mu2=0,mmax/mrso
                 do m= max(abs(mup),mrso*abs(mu2)), mmax
                     ip=p3%p(m,mup,mu2)
                     do itheta=1,ntheta
-                        f_theta_mu2_mup(itheta,mu2,mup) = f_theta_mu2_mup(itheta,mu2,mup) +p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
+                        my_f_theta_mu2_mup(itheta,mu2,mup) = my_f_theta_mu2_mup(itheta,mu2,mup) +p(ip)*p3%wigner_small_d(itheta,ip)*fm(m)
                     end do
                 end do
             end do
         end do
         io=0
         do itheta=1,ntheta
-            c2d(:,1:mmax+1) = conjg( f_theta_mu2_mup(itheta,0:mmax/mrso,0:mmax)   )
-            c2d(:,mmax+2:)  = conjg( f_theta_mu2_mup(itheta,0:mmax/mrso,-mmax:-1) )
+            my_c2d(:,1:mmax+1) = conjg( my_f_theta_mu2_mup(itheta,0:mmax/mrso,0:mmax)   )
+            my_c2d(:,mmax+2:)  = conjg( my_f_theta_mu2_mup(itheta,0:mmax/mrso,-mmax:-1) )
             select case(dp)
             case(c_double)
-                call dfftw_execute( fft%plan2dp, c2d, r2d )
+                call dfftw_execute_dft_c2r( fft%plan2dp, my_c2d, my_r2d )
             case(c_float)
-                call sfftw_execute( fft%plan2dp, c2d, r2d )
+                call sfftw_execute_dft_c2r( fft%plan2dp, my_c2d, my_r2d )
             end select
             do iphi=1,nphi
                 do ipsi=1,npsi
                     io=io+1
-                    o(io) = r2d(ipsi,iphi)
+                    o(io) = my_r2d(ipsi,iphi)
                 end do
             end do
         end do
     end subroutine proj2angl
+
 
 
 end module module_orientation_projection_transform

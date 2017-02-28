@@ -67,7 +67,7 @@ contains
         use precision_kinds, only: dp
         use module_grid, only: grid
         use module_thermo, only: thermo
-        use module_orientation_projection_transform, only: angl2proj, proj2angl
+        use module_orientation_projection_transform, only: angl2proj, proj2angl, init_module_orientation_projection_transform
         implicit none
         real(dp), intent(out) :: ff
         real(dp), contiguous, intent(inout), optional :: df(:,:,:,:,:) ! x y z o s
@@ -86,6 +86,7 @@ contains
         complex(dp) :: R_loc(-5:5), deltarho_p_q_loc, deltarho_p_mq_loc
         integer :: ip2_loc(-5:5)
         complex(dp), parameter :: zeroc=(0._dp, 0._dp)
+        real(dp), allocatable :: o(:)
         integer :: ierr
 
         call cpu_time (time(1))
@@ -276,18 +277,27 @@ contains
         call cpu_time (time(5))
 
         ! 2/ ON PROJETTE delta_rho
-
-        block
-            real(dp) :: o(no)
-            do iz=1,nz
-                do iy=1,ny
-                    do ix=1,nx
-                        o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
-                        call angl2proj( o, deltarho_p(:,ix,iy,iz) )
-                    end do
-                end do
-            end do
-        end block
+        call init_module_orientation_projection_transform
+        !block
+          !real(dp), allocatable :: o(:)
+          !real(dp) :: o(no)  
+          
+        !$omp parallel private (iz, iy, ix, o )
+        allocate( o(no), stat=ierr)
+        if (ierr/=0) PRINT*,"Allocate o returns error ",ierr
+        !$omp do
+        do iz=1,nz
+           do iy=1,ny
+              do ix=1,nx
+                 o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
+                 call angl2proj( o, deltarho_p(:,ix,iy,iz) )
+              end do
+           end do
+        end do
+        !$omp end do
+        deallocate(o)
+        !$omp end parallel
+        !end block
 
         call cpu_time (time(6))
 
@@ -720,6 +730,8 @@ contains
             prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
             if(present(df)) then
                 ff=0._dp
+                !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
+                !$omp do
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
@@ -730,10 +742,13 @@ contains
                         end do
                     end do
                 end do
+                !$omp end do
+                !$omp end parallel
                 ff = ff*0.5_dp*dv
             else
                 ff=0._dp
-                prefactor = -kT*fourpisq  /solvent(1)%n0! /0.0333 vient du c de luc qui est un n0.c
+                !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
+                !$omp do
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
@@ -743,6 +758,8 @@ contains
                         end do
                     end do
                 end do
+                !$omp end do
+                !$omp end parallel
                 ff = ff*0.5_dp*dv
             end if
         end block
