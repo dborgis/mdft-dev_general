@@ -232,6 +232,7 @@ contains
         complex(dp), allocatable :: my_f_theta_mu2_mup(:,:,:)
         real(dp), dimension(npsi,nphi) :: my_r2d
         complex(dp), dimension(npsi/2+1,nphi) :: my_c2d
+        integer :: ierr
 
         if(.not.is_init) call init
 
