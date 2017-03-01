@@ -36,10 +36,6 @@ module module_energy_cproj_mrso
     type(c_type), protected :: c
 
     complex(dp), allocatable, protected :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
-    complex(dp), allocatable, protected :: deltarho_p_q(:)
-    complex(dp), allocatable, protected :: deltarho_p_mq(:)
-    complex(dp), allocatable, protected :: gamma_p_q(:)
-    complex(dp), allocatable, protected :: gamma_p_mq(:)
 
     type :: p3_type
         real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
@@ -56,7 +52,7 @@ module module_energy_cproj_mrso
     end type fft_type
     type(fft_type), protected :: fft
     complex(dp), allocatable :: c3d(:,:,:), buf(:,:,:)
-    complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
+    !complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
     public :: energy_cproj_mrso
 
@@ -120,14 +116,6 @@ contains
         if (.not. allocated (deltarho_p) ) then
             allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc, stat=ierr)
             if (ierr/=0) PRINT*,"Allocate deltarho_p returns error ",ierr            
-            allocate (deltarho_p_q(np) ,source=zeroc, stat=ierr)
-            if (ierr/=0) PRINT*,"Allocate deltarho_p_q returns error ",ierr
-            allocate (deltarho_p_mq(np) ,source=zeroc, stat=ierr)
-            if (ierr/=0) PRINT*,"Allocate deltarho_p_mq returns error ",ierr
-            allocate (gamma_p_q(np), source=zeroc, stat=ierr)
-            if (ierr/=0) PRINT*,"Allocate gamma_p_q returns error ",ierr
-            allocate (gamma_p_mq(np), source=zeroc, stat=ierr)
-            if (ierr/=0) PRINT*,"Allocate gamma_p_mq returns error ",ierr
         end if
 
         if (.not. allocated (gamma_p_isok) ) then 
@@ -444,10 +432,6 @@ contains
 
         call cpu_time (time(9))
 
-        if (.not. allocated(R) ) then
-            allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=(0._dp,0._dp) )
-        end if
-
         !
         ! For all vectors q and -q handled simultaneously.
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
@@ -455,14 +439,30 @@ contains
         gamma_p_isok = .false.
 
         block
-            integer :: ip, m, khi, mu2, ia
-            complex(dp) :: ceff(c%np)
-            real(dp) :: effectiveiq, alpha
+          integer ::  m, khi, mu2, ia
+          complex(dp) :: ceff(c%np)
+          real(dp) :: effectiveiq, alpha
+          complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax)
+          complex(dp), allocatable :: deltarho_p_q(:)
+          complex(dp), allocatable :: deltarho_p_mq(:)
+          complex(dp), allocatable :: gamma_p_q(:)
+          complex(dp), allocatable :: gamma_p_mq(:)
 
-        do iz_q=1,nz/2+1
-            iz_mq = grid%iz_mq(iz_q)
-            q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
-            do iy_q=1,ny
+          !$omp parallel private(iz_q, iy_q, ix_q, iz_mq, iy_mq, ix_mq, q, R, R_loc, q_eq_mq, gamma_p_q, gamma_p_mq, m, khi, mu2, ip2_loc, deltarho_p_q, deltarho_p_mq, deltarho_p_q_loc, deltarho_p_mq_loc, ia, ip, effectiveiq, iq, alpha, ceff, ip2)
+          allocate (deltarho_p_q(np) ,source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate deltarho_p_q returns error ",ierr
+          allocate (deltarho_p_mq(np) ,source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate deltarho_p_mq returns error ",ierr
+          allocate (gamma_p_q(np), source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate gamma_p_q returns error ",ierr
+          allocate (gamma_p_mq(np), source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate gamma_p_mq returns error ",ierr          
+          
+          !$omp do
+          do iz_q=1,nz/2+1
+             iz_mq = grid%iz_mq(iz_q)
+             q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
+             do iy_q=1,ny
                 iy_mq = grid%iy_mq(iy_q)
                 q(2) = grid%ky(iy_q) ! cartesian coordinates of vector q in lab frame
                 do ix_q=1,nx
@@ -472,7 +472,7 @@ contains
                     !
                     ! gamma_p_isok is a logical array. If gamma(ix_q,iy_q,iz_q) has already been calculated, it is .true.
                     !
-                    if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq,iz_mq) ) cycle
+                    if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq, iz_mq) ) cycle
 
                     !
                     ! pay attention to the special case(s) where q=-q
@@ -535,11 +535,11 @@ contains
 
 !                    block
 !                        real(dp) :: effectiveiq, alpha
-                        effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
-                        iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
-                        alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
-                        ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
-                                 + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
+                    effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
+                    iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
+                    alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
+                    ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
+                         + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
 !                    end block
 
                     !
@@ -672,6 +672,13 @@ contains
                 end do
             end do
         end do
+        !$omp end do
+        ! deallocate : (not necessary)
+        deallocate (deltarho_p_q)
+        deallocate (deltarho_p_mq)
+        deallocate (gamma_p_q)
+        deallocate (gamma_p_mq)
+        !$omp end parallel
     end block
 
 
