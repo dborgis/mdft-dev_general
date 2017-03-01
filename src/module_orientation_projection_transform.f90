@@ -35,7 +35,7 @@ module module_orientation_projection_transform
     real(dp), parameter :: fm(0:5) = [ 1._dp, sqrt(3._dp), sqrt(5._dp), sqrt(7._dp), sqrt(9._dp), sqrt(11._dp) ] ! sqrt(2m+1)
     logical :: is_init = .false.
 
-    public :: angl2proj, proj2angl, init_module_orientation_projection_transform
+    public :: angl2proj, proj2angl, init
 
 contains
 
@@ -159,12 +159,6 @@ contains
 
         is_init = .true.
     end subroutine init
-
-    subroutine init_module_orientation_projection_transform
-      call init
-    end subroutine init_module_orientation_projection_transform
-
-
 
     subroutine angl2proj(o,p)
         implicit none

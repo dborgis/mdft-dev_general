@@ -67,7 +67,7 @@ contains
         use precision_kinds, only: dp
         use module_grid, only: grid
         use module_thermo, only: thermo
-        use module_orientation_projection_transform, only: angl2proj, proj2angl, init_module_orientation_projection_transform
+        use module_orientation_projection_transform, only: angl2proj, proj2angl, init_module_orientation_projection_transform=>init
         implicit none
         real(dp), intent(out) :: ff
         real(dp), contiguous, intent(inout), optional :: df(:,:,:,:,:) ! x y z o s
