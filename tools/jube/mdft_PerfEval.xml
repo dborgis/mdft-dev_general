@@ -186,7 +186,7 @@ end program
 
       <parameter name="threadspertask" type="int">24</parameter>      
       <parameter name="threadspertask" type="int" tag="NO_OMP">1</parameter>      
-
+      <parameter name="threadspertask" type="int" tag="scaling">1,2,4,8,12,24</parameter>
       <parameter name="executable">compile/mdft-dev</parameter>
       <parameter name="notification">FAIL</parameter>
       <parameter name="timelimit" tag="lysozyme">23:59:59</parameter>
@@ -322,8 +322,7 @@ end program
     <patternset name="my_pattern">
       <pattern name="n_iter">\n[\s]+${jube_pat_int} </pattern>
       <pattern name="time_pat">MDFT finished in\ +(.+)$</pattern>
-      <pattern name="energy_pat">^\*\*\*\*\*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\
-\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*([0-9\.D\-\+]*)</pattern>
+      <pattern name="energy_pat">ESTIMATED SOLVATION FREE ENERGY:[\s]+([0-9\.]+)</pattern>
       <pattern name="iteration_pat">^\*\*\*\*\*[\ ]*([0-9\.D]*)[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\\
 .D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D]*[\ ]*[0-9\.D\-\+]*[\ ]*[0-9\.D\-\+]*</pattern>
     </patternset>
@@ -336,15 +335,15 @@ end program
 
     <result name="my_results">
       <use>my_analysis</use>
-      <table name="my_results" style="pretty" sort="mmax">
+      <table name="my_results" style="pretty">
         <column>compile_mode</column>
         <column>mode</column>
         <column>mmax</column>
         <column>boxnod</column>
+	<column>threadspertask</column>
         <column>time_pat</column>
         <column>n_iter_last</column>
         <column>energy_pat</column>
-        <column>iteration_pat</column>
       </table>
     </result>
 

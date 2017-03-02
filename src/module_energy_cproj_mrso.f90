@@ -63,7 +63,7 @@ contains
         use precision_kinds, only: dp
         use module_grid, only: grid
         use module_thermo, only: thermo
-        use module_orientation_projection_transform, only: angl2proj, proj2angl, init_module_orientation_projection_transform=>init
+        use module_orientation_projection_transform, only: angl2proj, proj2angl, init_module_orientation_projection_transform => init
         implicit none
         real(dp), intent(out) :: ff
         real(dp), contiguous, intent(inout), optional :: df(:,:,:,:,:) ! x y z o s
@@ -266,9 +266,6 @@ contains
 
         ! 2/ ON PROJETTE delta_rho
         call init_module_orientation_projection_transform
-        !block
-          !real(dp), allocatable :: o(:)
-          !real(dp) :: o(no)  
           
         !$omp parallel private (iz, iy, ix, o )
         allocate( o(no), stat=ierr)
@@ -285,7 +282,6 @@ contains
         !$omp end do
         deallocate(o)
         !$omp end parallel
-        !end block
 
         call cpu_time (time(6))
 
@@ -299,8 +295,6 @@ contains
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-!        block
-!            integer :: ip
             
             !$omp parallel private ( ip, buf )
             allocate(buf(nx,ny,nz), stat=ierr)
@@ -326,7 +320,7 @@ contains
             end select
             deallocate(buf)
             !$omp end parallel
-!        end block
+
         call cpu_time (time(7))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -533,14 +527,11 @@ contains
                     ! ceff(:) = c%mnmunukhi_q(:,iq)
 
 
-!                    block
-!                        real(dp) :: effectiveiq, alpha
                     effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
                     iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
                     alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
                     ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
                          + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
-!                    end block
 
                     !
                     ! Ornstein-Zernike in the molecular frame

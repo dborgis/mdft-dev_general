@@ -166,7 +166,6 @@ contains
         complex(dp), intent(out) :: p(:) ! projections from 1 to no
         integer :: itheta, iphi, ipsi, m, mup, mu2, ip, io
         
-!        complex(dp), allocatable :: my_f_theta_mu2_mup(:,:,:)
         complex(dp), dimension(ntheta,0:mmax/mrso,-mmax:mmax) :: my_f_theta_mu2_mup
         real(dp), dimension(npsi,nphi) :: my_r2d
         complex(dp), dimension(npsi/2+1,nphi) :: my_c2d
@@ -175,9 +174,6 @@ contains
 
         if( .not. is_init) call init
 
-!        allocate( my_f_theta_mu2_mup(ntheta,0:mmax/mrso,-mmax:mmax), stat=ierr )        
-!        if (ierr/=0) PRINT*,"Allocate my_f_theta_mu2_mup returns error ",ierr
-        
         p = (0._dp,0._dp) !YOR! Useful?
         my_f_theta_mu2_mup = (0._dp,0._dp) !YOR! Useful?
         io=0
@@ -207,7 +203,6 @@ contains
                 end do
             end do
         end do
-!        deallocate(my_f_theta_mu2_mup)
     end subroutine angl2proj
 
 
@@ -217,7 +212,6 @@ contains
         real(dp), intent(out) :: o(:) ! no
         integer :: itheta, iphi, ipsi, m, mup, mu2, ip, io
 
-!        complex(dp), allocatable :: my_f_theta_mu2_mup(:,:,:)
         complex(dp), dimension(ntheta,0:mmax/mrso,-mmax:mmax) :: my_f_theta_mu2_mup
         real(dp), dimension(npsi,nphi) :: my_r2d
         complex(dp), dimension(npsi/2+1,nphi) :: my_c2d
@@ -225,9 +219,6 @@ contains
 
         if(.not.is_init) call init
 
-!        allocate( my_f_theta_mu2_mup(ntheta,0:mmax/mrso,-mmax:mmax), stat=ierr )        
-!        if (ierr/=0) PRINT*,"Allocate my_f_theta_mu2_mup returns error ",ierr
-        
         o = 0._dp !YOR! useful?
         my_f_theta_mu2_mup = (0._dp,0._dp) !YOR! useful?
         do mup=-mmax,mmax
@@ -257,7 +248,6 @@ contains
                 end do
             end do
         end do
-!        deallocate(my_f_theta_mu2_mup)
     end subroutine proj2angl
 
 
