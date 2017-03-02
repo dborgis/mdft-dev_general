@@ -27,5 +27,7 @@ Warning :
 indentation of some parameters is important. do not auto-indent. 
 
 Commands examples : (recommended benchmark)
-jube run mdft_PerfEval.xml --tag all vtune boxnod128 mmax3 COPY_FILES
 jube run mdft_PerfEval.xml --tag all vtune boxnod128 mmax3 COPY_FILES GFORTRAN
+
+scalability :
+jube run mdft_PerfEval.xml --tag ref scaling boxnod128 mmax3 COPY_FILES GFORTRAN 
