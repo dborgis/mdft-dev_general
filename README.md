@@ -1,15 +1,17 @@
 # MDFT's future
 
-The Molecular Density Functional Theory, by
+The Molecular Density Functional Theory is a collaborative work led by Daniel Borgis and Maximilien Levesque:
 
-- Daniel Borgis, PI, Maison de la Simulation  
-- Maximilien Levesque, PI, École Normale Supérieure
-- Guillaume Jeanmairet, as a PhD student (2011-2014), worked on the nP functional for water.
-- Ljiljana Stojanovitch, as a postdoctoral researcher (2013-2014), worked on reference MD, PMFs and hydrophobicity.
-- Volodymyr Sergiievskyi, as a postdoctoral researcher (2013-2014), worked on pressure corrections and hard sphere bridges.
-- Lu Ding, as a PhD student (2013-), works on the resolution of the molecular Ornstein-Zernike equations as projected on a basis of rotational invariants.
-- Cédric Gageat, as a PhD student (2015-), works on core developments and biomolecular applications.
-- Yacine Ould-Rouis, as an engineer in high performance computing (2017-), works on openmp implementation and vectorization.
+- Daniel Borgis  
+- Maximilien Levesque  
+- Guillaume Jeanmairet, as a PhD student (2011-2014), worked on the density-polarization functional for water.    
+- Ljiljana Stojanovitch, as a postdoctoral researcher (2013-2014), worked on reference MD, PMFs and hydrophobicity.  
+- Volodymyr Sergiievskyi, as a postdoctoral researcher (2013-2014), worked on pressure corrections and hard sphere bridges.  
+- Lu Ding, as a PhD student (2013-2017), worked on the resolution of the molecular Ornstein-Zernike equations using fast spherical harmonics transforms in the local frame.  
+- Cédric Gageat, as a PhD student (2015-), works on core developments and biomolecular applications.  
+- Yacine Ould-Rouis, as an engineer in high performance computing (2017-), works on openmp implementation and vectorization.   
+- José François, for a M2 intern (2017-), on the study of solute databases like Freesolv.  
+- Sohvi Luukkonen, for a M2 intern (2017-), on the building of bridge functional using machine learning.  
 
 ## Git, github, issues etc.
 
