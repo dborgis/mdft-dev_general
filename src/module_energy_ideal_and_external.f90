@@ -42,8 +42,11 @@ contains
         !
         fid = zerodp
         fext = zerodp
+
         do is=1,ns
           rho0 = solvent(is)%rho0 ! bulk density
+          !$omp parallel reduction(+:fid,fext) private(iz, iy, ix, io, xi, rho)
+          !$omp do
           do iz=1,grid%nz
             do iy=1,grid%ny
               do ix=1,grid%nx
@@ -66,7 +69,8 @@ contains
               end do
             end do
           end do
+          !$omp end do
+          !$omp end parallel
         end do
-
     end subroutine energy_ideal_and_external
 end module module_energy_ideal_and_external
