@@ -308,11 +308,6 @@ contains
         complex(dp)  :: fac, X
         complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
-        type :: smoother_type
-            real(dp) :: radius = 0.5_dp ! dramaticaly important
-            real(dp) :: factor
-        end type smoother_type
-        type (smoother_type) :: smoother
         real(dp) :: smootherfactor
         real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
 
@@ -352,11 +347,11 @@ contains
                              X = -iC*kr
                              solvent(s)%sigma_k(i,j,k,io) = solvent(s)%sigma_k(i,j,k,io) + solvent(s)%site(n)%q *exp(X) *smootherfactor ! exact
                              ! solvent(s)%sigma_k(i,j,k,o,p) = solvent(s)%sigma_k(i,j,k,o,p) +solvent(s)%site(n)%q* sum([(X**i/factorial(i), i=0,4)])&
-                             ! * smoother%factor ! Series expansion of exp(x) at 0 => multipole expansion of Vcoul(x). i=4 :: hexadecapole (16)
+                             ! * smootherfactor ! Series expansion of exp(x) at 0 => multipole expansion of Vcoul(x). i=4 :: hexadecapole (16)
                              if ( abs(kr)<=epsdp ) then
                                 solvent(s)%molec_polar_k(:,i,j,k,io) = solvent(s)%molec_polar_k(:,i,j,k,io) + solvent(s)%site(n)%q *r
                              else
-                                fac = -iC*(exp(iC*kr)-1._dp)/kr *smoother%factor
+                                fac = -iC*(exp(iC*kr)-1._dp)/kr *smootherfactor
                                 solvent(s)%molec_polar_k(:,i,j,k,io) = solvent(s)%molec_polar_k(:,i,j,k,io) + fac*solvent(s)%site(n)%q *r
                              end if
                           end if
