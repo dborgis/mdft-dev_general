@@ -1,5 +1,5 @@
 <jube>
-  <benchmark name="MDFT" outpath="$WORK/mdft_PerfEval_DP">
+  <benchmark name="MDFT" outpath="$WORK/mdft_PerfEval_DP_middlecase">
     <comment>MDFT full JUBE performance Evaluation - add specifics</comment>
     
     <!-- modules -->
@@ -189,8 +189,8 @@ end program
       <parameter name="threadspertask" type="int" tag="scaling">1,2,4,8,12,24</parameter>
       <parameter name="executable">compile/mdft-dev</parameter>
       <parameter name="notification">FAIL</parameter>
-      <parameter name="timelimit" tag="lysozyme">23:59:59</parameter>
-      <parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>
+      <parameter name="timelimit">11:00:00</parameter>
+      <!--<parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>-->
       <parameter name="env" mode="python" separator=";">                                              
         {"darshan": """
         ${module_list}
@@ -243,30 +243,19 @@ end program
       <parameter name="maxiternum" tag="maxiter20">20</parameter>
     </parameterset>
     
-    <substituteset name="substituteDftFile">
-      <iofile in="input/dft.in.jube" out="dft.in" />
-        <sub source="#MMAX#" dest="$mmax" />
-        <sub source="#maximum_iteration_nbr = #ITERMAX#" dest="maximum_iteration_nbr = 30" tag="!uselbfgs"/>
-        <sub source="#minimizer = #MINIMIZER#" dest="minimizer = benchmark" tag="!uselbfgs"/>
-        <sub source="#BOXNOD#" dest="$boxnod" />
-        <sub source="#BOXLEN#" dest="$boxlen" />
-        <sub source="#MMAX#" dest="$mmax" />
-        <sub source="#BULKDENSITY#" dest="$bulkdensity" />
-        <sub source="#TEMPERATURE#" dest="$temperature" />
-        <sub source="#DIRECTSUM#" dest="$directsum" />
-        <sub source="#SOLUTECHARGESSCALEFACTOR#" dest="$soluteChargesScaleFactor" />
-<!--        <sub source="#QUEUE#" dest="$queue" /> -->
-    </substituteset>
-
-    <substituteset name="substituteSoluteFile">
-      <iofile in="$soluteFile" out="solute.in" />
-    </substituteset>
-
+    <parameterset name="inputset">
+      
+      <parameter name="input_case">benchmark_small</parameter>
+      <parameter name="input_case" tag="middlecase">benchmark_mid</parameter>
+      <parameter name="input_case" tag="bigcase">benchmark_big</parameter>
+      <parameter name="input_dir">data/examples/${input_case}</parameter>
+    </parameterset>
 
     <!-- needed input datasets -->
     <fileset name="inputs">
       <link>../../data</link>
-      <copy>input</copy>
+      <prepare> cp ${input_dir}/solute.in . </prepare>
+      <prepare> cp ${input_dir}/dft.in . </prepare>
       <copy active="'$mode' == 'scalasca'">scalasca/filter.txt</copy>
       <copy active="'$mode' == 'papi'">scalasca/filter.txt</copy>
       <copy active="'$mode' == 'scalasca'" tag="GFORTRAN">scalasca/filter_GFORTRAN.txt</copy>
@@ -282,11 +271,10 @@ end program
       <use>executeset</use>
       <use from="platform.xml">executesub</use>
       <use from="platform.xml">jobfiles</use>
+      <use>inputset</use>
       <use>inputs</use>
       <use>systemParameter</use>
-      <use from="mdft_input_parameters.xml">inputParameter</use>
-      <use>substituteDftFile</use>
-      <use>substituteSoluteFile</use>
+      
       <do done_file="$done_file">$submit $submit_script</do>
     </step>
 
@@ -338,8 +326,7 @@ end program
       <table name="my_results" style="pretty">
         <column>compile_mode</column>
         <column>mode</column>
-        <column>mmax</column>
-        <column>boxnod</column>
+        <column>input_case</column>
 	<column>threadspertask</column>
         <column>time_pat</column>
         <column>n_iter_last</column>
