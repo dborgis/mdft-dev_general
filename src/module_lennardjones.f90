@@ -62,10 +62,6 @@ contains
         allocate( x(nx) ,source= [(real(i-1,dp)*grid%dx ,i=1,nx)] )
         allocate( y(ny) ,source= [(real(j-1,dp)*grid%dy ,j=1,ny)] )
         allocate( z(nz) ,source= [(real(k-1,dp)*grid%dz, k=1,nz)] )
-        allocate( xtab(xtabsize) )
-        allocate( ytab(ytabsize) )
-        allocate( ztab(ztabsize) )
-
 
         block
           integer :: ssmax
@@ -89,7 +85,12 @@ contains
 
 
 
+        !$omp parallel private(u, minx, maxx, miny, maxy, minz, maxz, xtab, ytab, ztab, s, ss, epsuv, siguv6, indextabz, iz, zgrid, indextaby, iy, ygrid, indextabx, ix, xgrid, io, xss, yss, zss, dx, dy, dz, rsq, vlj, div)
 
+        allocate( xtab(xtabsize) )
+        allocate( ytab(ytabsize) )
+        allocate( ztab(ztabsize) )
+        !$omp do
         do u=1,size(solute%site)
           if( solute%site(u)%eps <= epsdp ) cycle ! if the solute site does not wear a Lennard-Jones contribution
 
@@ -129,13 +130,12 @@ contains
 
 
           do s=1,ns ! Ces boucles peuvent etre remise à l'interieur si on créé un tableau au début qui contient les indices des sites sur lesquels on peut boucler
+            
             do ss=1,size(solvent(s)%site)
               if( solvent(s)%site(ss)%eps<=epsdp ) cycle
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
               siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)*0.5_dp)**6
 
-              !$omp parallel private(indextabz, iz, zgrid, indextaby, iy, ygrid, indextabx, ix, xgrid, io, xss, yss, zss, dx, dy, dz, rsq, vlj, div)
-              !$omp do
               do indextabz=1,ztabsize ! indextabz is the index in ztabsize
                 iz = ztab(indextabz)  ! iz is the index of the point in the grid
                 zgrid=z(iz)           ! zgrid is the z position of the point
@@ -176,13 +176,13 @@ contains
                   end do
                 end do
              end do
-             !$omp end do
-             !$omp end parallel
            end do
           end do
         end do
-
-        deallocate(xmod, ymod, zmod, x, y, z, xtab, ytab, ztab)
+        !$omp end do
+        deallocate(xtab, ytab, ztab)
+        !$omp end parallel
+        deallocate(xmod, ymod, zmod, x, y, z)
 
     end subroutine calcul_lennardjones
 
