@@ -320,13 +320,15 @@ contains
         ny = grid%ny
         nz = grid%nz
         no = grid%no
-        ns = solvent(1)%nspec
+        ns = size(solvent) ! Count of solvent species
 
         ! sigma_k is the Fourier transformed charge density of a single solvent molecule in the reference frame defined by solvent.in
         ! molec_polar_k is the Fourier transformed molecular polarization
-        do concurrent( s=1:ns , sum(abs(solvent(s)%site%q))>0) ! mask elimitates solvent molecules without point charges
-           allocate( solvent(s)%sigma_k       (   nx/2+1, ny, nz, no), SOURCE=zeroC )
-           allocate( solvent(s)%molec_polar_k (3, nx/2+1, ny, nz, no), SOURCE=zeroC )
+        do s = 1, ns
+            if( sum( abs( solvent(s)%site%q )) > epsdp ) then
+                allocate( solvent(s)%sigma_k       (   nx/2+1, ny, nz, no), SOURCE=zeroC )
+                allocate( solvent(s)%molec_polar_k (3, nx/2+1, ny, nz, no), SOURCE=zeroC )
+            end if
         end do
         
         do s=1,ns  
