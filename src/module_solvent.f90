@@ -329,10 +329,8 @@ contains
            allocate( solvent(s)%molec_polar_k (3, nx/2+1, ny, nz, no), SOURCE=zeroC )
         end do
         
-        !do concurrent ( i=1:nx/2+1, j=1:ny, k=1:nz, s=1:ns  , sum(abs(solvent(s)%site%q))>epsdp) ! mask elimitates solvent molecules without point charges)
-        
         do s=1,ns  
-           if (sum(abs(solvent(s)%site%q))<=epsdp) cycle
+           if( sum( abs( solvent(s)%site%q )) <= epsdp ) cycle ! Don't compute the polarization of a solvent molecule that has no point charge
            !$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
            !$omp do
            do k = 1, nz
@@ -345,7 +343,6 @@ contains
                        do io = 1, grid%no
                           if ( abs(solvent(s)%site(n)%q) > epsdp ) then
 
-!                    do concurrent ( io=1:grid%no, n=1:SIZE(solvent(s)%site), abs(solvent(s)%site(n)%q)>epsdp )
                              r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(s)%site(n)%r  )
                              r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(s)%site(n)%r  )
                              r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(s)%site(n)%r  )
