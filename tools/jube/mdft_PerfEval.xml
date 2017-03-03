@@ -189,7 +189,7 @@ end program
       <parameter name="threadspertask" type="int" tag="scaling">1,2,4,8,12,24</parameter>
       <parameter name="executable">compile/mdft-dev</parameter>
       <parameter name="notification">FAIL</parameter>
-      <parameter name="timelimit">11:00:00</parameter>
+      <parameter name="timelimit">01:00:00</parameter>
       <!--<parameter name="timelimit" tag="!lysozyme">01:00:00</parameter>-->
       <parameter name="env" mode="python" separator=";">                                              
         {"darshan": """
