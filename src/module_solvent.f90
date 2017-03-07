@@ -308,56 +308,70 @@ contains
         complex(dp)  :: fac, X
         complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
-        type :: smoother_type
-            real(dp) :: radius = 0.5_dp ! dramaticaly important
-            real(dp) :: factor
-        end type smoother_type
-        type (smoother_type) :: smoother
+        real(dp) :: smootherfactor
+        real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
 
         nx = grid%nx
         ny = grid%ny
         nz = grid%nz
         no = grid%no
-        ns = solvent(1)%nspec
+        ns = size(solvent) ! Count of solvent species
 
         ! sigma_k is the Fourier transformed charge density of a single solvent molecule in the reference frame defined by solvent.in
         ! molec_polar_k is the Fourier transformed molecular polarization
-        do concurrent( s=1:ns , sum(abs(solvent(s)%site%q))>0) ! mask elimitates solvent molecules without point charges
-            allocate( solvent(s)%sigma_k       (   nx/2+1, ny, nz, no), SOURCE=zeroC )
-            allocate( solvent(s)%molec_polar_k (3, nx/2+1, ny, nz, no), SOURCE=zeroC )
+        do s = 1, ns
+            if( sum( abs( solvent(s)%site%q )) > epsdp ) then
+                allocate( solvent(s)%sigma_k       (   nx/2+1, ny, nz, no), SOURCE=zeroC )
+                allocate( solvent(s)%molec_polar_k (3, nx/2+1, ny, nz, no), SOURCE=zeroC )
+            end if
         end do
+        
+        do s=1,ns  
+           if( sum( abs( solvent(s)%site%q )) <= epsdp ) cycle ! Don't compute the polarization of a solvent molecule that has no point charge
+           !$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
+           !$omp do
+           do k = 1, nz
+              do j = 1, ny
+                 do i = 1, nx/2+1
+                    kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+                    smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
+                    
+                    do n = 1, SIZE(solvent(s)%site)
+                       do io = 1, grid%no
+                          if ( abs(solvent(s)%site(n)%q) > epsdp ) then
 
-        do concurrent ( i=1:nx/2+1, j=1:ny, k=1:nz, s=1:ns  , sum(abs(solvent(s)%site%q))>epsdp) ! mask elimitates solvent molecules without point charges)
+                             r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(s)%site(n)%r  )
+                             r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(s)%site(n)%r  )
+                             r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(s)%site(n)%r  )
+                             kr = dot_product( kvec, r )
+                             X = -iC*kr
+                             solvent(s)%sigma_k(i,j,k,io) = solvent(s)%sigma_k(i,j,k,io) + solvent(s)%site(n)%q *exp(X) *smootherfactor ! exact
+                             ! solvent(s)%sigma_k(i,j,k,o,p) = solvent(s)%sigma_k(i,j,k,o,p) +solvent(s)%site(n)%q* sum([(X**i/factorial(i), i=0,4)])&
+                             ! * smootherfactor ! Series expansion of exp(x) at 0 => multipole expansion of Vcoul(x). i=4 :: hexadecapole (16)
+                             if ( abs(kr)<=epsdp ) then
+                                solvent(s)%molec_polar_k(:,i,j,k,io) = solvent(s)%molec_polar_k(:,i,j,k,io) + solvent(s)%site(n)%q *r
+                             else
+                                fac = -iC*(exp(iC*kr)-1._dp)/kr *smootherfactor
+                                solvent(s)%molec_polar_k(:,i,j,k,io) = solvent(s)%molec_polar_k(:,i,j,k,io) + fac*solvent(s)%site(n)%q *r
+                             end if
+                          end if
+                       end do
+                    end do
 
-            kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
-            smoother%factor =  exp(-smoother%radius**2 * sum( kvec**2 )/2._dp)
-
-            do concurrent ( io=1:grid%no, n=1:SIZE(solvent(s)%site), abs(solvent(s)%site(n)%q)>epsdp )
-                r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(s)%site(n)%r  )
-                r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(s)%site(n)%r  )
-                r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(s)%site(n)%r  )
-                kr = dot_product( kvec, r )
-                X = -iC*kr
-                solvent(s)%sigma_k(i,j,k,io) = solvent(s)%sigma_k(i,j,k,io) + solvent(s)%site(n)%q *exp(X) *smoother%factor ! exact
-                ! solvent(s)%sigma_k(i,j,k,o,p) = solvent(s)%sigma_k(i,j,k,o,p) +solvent(s)%site(n)%q* sum([(X**i/factorial(i), i=0,4)])&
-                ! * smoother%factor ! Series expansion of exp(x) at 0 => multipole expansion of Vcoul(x). i=4 :: hexadecapole (16)
-                if ( abs(kr)<=epsdp ) then
-                    solvent(s)%molec_polar_k(:,i,j,k,io) = solvent(s)%molec_polar_k(:,i,j,k,io) + solvent(s)%site(n)%q *r
-                else
-                    fac = -iC*(exp(iC*kr)-1._dp)/kr *smoother%factor
-                    solvent(s)%molec_polar_k(:,i,j,k,io) = solvent(s)%molec_polar_k(:,i,j,k,io) + fac*solvent(s)%site(n)%q *r
-                end if
-            end do
+                 end do
+              end do
+           end do
+           !$omp end do
+           !$omp end parallel
         end do
-
         !
         ! Substract the trace of the molecular polarization tensor
         !
         do concurrent (i=1:nx/2+1, j=1:ny, k=1:nz, s=1:ns, d=1:3)
-            solvent(s)%molec_polar_k(d,i,j,k,:) = solvent(s)%molec_polar_k(d,i,j,k,:)  &
-            -sum( solvent(s)%molec_polar_k(d,i,j,k,:) ) /real(grid%no,dp)
+           solvent(s)%molec_polar_k(d,i,j,k,:) = solvent(s)%molec_polar_k(d,i,j,k,:)  &
+                -sum( solvent(s)%molec_polar_k(d,i,j,k,:) ) /real(grid%no,dp)
         end do
-    end subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
+      end subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

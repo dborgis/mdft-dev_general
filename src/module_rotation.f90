@@ -2,9 +2,36 @@ module module_rotation
     use precision_kinds, only: dp
     implicit none
     private
-    public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu
+    public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu, init
     real(dp), private :: epsdp=epsilon(1._dp)
+    integer, parameter, private :: mmax_max = 5 ! we will never have mmax > 5
+    real(dp), dimension(2:mmax_max,-mmax_max:mmax_max,-mmax_max:mmax_max), private :: a, b
+    real(dp), dimension(2:mmax_max,-mmax_max:mmax_max), private :: c, d
+
 contains
+
+    subroutine init
+        implicit none
+        real(dp), parameter :: sqrt2=sqrt(2._dp)
+        real(dp), parameter :: sqrtof(-1:2*mmax_max +1) = [0._dp, 0._dp, 1._dp, sqrt(2._dp), sqrt(3._dp), sqrt(4._dp), sqrt(5._dp),&
+                                             sqrt(6._dp), sqrt(7._dp), sqrt(8._dp), sqrt(9._dp), sqrt(10._dp), sqrt(11._dp) ]
+        integer :: l, m, m1
+        a = 0._dp
+        b = 0._dp
+        c = 0._dp
+        d = 0._dp
+        do l=2,mmax_max
+          do m=-l,l
+            do m1=-l+1,l-1
+                a(l,m,m1) = sqrtof(l+m)*sqrtof(l-m)/(sqrtof(l+m1)*sqrtof(l-m1))
+                b(l,m,m1) = sqrtof(l+m)*sqrtof(l+m-1)/(sqrt2*sqrtof(l+m1)*sqrtof(l-m1))
+            end do
+            m1 = l
+            c(l,m) = sqrt2*sqrtof(l+m)*sqrtof(l-m)/(sqrtof(l+m1)*sqrtof(l+m1-1))
+            d(l,m) = sqrtof(l+m)*sqrtof(l+m-1)/(sqrtof(l+m1)*sqrtof(l+m1-1))
+          end do
+        end do
+    end subroutine init
 
     pure function thetaofq(qx,qy,qz)
         implicit none
@@ -50,31 +77,31 @@ contains
         end if
     end function angle
 
-    pure function rotation_matrix_from_lab_to_q_frame_lu (q) result (rmat)
-        implicit none
-        real(dp), intent(in) :: q(3)
-        real(dp) :: rmat(3,3)
-        real(dp) :: rmat1(3), rmat2(3), rmat3(3)
-        real(dp) :: n2rmat3
-        if (q(1)==0._dp .and. q(2)==0._dp .and. q(3)==0._dp) then
-            rmat3 = (/0._dp,0._dp,1._dp/)                            ! theta definied as zero.
-            n2rmat3 = 1._dp
-        else
-            rmat3 = q
-            n2rmat3 = sqrt(q(1)**2+q(2)**2+q(3)**2)
-        end if
-        if (rmat3(1)/=0._dp .or. rmat3(2)/=0._dp) then       ! if rmat3 is along with axis z, the GSH is null, and we don't carre about phi.
-            rmat2 = cross_product((/0._dp,0._dp,1._dp/),rmat3) ! in the MDFT definition of Omega, the rotation axes are z-y-z.
-        else
-            rmat2 = cross_product(rmat3,(/1._dp,0._dp,0._dp/)) ! cross product of rmat3 and axis x gives axis y, phi definied as zero.
-        end if
-        rmat3 = rmat3 / n2rmat3
-        rmat2 = rmat2 / norm2(rmat2)       ! to avoid round up error if rmat3 is so closed to z.
-        rmat1 = cross_product(rmat2,rmat3)
-        rmat(:,1) = rmat1
-        rmat(:,2) = rmat2
-        rmat(:,3) = rmat3
-    end function rotation_matrix_from_lab_to_q_frame_lu
+    ! pure function rotation_matrix_from_lab_to_q_frame_lu (q) result (rmat)
+    !     implicit none
+    !     real(dp), intent(in) :: q(3)
+    !     real(dp) :: rmat(3,3)
+    !     real(dp) :: rmat1(3), rmat2(3), rmat3(3)
+    !     real(dp) :: n2rmat3
+    !     if (q(1)==0._dp .and. q(2)==0._dp .and. q(3)==0._dp) then
+    !         rmat3 = (/0._dp,0._dp,1._dp/)                            ! theta definied as zero.
+    !         n2rmat3 = 1._dp
+    !     else
+    !         rmat3 = q
+    !         n2rmat3 = sqrt(q(1)**2+q(2)**2+q(3)**2)
+    !     end if
+    !     if (rmat3(1)/=0._dp .or. rmat3(2)/=0._dp) then       ! if rmat3 is along with axis z, the GSH is null, and we don't carre about phi.
+    !         rmat2 = cross_product((/0._dp,0._dp,1._dp/),rmat3) ! in the MDFT definition of Omega, the rotation axes are z-y-z.
+    !     else
+    !         rmat2 = cross_product(rmat3,(/1._dp,0._dp,0._dp/)) ! cross product of rmat3 and axis x gives axis y, phi definied as zero.
+    !     end if
+    !     rmat3 = rmat3 / n2rmat3
+    !     rmat2 = rmat2 / norm2(rmat2)       ! to avoid round up error if rmat3 is so closed to z.
+    !     rmat1 = cross_product(rmat2,rmat3)
+    !     rmat(:,1) = rmat1
+    !     rmat(:,2) = rmat2
+    !     rmat(:,3) = rmat3
+    ! end function rotation_matrix_from_lab_to_q_frame_lu
 
 
     pure function cross_product(a,b)
@@ -90,53 +117,27 @@ contains
     end function cross_product
 
     pure function rotation_matrix_between_complex_spherical_harmonics_lu (mmax, q) result(R)
-        use precision_kinds, only : dp
         implicit none
         integer, intent(in) :: mmax
         real(dp), intent(in) :: q(3)
-        real(dp), parameter :: rac2=sqrt(2._dp)
         complex(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: R
         real(dp), dimension(3) :: rmat1,rmat2,rmat3
         real(dp), dimension(3,3) :: rmat
-        real(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: f,g
-        integer :: l,l1,m,m1,m1min,k
-        real(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: a,b,c,d
-        real(dp), dimension(-1:2*mmax+1) :: rac
-        real(dp), parameter :: zerodp=0._dp
-        complex(dp), parameter :: zeroc=(0._dp,0._dp)
+        real(dp), dimension(0:mmax,-mmax:mmax,-mmax:mmax) :: f, g
+        integer :: l, l1, m, m1, m1min
+        real(dp), parameter :: sqrt2 = sqrt(2._dp)
 
         if (mmax == 0) then
             R = (1._dp,0._dp)
             return
         end if
 
-        a=zerodp
-        b=zerodp
-        c=zerodp
-        d=zerodp
-        f=zerodp
-        g=zerodp
-        R=zeroc
+        ! R = cmplx(f,g)
+        f = 0._dp
+        g = 0._dp
+        R = (0._dp,0._dp)
 
-        ! prepare coefficients
-        rac(-1)=0._dp
-        do k=0,2*mmax+1
-            rac(k)=sqrt(real(k,dp))
-        end do
-
-        do l=1,mmax
-          do m=-l,l
-            do m1=-l+1,l-1
-                a(l,m,m1) = rac(l+m)*rac(l-m)/(rac(l+m1)*rac(l-m1))
-                b(l,m,m1) = rac(l+m)*rac(l+m-1)/(rac2*rac(l+m1)*rac(l-m1))
-            end do
-            m1 = l
-            c(l,m,m1) = rac2*rac(l+m)*rac(l-m)/(rac(l+m1)*rac(l+m1-1))
-            d(l,m,m1) = rac(l+m)*rac(l+m-1)/(rac(l+m1)*rac(l+m1-1))
-          end do
-        end do
-
-        ! mmax = 0
+        ! m = 0
         f(0,0,0) = 1._dp
         g(0,0,0) = 0._dp
 
@@ -174,26 +175,26 @@ contains
         rmat(:,2) = rmat2
         rmat(:,3) = rmat3
 
-        ! mmax = 1
-        f(1,-1,-1) = (rmat(2,2)+rmat(1,1))/2._dp
-        f(1,-1, 0) = rmat(1,3)/rac2
-        f(1,-1,+1) = (rmat(2,2)-rmat(1,1))/2._dp
-        f(1, 0,-1) = rmat(3,1)/rac2
+        ! m = 1
+        f(1,-1,-1) = (rmat(2,2)+rmat(1,1))*0.5_dp
+        f(1,-1, 0) = rmat(1,3)/sqrt2
+        f(1,-1,+1) = (rmat(2,2)-rmat(1,1))*0.5_dp
+        f(1, 0,-1) = rmat(3,1)/sqrt2
         f(1, 0, 0) = rmat(3,3)
-        f(1, 0,+1) = -rmat(3,1)/rac2
-        f(1,+1,-1) = (rmat(2,2)-rmat(1,1))/2._dp
-        f(1,+1, 0) = -rmat(1,3)/rac2
-        f(1,+1,+1) = (rmat(2,2)+rmat(1,1))/2._dp
+        f(1, 0,+1) = -rmat(3,1)/sqrt2
+        f(1,+1,-1) = (rmat(2,2)-rmat(1,1))*0.5_dp
+        f(1,+1, 0) = -rmat(1,3)/sqrt2
+        f(1,+1,+1) = (rmat(2,2)+rmat(1,1))*0.5_dp
 
-        g(1,-1,-1) = (rmat(2,1)-rmat(1,2))/2._dp
-        g(1,-1, 0) = rmat(2,3)/rac2
-        g(1,-1,+1) = (-rmat(2,1)-rmat(1,2))/2._dp
-        g(1, 0,-1) = -rmat(3,2)/rac2
+        g(1,-1,-1) = (rmat(2,1)-rmat(1,2))*0.5_dp
+        g(1,-1, 0) = rmat(2,3)/sqrt2
+        g(1,-1,+1) = (-rmat(2,1)-rmat(1,2))*0.5_dp
+        g(1, 0,-1) = -rmat(3,2)/sqrt2
         g(1, 0, 0) = 0._dp
-        g(1, 0,+1) = -rmat(3,2)/rac2
-        g(1,+1,-1) = (rmat(2,1)+rmat(1,2))/2._dp
-        g(1,+1, 0) = rmat(2,3)/rac2
-        g(1,+1,+1) = (rmat(1,2)-rmat(2,1))/2._dp
+        g(1, 0,+1) = -rmat(3,2)/sqrt2
+        g(1,+1,-1) = (rmat(2,1)+rmat(1,2))*0.5_dp
+        g(1,+1, 0) = rmat(2,3)/sqrt2
+        g(1,+1,+1) = (rmat(1,2)-rmat(2,1))*0.5_dp
 
         if (mmax == 1) then
             R = cmplx(f,g,dp)
@@ -201,6 +202,7 @@ contains
         end if
 
         ! mmax > 1
+
         do l=2,mmax
             l1 = l-1
             do m=-l,l
@@ -208,18 +210,18 @@ contains
                 if (m>0) m1min = 1
                 do m1=m1min,l-1
                     if( m==-l) then
-                        f(l,m,m1)=b(l,-m,m1)*(f(1,-1,0)*f(l1,m+1,m1)-g(1,-1,0)*g(l1,m+1,m1))
-                        g(l,m,m1)=b(l,-m,m1)*(f(1,-1,0)*g(l1,m+1,m1)+g(1,-1,0)*f(l1,m+1,m1))
+                        f(l,m,m1) = b(l,-m,m1)*(f(1,-1,0)*f(l1,m+1,m1)-g(1,-1,0)*g(l1,m+1,m1))
+                        g(l,m,m1) = b(l,-m,m1)*(f(1,-1,0)*g(l1,m+1,m1)+g(1,-1,0)*f(l1,m+1,m1))
                     else if( m==l) then
-                        f(l,m,m1)=b(l,m,m1)*(f(1, 1,0)*f(l1,m-1,m1)-g(1, 1,0)*g(l1,m-1,m1))
-                        g(l,m,m1)=b(l,m,m1)*(f(1, 1,0)*g(l1,m-1,m1)+g(1, 1,0)*f(l1,m-1,m1))
+                        f(l,m,m1) = b(l,m,m1)*(f(1, 1,0)*f(l1,m-1,m1)-g(1, 1,0)*g(l1,m-1,m1))
+                        g(l,m,m1) = b(l,m,m1)*(f(1, 1,0)*g(l1,m-1,m1)+g(1, 1,0)*f(l1,m-1,m1))
                     else
-                        f(l,m,m1)=a(l, m,m1)*(f(1, 0,0)*f(l1,m  ,m1))+   &
-                        b(l, m,m1)*(f(1, 1,0)*f(l1,m-1,m1)-g(1, 1,0)*g(l1,m-1,m1))+   &
-                        b(l,-m,m1)*(f(1,-1,0)*f(l1,m+1,m1)-g(1,-1,0)*g(l1,m+1,m1))
-                        g(l,m,m1)=a(l, m,m1)*(f(1, 0,0)*g(l1,m  ,m1))+   &
-                        b(l, m,m1)*(f(1, 1,0)*g(l1,m-1,m1)+g(1, 1,0)*f(l1,m-1,m1))+   &
-                        b(l,-m,m1)*(f(1,-1,0)*g(l1,m+1,m1)+g(1,-1,0)*f(l1,m+1,m1))
+                        f(l,m,m1) = a(l, m,m1)*(f(1, 0,0)*f(l1,m  ,m1))+   &
+                                    b(l, m,m1)*(f(1, 1,0)*f(l1,m-1,m1)-g(1, 1,0)*g(l1,m-1,m1))+   &
+                                    b(l,-m,m1)*(f(1,-1,0)*f(l1,m+1,m1)-g(1,-1,0)*g(l1,m+1,m1))
+                        g(l,m,m1) = a(l, m,m1)*(f(1, 0,0)*g(l1,m  ,m1))+   &
+                                    b(l, m,m1)*(f(1, 1,0)*g(l1,m-1,m1)+g(1, 1,0)*f(l1,m-1,m1))+   &
+                                    b(l,-m,m1)*(f(1,-1,0)*g(l1,m+1,m1)+g(1,-1,0)*f(l1,m+1,m1))
                     end if
                     f(l,-m,-m1)=(-1)**(m+m1)*f(l,m,m1)
                     g(l,-m,-m1)=-(-1)**(m+m1)*g(l,m,m1)
@@ -227,19 +229,19 @@ contains
 
                 m1 = l
                 if( m==-l) then
-                    f(l,m,m1)=d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
-                    g(l,m,m1)=d(l,-m,m1)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
+                    f(l,m,m1)=d(l,-m)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
+                    g(l,m,m1)=d(l,-m)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
                 else if( m==l) then
-                    f(l,m,m1)=d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))
-                    g(l,m,m1)=d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))
+                    f(l,m,m1)=d(l,m)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))
+                    g(l,m,m1)=d(l,m)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))
                 else
-                    f(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*f(l1,m,m1-1)-g(1,0,+1)*g(l1,m,m1-1))+   &
-                        d(l,m,m1)*(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))+   &
-                        d(l,-m,m1)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
+                    f(l,m,m1)=c(l,m) *(f(1,0,+1)*f(l1,m,m1-1)-g(1,0,+1)*g(l1,m,m1-1))+   &
+                              d(l,m) *(f(1,+1,+1)*f(l1,m-1,m1-1)-g(1,+1,+1)*g(l1,m-1,m1-1))+   &
+                              d(l,-m)*(f(1,-1,+1)*f(l1,m+1,m1-1)-g(1,-1,+1)*g(l1,m+1,m1-1))
 
-                    g(l,m,m1)=c(l,m,m1)*(f(1,0,+1)*g(l1,m,m1-1)+g(1,0,+1)*f(l1,m,m1-1))+   &
-                        d(l,m,m1)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))+   &
-                        d(l,-m,m1)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
+                    g(l,m,m1)=c(l,m)*(f(1,0,+1)*g(l1,m,m1-1)+g(1,0,+1)*f(l1,m,m1-1))+   &
+                              d(l,m)*(f(1,+1,+1)*g(l1,m-1,m1-1)+g(1,+1,+1)*f(l1,m-1,m1-1))+   &
+                              d(l,-m)*(f(1,-1,+1)*g(l1,m+1,m1-1)+g(1,-1,+1)*f(l1,m+1,m1-1))
                 end if
                 f(l,-m,-m1)=(-1)**(m+m1)*f(l,m,m1)
                 g(l,-m,-m1)=-(-1)**(m+m1)*g(l,m,m1)
