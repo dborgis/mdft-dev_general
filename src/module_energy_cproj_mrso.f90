@@ -733,9 +733,6 @@ contains
         ! Note that gamma==df
         !
 
-        block
-            real(dp) :: prefactor
-            real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
             prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
             if(present(df)) then
                 ff=0._dp
@@ -771,7 +768,6 @@ contains
                 !$omp end parallel
                 ff = ff*0.5_dp*dv
             end if
-        end block
         call cpu_time(time(13))
 
         total_time_in_subroutine = time(13)-time(1)
