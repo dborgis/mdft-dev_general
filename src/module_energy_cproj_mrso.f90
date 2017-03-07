@@ -36,10 +36,6 @@ module module_energy_cproj_mrso
     type(c_type), protected :: c
 
     complex(dp), allocatable, protected :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
-    complex(dp), allocatable, protected :: deltarho_p_q(:)
-    complex(dp), allocatable, protected :: deltarho_p_mq(:)
-    complex(dp), allocatable, protected :: gamma_p_q(:)
-    complex(dp), allocatable, protected :: gamma_p_mq(:)
 
     type :: p3_type
         real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
@@ -55,22 +51,24 @@ module module_energy_cproj_mrso
         type(c_ptr) :: plan3dp, plan3dm ! plans for 2D and 3D FFTs with sign +(p) or -(m) in the exponential
     end type fft_type
     type(fft_type), protected :: fft
-    complex(dp), allocatable :: c3d(:,:,:)
-    complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
+    complex(dp), allocatable :: c3d(:,:,:), buf(:,:,:)
+    !complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
     public :: energy_cproj_mrso
 
 contains
 
     subroutine energy_cproj_mrso (ff, df, print_timers)
+
         use omp_lib
         use precision_kinds, only: dp
         use module_grid, only: grid
         use module_thermo, only: thermo
-        use module_orientation_projection_transform, only: angl2proj, proj2angl
+        use module_orientation_projection_transform, only: angl2proj, proj2angl, init_module_orientation_projection_transform => init
         use module_wigner_d, only: wigner_small_d
 
         implicit none
+
         real(dp), intent(out) :: ff
         real(dp), contiguous, intent(inout), optional :: df(:,:,:,:,:) ! x y z o s
         logical, intent(in), optional :: print_timers
@@ -87,6 +85,8 @@ contains
         real :: total_time_in_subroutine
         complex(dp) :: deltarho_p_q_loc, deltarho_p_mq_loc
         complex(dp), parameter :: zeroc=(0._dp, 0._dp)
+        real(dp), allocatable :: o(:)
+        integer :: ierr
         real(dp) :: effectiveiq, alpha
         complex(dp), allocatable :: ceff(:)
         real(dp) :: prefactor
@@ -117,16 +117,14 @@ contains
 
 
         if (.not. allocated (deltarho_p) ) then
-            allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc)
-            allocate (deltarho_p_q(np) ,source=zeroc)
-            allocate (deltarho_p_mq(np) ,source=zeroc)
-            allocate (gamma_p_q(np), source=zeroc)
-            allocate (gamma_p_mq(np), source=zeroc)
+            allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc, stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate deltarho_p returns error ",ierr            
         end if
 
-        if (.not. allocated (gamma_p_isok) ) then
-            allocate( gamma_p_isok(nx,ny,nz), source=.false., stat=i)
-            if( i/= 0) error stop "Problem allocating gamma_p_isok in module_energy_cproj_mrso"
+
+        if( .not. allocated (gamma_p_isok) ) then 
+           allocate (gamma_p_isok(nx,ny,nz), source=.false., stat=ierr)
+           if( ierr/=0) PRINT*,"Allocate gamma_p_isok returns error ", ierr
         end if
 
         call cpu_time (time(2))
@@ -274,14 +272,24 @@ contains
         !
         ! 2/ ON PROJETTE delta_rho
         !
+        call init_module_orientation_projection_transform
+          
+        !$omp parallel private (iz, iy, ix, o )
+        allocate( o(no), stat=ierr)
+        if (ierr/=0) PRINT*,"Allocate o returns error ",ierr
+        !$omp do
         do iz=1,nz
-            do iy=1,ny
-                do ix=1,nx
-                    call angl2proj( rho0*(solvent(1)%xi(1:no,ix,iy,iz)**2 -1._dp) , &
-                                    deltarho_p(1:np,ix,iy,iz) )
-                end do
-            end do
+           do iy=1,ny
+              do ix=1,nx
+                 o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
+                 call angl2proj( o, deltarho_p(:,ix,iy,iz) )
+              end do
+           end do
         end do
+        !$omp end do
+        deallocate(o)
+        !$omp end parallel
+
 
         call cpu_time (time(6))
 
@@ -295,16 +303,31 @@ contains
         ! On fait donc une FFT 3D pour chacune des projections.
         ! Les projections sont complexes, il s'agit donc d'une FFT3D C2C habituelle : Il n'y a pas de symétrie hermitienne.
         !
-        do ip = 1, np
-            c3d = deltarho_p(ip,:,:,:)
-            select case(dp);
-            case(c_double)
-                call dfftw_execute_dft(fft%plan3dp, c3d, c3d)
-            case(c_float)
-                call sfftw_execute_dft(fft%plan3dp, c3d, c3d)
-            end select
-            deltarho_p(ip,:,:,:) = c3d
+            
+        !$omp parallel private ( ip, buf )
+        allocate(buf(nx,ny,nz), stat=ierr)
+        if (ierr/=0) PRINT*,"Allocate buf returns error ",ierr
+
+        select case(dp);
+        case(c_double)
+            !$omp do
+            do ip = 1, np
+                buf=deltarho_p(ip,:,:,:)
+                call dfftw_execute_dft(fft%plan3dp, buf, buf)
+                deltarho_p(ip,:,:,:)=buf
+            end do
+            !$omp end do
+        case(c_float)
+            !$omp do
+            do ip=1,np
+                buf=deltarho_p(ip,:,:,:)
+                call sfftw_execute_dft(fft%plan3dp, buf, buf)
+            deltarho_p(ip,:,:,:)=buf
         end do
+           !$omp end do
+        end select
+        deallocate(buf)
+        !$omp end parallel
 
         call cpu_time (time(7))
 
@@ -408,26 +431,38 @@ contains
 
         call cpu_time (time(9))
 
-        if (.not. allocated(R) ) then
-            allocate ( R(0:mmax,-mmax:mmax,-mmax:mmax) ,source=(0._dp,0._dp) , stat = i)
-            if( i /= 0) error stop "Problem while allocating R in energy_cproj_mrso"
-        end if
-
-        if( .not. allocated( ceff )) then
-            allocate( ceff(c%np), source = (0._dp,0._dp), stat=i )
-            if( i /= 0) error stop "Problem while allocating ceff in energy_cproj_mrso"
-        end if
-
         !
         ! For all vectors q and -q handled simultaneously.
         ! ix_q,iy_q,iz_q are the coordinates of vector q, while ix_mq,iy_mq_iz_mq are those of vector -q
         !
         gamma_p_isok = .false.
 
-        do iz_q=1,nz/2+1
-            iz_mq = grid%iz_mq(iz_q)
-            q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
-            do iy_q=1,ny
+        block
+          integer ::  m, khi, mu2, ia
+          complex(dp) :: ceff(c%np)
+          real(dp) :: effectiveiq, alpha
+          complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax)
+          complex(dp), allocatable :: deltarho_p_q(:)
+          complex(dp), allocatable :: deltarho_p_mq(:)
+          complex(dp), allocatable :: gamma_p_q(:)
+          complex(dp), allocatable :: gamma_p_mq(:)
+
+          !$omp parallel private(iz_q, iy_q, ix_q, iz_mq, iy_mq, ix_mq, q, R, R_loc, q_eq_mq, gamma_p_q, gamma_p_mq, m, khi, mu2, ip2_loc, deltarho_p_q, deltarho_p_mq, deltarho_p_q_loc, deltarho_p_mq_loc, ia, ip, effectiveiq, iq, alpha, ceff, ip2)
+          allocate (deltarho_p_q(np) ,source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate deltarho_p_q returns error ",ierr
+          allocate (deltarho_p_mq(np) ,source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate deltarho_p_mq returns error ",ierr
+          allocate (gamma_p_q(np), source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate gamma_p_q returns error ",ierr
+          allocate (gamma_p_mq(np), source=zeroc, stat=ierr)
+          if (ierr/=0) PRINT*,"Allocate gamma_p_mq returns error ",ierr          
+          
+          !$omp do
+          do iz_q=1,nz/2+1
+             iz_mq = grid%iz_mq(iz_q)
+             q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
+
+             do iy_q=1,ny
                 iy_mq = grid%iy_mq(iy_q)
                 q(2) = grid%ky(iy_q) ! cartesian coordinates of vector q in lab frame
                 do ix_q=1,nx
@@ -437,7 +472,7 @@ contains
                     !
                     ! gamma_p_isok is a logical array. If gamma(ix_q,iy_q,iz_q) has already been calculated, it is .true.
                     !
-                    if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq,iz_mq) ) cycle
+                    if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq, iz_mq) ) cycle
 
                     !
                     ! pay attention to the special case(s) where q=-q
@@ -497,9 +532,10 @@ contains
 
                     effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
                     iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
-                    alpha = effectiveiq - real(iq,dp) ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
+
+                    alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
                     ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
-                             + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
+                         + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -636,29 +672,59 @@ contains
             end do
         end do
 
+        !$omp end do
+        ! deallocate : (not necessary)
+        deallocate (deltarho_p_q)
+        deallocate (deltarho_p_mq)
+        deallocate (gamma_p_q)
+        deallocate (gamma_p_mq)
+        !$omp end parallel
+    end block
+
+
 
         call cpu_time(time(10))
 
         if ( any(gamma_p_isok .eqv. .false.) ) then
             error stop "not all gamma_p(projections,ix,iy,iz) have not been computed"
         end if
-
+        deallocate(gamma_p_isok)
         call cpu_time(time(11))
 
 
         !
         ! FFT3D from Fourier space to real space
         !
-        do ip=1,np
-            c3d = deltarho_p(ip,:,:,:)
+        block
+          real(dp) :: cst
+            
+            !$omp parallel private ( ip, cst, buf )
+            allocate(buf(nx,ny,nz), stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate buf returns error ",ierr
+
+            cst=1._dp/real(nx*ny*nz,dp)
+            
             select case(dp)
             case(c_double)
-                call dfftw_execute_dft( fft%plan3dm, c3d, c3d )
+               !$omp do
+               do ip=1,np
+                  buf = deltarho_p(ip,:,:,:) 
+                  call dfftw_execute_dft( fft%plan3dm, buf, buf)
+                  deltarho_p(ip,:,:,:) = buf*cst
+               end do
+               !$omp end do
             case(c_float)
-                call sfftw_execute_dft( fft%plan3dm, c3d, c3d )
+               !$omp do
+               do ip=1,np
+                  buf = deltarho_p(ip,:,:,:)
+                  call sfftw_execute_dft( fft%plan3dm, buf, buf)
+                  deltarho_p(ip,:,:,:) = buf*cst
+               end do
+               !$omp end do
             end select
-            deltarho_p(ip,:,:,:) = c3d/real(nx*ny*nz,dp)
-        end do
+            deallocate(buf)
+            !$omp end parallel
+        end block
 
         call cpu_time(time(12))
 
@@ -666,34 +732,46 @@ contains
         ! Gather projections into gamma
         ! Note that gamma==df
         !
-        prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
-        if(present(df)) then
-            ff=0._dp
-            do iz=1,nz
-                do iy=1,ny
-                    do ix=1,nx
-                        call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
-                        vexc = prefactor*grid%w*vexc
-                        ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
-                        df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + 2._dp*rho0*solvent(1)%xi(:,ix,iy,iz)*vexc
-                    end do
-                end do
-            end do
-            ff = ff*0.5_dp*dv
-        else
-            ff=0._dp
-            do iz=1,nz
-                do iy=1,ny
-                    do ix=1,nx
-                        call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
-                        vexc = prefactor*grid%w*vexc
-                        ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
-                    end do
-                end do
-            end do
-            ff = ff*0.5_dp*dv
-        end if
 
+        block
+            real(dp) :: prefactor
+            real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
+            prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
+            if(present(df)) then
+                ff=0._dp
+                !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
+                !$omp do
+                do iz=1,nz
+                    do iy=1,ny
+                        do ix=1,nx
+                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
+                            vexc = prefactor*grid%w*vexc
+                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
+                            df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + 2._dp*rho0*solvent(1)%xi(:,ix,iy,iz)*vexc
+                        end do
+                    end do
+                end do
+                !$omp end do
+                !$omp end parallel
+                ff = ff*0.5_dp*dv
+            else
+                ff=0._dp
+                !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
+                !$omp do
+                do iz=1,nz
+                    do iy=1,ny
+                        do ix=1,nx
+                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
+                            vexc = prefactor*grid%w*vexc
+                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
+                        end do
+                    end do
+                end do
+                !$omp end do
+                !$omp end parallel
+                ff = ff*0.5_dp*dv
+            end if
+        end block
         call cpu_time(time(13))
 
         total_time_in_subroutine = time(13)-time(1)

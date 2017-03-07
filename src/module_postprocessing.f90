@@ -84,9 +84,11 @@ contains
         filename = "output/Pz.cube"
         call write_to_cube_file(pz,filename)
         print*, "New file output/Pz.cube"
-        filename = 'output/pnorm.xvg'
-        call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
-        print*, "New output file ", trim(adjustl(filename))
+        if( size(solute%site) < 10 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
+            filename = 'output/pnorm.xvg'
+            call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
+            print*, "New output file ", trim(adjustl(filename))
+        end if
 
 
 
@@ -177,7 +179,7 @@ contains
 !
         block
             use module_solvent, only: solvent
-            if ( solvent(1)%nsite<10 ) then ! For complex solutes with numerous sites, rdf are no longer useful nor readable.
+            if( solvent(1)%nsite < 10 .and. size(solute%site) < 10  ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
                 density = density / solvent(1)%n0
                 filename = 'output/rdf.xvg'
                 call output_rdf ( density , filename ) ! Get radial distribution functions

@@ -195,17 +195,13 @@ subroutine energy_and_gradient (f, df)
 
     ff%tot = f
 
-
-
     block
         logical, save :: printheader = .true.
+        real(dp) :: reldf, Texc, Ttot, Textid, pgtol
         if(printheader) then
             write(*,'(A5,11A14)') "#eval","Ftot","Fext","Fid","Fexc","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
             printheader = .false.
         end if
-    end block
-    block
-        real(dp) :: reldf, Texc, Ttot, Textid, pgtol
         Texc = t(6)-t(5)
         Textid = t(2)-t(1)
         Ttot = Texc+Textid
@@ -217,11 +213,6 @@ subroutine energy_and_gradient (f, df)
         reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
         write(*,"(I5,11F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
     end block
-
-! if(present(df)) then
-!     print*, "Δf/f =", real((fold-f)/maxval([abs(fold),abs(f),1._dp])) ,"target=",lbfgsb%factr*epsilon(1._dp)
-!     print*, "pgtol=", real(maxval(df)),                                "target=",lbfgsb%pgtol
-! end if
 
 end subroutine energy_and_gradient
 
