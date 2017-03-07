@@ -129,7 +129,7 @@ contains
           !end of prepare table to loop over
 
 
-          do s=1,ns ! Ces boucles peuvent etre remise à l'interieur si on créé un tableau au début qui contient les indices des sites sur lesquels on peut boucler
+          do s=1,ns ! Ces boucles peuvent etre remise à l'interieur si on créé un tableau au début qui contient les indices des sites sur lesquels on peut boucler. ns is always = 1.
             
             do ss=1,size(solvent(s)%site)
               if( solvent(s)%site(ss)%eps<=epsdp ) cycle
@@ -148,31 +148,57 @@ contains
                     ix = xtab(indextabx)
                     xgrid=x(ix)
 
-                    do io=1,no !! sortir io des xyz !!! a voir avec les acces memoire vext!!!
-                      if( solvent(s)%vext(io,ix,iy,iz) > 1.e5 ) cycle ! TODO reflechir a un critere plus malin
+                      if( solvent(s)%name == "spce" .or. solvent(s)%name == "tip3p" ) then
 
-                      xss=xgrid+xmod(io,ss,s)
-                      yss=ygrid+ymod(io,ss,s)
-                      zss=zgrid+zmod(io,ss,s)
+                          ! There is only one lennard-jones site in the solvent molecule: the central "oxygen" at coordinates 0,0,0.
+                          ! Thus, the lj external potential has no dependency on the orientation.
+                          if( any(solvent(s)%vext(:,ix,iy,iz) > 1.e5 )) cycle ! TODO reflechir a un critere plus malin
+                          xss = xgrid
+                          yss = ygrid
+                          zss = zgrid
+                          dx =abs(xss-solute%site(u)%r(1)); do while(dx>lx*0.5_dp); dx=abs(dx-lx); end do
+                          dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly*0.5_dp); dy=abs(dy-ly); end do
+                          dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz*0.5_dp); dz=abs(dz-lz); end do
+                          rsq = dx**2 + dy**2 + dz**2
+                          if( rsq <= epsdp ) then
+                              vlj = huge(1._dp)
+                          elseif( rsq > cutoffsq ) then
+                              vlj = 0._dp
+                          else
+                              div = siguv6 / rsq**3 ! rsq is a distance²
+                              vlj = 4._dp*epsuv*div*(div-1._dp)
+                          end if
+                          solvent(s)%vext(:,ix,iy,iz) = solvent(s)%vext(:,ix,iy,iz) + vlj
 
-                      dx =abs(xss-solute%site(u)%r(1)); do while(dx>lx*0.5_dp); dx=abs(dx-lx); end do
-                      dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly*0.5_dp); dy=abs(dy-ly); end do
-                      dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz*0.5_dp); dz=abs(dz-lz); end do
-
-
-                      rsq = dx**2+dy**2+dz**2
-
-                      if (rsq<=epsdp) then
-                        vlj = huge(1._dp)
-                      elseif (rsq>cutoffsq) then
-                        vlj = 0._dp
                       else
-                        div = siguv6/rsq**3 ! rsq is a distance²
-                        vlj = 4._dp*epsuv*div*(div-1._dp)
+
+                          do io=1,no !! sortir io des xyz !!! a voir avec les acces memoire vext!!!
+                              if( solvent(s)%vext(io,ix,iy,iz) > 1.e5 ) cycle ! TODO reflechir a un critere plus malin
+
+                              xss=xgrid+xmod(io,ss,s)
+                              yss=ygrid+ymod(io,ss,s)
+                              zss=zgrid+zmod(io,ss,s)
+
+                              dx =abs(xss-solute%site(u)%r(1)); do while(dx>lx*0.5_dp); dx=abs(dx-lx); end do
+                              dy =abs(yss-solute%site(u)%r(2)); do while(dy>ly*0.5_dp); dy=abs(dy-ly); end do
+                              dz =abs(zss-solute%site(u)%r(3)); do while(dz>lz*0.5_dp); dz=abs(dz-lz); end do
+
+                              rsq = dx**2+dy**2+dz**2
+
+                              if (rsq<=epsdp) then
+                                  vlj = huge(1._dp)
+                              elseif (rsq>cutoffsq) then
+                                  vlj = 0._dp
+                              else
+                                  div = siguv6/rsq**3 ! rsq is a distance²
+                                  vlj = 4._dp*epsuv*div*(div-1._dp)
+                              end if
+
+                              solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vlj
+                          end do
+
                       end if
 
-                      solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vlj
-                    end do
                   end do
                 end do
              end do
