@@ -447,7 +447,7 @@ contains
           complex(dp), allocatable :: gamma_p_q(:)
           complex(dp), allocatable :: gamma_p_mq(:)
 
-          !$omp parallel private(iz_q, iy_q, ix_q, iz_mq, iy_mq, ix_mq, q, R, R_loc, q_eq_mq, gamma_p_q, gamma_p_mq, m, khi, mu2, ip2_loc, deltarho_p_q, deltarho_p_mq, deltarho_p_q_loc, deltarho_p_mq_loc, ia, ip, effectiveiq, iq, alpha, ceff, ip2)
+          !$omp parallel private(iz_q, iy_q, ix_q, iz_mq, iy_mq, ix_mq, q, R, q_eq_mq, gamma_p_q, gamma_p_mq, m, khi, mu2, deltarho_p_q, deltarho_p_mq, deltarho_p_q_loc, deltarho_p_mq_loc, ia, ip, effectiveiq, iq, alpha, ceff)
           allocate (deltarho_p_q(np) ,source=zeroc, stat=ierr)
           if (ierr/=0) PRINT*,"Allocate deltarho_p_q returns error ",ierr
           allocate (deltarho_p_mq(np) ,source=zeroc, stat=ierr)
