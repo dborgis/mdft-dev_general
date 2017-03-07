@@ -45,6 +45,7 @@ contains
         use precision_kinds, only: dp
         use module_grid, only: grid
         implicit none
+        integer :: ip, m, mup, mu, i, p
 
         if(is_init) return
 
@@ -59,7 +60,7 @@ contains
         np=grid%np
         no=grid%no
 
-        allocate (wtheta(grid%ntheta))
+        allocate( wtheta(grid%ntheta))
         allocate( r2d(npsi,nphi) )
         allocate( c2d(npsi/2+1,nphi))
         allocate( f_theta_mu2_mup(ntheta,0:mmax/mrso,-mmax:mmax)   ,  source=(0._dp,0._dp)   )
@@ -75,31 +76,30 @@ contains
         ! Les fois suivantes, p3%p reste alloué, et donc le .not.allocated(p3%p) est skippé.
         ! On utilise cette astuce de nombreuses fois dans cette routine.
         !
-        block
-            integer :: ip, m, mup, mu
-            allocate ( p3%p(0:mmax,-mmax:mmax, 0:mmax/mrso) ,source=-huge(1)) ! Dans p3%p, on met mu2=2*mu, pas mu
-            allocate ( p3%m(np) ,source=-huge(1)) ! mettre des -huge comme valeur initiale permet de plus tard verifier que s'il reste un -huge qqpart, il y a un problème. Si on avait mis 0, on ne peut pas vérifier.
-            allocate ( p3%mup(np) ,source=-huge(1))
-            allocate ( p3%mu(np) ,source=-huge(1)) ! c'est bien mu qu'on met dans p3%mu(), pas mu2
-            ip=0
-            do m=0,mmax
-                do mup=-m,m
-                    do mu=0,m,mrso
-                        ip=ip+1
-                        if (ip > np) ERROR STOP "p > np at line 166"
-                        p3%p(m,mup,mu/mrso) = ip ! on met mu2 dans p3%p, pas mu
-                        p3%m(ip) = m
-                        p3%mup(ip) = mup
-                        p3%mu(ip) = mu ! c'est le vrai mu, pas mu2
-                    end do
+        
+            
+        allocate( p3%p(0:mmax,-mmax:mmax, 0:mmax/mrso) ,source=-huge(1)) ! Dans p3%p, on met mu2=2*mu, pas mu
+        allocate( p3%m(np) ,source=-huge(1)) ! mettre des -huge comme valeur initiale permet de plus tard verifier que s'il reste un -huge qqpart, il y a un problème. Si on avait mis 0, on ne peut pas vérifier.
+        allocate( p3%mup(np) ,source=-huge(1))
+        allocate( p3%mu(np) ,source=-huge(1)) ! c'est bien mu qu'on met dans p3%mu(), pas mu2
+        ip=0
+        do m=0,mmax
+            do mup=-m,m
+                do mu=0,m,mrso
+                    ip=ip+1
+                    if (ip > np) ERROR STOP "p > np at line 166"
+                    p3%p(m,mup,mu/mrso) = ip ! on met mu2 dans p3%p, pas mu
+                    p3%m(ip) = m
+                    p3%mup(ip) = mup
+                    p3%mu(ip) = mu ! c'est le vrai mu, pas mu2
                 end do
             end do
-            if (ip /= np) error stop "ip /= np in energy_cproj"
-            if ( any(abs(p3%m)>mmax) .or. any(abs(p3%mup)>mmax) .or. any(abs(p3%mu)>mmax) ) then
-                print*, "tabulated m, mup or mu have incorrect values"
-                error stop
-            end if
-        end block
+        end do
+        if (ip /= np) error stop "ip /= np in energy_cproj"
+        if ( any(abs(p3%m)>mmax) .or. any(abs(p3%mup)>mmax) .or. any(abs(p3%mu)>mmax) ) then
+            print*, "tabulated m, mup or mu have incorrect values"
+            error stop
+        end if
 
         !
         ! L'initialisation des racines et des poids de la quadrature angulaire a été faite beaucoup plus tot
@@ -122,19 +122,16 @@ contains
         ! TODO: a remplacer par la routine de luc, et utiliser la notation alpha plutot que m,mup,mu a ce moment
         !
         ! call test_routines_calcul_de_Rm_mup_mu_q
-        block
-            integer :: p, m, mup, mu, i
-            allocate ( p3%wigner_small_d(1:ntheta, 1:np) ,source=0._dp)
-            do p=1,np
-                m = p3%m(p)
-                mup = p3%mup(p)
-                mu = p3%mu(p)
-                do i=1,ntheta
-                    ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la méthode de Wigner.
-                    p3%wigner_small_d(i,p) =  wigner_small_d( m,mup,mu,  grid%thetaofntheta(i)  )
-                end do
+        allocate ( p3%wigner_small_d(1:ntheta, 1:np) ,source=0._dp)
+        do p=1,np
+            m = p3%m(p)
+            mup = p3%mup(p)
+            mu = p3%mu(p)
+            do i=1,ntheta
+                ! Pour chaque theta, calcule la fonction de Wigner-d correspondant à toutes les projections avec la méthode de Wigner.
+                p3%wigner_small_d(i,p) =  wigner_small_d( m,mup,mu,  grid%thetaofntheta(i)  )
             end do
-        end block
+        end do
 
         !
         ! Les projections sont complexes, mais la symetrie hermitienne
@@ -164,18 +161,14 @@ contains
         implicit none
         real(dp), intent(in) :: o(:) ! orientations from 1 to no
         complex(dp), intent(out) :: p(:) ! projections from 1 to no
-        integer :: itheta, iphi, ipsi, m, mup, mu2, ip, io
-        
+        integer :: itheta, iphi, ipsi, m, mup, mu2, ip, io, ierr
         complex(dp), dimension(ntheta,0:mmax/mrso,-mmax:mmax) :: my_f_theta_mu2_mup
         real(dp), dimension(npsi,nphi) :: my_r2d
         complex(dp), dimension(npsi/2+1,nphi) :: my_c2d
 
-        integer :: ierr
-
         if( .not. is_init) call init
 
-        p = (0._dp,0._dp) !YOR! Useful?
-        my_f_theta_mu2_mup = (0._dp,0._dp) !YOR! Useful?
+        my_f_theta_mu2_mup = (0._dp,0._dp)
         io=0
         do itheta=1,ntheta
             do iphi=1,nphi
@@ -194,6 +187,7 @@ contains
             my_f_theta_mu2_mup(itheta,0:mmax/mrso,0:mmax)   = my_c2d(:,1:mmax+1)
             my_f_theta_mu2_mup(itheta,0:mmax/mrso,-mmax:-1) = my_c2d(:,mmax+2:)
         end do
+        p = (0._dp,0._dp)
         ip=0
         do m=0,mmax
             do mup=-m,m
@@ -211,7 +205,6 @@ contains
         complex(dp), intent(in) :: p(:) ! np
         real(dp), intent(out) :: o(:) ! no
         integer :: itheta, iphi, ipsi, m, mup, mu2, ip, io
-
         complex(dp), dimension(ntheta,0:mmax/mrso,-mmax:mmax) :: my_f_theta_mu2_mup
         real(dp), dimension(npsi,nphi) :: my_r2d
         complex(dp), dimension(npsi/2+1,nphi) :: my_c2d
@@ -219,8 +212,7 @@ contains
 
         if(.not.is_init) call init
 
-        o = 0._dp !YOR! useful?
-        my_f_theta_mu2_mup = (0._dp,0._dp) !YOR! useful?
+        my_f_theta_mu2_mup = (0._dp,0._dp)
         do mup=-mmax,mmax
             do mu2=0,mmax/mrso
                 do m= max(abs(mup),mrso*abs(mu2)), mmax
@@ -231,6 +223,8 @@ contains
                 end do
             end do
         end do
+
+        o = 0._dp
         io=0
         do itheta=1,ntheta
             my_c2d(:,1:mmax+1) = conjg( my_f_theta_mu2_mup(itheta,0:mmax/mrso,0:mmax)   )
