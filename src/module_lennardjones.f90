@@ -218,6 +218,7 @@ contains
         end do
         deallocate(xtab, ytab, ztab)
         deallocate(xmod, ymod, zmod, x, y, z)
+        deallocate(hasAllLjSitesAtOrigin)
 
     end subroutine calcul_lennardjones
 
