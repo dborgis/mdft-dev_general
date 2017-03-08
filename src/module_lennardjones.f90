@@ -82,11 +82,6 @@ contains
           end do
         end do
 
-
-
-
-        !$omp parallel private( xtab, ytab, ztab, epsuv, siguv6, indextabz, iz, zgrid, indextaby, iy, ygrid, indextabx, ix, xgrid, io, xss, yss, zss, dx, dy, dz, rsq, vlj, div)
-
         allocate( xtab(xtabsize) )
         allocate( ytab(ytabsize) )
         allocate( ztab(ztabsize) )
@@ -134,7 +129,7 @@ contains
               if( solvent(s)%site(ss)%eps<=epsdp ) cycle
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
               siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)*0.5_dp)**6
-
+              !$omp parallel private(indextabz, iz, zgrid, indextaby, iy, ygrid, indextabx, ix, xgrid, io, xss, yss, zss, dx, dy, dz, rsq, vlj, div)
               !$omp do
               do indextabz=1,ztabsize ! indextabz is the index in ztabsize
                 iz = ztab(indextabz)  ! iz is the index of the point in the grid
@@ -203,12 +198,11 @@ contains
                 end do
              end do
              !$omp end do
-             
+             !$omp end parallel
            end do
           end do
         end do
         deallocate(xtab, ytab, ztab)
-        !$omp end parallel
         deallocate(xmod, ymod, zmod, x, y, z)
 
     end subroutine calcul_lennardjones
