@@ -28,6 +28,7 @@ contains
         real(dp) :: xgrid, ygrid, zgrid
         real(dp) :: div, rsq
         real(dp) :: vlj
+        logical :: iswater
 
         if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
         if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
@@ -123,8 +124,10 @@ contains
           !end of prepare table to loop over
 
 
-          do s=1,ns ! Ces boucles peuvent etre remise à l'interieur si on créé un tableau au début qui contient les indices des sites sur lesquels on peut boucler. ns is always = 1.
-            
+          do s=1,ns ! Ces boucles peuvent etre remise à l'interieur si on créé un tableau au début qui contient les indices des sites sur lesquels on peut boucler. ns is always = 1. 
+            iswater=.FALSE.
+            if ( solvent(s)%name == "spce" .or. solvent(s)%name == "tip3p" ) iswater=.TRUE.
+
             do ss=1,size(solvent(s)%site)
               if( solvent(s)%site(ss)%eps<=epsdp ) cycle
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
@@ -143,7 +146,7 @@ contains
                     ix = xtab(indextabx)
                     xgrid=x(ix)
 
-                      if( solvent(s)%name == "spce" .or. solvent(s)%name == "tip3p" ) then
+                    if( iswater ) then
 
                           ! There is only one lennard-jones site in the solvent molecule: the central "oxygen" at coordinates 0,0,0.
                           ! Thus, the lj external potential has no dependency on the orientation.
@@ -190,7 +193,7 @@ contains
                               end if
 
                               solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + vlj
-                          end do
+                           end do
 
                       end if
 
