@@ -28,7 +28,7 @@ contains
         real(dp) :: xgrid, ygrid, zgrid
         real(dp) :: div, rsq
         real(dp) :: vlj
-        logical, allocatable :: hasAllLjSitesAtOrigin(:)
+        logical :: hasOnlyLjAtOrigin(1:size(solvent))
 
         if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
         if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
@@ -72,13 +72,13 @@ contains
           allocate( zmod(no,ssmax,ns))
         end block
 
-        allocate ( hasAllLjSitesAtOrigin(ns), source=.TRUE. )
-
+		!Check the solvent has only one Lennard-Jones site, and that this site is on a grid node, ie at origin, (0,0,0).
         do s=1,ns
+          hasOnlyLjAtOrigin(ns) = .TRUE.
           do ss=1,solvent(s)%nsite
             if( solvent(s)%site(ss)%eps .NE. 0._dp ) then
               if( ANY(solvent(s)%site(ss)%r .NE. 0._dp ) ) then
-                hasAllLjSitesAtOrigin(s) = .FALSE.
+                hasOnlyLjAtOrigin(s) = .FALSE.
               end if
             end if
           end do
@@ -157,7 +157,7 @@ contains
                     ix = xtab(indextabx)
                     xgrid=x(ix)
 
-                    if( hasAllLjSitesAtOrigin(s) ) then
+                    if( hasOnlyLjAtOrigin(s) ) then
 						
                           ! There is only one lennard-jones site in the solvent molecule: the central "oxygen" at coordinates 0,0,0.
                           ! Thus, the lj external potential has no dependency on the orientation.
@@ -218,7 +218,6 @@ contains
         end do
         deallocate(xtab, ytab, ztab)
         deallocate(xmod, ymod, zmod, x, y, z)
-        deallocate(hasAllLjSitesAtOrigin)
 
     end subroutine calcul_lennardjones
 
