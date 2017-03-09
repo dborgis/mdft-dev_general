@@ -122,6 +122,7 @@ contains
         grid%thetaofntheta = acos(grid%thetaofntheta)
         allocate( grid%indo(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
         allocate( grid%io(grid%ntheta,grid%nphi,grid%npsi), source=-huge(1) )
+        open( 45, file = "output/list_of_orientations.dat")
         io = 0
         do itheta = 1, grid%ntheta
             do iphi = 1, grid%nphi
@@ -130,6 +131,7 @@ contains
                     grid%theta(io) = grid%thetaofntheta(itheta)
                     grid%phi(io) = grid%phiofnphi(iphi)
                     grid%psi(io) = grid%psiofnpsi(ipsi)
+                    write(45,*) io, grid%theta(io), grid%phi(io), grid%psi(io)
                     grid%io(itheta,iphi,ipsi) = io
                     grid%wtheta(io) = grid%wthetaofntheta(itheta)
                     grid%wphi(io) = grid%wphiofnphi(iphi)
@@ -139,6 +141,7 @@ contains
             end do
         end do
         grid%indo = grid%io
+        close(45)
 
         if (nint(abs(sum(grid%w)/(quadrature_norm/grid%molrotsymorder)))/=1) then
             print*, "In module_grid.f90, I am checking the normalization of the angular quadrature"
