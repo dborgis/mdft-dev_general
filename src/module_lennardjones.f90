@@ -28,7 +28,7 @@ contains
         real(dp) :: xgrid, ygrid, zgrid
         real(dp) :: div, rsq
         real(dp) :: vlj
-        logical :: iswater
+        logical :: hasOnlyLjAtOrigin(1:size(solvent))
 
         if (.not. allocated(solvent)) error stop "solvent should be allocated in vext_lennardjones"
         if (.not. grid%isinitiated) error stop "grid is not initiated in vext_lennardjones"
@@ -71,6 +71,19 @@ contains
           allocate( ymod(no,ssmax,ns))
           allocate( zmod(no,ssmax,ns))
         end block
+
+		!Check the solvent has only one Lennard-Jones site, and that this site is on a grid node, ie at origin, (0,0,0).
+        do s=1,ns
+          hasOnlyLjAtOrigin(ns) = .TRUE.
+          do ss=1,solvent(s)%nsite
+            if( solvent(s)%site(ss)%eps .NE. 0._dp ) then
+              if( ANY(solvent(s)%site(ss)%r .NE. 0._dp ) ) then
+                hasOnlyLjAtOrigin(s) = .FALSE.
+              end if
+            end if
+          end do
+        end do
+
 
 
         do s=1,ns
@@ -125,8 +138,6 @@ contains
 
 
           do s=1,ns ! Ces boucles peuvent etre remise à l'interieur si on créé un tableau au début qui contient les indices des sites sur lesquels on peut boucler. ns is always = 1. 
-            iswater=.FALSE.
-            if ( solvent(s)%name == "spce" .or. solvent(s)%name == "tip3p" ) iswater=.TRUE.
 
             do ss=1,size(solvent(s)%site)
               if( solvent(s)%site(ss)%eps<=epsdp ) cycle
@@ -146,8 +157,8 @@ contains
                     ix = xtab(indextabx)
                     xgrid=x(ix)
 
-                    if( iswater ) then
-
+                    if( hasOnlyLjAtOrigin(s) ) then
+						
                           ! There is only one lennard-jones site in the solvent molecule: the central "oxygen" at coordinates 0,0,0.
                           ! Thus, the lj external potential has no dependency on the orientation.
                           if( any(solvent(s)%vext(:,ix,iy,iz) > 1.e5 )) cycle ! TODO reflechir a un critere plus malin
