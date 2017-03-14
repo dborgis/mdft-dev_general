@@ -17,7 +17,7 @@ contains
         use module_orientation_projection_transform, only: angl2proj
         implicit none
         character(len=80) :: filename
-        real(dp), allocatable :: density(:,:,:), px(:,:,:,:), py(:,:,:,:), pz(:,:,:,:)
+        real(dp), allocatable :: density(:,:,:)
         integer :: nx, ny, nz, ix, iy, iz, is, isite, no
         real(dp), parameter :: pi=acos(-1._dp)
 
@@ -73,22 +73,30 @@ contains
         !
         ! print polarization in each direction
         !
-        allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
-        call get_final_polarization(px,py,pz)
-        filename = "output/Px.cube"
-        call write_to_cube_file(px,filename)
-        print*, "New file output/Px.cube"
-        filename = "output/Py.cube"
-        call write_to_cube_file(py,filename)
-        print*, "New file output/Py.cube"
-        filename = "output/Pz.cube"
-        call write_to_cube_file(pz,filename)
-        print*, "New file output/Pz.cube"
-        if( size(solute%site) < 10 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
-            filename = 'output/pnorm.xvg'
-            call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
-            print*, "New output file ", trim(adjustl(filename))
+        block
+        use module_input, only: getinput
+        real(dp), allocatable, dimension(:,:,:,:) :: px, py, pz
+        logical :: write_polarization_to_disk
+        write_polarization_to_disk = getinput%log( "write_polarization_to_disk", defaultValue = .false. )
+        if( write_polarization_to_disk ) then
+            allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
+            call get_final_polarization(px,py,pz)
+            filename = "output/Px.cube"
+            call write_to_cube_file(px,filename)
+            print*, "New file output/Px.cube"
+            filename = "output/Py.cube"
+            call write_to_cube_file(py,filename)
+            print*, "New file output/Py.cube"
+            filename = "output/Pz.cube"
+            call write_to_cube_file(pz,filename)
+            print*, "New file output/Pz.cube"
+            if( size(solute%site) < 10 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
+                filename = 'output/pnorm.xvg'
+                call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
+                print*, "New output file ", trim(adjustl(filename))
+            end if
         end if
+        end block
 
 
 
