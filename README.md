@@ -11,7 +11,8 @@ The Molecular Density Functional Theory is a collaborative work led by Daniel Bo
 - Cédric Gageat, as a PhD student (2015-), works on core developments and biomolecular applications.  
 - Yacine Ould-Rouis, as an engineer in high performance computing (2017-), works on openmp implementation and vectorization.   
 - José François, for a M2 intern (2017-), on the study of solute databases like Freesolv to construct an awesome MDFT database.  
-- Sohvi Luukkonen, for a M2 intern (2017-), on the building of bridge functional using machine learning.  
+- Sohvi Luukkonen, for a M2 intern (2017-), on the building of bridge functional using machine learning with Tensorflow.
+
 
 ## Git, github, issues etc.
 
