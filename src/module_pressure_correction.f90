@@ -68,6 +68,9 @@ subroutine pressure_correction
     correction  = -deltaN/solvent(1)%n0*Pbulk  !correction is -PV where V is excluded Volume
     correction2 =  deltaN*thermo%kbT  !correction is -PV where V is excluded Volume
     deltaG_corrected = deltaGtotMDFT + correction !+ correction2
+
+    write(*,'(A,F12.2,A)') "Functional at min   ", deltaGtotMDFT," kJ/mol"
+
     write(*,'(A,F12.2,A)') "PMV correction      ", correction," kJ/mol"
     write(*,'(A,F12.2,A)') "Pid correction      ", correction2," kJ/mol"
     open(79,file="output/PMV_correction")
