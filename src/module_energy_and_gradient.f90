@@ -13,6 +13,7 @@ module module_energy_and_gradient
                 exc_fmt = 0._dp,&
                 exc_wca = 0._dp,&
                 exc_3b = 0._dp,&
+                exc_cgb = 0._dp,&
                 exc_dipolar = 0._dp,&
                 exc_multipolar_without_coupling_to_density = 0._dp,&
                 exc_multipolar_with_coupling_to_density = 0._dp,&
@@ -47,6 +48,7 @@ subroutine energy_and_gradient (f, df)
     use module_solvent, only: solvent
     use module_grid, only: grid
     use module_energy_ideal_and_external, only: energy_ideal_and_external
+    use module_coarse_grained_bridge, only: coarse_grained_bridge
     ! use module_energy_cs, only: energy_cs
     ! use module_energy_cdeltacd, only: energy_cdeltacd
     use module_energy_cproj_mrso, only: energy_cproj_mrso
@@ -137,6 +139,18 @@ subroutine energy_and_gradient (f, df)
           call cpu_time(t(6))
         end if
         f = f + ff%exc_cproj
+    end if
+
+
+    if( getinput%log('coarse_grained_bridge', defaultvalue=.false.) ) then
+        if(present(df)) then
+          call coarse_grained_bridge( ff%exc_cgb, df)
+        else
+          call coarse_grained_bridge( ff%exc_cgb)
+        end if
+    
+    
+    
     end if
 
 
