@@ -92,7 +92,7 @@ contains
           n0 = solvent(is)%n0 ! 3.3289100974798203E-002
           c00000 = -13.6652260 / n0   ! -410.50150296973749
           A(is) = kT*( 1.0_dp/n0**2 - c00000/(2.0_dp*n0) )    ! c0 sphérique
-        
+
         end do
         
         B = -15e-8_dp
@@ -158,12 +158,7 @@ contains
             call sfftw_destroy_plan( fftPlan3d )
           end select
         
-        kernel_k(:,:,:) = kernel_k(:,:,:) / real(grid%nx*grid%ny*grid%nz) * (grid%lx * grid%ly * grid%lz)
-        
-        print*, "integral kernel (must be 1) ", sum(kernel(:,:,:)) * (grid%dx * grid%dy * grid%dz)  
-        print*, kernel_k(1,1,1)
-        print*, kernel_k(1,1,1)/ sqrt(real(grid%nx*grid%ny*grid%nz))
-        
+        kernel_k(:,:,:) = kernel_k(:,:,:) / real(grid%nx*grid%ny*grid%nz) * (grid%lx * grid%ly * grid%lz) ! normalization to be use in convolution
         
         deallocate(x)
         deallocate(y)
@@ -234,8 +229,8 @@ contains
                 if(present(df)) then
                   if ( n_cg .lt. n0 ) then
                     dfb_cg(ix,iy,iz) = A(is) * 3.0_dp * deltaN_cg**2 &
-                                               + B     *  ( 2.0_dp * n_cg * deltaN_cg**4 &
-                                                          + 4.0_dp * n_cg**2 * deltaN_cg**3 )
+                                     + B     *  ( 2.0_dp * n_cg * deltaN_cg**4 &
+                                                + 4.0_dp * n_cg**2 * deltaN_cg**3 )
                   else 
                     dfb_cg(ix,iy,iz) = 0.0_dp
                   end if
@@ -311,14 +306,14 @@ contains
     
       integer :: is, ix, iy, iz
       integer :: ns, nx, ny, nz
-      real(dp) :: wTot
+      real(dp) :: wTot, rho0
 
       ns = solvent(1)%nspec
  
       nx=grid%nx
       ny=grid%ny
       nz=grid%nz
-    
+      
       wTot = sum(grid%w(:))
       
       select case(dp)
@@ -337,15 +332,17 @@ contains
           call sfftw_execute_dft_c2r( fftDfb%plan3dm, dfb_cg_k, dfb)
       end select
 
-      dfb_cg_k = dfb_cg_k / real(grid%nx*grid%ny*grid%nz)
+      dfb = dfb / real(grid%nx*grid%ny*grid%nz)
+    
     
     
       do is=1,ns
+        rho0 = solvent(is)%rho0
         do iz=1,nz
           do iy=1,ny
             do ix=1,nx
 
-              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) + 2 * solvent(is)%xi(:,ix,iy,iz) * solvent(is)%n0 * dfb(ix, iy, iz) * grid%w(:) / wTot
+              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) + 2.0_dp * solvent(is)%xi(:,ix,iy,iz) * rho0 * dfb(ix, iy, iz) * grid%w(:) / wTot 
             
             end do
           end do
