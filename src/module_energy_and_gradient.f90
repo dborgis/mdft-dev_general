@@ -148,9 +148,7 @@ subroutine energy_and_gradient (f, df)
         else
           call coarse_grained_bridge( ff%exc_cgb)
         end if
-    
-    
-    
+        f = f + ff%exc_cgb
     end if
 
 
@@ -213,7 +211,7 @@ subroutine energy_and_gradient (f, df)
         logical, save :: printheader = .true.
         real(dp) :: reldf, Texc, Ttot, Textid, pgtol
         if(printheader) then
-            write(*,'(A5,11A14)') "#eval","Ftot","Fext","Fid","Fexc","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
+            write(*,'(A5,12A14)') "#eval","Ftot","Fext","Fid","Fexc","Fcgb","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
             printheader = .false.
         end if
         Texc = t(6)-t(5)
@@ -225,7 +223,7 @@ subroutine energy_and_gradient (f, df)
             pgtol = 0
         end if
         reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
-        write(*,"(I5,11F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
+        write(*,"(I5,12F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%exc_cgb, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
     end block
 
 end subroutine energy_and_gradient
