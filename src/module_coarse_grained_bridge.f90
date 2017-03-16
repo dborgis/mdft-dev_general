@@ -18,8 +18,8 @@ module module_coarse_grained_bridge
         type(c_ptr) :: plan3dp, plan3dm 
     end type fft_type
     
-    real(dp), allocatable :: density(:,:,:), coarseGrainedDensity(:,:,:), coarseGrainedDfb(:,:,:), dfb(:,:,:)
-    complex(dp), allocatable :: fourierKernel(:,:,:), fourierDensity(:,:,:), fourierCoarseGrainedDfb(:,:,:)
+    real(dp), allocatable :: density(:,:,:), density_cg(:,:,:), dfb_cg(:,:,:), dfb(:,:,:)
+    complex(dp), allocatable :: kernel_k(:,:,:), density_k(:,:,:), dfb_cg_k(:,:,:)
     
     real(dp), allocatable :: A(:)
     real(dp) :: B
@@ -41,20 +41,20 @@ contains
 
         implicit none
         
-        real(dp) :: c00000, kT, rho0
+        real(dp) :: c00000, kT, n0
         integer :: is, ns
 
 
         ns=solvent(1)%nspec
 
         allocate ( density(grid%nx,grid%ny,grid%nz) )
-        allocate ( coarseGrainedDensity(grid%nx,grid%ny,grid%nz) )
-        allocate ( coarseGrainedDfb(grid%nx,grid%ny,grid%nz) )
+        allocate ( density_cg(grid%nx,grid%ny,grid%nz) )
+        allocate ( dfb_cg(grid%nx,grid%ny,grid%nz) )
         allocate ( dfb(grid%nx,grid%ny,grid%nz) )
         
-        allocate ( fourierKernel(grid%nx,grid%ny,grid%nz/2+1) )
-        allocate ( fourierDensity(grid%nx,grid%ny,grid%nz/2+1) )
-        allocate ( fourierCoarseGrainedDfb(grid%nx,grid%ny,grid%nz/2+1) )
+        allocate ( kernel_k(grid%nx,grid%ny,grid%nz/2+1) )
+        allocate ( density_k(grid%nx,grid%ny,grid%nz/2+1) )
+        allocate ( dfb_cg_k(grid%nx,grid%ny,grid%nz/2+1) )
         
         allocate ( A(ns) )
         
@@ -63,19 +63,19 @@ contains
         select case(dp)
           case(c_double)
           
-            call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, fourierDensity, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, fourierDensity, coarseGrainedDfb, FFTW_MEASURE)
+            call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
+            call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, dfb_cg, FFTW_MEASURE)
 
-            call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, coarseGrainedDfb, fourierCoarseGrainedDfb, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, fourierCoarseGrainedDfb, dfb, FFTW_MEASURE)
+            call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
+            call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
           
           case(c_float)
           
-            call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, fourierDensity, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, fourierDensity, coarseGrainedDfb, FFTW_MEASURE)
+            call sfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
+            call sfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, dfb_cg, FFTW_MEASURE)
 
-            call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, coarseGrainedDfb, fourierCoarseGrainedDfb, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, fourierCoarseGrainedDfb, dfb, FFTW_MEASURE)
+            call sfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
+            call sfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
         
         end select
 
@@ -85,18 +85,17 @@ contains
 
         !! m_thermo.kBT/puissance(m_solvent.rhoZero,2) - m_thermo.kBT*cZero/m_solvent.rhoZero/2.0 
         !! TODO: l'extraire du fichier c directement mais cela implique de trop grosses modifs pour les permiers tests :)
-        c00000 = -13.6652260 ! -440 sur le code 1D :s
         kT   = thermo%kbT
         
         do is=1,ns
-
-          rho0 = solvent(is)%rho0
-          A(is) = kT*( 1.0_dp/rho0**2 - c00000/(2.0_dp*rho0) )    ! c0 sphérique
+        
+          n0 = solvent(is)%n0 ! 3.3289100974798203E-002
+          c00000 = -13.6652260 / n0   ! -410.50150296973749
+          A(is) = kT*( 1.0_dp/n0**2 - c00000/(2.0_dp*n0) )    ! c0 sphérique
         
         end do
         
         B = -15e-8_dp
-        
 
         is_init = .true.
         
@@ -113,57 +112,62 @@ contains
         integer :: i
         integer :: nx, ny, nz
         integer :: ix, iy, iz
-        real(dp), allocatable :: xSqr(:), ySqr(:), zSqr(:)
+        real(dp), allocatable :: x(:), y(:), z(:)
+        real(dp) :: xPbc, yPbc, zPbc
         real(dp), allocatable :: kernel(:,:,:)
-        real(dp) :: cutoff, cutoffDist
         type(c_ptr) :: fftPlan3d
+        real(dp), parameter :: pi=acos(-1._dp)
 
         nx=grid%nx
         ny=grid%ny
         nz=grid%nz
 
-        sigma = 2.36_dp
+        sigma = 2.36_dp !2.36_dp
         
-        cutoff = log(huge(1._dp)) ! To avoid numerical errors
-        cutoffDist = sqrt(2.0_dp * log(huge(1._dp)) ) /  sigma - 0.3_dp ! minus 0.3 because of numerical error above (empirical)
-
-        allocate( xSqr(nx) ,source= [( (real(i-1,dp)*grid%dx)**2 ,i=1,nx)] )
-        allocate( ySqr(ny) ,source= [( (real(i-1,dp)*grid%dy)**2 ,i=1,ny)] )
-        allocate( zSqr(nz) ,source= [( (real(i-1,dp)*grid%dz)**2, i=1,nz)] )
+        allocate( x(nx) ,source= [( (real(i-1,dp)*grid%dx) ,i=1,nx)] )
+        allocate( y(ny) ,source= [( (real(i-1,dp)*grid%dy) ,i=1,ny)] )
+        allocate( z(nz) ,source= [( (real(i-1,dp)*grid%dz), i=1,nz)] )
 
         allocate (kernel(grid%nx,grid%ny,grid%nz), source=0.0_dp)
 
 
         do iz=1,grid%nz
+          zPbc = min( z(iz), grid%lz-z(iz) )
           do iy=1,grid%ny
+            yPbc = min( y(iy), grid%ly-y(iy) )
             do ix=1,grid%nx
-
-                d=sqrt(xSqr(ix)+ySqr(iy)+zSqr(iz))
+              xPbc = min( x(ix), grid%lx-x(ix) )
                 
-                if( d .lt. cutoffDist) then
-                    kernel(ix, iy, iz) = exp( -0.5*(d*sigma)**2 )
-                end if
+                d=sqrt( xPbc**2 + yPbc**2 + zPbc**2 )
+                
+               !kernel(ix, iy, iz) = exp( -0.5*(d/sigma)**2 ) ! formula in fourier space n 1d
+               kernel(ix, iy, iz) = 1./(sigma*sqrt(2.*pi))**3 * exp( -(d**2)/(2.0_dp*sigma**2) )
 
             end do !ix
           end do !iy
         end do !iz
-        
        
         select case(dp)
           case(c_double)
-            call dfftw_plan_dft_r2c_3d( fftPlan3d, nx, ny, nz, kernel, fourierKernel, FFTW_MEASURE )
-            call dfftw_execute_dft_r2c( fftPlan3d, kernel, fourierKernel )
+            call dfftw_plan_dft_r2c_3d( fftPlan3d, nx, ny, nz, kernel, kernel_k, FFTW_MEASURE )
+            call dfftw_execute_dft_r2c( fftPlan3d, kernel, kernel_k )
             call dfftw_destroy_plan( fftPlan3d )
           case(c_float)
-            call sfftw_plan_dft_r2c_3d( fftPlan3d, nx, ny, nz, kernel, fourierKernel, FFTW_MEASURE )
-            call sfftw_execute_dft_r2c( fftPlan3d, kernel, fourierKernel )
+            call sfftw_plan_dft_r2c_3d( fftPlan3d, nx, ny, nz, kernel, kernel_k, FFTW_MEASURE )
+            call sfftw_execute_dft_r2c( fftPlan3d, kernel, kernel_k )
             call sfftw_destroy_plan( fftPlan3d )
           end select
         
+        kernel_k(:,:,:) = kernel_k(:,:,:) / real(grid%nx*grid%ny*grid%nz) * (grid%lx * grid%ly * grid%lz)
         
-        deallocate(xSqr)
-        deallocate(ySqr)
-        deallocate(zSqr)
+        print*, "integral kernel (must be 1) ", sum(kernel(:,:,:)) * (grid%dx * grid%dy * grid%dz)  
+        print*, kernel_k(1,1,1)
+        print*, kernel_k(1,1,1)/ sqrt(real(grid%nx*grid%ny*grid%nz))
+        
+        
+        deallocate(x)
+        deallocate(y)
+        deallocate(z)
         deallocate(kernel)
     
     end subroutine fill_kernel
@@ -186,9 +190,10 @@ contains
         real(dp), intent(inout), contiguous, optional :: df(:,:,:,:,:)
         integer :: is, ix, iy, iz
         integer :: ns, nx, ny, nz
-        real(dp) :: dv, kT,rho0
-        real(dp) :: coarseGrainedXi, coarseGrainedRho, coarseGrainedDeltaRho
+        real(dp) :: dv, kT,n0
+        real(dp) :: xi_cg, n_cg, deltaN_cg
         real(dp), parameter :: zerodp = 0._dp
+        real(dp), parameter :: pi=acos(-1._dp)
 
 
         ns = solvent(1)%nspec
@@ -210,27 +215,29 @@ contains
         do is=1,ns
 
           call grid%integrate_over_orientations( solvent(is)%xi**2 * solvent(is)%rho0, density)
-          call compute_coarse_grained_density( density, coarseGrainedDensity )
-          rho0 = solvent(is)%rho0
+          !density => 3.32891010E-02 without solute
+          call compute_coarse_grained_density( density, density_cg )
+          !density_cg => 3.32891010E-02 without solute
+
+          n0 = solvent(is)%n0
 
           do iz=1,nz
             do iy=1,ny
               do ix=1,nx
  
-                coarseGrainedXi = coarseGrainedDensity(ix,iy,iz)
-                coarseGrainedRho = coarseGrainedXi**2 *rho0
+                n_cg = density_cg(ix,iy,iz)
           
-                coarseGrainedDeltaRho = coarseGrainedRho - rho0
-                fb = fb + A(is) * coarseGrainedDeltaRho**3 &
-                        + B     * coarseGrainedRho**2 * coarseGrainedDeltaRho**4
+                deltaN_cg = n_cg - n0
+                fb = fb + A(is) * deltaN_cg**3 &
+                        + B     * n_cg**2 * deltaN_cg**4
                 
                 if(present(df)) then
-                  if ( coarseGrainedRho .lt. rho0 ) then
-                    coarseGrainedDfb(ix,iy,iz) = A(is) * 3.0_dp * coarseGrainedDeltaRho**2 &
-                                               + B     *  ( 2.0_dp * coarseGrainedRho * coarseGrainedDeltaRho**4 &
-                                                          + 4.0_dp * coarseGrainedRho**2 * coarseGrainedDeltaRho**3 )
+                  if ( n_cg .lt. n0 ) then
+                    dfb_cg(ix,iy,iz) = A(is) * 3.0_dp * deltaN_cg**2 &
+                                               + B     *  ( 2.0_dp * n_cg * deltaN_cg**4 &
+                                                          + 4.0_dp * n_cg**2 * deltaN_cg**3 )
                   else 
-                    coarseGrainedDfb(ix,iy,iz) = 0.0_dp
+                    dfb_cg(ix,iy,iz) = 0.0_dp
                   end if
                 end if
                 
@@ -241,7 +248,7 @@ contains
         end do !is
 
         if(present(df)) then
-          call update_gradient(coarseGrainedDfb, df)
+          call update_gradient(dfb_cg, df)
         end if
 
     end subroutine coarse_grained_bridge
@@ -251,42 +258,54 @@ contains
     
     
     
-    subroutine compute_coarse_grained_density ( density,  coarseGrainedDensity )
+    
+    
+    subroutine compute_coarse_grained_density ( density,  density_cg )  !! CHECK => OK
+
+      use module_grid, only: grid
 
       implicit none
  
       real(dp), intent(in) :: density(:,:,:)
-      real(dp), intent(out) :: coarseGrainedDensity(:,:,:)
+      real(dp), intent(out) :: density_cg(:,:,:)
     
       select case(dp)
         case(c_double)
-          call dfftw_execute_dft_r2c( fftRho%plan3dp, density, fourierDensity)
+          call dfftw_execute_dft_r2c( fftRho%plan3dp, density, density_k)
         case(c_float)
-          call sfftw_execute_dft_r2c( fftRho%plan3dp, density, fourierDensity)
+          call sfftw_execute_dft_r2c( fftRho%plan3dp, density, density_k)
       end select
         
-      fourierDensity(:,:,:) = fourierDensity(:,:,:) * fourierKernel(:,:,:)
+      density_k(:,:,:) = density_k(:,:,:) * kernel_k(:,:,:)
         
       select case(dp)
         case(c_double)
-          call dfftw_execute_dft_c2r( fftRho%plan3dm, fourierDensity, coarseGrainedDensity)
+          call dfftw_execute_dft_c2r( fftRho%plan3dm, density_k, density_cg)
         case(c_float)
-          call sfftw_execute_dft_c2r( fftRho%plan3dm, fourierDensity, coarseGrainedDensity)
+          call sfftw_execute_dft_c2r( fftRho%plan3dm, density_k, density_cg)
       end select
     
+      density_cg = density_cg / real(grid%nx * grid%ny * grid%nz)
+    
+      call write_to_cube_file (density, "output/toto.cube                                               ")
+      call write_to_cube_file (density_cg, "output/toto_cg.cube                                                  ")
+
     end subroutine compute_coarse_grained_density
     
     
     
     
-    subroutine update_gradient ( coarseGrainedDfb, df )
+    
+    
+    
+    subroutine update_gradient ( dfb_cg, df )
         
       use module_solvent, only: solvent 
       use module_grid, only: grid
 
       implicit none
  
-      real(dp), intent(in) :: coarseGrainedDfb(:,:,:)
+      real(dp), intent(in) :: dfb_cg(:,:,:)
       real(dp), intent(out) :: df(:,:,:,:,:)
     
     
@@ -301,23 +320,24 @@ contains
       nz=grid%nz
     
       wTot = sum(grid%w(:))
-    
+      
       select case(dp)
         case(c_double)
-          call dfftw_execute_dft_r2c( fftDfb%plan3dp, coarseGrainedDfb, fourierCoarseGrainedDfb)
+          call dfftw_execute_dft_r2c( fftDfb%plan3dp, dfb_cg, dfb_cg_k)
         case(c_float)
-          call sfftw_execute_dft_r2c( fftDfb%plan3dp, coarseGrainedDfb, fourierCoarseGrainedDfb)
+          call sfftw_execute_dft_r2c( fftDfb%plan3dp, dfb_cg, dfb_cg_k)
       end select
         
-      fourierCoarseGrainedDfb(:,:,:) = fourierCoarseGrainedDfb(:,:,:) * fourierKernel(:,:,:)
+      dfb_cg_k(:,:,:) = dfb_cg_k(:,:,:) * kernel_k(:,:,:)
         
       select case(dp)
         case(c_double)
-          call dfftw_execute_dft_c2r( fftDfb%plan3dm, fourierCoarseGrainedDfb, dfb)
+          call dfftw_execute_dft_c2r( fftDfb%plan3dm, dfb_cg_k, dfb)
         case(c_float)
-          call sfftw_execute_dft_c2r( fftDfb%plan3dm, fourierCoarseGrainedDfb, dfb)
+          call sfftw_execute_dft_c2r( fftDfb%plan3dm, dfb_cg_k, dfb)
       end select
 
+      dfb_cg_k = dfb_cg_k / real(grid%nx*grid%ny*grid%nz)
     
     
       do is=1,ns
@@ -325,7 +345,7 @@ contains
           do iy=1,ny
             do ix=1,nx
 
-              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) + dfb(ix, iy, iz) * grid%w(:) / wTot
+              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) + 2 * solvent(is)%xi(:,ix,iy,iz) * solvent(is)%n0 * dfb(ix, iy, iz) * grid%w(:) / wTot
             
             end do
           end do
