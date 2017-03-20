@@ -625,10 +625,12 @@ contains
                     !
                     ! prevent underflow in gamma_p_q/mq * R if gamma_p is very low
                     !
-                    where( abs(real(gamma_p_q)) < epsilon(1.) ) gamma_p_q = cmplx( 0., aimag(gamma_p_q) )
-                    where( abs(real(gamma_p_mq)) < epsilon(1.) ) gamma_p_mq = cmplx( 0., aimag(gamma_p_mq) )
-                    where( abs(aimag(gamma_p_q)) < epsilon(1.) ) gamma_p_q = cmplx( real(gamma_p_q), 0. )
-                    where( abs(aimag(gamma_p_mq)) < epsilon(1.) ) gamma_p_mq = cmplx( real(gamma_p_mq), 0. )
+                    where( abs(real(gamma_p_q))   < epsilon(1._dp) .and. abs(aimag(gamma_p_q))  < epsilon(1._dp) ) gamma_p_q  = cmplx( 0._dp, 0._dp )
+                    where( abs(real(gamma_p_mq))  < epsilon(1._dp) .and. abs(aimag(gamma_p_mq)) < epsilon(1._dp) ) gamma_p_mq = cmplx( 0._dp, 0._dp )
+                    where( abs(real(gamma_p_q))   < epsilon(1._dp) ) gamma_p_q  = cmplx( 0._dp, aimag(gamma_p_q) )
+                    where( abs(real(gamma_p_mq))  < epsilon(1._dp) ) gamma_p_mq = cmplx( 0._dp, aimag(gamma_p_mq) )
+                    where( abs(aimag(gamma_p_q))  < epsilon(1._dp) ) gamma_p_q  = cmplx( real(gamma_p_q), 0._dp )
+                    where( abs(aimag(gamma_p_mq)) < epsilon(1._dp) ) gamma_p_mq = cmplx( real(gamma_p_mq), 0._dp )
                     
 
                     deltarho_p_q = (0._dp,0._dp)
