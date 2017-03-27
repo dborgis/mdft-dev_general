@@ -233,6 +233,7 @@ contains
             ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
             ! Luc
         case ("acetonitrile")
+            ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
             solvent(1)%nsite = 3 ! ---Me---C--N--->z
             solvent(1)%molrotsymorder = 1000
             allocate( solvent(1)%site(3) )
