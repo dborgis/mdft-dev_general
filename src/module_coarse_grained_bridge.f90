@@ -95,7 +95,7 @@ contains
 
         end do
         
-        B = -15e-8_dp
+        B = 15e-8_dp
 
         is_init = .true.
         
@@ -122,7 +122,7 @@ contains
         ny=grid%ny
         nz=grid%nz
 
-        sigma = 2.36_dp !2.36_dp
+        sigma = 0.935_dp !2.36_dp
         
         allocate( x(nx) ,source= [( (real(i-1,dp)*grid%dx) ,i=1,nx)] )
         allocate( y(ny) ,source= [( (real(i-1,dp)*grid%dy) ,i=1,ny)] )
@@ -186,7 +186,8 @@ contains
         integer :: is, ix, iy, iz
         integer :: ns, nx, ny, nz
         real(dp) :: dv, kT,n0
-        real(dp) :: xi_cg, n_cg, deltaN_cg
+        real(dp) :: n_cg, deltaN_cg
+        real(dp) :: vVoxel
         real(dp), parameter :: zerodp = 0._dp
         real(dp), parameter :: pi=acos(-1._dp)
 
@@ -201,6 +202,7 @@ contains
         ny=grid%ny
         nz=grid%nz
 
+        vVoxel = grid%dx * grid%dy * grid%dz
 
         if(is_init .eqv. .FALSE.) then
             call init
@@ -223,8 +225,8 @@ contains
                 n_cg = density_cg(ix,iy,iz)
           
                 deltaN_cg = n_cg - n0
-                fb = fb + A(is) * deltaN_cg**3 &
-                        + B     * n_cg**2 * deltaN_cg**4
+                fb = fb + A(is) * deltaN_cg**3 * vVoxel &
+                        + B     * n_cg**2 * deltaN_cg**4 * vVoxel
                 
                 if(present(df)) then
                   if ( n_cg .lt. n0 ) then
