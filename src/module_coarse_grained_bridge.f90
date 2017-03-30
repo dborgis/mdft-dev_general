@@ -212,9 +212,7 @@ contains
         do is=1,ns
 
           call grid%integrate_over_orientations( solvent(is)%xi**2 * solvent(is)%rho0, density)
-          !density => 3.32891010E-02 without solute
           call compute_coarse_grained_density( density, density_cg )
-          !density_cg => 3.32891010E-02 without solute
 
           n0 = solvent(is)%n0
 
@@ -336,15 +334,13 @@ contains
 
       dfb = dfb / real(grid%nx*grid%ny*grid%nz)
     
-    
-    
       do is=1,ns
         rho0 = solvent(is)%rho0
         do iz=1,nz
           do iy=1,ny
             do ix=1,nx
 
-              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) + 2.0_dp * solvent(is)%xi(:,ix,iy,iz) * rho0 * dfb(ix, iy, iz) * grid%w(:) / wTot 
+              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) + 2.0_dp * solvent(is)%xi(:,ix,iy,iz) * rho0 * dfb(ix, iy, iz) * grid%w(:)
             
             end do
           end do
