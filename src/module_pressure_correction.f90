@@ -32,7 +32,6 @@ subroutine pressure_correction
     real(dp), parameter :: zerodp = 0._dp
     real(dp) :: deltaG_emptybox
 
-	stop
     numberdensity = solvent(1)%n0
     deltaGtotMDFT = ff%tot
 
