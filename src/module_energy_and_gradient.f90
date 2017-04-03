@@ -13,7 +13,7 @@ module module_energy_and_gradient
                 exc_fmt = 0._dp,&
                 exc_wca = 0._dp,&
                 exc_3b = 0._dp,&
-                exc_cgb = 0._dp,&
+                exc_b = 0._dp,&
                 exc_dipolar = 0._dp,&
                 exc_multipolar_without_coupling_to_density = 0._dp,&
                 exc_multipolar_with_coupling_to_density = 0._dp,&
@@ -48,7 +48,6 @@ subroutine energy_and_gradient (f, df)
     use module_solvent, only: solvent
     use module_grid, only: grid
     use module_energy_ideal_and_external, only: energy_ideal_and_external
-    use module_coarse_grained_bridge, only: coarse_grained_bridge
     ! use module_energy_cs, only: energy_cs
     ! use module_energy_cdeltacd, only: energy_cdeltacd
     use module_energy_cproj_mrso, only: energy_cproj_mrso
@@ -142,17 +141,6 @@ subroutine energy_and_gradient (f, df)
     end if
 
 
-    if( getinput%log('coarse_grained_bridge', defaultvalue=.false.) ) then
-        if(present(df)) then
-          call coarse_grained_bridge( ff%exc_cgb, df)
-        else
-          call coarse_grained_bridge( ff%exc_cgb)
-        end if
-        f = f + ff%exc_cgb
-    end if
-
-
-
     ! if (solvent(s)%do%exc_cproj) then
     !     call cpu_time(t(7))
     !     ! call energy_cproj_mrso (ff%exc_cproj, df)
@@ -166,6 +154,18 @@ subroutine energy_and_gradient (f, df)
     !     f = f + ff%exc_cproj
     !     ! stop
     ! end if
+
+    if(present(df)) then
+      call cpu_time(t(5))
+      call energy_bridge( ff%exc_b, df)
+      call cpu_time(t(6))
+    else
+      call cpu_time(t(5))
+      call energy_bridge( ff%exc_b)
+      call cpu_time(t(6))
+    end if
+    f = f + ff%exc_b
+
 
     ! if (solvent(s)%do%exc_ck_angular) then
     !     call cpu_time(t(9))
@@ -211,7 +211,7 @@ subroutine energy_and_gradient (f, df)
         logical, save :: printheader = .true.
         real(dp) :: reldf, Texc, Ttot, Textid, pgtol
         if(printheader) then
-            write(*,'(A5,12A14)') "#eval","Ftot","Fext","Fid","Fexc","Fcgb","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
+            write(*,'(A5,12A14)') "#eval","Ftot","Fext","Fid","Fexc","Fb","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
             printheader = .false.
         end if
         Texc = t(6)-t(5)
@@ -223,10 +223,42 @@ subroutine energy_and_gradient (f, df)
             pgtol = 0
         end if
         reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
-        write(*,"(I5,12F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%exc_cgb, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
+        write(*,"(I5,12F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%exc_b, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
     end block
 
 end subroutine energy_and_gradient
+
+
+
+
+
+subroutine energy_bridge(fb, df)
+    use precision_kinds, only: dp
+    use module_input, only: getinput
+    use module_coarse_grained_bridge, only: coarse_grained_bridge
+    implicit none
+    real(dp), intent(out) :: fb
+    real(dp), intent(inout), contiguous, optional :: df(:,:,:,:,:)
+    
+    
+    select case (getinput%char("bridge", defaultvalue="no"))
+    case("no","none")
+    case ("cgb")
+      if(present(df)) then
+        call coarse_grained_bridge( fb, df)
+      else
+        call coarse_grained_bridge( fb)
+      end if
+      
+    case ("wca")
+       stop "wca bridge not yet (re)implemented!"
+    case ("3b")
+       stop "3b bridge not yet (re)implemented!"
+    case default
+       stop "This bridge is not implemented"
+    end select
+
+end subroutine energy_bridge
 
 
 
