@@ -81,18 +81,20 @@ contains
         use module_input, only: getinput
         implicit none
         integer :: i, j, farthersite1, farthersite2
+        integer :: nsite ! number of solute sitess
         real(dp) :: costheta, sintheta, x, y, z, newx, newy, newz, u, v, w, r(3), vector_product(3), distance_between_sites, biggest_distance
+        nsite = size( solute%site ) ! number of solute sitess
         if( getinput%log( 'align_solute_with_diagonal', defaultvalue=.true. )) then
             ! start by finding the two sites of the solute that are the farthest from each other.
             ! This defines the "largest size" of our solute.
             ! These two sites are called fartersite1 and farthersite2.
             ! The largest size is called "biggest_distance"
-            if( size(solute%site) > 1) then ! size(solute%site) returns the number of sites in the solute
+            if( nsite > 1) then ! size(solute%site) returns the number of sites in the solute
                 farthersite1 = 0
                 farthersite2 = 0
                 biggest_distance = 0._dp
-                do i = 1, size(solute%site) -1
-                    do j = i+1, size(solute%site)
+                do i = 1, nsite -1
+                    do j = i+1, nsite
                         distance_between_sites =  norm2( solute%site(i)%r - solute%site(j)%r )
                         if( distance_between_sites > biggest_distance ) then
                             farthersite1 = i
@@ -104,7 +106,7 @@ contains
             end if
             ! Translate the solute so that the farthersite1 is at the origin
             r(1:3) = solute%site(farthersite1)%r
-            do i = 1, size( solute%site)
+            do i = 1, nsite
                 solute%site(i)%r = solute%site(i)%r - r
             end do
             ! The rotation angle is given by the dot product of the vector between coordinates of site 2 and 1, and the vector <1 1 1> (the longest diagonal)
@@ -125,7 +127,7 @@ contains
             u = u/norm2([u,v,w])
             v = v/norm2([u,v,w])
             w = w/norm2([u,v,w])
-            do i = 1, size( solute%site )
+            do i = 1, nsite
                 x = solute%site(i)%r(1)
                 y = solute%site(i)%r(2)
                 z = solute%site(i)%r(3)
