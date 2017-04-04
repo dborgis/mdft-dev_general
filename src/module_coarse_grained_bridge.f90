@@ -21,9 +21,15 @@ module module_coarse_grained_bridge
     real(dp), allocatable :: density(:,:,:), density_cg(:,:,:), dfb_cg(:,:,:), dfb(:,:,:)
     complex(dp), allocatable :: kernel_k(:,:,:), density_k(:,:,:), dfb_cg_k(:,:,:)
     
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!                                                          !!!!!
+    !!!!!                 BRIDGE PARAMETERS A AND B                !!!!!
+    !!!!!                   FOR MORE DETAILS SEE                   !!!!!
+    !!!!!                    GAGEAT ET AL 2017                     !!!!!
+    !!!!!                                                          !!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(dp), allocatable :: A(:)
-    real(dp) :: B
-
+    real(dp), parameter :: B = 15e-8_dp
 
     type(fft_type), protected :: fftRho, fftDfb
 
@@ -83,20 +89,17 @@ contains
         call fill_kernel
 
 
-        !! m_thermo.kBT/puissance(m_solvent.rhoZero,2) - m_thermo.kBT*cZero/m_solvent.rhoZero/2.0 
         !! TODO: l'extraire du fichier c directement mais cela implique de trop grosses modifs pour les permiers tests :)
         kT   = thermo%kbT
         
         do is=1,ns
         
-          n0 = solvent(is)%n0 ! 3.3289100974798203E-002
-          c00000 = -13.6652260 / n0   ! -410.50150296973749
-          A(is) = kT*( 1.0_dp/n0**2 - c00000/(2.0_dp*n0) )    ! c0 sphérique
+          n0 = solvent(is)%n0
+          c00000 = -13.6652260 / n0
+          A(is) = kT*( 1.0_dp/n0**2 - c00000/(2.0_dp*n0) )
 
         end do
         
-        B = 15e-8_dp
-
         is_init = .true.
         
     end subroutine init
@@ -108,44 +111,67 @@ contains
 
         implicit none
 
-        real(dp) :: sigma, d
-        integer :: i
+        real(dp) :: dSquare
         integer :: nx, ny, nz
         integer :: ix, iy, iz
-        real(dp), allocatable :: x(:), y(:), z(:)
+        real(dp), allocatable :: xPbcSquare(:), yPbcSquare(:), zPbcSquare(:)
         real(dp) :: xPbc, yPbc, zPbc
         real(dp), allocatable :: kernel(:,:,:)
         type(c_ptr) :: fftPlan3d
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!                                                          !!!!!
+        !!!!!              BRIDGE PARAMETER SIGMA (KERNEL)             !!!!!
+        !!!!!                   FOR MORE DETAILS SEE                   !!!!!
+        !!!!!                    GAGEAT ET AL 2017                     !!!!!
+        !!!!!                                                          !!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real(dp), parameter :: sigma = 0.935_dp
         real(dp), parameter :: pi=acos(-1._dp)
+        real(dp), parameter :: gaussianPrefactor = 1._dp/(sigma*sqrt(2._dp*pi))**3
+        real(dp), parameter :: oneOverTwoSigmaSquare = 1._dp/(2.0_dp*sigma**2)
 
         nx=grid%nx
         ny=grid%ny
         nz=grid%nz
 
-        sigma = 0.935_dp !2.36_dp
         
-        allocate( x(nx) ,source= [( (real(i-1,dp)*grid%dx) ,i=1,nx)] )
-        allocate( y(ny) ,source= [( (real(i-1,dp)*grid%dy) ,i=1,ny)] )
-        allocate( z(nz) ,source= [( (real(i-1,dp)*grid%dz), i=1,nz)] )
+
+        allocate( xPbcSquare(nx) )
+        allocate( yPbcSquare(ny) )
+        allocate( zPbcSquare(nz) )
+
+        do ix=1,grid%nx
+          xPbc = grid%dx * min( ix-1, grid%nx-(ix-1) )
+          xPbcSquare(ix) = xPbc*xPbc
+        end do
+
+        do iy=1,grid%ny
+          yPbc = grid%dy * min( iy-1, grid%ny-(iy-1) )
+          yPbcSquare(iy) = yPbc*yPbc
+        end do
+
+        do iz=1,grid%nz
+          zPbc = grid%dz * min( iz-1, grid%nz-(iz-1) )
+          zPbcSquare(iz) = zPbc*zPbc
+        end do
 
         allocate (kernel(grid%nx,grid%ny,grid%nz), source=0.0_dp)
 
 
         do iz=1,grid%nz
-          zPbc = min( z(iz), grid%lz-z(iz) )
           do iy=1,grid%ny
-            yPbc = min( y(iy), grid%ly-y(iy) )
             do ix=1,grid%nx
-              xPbc = min( x(ix), grid%lx-x(ix) )
-                
-                d=sqrt( xPbc**2 + yPbc**2 + zPbc**2 )
-                
-               !kernel(ix, iy, iz) = exp( -0.5*(d/sigma)**2 ) ! formula in fourier space n 1d
-               kernel(ix, iy, iz) = 1./(sigma*sqrt(2.*pi))**3 * exp( -(d**2)/(2.0_dp*sigma**2) )
+               
+               dSquare= xPbcSquare(ix) + yPbcSquare(iy) + zPbcSquare(iz) 
+               kernel(ix, iy, iz) = gaussianPrefactor * exp( - dSquare * oneOverTwoSigmaSquare )
 
             end do !ix
           end do !iy
         end do !iz
+       
+        deallocate(xPbcSquare)
+        deallocate(yPbcSquare)
+        deallocate(zPbcSquare)
        
         select case(dp)
           case(c_double)
@@ -156,14 +182,11 @@ contains
             call sfftw_plan_dft_r2c_3d( fftPlan3d, nx, ny, nz, kernel, kernel_k, FFTW_MEASURE )
             call sfftw_execute_dft_r2c( fftPlan3d, kernel, kernel_k )
             call sfftw_destroy_plan( fftPlan3d )
-          end select
-        
-        kernel_k(:,:,:) = kernel_k(:,:,:) / real(grid%nx*grid%ny*grid%nz) * (grid%lx * grid%ly * grid%lz) ! normalization to be use in convolution
-        
-        deallocate(x)
-        deallocate(y)
-        deallocate(z)
+        end select
+
         deallocate(kernel)
+                
+        kernel_k(:,:,:) = kernel_k(:,:,:) / real(grid%nx*grid%ny*grid%nz) * (grid%lx * grid%ly * grid%lz) ! normalization to be use in convolution
     
     end subroutine fill_kernel
     
@@ -177,7 +200,6 @@ contains
         use module_thermo, only: thermo
         use module_solvent, only: solvent 
         use module_grid, only: grid
-        !use module_input, only: getinput
 
         implicit none
 
@@ -255,7 +277,7 @@ contains
     
     
     
-    subroutine compute_coarse_grained_density ( density,  density_cg )  !! CHECK => OK
+    subroutine compute_coarse_grained_density ( density,  density_cg )
 
       use module_grid, only: grid
 
@@ -282,9 +304,6 @@ contains
     
       density_cg = density_cg / real(grid%nx * grid%ny * grid%nz)
     
-      call write_to_cube_file (density, "output/toto.cube                                               ")
-      call write_to_cube_file (density_cg, "output/toto_cg.cube                                                  ")
-
     end subroutine compute_coarse_grained_density
     
     
@@ -340,7 +359,8 @@ contains
           do iy=1,ny
             do ix=1,nx
 
-              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) + 2.0_dp * solvent(is)%xi(:,ix,iy,iz) * rho0 * dfb(ix, iy, iz) * grid%w(:)
+              df(:,ix,iy,iz,is) = df(:,ix,iy,iz,is) &
+                                + 2.0_dp * solvent(is)%xi(:,ix,iy,iz) * rho0 * dfb(ix, iy, iz) * grid%w(:)
             
             end do
           end do
