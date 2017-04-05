@@ -22,6 +22,7 @@ module module_energy_and_gradient
                 pscheme_correction=-999._dp,&
                 pbc_correction=-999._dp
     integer :: ieval=0
+    logical :: apply_energy_corrections_due_to_charged_solute = .true.
   end type
   type (f_type), public :: ff
   public :: energy_and_gradient
@@ -170,7 +171,9 @@ subroutine energy_and_gradient (f, df)
     !
     block
         use module_solute, only: solute
-        if ( .not. getinput%log('direct_sum', defaultvalue=.false.) .and. abs(sum(solute%site%q))>1.E-7 ) then
+        if ( .not. getinput%log('direct_sum', defaultvalue=.false.) &
+             .and. abs(sum(solute%site%q))>1.E-7 &
+             .and. ff%apply_energy_corrections_due_to_charged_solute ) then
             call typeB_corrections
             f = f + ff%pbc_correction
             call typeC_corrections
@@ -233,7 +236,9 @@ end subroutine energy_and_gradient
     implicit none
     real(dp) :: solute_net_charge, L
     solute_net_charge = sum (solute%site%q)
-    if( abs(solute_net_charge)<1.E-7 ) then
+    if( ff%apply_energy_corrections_due_to_charged_solute .eqv. .false. ) then
+      ff%pbc_correction = 0._dp
+    else if( abs(solute_net_charge)<1.E-7 ) then
       ff%pbc_correction = 0._dp
     else
       if (.not. all(grid%length==grid%length(1))) then
