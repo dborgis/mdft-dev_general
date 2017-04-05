@@ -28,10 +28,9 @@ subroutine pressure_correction
     real(dp) :: solutecharge ! net charge of the solute, for instance -1 for Cl- ion
     real(dp), parameter :: kJpermolperang3_to_Pa = 1.66113*10**9
     real(dp), parameter :: Pa_to_atm = 9.8692327e-06
-    real(dp) :: deltaG_corrected, deltaN, Pscheme_correction, correction, correction2
+    real(dp) :: deltaN, Pscheme_correction, PMV_correction, Volodymyr_empirical_correction
     real(dp), parameter :: zerodp = 0._dp
     real(dp) :: deltaG_emptybox
-
 
     numberdensity = solvent(1)%n0
     deltaGtotMDFT = ff%tot
@@ -54,36 +53,42 @@ subroutine pressure_correction
     write(*,'(A,F12.7,A)') "Bulk solvent density", solvent(1)%n0," molecule.Ang⁻³"
     write(*,'(A,F12.5,A,F9.2,A)') "Supercell volume", product(grid%length)," Ang³ = ",product(grid%length)/1000.," nm³"
 
+block
+    !
     ! Compute the pressure of the bulk solvent.
     ! We use : GrandPotential(homogeneous system) = -PV
-    solvent(1)%xi = 0._dp ! set Density to 0
-    call energy_and_gradient(deltaG_emptybox)
-
+    !
+    use module_energy_and_gradient, only: ff
+    logical :: oldvalue
+    oldvalue = ff%apply_energy_corrections_due_to_charged_solute
+    ff%apply_energy_corrections_due_to_charged_solute = .false. ! Don't include corrections due to the external potential since that's a pure homogeneous solvent problem.
+    solvent(1)%xi = 0._dp ! set density to 0 == empty the simulation box
+    call energy_and_gradient(deltaG_emptybox) ! compute the grandpotential of such system
+    ff%apply_energy_corrections_due_to_charged_solute = oldvalue ! put back the old value
     Pbulk = deltaG_emptybox / (grid%lx * grid%ly * grid%lz) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
     write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa*Pa_to_atm," atm"
     open(81,file="output/pressure")
     write(81,*) Pbulk
     close(81)
+    PMV_correction  = -deltaN/solvent(1)%n0*Pbulk  !correction is -PV where V is excluded Volume
+    Volodymyr_empirical_correction =  deltaN*thermo%kbT
+end block
 
-    correction  = -deltaN/solvent(1)%n0*Pbulk  !correction is -PV where V is excluded Volume
-    correction2 =  deltaN*thermo%kbT  !correction is -PV where V is excluded Volume
-    deltaG_corrected = deltaGtotMDFT + correction !+ correction2
 
     write(*,'(A,F12.2,A)') "Functional at min   ", deltaGtotMDFT," kJ/mol"
-
-    write(*,'(A,F12.2,A)') "PMV correction      ", correction," kJ/mol"
-    write(*,'(A,F12.2,A)') "Pid correction      ", correction2," kJ/mol"
+    write(*,'(A,F12.2,A)') "PMV correction      ", PMV_correction," kJ/mol"
+    write(*,'(A,F12.2,A)') "Pid correction      ", Volodymyr_empirical_correction," kJ/mol"
     open(79,file="output/PMV_correction")
-    write(79,*) correction
+    write(79,*) PMV_correction
     close(79)
     open(80,file="output/Pideal_PMV_correction")
-    write(80,*) correction2
+    write(80,*) Volodymyr_empirical_correction
     close(80)
 
-    write(*,'(A,F12.2,A)') "SFE ISc /PC         ", deltaG_corrected," kJ/mol"
-    write(*,'(A,F12.2,A)') "SFE ISc*/PC+        ", deltaG_corrected + correction2," kJ/mol"
+    write(*,'(A,F12.2,A)') "SFE ISc /PC         ", deltaGtotMDFT + PMV_correction," kJ/mol"
+    write(*,'(A,F12.2,A)') "SFE ISc*/PC+        ", deltaGtotMDFT + PMV_correction + Volodymyr_empirical_correction," kJ/mol"
 
-    PRINT*, "ESTIMATED SOLVATION FREE ENERGY: ", deltaG_corrected + correction2
+    PRINT*, "ESTIMATED SOLVATION FREE ENERGY: ", deltaGtotMDFT + PMV_correction + Volodymyr_empirical_correction
 
 end subroutine pressure_correction
 
