@@ -10,25 +10,20 @@ subroutine pressure_correction
     use precision_kinds, only: dp
     use module_energy_and_gradient, only: energy_and_gradient
     use module_thermo, only: thermo
-    use module_solute, only: solute
     use module_solvent, only: solvent
     use module_energy_and_gradient, only: ff
-    use module_input, only: getinput
     use module_grid, only: grid
     implicit none
 
     !... Volodymyr's partial molar volume correction. See J. Phys. Chem. Lett. 5, 1935-1942 (2014)
     real(dp) :: deltaGtotMDFT, Pbulk
     real(dp), allocatable :: density(:,:,:)
-    integer :: nx, ny, nz, s, ios
     real(dp) :: nmolecules_with_solute
     real(dp) :: nmolecules_without_solute
-    real(dp) :: gamma ! trace of the tensor of the quadrupole moment
     real(dp) :: numberdensity ! molecular number density, for instance 0.0332891 molecule per angstrom^3
-    real(dp) :: solutecharge ! net charge of the solute, for instance -1 for Cl- ion
     real(dp), parameter :: kJpermolperang3_to_Pa = 1.66113*10**9
     real(dp), parameter :: Pa_to_atm = 9.8692327e-06
-    real(dp) :: deltaN, Pscheme_correction, PMV_correction, Volodymyr_empirical_correction
+    real(dp) :: deltaN, PMV_correction, Volodymyr_empirical_correction
     real(dp), parameter :: zerodp = 0._dp
     real(dp) :: deltaG_emptybox
 
