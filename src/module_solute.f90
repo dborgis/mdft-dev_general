@@ -69,11 +69,75 @@ contains
         ! grid%length(3) = solutediameterz +2.*grid%buffer_length !+2*solutesigmaljmax
       end block
 
+      call align_solute_to_longer_diagonal_of_supercell ! align the solute so that its largest distance is along the longest diagonal of the supercell
       CALL mv_solute_to_center ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
       CALL print_solute_xsf ! Print periodic XSF file to be read by VMD or equivalent
-
-
     end subroutine read_solute
+
+
+    subroutine align_solute_to_longer_diagonal_of_supercell
+        ! We want to rotate the solute so that it is aligned with the largest diagonal of the supercell.
+        ! Works only for cubic cells right now, while it is desirable to have it work for orthorhombic cells anytime soon.
+        use module_input, only: getinput
+        implicit none
+        integer :: i, j, farthersite1, farthersite2
+        integer :: nsite ! number of solute sitess
+        real(dp) :: costheta, sintheta, x, y, z, newx, newy, newz, u, v, w, r(3), vector_product(3), distance_between_sites, biggest_distance
+        nsite = size( solute%site ) ! number of solute sitess
+        if( getinput%log( 'align_solute_with_diagonal', defaultvalue=.true. )) then
+            ! start by finding the two sites of the solute that are the farthest from each other.
+            ! This defines the "largest size" of our solute.
+            ! These two sites are called fartersite1 and farthersite2.
+            ! The largest size is called "biggest_distance"
+            if( nsite > 1) then ! size(solute%site) returns the number of sites in the solute
+                farthersite1 = 0
+                farthersite2 = 0
+                biggest_distance = 0._dp
+                do i = 1, nsite -1
+                    do j = i+1, nsite
+                        distance_between_sites =  norm2( solute%site(i)%r - solute%site(j)%r )
+                        if( distance_between_sites > biggest_distance ) then
+                            farthersite1 = i
+                            farthersite2 = j
+                            biggest_distance = distance_between_sites
+                        end if
+                    end do
+                end do
+            end if
+            ! Translate the solute so that the farthersite1 is at the origin
+            r(1:3) = solute%site(farthersite1)%r
+            do i = 1, nsite
+                solute%site(i)%r = solute%site(i)%r - r
+            end do
+            ! The rotation angle is given by the dot product of the vector between coordinates of site 2 and 1, and the vector <1 1 1> (the longest diagonal)
+            u = 1._dp
+            v = 1._dp
+            w = 1._dp
+            r = solute%site(farthersite2)%r
+            costheta = dot_product( solute%site(farthersite2)%r, [u,v,w] ) / norm2( solute%site(farthersite2)%r ) / norm2([u,v,w])
+            sintheta = sqrt( 1._dp - costheta**2 )
+            ! The rotation axis is the one given by the vector product between <1 1 1> and the coordinate vector
+            ! see http://inside.mines.edu/fs_home/gmurray/ArbitraryAxisRotation/   section 5.1    for the rotation matrix
+            vector_product = [ r(2)*w - r(3)*v,&
+                               r(3)*u - r(1)*w,&
+                               r(1)*v - r(2)*u ]
+            u = vector_product(1)
+            v = vector_product(2)
+            w = vector_product(3)
+            u = u/norm2([u,v,w])
+            v = v/norm2([u,v,w])
+            w = w/norm2([u,v,w])
+            do i = 1, nsite
+                x = solute%site(i)%r(1)
+                y = solute%site(i)%r(2)
+                z = solute%site(i)%r(3)
+                newx = ( u*(u*x+v*y+w*z)*(1._dp-costheta)+(u**2+v**2+w**2)*x*costheta+sqrt(u**2+v**2+w**2)*(-w*y+v*z)*sintheta )/sqrt(u**2+v**2+w**2)
+                newy = ( v*(u*x+v*y+w*z)*(1._dp-costheta)+(u**2+v**2+w**2)*y*costheta+sqrt(u**2+v**2+w**2)*( w*x-u*z)*sintheta )/sqrt(u**2+v**2+w**2)
+                newz = ( w*(u*x+v*y+w*z)*(1._dp-costheta)+(u**2+v**2+w**2)*z*costheta+sqrt(u**2+v**2+w**2)*(-v*x+u*y)*sintheta )/sqrt(u**2+v**2+w**2)
+                solute%site(i)%r = [newx, newy, newz]
+            end do
+        end if
+    end subroutine align_solute_to_longer_diagonal_of_supercell
 
     ! if user asks for it (tag 'translate_solute_to_center'), add Lx/2, Ly/2, Lz/2 to all solute coordinates
     subroutine mv_solute_to_center
