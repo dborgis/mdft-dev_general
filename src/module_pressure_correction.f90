@@ -38,6 +38,7 @@ subroutine pressure_correction
     ! number of solvent molecules inside the supercell:
     ! when the supercell has the solute inside
     nmolecules_with_solute = sum(density)*grid%dv
+    deallocate( density )
     ! when the supercell is empty of any perturbation, ie pure solvent
     nmolecules_without_solute = solvent(1)%n0*product(grid%length)
 
