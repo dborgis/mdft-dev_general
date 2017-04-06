@@ -18,8 +18,7 @@ module module_coarse_grained_bridge
         type(c_ptr) :: plan3dp, plan3dm 
     end type fft_type
     
-    real(dp), allocatable :: density(:,:,:), density_cg(:,:,:), dfb_cg(:,:,:), dfb(:,:,:)
-    complex(dp), allocatable :: kernel_k(:,:,:), density_k(:,:,:), dfb_cg_k(:,:,:)
+    complex(dp), allocatable :: kernel_k(:,:,:)
     
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!!!!                                                          !!!!!
@@ -53,38 +52,10 @@ contains
 
         ns=solvent(1)%nspec
 
-        allocate ( density(grid%nx,grid%ny,grid%nz) )
-        allocate ( density_cg(grid%nx,grid%ny,grid%nz) )
-        allocate ( dfb_cg(grid%nx,grid%ny,grid%nz) )
-        allocate ( dfb(grid%nx,grid%ny,grid%nz) )
-        
         allocate ( kernel_k(grid%nx,grid%ny,grid%nz/2+1) )
-        allocate ( density_k(grid%nx,grid%ny,grid%nz/2+1) )
-        allocate ( dfb_cg_k(grid%nx,grid%ny,grid%nz/2+1) )
         
         allocate ( A(ns) )
         
-
-
-        select case(dp)
-          case(c_double)
-          
-            call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, dfb_cg, FFTW_MEASURE)
-
-            call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
-          
-          case(c_float)
-          
-            call sfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
-            call sfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, dfb_cg, FFTW_MEASURE)
-
-            call sfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
-            call sfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
-        
-        end select
-
 
         call fill_kernel
 
@@ -218,8 +189,10 @@ contains
         real(dp) :: vVoxel
         real(dp), parameter :: zerodp = 0._dp
         real(dp), parameter :: pi=acos(-1._dp)
-
-
+        real(dp), allocatable :: density(:,:,:)
+        real(dp), allocatable :: density_cg(:,:,:), dfb_cg(:,:,:)
+        
+        
         ns = solvent(1)%nspec
         kT = thermo%kbT
         dv = grid%dv
@@ -236,7 +209,10 @@ contains
             call init
         end if
 
-        
+        allocate ( density(grid%nx,grid%ny,grid%nz) )        
+        allocate ( density_cg(grid%nx,grid%ny,grid%nz) )
+        allocate ( dfb_cg(grid%nx,grid%ny,grid%nz) )
+
         do is=1,ns
 
           call grid%integrate_over_orientations( solvent(is)%xi**2 * solvent(is)%rho0, density)
@@ -270,6 +246,11 @@ contains
           end do !iz
         end do !is
 
+        deallocate ( dfb_cg )
+        deallocate ( density_cg )
+        deallocate ( density )        
+
+
         if(present(df)) then
           call update_gradient(dfb_cg, df)
         end if
@@ -290,24 +271,37 @@ contains
       implicit none
  
       real(dp), intent(in) :: density(:,:,:)
-      real(dp), intent(out) :: density_cg(:,:,:)
+      real(dp), intent(inout), contiguous :: density_cg(:,:,:)
+      complex(dp), allocatable :: density_k(:,:,:)
+  
+      allocate ( density_k(grid%nx,grid%ny,grid%nz/2+1) )  
     
       select case(dp)
         case(c_double)
+          call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
           call dfftw_execute_dft_r2c( fftRho%plan3dp, density, density_k)
+          call dfftw_destroy_plan( fftRho%plan3dp )
         case(c_float)
+          call sfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
           call sfftw_execute_dft_r2c( fftRho%plan3dp, density, density_k)
+          call sfftw_destroy_plan( fftRho%plan3dp )
       end select
         
       density_k(:,:,:) = density_k(:,:,:) * kernel_k(:,:,:)
         
       select case(dp)
         case(c_double)
+          call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, density_cg, FFTW_MEASURE)
           call dfftw_execute_dft_c2r( fftRho%plan3dm, density_k, density_cg)
+          call dfftw_destroy_plan( fftRho%plan3dm )
         case(c_float)
+          call sfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, density_cg, FFTW_MEASURE)
           call sfftw_execute_dft_c2r( fftRho%plan3dm, density_k, density_cg)
+          call sfftw_destroy_plan( fftRho%plan3dm )
       end select
     
+      deallocate ( density_k )  
+
       density_cg = density_cg / real(grid%nx * grid%ny * grid%nz)
     
     end subroutine compute_coarse_grained_density
@@ -326,8 +320,9 @@ contains
       implicit none
  
       real(dp), intent(in) :: dfb_cg(:,:,:)
-      real(dp), intent(out) :: df(:,:,:,:,:)
-    
+      real(dp), intent(inout), contiguous :: df(:,:,:,:,:)
+      real(dp), allocatable :: dfb(:,:,:)
+      complex(dp), allocatable :: dfb_cg_k(:,:,:)
     
       integer :: is, ix, iy, iz
       integer :: ns, nx, ny, nz
@@ -341,21 +336,36 @@ contains
       
       wTot = sum(grid%w(:))
       
+      allocate ( dfb_cg_k(grid%nx,grid%ny,grid%nz/2+1) )
+      
       select case(dp)
         case(c_double)
+          call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
           call dfftw_execute_dft_r2c( fftDfb%plan3dp, dfb_cg, dfb_cg_k)
+          call dfftw_destroy_plan( fftDfb%plan3dp )
         case(c_float)
+          call sfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
           call sfftw_execute_dft_r2c( fftDfb%plan3dp, dfb_cg, dfb_cg_k)
+          call sfftw_destroy_plan( fftDfb%plan3dp )
       end select
         
       dfb_cg_k(:,:,:) = dfb_cg_k(:,:,:) * kernel_k(:,:,:)
+
+      allocate ( dfb(grid%nx,grid%ny,grid%nz) )
         
       select case(dp)
         case(c_double)
+          call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
           call dfftw_execute_dft_c2r( fftDfb%plan3dm, dfb_cg_k, dfb)
+          call dfftw_destroy_plan( fftDfb%plan3dm )
         case(c_float)
+          call sfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
           call sfftw_execute_dft_c2r( fftDfb%plan3dm, dfb_cg_k, dfb)
+          call sfftw_destroy_plan( fftDfb%plan3dm )
       end select
+
+      deallocate ( dfb_cg_k )
+
 
       dfb = dfb / real(grid%nx*grid%ny*grid%nz)
     
@@ -372,6 +382,8 @@ contains
           end do
         end do
       end do
+   
+      deallocate ( dfb )
    
     end subroutine update_gradient
     
