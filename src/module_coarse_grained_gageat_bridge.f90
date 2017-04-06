@@ -129,6 +129,10 @@ contains
         real(dp), parameter :: pi=acos(-1._dp)
         real(dp), parameter :: gaussianPrefactor = 1._dp/(sigma*sqrt(2._dp*pi))**3
         real(dp), parameter :: oneOverTwoSigmaSquare = 1._dp/(2.0_dp*sigma**2)
+        real(dp), parameter :: kernelCutoff = 1.0e-10_dp ! If the kernel value is less than this one, we put 0.0_dp
+        real(dp), parameter :: dSquareCutoff = -1.0_dp / oneOverTwoSigmaSquare * log( kernelCutoff / gaussianPrefactor )
+        
+        
 
         nx=grid%nx
         ny=grid%ny
@@ -140,30 +144,32 @@ contains
         allocate( yPbcSquare(ny) )
         allocate( zPbcSquare(nz) )
 
-        do ix=1,grid%nx
-          xPbc = grid%dx * min( ix-1, grid%nx-(ix-1) )
+        do ix=1,nx
+          xPbc = grid%dx * min( ix-1, nx-(ix-1) )
           xPbcSquare(ix) = xPbc*xPbc
         end do
 
-        do iy=1,grid%ny
-          yPbc = grid%dy * min( iy-1, grid%ny-(iy-1) )
+        do iy=1,ny
+          yPbc = grid%dy * min( iy-1, ny-(iy-1) )
           yPbcSquare(iy) = yPbc*yPbc
         end do
 
-        do iz=1,grid%nz
-          zPbc = grid%dz * min( iz-1, grid%nz-(iz-1) )
+        do iz=1,nz
+          zPbc = grid%dz * min( iz-1, nz-(iz-1) )
           zPbcSquare(iz) = zPbc*zPbc
         end do
 
-        allocate (kernel(grid%nx,grid%ny,grid%nz), source=0.0_dp)
+        allocate (kernel(nx,ny,nz), source=0.0_dp)
 
 
-        do iz=1,grid%nz
-          do iy=1,grid%ny
-            do ix=1,grid%nx
+        do iz=1,nz
+          do iy=1,ny
+            do ix=1,nx
                
-               dSquare= xPbcSquare(ix) + yPbcSquare(iy) + zPbcSquare(iz) 
-               kernel(ix, iy, iz) = gaussianPrefactor * exp( - dSquare * oneOverTwoSigmaSquare )
+              dSquare= xPbcSquare(ix) + yPbcSquare(iy) + zPbcSquare(iz)
+              if ( dSquare .lt. dSquareCutoff ) then
+                kernel(ix, iy, iz) = gaussianPrefactor * exp( - dSquare * oneOverTwoSigmaSquare )
+              end if
 
             end do !ix
           end do !iy
@@ -186,7 +192,7 @@ contains
 
         deallocate(kernel)
                 
-        kernel_k(:,:,:) = kernel_k(:,:,:) / real(grid%nx*grid%ny*grid%nz) * (grid%lx * grid%ly * grid%lz) ! normalization to be use in convolution
+        kernel_k(:,:,:) = kernel_k(:,:,:) / real(nx*ny*nz) * (grid%lx * grid%ly * grid%lz) ! normalization to be use in convolution
     
     end subroutine fill_kernel
     
