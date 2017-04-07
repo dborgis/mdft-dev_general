@@ -49,18 +49,21 @@ contains
         
         real(dp) :: c00000, kT, n0
         integer :: is, ns
+        integer :: nx, ny, nz
 
-
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
         ns=solvent(1)%nspec
 
-        allocate ( density(grid%nx,grid%ny,grid%nz) )
-        allocate ( density_cg(grid%nx,grid%ny,grid%nz) )
-        allocate ( dfb_cg(grid%nx,grid%ny,grid%nz) )
-        allocate ( dfb(grid%nx,grid%ny,grid%nz) )
+        allocate ( density(nx,ny,nz) )
+        allocate ( density_cg(nx,ny,nz) )
+        allocate ( dfb_cg(nx,ny,nz) )
+        allocate ( dfb(nx,ny,nz) )
         
-        allocate ( kernel_k(grid%nx,grid%ny,grid%nz/2+1) )
-        allocate ( density_k(grid%nx,grid%ny,grid%nz/2+1) )
-        allocate ( dfb_cg_k(grid%nx,grid%ny,grid%nz/2+1) )
+        allocate ( kernel_k(nx/2+1,ny,nz) )
+        allocate ( density_k(nx/2+1,ny,nz) )
+        allocate ( dfb_cg_k(nx/2+1,ny,nz) )
         
         allocate ( A(ns) )
         
@@ -69,19 +72,19 @@ contains
         select case(dp)
           case(c_double)
           
-            call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, dfb_cg, FFTW_MEASURE)
+            call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, nx, ny, nz, density, density_k, FFTW_MEASURE)
+            call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, nx, ny, nz, density_k, dfb_cg, FFTW_MEASURE)
 
-            call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
-            call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
+            call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, nx, ny, nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
+            call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, nx, ny, nz, dfb_cg_k, dfb, FFTW_MEASURE)
           
           case(c_float)
           
-            call sfftw_plan_dft_r2c_3d( fftRho%plan3dp, grid%nx, grid%ny, grid%nz, density, density_k, FFTW_MEASURE)
-            call sfftw_plan_dft_c2r_3d( fftRho%plan3dm, grid%nx, grid%ny, grid%nz, density_k, dfb_cg, FFTW_MEASURE)
+            call sfftw_plan_dft_r2c_3d( fftRho%plan3dp, nx, ny, nz, density, density_k, FFTW_MEASURE)
+            call sfftw_plan_dft_c2r_3d( fftRho%plan3dm, nx, ny, nz, density_k, dfb_cg, FFTW_MEASURE)
 
-            call sfftw_plan_dft_r2c_3d( fftDfb%plan3dp, grid%nx, grid%ny, grid%nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
-            call sfftw_plan_dft_c2r_3d( fftDfb%plan3dm, grid%nx, grid%ny, grid%nz, dfb_cg_k, dfb, FFTW_MEASURE)
+            call sfftw_plan_dft_r2c_3d( fftDfb%plan3dp, nx, ny, nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
+            call sfftw_plan_dft_c2r_3d( fftDfb%plan3dm, nx, ny, nz, dfb_cg_k, dfb, FFTW_MEASURE)
         
         end select
 
