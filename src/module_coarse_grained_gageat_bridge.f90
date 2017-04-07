@@ -42,16 +42,48 @@ contains
         
         real(dp) :: c00000, kT, n0
         integer :: is, ns
+        integer :: nx, ny, nz
 
-
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
         ns=solvent(1)%nspec
 
-        allocate ( kernel_k(grid%nx/2+1,grid%ny,grid%nz), source=(0._dp,0._dp) )
+        allocate ( density(nx,ny,nz) )
+        allocate ( density_cg(nx,ny,nz) )
+        allocate ( dfb_cg(nx,ny,nz) )
+        allocate ( dfb(nx,ny,nz) )
+        
+        allocate ( kernel_k(nx/2+1,ny,nz) )
+        allocate ( density_k(nx/2+1,ny,nz) )
+        allocate ( dfb_cg_k(nx/2+1,ny,nz) )
         
         allocate ( A(ns) )
         
 
-        call fill_kernel( kernel_k) ! must be already allocated
+
+        select case(dp)
+          case(c_double)
+          
+            call dfftw_plan_dft_r2c_3d( fftRho%plan3dp, nx, ny, nz, density, density_k, FFTW_MEASURE)
+            call dfftw_plan_dft_c2r_3d( fftRho%plan3dm, nx, ny, nz, density_k, dfb_cg, FFTW_MEASURE)
+
+            call dfftw_plan_dft_r2c_3d( fftDfb%plan3dp, nx, ny, nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
+            call dfftw_plan_dft_c2r_3d( fftDfb%plan3dm, nx, ny, nz, dfb_cg_k, dfb, FFTW_MEASURE)
+          
+          case(c_float)
+          
+            call sfftw_plan_dft_r2c_3d( fftRho%plan3dp, nx, ny, nz, density, density_k, FFTW_MEASURE)
+            call sfftw_plan_dft_c2r_3d( fftRho%plan3dm, nx, ny, nz, density_k, dfb_cg, FFTW_MEASURE)
+
+            call sfftw_plan_dft_r2c_3d( fftDfb%plan3dp, nx, ny, nz, dfb_cg, dfb_cg_k, FFTW_MEASURE)
+            call sfftw_plan_dft_c2r_3d( fftDfb%plan3dm, nx, ny, nz, dfb_cg_k, dfb, FFTW_MEASURE)
+        
+        end select
+
+
+        call fill_kernel
+
 
 
         !! TODO: l'extraire du fichier c directement mais cela implique de trop grosses modifs pour les permiers tests :)
