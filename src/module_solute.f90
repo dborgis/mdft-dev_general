@@ -69,7 +69,7 @@ contains
         ! grid%length(3) = solutediameterz +2.*grid%buffer_length !+2*solutesigmaljmax
       end block
 
-      call align_solute_to_longer_diagonal_of_supercell ! align the solute so that its largest distance is along the longest diagonal of the supercell
+      !call align_solute_to_longer_diagonal_of_supercell ! align the solute so that its largest distance is along the longest diagonal of the supercell
       CALL mv_solute_to_center ! if user wants all the sites to be translated to the center of the box, ie by Lx/2, Ly/2, Lz/2
       CALL print_solute_xsf ! Print periodic XSF file to be read by VMD or equivalent
     end subroutine read_solute
