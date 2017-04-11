@@ -57,7 +57,7 @@ end subroutine
     integer :: itermax, i, j, k
     real(dp) :: stepsize,stepsize_giving_minimum_f
     real(dp) :: fold,fmin
-    real(dp), parameter :: factr=0.00001_dp
+    real(dp), parameter :: factr=0.01_dp
     logical :: ich_continue
     logical :: find_new_value
     real(dp) :: stepsize_n(0:200)
