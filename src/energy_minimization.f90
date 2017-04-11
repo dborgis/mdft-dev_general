@@ -81,7 +81,6 @@ end subroutine
       k=0
       find_new_value = .false.
       
-      print*, i, " ", k
       if(i==0) then
         stepsize=0.5
       else
@@ -107,7 +106,6 @@ end subroutine
         end if
         stepsize_n(i)=stepsize_giving_minimum_f
         PRINT*,"AT ITERATION ",i,"BEST STEPSIZE TO DATE=",stepsize_giving_minimum_f,"F=",f,"FMIN=",fmin,"ACTUAL STEPSIZE", stepsize
-        stepsize=stepsize*0.5
         k=k+1
       end do
       PRINT*,"AT ITERATION ",i,"I WILL USE STEPSIZE",stepsize_giving_minimum_f
