@@ -59,6 +59,7 @@ end subroutine
     real(dp) :: fold,fmin
     real(dp), parameter :: factr=0.00001_dp
     logical :: ich_continue
+    logical :: find_new_value
     real(dp) :: stepsize_n(0:200)
     stepsize_n=0.5
     itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
@@ -78,35 +79,45 @@ end subroutine
       fmin=f
       ich_continue=.true.
       k=0
+      find_new_value = .false.
+      
+      print*, i, " ", k
+      if(i==0) then
+        stepsize=0.5
+      else
+        stepsize=stepsize_n(i-1)*5.
+      end if
+      
       do while(ich_continue)
-        if(k==0.and.i==0) then
-          stepsize=0.5
-        else if(k==0.and.i>0) then
-          stepsize=stepsize_n(i-1)
-        end if
         solvent(1)%xi=solvent(1)%xi-stepsize*df(:,:,:,:,1)
         call energy_and_gradient(f)
         solvent(1)%xi=solvent(1)%xi+stepsize*df(:,:,:,:,1)
         if(f<fmin) then
           stepsize_giving_minimum_f=stepsize
-          stepsize=stepsize*5.
           fmin=f
           ich_continue=.true.
+          find_new_value = .true.
         else
-          if(k==0) then
+          if(k .lt. 3) then
             ich_continue=.true.
-            stepsize=0.5
+            stepsize=stepsize*0.5
           else
             ich_continue=.false.
           end if
         end if
         stepsize_n(i)=stepsize_giving_minimum_f
-        PRINT*,"AT ITERATION ",i,"BEST STEPSIZE TO DATE=",stepsize_giving_minimum_f,"F=",f,"FMIN=",fmin
+        PRINT*,"AT ITERATION ",i,"BEST STEPSIZE TO DATE=",stepsize_giving_minimum_f,"F=",f,"FMIN=",fmin,"ACTUAL STEPSIZE", stepsize
+        stepsize=stepsize*0.5
         k=k+1
       end do
       PRINT*,"AT ITERATION ",i,"I WILL USE STEPSIZE",stepsize_giving_minimum_f
       PRINT*
       PRINT*
+      if( .not. find_new_value ) then
+          print*, "Minimization finished without converging! criteria=", abs(fmin-fold)/max(abs(fmin),abs(fold),1._dp), " for ", factr
+          exit
+      end if      
+      
       solvent(1)%xi=solvent(1)%xi-stepsize_giving_minimum_f*df(:,:,:,:,1)
       i=i+1
       j=j+1
