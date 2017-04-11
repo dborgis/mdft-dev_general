@@ -61,11 +61,14 @@ end subroutine
     logical :: ich_continue
     logical :: find_new_value
     real(dp) :: stepsize_n(0:200)
+    real(dp) :: deltaF
+    real(dp) :: oldDeltaF
     stepsize_n=0.5
     itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
     i=0
     f=0._dp
     fold=huge(1._dp)
+    oldDeltaF=huge(1._dp)
     stepsize=0.1
     j=1
     open(12,file="output/iterate.dat")
@@ -75,6 +78,7 @@ end subroutine
       print*
       print*,"ITERATION", j
       if(i>0) fold=f
+      if(i>0) oldDeltaF=deltaF
       call energy_and_gradient(f,df)
       fmin=f
       ich_continue=.true.
@@ -91,13 +95,14 @@ end subroutine
         solvent(1)%xi=solvent(1)%xi-stepsize*df(:,:,:,:,1)
         call energy_and_gradient(f)
         solvent(1)%xi=solvent(1)%xi+stepsize*df(:,:,:,:,1)
+        deltaF = abs(fmin-fold)/max(abs(fmin),abs(fold),1._dp)
         if(f<fmin) then
           stepsize_giving_minimum_f=stepsize
           fmin=f
           ich_continue=.true.
           find_new_value = .true.
         else
-          if(k .lt. 3) then
+          if( (k .lt. 10) .and. (deltaF < factr) ) then
             ich_continue=.true.
             stepsize=stepsize*0.5
           else
@@ -112,7 +117,7 @@ end subroutine
       PRINT*
       PRINT*
       if( .not. find_new_value ) then
-          print*, "Minimization finished without converging! criteria=", abs(fmin-fold)/max(abs(fmin),abs(fold),1._dp), " for ", factr
+          print*, "Minimization finished without converging! criteria=", oldDeltaF, " for ", factr
           exit
       end if      
       
@@ -120,7 +125,7 @@ end subroutine
       i=i+1
       j=j+1
       write(12,*) i,fmin
-      if( abs(fmin-fold)/max(abs(fmin),abs(fold),1._dp) < factr ) exit
+      if( deltaF < factr ) exit
     end do
     close(12)
   end subroutine minimization_using_steepest_descent
