@@ -15,7 +15,8 @@ subroutine energy_minimization
   character(80) :: minimizerName
 
   
-  minimizerName = getinput%char( "minimizer", defaultvalue = "lbfgs", validValues = ["sd       ",&
+  minimizerName = getinput%char( "minimizer", defaultvalue = "lbfgs", validValues = ["l-sd     ",&
+                                                                                     "sd       ",&
                                                                                      "lbfgs    ",&
                                                                                      "benchmark"] )
   
@@ -30,7 +31,7 @@ subroutine energy_minimization
       call minimization_using_steepest_descent()
   case( "l-sd" )
       print*, "===== Functional minimization by steepest descent ====="
-      call minimization_using_l-steepest_descent()
+      call minimization_using_l_steepest_descent()
   case( "benchmark" )
       print*, "===== Functional minimization canceled. We're benchmarking MDFT. Loop and don't minimize ====="
       call minimization_using_benchmark()
@@ -147,7 +148,7 @@ end subroutine
   end subroutine minimization_using_steepest_descent
 
 
-  subroutine minimization_using_l-steepest_descent
+  subroutine minimization_using_l_steepest_descent
     use module_input, only: getinput
     implicit none
     integer :: itermax, i, j, k
@@ -224,7 +225,7 @@ end subroutine
       if( deltaF < factr ) exit
     end do
     close(12)
-  end subroutine minimization_using_steepest_descent
+  end subroutine minimization_using_l_steepest_descent
 
 
   subroutine minimization_using_lbfgs
