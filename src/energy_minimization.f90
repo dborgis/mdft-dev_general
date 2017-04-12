@@ -28,6 +28,9 @@ subroutine energy_minimization
   case( "sd" )
       print*, "===== Functional minimization by steepest descent ====="
       call minimization_using_steepest_descent()
+  case( "l-sd" )
+      print*, "===== Functional minimization by steepest descent ====="
+      call minimization_using_l-steepest_descent()
   case( "benchmark" )
       print*, "===== Functional minimization canceled. We're benchmarking MDFT. Loop and don't minimize ====="
       call minimization_using_benchmark()
@@ -51,7 +54,100 @@ subroutine minimization_using_benchmark()
     end do
 end subroutine
 
+
   subroutine minimization_using_steepest_descent
+    use module_input, only: getinput
+    use module_grid, only: grid
+    use module_solvent, only: solvent
+    implicit none
+    integer :: itermax, i, j, k
+    real(dp) :: stepsize,stepsize_giving_minimum_f
+    real(dp) :: fold,fmin
+    real(dp), parameter :: factr=0.01_dp
+    logical :: ich_continue
+    logical :: find_new_value
+    real(dp) :: stepsize_n(-1:200)
+    real(dp) :: deltaF
+    real(dp) :: oldDeltaF
+    real(dp) :: df_for_steepsize_giving_minimum_f (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
+    real(dp) :: df_prev (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
+    integer, parameter :: n_try_max_by_iteration = 5
+
+
+    
+    stepsize_n(-1)=0.1_dp
+    itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
+    i=0
+    f=0._dp
+    fold=huge(1._dp)
+    fmin=huge(1._dp)
+    oldDeltaF=huge(1._dp)
+    j=1
+    call energy_and_gradient(f,df)
+    df_prev = df
+    open(12,file="output/iterate.dat")
+    
+    do while(i<itermax)
+      print*,""
+      print*
+      print*
+      print*,"ITERATION", j
+      fold=f
+      oldDeltaF=deltaF
+ 
+      ich_continue=.true.
+      k=0
+      find_new_value = .false.
+      stepsize=stepsize_n(i-1)*1.5_dp
+      
+      do while(ich_continue)
+        solvent(1)%xi=solvent(1)%xi-stepsize*df_prev(:,:,:,:,1)
+        call energy_and_gradient(f, df)
+        solvent(1)%xi=solvent(1)%xi+stepsize*df_prev(:,:,:,:,1)
+
+        if(f<fmin) then
+          stepsize_giving_minimum_f=stepsize
+          df_for_steepsize_giving_minimum_f = df
+          fmin=f
+          deltaF = abs(fmin-fold)/max(fmin,abs(fold),1._dp)
+          find_new_value = .true.
+          if( (deltaF < factr) ) then
+            ich_continue=.true.
+          else
+            ich_continue=.false.
+          end if
+        else
+          if( k .lt. n_try_max_by_iteration) then
+            ich_continue=.true.
+            stepsize=stepsize*0.5_dp
+          else
+            ich_continue=.false.
+          end if
+        end if
+        stepsize_n(i)=stepsize_giving_minimum_f
+        PRINT*,"AT ITERATION ",j,"BEST STEPSIZE TO DATE=",stepsize_giving_minimum_f,"F=",f,"FMIN=",fmin,"ACTUAL STEPSIZE", stepsize
+        k=k+1
+      end do
+      PRINT*,"AT ITERATION ",j,"I WILL USE STEPSIZE",stepsize_giving_minimum_f
+      PRINT*
+      PRINT*
+      if( .not. find_new_value ) then
+          print*, "Minimization finished without converging! criteria=", oldDeltaF, " for ", factr
+          exit
+      end if      
+      
+      solvent(1)%xi=solvent(1)%xi-stepsize_giving_minimum_f*df_prev(:,:,:,:,1)
+      df_prev = df_for_steepsize_giving_minimum_f
+      i=i+1
+      j=j+1
+      write(12,*) i,fmin
+      if( deltaF < factr ) exit
+    end do
+    close(12)
+  end subroutine minimization_using_steepest_descent
+
+
+  subroutine minimization_using_l-steepest_descent
     use module_input, only: getinput
     implicit none
     integer :: itermax, i, j, k
