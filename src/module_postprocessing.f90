@@ -187,7 +187,8 @@ contains
 !
         block
             use module_solvent, only: solvent
-            if( solvent(1)%nsite < 10 .and. size(solute%site) < 10  ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
+            use module_input, only: getinput
+            if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) .or. getinput%log ('write_rdf', defaultvalue=.false.) ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
                 density = density / solvent(1)%n0
                 filename = 'output/rdf.xvg'
                 call output_rdf ( density , filename ) ! Get radial distribution functions
