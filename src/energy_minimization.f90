@@ -30,7 +30,7 @@ subroutine energy_minimization
       print*, "===== Functional minimization by steepest descent ====="
       call minimization_using_steepest_descent()
   case( "l-sd" )
-      print*, "===== Functional minimization by steepest descent ====="
+      print*, "===== Functional minimization by low memory steepest descent ====="
       call minimization_using_l_steepest_descent()
   case( "benchmark" )
       print*, "===== Functional minimization canceled. We're benchmarking MDFT. Loop and don't minimize ====="
@@ -76,7 +76,7 @@ end subroutine
 
 
     
-    stepsize_n(-1)=0.1_dp
+    stepsize_n(-1)=0.5_dp
     itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
     i=0
     f=0._dp
@@ -166,7 +166,7 @@ end subroutine
     f=0._dp
     fold=huge(1._dp)
     oldDeltaF=huge(1._dp)
-    stepsize=0.1
+    stepsize=0.5
     j=1
     open(12,file="output/iterate.dat")
     do while(i<itermax)
