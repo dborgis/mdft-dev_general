@@ -75,7 +75,7 @@ subroutine energy_and_gradient (f, df)
     ! If the minimizer is lbfgs, then we always compute the gradient, even in the line search. Then, what you want it to use the dedicated variable for lbfgs: isave(30)
     !
     if(present(df)) then
-      if( allocated( lbfgsb%iwa )) then
+      if( allocated( lbfgsb%iwa )) then ! we detect that we use lbfgs by looking at an allocatable array. Allocated means LBFGS is used.
         ff%ieval = lbfgsb%isave(30) +1
       else
         ff%ieval = ff%ieval +1 ! The gradient is not computed during the line search. And we don't want to update the count of scf iterations during the last search.
