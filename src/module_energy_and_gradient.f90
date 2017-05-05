@@ -69,7 +69,13 @@ subroutine energy_and_gradient (f, df)
     real(dp) :: fold
     integer :: ns, s
 
-    ff%ieval = ff%ieval +1
+    if(present(df)) then
+      if( allocated( lbfgsb%iwa )) then
+        ff%ieval = lbfgsb%isave(30) +1
+      else
+        ff%ieval = ff%ieval +1 ! The gradient is not computed during the line search. And we don't want to update the count of scf iterations during the last search.
+      end if
+    end if
 
     if (.not. allocated(solvent)) then
       print*, "in energy_and_gradient, solvent()% is not allocated"

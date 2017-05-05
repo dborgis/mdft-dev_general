@@ -32,7 +32,7 @@ subroutine energy_minimization
       print*, "===== Functional minimization canceled. We're benchmarking MDFT. Loop and don't minimize ====="
       call minimization_using_benchmark()
   case default
-      print*, "===== Functional minimization by L-BFGS-B ====="
+      print*, "===== Functional minimization by L-BFGS-B (default) ====="
       call minimization_using_lbfgs()
   end select
       
@@ -65,14 +65,14 @@ end subroutine
     real(dp) :: oldDeltaF
     stepsize_n=0.5
     itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
-    i=0
+    i=1
     f=0._dp
     fold=huge(1._dp)
     oldDeltaF=huge(1._dp)
     stepsize=0.1
     j=1
     open(12,file="output/iterate.dat")
-    do while(i<itermax)
+    do while(i<=itermax)
       print*,""
       print*
       print*
@@ -173,20 +173,10 @@ end subroutine
         call energy_and_gradient(f, df) ! f and df are intent(out) of energy_and_gradient. see below for explanations of isave(34)
 
         call cpu_time(time(4))
-
       end if
 
 
       call cpu_time(time(5))
-
-    !   if (lbfgsb%task(1:2) == "FG") then
-    !     print*, "Timing of whole cycle (evaluation + bfgs stuff): ", time(5)-time(1)
-    !     print*
-    !     print*, "                  -----------------"
-    !     print*
-    !     print*
-    !     print*
-    !   end if
     end do
   end subroutine minimization_using_lbfgs
 
