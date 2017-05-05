@@ -69,6 +69,11 @@ subroutine energy_and_gradient (f, df)
     real(dp) :: fold
     integer :: ns, s
 
+    !
+    ! This is an horrible trick to not update the count of SCF cycles if we're in a line search.
+    ! If we're not in lbfgs, everything is easy: update the count if one needs the gradient only since the gradient is not computed in the line search.
+    ! If the minimizer is lbfgs, then we always compute the gradient, even in the line search. Then, what you want it to use the dedicated variable for lbfgs: isave(30)
+    !
     if(present(df)) then
       if( allocated( lbfgsb%iwa )) then
         ff%ieval = lbfgsb%isave(30) +1
