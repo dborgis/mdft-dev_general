@@ -1,13 +1,43 @@
 subroutine output_gOfRandCosTheta
-    ! use module_grid, only: grid
-  ! use precision_kinds, only: dp
-  ! use module_solute,          only: solute
-  ! use module_solvent, only: solvent
-  ! use constants,       only: zerodp, pi
-  ! use module_minimizer,       only: cg_vect_new
-  ! use mathematica,     only: deduce_optimal_histogram_properties
-  !
-  ! implicit none
+
+    use module_grid, only: grid
+    use precision_kinds, only: dp
+    use module_solute, only: solute
+    use module_solvent, only: solvent
+    use mathematica,     only: deduce_optimal_histogram_properties
+   
+    implicit none
+
+    real(dp), parameter :: zerodp = 0.0_dp, onedp = 1.0_dp
+    real(dp), parameter :: pi = acos(-1.0_dp)
+
+! Check that it is meaningfull to enter this routine, which is the case only if the solute is made of one site.
+block
+    integer :: countSoluteSites
+    countSoluteSites = size( solute%site(:) )
+    if( countSoluteSites > 1 ) then
+        return ! because the number of solute site is not 1, it has no sense to make spherically symmetric approximation
+    end if
+end block
+
+
+
+
+block
+    integer :: ix, iy ,iz
+    double precision :: cosTheta( grid%nx, grid%ny, grid%nz), OM(3), normOM
+    double precision, parameter :: Oz(3) = [ 0., 0., 1. ]
+    do concurrent( ix = 1: grid%nx, iy = 1: grid%ny, iz = 1: grid%nz)
+        OM = [ ix - 1, iy - 1, iz - 1 ] * [ grid%dx, grid%dy, grid%dz ] - solute%site(1)%r(:)
+        normOM = norm2( OM )
+        if( normOM < 0.0001 ) then
+            cycle
+        else
+            cosTheta(ix,iy,iz) = dot_product( OM, Oz ) / normOM
+        end if
+    end do
+end block
+
   ! integer  :: n,i,j,k,o,p,s,ntheta,npsi,nx,ny,nz,binthetamax,bintheta,binrmax,binr
   ! real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, maxrange
   ! real(dp), allocatable :: rho(:,:,:,:)
