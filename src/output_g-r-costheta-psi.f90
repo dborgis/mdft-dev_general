@@ -1,4 +1,4 @@
-subroutine output_g-r-costheta-psi
+subroutine output_gOfRAndCosThetaAndPsi
 
     use module_grid, only: grid
     use precision_kinds, only: dp
@@ -11,10 +11,10 @@ subroutine output_g-r-costheta-psi
     real(dp), parameter :: zerodp = 0.0_dp, onedp = 1.0_dp
     real(dp), parameter :: pi = acos(-1.0_dp)
     integer :: ix, iy ,iz, io, ncostheta, icostheta, ir, nr
-    double precision :: cosTheta, OM(3), normOM, H1(3), H2(3), Hbar(3), normHbar
-    double precision, parameter :: Oz(3) = [ 0., 0., 1. ]
-    double precision :: costheta_low, costheta_max, dcostheta, dr, r_low, r_max
-    double precision, allocatable :: g(:,:), bin(:,:)
+    real(dp) :: cosTheta, OM(3), normOM, H1(3), H2(3), Hbar(3), normHbar
+    real(dp), parameter :: Oz(3) = [ 0., 0., 1. ]
+    real(dp) :: costheta_low, costheta_max, dcostheta, dr, r_low, r_max
+    real(dp), allocatable :: g(:,:), bin(:,:)
 
 
 ! Check that it is meaningfull to enter this routine, which is the case only if the solute is made of one site.
@@ -55,7 +55,19 @@ end block
             normOM = norm2( OM )
             if( normOM < 0.0001 ) cycle
             cosTheta = dot_product( OM, Hbar ) / (normOM * normHbar)
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!>>>>>>>>>>>>>>>>>>>><
+block
+real(dp) :: sinTheta, phi, cosPhi, sinPhi, u_kz, v_kz, psi
+real(dp), parameter :: twopi = 2._dp * acos(-1._dp)
+            sinTheta = sqrt( 1._dp - cosTheta **2)
+            phi = angle( OM(2), OM(3) )
+            cosPhi = cos(phi)
+            sinPhi = sin(phi)
+            u_kz = grid%rotxx(io)*sinTheta*cosPhi + grid%rotyx(io)*sinTheta*sinPhi + grid%rotzx(io)*cosTheta
+            v_kz = grid%rotxy(io)*sinTheta*cosPhi + grid%rotyy(io)*sinTheta*sinPhi + grid%rotzy(io)*cosTheta
+            psi = modulo( angle(-u_kz,v_kz),twopi/grid%molRotSymOrder )
+end block
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!<<<<<<<<<<<<<<<<<<
             do icostheta = 1, ncostheta
                 costheta_low = (icostheta-1) * dcostheta - 1.
                 costheta_max = costheta_low + dcostheta
@@ -92,141 +104,27 @@ end block
 
 ! gnuplot> set pm3d; set border 4095; set xlabel "r (Ang)"; set ylabel "cos theta"; set zlabel "g"; unset key; splot "output/rdf-theta.dat" w l
 
-    ! The maximum of the g(r,\theta) is for r = rmaxg et theta = thetamaxg
-block
-    integer :: irmaxg(2), rmaxg, costhetamaxg
-    irmaxg(1:2) = maxloc( g )
-    print*, "irmaxg = ", irmaxg
-    rmaxg = (irmaxg(1) - 0.5_dp) * dr
-    costhetamaxg = (irmaxg(2)  * dcostheta
-    print*, "rmaxg = ", rmaxg
-    print*, "costhetamaxg = ", costhetamaxg
-!    do iz = 1, grid%nz
-!        z =  (iz - 1) * grid%dz
-!        zsup = iz * grid%dz
-!        if( z - rmaxg <= 0 .and. zsup - rmaxg > 0 ) then ! on est dans le bon interval
-!            do io = 1, grid%no
-!                if( grid%theta(io) - )
-!            end do
-!        end if
-!    end do
-end block
-
     stop "VICTORYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
 
 
-  ! integer  :: n,i,j,k,o,p,s,ntheta,npsi,nx,ny,nz,binthetamax,bintheta,binrmax,binr
-  ! real(dp) :: dx, dy, dz, r(3), normr, costheta, theta, dr, dtheta, maxrange
-  ! real(dp), allocatable :: rho(:,:,:,:)
-  ! real(dp), parameter :: epsdp=epsilon(1._dp)
-  ! real(dp), allocatable :: g(:,:), gcount(:,:) ! g(r,theta)
-  !
-  ! nx=grid%nx
-  ! ny=grid%ny
-  ! nz=grid%nz
-  ! ntheta=grid%ntheta
-  ! allocate( rho(nx,ny,nz,ntheta) )
-  ! dx=grid%dx
-  ! dy=grid%dy
-  ! dz=grid%dz
-  !
-  ! ! Get the density per spherical angle Omega (integrate over psi)
-  ! npsi = grid%npsi
-  ! do s=1,size(solvent)
-  !   do i=1,nx
-  !     do j=1,ny
-  !       do k=1,nz
-  !         do o=1,ntheta
-  !           rho(i,j,k,o) = solvent(s)%rho0 * sum( molRotGrid%weight * cg_vect_new(i,j,k,o,:,s)**2 )
-  !         end do
-  !       end do
-  !     end do
-  !   end do
-  ! end do
-  !
-  ! ! Test that all vectors Omega are normalized (i.e., it is a unitary vector)
-  ! do o=1,ntheta
-  !   if( abs( norm2([OMx(o),OMy(o),OMz(o)])-1 ) > epsdp ) then
-  !     print*,"ERROR: l.41 of compute_gOfRandCosTheta.f90"
-  !     print*,"-----  Vector Omega is not normalized for omega index",int(o,1)
-  !     stop
-  !   end if
-  ! end do
-  !
-  ! ! for the distance r between solute site and grid node:
-  ! maxrange   = minval(grid%length)/2._dp
-  ! call deduce_optimal_histogram_properties( nx*ny*nz, maxrange, binrmax, dr)
-  ! binthetamax = 10 ! this has to be decided, but we have a very large number of angles, even if the quadrature over omega is by 1 angle only in fixed frame
-  ! ! theta is between 0 and pi
-  ! dtheta = pi/real(binthetamax,dp)
-  ! allocate( g(binrmax,binthetamax) )
-  ! allocate( gcount(binrmax,binthetamax)  )
-  !
-  ! open(124,file="./output/g-of-r-theta.out")
-  ! do n=1,size(solute%site)
-  !   g = zerodp
-  !   gcount = zerodp
-  !   do i=1,nx
-  !     do j=1,ny
-  !       do k=1,nz
-  !         r = ([i,j,k]-1)*[dx,dy,dz] - solute%site(n)%r  ! vector that joins the grid node with index [i,j,k] to solute site n
-  !         normr = norm2(r)
-  !         if( abs(normr) <= epsdp ) cycle
-  !         binr = int(normr/dr)+1
-  !         if( binr > binrmax ) cycle ! don't try to bin something outside the range
-  !         if( binr <= 0 ) then
-  !           print*,"ERROR: l.73 of compute_gofrandcostheta.f90 binr has forbidden value",binr
-  !           print*,"-----  binr = int(normr/dr)+1 with normr, dr, int(normr/dr)+1 =",normr,dr,int(normr/dr)+1
-  !           stop
-  !         end if
-  !         do o=1,ntheta
-  !           costheta = dot_product( r, [OMx(o), OMy(o), OMz(o)] )/normr
-  !           if( costheta < -1 ) then
-  !             costheta = -1 ! sometimes costheta=-1.000000000000001 (...round off errors)
-  !           else if( costheta > 1 ) then
-  !             costheta = 1
-  !           end if
-  !           theta = acos(costheta)
-  !           bintheta = int(theta/(dtheta+2*epsdp)) +1! if dtheta is exactly theta/binthetamax, we end up with int(theta/dtheta)+1 = binthetamax+1. Numerical pb.
-  !           if( bintheta <= 0 .or. bintheta > binthetamax ) then
-  !             print*,"ERROR: l.82 of compute_gofrandcostheta.f90: bintheta has forbidden value",bintheta
-  !             print*,"-----  bintheta = int(theta/dtheta) +1, with &
-  !             & costheta, theta, dtheta, int(theta/dtheta)+1 =", costheta, theta, dtheta, int(theta/dtheta)+1
-  !             stop
-  !           end if
-  !           g(binr,bintheta) = g(binr,bintheta) + rho(i,j,k,o)*anggrid%weight(o)
-  !           gcount(binr,bintheta) = gcount(binr,bintheta) +1
-  !         end do
-  !       end do
-  !     end do
-  !   end do
-  !
-  !   ! test anormalities in g
-  !   if( any(g/=g) ) then
-  !     print*,"STOP: Nan or Infty somewhere in the histogram of g(r,theta), l.96 of compute_gofrtheta.f90"
-  !     STOP
-  !   end if
-  !
-  !   ! normalize
-  !   if( size(solvent)/=1 ) stop "l.105 of compute_g-r-theta.f90. Implemented for only 1 solvent species"
-  !   where( gcount /= 0 )
-  !     g = g/gcount *anggrid%n_angles/(binthetamax*solvent(1)%n0) ! The last two terms here I can convince myself of but I have doubts
-  !   else where
-  !     g = zerodp
-  !   end where
-  !
-  !   ! write g(r,theta) to an output file
-  !   write(124,*)"#solute site",n
-  !   do binr=1,binrmax
-  !     do bintheta=1,binthetamax
-  !       if( abs(g(binr,bintheta)) > epsdp ) then ! write to file only non-zero values. Consequences: File 10-20% smaller, but in-homogeneous printed grid
-  !         write(124,*) (binr-0.5)*dr, (bintheta-0.5)*dtheta, g(binr,bintheta)
-  !       end if
-  !     end do
-  !   end do
-  !   write(124,*) ! empty line
-  !
-  ! end do ! loop over solute sites
-  ! close(124)
-  ! deallocate( g, gcount )
-end subroutine output_g-r-costheta-psi
+contains
+    PURE FUNCTION angle(x,y)
+        use precision_kinds,    ONLY: dp
+        use constants,          ONLY: twopi
+        IMPLICIT NONE
+        REAL(dp), INTENT(IN)    :: x,y
+        REAL(dp)                :: angle
+        REAL(dp)                :: xx
+        IF (x==0._dp .AND. y==0._dp) THEN
+            angle = 0._dp
+        ELSE
+            xx = ACOS( x/SQRT(x**2 + y**2) )
+            IF (y>=0._dp) THEN
+                angle = xx
+            ELSE
+                angle = twopi - xx
+            END IF
+        END IF
+    END FUNCTION angle
+
+end subroutine output_gOfRAndCosThetaAndPsi

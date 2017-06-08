@@ -98,9 +98,7 @@ block
     irmaxg(1:2) = maxloc( g )
     print*, "irmaxg = ", irmaxg
     rmaxg = (irmaxg(1) - 0.5_dp) * dr
-    costhetamaxg = (irmaxg(2)  * dcostheta
     print*, "rmaxg = ", rmaxg
-    print*, "costhetamaxg = ", costhetamaxg
 !    do iz = 1, grid%nz
 !        z =  (iz - 1) * grid%dz
 !        zsup = iz * grid%dz
