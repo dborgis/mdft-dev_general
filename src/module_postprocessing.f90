@@ -21,26 +21,11 @@ contains
         integer :: nx, ny, nz, ix, iy, iz, is, isite, no
         real(dp), parameter :: pi=acos(-1._dp)
 
-print*,"theta=", grid%theta(:)
-print*,"phi=",grid%phi(:)
-print*,"psi=",grid%psi(:)
-
         nx=grid%nx
         ny=grid%ny
         nz=grid%nz
         no=grid%no
 
-block
-        integer :: iz, io
-        open( 55, file="output/gromega.dat")
-        !do io = 1, grid%no
-        do iz = 1, grid%nz/2
-            !write(55,*) (iz - 1) * grid%dz, grid%theta(io), grid%psi(io), solvent(1)%xi(io,1,1,iz)**2
-            write(55,*) (iz-1)*grid%dz, solvent(1)%xi(:,1,1,iz)**2
-        end do
-        !end do
-        close( 55)
-end block
 
         !
         ! print density (in fact, rho/rho0)
