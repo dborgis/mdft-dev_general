@@ -194,7 +194,7 @@ contains
                 call output_rdf ( density , filename ) ! Get radial distribution functions
                 print*, "New output file ", trim(adjustl(filename))
                 call output_gsitesite
-                call output_gOfRandCosTheta
+                call output_gOfRandCosThetaAndPsi
             end if
         end block
 

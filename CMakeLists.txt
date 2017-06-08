@@ -134,7 +134,8 @@ set(mdft_SRCS
   src/module_system.f90
   src/module_time.f90
   src/module_lbfgs_nocedal_mdft.f90
-  src/output_g-r-theta.f90
+  src/output_g-r-costheta.f90
+  src/output_g-r-costheta-psi.f90
   src/output_gsitesite.f90
   src/output_rdf.f90
   src/write_to_cube_file.f90
