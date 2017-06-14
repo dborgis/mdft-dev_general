@@ -311,14 +311,13 @@ contains
         real(dp), parameter :: epsdp = epsilon(1._dp)
         real(dp) :: smootherfactor
         real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
-
         nx = grid%nx
         ny = grid%ny
         nz = grid%nz
         no = grid%no
         ns = size(solvent) ! Count of solvent species
 
-        ! sigma_k is the Fourier transformed charge density of a single solvent molecule in the reference frame defined by solvent.in
+    ! sigma_k is the Fourier transformed charge density of a single solvent molecule in the reference frame defined by solvent.in
         ! molec_polar_k is the Fourier transformed molecular polarization
         do s = 1, ns
             if( sum( abs( solvent(s)%site%q )) > epsdp ) then
@@ -340,7 +339,6 @@ contains
                     do n = 1, SIZE(solvent(s)%site)
                        do io = 1, grid%no
                           if ( abs(solvent(s)%site(n)%q) > epsdp ) then
-
                              r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(s)%site(n)%r  )
                              r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(s)%site(n)%r  )
                              r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(s)%site(n)%r  )

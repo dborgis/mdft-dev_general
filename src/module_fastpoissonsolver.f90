@@ -116,7 +116,7 @@ contains
         use module_solvent, only: solvent
         use module_input, only: getinput
         use module_grid, only: grid
-
+        use module_solute, only : solute, getreciprocalsolutechargedensity
         ! electric_potential = electrostatic potential from charge density and poisson equation
 
         implicit none
@@ -136,56 +136,63 @@ contains
         real(dp), parameter :: fourpi =2._dp*twopi
         real(dp), parameter :: espdp=epsilon(1._dp)
         integer :: nx, ny, nz
+        character(50) :: filename
 
         include "fftw3.f03"
 
-        nx = gridnode(1)
-        ny = gridnode(2)
-        nz = gridnode(3)
 
 
-        ! allocate the arrays needed as input for fft (in_forward) or output for fft (out_forward)
-        ! or needed as input for inverse fft (in_backward) etc.
-        allocate ( fftw3inforward   (nx    , ny,nz))
-        allocate ( fftw3outforward  (nx/2+1, ny,nz))
-        allocate ( fftw3outbackward (nx    , ny,nz))
-        allocate ( fftw3inbackward  (nx/2+1, ny,nz))
+          nx = gridnode(1)
+          ny = gridnode(2)
+          nz = gridnode(3)
+          
+          ! allocate the arrays needed as input for fft (in_forward) or output for fft (out_forward)
+          ! or needed as input for inverse fft (in_backward) etc.
+          allocate ( fftw3inforward   (nx    , ny,nz))
+          allocate ( fftw3outforward  (nx/2+1, ny,nz))
+          allocate ( fftw3outbackward (nx    , ny,nz))
+          allocate ( fftw3inbackward  (nx/2+1, ny,nz))
 
-        ! prepare plans needed by fftw3
-        select case(dp)
-        case(c_double)
-            call dfftw_plan_dft_r2c_3d (fpspf, nx, ny, nz, fftw3inforward, fftw3outforward, fftw_estimate)
-            call dfftw_plan_dft_c2r_3d (fpspb, nx, ny, nz, fftw3inbackward, fftw3outbackward, fftw_estimate )
-        case(c_float)
-            call sfftw_plan_dft_r2c_3d (fpspf, nx, ny, nz, fftw3inforward, fftw3outforward, fftw_estimate)
-            call sfftw_plan_dft_c2r_3d (fpspb, nx, ny, nz, fftw3inbackward, fftw3outbackward, fftw_estimate )
-        end select
-        ! note that since the fast poisson solver implies only 1 fft in each direction, it is useless to use fftw_measure or even
-        ! more rigorous planning-flags. see http://www.fftw.org/doc/planner-flags.html
+          ! prepare plans needed by fftw3
+          select case(dp)
+          case(c_double)
+              call dfftw_plan_dft_r2c_3d (fpspf, nx, ny, nz, fftw3inforward, fftw3outforward, fftw_estimate)
+              call dfftw_plan_dft_c2r_3d (fpspb, nx, ny, nz, fftw3inbackward, fftw3outbackward, fftw_estimate )
+          case(c_float)
+              call sfftw_plan_dft_r2c_3d (fpspf, nx, ny, nz, fftw3inforward, fftw3outforward, fftw_estimate)
+              call sfftw_plan_dft_c2r_3d (fpspb, nx, ny, nz, fftw3inbackward, fftw3outbackward, fftw_estimate )
+          end select
+          ! note that since the fast poisson solver implies only 1 fft in each direction, it is useless to use fftw_measure or even
+          ! more rigorous planning-flags. see http://www.fftw.org/doc/planner-flags.html
 
 
 
-        if ( all(abs(sourcedistrib)<=epsilon(1._dp)) ) then
-            electric_potential = 0._dp
-            return
+          allocate( sourcedistrib_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
+          allocate( electric_potential_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
+          
+          
+          
+        if (.not. getinput%log("direct_solute_sigmak", defaultvalue=.false.) ) then
+          if ( all(abs(sourcedistrib)<=epsilon(1._dp)) ) then
+              electric_potential = 0._dp
+              return
+          end if
+          ! fourier transform of the solute charge density
+          fftw3inforward = sourcedistrib
+          select case(dp)
+          case(c_double)
+            call dfftw_execute(fpspf)
+          case(c_float)
+            call sfftw_execute(fpspf)
+          end select
+          sourcedistrib_k = fftw3OutForward ! It is verified that at this point, FFT-1(sourcedistrib_k)/ (nfft1*nfft2*nfft3) = sourcedistrib
+          ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
+          ! V(k) = 4Pi rho(k) / k^2
+        else
+          call getreciprocalsolutechargedensity()
+          sourcedistrib_k = solute%sigma_k/grid%dV
         end if
-
-        allocate( sourcedistrib_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
-        allocate( electric_potential_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
-
-        ! fourier transform of the solute charge density
-        fftw3inforward = sourcedistrib
-        select case(dp)
-        case(c_double)
-          call dfftw_execute(fpspf)
-        case(c_float)
-          call sfftw_execute(fpspf)
-        end select
-        sourcedistrib_k = fftw3OutForward ! It is verified that at this point, FFT-1(sourcedistrib_k)/ (nfft1*nfft2*nfft3) = sourcedistrib
-        ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
-        ! V(k) = 4Pi rho(k) / k^2
-
-
+ 
         DO k = 1, gridnode(3)
             DO j = 1, gridnode(2)
                 DO i = 1, nx/2+1
@@ -239,6 +246,9 @@ contains
                 if (.not. allocated(solvent(s)%sigma_k) ) then
                     call solvent(s)%init_chargedensity_molecularpolarization
                 end if
+                filename = "output/sigmak.cube"
+                CALL write_to_cube_file ( solvent(1)%sigma_k(:,:,:,1), filename )
+                print*, "New file output/%sigmak.cube"
                 do io = 1, grid%no
                     fftw3InBackward = electric_potential_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     select case(dp)
@@ -251,6 +261,8 @@ contains
                 end do
             end do
         end if
+
+
 
         select case(dp)
         case(c_double)
