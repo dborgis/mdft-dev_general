@@ -172,7 +172,7 @@ contains
           
           
           
-        if (.not. getinput%log("direct_solute_sigmak", defaultvalue=.false.) ) then
+        if (.not. getinput%log("direct_solute_sigmak", defaultvalue=.false.) ) then  !compute the solute charge density in direct space and FFT it
           if ( all(abs(sourcedistrib)<=epsilon(1._dp)) ) then
               electric_potential = 0._dp
               return
@@ -188,7 +188,7 @@ contains
           sourcedistrib_k = fftw3OutForward ! It is verified that at this point, FFT-1(sourcedistrib_k)/ (nfft1*nfft2*nfft3) = sourcedistrib
           ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
           ! V(k) = 4Pi rho(k) / k^2
-        else
+        else  !directely compute the solute charge density analitically in k-space
           call getreciprocalsolutechargedensity()
           sourcedistrib_k = solute%sigma_k/grid%dV
         end if
@@ -230,6 +230,9 @@ contains
 
         ! old construction
         if (getinput%log('better_poisson_solver', defaultvalue=.false.)) then
+            !please be aware that this will compute the external potential, but
+            !it won't be use to to compute the external FE, thus it is like you
+            !were not using electrostatic at all
             ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
             fftw3InBackward = electric_potential_k
             select case(dp)
@@ -246,9 +249,6 @@ contains
                 if (.not. allocated(solvent(s)%sigma_k) ) then
                     call solvent(s)%init_chargedensity_molecularpolarization
                 end if
-                filename = "output/sigmak.cube"
-                CALL write_to_cube_file ( solvent(1)%sigma_k(:,:,:,1), filename )
-                print*, "New file output/%sigmak.cube"
                 do io = 1, grid%no
                     fftw3InBackward = electric_potential_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     select case(dp)

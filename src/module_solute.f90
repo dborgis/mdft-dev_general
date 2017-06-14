@@ -287,7 +287,8 @@ contains
 
     !This subroutine computes analitically and directly in k-space the charge
     !distribution of the solute molecule. It is quite  a strong repeating of
-    !soluteChargeDensityFromSoluteChargeCoordinates for solvent
+    !soluteChargeDensityFromSoluteChargeCoordinates for solvent but I did not
+    !find a smart way yet to avoid this redundancy
     SUBROUTINE getreciprocalsolutechargedensity()
         use module_grid, only: grid
         implicit none
@@ -309,7 +310,7 @@ contains
         if( sum( abs( solute%site%q )) > epsdp ) then
           allocate( solute%sigma_k (   nx/2+1, ny, nz), SOURCE=zeroC )
         else
-          print*, "you want to compute the charge distribution of a neutral solute,there is a problem"
+          print*, "you want to compute the charge distribution of a neutral solute,there is a problem somewhere"
           stop
         end if
         
@@ -319,14 +320,13 @@ contains
               do j = 1, ny
                  do i = 1, nx/2+1
                     kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
-                    smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
+                    !smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
                     smootherfactor =  1.0_dp
                     
                     do n = 1, SIZE(solute%site)
                         if ( abs(solute%site(n)%q) > epsdp ) then
                            kr = dot_product( kvec, solute%site(n)%r )
                            X = -iC*kr
-                           if (k==1 .and. j==1 .and. i==1) print*, solute%site(n)%r,X,solute%site(n)%q
                            solute%sigma_k(i,j,k) = solute%sigma_k(i,j,k) + solute%site(n)%q *exp(X) *smootherfactor ! exact
                         end if
                     end do
