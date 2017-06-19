@@ -369,7 +369,8 @@ contains
         ! Substract the trace of the molecular polarization tensor
         !
         do concurrent (i=1:nx/2+1, j=1:ny, k=1:nz, s=1:ns, d=1:3)
-           solvent(s)%molec_polar_k(d,i,j,k,:) = solvent(s)%molec_polar_k(d,i,j,k,:)  &
+            if( sum( abs( solvent(s)%site%q )) > epsdp ) cycle
+            solvent(s)%molec_polar_k(d,i,j,k,:) = solvent(s)%molec_polar_k(d,i,j,k,:)  &
                 -sum( solvent(s)%molec_polar_k(d,i,j,k,:) ) /real(grid%no,dp)
         end do
       end subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin

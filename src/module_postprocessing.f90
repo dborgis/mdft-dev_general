@@ -90,7 +90,7 @@ contains
             filename = "output/Pz.cube"
             call write_to_cube_file(pz,filename)
             print*, "New file output/Pz.cube"
-            if( size(solute%site) < 10 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
+            if( size(solute%site) < 50 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
                 filename = 'output/pnorm.xvg'
                 call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
                 print*, "New output file ", trim(adjustl(filename))
