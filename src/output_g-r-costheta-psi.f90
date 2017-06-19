@@ -108,8 +108,7 @@ end block
     close(77)
 ! gnuplot> set pm3d; set border 4095; set xlabel "r (\305)"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-r-costheta.dat" w l
 
-    open( 77, file="output/g-of-costheta-psi-at-3ang.dat")
-    ir = int( 3.1/dr) +1
+    open( 77, file="output/g-of-costheta-psi-at-gmax.dat")
     block
         integer :: toto(3)
         toto = maxloc(g)
@@ -126,7 +125,23 @@ end block
         write(77,*)
     end do
     close(77)
-! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-3ang.dat" w l
+! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-gmax.dat" w l
+
+    open( 77, file="output/g-of-costheta-psi-at-10Ang.dat")
+    ir = 10._dp / dr + 1
+    do ipsi = 1, npsi
+        psi_low = (ipsi-1) * dpsi
+        psi_max = psi_low + dpsi
+        do icostheta = 1, ncostheta
+            costheta_low = (icostheta-1) * dcostheta - 1.
+            costheta_max = costheta_low + dcostheta
+            write(77,*) (psi_low + psi_max)/2._dp, ( costheta_low + costheta_max )/2._dp, g(ir,icostheta,ipsi)
+        end do
+        write(77,*)
+    end do
+    close(77)
+! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-10Ang.dat" w l
+
 
     stop "OOOOOOOOOOOOYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
 
