@@ -14,8 +14,8 @@ subroutine output_gOfRAndCosThetaAndPsi
     integer :: ix, iy ,iz, io, ncostheta, icostheta, ir, nr, npsi, ipsi
     real(dp) :: cosTheta, OM(3), normOM, H1(3), H2(3), Hbar(3), normHbar
     real(dp), parameter :: Oz(3) = [ 0., 0., 1. ], twopi = acos(-1._dp)
-    real(dp) :: costheta_low, costheta_max, dcostheta, dr, r_low, r_max, omega(3), omegaPrime(3)
-    real(dp), allocatable :: g(:,:), bin(:,:)
+    real(dp) :: costheta_low, costheta_max, dcostheta, dr, r_low, r_max, r_mean, omega(3), omegaPrime(3)
+    real(dp), allocatable :: g(:,:,:), bin(:,:,:)
     real(dp) :: dpsi, psi, psi_low, psi_max
 
 
@@ -33,12 +33,12 @@ end block
 
     nr = 100
     dr = min(grid%lz,grid%ly, grid%lz)/2. / nr
-    ncostheta = 20
+    ncostheta = 25
     dcostheta = 2. / ncostheta
-    npsi = 20
-    dpsi = twopi / grid%molrotsymorder / npsi
-    allocate(g(nr, ncostheta))
-    allocate(bin(nr,ncostheta))
+    npsi = 25
+    dpsi = twopi / npsi
+    allocate(g(nr, ncostheta, npsi))
+    allocate(bin(nr,ncostheta,npsi))
     g = 0.
     bin = 0
 
@@ -62,9 +62,10 @@ end block
 
             omegaPrime = omega_prime_fonction_de_omega( OM, omega ) ! omega' est le vecteur de theta',phi',psi'   ie les nouveaux theta, phi, psi dans le repère local soluté-solvant
             cosTheta = cos(omegaPrime(1))
+            psi = omegaPrime(3)
 
             do ipsi = 1, npsi
-                psi_low = (psi-1) * dpsi
+                psi_low = (ipsi-1) * dpsi
                 psi_max = psi_low + dpsi
 
                 do icostheta = 1, ncostheta
@@ -76,10 +77,11 @@ end block
                         r_max = r_low + dr
 
                         if(       costheta >= costheta_low .and. costheta < costheta_max &
-                            .and. normOM >= r_low .and. normOM <  r_max ) then
+                            .and. normOM   >= r_low        .and. normOM   < r_max &
+                            .and. psi      >= psi_low      .and. psi      < psi_max ) then
 
-                            g(ir,icostheta) = g(ir,icostheta) + solvent(1)%xi(io,ix,iy,iz)**2 * grid%w(io)
-                            bin(ir,icostheta) = bin(ir,icostheta) + 1
+                            g(ir,icostheta,ipsi) = g(ir,icostheta,ipsi) + solvent(1)%xi(io,ix,iy,iz)**2 * grid%w(io)
+                            bin(ir,icostheta,ipsi) = bin(ir,icostheta,ipsi) + 1
                         end if
                     end do
 
@@ -90,22 +92,42 @@ end block
         end do ! xyz
     end do ! io
 
-    open( 77, file="output/rdf-theta.dat")
     where (bin /= 0) g = g / bin
+
+    open( 77, file="output/g-of-r-costheta.dat")
     do icostheta = 1, ncostheta
         costheta_low = (icostheta-1) * dcostheta - 1.
         costheta_max = costheta_low + dcostheta
         do ir = 1, nr
             r_low = (ir - 1) * dr
             r_max = r_low + dr
-            write(77,*) (r_low+r_max)/2., ( costheta_low + costheta_max )/2., g(ir,icostheta)
+            write(77,*) (r_low+r_max)/2., ( costheta_low + costheta_max )/2., sum(g(ir,icostheta,:)/size(g,3))
         end do
         write(77,*)
     end do
     close(77)
+! gnuplot> set pm3d; set border 4095; set xlabel "r (\305)"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-r-costheta.dat" w l
 
-! gnuplot> set pm3d; set border 4095; set xlabel "r (Ang)"; set ylabel "cos theta"; set zlabel "g"; unset key; splot "output/rdf-theta.dat" w l
+    open( 77, file="output/g-of-costheta-psi-at-3ang.dat")
+    ir = int( 3.1/dr) +1
+    block
+        integer :: toto(3)
+        toto = maxloc(g)
+        ir = toto(1)
+    end block
+    do ipsi = 1, npsi
+        psi_low = (ipsi-1) * dpsi
+        psi_max = psi_low + dpsi
+        do icostheta = 1, ncostheta
+            costheta_low = (icostheta-1) * dcostheta - 1.
+            costheta_max = costheta_low + dcostheta
+            write(77,*) (psi_low + psi_max)/2._dp, ( costheta_low + costheta_max )/2._dp, g(ir,icostheta,ipsi)
+        end do
+        write(77,*)
+    end do
+    close(77)
+! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-3ang.dat" w l
 
-    stop "2VICTORYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+    stop "OOOOOOOOOOOOYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
 
 end subroutine output_gOfRAndCosThetaAndPsi
