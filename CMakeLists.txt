@@ -99,7 +99,6 @@ set(mdft_SRCS
   src/compute_vext_hard_sphere.f90
   src/compute_wca_diameter.f90
   src/compute_z_density.f90
-  src/convert_coordinate_into_icg.f90
   src/cs_of_k_hard_sphere.f90
   src/module_energy_and_gradient.f90
   src/module_energy_ck_angular.f90
