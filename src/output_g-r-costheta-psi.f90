@@ -11,7 +11,7 @@ subroutine output_gOfRAndCosThetaAndPsi
 
     real(dp), parameter :: zerodp = 0.0_dp, onedp = 1.0_dp
     real(dp), parameter :: pi = acos(-1.0_dp)
-    integer :: ix, iy ,iz, io, ncostheta, icostheta, ir, nr, npsi, ipsi
+    integer :: ix, iy ,iz, io, ncostheta, icostheta, ir, nr, npsi, ipsi, countSoluteSites
     real(dp) :: cosTheta, OM(3), normOM, H1(3), H2(3), Hbar(3), normHbar
     real(dp), parameter :: Oz(3) = [ 0., 0., 1. ], twopi = acos(-1._dp)
     real(dp) :: costheta_low, costheta_max, dcostheta, dr, r_low, r_max, r_mean, omega(3), omegaPrime(3)
@@ -19,28 +19,21 @@ subroutine output_gOfRAndCosThetaAndPsi
     real(dp) :: dpsi, psi, psi_low, psi_max
 
 
-! Check that it is meaningfull to enter this routine, which is the case only if the solute is made of one site.
-block
-    integer :: countSoluteSites
+    ! Check that it is meaningfull to enter this routine, which is the case only if the solute is made of one site.
     countSoluteSites = size( solute%site(:) )
-    if( countSoluteSites > 1 ) then
-        return ! because the number of solute site is not 1, it has no sense to make spherically symmetric approximation
-    end if
-end block
+    if( countSoluteSites > 1 ) return ! because the number of solute site is not 1, it has no sense to make spherically symmetric approximation
 
 
 
 
-    nr = 100
-    dr = min(grid%lz,grid%ly, grid%lz)/2. / nr
+    nr = 50
+    dr = 0.5_dp * min( grid%lx, grid%ly, grid%lz) / real(nr,dp)
     ncostheta = 25
-    dcostheta = 2. / ncostheta
+    dcostheta = 2. / real(ncostheta,dp)
     npsi = 25
-    dpsi = twopi / npsi
-    allocate(g(nr, ncostheta, npsi))
-    allocate(bin(nr,ncostheta,npsi))
-    g = 0.
-    bin = 0
+    dpsi = twopi / real(npsi,dp)
+    allocate( g  (nr, ncostheta, npsi), source=0._dp)
+    allocate( bin(nr, ncostheta, npsi), source=0)
 
     do io = 1, grid%no
         omega = [ grid%theta(io), grid%phi(io), grid%psi(io) ]
@@ -106,7 +99,7 @@ end block
         write(77,*)
     end do
     close(77)
-! gnuplot> set pm3d; set border 4095; set xlabel "r (\305)"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-r-costheta.dat" w l
+! gnuplot> set pm3d; set border 4095; set xlabel "r (Ang)"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-r-costheta.dat" w l
 
     open( 77, file="output/g-of-costheta-psi-at-gmax.dat")
     block
@@ -128,19 +121,33 @@ end block
 ! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-gmax.dat" w l
 
     open( 77, file="output/g-of-costheta-psi-at-10Ang.dat")
-    ir = 10._dp / dr + 1
     do ipsi = 1, npsi
         psi_low = (ipsi-1) * dpsi
         psi_max = psi_low + dpsi
         do icostheta = 1, ncostheta
             costheta_low = (icostheta-1) * dcostheta - 1.
             costheta_max = costheta_low + dcostheta
-            write(77,*) (psi_low + psi_max)/2._dp, ( costheta_low + costheta_max )/2._dp, g(ir,icostheta,ipsi)
+            write(77,*) (psi_low + psi_max)/2._dp, ( costheta_low + costheta_max )/2._dp, g(ir-1,icostheta,ipsi)
         end do
         write(77,*)
     end do
     close(77)
 ! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-10Ang.dat" w l
+
+    open( 77, file="output/g-of-r-psi-for-theta0.dat")
+    icostheta = ncostheta
+     do ir = 1, nr
+        r_low = (ir - 1) * dr
+        r_max = r_low + dr
+        do ipsi = 1, npsi
+            psi_low = (ipsi-1) * dpsi
+            psi_max = psi_low + dpsi
+        end do
+        write(77,*) (r_low+r_max)/2., (psi_low + psi_max)/2._dp, g(ir,icostheta,ipsi)
+    end do
+    write(77,*)
+    close(77)
+! gnuplot> set pm3d; set border 4095; set xlabel "r (Ang)"; set ylabel "psi {/Symbol Y}"; set zlabel "g"; unset key; splot "output/g-of-r-psi-for-theta0.dat" w l
 
 
     stop "OOOOOOOOOOOOYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
