@@ -15,7 +15,8 @@ subroutine output_gOfRAndCosThetaAndPsi
     real(dp) :: cosTheta, OM(3), normOM, H1(3), H2(3), Hbar(3), normHbar
     real(dp), parameter :: Oz(3) = [ 0., 0., 1. ], twopi = acos(-1._dp)
     real(dp) :: costheta_low, costheta_max, dcostheta, dr, r_low, r_max, r_mean, omega(3), omegaPrime(3)
-    real(dp), allocatable :: g(:,:,:), bin(:,:,:)
+    real(dp), allocatable :: g(:,:,:)
+    integer, allocatable :: bin(:,:,:)
     real(dp) :: dpsi, psi, psi_low, psi_max
 
 
@@ -149,7 +150,6 @@ subroutine output_gOfRAndCosThetaAndPsi
     close(77)
 ! gnuplot> set pm3d; set border 4095; set xlabel "r (Ang)"; set ylabel "psi {/Symbol Y}"; set zlabel "g"; unset key; splot "output/g-of-r-psi-for-theta0.dat" w l
 
-
-    stop "OOOOOOOOOOOOYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+    deallocate(g, bin)
 
 end subroutine output_gOfRAndCosThetaAndPsi
