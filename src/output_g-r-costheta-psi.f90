@@ -100,7 +100,8 @@ subroutine output_gOfRAndCosThetaAndPsi
         write(77,*)
     end do
     close(77)
-! gnuplot> set pm3d; set border 4095; set xlabel "r (Ang)"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-r-costheta.dat" w l
+! gnuplot> set palette defined (0 0 0 0.5, 1 0 0 1, 2 0 0.5 1, 3 0 1 1, 4 0.5 1 0.5, 5 1 1 0, 6 1 0.5 0, 7 1 0 0, 8 0.5 0 0); set view map; set pm3d interpolate 0,0; set border 4095; set xlabel "r (Ang)"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-r-costheta.dat" w pm3d
+! gnuplot> set view map; set pm3d interpolate 0,0; set xlabel "r (Ang)"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-r-costheta.dat" w pm3d
 
     open( 77, file="output/g-of-costheta-psi-at-gmax.dat")
     block
@@ -119,7 +120,7 @@ subroutine output_gOfRAndCosThetaAndPsi
         write(77,*)
     end do
     close(77)
-! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-gmax.dat" w l
+! gnuplot> set palette defined (0 0 0 0.5, 1 0 0 1, 2 0 0.5 1, 3 0 1 1, 4 0.5 1 0.5, 5 1 1 0, 6 1 0.5 0, 7 1 0 0, 8 0.5 0 0); set view map; set pm3d interpolate 0,0; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-gmax.dat" w pm3d
 
     open( 77, file="output/g-of-costheta-psi-at-10Ang.dat")
     do ipsi = 1, npsi
@@ -133,7 +134,7 @@ subroutine output_gOfRAndCosThetaAndPsi
         write(77,*)
     end do
     close(77)
-! gnuplot> set pm3d; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-10Ang.dat" w l
+! gnuplot> set palette defined (0 0 0 0.5, 1 0 0 1, 2 0 0.5 1, 3 0 1 1, 4 0.5 1 0.5, 5 1 1 0, 6 1 0.5 0, 7 1 0 0, 8 0.5 0 0); set view map; set pm3d interpolate 0,0; set border 4095; set xlabel "{/Symbol Y}"; set ylabel "cos {/Symbol q}"; set zlabel "g"; unset key; splot "output/g-of-costheta-psi-at-10Ang.dat" w pm3d
 
     open( 77, file="output/g-of-r-psi-for-theta0.dat")
     icostheta = ncostheta
@@ -148,7 +149,7 @@ subroutine output_gOfRAndCosThetaAndPsi
     end do
     write(77,*)
     close(77)
-! gnuplot> set pm3d; set border 4095; set xlabel "r (Ang)"; set ylabel "psi {/Symbol Y}"; set zlabel "g"; unset key; splot "output/g-of-r-psi-for-theta0.dat" w l
+! gnuplot> set palette defined (0 0 0 0.5, 1 0 0 1, 2 0 0.5 1, 3 0 1 1, 4 0.5 1 0.5, 5 1 1 0, 6 1 0.5 0, 7 1 0 0, 8 0.5 0 0); set view map; set pm3d interpolate 0,0; set border 4095; set xlabel "r (Ang)"; set ylabel "psi {/Symbol Y}"; set zlabel "g"; unset key; splot "output/g-of-r-psi-for-theta0.dat" w pm3d
 
     deallocate(g, bin)
 
