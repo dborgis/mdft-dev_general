@@ -1,6 +1,6 @@
 module module_postprocessing
     use precision_kinds, only: dp
-    use read_and_write_cube 
+    use cubefiles 
     implicit none
     private
     public :: init_postprocessing

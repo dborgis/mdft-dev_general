@@ -8,7 +8,7 @@
 ! output : a file called 'filename' containing 3dimensional data in .cube format
 ! written by Maximilien Levesque, while in post doc at Ecole Normale Superieure, Paris in Daniel Borgis's theoretical chemistry group
 ! 20110919  Maximilien Levesque, clean version for Virginie M.
-module read_and_write_cube
+module cubefiles 
 
 contains
 
