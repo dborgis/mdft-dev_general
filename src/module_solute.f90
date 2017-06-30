@@ -1,7 +1,7 @@
 module module_solute
     use precision_kinds, only: dp
     use system, only: site_type
-    use  cubefiles
+    !use  cubefiles
     implicit none
     type :: solute_type
         character(130) :: name
@@ -231,13 +231,6 @@ contains
         volumElem = PRODUCT(gridlen/REAL(gridnode,dp))
         soluteChargeDensity = soluteChargeDensity / volumElem ! charge density is in charge per unit volume
 
-        IF (verbose) THEN
-            BLOCK
-                CHARACTER(50) :: filename
-                filename='output/soluteChargeDensity.cube'
-                CALL write_to_cube_file ( soluteChargeDensity, filename  )
-            END BLOCK
-        END IF
 
     END SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates
 
