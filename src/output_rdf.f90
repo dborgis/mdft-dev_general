@@ -57,7 +57,7 @@ SUBROUTINE output_rdf (array,filename)
     open (10, file=filename) ! filename is intent(in), typically "output/rdf.out"
     write(10,*) '@ xaxis label "Distance (\cE\C)"'
     write(10,*) '@ yaxis label "Radial distribution function"'
-    write(10,*) '@TYPE xy'
+    write(10,*) '@ TYPE xy'
     write(10,*) '@ legend on'
     write(10,*) '@ legend box on'
     write(10,*) '@ legend loctype view'
