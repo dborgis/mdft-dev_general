@@ -229,11 +229,16 @@ end subroutine
 
 
   subroutine minimization_using_lbfgs
+    implicit none
+    integer :: itermaxBeforeError
+    itermaxBeforeError = getinput%int("maximum_iteration_before_error", defaultvalue=huge(1), assert=">0")
     ! Init minimization process. From allocations to optimizer parameters to guess solution
     call lbfgsb%init
 
     do while( (lbfgsb%task(1:2).eq.'FG'.or.lbfgsb%task.eq.'NEW_X'.or.lbfgsb%task.eq.'START') &
       .and. (lbfgsb%isave(30)<lbfgsb%itermax) )
+
+      if( lbfgsb%isave(30) >= itermaxBeforeError ) error stop "You have reached what you parameterized as the maximum number of iterations before an error is reported"
 
       time(:)=0
       call cpu_time(time(1))
