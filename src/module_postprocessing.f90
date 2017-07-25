@@ -1,5 +1,6 @@
 module module_postprocessing
     use precision_kinds, only: dp
+    use module_cubefiles 
     implicit none
     private
     public :: init_postprocessing

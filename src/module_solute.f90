@@ -1,6 +1,7 @@
 module module_solute
     use precision_kinds, only: dp
     use system, only: site_type
+    !use  cubefiles
     implicit none
     type :: solute_type
         character(130) :: name
@@ -9,11 +10,12 @@ module module_solute
         integer :: nspec ! number of solvent species
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
         real(dp) :: diameter ! hard sphere diameter, for instance
+        complex(dp), allocatable :: sigma_k(:,:,:) ! charge factor
         type (site_type), allocatable :: site(:)
     end type
     type (solute_type), protected :: solute
     private
-    public :: solute_type, solute, read_solute, soluteChargeDensityFromSoluteChargeCoordinates
+    public :: solute_type, solute, read_solute, soluteChargeDensityFromSoluteChargeCoordinates,getreciprocalsolutechargedensity
 
 contains
 
@@ -229,13 +231,6 @@ contains
         volumElem = PRODUCT(gridlen/REAL(gridnode,dp))
         soluteChargeDensity = soluteChargeDensity / volumElem ! charge density is in charge per unit volume
 
-        IF (verbose) THEN
-            BLOCK
-                CHARACTER(50) :: filename
-                filename='output/soluteChargeDensity.cube'
-                CALL write_to_cube_file ( soluteChargeDensity, filename  )
-            END BLOCK
-        END IF
 
     END SUBROUTINE soluteChargeDensityFromSoluteChargeCoordinates
 
@@ -284,5 +279,57 @@ contains
         close(5)
     END SUBROUTINE print_solute_xsf
 
+    !This subroutine computes analitically and directly in k-space the charge
+    !distribution of the solute molecule. It is quite  a strong repeating of
+    !soluteChargeDensityFromSoluteChargeCoordinates for solvent but I did not
+    !find a smart way yet to avoid this redundancy
+    SUBROUTINE getreciprocalsolutechargedensity()
+        use module_grid, only: grid
+        implicit none
+        integer :: nx, ny, nz, no
+        integer :: i, j, k, n, s, io, d
+        real(dp)     :: r(3), kr, kvec(3)
+        complex(dp)  :: fac, X
+        complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
+        real(dp), parameter :: epsdp = epsilon(1._dp)
+        real(dp) :: smootherfactor
+        real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
+        nx = grid%nx
+        ny = grid%ny
+        nz = grid%nz
+        no = grid%no
+
+        ! sigma_k is the Fourier transformed charge density of a single solvent molecule in the reference frame defined by solvent.in
+        ! molec_polar_k is the Fourier transformed molecular polarization
+        if( sum( abs( solute%site%q )) > epsdp ) then
+          allocate( solute%sigma_k (   nx/2+1, ny, nz), SOURCE=zeroC )
+        else
+          print*, "you want to compute the charge distribution of a neutral solute,there is a problem somewhere"
+          stop
+        end if
+        
+           !$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
+           !$omp do
+           do k = 1, nz
+              do j = 1, ny
+                 do i = 1, nx/2+1
+                    kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+                    !smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
+                    smootherfactor =  1.0_dp
+                    
+                    do n = 1, SIZE(solute%site)
+                        if ( abs(solute%site(n)%q) > epsdp ) then
+                           kr = dot_product( kvec, solute%site(n)%r )
+                           X = -iC*kr
+                           solute%sigma_k(i,j,k) = solute%sigma_k(i,j,k) + solute%site(n)%q *exp(X) *smootherfactor ! exact
+                        end if
+                    end do
+
+                 end do
+              end do
+           end do
+           !$omp end do
+           !$omp end parallel
+    END SUBROUTINE
 
 end module module_solute

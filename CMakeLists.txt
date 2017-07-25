@@ -99,7 +99,6 @@ set(mdft_SRCS
   src/compute_vext_hard_sphere.f90
   src/compute_wca_diameter.f90
   src/compute_z_density.f90
-  src/convert_coordinate_into_icg.f90
   src/cs_of_k_hard_sphere.f90
   src/module_energy_and_gradient.f90
   src/module_energy_ck_angular.f90
@@ -137,7 +136,7 @@ set(mdft_SRCS
   src/output_g-r-costheta-psi.f90
   src/output_gsitesite.f90
   src/output_rdf.f90
-  src/write_to_cube_file.f90
+  src/module_cubefiles.f90
   src/module_wigner_d.f90
   src/module_orientation_projection_transform.f90
   src/module_lennardjones.f90
@@ -161,7 +160,7 @@ include(ExternalProject)
 if(NOT BUILD_FFTW)
 	find_package(FFTW QUIET)
     if(NOT FFTW_FOUND)
-		message(STATUS "WARNING: FFTW not found! FFTW-3.3.4 will be compile before MDFT.")
+		message(STATUS "WARNING: FFTW not found! FFTW-3.3.4 will be compiled from sources before MDFT.")
 		set(BUILD_FFTW ON)
     endif()
 endif()
@@ -172,7 +171,7 @@ if(BUILD_FFTW)
 	  fftw
 	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
 	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp --enable-threads --enable-sse2 --enable-avx
+	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3  --enable-openmp  --enable-threads --enable-sse2 --enable-avx
 	  BUILD_COMMAND make -j4
 	  INSTALL_COMMAND make install -j4
 	)
@@ -180,7 +179,7 @@ if(BUILD_FFTW)
 	  fftwf
 	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
 	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float --enable-openmp --enable-threads --enable-sse --enable-sse2 --enable-avx
+	  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 --enable-float   --enable-openmp  --enable-threads --enable-sse --enable-sse2 --enable-avx
 	  BUILD_COMMAND make -j4
 	  INSTALL_COMMAND make install -j4
 	)
