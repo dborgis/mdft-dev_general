@@ -192,9 +192,13 @@ contains
                 density = density / solvent(1)%n0
                 filename = 'output/rdf.xvg'
                 call output_rdf ( density , filename ) ! Get radial distribution functions
-                print*, "New output file ", trim(adjustl(filename))
-                call output_gsitesite
-                call output_gOfRandCosThetaAndPsi
+                print*, "New file ", trim(adjustl(filename))
+                
+                if( getinput%log("print_angular_rdf", defaultValue=.false.)) then
+                    call output_gsitesite ! may be very time-consuming for large supercells / solutes
+                    call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
+                end if
+
             end if
         end block
 
