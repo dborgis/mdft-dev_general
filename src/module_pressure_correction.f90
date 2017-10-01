@@ -84,7 +84,7 @@ end block
     write(*,'(A,F12.2,A)') "SFE ISc /PC         ", deltaGtotMDFT + PMV_correction," kJ/mol"
     write(*,'(A,F12.2,A)') "SFE ISc*/PC+        ", deltaGtotMDFT + PMV_correction + Volodymyr_empirical_correction," kJ/mol"
 
-    PRINT*, "ESTIMATED SOLVATION FREE ENERGY: ", deltaGtotMDFT + PMV_correction + Volodymyr_empirical_correction
+    PRINT*, "ESTIMATED SOLVATION FREE ENERGY: ", deltaGtotMDFT + PMV_correction
 
 end subroutine pressure_correction
 
