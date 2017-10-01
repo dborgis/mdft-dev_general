@@ -23,6 +23,7 @@ subroutine pressure_correction
     real(dp) :: numberdensity ! molecular number density, for instance 0.0332891 molecule per angstrom^3
     real(dp), parameter :: kJpermolperang3_to_Pa = 1.66113*10**9
     real(dp), parameter :: Pa_to_atm = 9.8692327e-06
+    real(dp), parameter :: kJpermolperang3_to_Pa_x_Pa_to_atm = 16394.078514951_dp
     real(dp) :: deltaN, PMV_correction, Volodymyr_empirical_correction
     real(dp), parameter :: zerodp = 0._dp
     real(dp) :: deltaG_emptybox
@@ -62,11 +63,11 @@ block
     call energy_and_gradient(deltaG_emptybox) ! compute the grandpotential of such system
     ff%apply_energy_corrections_due_to_charged_solute = oldvalue ! put back the old value
     Pbulk = deltaG_emptybox / (grid%lx * grid%ly * grid%lz) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
-    write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa*Pa_to_atm," atm"
+    write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa_x_Pa_to_atm," atm"
     open(81,file="output/pressure")
     write(81,*) Pbulk
     close(81)
-    PMV_correction  = -deltaN/solvent(1)%n0*Pbulk  !correction is -PV where V is excluded Volume
+    PMV_correction  = -deltaN/(solvent(1)%n0*Pbulk)  !correction is -PV where V is excluded Volume
     Volodymyr_empirical_correction =  deltaN*thermo%kbT
 end block
 
