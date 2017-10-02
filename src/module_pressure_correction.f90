@@ -13,6 +13,7 @@ subroutine pressure_correction
     use module_solvent, only: solvent
     use module_energy_and_gradient, only: ff
     use module_grid, only: grid
+    use module_fft, only: sum_byfft_3d
     implicit none
 
     !... Volodymyr's partial molar volume correction. See J. Phys. Chem. Lett. 5, 1935-1942 (2014)
@@ -38,7 +39,9 @@ subroutine pressure_correction
 
     ! number of solvent molecules inside the supercell:
     ! when the supercell has the solute inside
-    nmolecules_with_solute = sum(density)*grid%dv
+
+    nmolecules_with_solute = sum_byfft_3d(density)*grid%dv  ! replaces: nmolecules_with_solute = sum(density)*grid%dv    without the rounding error of SUM() but for the price of a FFT.
+
     deallocate( density )
     ! when the supercell is empty of any perturbation, ie pure solvent
     nmolecules_without_solute = solvent(1)%n0*product(grid%length)
