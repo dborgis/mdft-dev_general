@@ -70,7 +70,7 @@ block
     open(81,file="output/pressure")
     write(81,*) Pbulk
     close(81)
-    PMV_correction  = -deltaN/(solvent(1)%n0*Pbulk)  !correction is -PV where V is excluded Volume
+    PMV_correction  = -deltaN/solvent(1)%n0*Pbulk  !correction is -PV where V is excluded Volume
     Volodymyr_empirical_correction =  deltaN*thermo%kbT
 end block
 
