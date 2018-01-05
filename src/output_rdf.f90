@@ -37,8 +37,7 @@ SUBROUTINE output_rdf (array,filename)
     rdfmaxrange = minval(grid%length)/2._dp
     ! we dont use this anymore. Not suited to our "powder averaging" kind of grid results.
     ! CALL deduce_optimal_histogram_properties( product(grid%n_nodes), rdfmaxrange, nbins, dr )
-    dr = getinput%dp( "rdf_dr", defaultvalue=0.1_dp) !Angstrom
-    !dr = 0.1 ! Angstrom
+    dr = getinput%dp( "rdf_dr", defaultvalue=0.1_dp, assert=">0") !Angstrom
     nbins = int( rdfmaxrange/dr ) +1
 
     allocate (rdf(nbins), source=0._dp)
