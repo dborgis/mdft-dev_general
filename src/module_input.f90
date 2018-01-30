@@ -8,7 +8,7 @@ module module_input
   ! since this module should be shared between several codes,
   ! at least laboetie and mdft,
   ! it should have as few dependancies as possible.
-  use precision_kinds, only: dp
+  use kinds, only: dp
 
   implicit none
 
@@ -652,7 +652,7 @@ end function input_char
 
     ! print what has been considered as input by the parser, that is what is contained by input_line(), to output dir.
     call execute_command_line("mkdir -p output", WAIT=.TRUE.)  ! just create folder. If it already exists, nothing happens.
-    call execute_command_line ("cp dft.in output/.")
+    call execute_command_line( "cp "//inputfilename//" output/." )
     open(10, FILE='output/inputfile.out' )
     block
       integer :: i
