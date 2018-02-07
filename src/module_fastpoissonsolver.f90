@@ -22,6 +22,8 @@ contains
         use precision_kinds, only: dp
         use module_grid, only: grid
         use module_solute, only: soluteChargeDensityFromSoluteChargeCoordinates
+        use module_input, only : verbose
+        use module_cubefiles, only:write_to_cube_file
         implicit none
         type :: myerror_type
             integer :: i
@@ -69,6 +71,14 @@ contains
         end if
 
         call soluteChargeDensityFromSoluteChargeCoordinates ([nx,ny,nz], [lx,ly,lz], sourcedistrib)
+
+        IF (verbose) THEN
+            BLOCK
+                CHARACTER(50) :: filename
+                filename='output/soluteChargeDensity.cube'
+                CALL write_to_cube_file ( sourcedistrib, filename  )
+            END BLOCK
+        END IF
 
         if (all(abs(sourcedistrib)<=epsdp)) then
             electric_potential = 0._dp

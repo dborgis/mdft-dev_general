@@ -1,6 +1,6 @@
 module module_postprocessing
     use precision_kinds, only: dp
-    use read_and_write_cube 
+    use module_cubefiles 
     implicit none
     private
     public :: init_postprocessing
@@ -35,7 +35,7 @@ contains
         call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
         filename = "output/density.cube"
         call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
-        print*, "New file output/density.cube"
+        print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
 
 
         !
@@ -76,7 +76,7 @@ contains
         !
         block
         use module_input, only: getinput
-        real(dp), allocatable, dimension(:,:,:,:) :: px, py, pz
+        real(dp), allocatable, dimension(:,:,:,:) :: px, py, pz ! last dimension accoutns for the solvent id.
         logical :: write_polarization_to_disk
         write_polarization_to_disk = getinput%log( "write_polarization_to_disk", defaultValue = .false. )
         if( write_polarization_to_disk ) then
@@ -84,17 +84,17 @@ contains
             call get_final_polarization(px,py,pz)
             filename = "output/Px.cube"
             call write_to_cube_file(px,filename)
-            print*, "New file output/Px.cube"
+            print*, "New file output/Px.cube. Try$ vmd -cube output/Px.cube"
             filename = "output/Py.cube"
             call write_to_cube_file(py,filename)
-            print*, "New file output/Py.cube"
+            print*, "New file output/Py.cube. Try$ vmd -cube output/Py.cube"
             filename = "output/Pz.cube"
             call write_to_cube_file(pz,filename)
-            print*, "New file output/Pz.cube"
+            print*, "New file output/Pz.cube. Try$ vmd -cube output/Pz.cube"
             if( size(solute%site) < 50 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
                 filename = 'output/pnorm.xvg'
                 call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
-                print*, "New output file ", trim(adjustl(filename))
+                print*, "New output file ", trim(adjustl(filename)), ". Try$ xmgrace output/pnorm.xvg"
             end if
         end if
         end block
@@ -193,9 +193,13 @@ contains
                 density = density / solvent(1)%n0
                 filename = 'output/rdf.xvg'
                 call output_rdf ( density , filename ) ! Get radial distribution functions
-                print*, "New output file ", trim(adjustl(filename))
-                call output_gsitesite
-                call output_gOfRandCosTheta
+                print*, "New file ", trim(adjustl(filename))
+                
+                if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
+                    call output_gsitesite ! may be very time-consuming for large supercells / solutes
+                    call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
+                end if
+
             end if
         end block
 

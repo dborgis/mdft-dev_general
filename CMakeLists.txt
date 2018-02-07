@@ -133,10 +133,10 @@ set(mdft_SRCS
   src/module_system.f90
   src/module_time.f90
   src/module_lbfgs_nocedal_mdft.f90
-  src/output_g-r-theta.f90
+  src/output_g-r-costheta-psi.f90
   src/output_gsitesite.f90
   src/output_rdf.f90
-  src/module_read_and_write_cube.f90
+  src/module_cubefiles.f90
   src/module_wigner_d.f90
   src/module_orientation_projection_transform.f90
   src/module_lennardjones.f90
@@ -160,7 +160,7 @@ include(ExternalProject)
 if(NOT BUILD_FFTW)
 	find_package(FFTW QUIET)
     if(NOT FFTW_FOUND)
-		message(STATUS "WARNING: FFTW not found! FFTW-3.3.4 will be compile before MDFT.")
+		message(STATUS "WARNING: FFTW not found! FFTW-3.3.4 will be compiled from sources before MDFT.")
 		set(BUILD_FFTW ON)
     endif()
 endif()

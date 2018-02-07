@@ -26,7 +26,7 @@ module module_fft
     type(fftw3_type3d_r2c2r) :: fftw3
     type(fftw3_type2d_r2c2r) :: fft2d
 
-    public :: init, fft2d, fftw3
+    public :: init, fft2d, fftw3, sum_byfft_3d
 
 contains
 
@@ -125,5 +125,22 @@ contains
           error stop "You are working on neither single or double precision ... ?"
         end select
     end subroutine init_fftw3_plans
+
+    function sum_byfft_3d( arraytosum )
+        ! use module_fft
+        use iso_c_binding, only: c_double, c_float
+        implicit none
+        real(dp) :: sum_byfft_3d
+        real(dp), intent(in) :: arraytosum(:,:,:)
+        fftw3%in_forward = arraytosum
+        select case (dp)
+        case(c_double)
+        call dfftw_execute( fftw3%plan_forward, fftw3%in_forward, fftw3%out_forward)
+        case(c_float)
+        call sfftw_execute( fftw3%plan_forward, fftw3%in_forward, fftw3%out_forward)
+        end select
+        sum_byfft_3d = real(fftw3%out_forward(1,1,1), dp)
+    end function sum_byfft_3d
+
 
 end module module_fft

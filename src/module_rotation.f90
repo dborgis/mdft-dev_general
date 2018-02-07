@@ -2,7 +2,7 @@ module module_rotation
     use precision_kinds, only: dp
     implicit none
     private
-    public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu, init
+    public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu, init, omega_prime_fonction_de_omega
     real(dp), private :: epsdp=epsilon(1._dp)
     integer, parameter, private :: mmax_max = 5 ! we will never have mmax > 5
     real(dp), dimension(2:mmax_max,-mmax_max:mmax_max,-mmax_max:mmax_max), private :: a, b
@@ -249,5 +249,52 @@ contains
         end do
         R = cmplx(f,g,dp)
     end function rotation_matrix_between_complex_spherical_harmonics_lu
+
+
+    pure function omega_prime_fonction_de_omega( q, omega) result (omegaPrime)
+        use precision_kinds, only: dp
+        implicit none
+        real(dp), intent(in) :: q(3), omega(3)
+        real(dp) :: omegaPrime(3)
+        real(dp) :: theta, phi, psi
+        real(dp) :: cosTheta, sinTheta, cosPsiPrimeMinPsi, sinPsiPrimeMinPsi, psiPrimeMinPsi
+        real(dp) :: thetaPrime, phiPrime, psiPrime, cosThetaPrime, sinThetaPrime, cosPhiPrime, sinPhiPrime
+        real(dp) :: thetaQ, phiQ, qx, qy, qz, cosThetaQ, sinThetaQ, cosPhiMinPhiQ, sinPhiMinPhiQ
+        real(dp), parameter :: epsdp = epsilon(1._dp)
+
+        theta = omega(1)
+        phi = omega(2)
+        psi = omega(3)
+
+        cosTheta = cos(theta)
+        sinTheta = sin(theta)
+
+        thetaQ = thetaOfQ( q(1), q(2), q(3) )
+        cosThetaQ = cos(thetaQ)
+        sinThetaQ = sin(thetaQ)
+        phiQ = phiOfQ( q(1), q(2) )
+        cosPhiMinPhiQ = cos(phi-phiQ)
+        sinPhiMinPhiQ = sin(phi-phiQ)
+
+        cosThetaPrime = cosThetaQ * cosTheta + sinThetaQ * sinTheta * cosPhiMinPhiQ
+        sinThetaPrime = sqrt( 1._dp - costhetaPrime**2 )
+        thetaPrime = acos(cosThetaPrime)
+
+        cosPhiPrime = (cosThetaQ*sinTheta*cosPhiMinPhiQ-sinThetaQ*cosTheta) / sinThetaPrime
+        sinPhiPrime = sinTheta * sinPhiMinPhiQ / sinThetaPrime
+        phiPrime = acos(cosPhiPrime)
+        if(sinPhiPrime < 0) phiPrime = -phiPrime
+
+        cosPsiPrimeMinPsi = (-sinThetaQ*cosTheta*cosPhiMinPhiQ+cosThetaQ*sinTheta)/sinThetaPrime
+        sinPsiPrimeMinPsi = -sinThetaQ*sinPhiMinPhiQ/sinThetaPrime
+        psiPrimeMinPsi = acos(cosPsiPrimeMinPsi)
+        if(sinPsiPrimeMinPsi < 0) psiPrimeMinPsi = -psiPrimeMinPsi
+        psiPrime = psiPrimeMinPsi + psi
+
+        omegaPrime(1) = thetaPrime
+        omegaPrime(2) = phiPrime
+        omegaPrime(3) = psiPrime
+
+    end function omega_prime_fonction_de_omega
 
 end module module_rotation
