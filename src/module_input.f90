@@ -8,7 +8,7 @@ module module_input
   ! since this module should be shared between several codes,
   ! at least laboetie and mdft,
   ! it should have as few dependancies as possible.
-  use kinds, only: dp
+  use precision_kinds, only: dp
 
   implicit none
 
