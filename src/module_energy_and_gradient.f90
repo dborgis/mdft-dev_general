@@ -140,14 +140,14 @@ subroutine energy_and_gradient (f, df)
     !
     if (solvent(s)%do%exc_cproj) then
         if(present(df)) then
-          call cpu_time(t(5))
+          call cpu_time(t(4))
           call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.false.)
-          call cpu_time(t(6))
+          call cpu_time(t(5))
         !   print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
         else
-          call cpu_time(t(5))
+          call cpu_time(t(4))
           call energy_cproj_mrso( ff%exc_cproj, print_timers=.false.)
-          call cpu_time(t(6))
+          call cpu_time(t(5))
         end if
         f = f + ff%exc_cproj
     end if
@@ -228,7 +228,7 @@ subroutine energy_and_gradient (f, df)
             write(*,'(A5,12A14)') "#eval","Ftot","Fext","Fid","Fexc","Fb","Cpbc","Cpsch","relF","pgtol","Ttot","Text+id","Texc"
             printheader = .false.
         end if
-        Texc = t(6)-t(5)
+        Texc = t(5)-t(4)
         Textid = t(2)-t(1)
         Ttot = Texc+Textid
         if (present(df)) then
