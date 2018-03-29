@@ -53,6 +53,7 @@ module module_solvent
         type(correlationfunction_type) :: cd
         complex(dp), allocatable :: ck_angular(:,:,:,:,:,:) ! TODO REMOVE THIS IS FOR TESTING PURPOSE ONLY!
         real(dp) :: relativePermittivity ! relative permittivity == static dielectric constant = dielectric constant = coonstante diélectrique
+        integer, parameter :: npluc(0:5)
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &
@@ -213,6 +214,7 @@ contains
             solvent(1)%n0 = 0.0332891
             solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
             solvent(1)%relativePermittivity = 71._dp
+            solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
         case ("tip3p")
             ! cf 
             solvent(1)%nsite = 3
@@ -236,6 +238,7 @@ contains
             ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
             solvent(1)%nsite = 3 ! ---Me---C--N--->z
             solvent(1)%molrotsymorder = 1000
+            print*,  solvent(1)%molrotsymorder
             allocate( solvent(1)%site(3) )
             solvent(1)%site(1:3)%q = [0.269, 0.129, -0.398]
             solvent(1)%site(1:3)%sig = [3.6, 3.4, 3.3]

@@ -18,8 +18,9 @@ contains
         integer, intent(out) :: nq
         real(dp), intent(out) :: dq
         integer, intent(out), allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
-        integer, parameter :: npluc(0:5) = [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
+        integer, parameter :: npluc(0:5) != [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
 
+        npluc=solvent(1)%npluc
 
         write (endOfFilename, "(I1,A3)") mmax,"_ml"
         filename = "data/dcf/" // trim(solvent(1)%name) // "/" // trim(solvent(1)%name) // "-ck_nonzero_nmax" // trim(endOfFilename)
@@ -28,6 +29,7 @@ contains
         if( allocated(cmnmunukhi)) error stop "c(m,n,mu,nu,khi) is already allocated in module_read_c_luc"
         ! Number of projections for mmax = 0 to 5
         np = npluc(mmax)
+        print*, 'np when read' , np
         ! Inquire that the file exists
         block
             logical :: exist
@@ -95,7 +97,7 @@ contains
         end block
         ! Read q, cmnmunukhi(q)
         block
-            integer, parameter  :: nqinfile = 1024
+            integer, parameter  :: nqinfile = 500
             real(dp) :: q
             integer :: iq
             dq = 0.0613592315
