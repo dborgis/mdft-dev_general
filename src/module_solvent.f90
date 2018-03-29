@@ -53,7 +53,7 @@ module module_solvent
         type(correlationfunction_type) :: cd
         complex(dp), allocatable :: ck_angular(:,:,:,:,:,:) ! TODO REMOVE THIS IS FOR TESTING PURPOSE ONLY!
         real(dp) :: relativePermittivity ! relative permittivity == static dielectric constant = dielectric constant = coonstante diélectrique
-        integer, parameter :: npluc(0:5)
+        integer:: npluc(0:5)
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &

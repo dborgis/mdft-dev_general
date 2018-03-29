@@ -18,7 +18,7 @@ contains
         integer, intent(out) :: nq
         real(dp), intent(out) :: dq
         integer, intent(out), allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
-        integer, parameter :: npluc(0:5) != [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
+        integer :: npluc(0:5) != [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
 
         npluc=solvent(1)%npluc
 
@@ -97,7 +97,7 @@ contains
         end block
         ! Read q, cmnmunukhi(q)
         block
-            integer, parameter  :: nqinfile = 500
+            integer, parameter  :: nqinfile = 1024
             real(dp) :: q
             integer :: iq
             dq = 0.0613592315
