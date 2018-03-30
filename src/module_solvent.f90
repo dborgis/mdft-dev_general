@@ -55,6 +55,7 @@ module module_solvent
         real(dp) :: relativePermittivity ! relative permittivity == static dielectric constant = dielectric constant = coonstante diélectrique
         integer:: npluc(0:6)
         integer:: n_line_cfile
+        real(dp) :: dq
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &
@@ -217,6 +218,7 @@ contains
             solvent(1)%relativePermittivity = 71._dp
             solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
             solvent(1)%n_line_cfile=1024
+            solvent(1)%dq=0.061359231500000_dp
         case ("tip3p")
             ! cf 
             solvent(1)%nsite = 3
@@ -234,6 +236,7 @@ contains
             solvent(1)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
             solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
             solvent(1)%n_line_cfile=1024
+            solvent(1)%dq=0.061359231500000_dp
             ! Je connais ce site. C'est bizarre, la ref.3 pour epsilon(tip3p) n'a pas fait tip3p!
             ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
             ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
@@ -256,10 +259,10 @@ contains
             solvent(1)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
             solvent(1)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
             solvent(1)%n_line_cfile=500
+            solvent(1)%dq=0.061359231500000_dp
         case default
             error stop "Solvent unkown"
         end select
-
 
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
