@@ -18,7 +18,7 @@ contains
         integer, intent(out) :: nq
         real(dp), intent(out) :: dq
         integer, intent(out), allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
-        integer :: npluc(0:5) != [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
+        integer :: npluc(0:6) != [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
 
         npluc=solvent(1)%npluc
 
@@ -41,13 +41,13 @@ contains
                 ERROR STOP
             end if
         end block
-        ! Verify it contains 1024 values of q
+        ! Verify it contains the expected values of q
         block
             integer :: nline
             nline = n_linesInFile(filename) -17 ! header contains 17 lines
-            if( nline /= 1024) then
+            if( nline /= solvent(1)%n_line_cfile) then
                 print*, "WARNING:!!!!! len of c file not verified here !!!!!!      module_read_c_luc.f90 at line 44"
-                !error stop "In module_read_c_luc/read_c_luc, filename does not contain 1024 values of q"
+                !error stop "In module_read_c_luc/read_c_luc, filename does not contain the expected number of  values of q"
             end if
         end block
         ! Open the file. Its unit will be 88.
@@ -97,9 +97,10 @@ contains
         end block
         ! Read q, cmnmunukhi(q)
         block
-            integer, parameter  :: nqinfile = 1024
+            integer  :: nqinfile 
             real(dp) :: q
             integer :: iq
+            nqinfile = solvent(1)%n_line_cfile
             dq = 0.0613592315
             nq = int(qmaxwanted/dq +0.5)+2
             if( nq>nqinfile) error stop "You want more values of q that are available in module_read_c_luc"
