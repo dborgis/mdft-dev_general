@@ -754,7 +754,7 @@ contains
         ! Note that gamma==df
         !
 
-            prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
+            prefactor = -kT*2.0_dp*fourpisq/mrso  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
             if(present(df)) then
                 ff=0._dp
                 !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)

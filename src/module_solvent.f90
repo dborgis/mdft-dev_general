@@ -245,7 +245,7 @@ contains
         case ("acetonitrile")
             ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
             solvent(1)%nsite = 3 ! ---Me---C--N--->z
-            solvent(1)%molrotsymorder = 10
+            solvent(1)%molrotsymorder = 1000
             allocate( solvent(1)%site(3) )
             solvent(1)%site(1:3)%q = [0.269, 0.129, -0.398]
             solvent(1)%site(1:3)%sig = [3.6, 3.4, 3.3]
