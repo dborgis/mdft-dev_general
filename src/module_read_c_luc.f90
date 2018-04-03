@@ -29,7 +29,6 @@ contains
         if( allocated(cmnmunukhi)) error stop "c(m,n,mu,nu,khi) is already allocated in module_read_c_luc"
         ! Number of projections for mmax = 0 to 5
         np = npluc(mmax)
-        print*, 'np when read' , np
         ! Inquire that the file exists
         block
             logical :: exist

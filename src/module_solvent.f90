@@ -96,7 +96,6 @@ contains
             !
             if(.not.getinput%log('minimize_wrt_vext_only',defaultvalue=.false.)) then
 
-                if( grid%mmax>5 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
                 solvent(s)%do%exc_fmt = getinput%log ('hard_sphere_fluid', defaultvalue=.false.)
                 solvent(s)%do%exc_wca = getinput%log ('wca', defaultvalue=.false.)
                 solvent(s)%do%exc_3b  = getinput%log ('threebody', defaultvalue=.false. )
@@ -201,7 +200,7 @@ contains
         ! Get the information about the solvent
         !
         solvent(1)%name = getinput%char('solvent', defaultvalue="spce") ! This wont be valid anymore when several solvents will be used.
-        print*, "solvent is " ,  solvent(1)%name
+        print*, "The solvent beeing used  is " ,  solvent(1)%name
         select case (solvent(1)%name)
         case ("spce")
             solvent(1)%nsite = 3
@@ -220,6 +219,7 @@ contains
             solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
             solvent(1)%n_line_cfile=1024
             solvent(1)%dq=0.061359231500000_dp
+            if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
         case ("tip3p")
             ! cf 
             solvent(1)%nsite = 3
@@ -238,6 +238,7 @@ contains
             solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
             solvent(1)%n_line_cfile=1024
             solvent(1)%dq=0.061359231500000_dp
+            if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent tip3p only avail with mmax between 0 and 5"
             ! Je connais ce site. C'est bizarre, la ref.3 pour epsilon(tip3p) n'a pas fait tip3p!
             ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
             ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
@@ -262,10 +263,11 @@ contains
             solvent(1)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
             solvent(1)%n_line_cfile=500
             solvent(1)%dq=0.061359231500000_dp
+            if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
         case default
-            error stop "Solvent unkown"
+             print*,  "the solvent you want to use: ", trim(solvent(1)%name), " is not available, you can only use spce, tip3p or acetonitrile for now, sorry :("
+             stop
         end select
-        print*, "densities", solvent(1)%n0,solvent(1)%rho0
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
         do concurrent (s=1:size(solvent))
@@ -307,12 +309,11 @@ contains
         call functional_decision_tree
 
         solvent%is_initiated = .true.
-        print*, "in read solvent mrso is", grid%molrotsymorder,solvent(1)%molrotsymorder
         if (any(solvent%molrotsymorder/=grid%molrotsymorder)) then
           print*, "########################################################"
           print*, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING"
           print*, "the grid molrotsymorder is", grid%molrotsymorder, "which differs from at least one solvent molrotsymorder that are"
-          print*, solvent(:)%molrotsymorder, "be very carrfull"
+          print*, solvent(:)%molrotsymorder, "be very carefull I did not tested what you are trying to do" 
           print*, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING"
           print*, "########################################################"
         end if
