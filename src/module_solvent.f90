@@ -201,6 +201,7 @@ contains
         ! Get the information about the solvent
         !
         solvent(1)%name = getinput%char('solvent', defaultvalue="spce") ! This wont be valid anymore when several solvents will be used.
+        print*, "solvent is " ,  solvent(1)%name
         select case (solvent(1)%name)
         case ("spce")
             solvent(1)%nsite = 3
@@ -245,7 +246,6 @@ contains
             ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
             solvent(1)%nsite = 3 ! ---Me---C--N--->z
             solvent(1)%molrotsymorder = 1000
-            print*,  solvent(1)%molrotsymorder
             allocate( solvent(1)%site(3) )
             solvent(1)%site(1:3)%q = [0.269, 0.129, -0.398]
             solvent(1)%site(1:3)%sig = [3.6, 3.4, 3.3]
@@ -305,6 +305,15 @@ contains
         call functional_decision_tree
 
         solvent%is_initiated = .true.
+        print*, "in read solvent mrso is", grid%molrotsymorder,solvent(1)%molrotsymorder
+        if (any(solvent%molrotsymorder/=grid%molrotsymorder)) then
+          print*, "########################################################"
+          print*, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING"
+          print*, "the grid molrotsymorder is", grid%molrotsymorder, "which differs from at least one solvent molrotsymorder that are"
+          print*, solvent(:)%molrotsymorder, "be very carrfull"
+          print*, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING"
+          print*, "########################################################"
+        end if
     end subroutine read_solvent
 
     !This routine compute : -The solvent molecular charge density, which can be used into Vcoul_from_solvent_charge_density.f90 to

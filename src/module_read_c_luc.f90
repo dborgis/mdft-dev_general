@@ -111,7 +111,7 @@ contains
                 if (iq==2) actualdq=q-actualdq
                 if( q>(qmaxwanted+2._dp*dq) ) error stop "q>qmaxwanted in module_read_c_luc" ! One needs a little bit of tolerance: We must have qmaxwanted within our bins.
             end do
-            if (actualdq/=dq) stop("the dq in you cfilesdoes correspond to the one assumed by the code it might be due to single precision so please check")
+            if (actualdq/=dq) stop "the dq in you cfilesdoes correspond to the one assumed by the code it might be due to single precision so please check" 
             block
                 open(89,file="output/arraysinmemory_module_read_c_luc")
                 write(89,*)"From module_read_c_luc:"
