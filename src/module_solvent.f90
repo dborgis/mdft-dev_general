@@ -245,7 +245,7 @@ contains
         case ("acetonitrile")
             ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
             solvent(1)%nsite = 3 ! ---Me---C--N--->z
-            solvent(1)%molrotsymorder = 1000
+            solvent(1)%molrotsymorder = 10
             allocate( solvent(1)%site(3) )
             solvent(1)%site(1:3)%q = [0.269, 0.129, -0.398]
             solvent(1)%site(1:3)%sig = [3.6, 3.4, 3.3]
@@ -254,8 +254,10 @@ contains
             solvent(1)%site(2)%r = [0., 0., 0.]
             solvent(1)%site(3)%r = [0., 0., 1.17]
             solvent(1)%site(1:3)%Z = [9, 6, 7] ! CH3
-            solvent(1)%n0 = 0.0289
-            solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            !solvent(1)%n0 = 0.0289
+            solvent(1)%n0 = 0.01154
+            solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
             solvent(1)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
             solvent(1)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
             solvent(1)%n_line_cfile=500
@@ -263,7 +265,7 @@ contains
         case default
             error stop "Solvent unkown"
         end select
-
+        print*, "densities", solvent(1)%n0,solvent(1)%rho0
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
         do concurrent (s=1:size(solvent))
