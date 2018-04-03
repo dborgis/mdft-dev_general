@@ -594,18 +594,6 @@ contains
 
                             do nu2=-n/mrso ,n/mrso 
                               ia=ia+1
-                              !case(0, 1) ! nu2 == 0
-                              !    gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
-                              !    gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *conjg(deltarho_p_q (p3%p(n,khi,0)))
-                              !case(2, 3) ! nu2 = -1,0,1
-                              !    gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,1))  &
-                              !                                      + ceff(ia+1) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                              !                                      + ceff(ia+2) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
-                              !    gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,1))  &
-                              !                                      + ceff(ia+1) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                              !                                      + ceff(ia+2) *conjg(deltarho_p_q (p3%p(n,khi,1)))
-                              !    ia = ia +2
-                              !case(4, 5) ! nu2 = -2,-1,0,1,2
                                 if (nu2<0) then
                                   gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,abs(nu2)))  
                                   gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,abs(nu2)))  
