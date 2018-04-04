@@ -46,9 +46,10 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # set where fortran module files will be located
 #
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
-get_filename_component (CC_COMPILER_NAME ${CMAKE_CC_COMPILER} NAME)
+get_filename_component (CC_COMPILER_NAME ${CMAKE_C_COMPILER} NAME)
 #SET (CMAKE_Fortran_COMPILER  gfortran)
 message(STATUS "Using compiler ${Fortran_COMPILER_NAME}")
+message(STATUS "Using compiler ${CC_COMPILER_NAME}")
 
 # Have the .mod files placed in the lib folder
 SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
