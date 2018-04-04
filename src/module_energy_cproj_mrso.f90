@@ -591,7 +591,6 @@ contains
                             !                                      + ceff(ia+4) *conjg(deltarho_p_q (p3%p(n,khi,2)))
                             !    ia = ia +4
                             !end select
-
                             do nu2=-n/mrso ,n/mrso 
                               ia=ia+1
                                 if (nu2<0) then
@@ -602,35 +601,6 @@ contains
                                   gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia) *conjg(deltarho_p_q (p3%p(n,khi,nu2))) 
                                 end if
                             end do
-
-                            !         do nu2= -n/mrso, n/mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
-                            !        
-                            !             ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
-                            !             ip = p3%p(n,khi,abs(nu2))
-                            !        
-                            !             if (nu2<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                            !                 gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                            !                 gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-
-                            !         do nu2= -n/mrso, n/mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
-                            !        
-                            !             ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
-                            !             ip = p3%p(n,khi,abs(nu2))
-                            !        
-                            !             if (nu2<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
-                            !                 gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                            !                 gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                            !             else
-                            !                 gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
-                            !                 gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
-                            !             end if
-                            !             ! < USELESS SINCE DELTARHO_P_Q and DELTARHO_P_MQ are prepared before MOZ
-                            !        
-                            !             ! gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
-                            !             ! gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
-                            !        
-                            !         end do !nu2
-
                         end do
                     end do
 
