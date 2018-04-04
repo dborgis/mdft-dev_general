@@ -5,7 +5,7 @@ module module_read_c_luc
 contains
     subroutine read_c_luc( cmnmunukhi, mmax, mrso, qmaxwanted, np, nq, dq, m, n, mu, nu, khi, p )
         use precision_kinds, only: dp
-        use module_input, only: n_linesInFile
+        use module_input, only: n_linesInFile, deltaAbscissa
         use module_solvent, only: solvent
         implicit none
         complex(dp), allocatable, intent(out) :: cmnmunukhi(:,:)
@@ -18,17 +18,15 @@ contains
         integer, intent(out) :: nq
         real(dp), intent(out) :: dq
         integer, intent(out), allocatable :: m(:), n(:), mu(:), nu(:), khi(:), p(:,:,:,:,:)
-        integer :: npluc(0:6) != [1,6,75,252,877,2002] ! $ grep alpha input/dcf/water/SPCE/ck_nonzero_nmax5_ml
 
-        npluc=solvent(1)%npluc
+        np=solvent(1)%npluc(mmax)
 
         write (endOfFilename, "(I1,A3)") mmax,"_ml"
         filename = "data/dcf/" // trim(solvent(1)%name) // "/" // trim(solvent(1)%name) // "-ck_nonzero_nmax" // trim(endOfFilename)
-		
+        dq=deltaAbscissa(filename,17) 
         ! c(mnmunukhi) should not be already allocated
         if( allocated(cmnmunukhi)) error stop "c(m,n,mu,nu,khi) is already allocated in module_read_c_luc"
         ! Number of projections for mmax = 0 to 5
-        np = npluc(mmax)
         ! Inquire that the file exists
         block
             logical :: exist
@@ -100,7 +98,6 @@ contains
             real(dp) :: q, actualdq
             integer :: iq
             nqinfile = solvent(1)%n_line_cfile
-            dq = solvent(1)%dq
             nq = int(qmaxwanted/dq +0.5)+2
             if( nq>nqinfile) error stop "You want more values of q that are available in module_read_c_luc"
             allocate( cmnmunukhi(np,nq) ,source=(0._dp,0._dp)  )
@@ -110,7 +107,6 @@ contains
                 if (iq==2) actualdq=q-actualdq
                 if( q>(qmaxwanted+2._dp*dq) ) error stop "q>qmaxwanted in module_read_c_luc" ! One needs a little bit of tolerance: We must have qmaxwanted within our bins.
             end do
-            if (actualdq/=dq) stop "the dq in you cfilesdoes correspond to the one assumed by the code it might be due to single precision so please check" 
             block
                 open(89,file="output/arraysinmemory_module_read_c_luc")
                 write(89,*)"From module_read_c_luc:"

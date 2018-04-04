@@ -55,7 +55,6 @@ module module_solvent
         real(dp) :: relativePermittivity ! relative permittivity == static dielectric constant = dielectric constant = coonstante diélectrique
         integer:: npluc(0:6)
         integer:: n_line_cfile
-        real(dp) :: dq
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &
@@ -218,7 +217,6 @@ contains
             solvent(1)%relativePermittivity = 71._dp
             solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
             solvent(1)%n_line_cfile=1024
-            solvent(1)%dq=0.061359231500000_dp
             if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
         case ("tip3p")
             ! cf 
@@ -237,7 +235,6 @@ contains
             solvent(1)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
             solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
             solvent(1)%n_line_cfile=1024
-            solvent(1)%dq=0.061359231500000_dp
             if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent tip3p only avail with mmax between 0 and 5"
             ! Je connais ce site. C'est bizarre, la ref.3 pour epsilon(tip3p) n'a pas fait tip3p!
             ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
@@ -262,7 +259,6 @@ contains
             solvent(1)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
             solvent(1)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
             solvent(1)%n_line_cfile=500
-            solvent(1)%dq=0.061359231500000_dp
             if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
         case default
              print*,  "the solvent you want to use: ", trim(solvent(1)%name), " is not available, you can only use spce, tip3p or acetonitrile for now, sorry :("
