@@ -301,8 +301,8 @@ CONTAINS
         ALLOCATE ( chi_l (n_k), SOURCE=0._dp)
         ALLOCATE ( chi_t (n_k), SOURCE=0._dp)
 
-        delta_k_chi_l = deltaAbscissa(file_l)
-        delta_k_chi_t = deltaAbscissa(file_t)
+        delta_k_chi_l = deltaAbscissa(file_l,0)
+        delta_k_chi_t = deltaAbscissa(file_t,0)
         IF ( (delta_k_chi_t-delta_k_chi_l)/delta_k_chi_t >= 1.E-10 ) THEN
             WRITE(*,*)"chi_t and chi_l should have same delta k, i.e., same step in abscissa"
             STOP
@@ -379,9 +379,9 @@ CONTAINS
         ALLOCATE ( Cnc (nb_k_in_c), SOURCE=0._dp)
         ALLOCATE ( Ccc (nb_k_in_c), SOURCE=0._dp)
 
-        delta_k_Cnn = deltaAbscissa(file_nn)
-        delta_k_Cnc = deltaAbscissa(file_nc)
-        delta_k_Ccc = deltaAbscissa(file_cc)
+        delta_k_Cnn = deltaAbscissa(file_nn,0)
+        delta_k_Cnc = deltaAbscissa(file_nc,0)
+        delta_k_Ccc = deltaAbscissa(file_cc,0)
 
         IF ( (delta_k_Cnn-delta_k_Cnc)/delta_k_Cnn >= 1.E-10 ) THEN
             WRITE(*,*)"Cnn and Cnc should have same delta k, i.e., same step in abscissa"

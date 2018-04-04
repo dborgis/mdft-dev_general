@@ -532,28 +532,33 @@ end function input_char
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION deltaAbscissa (filename)
-    REAL(dp) :: abscissa, previousAbscissa, ordonates, deltaAbscissa
+  FUNCTION deltaAbscissa (filename,linetoskip) result(dAbscissa)
+    REAL(dp) :: abscissa, previousAbscissa, ordonates
+    REAL(dp):: dAbscissa
     CHARACTER(*), INTENT(IN) :: filename
     INTEGER :: i, ios, n_lines
+    integer, intent(in) :: linetoskip
+    CHARACTER :: useless_stuff
     OPEN (10, FILE=filename, IOSTAT=ios)
     IF (ios /= 0) THEN
       WRITE(*,*)"Cant open file ",filename," in FUNCTION deltaAbscissa"
     END IF
-
+    Do i=1,linetoskip
+      READ(10,*)
+    End do
     DO i= 1, 2
-      READ(10,*,IOSTAT=ios) previousAbscissa, ordonates
+      READ(10,*,IOSTAT=ios) previousAbscissa, useless_stuff
       IF (ios/=0) then
         PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
         STOP
       END IF
-      READ(10,*, IOSTAT=ios) abscissa, ordonates
+      READ(10,*, IOSTAT=ios) abscissa, useless_stuff
       IF (ios/=0) then
         PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
         STOP
       END IF
     END DO
-    deltaAbscissa = abscissa-previousAbscissa
+    dAbscissa = abscissa-previousAbscissa
     CLOSE(10)
     n_lines = n_linesInFile(filename)
     OPEN (10, FILE=filename, IOSTAT=ios)
@@ -561,22 +566,25 @@ end function input_char
       WRITE(*,*)"Cant open file ",filename," in FUNCTION deltaAbscissa"
     END IF
 
-    READ(10,*,IOSTAT=ios) abscissa, ordonates
+    Do i=1,linetoskip
+      READ(10,*)
+    End do
+    READ(10,*,IOSTAT=ios) abscissa, useless_stuff
     IF (ios/=0) then
       PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
       STOP
     END IF
     DO i=1, n_lines-1
       previousAbscissa = abscissa
-      READ(10,*,IOSTAT=ios) abscissa, ordonates
+      READ(10,*,IOSTAT=ios) abscissa, useless_stuff
       IF (ios>0) then
         PRINT*, 'Something went wrong while reading ', TRIM(ADJUSTL(filename)), ' in module_input>deltaAbscissa'
         STOP
       ELSE IF (ios<0) THEN
         EXIT
       ELSE
-        IF ((abscissa-previousAbscissa-deltaAbscissa)/deltaAbscissa > 1E-5) THEN
-          PRINT*, abscissa, previousAbscissa,abscissa-previousAbscissa ,deltaAbscissa
+        IF ((abscissa-previousAbscissa-dAbscissa)/dAbscissa > 1E-5) THEN
+          PRINT*, abscissa, previousAbscissa,abscissa-previousAbscissa ,dAbscissa
           PRINT*, 'STOP. Non uniform absissa in ', filename
           STOP
         END IF
