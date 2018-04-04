@@ -131,12 +131,12 @@ contains
                     grid%theta(io) = grid%thetaofntheta(itheta)
                     grid%phi(io) = grid%phiofnphi(iphi)
                     grid%psi(io) = grid%psiofnpsi(ipsi)
-                    write(45,*) io, grid%theta(io), grid%phi(io), grid%psi(io)
                     grid%io(itheta,iphi,ipsi) = io
                     grid%wtheta(io) = grid%wthetaofntheta(itheta)
                     grid%wphi(io) = grid%wphiofnphi(iphi)
                     grid%wpsi(io) = grid%wpsiofnpsi(ipsi)
                     grid%w(io) = grid%wtheta(io) * grid%wphi(io) * grid%wpsi(io) *quadrature_norm
+                    write(45,*) io, grid%theta(io), grid%phi(io), grid%psi(io),grid%w(io)
                 end do
             end do
         end do
