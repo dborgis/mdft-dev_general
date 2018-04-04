@@ -53,6 +53,8 @@ module module_solvent
         type(correlationfunction_type) :: cd
         complex(dp), allocatable :: ck_angular(:,:,:,:,:,:) ! TODO REMOVE THIS IS FOR TESTING PURPOSE ONLY!
         real(dp) :: relativePermittivity ! relative permittivity == static dielectric constant = dielectric constant = coonstante diélectrique
+        integer:: npluc(0:6)
+        integer:: n_line_cfile
     contains
         procedure, nopass :: init => read_solvent
         procedure, nopass :: init_chargedensity_molecularpolarization => &
@@ -93,7 +95,6 @@ contains
             !
             if(.not.getinput%log('minimize_wrt_vext_only',defaultvalue=.false.)) then
 
-                if( grid%mmax>5 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
                 solvent(s)%do%exc_fmt = getinput%log ('hard_sphere_fluid', defaultvalue=.false.)
                 solvent(s)%do%exc_wca = getinput%log ('wca', defaultvalue=.false.)
                 solvent(s)%do%exc_3b  = getinput%log ('threebody', defaultvalue=.false. )
@@ -198,6 +199,7 @@ contains
         ! Get the information about the solvent
         !
         solvent(1)%name = getinput%char('solvent', defaultvalue="spce") ! This wont be valid anymore when several solvents will be used.
+        print*, "The solvent beeing used  is " ,  solvent(1)%name
         select case (solvent(1)%name)
         case ("spce")
             solvent(1)%nsite = 3
@@ -213,6 +215,9 @@ contains
             solvent(1)%n0 = 0.0332891
             solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
             solvent(1)%relativePermittivity = 71._dp
+            solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
+            solvent(1)%n_line_cfile=1024
+            if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
         case ("tip3p")
             ! cf 
             solvent(1)%nsite = 3
@@ -228,6 +233,9 @@ contains
             solvent(1)%n0 = 0.03349459
             solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
             solvent(1)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
+            solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
+            solvent(1)%n_line_cfile=1024
+            if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent tip3p only avail with mmax between 0 and 5"
             ! Je connais ce site. C'est bizarre, la ref.3 pour epsilon(tip3p) n'a pas fait tip3p!
             ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
             ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
@@ -244,14 +252,18 @@ contains
             solvent(1)%site(2)%r = [0., 0., 0.]
             solvent(1)%site(3)%r = [0., 0., 1.17]
             solvent(1)%site(1:3)%Z = [9, 6, 7] ! CH3
-            solvent(1)%n0 = 0.0289
-            solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            !solvent(1)%n0 = 0.0289
+            solvent(1)%n0 = 0.01154
+            solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+            !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
             solvent(1)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
+            solvent(1)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
+            solvent(1)%n_line_cfile=500
+            if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
         case default
-            error stop "Solvent unkown"
+             print*,  "the solvent you want to use: ", trim(solvent(1)%name), " is not available, you can only use spce, tip3p or acetonitrile for now, sorry :("
+             stop
         end select
-
-
         !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
         !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
         do concurrent (s=1:size(solvent))
@@ -293,6 +305,14 @@ contains
         call functional_decision_tree
 
         solvent%is_initiated = .true.
+        if (any(solvent%molrotsymorder/=grid%molrotsymorder)) then
+          print*, "########################################################"
+          print*, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING"
+          print*, "the grid molrotsymorder is", grid%molrotsymorder, "which differs from at least one solvent molrotsymorder that are"
+          print*, solvent(:)%molrotsymorder, "be very carefull I did not tested what you are trying to do" 
+          print*, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING"
+          print*, "########################################################"
+        end if
     end subroutine read_solvent
 
     !This routine compute : -The solvent molecular charge density, which can be used into Vcoul_from_solvent_charge_density.f90 to

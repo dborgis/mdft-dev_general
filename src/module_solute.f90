@@ -1,7 +1,6 @@
 module module_solute
     use precision_kinds, only: dp
     use system, only: site_type
-    !use  cubefiles
     implicit none
     type :: solute_type
         character(130) :: name
