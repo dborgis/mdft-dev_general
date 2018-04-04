@@ -3,7 +3,7 @@
 module precision_kinds
   use iso_c_binding, only: C_FLOAT, C_DOUBLE
   implicit none
-  integer, parameter :: dp = C_DOUBLE!C_FLOAT    ! usual double precision float
+  integer, parameter :: dp = C_FLOAT    ! usual double precision float
   integer, parameter :: sp = C_FLOAT       ! usual simple precision float
 
   integer, parameter :: i2b = KIND(1)      ! usual integer
