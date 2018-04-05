@@ -190,9 +190,11 @@ contains
         if (s==1) then
           solvent(1)%name = getinput%char('solvent', defaultvalue="spce")
         else
-          dummychar= getinput%char_multiple('solvent',s, defaultvalue="spce  spce")
+          dummychar= getinput%char_multiple('solvent',s, defaultvalue="spce spce spce spce spce spce")
           read(dummychar,*) solvent(:)%name
-          solvent(1)%name=Trim(adjustl(solvent(1)%name))
+          do i=1,s
+            solvent(i)%name=Trim(adjustl(solvent(i)%name))
+          end do
         end if
         !select case (s)
         !case (1)
@@ -203,101 +205,101 @@ contains
         !
         !solvent(1)%name = getinput%char('solvent', defaultvalue="spce") ! This wont be valid anymore when several solvents will be used.
         Do s=1,size(solvent)
-        print*, "The solvent beeing used  is " , s, solvent(s)%name
-        select case (solvent(s)%name)
-        case ("spce")
-            print*, "case spce"
-            solvent(1)%nsite = 3
-            solvent(1)%molrotsymorder = 2
-            allocate( solvent(1)%site(3) )
-            solvent(1)%site(1:3)%q = [-0.8476, 0.4238, 0.4238]
-            solvent(1)%site(1:3)%sig = [3.166, 0., 0.]
-            solvent(1)%site(1:3)%eps = [0.65, 0., 0.]
-            solvent(1)%site(1)%r = [0., 0., 0.]
-            solvent(1)%site(2)%r = [0.816495, 0.0, 0.5773525]
-            solvent(1)%site(3)%r = [-0.816495, 0.0, 0.5773525]
-            solvent(1)%site(1:3)%Z = [8, 1, 1]
-            solvent(1)%n0 = 0.0332891
-            solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
-            solvent(1)%relativePermittivity = 71._dp
-            solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
-            solvent(1)%n_line_cfile=1024
-            if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
-        case ("tip3p")
-            ! cf 
-            print*, "case tip3p"
-            solvent(1)%nsite = 3
-            solvent(1)%molrotsymorder = 2
-            allocate( solvent(1)%site(3) )
-            solvent(1)%site(1:3)%q = [-0.834, 0.417, 0.417]
-            solvent(1)%site(1:3)%sig = [3.15061, 0., 0.]
-            solvent(1)%site(1:3)%eps = [0.636386, 0., 0.]
-            solvent(1)%site(1)%r = [0., 0., 0.]
-            solvent(1)%site(2)%r = [0.756950, 0.0, 0.585882]
-            solvent(1)%site(3)%r = [-0.756950, 0.0, 0.585882] 
-            solvent(1)%site(1:3)%Z = [8, 1, 1]
-            solvent(1)%n0 = 0.03349459
-            solvent(1)%rho0 = solvent(1)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
-            solvent(1)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
-            solvent(1)%npluc(0:5)=[1,6,75,252,877,2002]
-            solvent(1)%n_line_cfile=1024
-            if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent tip3p only avail with mmax between 0 and 5"
-            ! Je connais ce site. C'est bizarre, la ref.3 pour epsilon(tip3p) n'a pas fait tip3p!
-            ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
-            ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
-            ! Luc
-        case ("acetonitrile")
-            ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
-            solvent(1)%nsite = 3 ! ---Me---C--N--->z
-            solvent(1)%molrotsymorder = 1000
-            allocate( solvent(1)%site(3) )
-            solvent(1)%site(1:3)%q = [0.269, 0.129, -0.398]
-            solvent(1)%site(1:3)%sig = [3.6, 3.4, 3.3]
-            solvent(1)%site(1:3)%eps = [1.59, 0.416, 0.416]
-            solvent(1)%site(1)%r = [0., 0., -1.46]
-            solvent(1)%site(2)%r = [0., 0., 0.]
-            solvent(1)%site(3)%r = [0., 0., 1.17]
-            solvent(1)%site(1:3)%Z = [9, 6, 7] ! CH3
-            !solvent(1)%n0 = 0.0289
-            solvent(1)%n0 = 0.01154
-            solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
-            !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
-            solvent(1)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
-            solvent(1)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
-            solvent(1)%n_line_cfile=500
-            if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
-        case default
-             print*,  "the solvent you want to use: ", trim(solvent(1)%name), " is not available, you can only use spce, tip3p or acetonitrile for now, sorry :("
-             stop
-        end select
-        !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
-        !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
-        do concurrent (s=1:size(solvent))
-            !... monopole = net charge
-            solvent(s)%monopole = chop(sum( solvent(s)%site%q ))
+          print*, "The solvent beeing used  is " , s, solvent(s)%name
+          select case (solvent(s)%name)
+          case ("spce")
+              print*, "case spce"
+              solvent(s)%nsite = 3
+              solvent(s)%molrotsymorder = 2
+              allocate( solvent(s)%site(3) )
+              solvent(s)%site(1:3)%q = [-0.8476, 0.4238, 0.4238]
+              solvent(s)%site(1:3)%sig = [3.166, 0., 0.]
+              solvent(s)%site(1:3)%eps = [0.65, 0., 0.]
+              solvent(s)%site(1)%r = [0., 0., 0.]
+              solvent(s)%site(2)%r = [0.816495, 0.0, 0.5773525]
+              solvent(s)%site(3)%r = [-0.816495, 0.0, 0.5773525]
+              solvent(s)%site(1:3)%Z = [8, 1, 1]
+              solvent(s)%n0 = 0.0332891
+              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+              solvent(s)%relativePermittivity = 71._dp
+              solvent(s)%npluc(0:5)=[1,6,75,252,877,2002]
+              solvent(s)%n_line_cfile=1024
+              if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
+          case ("tip3p")
+              ! cf 
+              print*, "case tip3p"
+              solvent(s)%nsite = 3
+              solvent(s)%molrotsymorder = 2
+              allocate( solvent(s)%site(3) )
+              solvent(s)%site(1:3)%q = [-0.834, 0.417, 0.417]
+              solvent(s)%site(1:3)%sig = [3.15061, 0., 0.]
+              solvent(s)%site(1:3)%eps = [0.636386, 0., 0.]
+              solvent(s)%site(1)%r = [0., 0., 0.]
+              solvent(s)%site(2)%r = [0.756950, 0.0, 0.585882]
+              solvent(s)%site(3)%r = [-0.756950, 0.0, 0.585882] 
+              solvent(s)%site(1:3)%Z = [8, 1, 1]
+              solvent(s)%n0 = 0.03349459
+              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+              solvent(s)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
+              solvent(s)%npluc(0:5)=[1,6,75,252,877,2002]
+              solvent(s)%n_line_cfile=1024
+              if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent tip3p only avail with mmax between 0 and 5"
+              ! Je connais ce site. C'est bizarre, la ref.3 pour epsilon(tip3p) n'a pas fait tip3p!
+              ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
+              ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
+              ! Luc
+          case ("acetonitrile")
+              ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
+              solvent(s)%nsite = 3 ! ---Me---C--N--->z
+              solvent(s)%molrotsymorder = 1000
+              allocate( solvent(s)%site(3) )
+              solvent(s)%site(1:3)%q = [0.269, 0.129, -0.398]
+              solvent(s)%site(1:3)%sig = [3.6, 3.4, 3.3]
+              solvent(s)%site(1:3)%eps = [1.59, 0.416, 0.416]
+              solvent(s)%site(1)%r = [0., 0., -1.46]
+              solvent(s)%site(2)%r = [0., 0., 0.]
+              solvent(s)%site(3)%r = [0., 0., 1.17]
+              solvent(s)%site(1:3)%Z = [9, 6, 7] ! CH3
+              !solvent(1)%n0 = 0.0289
+              solvent(s)%n0 = 0.01154
+              solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+              !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
+              solvent(s)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
+              solvent(s)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
+              solvent(s)%n_line_cfile=500
+              if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
+          case default
+               print*,  "the solvent you want to use: ", trim(solvent(s)%name), " is not available, you can only use spce, tip3p or acetonitrile for now, sorry :("
+               stop
+          end select
+          !... compute monopole, dipole, quadrupole, octupole and hexadecapole of each solvent species
+          !... 1 Debye (D)  = 3.33564095 x10-30 C·m (= -0.20819435 e-·Å)
+          do concurrent (s=1:size(solvent))
+              !... monopole = net charge
+              solvent(s)%monopole = chop(sum( solvent(s)%site%q ))
 
-            !... dipole
-            do concurrent (i=1:3)
-                solvent(s)%dipole(i) = chop(sum( solvent(s)%site%q * solvent(s)%site%r(i) ))
-            end do
+              !... dipole
+              do concurrent (i=1:3)
+                  solvent(s)%dipole(i) = chop(sum( solvent(s)%site%q * solvent(s)%site%r(i) ))
+              end do
 
-            !... quadrupole
-            do concurrent (i=1:3, j=1:3)
-                solvent(s)%quadrupole(i,j) = chop(sum( solvent(s)%site%q * solvent(s)%site%r(i) * solvent(s)%site%r(j) ))
-            end do
+              !... quadrupole
+              do concurrent (i=1:3, j=1:3)
+                  solvent(s)%quadrupole(i,j) = chop(sum( solvent(s)%site%q * solvent(s)%site%r(i) * solvent(s)%site%r(j) ))
+              end do
 
-            !... octupole
-            do concurrent (i=1:3, j=1:3, k=1:3)
-                solvent(s)%octupole(i,j,k) = chop(&
-                sum( solvent(s)%site%q * solvent(s)%site%r(i) * solvent(s)%site%r(j) * solvent(s)%site%r(k) ))
-            end do
+              !... octupole
+              do concurrent (i=1:3, j=1:3, k=1:3)
+                  solvent(s)%octupole(i,j,k) = chop(&
+                  sum( solvent(s)%site%q * solvent(s)%site%r(i) * solvent(s)%site%r(j) * solvent(s)%site%r(k) ))
+              end do
 
-            !... hexadecapole
-            do concurrent (i=1:3, j=1:3, k=1:3, l=1:3)
-                solvent(s)%hexadecapole(i,j,k,l) = chop( sum( solvent(s)%site%q * &
-                solvent(s)%site%r(i) * solvent(s)%site%r(j) * solvent(s)%site%r(k) * solvent(s)%site%r(l) ))
-            end do
-        end do
+              !... hexadecapole
+              do concurrent (i=1:3, j=1:3, k=1:3, l=1:3)
+                  solvent(s)%hexadecapole(i,j,k,l) = chop( sum( solvent(s)%site%q * &
+                  solvent(s)%site%r(i) * solvent(s)%site%r(j) * solvent(s)%site%r(k) * solvent(s)%site%r(l) ))
+              end do
+          end do
         end do
 
         ! Compute the charge density of a single solvant molecule in Fourier-space, and electrostatic potential generated by a such distribution
@@ -413,6 +415,8 @@ contains
         use module_input, only: input_line
         implicit none
         integer :: i, j, s
+        logical :: tagfound
+        tagfound=.false.
         if (.not.allocated(solvent)) stop "in read_mole_fractions, solvent is not allocated"
         select case (solvent(1)%nspec)
         case (1)
@@ -425,9 +429,14 @@ contains
                     do s = 1, solvent(1)%nspec
                         read( input_line(i+s),*) solvent(s)%mole_fraction
                     end do
+                    tagfound=.true.
                     exit ! loop over i
                 end if
             end do
+            if (.not. tagfound) then
+              print*, "you are using several solvent and you are not specifying the molefraction, I will assume it is equimolar i.e each are", 1.0/real(solvent(1)%nspec,dp) 
+              solvent(:)%mole_fraction=1.0/real(solvent(1)%nspec,dp)
+            end if
         end select
         if (sum(solvent(:)%mole_fraction)/=1._dp) then
             write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
