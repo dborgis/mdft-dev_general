@@ -464,6 +464,7 @@ contains
           complex(dp), allocatable :: deltarho_p_mq(:)
           complex(dp), allocatable :: gamma_p_q(:)
           complex(dp), allocatable :: gamma_p_mq(:)
+          complex(dp), allocatable:: gammatmp(:,:,:,:,:) ! deltarho_p(np,nx,ny,nz)
          
           !Guillaume: Again, I emphasize that this should be changed when we want to use mixture c
           allocate(ceff(size(c),maxval(c(:)%np)))
@@ -666,18 +667,25 @@ contains
                     end do
 
 
+                    allocate (gammatmp(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
                     !
                     ! Move the result for this given vector q to the big array containing all results.
                     ! First, for q,
                     !Guillaume:Here we shoud add all the contribtuion coming froms s2 in order to have a simple integration in ff
-                    deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p(1:np, ix_q, iy_q, iz_q,s)+ deltarho_p_q(1:np)
+                    !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p(1:np, ix_q, iy_q, iz_q,s)+ deltarho_p_q(1:np)
+                    gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
+                    !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                     !
                     ! Then, for -q. Again, pay attention to the singular mid-k point
                     !
                     if( q_eq_mq .and. (ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1)) then
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s)+conjg(deltarho_p_mq(1:np))
+                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s)+conjg(deltarho_p_mq(1:np))
+                        gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
+                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                     else
-                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s)+deltarho_p_mq(1:np)
+                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s)+deltarho_p_mq(1:np)
+                        gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
+                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p_mq(1:np)
                     end if
                     !
                     ! And store you have already done the job
@@ -692,6 +700,8 @@ contains
         end do
         !$omp end do
         ! deallocate : (not necessary)
+        deltarho_p=gammatmp
+        deallocate (gammatmp)
         deallocate (deltarho_p_q)
         deallocate (deltarho_p_mq)
         deallocate (gamma_p_q)
@@ -760,18 +770,18 @@ contains
                 ff=0._dp
                 !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
                 !$omp do
-                do s=1,size(solvent)
+                !do s=1,size(solvent)
                 do s2=1,size(solvent)
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
-                            call proj2angl( deltarho_p(:,ix,iy,iz,s), vexc)
+                            call proj2angl( deltarho_p(:,ix,iy,iz,s2), vexc)
                             vexc = prefactor*grid%w*vexc
                             ff = ff + sum((solvent(s2)%xi(:,ix,iy,iz)**2*solvent(s2)%rho0-solvent(s2)%rho0)*vexc)
                             df(:,ix,iy,iz,s2) = df(:,ix,iy,iz,s2) + 2._dp*solvent(s2)%rho0*solvent(s2)%xi(:,ix,iy,iz)*vexc
                         end do
                     end do
-                end do
+                !end do
                 end do
                 end do
                 !$omp end do
