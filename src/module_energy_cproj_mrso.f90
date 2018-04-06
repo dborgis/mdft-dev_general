@@ -700,13 +700,13 @@ contains
         end do
         !$omp end do
         ! deallocate : (not necessary)
-        deltarho_p=gammatmp
         deallocate (gammatmp)
         deallocate (deltarho_p_q)
         deallocate (deltarho_p_mq)
         deallocate (gamma_p_q)
         deallocate (gamma_p_mq)
         !$omp end parallel
+        deltarho_p=gammatmp
     end block
 
 
