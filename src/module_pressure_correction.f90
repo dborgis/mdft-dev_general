@@ -33,7 +33,7 @@ subroutine pressure_correction
     deltaGtotMDFT = ff%tot
 
     !... Volodymyr's partial molar volume correction. See J. Phys. Chem. Lett. 5, 1935-1942 (2014)
-    if (size(solvent)/=1) stop "pressure_correction implemented for 1 solvent species only"
+    if (size(solvent)/=1) print*, "pressure_correction implemented for 1 solvent species only WARNNING this does not make sense"
     allocate(  density(grid%nx,grid%ny,grid%nz),  source=0._dp)
     call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
 
