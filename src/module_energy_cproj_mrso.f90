@@ -478,6 +478,7 @@ contains
           allocate (gamma_p_mq(np), source=zeroc, stat=ierr)
           if (ierr/=0) PRINT*,"Allocate gamma_p_mq returns error ",ierr          
            
+          allocate (gammatmp(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
           !$omp do
           do s=1,size(solvent)
           do s2=1,size(solvent)
@@ -667,24 +668,37 @@ contains
                     end do
 
 
-                    allocate (gammatmp(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
                     !
                     ! Move the result for this given vector q to the big array containing all results.
                     ! First, for q,
+
                     !Guillaume:Here we shoud add all the contribtuion coming froms s2 in order to have a simple integration in ff
-                    !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p(1:np, ix_q, iy_q, iz_q,s)+ deltarho_p_q(1:np)
-                    gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
+                    if (any(gammatmp(1:np,ix_q,iy_q,iz_q,s)/=zeroC)) then
+                      print*, "gammatmp(ix_q,iy_q,iz_q,s,s2) is not zero", ix_q,iy_q,iz_q,s,s2
+                    end if
+                    if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
+                    !if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                     !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                     !
                     ! Then, for -q. Again, pay attention to the singular mid-k point
                     !
                     if( q_eq_mq .and. (ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1)) then
-                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s)+conjg(deltarho_p_mq(1:np))
-                        gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
+                      if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
+                        print*, "first gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq, q_eq_mq
+                      else
+                        print*, "another one that actualy count in first", ix_mq, iy_mq, iz_mq, q_eq_mq
+                      end if
+                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
+                      !if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                         !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                     else
-                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s)+deltarho_p_mq(1:np)
-                        gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
+                      if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
+                        print*, "second gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq,s, q_eq_mq
+                      else if (q_eq_mq) then
+                        print*, "this q=-q counts sound weird"
+                      end if
+                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
+                      !if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) =  deltarho_p_mq(1:np)
                         !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p_mq(1:np)
                     end if
                     !
@@ -700,13 +714,13 @@ contains
         end do
         !$omp end do
         ! deallocate : (not necessary)
-        deallocate (gammatmp)
         deallocate (deltarho_p_q)
         deallocate (deltarho_p_mq)
         deallocate (gamma_p_q)
         deallocate (gamma_p_mq)
         !$omp end parallel
         deltarho_p=gammatmp
+        deallocate (gammatmp)
     end block
 
 
