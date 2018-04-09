@@ -676,29 +676,29 @@ contains
                     if (any(gammatmp(1:np,ix_q,iy_q,iz_q,s)/=zeroC)) then
                       print*, "gammatmp(ix_q,iy_q,iz_q,s,s2) is not zero", ix_q,iy_q,iz_q,s,s2
                     end if
-                    if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
-                    !if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
+                    !if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
+                    if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                     !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                     !
                     ! Then, for -q. Again, pay attention to the singular mid-k point
                     !
                     if( q_eq_mq .and. (ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1)) then
-                      if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
-                        print*, "first gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq, q_eq_mq
-                      else
-                        print*, "another one that actualy count in first", ix_mq, iy_mq, iz_mq, q_eq_mq
-                      end if
-                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
-                      !if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
+                      !if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
+                      !  print*, "first gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq, q_eq_mq
+                      !else
+                      !  print*, "another one that actualy count in first", ix_mq, iy_mq, iz_mq, q_eq_mq
+                      !end if
+                      !if (.not. q_eq_mq .and. .not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
+                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                         !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                     else
-                      if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
-                        print*, "second gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq,s, q_eq_mq
-                      else if (q_eq_mq) then
-                        print*, "this q=-q counts sound weird"
-                      end if
-                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
-                      !if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) =  deltarho_p_mq(1:np)
+                      !if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
+                      !  print*, "second gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq,s, q_eq_mq
+                      !else if (q_eq_mq) then
+                      !  print*, "this q=-q counts sound weird"
+                      !end if
+                      !if (.not. q_eq_mq .and. .not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
+                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) =  deltarho_p_mq(1:np)
                         !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p_mq(1:np)
                     end if
                     !
