@@ -36,7 +36,7 @@ module module_energy_cproj_mrso
     type(c_type),protected,allocatable :: c(:)
 
     complex(dp), allocatable, protected :: deltarho_p(:,:,:,:,:) ! deltarho_p(np,nx,ny,nz)
-
+    complex(dp), allocatable:: gammatmp(:,:,:,:,:) ! deltarho_p(np,nx,ny,nz)
     type :: p3_type
         real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
         integer, allocatable :: p(:,:,:) ! index of the projection corresponding to m, mup, mu
@@ -120,6 +120,10 @@ contains
 
         if (.not. allocated (deltarho_p) ) then
             allocate (deltarho_p(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
+            if (ierr/=0) PRINT*,"Allocate deltarho_p returns error ",ierr            
+        end if
+        if (.not. allocated (gammatmp) ) then
+            allocate (gammatmp(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
             if (ierr/=0) PRINT*,"Allocate deltarho_p returns error ",ierr            
         end if
 
@@ -310,7 +314,7 @@ contains
         !
             
         !$omp parallel private ( ip, buf )
-        allocate(buf(nx,ny,nz), stat=ierr)
+        allocate(buf(nx,ny,nz),source=zeroC, stat=ierr)
         if (ierr/=0) PRINT*,"Allocate buf returns error ",ierr
 
         select case(dp);
@@ -464,7 +468,6 @@ contains
           complex(dp), allocatable :: deltarho_p_mq(:)
           complex(dp), allocatable :: gamma_p_q(:)
           complex(dp), allocatable :: gamma_p_mq(:)
-          complex(dp), allocatable:: gammatmp(:,:,:,:,:) ! deltarho_p(np,nx,ny,nz)
          
           !Guillaume: Again, I emphasize that this should be changed when we want to use mixture c
           allocate(ceff(size(c),maxval(c(:)%np)))
@@ -477,8 +480,7 @@ contains
           if (ierr/=0) PRINT*,"Allocate gamma_p_q returns error ",ierr
           allocate (gamma_p_mq(np), source=zeroc, stat=ierr)
           if (ierr/=0) PRINT*,"Allocate gamma_p_mq returns error ",ierr          
-           
-          allocate (gammatmp(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
+          gammatmp(np,nx,ny,nz,size(solvent))=zeroC
           !$omp do
           do s=1,size(solvent)
           do s2=1,size(solvent)
@@ -673,11 +675,8 @@ contains
                     ! First, for q,
 
                     !Guillaume:Here we shoud add all the contribtuion coming froms s2 in order to have a simple integration in ff
-                    if (any(gammatmp(1:np,ix_q,iy_q,iz_q,s)/=zeroC)) then
-                      print*, "gammatmp(ix_q,iy_q,iz_q,s,s2) is not zero", ix_q,iy_q,iz_q,s,s2
-                    end if
-                    !if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
-                    if (.not. gamma_p_isok(ix_q,iy_q,iz_q,s,s2)) gammatmp(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
+                    gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
+                    !gammatmp(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                     !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                     !
                     ! Then, for -q. Again, pay attention to the singular mid-k point
@@ -688,18 +687,18 @@ contains
                       !else
                       !  print*, "another one that actualy count in first", ix_mq, iy_mq, iz_mq, q_eq_mq
                       !end if
-                      !if (.not. q_eq_mq .and. .not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
-                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
-                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
+                      if (.not. q_eq_mq ) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
+                      !gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
+                      !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                     else
                       !if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
                       !  print*, "second gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq,s, q_eq_mq
                       !else if (q_eq_mq) then
                       !  print*, "this q=-q counts sound weird"
                       !end if
-                      !if (.not. q_eq_mq .and. .not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
-                      if (.not. gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2))  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) =  deltarho_p_mq(1:np)
-                        !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p_mq(1:np)
+                      if (.not. q_eq_mq )  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
+                      !gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) =  deltarho_p_mq(1:np)
+                      !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p_mq(1:np)
                     end if
                     !
                     ! And store you have already done the job
@@ -779,13 +778,13 @@ contains
         ! Note that gamma==df
         !
 
-            prefactor = -kT*2.0_dp*fourpisq/mrso /solvent(1)%n0!/2.0! the division by n0 comes from Luc's normalization of c
             if(present(df)) then
                 ff=0._dp
                 !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
                 !$omp do
                 !do s=1,size(solvent)
                 do s2=1,size(solvent)
+                prefactor = -kT*2.0_dp*fourpisq/mrso /solvent(1)%n0*solvent(s2)%mole_fraction!/2.0! the division by n0 comes from Luc's normalization of c
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
