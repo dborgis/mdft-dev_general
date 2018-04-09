@@ -32,7 +32,7 @@ module module_orientation_projection_transform
     complex(dp), allocatable :: c2d(:,:)
     integer :: nx, ny, nz, np, no, ntheta, nphi, npsi, mmax, mrso
     real(dp), allocatable :: wtheta(:)
-    real(dp), parameter :: fm(0:6) = [ 1._dp, sqrt(3._dp), sqrt(5._dp), sqrt(7._dp), sqrt(9._dp), sqrt(11._dp), sqrt(13._dp) ] ! sqrt(2m+1)
+    real(dp), parameter :: fm(0:7) = [ 1._dp, sqrt(3._dp), sqrt(5._dp), sqrt(7._dp), sqrt(9._dp), sqrt(11._dp), sqrt(13._dp),sqrt(14._dp) ] ! sqrt(2m+1)
     logical :: is_init = .false.
 
     public :: angl2proj, proj2angl, init
