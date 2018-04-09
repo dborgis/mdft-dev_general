@@ -333,10 +333,14 @@ end subroutine energy_bridge
       use module_solute, only: solute
       implicit none
       real(dp) :: solute_net_charge ! net charge of the solute
+      integer :: s
       real(dp) :: gamma ! trace of the quadrupole moment. Should be 0.848 e.nm² for SPCE and 0.820 for SPC water.
-      gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
-      solute_net_charge = sum(solute%site%q)
-      ff%pscheme_correction = -gamma*solvent(1)%n0*2909.857_dp*solute_net_charge ! in kJ/mol
+      ff%pscheme_correction=0.0_dp
+      do s=1,solvent(1)%nspec
+        gamma = solvent(s)%quadrupole(1,1)+solvent(s)%quadrupole(2,2)+solvent(s)%quadrupole(3,3) ! quadrupole moment trace
+        solute_net_charge = sum(solute%site%q)
+        ff%pscheme_correction =ff%pscheme_correction-gamma*solvent(s)%n0*2909.857_dp*solute_net_charge ! in kJ/mol
+      end do
   end subroutine typeC_corrections
 
 
