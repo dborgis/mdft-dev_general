@@ -446,7 +446,6 @@ contains
         tag_is_found = .true.
         IF (iostatint/=0) THEN
           PRINT*,"I have a problem while reading input line:"
-          PRINT*,TRIM(ADJUSTL(input_line(i)))
           IF (TRIM(ADJUSTL(input_line(i)(lentag+4:lentag+50)))=='') PRINT*,"I found nothing after sign ="
           STOP
         END IF

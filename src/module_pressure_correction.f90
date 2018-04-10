@@ -28,6 +28,7 @@ subroutine pressure_correction
     real(dp) :: deltaN, PMV_correction, Volodymyr_empirical_correction
     real(dp), parameter :: zerodp = 0._dp
     real(dp) :: deltaG_emptybox
+    integer :: s
 
     numberdensity = solvent(1)%n0
     deltaGtotMDFT = ff%tot
@@ -62,16 +63,22 @@ block
     logical :: oldvalue
     oldvalue = ff%apply_energy_corrections_due_to_charged_solute
     ff%apply_energy_corrections_due_to_charged_solute = .false. ! Don't include corrections due to the external potential since that's a pure homogeneous solvent problem.
-    solvent(1)%xi = 0._dp ! set density to 0 == empty the simulation box
+    do s=1,size(solvent) 
+      solvent(s)%xi = 0._dp ! set density to 0 == empty the simulation box
+    end do
+    print*, "toto"
     call energy_and_gradient(deltaG_emptybox) ! compute the grandpotential of such system
+    print*, "toto1"
     ff%apply_energy_corrections_due_to_charged_solute = oldvalue ! put back the old value
     Pbulk = deltaG_emptybox / (grid%lx * grid%ly * grid%lz) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
     write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa_x_Pa_to_atm," atm"
+    print*, "toto1"
     open(81,file="output/pressure")
     write(81,*) Pbulk
     close(81)
     PMV_correction  = -deltaN/solvent(1)%n0*Pbulk  !correction is -PV where V is excluded Volume
     Volodymyr_empirical_correction =  deltaN*thermo%kbT
+    print*, "toto3"
 end block
 
 

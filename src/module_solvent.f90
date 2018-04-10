@@ -190,12 +190,10 @@ contains
         if (s==1) then
           solvent(1)%name = getinput%char('solvent', defaultvalue="spce")
         else
-          print*, "you are using", solvent(:)%nspec, "solvent that are named:"
           dummychar= getinput%char_multiple('solvent',s, defaultvalue="spce spce spce spce spce spce")
           read(dummychar,*) solvent(:)%name
           do i=1,s
             solvent(i)%name=Trim(adjustl(solvent(i)%name))
-            print*, solvent(i)%name
           end do
         end if
         

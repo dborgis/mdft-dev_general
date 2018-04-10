@@ -80,7 +80,7 @@ contains
         logical :: write_polarization_to_disk
         write_polarization_to_disk = getinput%log( "write_polarization_to_disk", defaultValue = .false. )
         if( write_polarization_to_disk ) then
-            allocate(px(nx,ny,nz,1), py(nx,ny,nz,1), pz(nx,ny,nz,1), source=0._dp)
+            allocate(px(nx,ny,nz,size(solvent)), py(nx,ny,nz,size(solvent)), pz(nx,ny,nz,size(solvent)), source=0._dp)
             call get_final_polarization(px,py,pz)
             filename = "output/Px.cube"
             call write_to_cube_file(px,filename)
