@@ -33,10 +33,10 @@ module module_energy_cproj_mrso
         integer, allocatable :: m(:), n(:), mu(:), nu(:), khi(:)
         complex(dp), allocatable :: mnmunukhi_q(:,:)
     end type c_type
-    type(c_type),protected,allocatable :: c(:)
+    type(c_type), protected :: c
 
-    complex(dp), allocatable, protected :: deltarho_p(:,:,:,:,:) ! deltarho_p(np,nx,ny,nz)
-    complex(dp), allocatable:: gammatmp(:,:,:,:,:) ! deltarho_p(np,nx,ny,nz)
+    complex(dp), allocatable, protected :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
+
     type :: p3_type
         real(dp), allocatable :: wigner_small_d(:,:) ! tabulation des harmoniques sphériques r(m,mup,mu,theta) en un tableau r(itheta,p)
         integer, allocatable :: p(:,:,:) ! index of the projection corresponding to m, mup, mu
@@ -55,7 +55,6 @@ module module_energy_cproj_mrso
     !complex(dp), allocatable, protected :: R(:,:,:) ! Table of generalized spherical harmonics of m, mup, mu
 
     public :: energy_cproj_mrso
-
 
 contains
 
@@ -77,10 +76,10 @@ contains
         logical :: q_eq_mq
         integer :: ix, iy, iz, ix_q, iy_q, iz_q, ix_mq, iy_mq, iz_mq, ip
         integer :: nx, ny, nz, np, no, ns, ntheta, nphi, npsi, mmax, mrso
-        integer :: m, n, mu, nu, khi, mup, iq, mu2, nu2, p, i, ia, s,s2
+        integer :: m, n, mu, nu, khi, mup, iq, mu2, nu2, p, i, ia
         real(dp) :: q(3), lx, ly, lz, rho0
         real(dp) :: theta(grid%ntheta), wtheta(grid%ntheta)
-        logical, allocatable :: gamma_p_isok(:,:,:,:,:)
+        logical, allocatable :: gamma_p_isok(:,:,:)
         real :: time(20)
         real(dp) :: vexc(grid%no)
         real :: total_time_in_subroutine
@@ -94,7 +93,6 @@ contains
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
 
         call cpu_time (time(1))
-
         ntheta = grid%ntheta
         nphi   = grid%nphi
         npsi   = grid%npsi
@@ -113,23 +111,18 @@ contains
         nz   = grid%nz
         np   = grid%np
         no   = grid%no
-    
-        if (.not. allocated(c)) then
-          allocate(c(solvent(1)%nspec))
-        end if
+        ns   = solvent(1)%nspec
+        rho0 = solvent(1)%rho0
+
 
         if (.not. allocated (deltarho_p) ) then
-            allocate (deltarho_p(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
-            if (ierr/=0) PRINT*,"Allocate deltarho_p returns error ",ierr            
-        end if
-        if (.not. allocated (gammatmp) ) then
-            allocate (gammatmp(np,nx,ny,nz,size(solvent)) ,source=zeroc, stat=ierr)
+            allocate (deltarho_p(np,nx,ny,nz) ,source=zeroc, stat=ierr)
             if (ierr/=0) PRINT*,"Allocate deltarho_p returns error ",ierr            
         end if
 
 
         if( .not. allocated (gamma_p_isok) ) then 
-           allocate (gamma_p_isok(nx,ny,nz,size(solvent),size(solvent)), source=.false., stat=ierr)
+           allocate (gamma_p_isok(nx,ny,nz), source=.false., stat=ierr)
            if( ierr/=0) PRINT*,"Allocate gamma_p_isok returns error ", ierr
         end if
 
@@ -284,16 +277,13 @@ contains
         allocate( o(no), stat=ierr)
         if (ierr/=0) PRINT*,"Allocate o returns error ",ierr
         !$omp do
-        do s=1,size(solvent)
-          do iz=1,nz
-             do iy=1,ny
-                do ix=1,nx
-                   o = solvent(s)%rho0*(solvent(s)%xi(:,ix,iy,iz)**2 -1._dp)
-                   !Guillaume here we put j=1 because deltarho_p is storing density projected we only have 1 density per specie type
-                   call angl2proj( o, deltarho_p(:,ix,iy,iz,s) )
-                end do
-             end do
-          end do
+        do iz=1,nz
+           do iy=1,ny
+              do ix=1,nx
+                 o = rho0*(solvent(1)%xi(:,ix,iy,iz)**2 -1._dp)
+                 call angl2proj( o, deltarho_p(:,ix,iy,iz) )
+              end do
+           end do
         end do
         !$omp end do
         deallocate(o)
@@ -314,29 +304,25 @@ contains
         !
             
         !$omp parallel private ( ip, buf )
-        allocate(buf(nx,ny,nz),source=zeroC, stat=ierr)
+        allocate(buf(nx,ny,nz), stat=ierr)
         if (ierr/=0) PRINT*,"Allocate buf returns error ",ierr
 
         select case(dp);
         case(c_double)
             !$omp do
-            do s=1,size(solvent)
-              do ip = 1, np
-                  buf=deltarho_p(ip,:,:,:,s)
-                  call dfftw_execute_dft(fft%plan3dp, buf, buf)
-                  deltarho_p(ip,:,:,:,s)=buf
-              end do
+            do ip = 1, np
+                buf=deltarho_p(ip,:,:,:)
+                call dfftw_execute_dft(fft%plan3dp, buf, buf)
+                deltarho_p(ip,:,:,:)=buf
             end do
             !$omp end do
         case(c_float)
             !$omp do
-            do s=1,size(solvent)
-              do ip=1,np
-                  buf=deltarho_p(ip,:,:,:,s)
-                  call sfftw_execute_dft(fft%plan3dp, buf, buf)
-                  deltarho_p(ip,:,:,:,s)=buf
-              end do
-            end do
+            do ip=1,np
+                buf=deltarho_p(ip,:,:,:)
+                call sfftw_execute_dft(fft%plan3dp, buf, buf)
+            deltarho_p(ip,:,:,:)=buf
+        end do
            !$omp end do
         end select
         deallocate(buf)
@@ -373,16 +359,12 @@ contains
         ! in the intermolecular frame
         ! normq is norm of q, |q|, that correspond to the index iq in ck(ia,iq)
         !
-        !Guillaume: Here we read the c's, in principle we should read the pure solvent dcf and the mixture dcf
-        !the mixture dcf are not available yet thus i code with the assumpution that c_ij=c_i and i read only the 
-        !pure c function. This should be of course change to do proper mixture
-        do s=1,size(solvent)
-        if (.not.c(s)%isok) then
+        if (.not.c%isok) then
             block
                 use module_read_c_luc, only: read_c_luc
                 real(dp) :: qmaxnecessary
                 qmaxnecessary = norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))])
-                  call read_c_luc(s,c(s)%mnmunukhi_q,mmax,mrso,qmaxnecessary,c(s)%np,c(s)%nq,c(s)%dq,c(s)%m,c(s)%n,c(s)%mu,c(s)%nu,c(s)%khi,c(s)%ip)
+                call read_c_luc(1,c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
                 ! The c(m,n,mu,nu,khi) that we read from Luc had 2 drawbacks:
                 ! - we read it the way Luc give it, not the optimal way for our loops
                 ! - it does not contain our use of the symetries, and here we decide to have mu>0.
@@ -397,12 +379,7 @@ contains
                     do m=0,mmax; do khi=-m,m; do mu2=0,m/mrso; do n=abs(khi),mmax; do nu2=-n/mrso,n/mrso
                         np_new = np_new +1
                     end do; end do; end do; end do; end do
-                    !Guillaume for now it is assume that nq are identical for
-                    !all solvent and that the number of line of the c files
-                    !coincid this is obviously not the case for interesting
-                    !stuff but it will ease the coding for water in water
-                    !This should be of course change to do proper mixture
-                    allocate( cnu2nmu2khim_q_new(np_new,c(1)%nq) )
+                    allocate( cnu2nmu2khim_q_new(np_new,c%nq) )
                     allocate( m_new(np_new) )
                     allocate( n_new(np_new) )
                     allocate( mu_new(np_new) )
@@ -418,39 +395,39 @@ contains
                         nu_new(i)=nu2*mrso
                         khi_new(i)=khi
                         ip_new(nu2,n,mu2,khi,m)=i
-                        cnu2nmu2khim_q_new(i,:) = c(s)%mnmunukhi_q(c(s)%ip(m,n,mu2,nu2,khi),:)
+                        cnu2nmu2khim_q_new(i,:) = c%mnmunukhi_q(c%ip(m,n,mu2,nu2,khi),:)
                     end do; end do; end do; end do; end do
-                    deallocate( c(s)%m,c(s)%n,c(s)%mu,c(s)%nu,c(s)%khi,c(s)%ip, c(s)%mnmunukhi_q)
-                    c(s)%np = np_new
-                    allocate( c(s)%m(c(s)%np),c(s)%n(c(s)%np),c(s)%mu(c(s)%np),c(s)%nu(c(s)%np),c(s)%khi(c(s)%np),c(s)%ip(-mmax:mmax,0:mmax,0:mmax/mrso,-mmax:mmax,-mmax:mmax) )
-                    allocate( c(s)%mnmunukhi_q(c(s)%np,c(s)%nq), source=cnu2nmu2khim_q_new )
+                    deallocate( c%m,c%n,c%mu,c%nu,c%khi,c%ip, c%mnmunukhi_q)
+                    c%np = np_new
+                    allocate( c%m(c%np),c%n(c%np),c%mu(c%np),c%nu(c%np),c%khi(c%np),c%ip(-mmax:mmax,0:mmax,0:mmax/mrso,-mmax:mmax,-mmax:mmax) )
+                    allocate( c%mnmunukhi_q(c%np,c%nq), source=cnu2nmu2khim_q_new )
                     deallocate(cnu2nmu2khim_q_new)
-                    c(s)%m = m_new
-                    c(s)%n = n_new
-                    c(s)%mu = mu_new
-                    c(s)%nu = nu_new
-                    c(s)%khi = khi_new
-                    c(s)%ip = ip_new
+                    c%m = m_new
+                    c%n = n_new
+                    c%mu = mu_new
+                    c%nu = nu_new
+                    c%khi = khi_new
+                    c%ip = ip_new
                 end block
             end block
-            c(s)%mnmunukhi_q=conjg(c(s)%mnmunukhi_q) ! this is strange, but certainly due to some error or misunderstanding with Luc. It does not appear in Luc's document.
+            c%mnmunukhi_q=conjg(c%mnmunukhi_q) ! this is strange, but certainly due to some error or misunderstanding with Luc. It does not appear in Luc's document.
             !
             ! Move prefactors of MOZ inside the direct correlation function so that one does not need to compute, for instance,
             !  (-1)**(khi+nu) inside the inner loop of MOZ
             !
-            do ip=1,c(s)%np
-                nu = c(s)%nu(ip)
+            do ip=1,c%np
+                nu = c%nu(ip)
                 if( nu<0 ) then
-                    khi = c(s)%khi(ip)
-                    c(s)%mnmunukhi_q(ip,:) = (-1)**(khi+nu) *c(s)%mnmunukhi_q(ip,:)
+                    khi = c%khi(ip)
+                    c%mnmunukhi_q(ip,:) = (-1)**(khi+nu) *c%mnmunukhi_q(ip,:)
                 else
-                    n = c(s)%n(ip)
-                    c(s)%mnmunukhi_q(ip,:) = (-1)**(n) *c(s)%mnmunukhi_q(ip,:)
+                    n = c%n(ip)
+                    c%mnmunukhi_q(ip,:) = (-1)**(n) *c%mnmunukhi_q(ip,:)
                 end if
             end do
-            c(s)%isok=.true.
+            c%isok=.true.
         end if
-        END DO
+
         call cpu_time (time(9))
 
         !
@@ -461,16 +438,14 @@ contains
 
         block
           integer ::  m, khi, mu2, ia
-          complex(dp),allocatable,dimension(:,:) :: ceff
+          complex(dp) :: ceff(c%np)
           real(dp) :: effectiveiq, alpha
           complex(dp) :: R(0:mmax,-mmax:mmax,-mmax:mmax)
           complex(dp), allocatable :: deltarho_p_q(:)
           complex(dp), allocatable :: deltarho_p_mq(:)
           complex(dp), allocatable :: gamma_p_q(:)
           complex(dp), allocatable :: gamma_p_mq(:)
-         
-          !Guillaume: Again, I emphasize that this should be changed when we want to use mixture c
-          allocate(ceff(size(c),maxval(c(:)%np)))
+
           !$omp parallel private(iz_q, iy_q, ix_q, iz_mq, iy_mq, ix_mq, q, R, q_eq_mq, gamma_p_q, gamma_p_mq, m, khi, mu2, deltarho_p_q, deltarho_p_mq, deltarho_p_q_loc, deltarho_p_mq_loc, ia, ip, effectiveiq, iq, alpha, ceff)
           allocate (deltarho_p_q(np) ,source=zeroc, stat=ierr)
           if (ierr/=0) PRINT*,"Allocate deltarho_p_q returns error ",ierr
@@ -480,10 +455,8 @@ contains
           if (ierr/=0) PRINT*,"Allocate gamma_p_q returns error ",ierr
           allocate (gamma_p_mq(np), source=zeroc, stat=ierr)
           if (ierr/=0) PRINT*,"Allocate gamma_p_mq returns error ",ierr          
-          gammatmp(np,nx,ny,nz,size(solvent))=zeroC
+          
           !$omp do
-          do s=1,size(solvent)
-          do s2=1,size(solvent)
           do iz_q=1,nz/2+1
              iz_mq = grid%iz_mq(iz_q)
              q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
@@ -498,7 +471,7 @@ contains
                     !
                     ! gamma_p_isok is a logical array. If gamma(ix_q,iy_q,iz_q) has already been calculated, it is .true.
                     !
-                    if ( gamma_p_isok(ix_q,iy_q,iz_q,s,s2) .and. gamma_p_isok(ix_mq, iy_mq, iz_mq,s,s2) ) cycle
+                    if ( gamma_p_isok(ix_q,iy_q,iz_q) .and. gamma_p_isok(ix_mq, iy_mq, iz_mq) ) cycle
 
                     !
                     ! pay attention to the special case(s) where q=-q
@@ -526,11 +499,9 @@ contains
 
                     !  on  a       deltarho_p_q(m,khi,mu2) =  sum/mup  @   gamma_p_q(m,mup,mu2) * R(m,mup,khi)
                     !=>              gamma_p_q(mup,m,mu2) * R(mup,m,khi)
-                    
-                    !Guillaume: Here we are computing gamma_ij with i j beeing possible 2 diffrent species
-                    !But for now gamma_p_q hold DeltaRho
-                    gamma_p_q  = deltarho_p(:,ix_q,iy_q,iz_q,s) ! this a temporary array
-                    gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq,s) ! this a temporary array
+
+                    gamma_p_q  = deltarho_p(:,ix_q,iy_q,iz_q) ! this a temporary array
+                    gamma_p_mq = deltarho_p(:,ix_mq,iy_mq,iz_mq) ! this a temporary array
                     ip=0
                     do m=0,mmax
                         do khi=-m,m
@@ -557,13 +528,13 @@ contains
                     ! iq = int( norm2(q) /c%dq +0.5) +1
                     ! ceff(:) = c%mnmunukhi_q(:,iq)
 
-                    !Guillaume: Since we used s to describe solvent 1 in rho, we must use s2 to descrobe solvent 2 in c, to get gamma_ss2
-                    effectiveiq = norm2(q)/c(s2)%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
+
+                    effectiveiq = norm2(q)/c%dq +1  ! norm(q)/dq is in [0,n] while our iq should be in [1,n+1]. Thus, add +1.
                     iq = int(effectiveiq) ! the lower bound. The upper bound is iq+1
 
                     alpha = effectiveiq - iq ! linear interpolation    y=alpha*upperbound + (1-alpha)*lowerbound
-                    ceff(s2,:) =         alpha  * c(s2)%mnmunukhi_q(:,iq+1) &
-                         + (1._dp-alpha) * c(s2)%mnmunukhi_q(:,iq)
+                    ceff(:) =         alpha  * c%mnmunukhi_q(:,iq+1) &
+                         + (1._dp-alpha) * c%mnmunukhi_q(:,iq)
 
                     !
                     ! Ornstein-Zernike in the molecular frame
@@ -593,44 +564,53 @@ contains
                         khi = p3%mup(ip)     ! khi=-m,m
                         mu2 = p3%mu(ip)/mrso ! mu2=-m/mrso,m/mrso
                         do n = abs(khi), mmax
-                            !ia = ia +1
-                            !select case (n)
-                            !case(0, 1) ! nu2 == 0
-                            !    gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
-                            !    gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *conjg(deltarho_p_q (p3%p(n,khi,0)))
-                            !case(2, 3) ! nu2 = -1,0,1
-                            !    gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,1))  &
-                            !                                      + ceff(ia+1) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                            !                                      + ceff(ia+2) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
-                            !    gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,1))  &
-                            !                                      + ceff(ia+1) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                            !                                      + ceff(ia+2) *conjg(deltarho_p_q (p3%p(n,khi,1)))
-                            !    ia = ia +2
-                            !case(4, 5) ! nu2 = -2,-1,0,1,2
-                            !    gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,2))  &
-                            !                                      + ceff(ia+1) *      deltarho_p_q (p3%p(n,khi,1))  &
-                            !                                      + ceff(ia+2) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
-                            !                                      + ceff(ia+3) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
-                            !                                      + ceff(ia+4) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
-                            !    gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,2))  &
-                            !                                      + ceff(ia+1) *      deltarho_p_mq(p3%p(n,khi,1))  &
-                            !                                      + ceff(ia+2) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
-                            !                                      + ceff(ia+3) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
-                            !                                      + ceff(ia+4) *conjg(deltarho_p_q (p3%p(n,khi,2)))
-                            !    ia = ia +4
-                            !end select
-                            !Guillaume: This does not appear explicitely here but deltarho_p_q and deltarho_p_mq are s depandant, thus 
-                            !gamma_p_q and gamma_p_mq correspond indeed to gamma_ss2
-                            do nu2=-n/mrso ,n/mrso 
-                              ia=ia+1
-                                if (nu2<0) then
-                                  gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(s2,ia  ) *      deltarho_p_q (p3%p(n,khi,abs(nu2)))  
-                                  gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(s2,ia  ) *      deltarho_p_mq(p3%p(n,khi,abs(nu2)))  
-                                else
-                                  gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(s2,ia) *conjg(deltarho_p_mq(p3%p(n,khi,nu2))) 
-                                  gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(s2,ia) *conjg(deltarho_p_q (p3%p(n,khi,nu2))) 
-                                end if
-                            end do
+                            ia = ia +1
+                            select case (n)
+                            case(0, 1) ! nu2 == 0
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *conjg(deltarho_p_mq(p3%p(n,khi,0)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *conjg(deltarho_p_q (p3%p(n,khi,0)))
+                            case(2, 3) ! nu2 = -1,0,1
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                  + ceff(ia+1) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_mq(p3%p(n,khi,1)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                  + ceff(ia+1) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_q (p3%p(n,khi,1)))
+                                ia = ia +2
+                            case(4, 5) ! nu2 = -2,-1,0,1,2
+                                gamma_p_q(ip)  = gamma_p_q(ip)    + ceff(ia  ) *      deltarho_p_q (p3%p(n,khi,2))  &
+                                                                  + ceff(ia+1) *      deltarho_p_q (p3%p(n,khi,1))  &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_mq(p3%p(n,khi,0))) &
+                                                                  + ceff(ia+3) *conjg(deltarho_p_mq(p3%p(n,khi,1))) &
+                                                                  + ceff(ia+4) *conjg(deltarho_p_mq(p3%p(n,khi,2)))
+                                gamma_p_mq(ip) = gamma_p_mq(ip)   + ceff(ia  ) *      deltarho_p_mq(p3%p(n,khi,2))  &
+                                                                  + ceff(ia+1) *      deltarho_p_mq(p3%p(n,khi,1))  &
+                                                                  + ceff(ia+2) *conjg(deltarho_p_q (p3%p(n,khi,0))) &
+                                                                  + ceff(ia+3) *conjg(deltarho_p_q (p3%p(n,khi,1))) &
+                                                                  + ceff(ia+4) *conjg(deltarho_p_q (p3%p(n,khi,2)))
+                                ia = ia +4
+                            end select
+
+
+                                    ! do nu2= -n/mrso, n/mrso   ! imaginons n=3, -n,n,mrso  ferait nu=-3,-1,1,3 mais en faisant /mrso puis *mrso, ça fait -2,0,2 as expected
+                                    !
+                                    !     ia = c%ip(m,n,mu2,nu2,khi) ! the index of the projection of c(q). 1<=ia<na
+                                    !     ip = p3%p(n,khi,abs(nu2))
+                                    !
+                                    !     if (nu2<0) then ! no problem with delta rho (n, khi, -nu) since -nu>0. Thus, we apply eq. 1.30 directly
+                                    !         gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                    !         gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                    !     else
+                                    !         gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_mq(ip))
+                                    !         gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *conjg(deltarho_p_q(ip))
+                                    !     end if
+                                    !     ! < USELESS SINCE DELTARHO_P_Q and DELTARHO_P_MQ are prepared before MOZ
+                                    !
+                                    !     ! gamma_mkhimu2_q  = gamma_mkhimu2_q  + c%mnmunukhi_q(ia,iq) *deltarho_p_q(ip)
+                                    !     ! gamma_mkhimu2_mq = gamma_mkhimu2_mq + c%mnmunukhi_q(ia,iq) *deltarho_p_mq(ip)
+                                    !
+                                    ! end do !nu2
+
                         end do
                     end do
 
@@ -673,44 +653,26 @@ contains
                     !
                     ! Move the result for this given vector q to the big array containing all results.
                     ! First, for q,
-
-                    !Guillaume:Here we shoud add all the contribtuion coming froms s2 in order to have a simple integration in ff
-                    gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
-                    !gammatmp(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
-                    !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
+                    !
+                    deltarho_p(1:np, ix_q, iy_q, iz_q) = deltarho_p_q(1:np)
                     !
                     ! Then, for -q. Again, pay attention to the singular mid-k point
                     !
                     if( q_eq_mq .and. (ix_q==nx/2+1 .or. iy_q==ny/2+1 .or. iz_q==nz/2+1)) then
-                      !if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
-                      !  print*, "first gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq, q_eq_mq
-                      !else
-                      !  print*, "another one that actualy count in first", ix_mq, iy_mq, iz_mq, q_eq_mq
-                      !end if
-                      if (.not. q_eq_mq ) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
-                      !gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
-                      !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = conjg(deltarho_p_mq(1:np))
                     else
-                      !if (any(gammatmp(1:np, ix_mq, iy_mq, iz_mq,s)/=zeroC)) then
-                      !  print*, "second gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) is not zero",  ix_mq, iy_mq, iz_mq,s, q_eq_mq
-                      !else if (q_eq_mq) then
-                      !  print*, "this q=-q counts sound weird"
-                      !end if
-                      if (.not. q_eq_mq )  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
-                      !gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) =  deltarho_p_mq(1:np)
-                      !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p_mq(1:np)
+                        deltarho_p(1:np, ix_mq, iy_mq, iz_mq) = deltarho_p_mq(1:np)
                     end if
                     !
                     ! And store you have already done the job
                     !
-                    gamma_p_isok(ix_q,iy_q,iz_q,s,s2)=.true.
-                    gamma_p_isok(ix_mq,iy_mq,iz_mq,s,s2)=.true.
+                    gamma_p_isok(ix_q,iy_q,iz_q)=.true.
+                    gamma_p_isok(ix_mq,iy_mq,iz_mq)=.true.
 
                 end do
             end do
         end do
-        end do
-        end do
+
         !$omp end do
         ! deallocate : (not necessary)
         deallocate (deltarho_p_q)
@@ -718,8 +680,6 @@ contains
         deallocate (gamma_p_q)
         deallocate (gamma_p_mq)
         !$omp end parallel
-        deltarho_p=gammatmp
-        deallocate (gammatmp)
     end block
 
 
@@ -748,22 +708,18 @@ contains
             select case(dp)
             case(c_double)
                !$omp do
-               do s=1,size(solvent)
                do ip=1,np
-                  buf = deltarho_p(ip,:,:,:,s) 
+                  buf = deltarho_p(ip,:,:,:) 
                   call dfftw_execute_dft( fft%plan3dm, buf, buf)
-                  deltarho_p(ip,:,:,:,s) = buf*cst
+                  deltarho_p(ip,:,:,:) = buf*cst
                end do
-              end do
                !$omp end do
             case(c_float)
                !$omp do
-               do s=1,size(solvent)
                do ip=1,np
-                  buf = deltarho_p(ip,:,:,:,s)
+                  buf = deltarho_p(ip,:,:,:)
                   call sfftw_execute_dft( fft%plan3dm, buf, buf)
-                  deltarho_p(ip,:,:,:,s) = buf*cst
-               end do
+                  deltarho_p(ip,:,:,:) = buf*cst
                end do
                !$omp end do
             end select
@@ -778,43 +734,36 @@ contains
         ! Note that gamma==df
         !
 
+            prefactor = -kT*fourpisq  /solvent(1)%n0! the division by n0 comes from Luc's normalization of c
             if(present(df)) then
                 ff=0._dp
                 !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
                 !$omp do
-                !do s=1,size(solvent)
-                do s2=1,size(solvent)
-                prefactor = -kT*2.0_dp*fourpisq/mrso /solvent(1)%n0*solvent(s2)%mole_fraction!/2.0! the division by n0 comes from Luc's normalization of c
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
-                            call proj2angl( deltarho_p(:,ix,iy,iz,s2), vexc)
+                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
                             vexc = prefactor*grid%w*vexc
-                            ff = ff + sum((solvent(s2)%xi(:,ix,iy,iz)**2*solvent(s2)%rho0-solvent(s2)%rho0)*vexc)
-                            df(:,ix,iy,iz,s2) = df(:,ix,iy,iz,s2) + 2._dp*solvent(s2)%rho0*solvent(s2)%xi(:,ix,iy,iz)*vexc
+                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
+                            df(:,ix,iy,iz,1) = df(:,ix,iy,iz,1) + 2._dp*rho0*solvent(1)%xi(:,ix,iy,iz)*vexc
                         end do
                     end do
-                !end do
-                end do
                 end do
                 !$omp end do
                 !$omp end parallel
                 ff = ff*0.5_dp*dv
             else
-                !Guillaume:I did not code mixture for this loop for now but it is just copy paste of the one before
                 ff=0._dp
                 !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
                 !$omp do
-                do s=1,size(solvent)
                 do iz=1,nz
                     do iy=1,ny
                         do ix=1,nx
-                            call proj2angl( deltarho_p(:,ix,iy,iz,s), vexc)
+                            call proj2angl( deltarho_p(:,ix,iy,iz), vexc)
                             vexc = prefactor*grid%w*vexc
-                            ff = ff + sum((solvent(s)%xi(:,ix,iy,iz)**2*solvent(s)%rho0-solvent(s)%rho0)*vexc)
+                            ff = ff + sum((solvent(1)%xi(:,ix,iy,iz)**2*rho0-rho0)*vexc)
                         end do
                     end do
-                end do
                 end do
                 !$omp end do
                 !$omp end parallel
