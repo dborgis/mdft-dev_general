@@ -46,7 +46,6 @@ contains
         use module_grid, only: grid
         implicit none
         integer :: ip, m, mup, mu, i, p
-
         if(is_init) return
 
         ntheta=grid%ntheta
@@ -223,7 +222,6 @@ contains
                 end do
             end do
         end do
-
         o = 0._dp
         io=0
         do itheta=1,ntheta

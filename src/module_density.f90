@@ -63,7 +63,7 @@ contains
       use module_solute, only: solute
       use module_grid, only: grid
       use system, only: site_type
-      use module_orientation_projection_transform, only: proj2angl
+      use module_orientation_projection_transform, only: proj2angl, init_module_rotation => init
       implicit none
       logical :: exists
       integer :: ios
@@ -118,7 +118,7 @@ contains
       print *,'previous state'
       print *,'nx=', nx_prev,'  ny=', ny_prev,'  nz=', nz_prev
       print *, "mmax=", mmax
-
+      call init_module_rotation
       offset_x = (grid%lx - dx_prev * nx_prev) / 2
       offset_y = (grid%ly - dy_prev * ny_prev) / 2
       offset_z = (grid%lz - dz_prev * nz_prev) / 2
@@ -144,7 +144,7 @@ contains
 
       if (.not. allocated (xi_prev) ) allocate (xi_prev(no,nx_prev,ny_prev,nz_prev) ,source=0._dp)
       if (.not. allocated (deltarho_p_prev) ) allocate (deltarho_p_prev(np,nx_prev,ny_prev,nz_prev) ,source=zeroc)
-
+      
       !load previous projections
       do is=1,size(solvent)
         ! read file
@@ -155,7 +155,7 @@ contains
             end do
           end do
         end do
-
+        
         !proj2angl
         do iz_prev=1,nz_prev
           do iy_prev=1,ny_prev
@@ -166,7 +166,6 @@ contains
             end do
           end do
         end do
-
         !interpolation
         do io=1,no
 
