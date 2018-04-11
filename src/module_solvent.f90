@@ -253,15 +253,15 @@ contains
               solvent(s)%site(1:3)%q = [0.269, 0.129, -0.398]
               solvent(s)%site(1:3)%sig = [3.6, 3.4, 3.3]
               solvent(s)%site(1:3)%eps = [1.59, 0.416, 0.416]
-              solvent(s)%site(1)%r = [0., 0., -1.46]
+              solvent(s)%site(1)%r = [0., 0., 1.46]
               solvent(s)%site(2)%r = [0., 0., 0.]
-              solvent(s)%site(3)%r = [0., 0., 1.17]
+              solvent(s)%site(3)%r = [0., 0., -1.17]
               solvent(s)%site(1:3)%Z = [9, 6, 7] ! CH3
               !solvent(1)%n0 = 0.0289
-              solvent(s)%n0 = 0.01154*solvent(s)%mole_fraction
+              solvent(s)%n0 = 0.012044*solvent(s)%mole_fraction
               solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
               !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
-              solvent(s)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
+              solvent(s)%relativePermittivity = 31.6_dp ! TODO TO BE CHECKED AND INCLUDED.
               solvent(s)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
               solvent(s)%n_line_cfile=500
               if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"

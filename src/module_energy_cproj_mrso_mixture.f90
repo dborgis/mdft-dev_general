@@ -98,7 +98,6 @@ contains
         real(dp) :: prefactor
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
         call cpu_time (time(1))
-
         ntheta = grid%ntheta
         nphi   = grid%nphi
         npsi   = grid%npsi
