@@ -11,6 +11,7 @@ subroutine energy_minimization
 
   real(dp) :: f ! functional to minimize
   real(dp) :: df (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
+  real(dp) :: x_allsolv (grid%no, grid%nx, grid%ny, grid%nz, solvent(1)%nspec )
   real :: time(1:10)
   character(80) :: minimizerName
 
@@ -230,7 +231,7 @@ end subroutine
 
   subroutine minimization_using_lbfgs
     implicit none
-    integer :: itermaxBeforeError
+    integer :: itermaxBeforeError,s
     itermaxBeforeError = getinput%int("maximum_iteration_before_error", defaultvalue=huge(1), assert=">0")
     ! Init minimization process. From allocations to optimizer parameters to guess solution
     call lbfgsb%init
@@ -255,7 +256,10 @@ end subroutine
       ! MAIS il est con et mon array est contigu en mémoire, donc je lui passe mon tableau à 4 colonnes dans le bon sens
       ! et il ne s'en rend pas compte: c'est pour lui une seule colonne 4 fois plus grande. Joix du fortran dégueux :)
 
-      call lbfgsb%setulb ( lbfgsb%n, lbfgsb%m, solvent(1)%xi, f, df, &
+      Do s=1,size(solvent)
+        x_allsolv(:,:,:,:,s)=solvent(s)%xi
+      end do
+      call lbfgsb%setulb ( lbfgsb%n, lbfgsb%m, x_allsolv, f, df, &
       lbfgsb%factr, lbfgsb%pgtol, lbfgsb%wa, lbfgsb%iwa, lbfgsb%task, lbfgsb%iprint, lbfgsb%csave, lbfgsb%lsave, lbfgsb%isave,&
       lbfgsb%dsave )
 
@@ -269,6 +273,9 @@ end subroutine
         !
         call cpu_time(time(3))
 
+      Do s=1,size(solvent)
+        solvent(s)%xi=x_allsolv(:,:,:,:,s) 
+      end do
         !
         ! Given a density of orientation, xyz, return the value of the functional at this point F[xi] and the gradient dF/dxi
         !
