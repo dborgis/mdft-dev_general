@@ -4,7 +4,7 @@ module module_rotation
     private
     public :: angle, thetaofq, phiofq, rotation_matrix_between_complex_spherical_harmonics_lu, init, omega_prime_fonction_de_omega
     real(dp), private :: epsdp=epsilon(1._dp)
-    integer, parameter, private :: mmax_max = 5 ! we will never have mmax > 5
+    integer, parameter, private :: mmax_max = 6 ! we will never have mmax > 5, actually we do for ACN
     real(dp), dimension(2:mmax_max,-mmax_max:mmax_max,-mmax_max:mmax_max), private :: a, b
     real(dp), dimension(2:mmax_max,-mmax_max:mmax_max), private :: c, d
 
@@ -14,7 +14,7 @@ contains
         implicit none
         real(dp), parameter :: sqrt2=sqrt(2._dp)
         real(dp), parameter :: sqrtof(-1:2*mmax_max +1) = [0._dp, 0._dp, 1._dp, sqrt(2._dp), sqrt(3._dp), sqrt(4._dp), sqrt(5._dp),&
-                                             sqrt(6._dp), sqrt(7._dp), sqrt(8._dp), sqrt(9._dp), sqrt(10._dp), sqrt(11._dp) ]
+                                             sqrt(6._dp), sqrt(7._dp), sqrt(8._dp), sqrt(9._dp), sqrt(10._dp), sqrt(11._dp),sqrt(12._dp),sqrt(13._dp) ]
         integer :: l, m, m1
         a = 0._dp
         b = 0._dp

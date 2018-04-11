@@ -248,15 +248,15 @@ contains
             solvent(1)%site(1:3)%q = [0.269, 0.129, -0.398]
             solvent(1)%site(1:3)%sig = [3.6, 3.4, 3.3]
             solvent(1)%site(1:3)%eps = [1.59, 0.416, 0.416]
-            solvent(1)%site(1)%r = [0., 0., -1.46]
+            solvent(1)%site(1)%r = [0., 0., 1.46]
             solvent(1)%site(2)%r = [0., 0., 0.]
-            solvent(1)%site(3)%r = [0., 0., 1.17]
+            solvent(1)%site(3)%r = [0., 0., -1.17]
             solvent(1)%site(1:3)%Z = [9, 6, 7] ! CH3
             !solvent(1)%n0 = 0.0289
-            solvent(1)%n0 = 0.01154
+            solvent(1)%n0 = 0.012044  !Value given by Luc
             solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
             !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
-            solvent(1)%relativePermittivity = 1._dp ! TODO TO BE CHECKED AND INCLUDED.
+            solvent(1)%relativePermittivity = 31.6_dp ! 33 seems to be the value in Edwards et al, Mol. Phys. 51, 1141 (1984), Luc value is 31.6 
             solvent(1)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
             solvent(1)%n_line_cfile=500
             if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 5"
