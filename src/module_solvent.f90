@@ -203,7 +203,7 @@ contains
         !
         !solvent(1)%name = getinput%char('solvent', defaultvalue="spce") ! This wont be valid anymore when several solvents will be used.
         Do s=1,size(solvent)
-          print*, "Solvent number  " , s, " is " , solvent(s)%name
+          print*, "Solvent number  " , s, " is " , solvent(s)%name, " with a molecular fraction of", solvent(s)%mole_fraction
           select case (solvent(s)%name)
           case ("spce")
               solvent(s)%nsite = 3
@@ -437,6 +437,7 @@ contains
         if (sum(solvent(:)%mole_fraction)/=1._dp) then
             write (*,*) 'Critial error. Sum of all mole fraction should be equal to one.'
             write (*,*) 'here are the number of the species and its associated mole fraction'
+            stop
         end if
         if ( any(solvent(:)%mole_fraction<0._dp) .or. any(solvent(:)%mole_fraction>1._dp) ) THEN
             write (*,*) 'Critical errror in ALLOCATE_from_input.f90. Mole fractions should be between 0 and 1'
