@@ -487,9 +487,9 @@ contains
           !it is deallocated just after the big loop
           gammatmp(np,nx,ny,nz,size(solvent))=zeroC
           
-          !$omp do
           do s=1,size(solvent)
             do s2=1,size(solvent)
+          !$omp do
               do iz_q=1,nz/2+1
                  iz_mq = grid%iz_mq(iz_q)
                  q(3) = grid%kz(iz_q) ! cartesian coordinates of vector q in lab frame
@@ -681,7 +681,7 @@ contains
                         ! First, for q,
 
                         !Guillaume:Here we shoud add all the contribtuion coming froms s2 in order to have a simple integration in ff
-                        gammatmp(1:np, ix_q, iy_q, iz_q,s) =gammatmp(1:np, ix_q, iy_q, iz_q,s) + deltarho_p_q(1:np)
+                        gammatmp(1:np, ix_q, iy_q, iz_q,s2) =gammatmp(1:np, ix_q, iy_q, iz_q,s2) + deltarho_p_q(1:np)
                         !gammatmp(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                         !deltarho_p(1:np, ix_q, iy_q, iz_q,s) =deltarho_p_q(1:np)
                         !
@@ -693,7 +693,7 @@ contains
                           !else
                           !  print*, "another one that actualy count in first", ix_mq, iy_mq, iz_mq, q_eq_mq
                           !end if
-                          if (.not. q_eq_mq ) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + conjg(deltarho_p_mq(1:np))
+                          if (.not. q_eq_mq ) gammatmp(1:np, ix_mq, iy_mq, iz_mq,s2) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s2) + conjg(deltarho_p_mq(1:np))
                           !gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                           !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = conjg(deltarho_p_mq(1:np))
                         else
@@ -702,7 +702,7 @@ contains
                           !else if (q_eq_mq) then
                           !  print*, "this q=-q counts sound weird"
                           !end if
-                          if (.not. q_eq_mq )  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) + deltarho_p_mq(1:np)
+                          if (.not. q_eq_mq )  gammatmp(1:np, ix_mq, iy_mq, iz_mq,s2) = gammatmp(1:np, ix_mq, iy_mq, iz_mq,s2) + deltarho_p_mq(1:np)
                           !gammatmp(1:np, ix_mq, iy_mq, iz_mq,s) =  deltarho_p_mq(1:np)
                           !deltarho_p(1:np, ix_mq, iy_mq, iz_mq,s) = deltarho_p_mq(1:np)
                         end if
@@ -715,9 +715,9 @@ contains
                   end do
               end do
             end do
+        !$omp end do
           end do!solvent 2 loop
         end do!solvent 1 loop
-        !$omp end do
         ! deallocate : (not necessary)
         deallocate (deltarho_p_q)
         deallocate (deltarho_p_mq)
@@ -786,11 +786,11 @@ contains
 
             if(present(df)) then
                 ff=0._dp
+                do s2=1,size(solvent)
+                  prefactor = -kT*2.0_dp*fourpisq/mrso /solvent(s2)%n0*solvent(s2)%mole_fraction!/2.0! the division by n0 comes from Luc's normalization of c
                 !$omp parallel private(iz, iy, ix, vexc) reduction(+:ff)
                 !$omp do
                 !do s=1,size(solvent)
-                do s2=1,size(solvent)
-                  prefactor = -kT*2.0_dp*fourpisq/mrso /solvent(s2)%n0*solvent(s2)%mole_fraction!/2.0! the division by n0 comes from Luc's normalization of c
                   do iz=1,nz
                       do iy=1,ny
                           do ix=1,nx
@@ -800,11 +800,11 @@ contains
                               df(:,ix,iy,iz,s2) = df(:,ix,iy,iz,s2) + 2._dp*solvent(s2)%rho0*solvent(s2)%xi(:,ix,iy,iz)*vexc
                           end do
                       end do
-                  !end do
                   end do
-                end do
                 !$omp end do
                 !$omp end parallel
+                end do
+                              !stop
                 ff = ff*0.5_dp*dv
             else
                 !Guillaume:I did not check mixture code for this loop 
@@ -818,7 +818,7 @@ contains
                           do ix=1,nx
                               call proj2angl( deltarho_p(:,ix,iy,iz,s), vexc)
                               vexc = prefactor*grid%w*vexc
-                              ff = ff + sum((solvent(s2)%xi(:,ix,iy,iz)**2*solvent(s2)%rho0-solvent(s)%rho0)*vexc)
+                              ff = ff + sum((solvent(s2)%xi(:,ix,iy,iz)**2*solvent(s2)%rho0-solvent(s2)%rho0)*vexc)
                           end do
                       end do
                   end do
