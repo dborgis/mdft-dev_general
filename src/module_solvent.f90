@@ -247,16 +247,16 @@ contains
               ! Luc
           case ("acetonitrile")
               ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
-              solvent(s)%nsite = 3 ! ---Me---C--N--->z
+              solvent(s)%nsite = 3 ! z<---Me---C--N--
               solvent(s)%molrotsymorder = 1000
               allocate( solvent(s)%site(3) )
               solvent(s)%site(1:3)%q = [0.269, 0.129, -0.398]
               solvent(s)%site(1:3)%sig = [3.6, 3.4, 3.3]
               solvent(s)%site(1:3)%eps = [1.59, 0.416, 0.416]
-              solvent(s)%site(1)%r = [0., 0., 1.46]
-              solvent(s)%site(2)%r = [0., 0., 0.]
-              solvent(s)%site(3)%r = [0., 0., -1.17]
-              solvent(s)%site(1:3)%Z = [9, 6, 7] ! CH3
+              solvent(s)%site(1)%r = [0., 0., 1.46]  !N
+              solvent(s)%site(2)%r = [0., 0., 0.]    !C
+              solvent(s)%site(3)%r = [0., 0., -1.17] !CH3
+              solvent(s)%site(1:3)%Z = [9, 6, 7]
               !solvent(1)%n0 = 0.0289
               solvent(s)%n0 = 0.012044*solvent(s)%mole_fraction
               solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
