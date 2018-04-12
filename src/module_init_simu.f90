@@ -62,7 +62,7 @@ contains
       use module_energy_cproj_mrso_mixture, only: energy_cproj_mrso_mixture
 
       if (size(solvent)==1) then
-        excess_energy=>energy_cproj_mrso
+       excess_energy=>energy_cproj_mrso
       else
         excess_energy=>energy_cproj_mrso_mixture
       end if

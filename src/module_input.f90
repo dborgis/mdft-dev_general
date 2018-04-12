@@ -428,11 +428,10 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  FUNCTION input_char_multiple (tag,n,defaultvalue) 
+  FUNCTION input_char_multiple (tag,defaultvalue) 
     Implicit none
     CHARACTER(*), INTENT(IN) :: tag
     character(*), intent(in), optional :: defaultvalue
-    Integer, intent(in) :: n
     Integer::lentag,i,iostatint
     character(50)::input_char_multiple
     logical :: tag_is_found
