@@ -217,7 +217,7 @@ contains
               solvent(s)%site(3)%r = [-0.816495, 0.0, 0.5773525]
               solvent(s)%site(1:3)%Z = [8, 1, 1]
               solvent(s)%n0 = 0.0332891*solvent(s)%mole_fraction
-              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
               solvent(s)%relativePermittivity = 71._dp
               solvent(s)%npluc(0:5)=[1,6,75,252,877,2002]
               solvent(s)%n_line_cfile=1024
@@ -236,7 +236,7 @@ contains
               solvent(s)%site(3)%r = [-0.756950, 0.0, 0.585882] 
               solvent(s)%site(1:3)%Z = [8, 1, 1]
               solvent(s)%n0 = 0.03349459*solvent(s)%mole_fraction
-              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
               solvent(s)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
               solvent(s)%npluc(0:5)=[1,6,75,252,877,2002]
               solvent(s)%n_line_cfile=1024
@@ -259,7 +259,7 @@ contains
               solvent(s)%site(1:3)%Z = [9, 6, 7]
               !solvent(1)%n0 = 0.0289
               solvent(s)%n0 = 0.012044*solvent(s)%mole_fraction
-              solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(1)%molrotsymorder)
+              solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
               !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
               solvent(s)%relativePermittivity = 31.6_dp ! TODO TO BE CHECKED AND INCLUDED.
               solvent(s)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
