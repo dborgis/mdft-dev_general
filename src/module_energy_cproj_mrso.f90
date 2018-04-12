@@ -93,7 +93,6 @@ contains
         real(dp), parameter :: fourpisq = 4._dp*acos(-1._dp)**2
 
         call cpu_time (time(1))
-
         ntheta = grid%ntheta
         nphi   = grid%nphi
         npsi   = grid%npsi
@@ -365,7 +364,7 @@ contains
                 use module_read_c_luc, only: read_c_luc
                 real(dp) :: qmaxnecessary
                 qmaxnecessary = norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))])
-                call read_c_luc(c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
+                call read_c_luc(1,c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
                 ! The c(m,n,mu,nu,khi) that we read from Luc had 2 drawbacks:
                 ! - we read it the way Luc give it, not the optimal way for our loops
                 ! - it does not contain our use of the symetries, and here we decide to have mu>0.

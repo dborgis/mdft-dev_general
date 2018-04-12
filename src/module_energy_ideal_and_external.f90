@@ -64,7 +64,6 @@ contains
                     ! limit of Fid when rho->0 is not 0, it is:
                     fid = fid + kT*dv*grid%w(io)*  rho0
                   end if
-
                 end do
               end do
             end do

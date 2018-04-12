@@ -28,9 +28,6 @@ module module_energy_and_gradient
   type (f_type), public :: ff
   public :: energy_and_gradient
 
-
-
-
 contains
 
 
@@ -52,6 +49,7 @@ subroutine energy_and_gradient (f, df)
     ! use module_energy_cs, only: energy_cs
     ! use module_energy_cdeltacd, only: energy_cdeltacd
     use module_energy_cproj_mrso, only: energy_cproj_mrso
+    use module_energy_cproj_mrso_mixture, only: energy_cproj_mrso_mixture
     ! use module_energy_cproj_no_symetry, only: energy_cproj_no_symetry
     ! use module_energy_ck_angular, only: energy_ck_angular
     ! use module_energy_luc, only: energy_luc
@@ -59,7 +57,7 @@ subroutine energy_and_gradient (f, df)
     use module_input, only: getinput
     ! use module_energy_cproj_slow, only: energy_cproj_slow
     use module_lbfgs_nocedal_mdft, only:lbfgsb
-
+    use proc_ptrs, only : excess_energy
     implicit none
 
     real(dp), intent(out) :: f
@@ -68,8 +66,7 @@ subroutine energy_and_gradient (f, df)
     real(c_float) :: t(10)
     real(dp) :: fold
     integer :: ns, s
-
-    !
+   
     ! This is an horrible trick to not update the count of SCF cycles if we're in a line search.
     ! If we're not in lbfgs, everything is easy: update the count if one needs the gradient only since the gradient is not computed in the line search.
     ! If the minimizer is lbfgs, then we always compute the gradient, even in the line search. Then, what you want it to use the dedicated variable for lbfgs: isave(30)
@@ -141,12 +138,12 @@ subroutine energy_and_gradient (f, df)
     if (solvent(s)%do%exc_cproj) then
         if(present(df)) then
           call cpu_time(t(4))
-          call energy_cproj_mrso( ff%exc_cproj, df, print_timers=.false.)
+          call excess_energy( ff%exc_cproj, df, print_timers=.false.)
           call cpu_time(t(5))
         !   print*, "ff%exc_cproj_mrso =", real(ff%exc_cproj), " in",t(6)-t(5),"sec"
         else
           call cpu_time(t(4))
-          call energy_cproj_mrso( ff%exc_cproj, print_timers=.false.)
+          call excess_energy( ff%exc_cproj, print_timers=.false.)
           call cpu_time(t(5))
         end if
         f = f + ff%exc_cproj
@@ -333,10 +330,14 @@ end subroutine energy_bridge
       use module_solute, only: solute
       implicit none
       real(dp) :: solute_net_charge ! net charge of the solute
+      integer :: s
       real(dp) :: gamma ! trace of the quadrupole moment. Should be 0.848 e.nm² for SPCE and 0.820 for SPC water.
-      gamma = solvent(1)%quadrupole(1,1)+solvent(1)%quadrupole(2,2)+solvent(1)%quadrupole(3,3) ! quadrupole moment trace
-      solute_net_charge = sum(solute%site%q)
-      ff%pscheme_correction = -gamma*solvent(1)%n0*2909.857_dp*solute_net_charge ! in kJ/mol
+      ff%pscheme_correction=0.0_dp
+      do s=1,solvent(1)%nspec
+        gamma = solvent(s)%quadrupole(1,1)+solvent(s)%quadrupole(2,2)+solvent(s)%quadrupole(3,3) ! quadrupole moment trace
+        solute_net_charge = sum(solute%site%q)
+        ff%pscheme_correction =ff%pscheme_correction-gamma*solvent(s)%n0*2909.857_dp*solute_net_charge ! in kJ/mol
+      end do
   end subroutine typeC_corrections
 
 

@@ -32,8 +32,6 @@ SUBROUTINE output_rdf (array,filename)
     logical :: dontPrintZeros
     character(len=6) :: string, string2
 
-    if (solvent(1)%nspec/=1) error stop "compute_rdf.f90 is written for 1 solvent species only."
-
     rdfmaxrange = minval(grid%length)/2._dp
     ! we dont use this anymore. Not suited to our "powder averaging" kind of grid results.
     ! CALL deduce_optimal_histogram_properties( product(grid%n_nodes), rdfmaxrange, nbins, dr )

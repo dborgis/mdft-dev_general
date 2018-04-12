@@ -94,6 +94,7 @@ set(mdft_SRCS
 #  ${SRC_Bpp}
   src/module_rotation.f90
   src/module_energy_cproj_mrso.f90
+  src/module_energy_cproj_mrso_mixture.f90
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90
@@ -102,6 +103,7 @@ set(mdft_SRCS
   src/compute_wca_diameter.f90
   src/compute_z_density.f90
   src/cs_of_k_hard_sphere.f90
+  src/module_proc_ptrs.f90
   src/module_energy_and_gradient.f90
   src/module_energy_ck_angular.f90
   src/module_energy_cs.f90

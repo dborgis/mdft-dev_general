@@ -28,12 +28,13 @@ subroutine pressure_correction
     real(dp) :: deltaN, PMV_correction, Volodymyr_empirical_correction
     real(dp), parameter :: zerodp = 0._dp
     real(dp) :: deltaG_emptybox
+    integer :: s
 
     numberdensity = solvent(1)%n0
     deltaGtotMDFT = ff%tot
 
     !... Volodymyr's partial molar volume correction. See J. Phys. Chem. Lett. 5, 1935-1942 (2014)
-    if (size(solvent)/=1) stop "pressure_correction implemented for 1 solvent species only"
+    if (size(solvent)/=1) print*, "pressure_correction implemented for 1 solvent species only WARNNING this does not make sense"
     allocate(  density(grid%nx,grid%ny,grid%nz),  source=0._dp)
     call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
 
@@ -62,7 +63,9 @@ block
     logical :: oldvalue
     oldvalue = ff%apply_energy_corrections_due_to_charged_solute
     ff%apply_energy_corrections_due_to_charged_solute = .false. ! Don't include corrections due to the external potential since that's a pure homogeneous solvent problem.
-    solvent(1)%xi = 0._dp ! set density to 0 == empty the simulation box
+    do s=1,size(solvent) 
+      solvent(s)%xi = 0._dp ! set density to 0 == empty the simulation box
+    end do
     call energy_and_gradient(deltaG_emptybox) ! compute the grandpotential of such system
     ff%apply_energy_corrections_due_to_charged_solute = oldvalue ! put back the old value
     Pbulk = deltaG_emptybox / (grid%lx * grid%ly * grid%lz) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3

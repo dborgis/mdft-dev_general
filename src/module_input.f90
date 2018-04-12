@@ -29,7 +29,7 @@ module module_input
   end type
 
   public :: n_linesInFile, deltaAbscissa,&
-  input_dp, input_int, input_log, input_char, input_dp2, input_dp3, input_int2, input_int3
+  input_dp, input_int, input_log, input_char, input_dp2, input_dp3, input_int2, input_int3, input_char_multiple
 
   type, private :: getinput_type
     contains
@@ -41,6 +41,7 @@ module module_input
       procedure, nopass :: dp => input_dp
       procedure, nopass :: dp2 => input_dp2
       procedure, nopass :: dp3 => input_dp3
+      procedure, nopass :: char_multiple => input_char_multiple
   end type
   type(getinput_type), public :: getinput
 
@@ -427,6 +428,62 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  FUNCTION input_char_multiple (tag,defaultvalue) 
+    Implicit none
+    CHARACTER(*), INTENT(IN) :: tag
+    character(*), intent(in), optional :: defaultvalue
+    Integer::lentag,i,iostatint
+    character(50)::input_char_multiple
+    logical :: tag_is_found
+    tag_is_found = .false.
+    !if (.not. allocated(input_line) ) call put_input_in_character_array
+    lentag=LEN(tag)
+    do i=1,size(input_line)+1
+      IF (i==size(input_line)+1) exit
+      if (input_line(i)(1:lentag)==tag .AND. input_line(i)(lentag+1:lentag+1)=='') then
+        READ(input_line(i)(lentag+4:lentag+50),'(A)',IOSTAT=iostatint) input_char_multiple
+        tag_is_found = .true.
+        IF (iostatint/=0) THEN
+          PRINT*,"I have a problem while reading input line:"
+          IF (TRIM(ADJUSTL(input_line(i)(lentag+4:lentag+50)))=='') PRINT*,"I found nothing after sign ="
+          STOP
+        END IF
+        EXIT
+      end if
+    end do
+
+
+    if (tag_is_found) then
+        IF (LEN(TRIM(ADJUSTL(input_char_multiple)))==0) THEN
+            print*, "Problem while looking for input tag: ", tag
+            print*, "input_line(:) reads: ", input_line
+            print*, "input_char(:) reads: ", input_char_multiple
+            print*, "I only read white spaces!"
+            stop
+        else IF (input_char_multiple(1:1)==' ') THEN
+            print*, "Problem while looking for input tag: ", tag
+            print*, "The first input character is a whitespace"
+            print*, "input_line(:) reads: ", input_line
+            print*, "input_char(:) reads: ", input_char_multiple
+            stop
+        end if
+
+    else if( .not. tag_is_found .and. present(defaultvalue) ) then
+        input_char_multiple = defaultvalue
+    else if( .not. tag_is_found .and. .not. present(defaultvalue) ) then
+        print*, "Failed to find the keyword for input tag: ", tag
+        print*, "No default values have been given by developers."
+        stop
+    end if
+
+    print*, input_char_multiple
+  END FUNCTION input_char_multiple
+
+
+
+
+
+
   FUNCTION input_char (tag, defaultvalue, validValues)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: tag
@@ -496,7 +553,6 @@ contains
             stop
         end if
     end if
-
 
 end function input_char
 

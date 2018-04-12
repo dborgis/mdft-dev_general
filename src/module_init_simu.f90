@@ -29,6 +29,7 @@ contains
         if (getinput%log('hard_sphere_fluid', defaultvalue=.false.)) call compute_hard_spheres_parameters ! If calculation based on Fundamental Measure Theory read FMT parameters and compute weight functions etc
         call init_fft
         call init_vext
+        call init_vexc
         call init_density
     end subroutine init_simu
 
@@ -53,5 +54,19 @@ contains
 
     end subroutine print_header
 
+    subroutine init_vexc
+    
+      use proc_ptrs, only : excess_energy
+      use module_solvent, only: solvent
+      use module_energy_cproj_mrso, only: energy_cproj_mrso
+      use module_energy_cproj_mrso_mixture, only: energy_cproj_mrso_mixture
+
+      if (size(solvent)==1) then
+       excess_energy=>energy_cproj_mrso
+      else
+        excess_energy=>energy_cproj_mrso_mixture
+      end if
+    !
+    end subroutine
 
 end module module_init_simu

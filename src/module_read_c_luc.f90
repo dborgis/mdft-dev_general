@@ -3,7 +3,7 @@ module module_read_c_luc
     private
     public :: read_c_luc
 contains
-    subroutine read_c_luc( cmnmunukhi, mmax, mrso, qmaxwanted, np, nq, dq, m, n, mu, nu, khi, p )
+    subroutine read_c_luc(s, cmnmunukhi, mmax, mrso, qmaxwanted, np, nq, dq, m, n, mu, nu, khi, p )
         use precision_kinds, only: dp
         use module_input, only: n_linesInFile, deltaAbscissa
         use module_solvent, only: solvent
@@ -11,7 +11,7 @@ contains
         complex(dp), allocatable, intent(out) :: cmnmunukhi(:,:)
         character(len=4) :: endOfFilename
         character(len=100) :: filename
-        integer, intent(in) :: mmax
+        integer, intent(in) :: mmax, s
         integer, intent(in) :: mrso ! Symetry of the main axis. For instance, mrso=2 for a molecule of symetry C2v (like water).
         real(dp), intent(in) :: qmaxwanted
         integer, intent(out) :: np
@@ -22,7 +22,7 @@ contains
         np=solvent(1)%npluc(mmax)
 
         write (endOfFilename, "(I1,A3)") mmax,"_ml"
-        filename = "data/dcf/" // trim(solvent(1)%name) // "/" // trim(solvent(1)%name) // "-ck_nonzero_nmax" // trim(endOfFilename)
+        filename = "data/dcf/" // trim(solvent(s)%name) // "/" // trim(solvent(s)%name) // "-ck_nonzero_nmax" // trim(endOfFilename)
         dq=deltaAbscissa(filename,17) 
         ! c(mnmunukhi) should not be already allocated
         if( allocated(cmnmunukhi)) error stop "c(m,n,mu,nu,khi) is already allocated in module_read_c_luc"
@@ -42,7 +42,7 @@ contains
         block
             integer :: nline
             nline = n_linesInFile(filename) -17 ! header contains 17 lines
-            if( nline /= solvent(1)%n_line_cfile) then
+            if( nline /= solvent(s)%n_line_cfile) then
                 print*, "WARNING:!!!!! len of c file not verified here !!!!!!      module_read_c_luc.f90 at line 44"
                 !error stop "In module_read_c_luc/read_c_luc, filename does not contain the expected number of  values of q"
             end if
@@ -97,7 +97,7 @@ contains
             integer  :: nqinfile 
             real(dp) :: q, actualdq
             integer :: iq
-            nqinfile = solvent(1)%n_line_cfile
+            nqinfile = solvent(s)%n_line_cfile
             nq = int(qmaxwanted/dq +0.5)+2
             if( nq>nqinfile) error stop "You want more values of q that are available in module_read_c_luc"
             allocate( cmnmunukhi(np,nq) ,source=(0._dp,0._dp)  )
