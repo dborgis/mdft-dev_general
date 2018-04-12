@@ -78,7 +78,6 @@ contains
     read(10,*) numpoints(1), deltarinbohr(1), dummytext
     read(10,*) numpoints(2),dummytext, deltarinbohr(2), dummytext
     read(10,*) numpoints(3), dummytext,dummytext, deltarinbohr(3)
-    print*, 'toto', numsites,numpoints
     !For safety check that the numbpoints and the grid length correspond to the
     !grid used in the current calc
     if (numpoints(1)/=grid%nx) stop "error in read_cube_file, the cube file does not have the same number of points in X direction than the grid used in MDFT calc"
