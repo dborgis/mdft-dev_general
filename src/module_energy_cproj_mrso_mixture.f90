@@ -815,7 +815,7 @@ contains
                   do iz=1,nz
                       do iy=1,ny
                           do ix=1,nx
-                              call proj2angl( deltarho_p(:,ix,iy,iz,s), vexc)
+                              call proj2angl( deltarho_p(:,ix,iy,iz,s2), vexc)
                               vexc = prefactor*grid%w*vexc
                               ff = ff + sum((solvent(s2)%xi(:,ix,iy,iz)**2*solvent(s2)%rho0-solvent(s2)%rho0)*vexc)
                           end do
