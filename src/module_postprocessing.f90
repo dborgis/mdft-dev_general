@@ -16,12 +16,13 @@ contains
         use module_solute, only: solute
         use module_grid, only: grid
         use module_orientation_projection_transform, only: angl2proj
+        use module_input
         implicit none
         character(len=80) :: filename
         real(dp), allocatable :: density(:,:,:)
-        integer :: nx, ny, nz, ix, iy, iz, is, isite, no
+        integer :: nx, ny, nz, ix, iy, iz, is, isite, no,io
         real(dp), parameter :: pi=acos(-1._dp)
-
+        logical:: output_full_density
         nx=grid%nx
         ny=grid%ny
         nz=grid%nz
@@ -38,11 +39,15 @@ contains
         print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
 
 
-        !
+        output_full_density=getinput%log('write_full_density', defaultvalue=.false.)
         ! print binary file one can use as a restart point
         !
         open(10,file='output/density.bin',form='unformatted')
-        write(10) size(solvent)
+        if (output_full_density) then
+          write(10) -size(solvent)
+        else
+          write(10) size(solvent)
+        end if
         write(10) grid%mmax
         write(10) grid%no
         write(10) grid%np
@@ -55,16 +60,30 @@ contains
         block
             use module_grid, only: grid
             complex(dp) :: xi_p(grid%np)
-            do is=1,size(solvent)
-                do iz=1,nz
-                    do iy=1,ny
-                        do ix=1,nx
-                            call angl2proj( solvent(is)%xi(:,ix,iy,iz), xi_p)
-                            write(10) xi_p
-                        end do
-                    end do
-                end do
+            if (.not. output_full_density) then
+              do is=1,size(solvent)
+                  do iz=1,nz
+                      do iy=1,ny
+                          do ix=1,nx
+                              call angl2proj( solvent(is)%xi(:,ix,iy,iz), xi_p)
+                              write(10) xi_p
+                          end do
+                      end do
+                  end do
+              end do
+            else
+              do is=1,size(solvent)
+                  do iz=1,nz
+                      do iy=1,ny
+                          do ix=1,nx
+                            do io=1,no
+                              write(10) solvent(is)%xi(io,ix,iy,iz)
+                            end do
+                          end do
+                      end do
+                  end do
             end do
+          end if
         end block
         close(10)
         print*, "New file output/density.bin"

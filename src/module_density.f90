@@ -83,7 +83,7 @@ contains
       real(dp), allocatable :: xi_prev(:,:,:,:)
       real(dp), parameter :: zero=0._dp
       complex(dp), parameter :: zeroc=(0._dp, 0._dp)
-
+      logical :: read_full_density
       character(len("input/density.bin")), parameter :: filename="input/density.bin"
       inquire (file=filename, EXIST=exists)
       if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
@@ -104,13 +104,20 @@ contains
       mmax=grid%mmax
 
       read ( 10, iostat=ios ) ns_prev
+      if (ns_prev<0) then
+        read_full_density=.true.
+        print*, "The denisity.bin file you are rereading contains xi(Omega,r)"
+        ns_prev=-ns_prev
+      else
+        read_full_density=.false.
+        print*,  "The denisity.bin file you are rereading is stored in projections"
+      end if
       read ( 10, iostat=ios ) mmax_prev
       read ( 10, iostat=ios ) no_prev
       read ( 10, iostat=ios ) np_prev
       read ( 10, iostat=ios ) nx_prev, ny_prev, nz_prev
       read ( 10, iostat=ios ) dx_prev, dy_prev, dz_prev
       read ( 10, iostat=ios ) nsite_prev
-
 
       print*
       print*, '*** RESTARTING from input/density.bin ***'
@@ -142,88 +149,100 @@ contains
 
       ! TODO: test si les ns sont les mêmes
 
+      if (.not. read_full_density) then 
       if (.not. allocated (xi_prev) ) allocate (xi_prev(no,nx_prev,ny_prev,nz_prev) ,source=0._dp)
       if (.not. allocated (deltarho_p_prev) ) allocate (deltarho_p_prev(np,nx_prev,ny_prev,nz_prev) ,source=zeroc)
-      
       !load previous projections
-      do is=1,size(solvent)
-        ! read file
-        do iz_prev=1,nz_prev
-          do iy_prev=1,ny_prev
-            do ix_prev=1,nx_prev
-              read ( 10, iostat=ios ) deltarho_p_prev(1:np_prev,ix_prev,iy_prev,iz_prev)
-            end do
-          end do
-        end do
-        
-        !proj2angl
-        do iz_prev=1,nz_prev
-          do iy_prev=1,ny_prev
-            do ix_prev=1,nx_prev
-                call proj2angl( &
-                    deltarho_p_prev(1:np,ix_prev,iy_prev,iz_prev) ,&
-                    xi_prev(1:no,ix_prev,iy_prev,iz_prev) )
-            end do
-          end do
-        end do
-        !interpolation
-        do io=1,no
-
-          do iz_prev=1,nz_prev-1
-            z0 = (iz_prev-1)*dz_prev+offset_z
-            z1 = (iz_prev)*dz_prev+offset_z
-            do iy_prev=1,ny_prev-1
-              y0 = (iy_prev-1)*dy_prev+offset_y
-              y1 = (iy_prev)*dy_prev+offset_y
-              do ix_prev=1,nx_prev-1
-                x0 = (ix_prev-1)*dx_prev+offset_x
-                x1 = (ix_prev)*dx_prev+offset_x
-
-                iz=max(1, ceiling(z0/dz+1))
-                do while(iz<=min(nz, floor(z1/dz+1)))
-                  iy=max(1, ceiling(y0/dy+1))
-                  do while(iy<=min(ny, floor(y1/dy+1)))
-                    ix=max(1, ceiling(x0/dx+1))
-                    do while(ix<=min(nx, floor(x1/dx+1)))
-
-                      z = (iz-1)*dz
-                      y = (iy-1)*dy
-                      x = (ix-1)*dx
-
-                      xd = (x-x0)/(x1-x0)
-                      yd = (y-y0)/(y1-y0)
-                      zd = (z-z0)/(z1-z0)
-
-                      xi00 = xi_prev(io, ix_prev, iy_prev, iz_prev) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev, iz_prev) * xd
-                      xi01 = xi_prev(io, ix_prev, iy_prev, iz_prev+1) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev, iz_prev+1) * xd
-                      xi10 = xi_prev(io, ix_prev, iy_prev+1, iz_prev) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev+1, iz_prev) * xd
-                      xi11 = xi_prev(io, ix_prev, iy_prev+1, iz_prev+1) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev+1, iz_prev+1) * xd
-
-                      xi0 = xi00 * (1-yd) + xi10 * yd
-                      xi1 = xi01 * (1-yd) + xi11 * yd
-
-                      solvent(is)%xi(io,ix,iy,iz) = xi0 * (1-zd) + xi1 * zd
-
-                      ix = ix + 1
-                    end do
-                    iy = iy + 1
-                  end do
-                  iz = iz + 1
-                end do
-
+        do is=1,size(solvent)
+          ! read file
+          do iz_prev=1,nz_prev
+            do iy_prev=1,ny_prev
+              do ix_prev=1,nx_prev
+                read ( 10, iostat=ios ) deltarho_p_prev(1:np_prev,ix_prev,iy_prev,iz_prev)
               end do
             end do
           end do
+          
+          !proj2angl
+          do iz_prev=1,nz_prev
+            do iy_prev=1,ny_prev
+              do ix_prev=1,nx_prev
+                  call proj2angl( &
+                      deltarho_p_prev(1:np,ix_prev,iy_prev,iz_prev) ,&
+                      xi_prev(1:no,ix_prev,iy_prev,iz_prev) )
+              end do
+            end do
+          end do
+          !interpolation
+          do io=1,no
+
+            do iz_prev=1,nz_prev-1
+              z0 = (iz_prev-1)*dz_prev+offset_z
+              z1 = (iz_prev)*dz_prev+offset_z
+              do iy_prev=1,ny_prev-1
+                y0 = (iy_prev-1)*dy_prev+offset_y
+                y1 = (iy_prev)*dy_prev+offset_y
+                do ix_prev=1,nx_prev-1
+                  x0 = (ix_prev-1)*dx_prev+offset_x
+                  x1 = (ix_prev)*dx_prev+offset_x
+
+                  iz=max(1, ceiling(z0/dz+1))
+                  do while(iz<=min(nz, floor(z1/dz+1)))
+                    iy=max(1, ceiling(y0/dy+1))
+                    do while(iy<=min(ny, floor(y1/dy+1)))
+                      ix=max(1, ceiling(x0/dx+1))
+                      do while(ix<=min(nx, floor(x1/dx+1)))
+
+                        z = (iz-1)*dz
+                        y = (iy-1)*dy
+                        x = (ix-1)*dx
+
+                        xd = (x-x0)/(x1-x0)
+                        yd = (y-y0)/(y1-y0)
+                        zd = (z-z0)/(z1-z0)
+
+                        xi00 = xi_prev(io, ix_prev, iy_prev, iz_prev) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev, iz_prev) * xd
+                        xi01 = xi_prev(io, ix_prev, iy_prev, iz_prev+1) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev, iz_prev+1) * xd
+                        xi10 = xi_prev(io, ix_prev, iy_prev+1, iz_prev) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev+1, iz_prev) * xd
+                        xi11 = xi_prev(io, ix_prev, iy_prev+1, iz_prev+1) * (1-xd) + xi_prev(io, ix_prev+1, iy_prev+1, iz_prev+1) * xd
+
+                        xi0 = xi00 * (1-yd) + xi10 * yd
+                        xi1 = xi01 * (1-yd) + xi11 * yd
+
+                        solvent(is)%xi(io,ix,iy,iz) = xi0 * (1-zd) + xi1 * zd
+
+                        ix = ix + 1
+                      end do
+                      iy = iy + 1
+                    end do
+                    iz = iz + 1
+                  end do
+
+                end do
+              end do
+            end do
+
+          end do
+
 
         end do
-
-
-      end do
-
-      close (10)
-
       deallocate (deltarho_p_prev)
       deallocate (xi_prev)
+      else
+        do is=1,size(solvent)
+          ! read file
+          do iz_prev=1,nz_prev
+            do iy_prev=1,ny_prev
+              do ix_prev=1,nx_prev
+                do io=1,no_prev
+                  read ( 10, iostat=ios ) solvent(is)%xi(io,ix_prev,iy_prev,iz_prev)
+                end do
+              end do
+            end do
+          end do
+      end do
+    end if
+      close (10)
 
     end subroutine read_restart_file
 
