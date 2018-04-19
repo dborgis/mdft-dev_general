@@ -83,7 +83,7 @@ contains
       real(dp), allocatable :: xi_prev(:,:,:,:)
       real(dp), parameter :: zero=0._dp
       complex(dp), parameter :: zeroc=(0._dp, 0._dp)
-      logical :: read_full_density=.false.
+      logical :: read_full_density
       character(len("input/density.bin")), parameter :: filename="input/density.bin"
       inquire (file=filename, EXIST=exists)
       if (.not.exists) stop "You want to restart from a density file, but input/density.bin is not found"
@@ -109,6 +109,7 @@ contains
         print*, "The denisity.bin file you are rereading contains xi(Omega,r)"
         ns_prev=-ns_prev
       else
+        read_full_density=.false.
         print*,  "The denisity.bin file you are rereading is stored in projections"
       end if
       read ( 10, iostat=ios ) mmax_prev

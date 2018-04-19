@@ -22,7 +22,7 @@ contains
         real(dp), allocatable :: density(:,:,:)
         integer :: nx, ny, nz, ix, iy, iz, is, isite, no,io
         real(dp), parameter :: pi=acos(-1._dp)
-        logical:: output_full_density=.false. 
+        logical:: output_full_density
         nx=grid%nx
         ny=grid%ny
         nz=grid%nz
