@@ -1,7 +1,8 @@
 module module_lennardjones
+    use precision_kinds, only: dp
     implicit none
     private
-    public :: calcul_lennardjones
+    public :: calcul_lennardjones, calcul_lennardjones_lent_de_reference
 contains
 
     subroutine calcul_lennardjones
@@ -50,7 +51,7 @@ contains
         no = grid%no
         ns = size(solvent)
 
-        if (cutoff .gt. lx*0.5_dp .or. cutoff .gt. ly*0.5_dp .or. cutoff .gt. lz*0.5_dp) then
+        if (cutoff > lx*0.5_dp .or. cutoff > ly*0.5_dp .or. cutoff > lz*0.5_dp) then
             print*, "ERROR: the cut off for the LJ potential is larger than half the box size"
             print*, "lx, ly, lz=",lx,ly,lz,"and cutoff=",cutoff
             error stop "see dft.in and src/module_lennardjones"
@@ -118,15 +119,15 @@ contains
           if(maxz>nz) error stop "maxz>nz in module_lennardjones"
 
           if (minx<maxx) then
-            xtab = (/ (I, I = minx, maxx) /)
+            xtab = [ (I, I = minx, maxx) ]
           else ! take into account PBC
             xtab = [(/ (I, I = 1, maxx) /), (/ (I, I = minx, nx) /)]
           end if
 
           if (miny<maxy) then
-            ytab = (/ (I, I = miny, maxy) /)
+            ytab = [ (I, I = miny, maxy) ]
           else ! take into account PBC
-            ytab = [(/ (I, I = 1, maxy) /), (/ (I, I = miny, ny) /)]
+            ytab = [[ (I, I = 1, maxy) ], [ (I, I = miny, ny) ]]
           end if
 
           if (minz<maxz) then
@@ -220,6 +221,65 @@ contains
         deallocate(xmod, ymod, zmod, x, y, z)
 
     end subroutine calcul_lennardjones
+
+
+    subroutine calcul_lennardjones_lent_de_reference
+      use module_input, only: getinput
+      use module_solvent, only: solvent
+      use module_solute, only: solute
+      use module_grid, only: grid
+      implicit none
+      real(dp) :: epsilonLJ, sigmaLJ,distanceSelonX, distanceSelonY, distanceSelonZ, distanceAuCarre
+      real(dp) :: deplacementXDuSiteDeSolvantDuAOrientation, deplacementYDuSiteDeSolvantDuAOrientation, deplacementZDuSiteDeSolvantDuAOrientation
+      real(dp) :: cutoff, cutoffAuCarre, div
+      integer :: isolute, s, ss, ix, iy, iz, io
+      cutoff = getinput%dp('rvdw', defaultvalue=10.0_dp, assert=">=0")
+      cutoffAuCarre = cutoff**2
+      ! pour tous les sites de solutés
+      do isolute = 1, size(solute%site)
+        ! pour toutes les fluides
+        do s = 1, size(solvent)
+          ! pour tous les sites de solvant
+          do ss = 1, size(solvent(s)%site)
+            ! on calcule les paramètres effectifs Lennard Jones
+            epsilonLJ = sqrt( solute%site(isolute)%eps * solvent(s)%site(ss)%eps )
+            if( epsilonLJ <= epsilon(1.) ) cycle
+            sigmaLJ = ( solute%site(isolute)%eps * solvent(s)%site(ss)%eps )/2._dp
+            ! pour chaque point de la grille orientationnelle
+            do io = 1, grid%no
+              ! les trois déplacements ci dessous correspondent au x, y, z d'un site de solvant après rotation lié à l'orientation io.
+              deplacementXDuSiteDeSolvantDuAOrientation = dot_product( [grid%rotxx(io), grid%rotxy(io), grid%rotxz(io)] , solvent(s)%site(ss)%r )
+              deplacementYDuSiteDeSolvantDuAOrientation = dot_product( [grid%rotyx(io), grid%rotyy(io), grid%rotyz(io)] , solvent(s)%site(ss)%r )
+              deplacementZDuSiteDeSolvantDuAOrientation = dot_product( [grid%rotzx(io), grid%rotzy(io), grid%rotzz(io)] , solvent(s)%site(ss)%r )
+              ! pour chaque point de la grille d'espace
+              do ix = 1, grid%nx
+                ! calcule la distance entre le site de soluté et le site de solvant
+                distanceSelonX = solute%site(isolute)%r(1) - ((ix-1)*grid%dx + deplacementXDuSiteDeSolvantDuAOrientation)
+                do iy = 1, grid%ny
+                  distanceSelonY = solute%site(isolute)%r(2) - ((iy-1)*grid%dy + deplacementYDuSiteDeSolvantDuAOrientation)
+                  do iz = 1, grid%nz
+                    distanceSelonZ = solute%site(isolute)%r(3) - ((iz-1)*grid%dz + deplacementZDuSiteDeSolvantDuAOrientation)
+                    distanceAuCarre = distanceSelonX*distanceSelonX + distanceSelonY*distanceSelonY + distanceSelonZ*distanceSelonZ
+
+                    ! maintenant on calcule l'énergie
+                    if (distanceAuCarre <= epsilon(1._dp)) then ! ici on peut imaginer mettre 1 angstrom plutot que 0.0000000001 Angstrom ... 
+                      solvent(s)%vext(io,ix,iy,iz) = huge(1._dp)
+                    elseif (distanceAuCarre > cutoffAuCarre) then
+                      ! l'énergie "Lennard Jones" est nulle donc on incrémente pas vext
+                    else
+                      div = sigmaLJ**6/(distanceAuCarre**3)
+                      solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + 4._dp*epsilonLJ*div*(div-1._dp)
+                    end if
+    
+                  end do
+                end do
+              end do
+            end do
+          end do
+        end do
+      end do
+
+    end subroutine calcul_lennardjones_lent_de_reference
 
 
 end module module_lennardjones
