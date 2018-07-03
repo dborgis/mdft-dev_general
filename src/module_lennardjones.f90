@@ -231,8 +231,8 @@ contains
       implicit none
       real(dp) :: epsilonLJ, sigmaLJ,distanceSelonX, distanceSelonY, distanceSelonZ, distanceAuCarre
       real(dp) :: deplacementXDuSiteDeSolvantDuAOrientation, deplacementYDuSiteDeSolvantDuAOrientation, deplacementZDuSiteDeSolvantDuAOrientation
-      real(dp) :: cutoff, cutoffAuCarre, div
-      integer :: isolute, s, ss, ix, iy, iz, io
+      real(dp) :: cutoff, cutoffAuCarre, div, lx2, ly2, lz2
+      integer :: isolute, s, ss, ix, iy, iz, io, px, py, pz
       cutoff = getinput%dp('rvdw', defaultvalue=10.0_dp, assert=">=0")
       cutoffAuCarre = cutoff**2
       ! pour tous les sites de solutés
@@ -260,18 +260,31 @@ contains
                   distanceSelonY = solute%site(isolute)%r(2) - ((iy-1)*grid%dy + deplacementYDuSiteDeSolvantDuAOrientation)
                   do iz = 1, grid%nz
                     distanceSelonZ = solute%site(isolute)%r(3) - ((iz-1)*grid%dz + deplacementZDuSiteDeSolvantDuAOrientation)
-                    distanceAuCarre = distanceSelonX*distanceSelonX + distanceSelonY*distanceSelonY + distanceSelonZ*distanceSelonZ
+                    
+                     ! For all periods (say you will never reach more than 3 neighbours in each direction)
+                    do px = 0, 3
+                      lx2 = px * grid%lx * grid%lx
+                      do py = 0, 3
+                        ly2 = py * grid%ly * grid%ly
+                        do pz = 0, 3
+                          lz2 = pz * grid%lz * grid%lz
+                          
+                          distanceAuCarre = distanceSelonX**2 + distanceSelonY**2 + distanceSelonZ**2 + lx2 + ly2 + lz2
 
-                    ! maintenant on calcule l'énergie
-                    if (distanceAuCarre <= epsilon(1._dp)) then ! ici on peut imaginer mettre 1 angstrom plutot que 0.0000000001 Angstrom ... 
-                      solvent(s)%vext(io,ix,iy,iz) = huge(1._dp)
-                    elseif (distanceAuCarre > cutoffAuCarre) then
-                      ! l'énergie "Lennard Jones" est nulle donc on incrémente pas vext
-                    else
-                      div = sigmaLJ**6/(distanceAuCarre**3)
-                      solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + 4._dp*epsilonLJ*div*(div-1._dp)
-                    end if
+                          ! maintenant on calcule l'énergie
+                          if (distanceAuCarre <= epsilon(1._dp)) then ! ici on peut imaginer mettre 1 angstrom plutot que 0.0000000001 Angstrom ... 
+                            solvent(s)%vext(io,ix,iy,iz) = huge(1._dp)
+                          elseif (distanceAuCarre > cutoffAuCarre) then
+                            ! l'énergie "Lennard Jones" est nulle donc on incrémente pas vext
+                          else
+                            div = sigmaLJ**6/(distanceAuCarre**3)
+                            solvent(s)%vext(io,ix,iy,iz) = solvent(s)%vext(io,ix,iy,iz) + 4._dp*epsilonLJ*div*(div-1._dp)
+                          end if
     
+                        end do
+                      end do
+                    end do
+
                   end do
                 end do
               end do
