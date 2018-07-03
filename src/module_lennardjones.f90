@@ -244,13 +244,14 @@ contains
             ! on calcule les paramètres effectifs Lennard Jones
             epsilonLJ = sqrt( solute%site(isolute)%eps * solvent(s)%site(ss)%eps )
             if( epsilonLJ <= epsilon(1.) ) cycle
-            sigmaLJ = ( solute%site(isolute)%eps * solvent(s)%site(ss)%eps )/2._dp
+            sigmaLJ = ( solute%site(isolute)%sig + solvent(s)%site(ss)%sig )/2._dp
             ! pour chaque point de la grille orientationnelle
             do io = 1, grid%no
               ! les trois déplacements ci dessous correspondent au x, y, z d'un site de solvant après rotation lié à l'orientation io.
               deplacementXDuSiteDeSolvantDuAOrientation = dot_product( [grid%rotxx(io), grid%rotxy(io), grid%rotxz(io)] , solvent(s)%site(ss)%r )
               deplacementYDuSiteDeSolvantDuAOrientation = dot_product( [grid%rotyx(io), grid%rotyy(io), grid%rotyz(io)] , solvent(s)%site(ss)%r )
               deplacementZDuSiteDeSolvantDuAOrientation = dot_product( [grid%rotzx(io), grid%rotzy(io), grid%rotzz(io)] , solvent(s)%site(ss)%r )
+
               ! pour chaque point de la grille d'espace
               do ix = 1, grid%nx
                 ! calcule la distance entre le site de soluté et le site de solvant
