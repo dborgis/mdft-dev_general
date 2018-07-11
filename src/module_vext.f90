@@ -8,8 +8,8 @@ module module_vext
     public :: init_vext
 contains
     ! This SUBROUTINE computes the external potential. It is one of the most time consuming routine.
-    !Warning there are two ways of calculating the electrostatic potential (Poisson solver and point charge) you should always have one tag
-    !T and one tag F for the electrostatic potential, if thera are 2 tags T, it is the last evaluation which counts, i.e Poisson solver.
+    ! Warning there are two ways of calculating the electrostatic potential (Poisson solver and point charge) you should always have one tag
+    ! T and one tag F for the electrostatic potential, if thera are 2 tags T, it is the last evaluation which counts, i.e Poisson solver.
 
     subroutine init_vext
         use precision_kinds, only: dp
@@ -17,7 +17,7 @@ contains
         use module_solvent, only: solvent
         use module_grid, only: grid
 
-        use module_lennardjones, only: calcul_lennardjones
+        use module_lennardjones, only: calcul_lennardjones, calcul_lennardjones_lent_de_reference
 
         IMPLICIT NONE
 
@@ -61,7 +61,11 @@ contains
         CALL init_electrostatic_potential ! ELECTROSTATIC POTENTIAL
 
         call cpu_time(t(2))
-        call calcul_lennardjones
+        if( getinput%log("slowlj", defaultvalue=.false.) ) then
+            call calcul_lennardjones_lent_de_reference
+        else
+            call calcul_lennardjones
+        end if
         call cpu_time(t(3))
 
 
