@@ -52,9 +52,9 @@ contains
         ns = size(solvent)
 
         if (cutoff > lx*0.5_dp .or. cutoff > ly*0.5_dp .or. cutoff > lz*0.5_dp) then
-            print*, "ERROR: the cut off for the LJ potential is larger than half the box size"
-            print*, "lx, ly, lz=",lx,ly,lz,"and cutoff=",cutoff
-            error stop "see dft.in and src/module_lennardjones"
+            print*, "The cut-off for the LJ potential is larger than half the box size"
+            print*, "Lx, Ly, Lz=",lx,ly,lz,"and the LJ cut-off is ",cutoff
+            stop "Please use dft.in keyword : 'slowlj = T'"
         end if
 
         xtabsize = floor(2*cutoff/grid%dx)+1
