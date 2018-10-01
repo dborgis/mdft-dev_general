@@ -36,6 +36,8 @@ contains
         call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
         filename = "output/density.cube"
         call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
+        filename = 'output/z_density.out'
+        CALL compute_z_density ( density , filename ) ! TODO for now only write for the first species
         print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
 
 
