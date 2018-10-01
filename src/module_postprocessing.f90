@@ -37,6 +37,8 @@ contains
         filename = "output/density.cube"
         call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
         print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
+        filename = 'output/z_density.out'
+        CALL compute_z_density ( density(:,:,:) , filename ) ! TODO for now only write for the first species
 
 
         output_full_density=getinput%log('write_full_density', defaultvalue=.false.)
@@ -110,6 +112,7 @@ contains
             filename = "output/Pz.cube"
             call write_to_cube_file(pz,filename)
             print*, "New file output/Pz.cube. Try$ vmd -cube output/Pz.cube"
+            filename='output/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1) , filename)
             filename = "output/Pnorm.cube"
             call write_to_cube_file( sqrt( px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ), filename ) 
             print*, "New file output/Pnorm.cube. Try$ vmd -cube output/Pnorm.cube"
