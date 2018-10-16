@@ -58,7 +58,7 @@ subroutine  energy_fmt (Ffmt,df)
           end do
           ! correct by *(8*pi²/n)**-1 as the integral over all orientations o and psi is 4pi and 2pi/n
           ! at the same time integrate rho in order to count the total number of implicit molecules.
-          rho(i,j,k,s) = local_density*grid%molRotSymOrder/(fourpi*twopi) ! n/n0 at this stage
+          rho(i,j,k,s) = local_density
         end do
       end do
     end do
@@ -66,12 +66,11 @@ subroutine  energy_fmt (Ffmt,df)
 
   ! total number of molecules of each species
   do concurrent ( s=1:solvent(1)%nspec )
-    nb_molecules(s) = sum(rho(:,:,:,s))*dV *solvent(s)%n0 *solvent(s)%mole_fraction
+    nb_molecules(s) = sum(rho(:,:,:,s))*dV *solvent(s)%rho0 *solvent(s)%mole_fraction
   end do
 
   ! compute the weight functions
   call weight_functions
-
 
   ! weighted densities
   wdl=0 ! 0:3 for Kierliek Rosinberg
