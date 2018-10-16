@@ -262,9 +262,9 @@ contains
       vextmax = (-log(epsilon(1.0_dp))-0.05) * thermo%kbT
       do s=1,size(solvent)
         where (solvent(s)%vext >= vextmax)
-          solvent(s)%xi = 0._dp
+          solvent(s)%xi = 0.0_dp 
         else where
-          solvent(s)%xi = 1._dp
+         solvent(s)%xi = 1._dp
         end where
       end do
     end subroutine guess_density

@@ -41,8 +41,8 @@ module module_grid
     type(somegrid), protected :: grid
     real(dp), parameter, private :: eightpisq=8._dp*acos(-1._dp)**2
     real(dp), parameter, private :: quadrature_norm=eightpisq
-
-    public :: norm_k, timesExpPrefactork2, k2, mean_over_orientations, grid
+    real(dp) :: dq   !dq is the dq in luc c files
+    public :: norm_k, timesExpPrefactork2, k2, mean_over_orientations, grid, dq
 
 
 contains

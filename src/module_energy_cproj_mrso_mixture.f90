@@ -8,7 +8,7 @@ module module_energy_cproj_mrso_mixture
     use iso_c_binding, only: C_PTR, C_INT, C_INT32_T, C_INTPTR_T, C_DOUBLE_COMPLEX, C_DOUBLE, C_FUNPTR, C_SIZE_T, C_FLOAT, &
                              C_FLOAT_COMPLEX, C_CHAR
     use precision_kinds, only: dp
-    use module_grid, only: grid
+    use module_grid, only: grid,dq
     use module_solvent, only: solvent
     use module_rotation, only: rotation_matrix_between_complex_spherical_harmonics_lu, init_module_rotation => init
 
@@ -385,6 +385,8 @@ contains
                   real(dp) :: qmaxnecessary
                   qmaxnecessary = norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))])
                   call read_c_luc(s,c(s)%mnmunukhi_q,mmax,mrso,qmaxnecessary,c(s)%np,c(s)%nq,c(s)%dq,c(s)%m,c(s)%n,c(s)%mu,c(s)%nu,c(s)%khi,c(s)%ip)
+                  !please retains what is dq to compute HS bridge if necessary
+                  dq=c(1)%dq
                   ! The c(m,n,mu,nu,khi) that we read from Luc had 2 drawbacks:
                   ! - we read it the way Luc give it, not the optimal way for our loops
                   ! - it does not contain our use of the symetries, and here we decide to have mu>0.

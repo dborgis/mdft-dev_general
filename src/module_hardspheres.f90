@@ -45,12 +45,13 @@ subroutine weight_functions
   implicit none
   real(dp)     :: kR, sinkR, coskR, norm_k_loc, R, k
   integer(i2b) :: l,m,n,s,nfft1,nfft2,nfft3
-  nfft1=grid%n_nodes(1)
-  nfft2=grid%n_nodes(2)
-  nfft3=grid%n_nodes(3)
+  nfft1=grid%nx
+  nfft2=grid%ny
+  nfft3=grid%nz
   do concurrent( s=1:solvent(1)%nspec ,.not.allocated(hs(1)%w_k) )
     allocate( hs(s)%w_k(nfft1/2+1,nfft2,nfft3,0:3) ,source=zerodp)
   end do
+  print*, hs(:)%R
   ! Weight functions of a fluid of hard spheres are known analyticaly.
   do concurrent( s=1:solvent(1)%nspec, l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3 )
     R=hs(s)%R
@@ -198,33 +199,31 @@ subroutine read_hard_sphere_radius
   use module_input            ,only: input_line
   use module_thermo ,only: thermo
   use module_solvent, only: solvent
+  use module_input           ,only: verbose, getinput
   implicit none
   integer(i2b) :: i,j,s
   real(dp)     :: d_wca ! optimal diameter for hard spheres in the case of lennard jones perturbation as defined by Verlet and Weis, Phys Rev A 1972
   real(dp)     :: dmin
-  if(.not.allocated(hs)) allocate(hs(solvent(1)%nspec))
-  ! Get hard sphere radius
+  character(50) :: dummychar
+
+  !allocate(hs(size(solvent)))
+  dummychar= getinput%char_multiple('hs_radius', defaultvalue="0.0 0.0 0.0 0.0 0.0 0.0")
+  read(dummychar,*) hs(:)%R
+! Get hard sphere radius
   ! two possibilities : 1/ pure hard spheres : read radius in input/dft.in    2/ perturbated HS by a lennard jones
   ! next few lines is a test to know if we have
   ! Algo : one looks for line containing 'hard_sphere_radius'. Next solvent(1)%nspec lines contain the radius of each hard sphere species.
   ! If the radius is negative, the user means that the radius has to be calculated using the week chandler anderson model
   ! by reading the lennard jones sigma and epsilon values accordingly to integer species between 1 and solvent(1)%nspec
-error stop "uncomment following lines once you know what you're doing."
 ! read hard sphere radius and if WCA the compute the WCA radius
-  DO i= 1, SIZE(input_line)
-    j = LEN( 'hard_sphere_radius' )
-    IF ( input_line (i) (1:j) == 'hard_sphere_radius' ) THEN
-      DO s = 1 , solvent(1)%nspec
-        READ( input_line(i+s) ,*) hs(s)%R
-        IF ( hs(s)%R <= 0.0_dp ) THEN ! check if one radius is negative, ie if one has to compute wca diameter
-          print*, "You ask for a WCA calculation of hard sphere diameter"
-          CALL compute_wca_diameter (solvent(s)%n0 , thermo%T, solvent(s)%site(1)%sig , solvent(s)%site(1)%eps, d_wca)
-          hs(s)%R = d_wca / 2.0_dp
-        END IF
-      END DO
-      exit
-    end if
-  end do
+  !do i= 1, SIZE(input_line)
+  !  do s = 1 , solvent(1)%nspec
+  !      !print*, "You ask for a WCA calculation of hard sphere diameter"
+  !      !CALL compute_wca_diameter (solvent(s)%n0 , thermo%T, solvent(s)%site(1)%sig , solvent(s)%site(1)%eps, d_wca)
+  !      !hs(s)%R = d_wca / 2.0_dp
+  !  end do
+  !  exit
+  !end do
 end subroutine read_hard_sphere_radius
 
 end module hardspheres
