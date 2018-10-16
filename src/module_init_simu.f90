@@ -31,6 +31,9 @@ contains
         call init_vext
         call init_vexc
         call init_density
+        if (getinput%char("bridge", defaultvalue="no")=="hard_sphere") then
+          call compute_hard_spheres_parameters
+        end if
     end subroutine init_simu
 
     !

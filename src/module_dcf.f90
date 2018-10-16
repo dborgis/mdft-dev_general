@@ -10,8 +10,8 @@ module module_dcf
 
     REAL(dp) :: delta_k , delta_k_in_C! distance between two k points in cs.in, cdelta.in, cd.in
     INTEGER(i2b) :: nb_k, nb_k_in_c ! nb of k points in cs.in, cdelta.in, cd.in
-    ! REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s ! density density correlation function
-    ! REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_delta, c_d ! polarization polarization correlation function
+    !REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_s ! density density correlation function
+    !REAL(dp), ALLOCATABLE, DIMENSION (:) :: c_delta, c_d ! polarization polarization correlation function
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: chi_l, chi_t ! longitudinal and transverse dielectric susceptibilities
     REAL(dp), ALLOCATABLE, DIMENSION (:) :: Cnn, Cnc, Ccc ! longitudinal and transverse dielectric susceptibilities
 
@@ -43,8 +43,8 @@ module module_dcf
 
     TYPE(TYP_angleVal), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: angleVal ! real omega values for interpolation in energy_ck_angular
     INTEGER(i2b) :: num_phi, num_cos, num_psi ! global variables for ck_angular, used in energy_ck_angular for reproducing angles
-
-    public :: init_dcf
+    
+    public :: init_dcf, c_s, c_s_hs
 
 CONTAINS
     !-----------------------------------------------------------------------------------------------------------------------------------

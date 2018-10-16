@@ -107,7 +107,7 @@ set(mdft_SRCS
   src/module_energy_and_gradient.f90
   src/module_energy_ck_angular.f90
   src/module_energy_cs.f90
-#  src/energy_fmt.f90
+  src/module_fmt.f90
   src/energy_hydro.f90
   src/module_energy_ideal_and_external.f90
   src/energy_minimization.f90

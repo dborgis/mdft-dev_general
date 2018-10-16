@@ -37,6 +37,7 @@ module module_solvent
         integer :: nsite ! number of site of the solvent molecule
         integer :: nspec ! number of solvent species
         real(dp) :: monopole, dipole(3), quadrupole(3,3), octupole(3,3,3), hexadecapole(3,3,3,3)
+        real(dp) :: hs_radius !hard sphere radius for HS bridge
         real(dp) :: diameter ! hard sphere diameter, for instance
         real(dp), allocatable :: xi(:,:,:,:) ! io, ix, iy, iz    xi**2=rho/rho0
         type (site_type), allocatable :: site(:)
@@ -206,6 +207,7 @@ contains
           print*, "Solvent number  " , s, " is " , solvent(s)%name, " with a molecular fraction of", solvent(s)%mole_fraction
           select case (solvent(s)%name)
           case ("spce")
+              solvent(s)%hs_radius = 0.0_dp
               solvent(s)%nsite = 3
               solvent(s)%molrotsymorder = 2
               allocate( solvent(s)%site(3) )

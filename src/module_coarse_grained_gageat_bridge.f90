@@ -1,4 +1,4 @@
-module module_coarse_grained_bridge
+module module_coarse_grained_bridge 
 
     use iso_c_binding, only: C_PTR, C_INT, C_INT32_T, C_INTPTR_T, C_DOUBLE_COMPLEX, C_DOUBLE, C_FUNPTR, C_SIZE_T, C_FLOAT, &
                              C_FLOAT_COMPLEX, C_CHAR
@@ -377,6 +377,6 @@ contains
       end do
    
     end subroutine update_gradient
+
     
-    
-end module module_coarse_grained_bridge
+end module  module_coarse_grained_bridge

@@ -206,7 +206,6 @@ subroutine energy_and_gradient (f, df)
 
 
 
-    ! if (solvent(s)%do%exc_fmt) call energy_fmt (ff%exc_fmt, df)
     ! if (solvent(s)%do%wca) call lennard_jones_perturbation_to_hard_spheres (ff%exc_wca, df)
     ! if (solvent(s)%do%exc_multipolar_without_coupling_to_density) &
     !         call energy_polarization_multi (ff%exc_multipolar_without_coupling_to_density, df)
@@ -247,6 +246,7 @@ subroutine energy_bridge(fb, df)
     use precision_kinds, only: dp
     use module_input, only: getinput
     use module_coarse_grained_bridge, only: coarse_grained_bridge
+    use module_fmt
     implicit none
     real(dp), intent(out) :: fb
     real(dp), intent(inout), contiguous, optional :: df(:,:,:,:,:)
@@ -260,7 +260,9 @@ subroutine energy_bridge(fb, df)
       else
         call coarse_grained_bridge( fb)
       end if
-      
+    case("hard_sphere")    
+      call cs_of_k_hard_sphere 
+      call energy_fmt (fb, df)
     case ("wca")
        stop "wca bridge not yet (re)implemented!"
     case ("3b")
