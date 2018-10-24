@@ -53,7 +53,6 @@ subroutine pressure_correction
     write(*,'(A,F12.2)') "ΔN solvent", deltaN
     write(*,'(A,F12.7,A)') "Bulk solvent density", solvent(1)%n0," molecule.Ang⁻³"
     write(*,'(A,F12.5,A,F9.2,A)') "Supercell volume", product(grid%length)," Ang³ = ",product(grid%length)/1000.," nm³"
-
 block
     !
     ! Compute the pressure of the bulk solvent.

@@ -27,7 +27,7 @@ contains
         real(dp) :: xi, rho0, dv, kT, mu, rho
         real(dp), parameter :: zerodp = 0._dp
         real(dp), parameter :: epsdp = epsilon(0._dp)
-
+        
         ns = solvent(1)%nspec ! number of solvent species
         kT = thermo%kbT
         dv = grid%dv
@@ -42,7 +42,7 @@ contains
         !
         fid = zerodp
         fext = zerodp
-
+      
         do is=1,ns
           rho0 = solvent(is)%rho0 ! bulk density
           !$omp parallel reduction(+:fid,fext) private(iz, iy, ix, io, xi, rho)

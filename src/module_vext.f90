@@ -16,7 +16,7 @@ contains
         use module_input, only: getinput
         use module_solvent, only: solvent
         use module_grid, only: grid
-
+        use module_Vext_hard_sphere, only : compute_vext_hard_sphere
         use module_lennardjones, only: calcul_lennardjones, calcul_lennardjones_lent_de_reference
 
         IMPLICIT NONE

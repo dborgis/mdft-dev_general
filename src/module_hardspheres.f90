@@ -51,7 +51,6 @@ subroutine weight_functions
   do concurrent( s=1:solvent(1)%nspec ,.not.allocated(hs(1)%w_k) )
     allocate( hs(s)%w_k(nfft1/2+1,nfft2,nfft3,0:3) ,source=zerodp)
   end do
-  print*, hs(:)%R
   ! Weight functions of a fluid of hard spheres are known analyticaly.
   do concurrent( s=1:solvent(1)%nspec, l=1:nfft1/2+1, m=1:nfft2, n=1:nfft3 )
     R=hs(s)%R

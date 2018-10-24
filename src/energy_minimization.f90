@@ -276,7 +276,7 @@ end subroutine
       Do s=1,size(solvent)
         solvent(s)%xi=x_allsolv(:,:,:,:,s) 
       end do
-        !
+      !
         ! Given a density of orientation, xyz, return the value of the functional at this point F[xi] and the gradient dF/dxi
         !
         call energy_and_gradient(f, df) ! f and df are intent(out) of energy_and_gradient. see below for explanations of isave(34)
