@@ -1,8 +1,9 @@
 ! This subroutine computes the direct correlation function of a hard sphere fluid
+!it was added back in Oct 2018
 subroutine cs_of_k_hard_sphere
 
    use precision_kinds ,only: i2b, dp
-   use module_solvent, only: solvent!@GUILLAUME c_s_hs should go into MODULE DCF
+   use module_solvent, only: solvent
    use module_input           ,only: input_line, n_linesInFile, verbose,getinput
    use constants       ,only: fourpi, pi, zerodp
    use module_dcf             ,only:  c_s, c_s_hs
@@ -19,22 +20,26 @@ subroutine cs_of_k_hard_sphere
    real(dp), dimension (0:3,0:3) :: d2phi ! second partial derivative of phi wrt ni nj
    integer(i2b) :: i,j,nb_k, ios
    logical :: PY,CS ! the one which is true is the right equation of state
-   character(2)  :: fun_name
+   character(2)  :: hs_functional
 
-   print*, "I enter cs_of_k_hard_sphere this is going to crash very soon :)"
+   if( allocated(c_s_hs%x) ) then
+     return
+     stop "cs_of_k_hard_sphere.f90 strange c_s_hs is already existing..."
+   end if
 
    ! type HS should be allocated. It contains radius etc.
    if( .not. allocated(hs) ) then
      call read_hard_sphere_radius
-     print*, hs(1)%R
    end if
-
-   write(*,'(A,F12.4)') 'I will compute direct correlation function for hard sphere fluid with radius',hs(1)%R
+  
+   !I juste compute cs for 1 specie of solvent for now
    if( solvent(1)%nspec/=1 ) then
      stop "cs_of_k_hard_sphere works only for 1 solvent species"
    end if
 
-   if (fun_name=="CS") then
+   !This is quite ugly, but it is a inheritance and Ido not want to spend time changing it
+   hs_functional=getinput%char('hs_functional')
+   if (hs_functional=="CS") then
      CS = .true.
      PY = .false.
    else
@@ -46,18 +51,12 @@ subroutine cs_of_k_hard_sphere
      stop "in cs_of_k_hard_sphere I could not detect if you want PY or CS functions"
    end if
 
-   ! Here we could generate as many points as wanted. In order to be coheren with th excess functional
-   ! we will use as much mk than qmaxnecessary in module_energy_cproj_mrso
+   ! Here we could generate as many points as wanted. In order to be coherent with the excess functional
+   ! we will use as much nk than qmaxnecessary in module_energy_cproj_mrso
    nb_k = int(norm2([maxval(grid%kx(1:grid%nx)), maxval(grid%ky(1:grid%ny)), maxval(grid%kz(1:grid%nz/2+1))])/dq)+1
-   if( allocated(c_s_hs%x) ) then
-     return
-     stop "cs_of_k_hard_sphere.f90 strange c_s_hs is already existing..."
-   else
-     !print*, nb_k
-     allocate( c_s_hs%x(nb_k),  source=zerodp) ! k
-     allocate( c_s_hs%y(nb_k),  source=zerodp) ! c(k) hard sphere
-     allocate( c_s_hs%y2(nb_k), source=zerodp) ! dc(k)/dk
-   end if
+   allocate( c_s_hs%x(nb_k),  source=zerodp) ! k
+   allocate( c_s_hs%y(nb_k),  source=zerodp) ! c(k) hard sphere
+   allocate( c_s_hs%y2(nb_k), source=zerodp) ! dc(k)/dk
    R=hs(1)%R
    do i = 1, nb_k
      k=(i-1)*dq
@@ -87,13 +86,6 @@ subroutine cs_of_k_hard_sphere
        ! n0 etc that are used below are thoses for the k=0
      END IF
 
- !stop "what about n0, n1, n2 and n3 if k/=0 ?"
-
-     ! weighted densities
- !    n0 = solvent(1)%n0 * w0
- !    n1 = solvent(1)%n0 * w1
- !    n2 = solvent(1)%n0 * w2
- !    n3 = solvent(1)%n0 * w3
      if( abs(n3-1)<=epsilon(1.0_dp) ) then
        stop "n3-1=0 in cs_of_k_hard_sphere.f90:69"
      end if
@@ -120,11 +112,6 @@ subroutine cs_of_k_hard_sphere
        d2phi(3,2) = d2phi(2,3)
        d2phi(3,3) = (2.*n1*n2)/(1.-n3)**3 + n0/(1.-n3)**2 + n2**3/(4.*Pi*(1.-n3)**4)
      ELSE IF ( CS ) then ! CS
-       ! first partial derivative of phi wrt n_\alpha, case PY
-       !dphi(0) = -Log(1.0d0-n3)
-       !dphi(1) = n2/(1.0d0-n3)
-       !dphi(2) = n1/(1 - n3) + n2**2/(12.*(1 - n3)**2*n3*Pi) + (n2**2*Log(1 - n3))/(12.*n3**2*Pi)
-       !dphi(3) = (n1*n2)/(1 - n3)**2 - (-n0 + n2**3/(36.*n3**2*Pi))/(1 - n3) - n2**3/(36.*(1 - n3)**2*n3**2*Pi) + n2**3/(18.*(1 - n3)**3*n3*Pi) - (n2**3*Log(1 - n3))/(18.*n3**3*Pi)
 
        ! second partial derivative of phi wrt n_\alpha n_\beta
        d2phi(0,0) = 0.d0
@@ -176,41 +163,6 @@ subroutine cs_of_k_hard_sphere
    close(99)
 
    ! Prepare the future use of splines by calculating the second order derivative (y2) at each point
-   call spline( x=c_s_hs%x, y=c_s_hs%y, n=size(c_s_hs%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s_hs%y2)
-
-
-   ! print the splined version of the direct correlation function to test both the spline function
-   !open(14,file="output/cs_hs_spline.dat")
-   !do i=0,1000
-   !  x_loc = i*0.1
-   !  call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=x_loc, y=y_loc)
-   !  write(14,*) x_loc, y_loc
-   !end do
-   !close(14)
-
-   !I do not want to change cs, whic is outdatet I will calc the cs_hs*deltarho*deltarho term and substract it
-   ! cs is replaced by cs-cshs
-   !do i=1,size(c_s%x)
-   !  x_loc=c_s%x(i)
-   !  call splint( xa=c_s_hs%x, ya=c_s_hs%y, y2a=c_s_hs%y2, n=size(c_s_hs%y), x=x_loc, y=y_loc)
-   !  c_s%y(i)= c_s%y(i) -y_loc
-   !end do
-   !call spline( x=c_s%x, y=c_s%y, n=size(c_s%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s%y2)
-
-   !open(14,file="output/cs_hnc-hs.dat")
-   !do i=0,1000
-   !  x_loc = i*0.1
-   !  call splint( xa=c_s%x, ya=c_s%y, y2a=c_s%y2, n=size(c_s%y), x=x_loc, y=y_loc)
-   !  write(14,*) x_loc, y_loc
-   !end do
-   !close(14)
-
-   !
-   ! open(14,file="output/cs_analytic_PY_wertheim.dat")
-   !   real(dp) :: e, R, n
-   !   n = solvent(1)%n0
-   !   R = hs(1)%R*2 ! diameter
-   !   e = acos(-1._dp)/6. * R**3 * n
-   ! close(14)
+   !call spline( x=c_s_hs%x, y=c_s_hs%y, n=size(c_s_hs%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s_hs%y2)
 
 end subroutine cs_of_k_hard_sphere
