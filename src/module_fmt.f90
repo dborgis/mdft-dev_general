@@ -32,6 +32,7 @@ subroutine  energy_fmt (Ffmt,df)
   real(dp), PARAMETER :: inv24pi = 1.0_dp/( 24.0_dp * pi)
   real(dp), PARAMETER :: inv36pi = 1.0_dp/( 36.0_dp * pi)
 
+
   IF (solvent(1)%nspec/=1) STOP "I stop because FMT calculations are only possible with one solvent species."
   CALL CPU_TIME ( time0 ) ! init timer
 
@@ -46,7 +47,7 @@ subroutine  energy_fmt (Ffmt,df)
     Ffmt = -sum( hs%Fexc0 * solvent(1)%mole_fraction )
     return
   end if
-
+  
   allocate( rho (nx,ny,nz,solvent(1)%nspec) ,SOURCE=0._dp)
   do s=1,size(solvent)
     do i=1,nx
@@ -56,8 +57,6 @@ subroutine  energy_fmt (Ffmt,df)
           do io=1,grid%no
             local_density = local_density + solvent(s)%xi(io,i,j,k)**2 * grid%w(io)
           end do
-          ! correct by *(8*pi²/n)**-1 as the integral over all orientations o and psi is 4pi and 2pi/n
-          ! at the same time integrate rho in order to count the total number of implicit molecules.
           rho(i,j,k,s) = local_density
         end do
       end do
@@ -86,7 +85,7 @@ subroutine  energy_fmt (Ffmt,df)
     fftw3%in_forward = rho(:,:,:,s)
     call dfftw_execute ( fftw3%plan_forward ) ! fourier transform the density and put it into fftw3%out_forward
     do i=0,3
-      fftw3%in_backward = fftw3%out_forward * solvent(s)%n0 * solvent(s)%mole_fraction * cmplx( hs(s)%w_k(:,:,:,i) ,0)! rho_k(s) * w_k(i)
+      fftw3%in_backward = fftw3%out_forward * solvent(s)%rho0 * solvent(s)%mole_fraction * cmplx( hs(s)%w_k(:,:,:,i) ,0)! rho_k(s) * w_k(i)
       call dfftw_execute( fftw3%plan_backward )
       wd(:,:,:,i) = wd(:,:,:,i) + fftw3%out_backward /(nx*ny*nz)
     end do
@@ -112,9 +111,7 @@ subroutine  energy_fmt (Ffmt,df)
     stop "hs_functional not initialized in energy_hard_spheres_fmt.f90:121"
   end if
 
-
   Ffmt = Ffmt*kT*dV -sum(hs%excchempot*nb_molecules) -sum(hs%Fexc0*solvent(1)%mole_fraction)
-  
 
   ! gradients
   ! dFHS_i and weighted_density_j are arrays of dimension (nx,ny,nz)
@@ -160,6 +157,8 @@ subroutine  energy_fmt (Ffmt,df)
     dFHS_k(:,:,:,i) = fftw3%out_forward
   end do
   deallocate( dFHS )
+  
+  
 
   ! compute final gradient in k-space
   allocate( dFex (nx,ny,nz,solvent(1)%nspec) ,source=zerodp)
@@ -176,18 +175,15 @@ subroutine  energy_fmt (Ffmt,df)
   do s=1,solvent(1)%nspec
     deallocate( hs(s)%w_k )
   end do
-
   ! transfer in rank 1 vector dF
-  icg=0
   do s=1,solvent(1)%nspec
-    do i=1,nx
+    do k=1,nz
       do j=1,ny
-        do k=1,nz
+        do i=1,nx
           do io=1,grid%no
-              icg=icg+1
-              psi=solvent(1)%xi(io,i,j,k)
+              psi=solvent(s)%xi(io,i,j,k)
               df(io,i,j,k,s) = df(io,i,j,k,s) &
-                  + 2*psi*solvent(s)%rho0*dV*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*grid%w(io)
+                  + 2*psi*solvent(s)%rho0*( kT*dFex(i,j,k,s)-hs(s)%excchempot )*grid%w(io)  !*dV
           end do
         end do
       end do
@@ -196,12 +192,11 @@ subroutine  energy_fmt (Ffmt,df)
   deallocate (dFex)
 
 
-  call cpu_time( time1 )
 
 
 !!!Now remove the c_hs contribution
   !rho is bearing deltaN now
-  rho=rho*solvent(1)%n0*solvent(1)%mole_fraction-solvent(1)%n0
+  rho=rho*solvent(1)%rho0*solvent(1)%mole_fraction-solvent(1)%n0
   fftw3%in_forward = rho(:,:,:,1)
   call dfftw_execute( fftw3%plan_forward )
   fftw3%in_backward = (0._dp,0._dp)
@@ -214,11 +209,10 @@ subroutine  energy_fmt (Ffmt,df)
           end do
       end do
   end do
-  ! at this point we have gamma(k) in fftw3%in_backward
 
   call dfftw_execute( fftw3%plan_backward ) ! this fill fftw3%out_backward with gamma(x)
   fftw3%out_backward = fftw3%out_backward  /real(nx*ny*nz,dp) ! gamma(x)  note: the normalization factor /real(nx,ny,nz) comes from the way FFTW3 does NOT normalize its FFT
-  
+ 
   !This is a HS bridge term so watch the sign
   Ffmt=Ffmt+kT/2._dp*dv*sum (rho(:,:,:,1)*fftw3%out_backward)
 
@@ -228,7 +222,7 @@ subroutine  energy_fmt (Ffmt,df)
         do i=1,nx
           do io=1,grid%no
             df(io,i,j,k,s) = df(io,i,j,k,s) &
-                +kT*grid%w(io)*fftw3%out_backward(i,j,k)*2._dp*solvent(s)%rho0*solvent(s)%xi(i,j,k,s)
+                +kT*grid%w(io)*fftw3%out_backward(i,j,k)*2._dp*solvent(s)%rho0*solvent(s)%xi(io,i,j,k)*dv
           end do
         end do
       end do
