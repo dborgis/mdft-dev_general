@@ -1,5 +1,5 @@
 module module_grid
-    use precision_kinds, only: dp
+    use precision_kinds, only: dp,i2b
     implicit none
     private
     type :: somegrid
@@ -41,8 +41,9 @@ module module_grid
     type(somegrid), protected :: grid
     real(dp), parameter, private :: eightpisq=8._dp*acos(-1._dp)**2
     real(dp), parameter, private :: quadrature_norm=eightpisq
-    real(dp) :: dq   !dq is the dq in luc c files
-    public :: norm_k, timesExpPrefactork2, k2, mean_over_orientations, grid, dq
+    real(dp) :: dq=6.1359999999999998E-002   !dq is the dq in luc c files, if not read it is this default
+    integer(i2b) ::nb_k
+    public :: norm_k, timesExpPrefactork2, k2, mean_over_orientations, grid, dq, nb_k
 
 
 contains

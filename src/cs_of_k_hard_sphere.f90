@@ -9,7 +9,7 @@ subroutine cs_of_k_hard_sphere
    use module_dcf             ,only:  c_s, c_s_hs
    use mathematica     ,only: spline, splint
    use hardspheres     ,only: hs, read_hard_sphere_radius
-   use module_grid, only : grid ,dq
+   use module_grid, only : grid ,dq, nb_k
 
    implicit none
 
@@ -18,9 +18,10 @@ subroutine cs_of_k_hard_sphere
    real(dp) :: w0, w1, w2, w3 ! weight functions of homogeneous fluid
    real(dp) :: kR,R,x_loc,y_loc,k,coskR,sinkR
    real(dp), dimension (0:3,0:3) :: d2phi ! second partial derivative of phi wrt ni nj
-   integer(i2b) :: i,j,nb_k, ios
+   integer(i2b) :: i,j, ios
    logical :: PY,CS ! the one which is true is the right equation of state
    character(2)  :: hs_functional
+
 
    if( allocated(c_s_hs%x) ) then
      return
@@ -161,7 +162,6 @@ subroutine cs_of_k_hard_sphere
        write(99,*) c_s_hs%x(i), c_s_hs%y(i)
      end do
    close(99)
-
    ! Prepare the future use of splines by calculating the second order derivative (y2) at each point
    !call spline( x=c_s_hs%x, y=c_s_hs%y, n=size(c_s_hs%x), yp1=huge(1._dp), ypn=huge(1._dp), y2=c_s_hs%y2)
 

@@ -264,7 +264,7 @@ contains
         where (solvent(s)%vext >= vextmax)
           solvent(s)%xi = 0.0_dp 
         else where
-         solvent(s)%xi = 1._dp
+          solvent(s)%xi = 1._dp
         end where
       end do
     end subroutine guess_density

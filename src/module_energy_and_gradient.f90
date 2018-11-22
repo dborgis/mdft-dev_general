@@ -149,7 +149,6 @@ subroutine energy_and_gradient (f, df)
         f = f + ff%exc_cproj
     end if
 
-
     ! if (solvent(s)%do%exc_cproj) then
     !     call cpu_time(t(7))
     !     ! call energy_cproj_mrso (ff%exc_cproj, df)

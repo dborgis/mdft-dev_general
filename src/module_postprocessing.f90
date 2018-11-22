@@ -221,7 +221,6 @@ contains
                 filename = 'output/rdf.xvg'
                 call output_rdf ( density , filename ) ! Get radial distribution functions
                 print*, "New file ", trim(adjustl(filename))
-                
                 if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
                     call output_gsitesite ! may be very time-consuming for large supercells / solutes
                     call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
