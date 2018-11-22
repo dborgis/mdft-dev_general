@@ -10,7 +10,7 @@ subroutine  energy_fmt (Ffmt,df)
   use module_fft              ,ONLY: fftw3
   use module_input            ,ONLY: getinput
   use hardspheres      ,ONLY: hs, weight_functions
-  use module_grid, only: grid,dq, norm_k
+  use module_grid, only: grid,dq, norm_k,nb_k
   use constants
   use module_dcf, only :  c_s_hs
 
@@ -18,7 +18,7 @@ subroutine  energy_fmt (Ffmt,df)
 
   real(dp), intent(out) :: Ffmt ! Internal part of free energy
   real(dp), intent(inout), contiguous, optional :: df(:,:,:,:,:)
-  integer(i2b) :: icg,i,j,k,s,nx,ny,nz,wdl,wdu,io,iq
+  integer(i2b) :: i,j,k,s,nx,ny,nz,wdl,wdu,io,iq
   real(dp) :: local_density, psi, dV, nb_molecules(size(solvent)), time0, time1, kT,q
   real(dp)   , ALLOCATABLE, DIMENSION(:,:,:,:) :: rho ! density per angle (recall : rho_0 = n_0 / 4pi ) ! x y z solvent(1)%nspec
   real(dp)   , ALLOCATABLE , DIMENSION(:,:,:,:) :: wd ! weighted density at node i,j,k, for index 0:3
@@ -31,10 +31,14 @@ subroutine  energy_fmt (Ffmt,df)
   real(dp), PARAMETER :: inv18pi = 1.0_dp/( 18.0_dp * pi)
   real(dp), PARAMETER :: inv24pi = 1.0_dp/( 24.0_dp * pi)
   real(dp), PARAMETER :: inv36pi = 1.0_dp/( 36.0_dp * pi)
-
-
+  REAL(dp), ALLOCATABLE, DIMENSION(:,:,:) :: delta_rho, gamma
+  COMPLEX(dp), ALLOCATABLE, DIMENSION(:,:,:) :: delta_rho_k
+  real(dp) :: fact, fint,Vint
+  integer::l,m,n
   IF (solvent(1)%nspec/=1) STOP "I stop because FMT calculations are only possible with one solvent species."
   CALL CPU_TIME ( time0 ) ! init timer
+  
+  Ffmt=0.0_dp
 
   nx = grid%nx
   ny = grid%ny
@@ -191,47 +195,127 @@ subroutine  energy_fmt (Ffmt,df)
   end do
   deallocate (dFex)
 
+    CALL build_delta_rho_from_last_minimizer_step
+    CALL build_delta_rho_in_Fourier_space
+    CALL build_gamma_is_delta_rho_k_dot_cs_k
 
+    ! compute excess energy and its gradient
+    Fint = 0.0_dp
+    DO s = 1 , solvent(1)%nspec
+        fact = dv* solvent(s)%rho0
+        DO i = 1 , nx
+            DO j = 1 , ny
+                DO k = 1 , nz
+                    Vint = -kt * solvent(s)%rho0 * gamma(i,j,k)
+                    DO io = 1 , grid%no
+                            psi = solvent(s)%xi(io,i,j,k)
+                            Fint = Fint   + grid%w(io)* fact * 0.5_dp * ( psi ** 2 - 1.0_dp) * Vint
+                            dF (io,i,j,k,s) = dF (io,i,j,k,s) -2.0_dp * psi * grid%w(io)* fact * Vint/dv
+                    END DO
+                END DO
+            END DO
+        END DO
+    END DO
+    DEALLOCATE(gamma)
+    print*, Ffmt,Fint
+    Ffmt=Ffmt-Fint
+    print*, Ffmt,Fint
+   CONTAINS
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+       SUBROUTINE build_delta_rho_from_last_minimizer_step
+           ALLOCATE( Delta_rho (nx,ny,nz) ,SOURCE=zero)
+           DO i=1,nx
+               DO j=1,ny
+                   DO k=1,nz
+                       DO io = 1, grid%no 
+                               Delta_rho(i,j,k) = Delta_rho(i,j,k) + solvent(1)%xi(io,i,j,k)**2 *grid%w(io)
+                       END DO
+                   END DO
+               END DO
+           END DO
+           delta_rho = delta_rho-(twopi*fourpi)/REAL(solvent(1)%molRotSymOrder,dp)
+       END SUBROUTINE build_delta_rho_from_last_minimizer_step
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+       SUBROUTINE build_delta_rho_in_Fourier_space
+           ! Compute rho in k-space
+           fftw3%in_forward = delta_rho
+           DEALLOCATE (delta_rho)
+           CALL dfftw_execute ( fftw3%plan_forward )
+           ALLOCATE ( delta_rho_k (nx/2+1,ny,nz) ,SOURCE=fftw3%out_forward)
+       END SUBROUTINE build_delta_rho_in_Fourier_space
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+       SUBROUTINE build_gamma_is_delta_rho_k_dot_cs_k
+           use module_grid, only:dq,nb_k
+           INTEGER(i2b) :: k_index
+           ! gamma(k)=cs(k)*rho(k)
+           ! gamma is named fftw3%in_backward not to have useless big table
+           print*, dq
+           do l=1,nx/2+1
+             do m=1,ny
+               do n=1,nz
+               k_index = MIN(  INT(norm_k(l,m,n)/dq)+1  ,nb_k) ! Here it happens that k_index gets higher than the highest c_k index.
+               fftw3%in_backward(l,m,n) = delta_rho_k(l,m,n) *c_s_hs%y(k_index) 
+           END DO
+           END DO
+           END DO
+           DEALLOCATE ( delta_rho_k )
+           CALL dfftw_execute (fftw3%plan_backward)
+           ALLOCATE ( gamma(nx,ny,nz) ,SOURCE=fftw3%out_backward/REAL(nx*ny*nz,dp))
+           do l=1,nx
+             do m=1,ny
+               do n=1,nz
+               end do
+             end do
+           end do
+       END SUBROUTINE build_gamma_is_delta_rho_k_dot_cs_k
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!Now remove the c_hs contribution
-  !rho is bearing deltaN now
-  rho=rho*solvent(1)%rho0*solvent(1)%mole_fraction-solvent(1)%n0
-  fftw3%in_forward = rho(:,:,:,1)
-  call dfftw_execute( fftw3%plan_forward )
-  fftw3%in_backward = (0._dp,0._dp)
-  do k=1,nx
-      do j=1,ny
-          do i=1,nz/2+1
-              q =  norm_k(i,j,k) 
-              iq = int(q/dq) +1
-              fftw3%in_backward(i,j,k) = fftw3%out_forward(i,j,k) * c_s_hs%y(iq)
-          end do
-      end do
-  end do
-
-  call dfftw_execute( fftw3%plan_backward ) ! this fill fftw3%out_backward with gamma(x)
-  fftw3%out_backward = fftw3%out_backward  /real(nx*ny*nz,dp) ! gamma(x)  note: the normalization factor /real(nx,ny,nz) comes from the way FFTW3 does NOT normalize its FFT
- 
-  !This is a HS bridge term so watch the sign
-  Ffmt=Ffmt+kT/2._dp*dv*sum (rho(:,:,:,1)*fftw3%out_backward)
-
-  do s=1,size(solvent)
-    do k=1,nz
-      do j=1,ny
-        do i=1,nx
-          do io=1,grid%no
-            df(io,i,j,k,s) = df(io,i,j,k,s) &
-                +kT*grid%w(io)*fftw3%out_backward(i,j,k)*2._dp*solvent(s)%rho0*solvent(s)%xi(io,i,j,k)*dv
-          end do
-        end do
-      end do
-    end do
-  end do
-
-  deallocate(rho)
+!  !rho is bearing deltaN now
+!  rho=rho*solvent(1)%rho0*solvent(1)%mole_fraction-solvent(1)%n0
+!  fftw3%in_forward = rho(:,:,:,1)
+!  call dfftw_execute( fftw3%plan_forward )
+!  fftw3%in_backward = (0._dp,0._dp)
+!  do k=1,nx
+!      do j=1,ny
+!          do i=1,nz/2+1
+!              q =  norm_k(i,j,k) 
+!              iq = int(q/dq) +1
+!              !iq = min(int(q/dq) +1,nb_k)
+!              fftw3%in_backward(i,j,k) = fftw3%out_forward(i,j,k) * c_s_hs%y(iq)
+!          end do
+!      end do
+!  end do
+!
+!  call dfftw_execute( fftw3%plan_backward ) ! this fill fftw3%out_backward with gamma(x)
+!  fftw3%out_backward = fftw3%out_backward  /real(nx*ny*nz,dp) ! gamma(x)  note: the normalization factor /real(nx,ny,nz) comes from the way FFTW3 does NOT normalize its FFT
+! 
+!  !This is a HS bridge term so watch the sign
+!  Ffmt=Ffmt+kT/2._dp*dv*sum (rho(:,:,:,1)*fftw3%out_backward)
+!
+!  do s=1,size(solvent)
+!    do k=1,nz
+!      do j=1,ny
+!        do i=1,nx
+!          do io=1,grid%no
+!            df(io,i,j,k,s) = df(io,i,j,k,s) &
+!                +kT*grid%w(io)*fftw3%out_backward(i,j,k)*2._dp*solvent(s)%rho0*solvent(s)%xi(io,i,j,k)*dv
+!          end do
+!        end do
+!      end do
+!    end do
+!  end do
+!
+!  !stop
+!  
+!
 end subroutine energy_fmt
-
-
 
 end module module_fmt
