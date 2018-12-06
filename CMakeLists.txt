@@ -55,8 +55,8 @@ message(STATUS "Using compiler ${CC_COMPILER_NAME}")
 SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran*")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008 -fopenmp")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-march=native -ffree-line-length-none -O0             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds -g -fopenmp")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-march=native -ffree-line-length-none -O0             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds -g")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
@@ -175,7 +175,7 @@ if(BUILD_FFTW)
 	  fftw
 	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
 	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 CC=${CC_COMPILER_NAME}  --enable-threads --enable-openmp  --enable-sse2 --enable-avx
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 CC=${CC_COMPILER_NAME}  --enable-threads   --enable-sse2 --enable-avx
 	  BUILD_COMMAND make -j4
 	  INSTALL_COMMAND make install -j4
 	)
@@ -183,7 +183,7 @@ if(BUILD_FFTW)
 	  fftwf
 	  URL ${PROJECT_SOURCE_DIR}/src/fftw-3.3.4.tar.gz
 	  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw3-cmake
-    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 CC=${CC_COMPILER_NAME} --enable-float --enable-openmp   --enable-threads --enable-sse --enable-sse2 --enable-avx
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libs/fftw3 CC=${CC_COMPILER_NAME} --enable-float  --enable-threads --enable-sse --enable-sse2 --enable-avx
 	  BUILD_COMMAND make -j4
 	  INSTALL_COMMAND make install -j4
 	)

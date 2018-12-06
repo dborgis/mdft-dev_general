@@ -4,6 +4,7 @@ module module_solute
     implicit none
     type :: solute_type
         character(130) :: name
+        character(130) :: nature  ! 'classical' point charge model or QM
         integer :: molrotsymorder
         integer :: nsite ! number of site of the solvent molecule
         integer :: nspec ! number of solvent species
@@ -11,6 +12,10 @@ module module_solute
         real(dp) :: diameter ! hard sphere diameter, for instance
         complex(dp), allocatable :: sigma_k(:,:,:) ! charge factor
         type (site_type), allocatable :: site(:)
+        real(dp), allocatable :: electron_density(:,:,:)
+        character(130) ::  electron_density_filename
+        real(dp), dimension(3) :: electron_density_boxlength
+        integer, dimension(3)  :: electron_density_gridSize
     end type
     type (solute_type), protected :: solute
     private
@@ -24,10 +29,13 @@ contains
 
       use precision_kinds, ONLY: i2b,dp
       use module_input,    ONLY: getinput
+      use module_grid, only: grid
+      use module_cubefiles
 
       implicit none
 
       integer :: n,i,stat
+      character(3) :: QM_flag
 
     !  call init_periodic_table
       ! print *, ptable ( 1 ) % name
@@ -41,15 +49,44 @@ contains
       ! copy solute.in in the output folder for further reference
       call execute_command_line ("cp solute.in output/.")
 
-      READ (5,*) ! comment line
+      READ (5,*) QM_flag
+      if ( QM_flag == '#QM' ) solute%nature = 'QM'
       READ (5,*) solute%nsite ! total number of atom sites of the solute
       ALLOCATE(solute%site(solute%nsite))
       READ (5,*)
       DO n = 1, solute%nsite
         READ(5,*) i, solute%site(n)%q, solute%site(n)%sig, solute%site(n)%eps, solute%site(n)%r, solute%site(n)%Z
       END DO
+
+      ! if solute is described quantum mechanically, one needs to specify the electron_densty_filename
+      ! and upload the corresponding electron density
+      if( solute%nature == 'QM') then
+        write(*,*) 'the solute is described quantum-mechanically by its electron density'
+        read(5,*)  ! comment line
+        read(5,*) solute%electron_density_boxlength
+        read(5,*) solute%electron_density_gridSize
+
+        if( solute%electron_density_boxlength(1) /= grid%length(1) ) then  !to be change for all directions
+            write(*,*) 'In module_solute: electrondensity_boxLength should be the same as grid_length'
+            STOP
+
+            else if( solute%electron_density_gridSize(1) /= grid%n_nodes(1) ) then
+            write(*,*) 'In module_solute: electron_density_GridSize should be the same as grid%n_nodes'
+            STOP
+
+        else
+        read(5,*)  solute%electron_density_filename
+        write(*,*) 'The electron_density_filename : ', solute%electron_density_filename,' was read'
+        end if
+
+
+      CALL Read_cube_file(solute%electron_density,solute%electron_density_filename)
+
+      end if
+
       CLOSE (5)
-      solute%site%q = solute%site%q * getinput%dp('solute_charges_scale_factor', defaultvalue=1._dp)
+      if( solute%nature /= 'QM') &
+              solute%site%q = solute%site%q * getinput%dp('solute_charges_scale_factor', defaultvalue=1._dp)
 
       block
         real(dp) :: solutexmin, solutexmax, soluteymin, soluteymax, solutezmin, solutezmax, &
