@@ -117,7 +117,7 @@ print*, "New file created:", trim(adjustl(filename))
 
 !  Compute and print corresponding RDFs
 if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) ) then
-filename = 'output/charge_density_rdf.xvg'
+filename = 'output/solvent_pseudo_charge_density_rdf'
 charge_density = charge_density/solvent(1)%n0
 call output_rdf ( charge_density , filename ) ! Get radial distribution functions
 print*, "New file created:", trim(adjustl(filename))
@@ -130,7 +130,7 @@ call write_to_cube_file( charge_density, filename )
 print*, "New file created:", trim(adjustl(filename))
 if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) ) then
 
-filename = 'output/molecule_pseudo_charge_density_rdf.xvg'
+filename = 'output/molecule_pseudo_charge_density_rdf'
 call output_rdf ( charge_density , filename ) ! Get radial distribution functions
 print*, "New file created:", trim(adjustl(filename))
 end if
@@ -164,7 +164,7 @@ WRITE_POLARIZATION: BLOCK
             call write_to_cube_file( sqrt( px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ), filename ) 
             print*, "New file output/Pnorm.cube. Try$ vmd -cube output/Pnorm.cube"
             if( size(solute%site) < 50 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
-                filename = 'output/pnorm.xvg'
+                filename = 'output/pnorm'
                 call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
                 print*, "New output file ", trim(adjustl(filename)), ". Try$ xmgrace output/pnorm.xvg"
             end if
@@ -177,7 +177,7 @@ WRITE_DENSITY_RDFs: BLOCK
             use module_input, only: getinput
             if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) .or. getinput%log ('write_rdf', defaultvalue=.false.) ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
                 density = density / solvent(1)%n0
-                filename = 'output/rdf.xvg'
+                filename = 'output/rdf'
                 call output_rdf ( density , filename ) ! Get radial distribution functions
                 print*, "New file ", trim(adjustl(filename))
                 if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
@@ -386,14 +386,14 @@ case(c_float)
 call sfftw_execute(plan_backward)
 end select
 
-charge_density = charge_density*grid%dv
+charge_density = charge_density/grid%dv/real(nx*ny*nz,dp)
 
 !check molecule charge density
    sum_charges = zero
    do k = 1, nz
      do j = 1, ny
        do i = 1, nx
-          sum_charges = sum_charges + charge_density(i, j, k)
+          sum_charges = sum_charges + charge_density(i, j, k)*grid%dv
        end do
      end do
    end do

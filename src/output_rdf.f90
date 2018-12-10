@@ -35,6 +35,7 @@ SUBROUTINE output_rdf (array,filename)
     real(dp) :: xbin
     logical :: dontPrintZeros
     character(len=6) :: string, string2
+    character(80) :: filename_xvg, filename_out
 
     rdfmaxrange = minval(grid%length)/2._dp
     ! we dont use this anymore. Not suited to our "powder averaging" kind of grid results.
@@ -58,7 +59,12 @@ SUBROUTINE output_rdf (array,filename)
     ! we dont print the zeros anymore.
     !
     !
-    open (10, file=filename) ! filename is intent(in), typically "output/rdf.out"
+     filename_xvg = trim(adjustl(filename))//'.xvg'
+     filename_out = trim(adjustl(filename))//'.out'
+
+    open (10, file=filename_xvg) ! filename is intent(in), typically "output/rdf.out"
+    open(11, file=filename_out)
+    write(*,*)
     write(10,*) '@ xaxis label "Distance (\cE\C)"'
     write(10,*) '@ yaxis label "Radial distribution function"'
     write(10,*) '@ TYPE xy'
@@ -79,7 +85,10 @@ SUBROUTINE output_rdf (array,filename)
                 write(10,*) xbin, rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
                 if( rdf(bin)/=0 ) dontPrintZeros = .true.
             else if( dontPrintZeros ) then
-                if( rdf(bin)/=0 ) write(10,*) xbin, rdf(bin)
+                if( rdf(bin)/=0 ) then
+                    write(10,*) xbin, rdf(bin)
+                    write(11,*) xbin, rdf(bin)
+                end if
             end if
         end do
     end do

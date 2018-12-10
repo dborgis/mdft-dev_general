@@ -44,8 +44,10 @@ module module_solvent
         type (site_type), allocatable :: site(:)
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
-        complex(dp), allocatable :: sigma_k(:,:,:,:) ! solvent molecule charge density
+
         complex(dp), allocatable :: pseudo_charge_density_k(:,:,:,:) ! solvent molecule pseudo-charge density in k-space for QM/MM calculations
+        complex(dp), allocatable :: charge_density_k(:,:,:,:) ! solvent molecule charge density, same as sigma_k with diffrent normalization
+        complex(dp), allocatable :: sigma_k(:,:,:,:)! solvent molecule charge density
         complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! solvent molecule polarization density
         real(dp), allocatable :: vext(:,:,:,:), vextq(:,:,:,:)
         real(dp) :: vext_threeshold = qfact/2.0_dp !100._dp!36.04_dp ! 36.something is the maximum value of v so that exp(-beta.v) does not return underflow at 300 K
@@ -323,9 +325,6 @@ COMPUTE_SOLVENT_MOLECULE_PSEUDO_CHARGE_DENSITY: BLOCK
         print*, compute_solvent_pseudo_charge_density
         if( compute_solvent_pseudo_charge_density ) then
                 call init_solvent_molecule_pseudo_charge_density
-          !      do io = 1, grid%no   ! for tests only
-          !        call get_Solvent_Molecule_Pseudo_Charge_Density( charge_density , io )
-          !       end do
         end if
 END BLOCK COMPUTE_SOLVENT_MOLECULE_PSEUDO_CHARGE_DENSITY
 
@@ -430,10 +429,12 @@ integer :: nx, ny, nz, no, ns
 integer :: i, j, k, n, s, io, d
 real(dp)     :: r(3), kr, kvec(3)
 complex(dp)  :: fac, X
+real(dp) :: GaussianFactor
 complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
-real(dp), parameter :: epsdp = epsilon(1._dp)
-real(dp) :: smootherfactor
-real(dp) :: smootherradius = 0.25_dp ! dramaticaly important
+real(dp), parameter :: AngtoBohr = 1.889725989_dp, BohrtoAng = 1.0_dp/AngtoBohr
+real(dp), parameter :: q_h = 0.41_dp, A_1h = 0.75_dp/BohrtoAng, B_1h = 0.150_dp, B_2h = 0.5_dp/BohrtoAng, B_3h = 0.35_dp/BohrtoAng
+real(dp), parameter :: q_o = -0.82_dp, A_1o = 0.575_dp/BohrtoAng, B_1o = 0.620_dp, B_2o = 1.0_dp/BohrtoAng, B_3o = 0.4_dp/BohrtoAng
+
 nx = grid%nx
 ny = grid%ny
 nz = grid%nz
@@ -457,20 +458,34 @@ allocate( solvent(1)%pseudo_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
     do k = 1, nz
       do j = 1, ny
         do i = 1, nx/2+1
+           kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
 
-   !       do n=1, solvent(1)%nsite
-          do n= 1, 1  !for tests only
-          kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
-          smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
+           n= 1 ! oxygen site
 
-           r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(1)/2._dp
-           r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(2)/2._dp
-           r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   ! - grid%length(3)/2._dp
+           GaussianFactor =  q_o*exp( -sum(kvec**2 )/(4._dp*A_1o**2)) &
+                     - B_1o*( exp(-sum( kvec**2 )/(4._dp*B_2o**2)) - exp(-sum( kvec**2 )/(4._dp*B_3o**2)) )
+
+           r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
+           r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
+           r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
            kr = dot_product( kvec, r )
            X = -iC*kr
-           solvent(1)%pseudo_charge_density_k(i,j,k,io) = solvent(1)%pseudo_charge_density_k(i,j,k,io) &
-                                       + solvent(1)%site(n)%q *exp(X) *smootherfactor/grid%v ! exact
-           end do ! loop over solvent sites
+           solvent(1)%pseudo_charge_density_k(i,j,k,io) = exp(X) *GaussianFactor!! exact
+
+        do n= 2, 3 ! sum of hydrogen sites site
+
+           GaussianFactor =  q_h*exp(-sum( kvec**2 )/(4._dp*A_1h**2))&
+                - B_1o*( exp(-sum( kvec**2 )/(4._dp*B_2h**2)) - exp(-sum( kvec**2 )/(4._dp*B_3h**2)) )
+
+            r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
+            r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
+            r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
+            kr = dot_product( kvec, r )
+            X = -iC*kr
+            solvent(1)%pseudo_charge_density_k(i,j,k,io) =  solvent(1)%pseudo_charge_density_k(i,j,k,io) &
+                                 + exp(X) *GaussianFactor! exact
+
+           end do ! loop over hydrogen sites
 
 
         end do !loop nx
@@ -484,6 +499,63 @@ allocate( solvent(1)%pseudo_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
 !$omp end parallel
 end subroutine init_solvent_molecule_pseudo_charge_density
 
+subroutine init_solvent_molecule_charge_density  !not useful for now, same as chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin exept for normalization by grid%dv. charge_density_k is sigma_k
+use module_grid, only: grid
+implicit none
+integer :: nx, ny, nz, no, ns
+integer :: i, j, k, n, s, io, d
+real(dp)     :: r(3), kr, kvec(3)
+complex(dp)  :: fac, X
+complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
+real(dp), parameter :: epsdp = epsilon(1._dp)
+real(dp) :: smootherfactor
+real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
+nx = grid%nx
+ny = grid%ny
+nz = grid%nz
+no = grid%no
+ns = size(solvent) ! Count of solvent species
+
+print*, 'passed in subroutine init_solvent_molecule_charge_density, created by Daniel on 7-12-2018, same as chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin'
+
+!charge_density is the Fourier transformed "classical" charge density of a single water molecule in the reference frame defined by solvent.in
+
+if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns = 1'
+
+allocate( solvent(1)%charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
+
+!$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
+!$omp do
+do io = 1, no
+
+do k = 1, nz
+do j = 1, ny
+do i = 1, nx/2+1
+
+do n=1, solvent(1)%nsite
+!do n= 1, 1  !for tests only
+kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
+
+r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(1)/2._dp
+r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(2)/2._dp
+r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   ! - grid%length(3)/2._dp
+kr = dot_product( kvec, r )
+X = -iC*kr
+solvent(1)%charge_density_k(i,j,k,io) = solvent(1)%charge_density_k(i,j,k,io) &
++ solvent(1)%site(n)%q *exp(X) *smootherfactor/grid%v ! exact
+end do ! loop over solvent sites
+
+
+end do !loop nx
+end do ! loop ny
+end do !loop nz
+
+end do !loop no
+!$omp end do
+!$omp end parallel
+
+end subroutine init_solvent_molecule_charge_density
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
