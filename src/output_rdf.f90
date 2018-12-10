@@ -8,6 +8,10 @@ SUBROUTINE output_rdf (array,filename)
 ! A much better (and more complicated) way of chosing this number would be to follow this publication:
 ! www.proba.jussieu.fr/mathdoc/textes/PMA-721.pdf
 
+! slightly change by Daniel 9-12-2018: print if rdf(bin) /= 0 instead of >0. Works also for negative densities
+! (like charge densities)
+
+
     use precision_kinds, only: dp
     use module_solute, only: solute
     use module_solvent, only: solvent
@@ -73,9 +77,9 @@ SUBROUTINE output_rdf (array,filename)
             xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
             if( .not. dontPrintZeros ) then ! print the zeros
                 write(10,*) xbin, rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
-                if( rdf(bin)>0 ) dontPrintZeros = .true.
+                if( rdf(bin)/=0 ) dontPrintZeros = .true.
             else if( dontPrintZeros ) then
-                if( rdf(bin)>0 ) write(10,*) xbin, rdf(bin)
+                if( rdf(bin)/=0 ) write(10,*) xbin, rdf(bin)
             end if
         end do
     end do

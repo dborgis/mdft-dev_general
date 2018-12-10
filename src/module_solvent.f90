@@ -1,10 +1,11 @@
 module module_solvent
 
-    use precision_kinds, only: dp
+    use precision_kinds
     use system, only: site_type
     use module_input, only: getinput
     use module_grid, only: grid
     use constants, only: qfact
+    use module_postprocessing !! for test only. REMOVE
 
     implicit none
     private
@@ -43,8 +44,9 @@ module module_solvent
         type (site_type), allocatable :: site(:)
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
-        complex(dp), allocatable :: sigma_k(:,:,:,:) ! charge factor
-        complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! molecule polarization factor
+        complex(dp), allocatable :: sigma_k(:,:,:,:) ! solvent molecule charge density
+        complex(dp), allocatable :: pseudo_charge_density_k(:,:,:,:) ! solvent molecule pseudo-charge density in k-space for QM/MM calculations
+        complex(dp), allocatable :: molec_polar_k(:,:,:,:,:) ! solvent molecule polarization density
         real(dp), allocatable :: vext(:,:,:,:), vextq(:,:,:,:)
         real(dp) :: vext_threeshold = qfact/2.0_dp !100._dp!36.04_dp ! 36.something is the maximum value of v so that exp(-beta.v) does not return underflow at 300 K
         type(do_type) :: do
@@ -173,7 +175,8 @@ contains
         use module_input, only: getinput
         implicit none
         integer :: i, j, k, l, s, ncomma
-        character(180) :: polarization, dummychar
+        character(180) :: polarization, dummychar,solvent_pseudo_charge_density
+        logical :: compute_solvent_pseudo_charge_density
 
         if (allocated(solvent)) then
             print*, "bug dans read_solvent. Le 21 octobre 2015, j'ai transféré l'allocation de allocate_from_input a read_solvent"
@@ -309,6 +312,26 @@ contains
             call chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
         end select
 
+        ! Compute solvent molecule pseudo charge-density for QM calculations (added by daniel, 7-12-2018)
+COMPUTE_SOLVENT_MOLECULE_PSEUDO_CHARGE_DENSITY: BLOCK
+        real(dp), allocatable :: charge_density(:,:,:)
+        integer(i2b) :: io
+
+        allocate ( charge_density( grid%nx, grid%ny, grid%nz ) )
+
+        compute_solvent_pseudo_charge_density = getinput%log("compute_solvent_pseudo_charge_density", defaultvalue=.false.)
+        print*, compute_solvent_pseudo_charge_density
+        if( compute_solvent_pseudo_charge_density ) then
+                call init_solvent_molecule_pseudo_charge_density
+          !      do io = 1, grid%no   ! for tests only
+          !        call get_Solvent_Molecule_Pseudo_Charge_Density( charge_density , io )
+          !       end do
+        end if
+END BLOCK COMPUTE_SOLVENT_MOLECULE_PSEUDO_CHARGE_DENSITY
+
+
+
+
         call functional_decision_tree
 
         solvent%is_initiated = .true.
@@ -399,6 +422,68 @@ contains
                 -sum( solvent(s)%molec_polar_k(d,i,j,k,:) ) /real(grid%no,dp)
         end do
       end subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
+
+subroutine init_solvent_molecule_pseudo_charge_density
+use module_grid, only: grid
+implicit none
+integer :: nx, ny, nz, no, ns
+integer :: i, j, k, n, s, io, d
+real(dp)     :: r(3), kr, kvec(3)
+complex(dp)  :: fac, X
+complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
+real(dp), parameter :: epsdp = epsilon(1._dp)
+real(dp) :: smootherfactor
+real(dp) :: smootherradius = 0.25_dp ! dramaticaly important
+nx = grid%nx
+ny = grid%ny
+nz = grid%nz
+no = grid%no
+ns = size(solvent) ! Count of solvent species
+
+print*, 'passed in subroutine init_solvent_molecule_pseudo_charge_density, created by Daniel on 7-12-2018 for introducing QM/MM electron-water pseudopotential'
+
+! At this stage: pseudo_charge_density is the Fourier transformed charge density of a single water molecule in the reference frame defined by solvent.in
+
+if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns = 1'
+if( solvent(1)%name /= 'spce' ) stop 'init_solvent_molecule_pseudo_charge_density only work for spc or spce'
+
+allocate( solvent(1)%pseudo_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
+
+!$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
+!$omp do
+
+  do io = 1, no
+
+    do k = 1, nz
+      do j = 1, ny
+        do i = 1, nx/2+1
+
+   !       do n=1, solvent(1)%nsite
+          do n= 1, 1  !for tests only
+          kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+          smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
+
+           r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(1)/2._dp
+           r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(2)/2._dp
+           r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   ! - grid%length(3)/2._dp
+           kr = dot_product( kvec, r )
+           X = -iC*kr
+           solvent(1)%pseudo_charge_density_k(i,j,k,io) = solvent(1)%pseudo_charge_density_k(i,j,k,io) &
+                                       + solvent(1)%site(n)%q *exp(X) *smootherfactor/grid%v ! exact
+           end do ! loop over solvent sites
+
+
+        end do !loop nx
+      end do ! loop ny
+    end do !loop nz
+
+  end do !loop no
+
+
+!$omp end do
+!$omp end parallel
+end subroutine init_solvent_molecule_pseudo_charge_density
+
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
