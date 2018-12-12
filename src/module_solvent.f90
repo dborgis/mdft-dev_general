@@ -44,7 +44,7 @@ module module_solvent
         type (site_type), allocatable :: site(:)
         real(dp)              :: n0        ! number density of the homogeneous reference fluid in molecules per Angstrom^3, e.g., 0.033291 molecule.A**-3 for water
         real(dp)              :: rho0      ! number density per orientation of the homogeneous reference fluid in molecules per Angstrom^3 per orientation
-
+        character(80) :: quantum_description
         complex(dp), allocatable :: pseudo_charge_density_k(:,:,:,:) ! solvent molecule pseudo-charge density in k-space for QM/MM calculations
         complex(dp), allocatable :: charge_density_k(:,:,:,:) ! solvent molecule charge density, same as sigma_k with diffrent normalization
         complex(dp), allocatable :: sigma_k(:,:,:,:)! solvent molecule charge density
@@ -175,10 +175,11 @@ contains
         ! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
         use mathematica, only: chop
         use module_input, only: getinput
+        use module_solute, only: solute
         implicit none
         integer :: i, j, k, l, s, ncomma
-        character(180) :: polarization, dummychar,solvent_pseudo_charge_density
-        logical :: compute_solvent_pseudo_charge_density
+        character(80) :: polarization, dummychar,solvent_quantum_description
+
 
         if (allocated(solvent)) then
             print*, "bug dans read_solvent. Le 21 octobre 2015, j'ai transféré l'allocation de allocate_from_input a read_solvent"
@@ -314,19 +315,32 @@ contains
             call chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
         end select
 
-        ! Compute solvent molecule pseudo charge-density for QM calculations (added by daniel, 7-12-2018)
-COMPUTE_SOLVENT_MOLECULE_PSEUDO_CHARGE_DENSITY: BLOCK
-        real(dp), allocatable :: charge_density(:,:,:)
-        integer(i2b) :: io
+! Compute solvent molecule charge-density in reciprocal space (solvent(1)%sigma_k
 
-        allocate ( charge_density( grid%nx, grid%ny, grid%nz ) )
+        call Get_solvent_molecule_reciprocal_charge_density
+  !      call chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
 
-        compute_solvent_pseudo_charge_density = getinput%log("compute_solvent_pseudo_charge_density", defaultvalue=.false.)
-        print*, compute_solvent_pseudo_charge_density
-        if( compute_solvent_pseudo_charge_density ) then
-                call init_solvent_molecule_pseudo_charge_density
-        end if
-END BLOCK COMPUTE_SOLVENT_MOLECULE_PSEUDO_CHARGE_DENSITY
+
+! Compute solvent molecule pseudo charge-density for QM calculations (added by daniel, 7-12-2018)
+COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY: BLOCK
+     allocate( solvent(1)%pseudo_charge_density_k(grid%nx/2+1, grid%ny, grid%nz, grid%no), SOURCE=(0._dp,0._dp) )
+
+     if( solute%nature == "QM") then
+
+        select case (solute%solvent_coupling)
+        case ("pseudo")
+              call Get_solvent_molecule_reciprocal_pseudo_charge_density
+            print*, 'choix pseudo'
+        case ("classical_charges")
+              solvent(1)%pseudo_charge_density_k(:,:,:,:) = solvent(1)%sigma_k(:,:,:,:)
+             print*, 'choix classical_charges'
+        end select
+
+     else
+           solvent(1)%pseudo_charge_density_k(:,:,:,:) = solvent(1)%sigma_k(:,:,:,:)
+     end if
+
+END BLOCK COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY
 
 
 
@@ -422,7 +436,7 @@ END BLOCK COMPUTE_SOLVENT_MOLECULE_PSEUDO_CHARGE_DENSITY
         end do
       end subroutine chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin
 
-subroutine init_solvent_molecule_pseudo_charge_density
+subroutine Get_solvent_molecule_reciprocal_pseudo_charge_density
 use module_grid, only: grid
 implicit none
 integer :: nx, ny, nz, no, ns
@@ -441,14 +455,13 @@ nz = grid%nz
 no = grid%no
 ns = size(solvent) ! Count of solvent species
 
-print*, 'passed in subroutine init_solvent_molecule_pseudo_charge_density, created by Daniel on 7-12-2018 for introducing QM/MM electron-water pseudopotential'
+print*, 'passed in subroutine get_solvent_molecule_pseudo_charge_density, created by Daniel on 7-12-2018 for introducing QM/MM electron-water pseudopotential'
 
 ! At this stage: pseudo_charge_density is the Fourier transformed charge density of a single water molecule in the reference frame defined by solvent.in
 
 if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns = 1'
 if( solvent(1)%name /= 'spce' ) stop 'init_solvent_molecule_pseudo_charge_density only work for spc or spce'
 
-allocate( solvent(1)%pseudo_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
 
 !$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
 !$omp do
@@ -497,9 +510,9 @@ allocate( solvent(1)%pseudo_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
 
 !$omp end do
 !$omp end parallel
-end subroutine init_solvent_molecule_pseudo_charge_density
+end subroutine Get_solvent_molecule_reciprocal_pseudo_charge_density
 
-subroutine init_solvent_molecule_charge_density  !not useful for now, same as chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin exept for normalization by grid%dv. charge_density_k is sigma_k
+subroutine Get_solvent_molecule_reciprocal_charge_density  !not useful for now, same as chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin exept for normalization by grid%dv. charge_density_k is sigma_k
 use module_grid, only: grid
 implicit none
 integer :: nx, ny, nz, no, ns
@@ -522,7 +535,7 @@ print*, 'passed in subroutine init_solvent_molecule_charge_density, created by D
 
 if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns = 1'
 
-allocate( solvent(1)%charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
+allocate( solvent(1)%sigma_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
 
 !$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
 !$omp do
@@ -533,7 +546,7 @@ do j = 1, ny
 do i = 1, nx/2+1
 
 do n=1, solvent(1)%nsite
-!do n= 1, 1  !for tests only
+
 kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
 smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
 
@@ -542,8 +555,8 @@ r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent
 r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   ! - grid%length(3)/2._dp
 kr = dot_product( kvec, r )
 X = -iC*kr
-solvent(1)%charge_density_k(i,j,k,io) = solvent(1)%charge_density_k(i,j,k,io) &
-+ solvent(1)%site(n)%q *exp(X) *smootherfactor/grid%v ! exact
+solvent(1)%sigma_k(i,j,k,io) = solvent(1)%sigma_k(i,j,k,io) &
+                         + solvent(1)%site(n)%q *exp(X) *smootherfactor ! exact
 end do ! loop over solvent sites
 
 
@@ -555,7 +568,7 @@ end do !loop no
 !$omp end do
 !$omp end parallel
 
-end subroutine init_solvent_molecule_charge_density
+end subroutine Get_solvent_molecule_reciprocal_charge_density
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

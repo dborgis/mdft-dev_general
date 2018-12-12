@@ -1,10 +1,10 @@
 module module_solute
-    use precision_kinds, only: dp
+use precision_kinds, only: dp
     use system, only: site_type
     implicit none
     type :: solute_type
         character(130) :: name
-        character(130) :: nature  ! 'classical' point charge model or QM
+        character(80) :: nature, solvent_coupling  ! 'classical' point charge model or QM
         integer :: molrotsymorder
         integer :: nsite ! number of site of the solvent molecule
         integer :: nspec ! number of solvent species
@@ -12,10 +12,8 @@ module module_solute
         real(dp) :: diameter ! hard sphere diameter, for instance
         complex(dp), allocatable :: sigma_k(:,:,:) ! charge factor
         type (site_type), allocatable :: site(:)
-        real(dp), allocatable :: electron_density(:,:,:)
-        character(130) ::  electron_density_filename
-        real(dp), dimension(3) :: electron_density_boxlength
-        integer, dimension(3)  :: electron_density_gridSize
+        complex(dp), allocatable :: electron_density_k(:,:,:)
+        real(dp) :: electronic_charge, nuclei_charge
     end type
     type (solute_type), protected :: solute
     private
@@ -27,15 +25,24 @@ contains
     !! charge in electron units, sigma in Angstroms, epsilon in KJ/mol.
     subroutine read_solute
 
-      use precision_kinds, ONLY: i2b,dp
+      use iso_c_binding
+      use precision_kinds, only: dp, i4b
       use module_input,    ONLY: getinput
       use module_grid, only: grid
       use module_cubefiles
 
+
       implicit none
 
-      integer :: n,i,stat
+      integer :: n,i,j,k,stat
+      real(dp) :: sum_charge
       character(3) :: QM_flag
+      character(80) :: filename
+      real(dp), allocatable :: solute_electron_density(:,:,:)
+      character(130) ::  solute_electron_density_filename
+      integer(i4b) :: plan_forward  !for fftw3
+
+      include "fftw3.f03"
 
     !  call init_periodic_table
       ! print *, ptable ( 1 ) % name
@@ -60,31 +67,43 @@ contains
 
       ! if solute is described quantum mechanically, one needs to specify the electron_densty_filename
       ! and upload the corresponding electron density
+GET_QUANTUM_ELECTRON_DENSITY: Block
       if( solute%nature == 'QM') then
         write(*,*) 'the solute is described quantum-mechanically by its electron density'
         read(5,*)  ! comment line
-        read(5,*) solute%electron_density_boxlength
-        read(5,*) solute%electron_density_gridSize
+        read(5,*)  solute_electron_density_filename
+        write(*,*) 'The electron_density_filename : ', solute_electron_density_filename,' was read'
+        read(5,*)  ! comment line
+        read(5,*)  solute%solvent_coupling
+        print*, solute%solvent_coupling
 
-        if( solute%electron_density_boxlength(1) /= grid%length(1) ) then  !to be change for all directions
-            write(*,*) 'In module_solute: electrondensity_boxLength should be the same as grid_length'
-            STOP
+      allocate ( solute_electron_density( grid%nx, grid%ny, grid%nz ) )
 
-            else if( solute%electron_density_gridSize(1) /= grid%n_nodes(1) ) then
-            write(*,*) 'In module_solute: electron_density_GridSize should be the same as grid%n_nodes'
-            STOP
+      CALL Read_Gaussian_cube_file( solute_electron_density, solute_electron_density_filename, solute%electronic_charge )
+      print*,'cube file read: DONE. Total electronic charge =',solute%electronic_charge
 
-        else
-        read(5,*)  solute%electron_density_filename
-        write(*,*) 'The electron_density_filename : ', solute%electron_density_filename,' was read'
-        end if
+      allocate( solute%electron_density_k( grid%nx/2 + 1, grid%ny, grid%nz) )
 
+      ! DO FFT forward
+      select case(dp)
+      case(c_double)
+        call dfftw_plan_dft_r2c_3d (plan_forward, grid%nx, grid%ny, grid%nz, solute_electron_density, solute%electron_density_k, fftw_estimate)
+        call dfftw_execute(plan_forward)
+      case(c_float)
+        call sfftw_plan_dft_r2c_3d (plan_forward, grid%nx, grid%ny, grid%nz, solute_electron_density, solute%electron_density_k, fftw_estimate)
+        call sfftw_execute(plan_forward)
+      end select
 
-      CALL Read_cube_file(solute%electron_density,solute%electron_density_filename)
+      solute%electron_density_k = solute%electron_density_k*grid%dv
+!
+      deallocate( solute_electron_density )
 
-      end if
+     end if !
+
+END Block GET_QUANTUM_ELECTRON_DENSITY
 
       CLOSE (5)
+
       if( solute%nature /= 'QM') &
               solute%site%q = solute%site%q * getinput%dp('solute_charges_scale_factor', defaultvalue=1._dp)
 
@@ -315,11 +334,13 @@ contains
         close(5)
     END SUBROUTINE print_solute_xsf
 
+
+
     !This subroutine computes analitically and directly in k-space the charge
     !distribution of the solute molecule. It is quite  a strong repeating of
     !soluteChargeDensityFromSoluteChargeCoordinates for solvent but I did not
     !find a smart way yet to avoid this redundancy
-    SUBROUTINE getreciprocalsolutechargedensity()
+    SUBROUTINE GetReciprocalSoluteChargeDensity()
         use module_grid, only: grid
         implicit none
         integer :: nx, ny, nz, no
@@ -367,5 +388,6 @@ contains
            !$omp end do
            !$omp end parallel
     END SUBROUTINE
+!
 
 end module module_solute

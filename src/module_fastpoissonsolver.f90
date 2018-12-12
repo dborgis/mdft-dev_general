@@ -147,6 +147,7 @@ contains
         real(dp), parameter :: espdp=epsilon(1._dp)
         integer :: nx, ny, nz
         character(50) :: filename
+        logical :: direct_solute_sigma_k
 
         include "fftw3.f03"
 
@@ -181,8 +182,9 @@ contains
           allocate( electric_potential_k (nx/2+1,gridnode(2),gridnode(3)) ,source=zeroc)
           
           
-          
-        if (.not. getinput%log("direct_solute_sigmak", defaultvalue=.false.) ) then  !compute the solute charge density in direct space and FFT it
+        direct_solute_sigma_k = getinput%log("direct_solute_sigmak", defaultvalue=.false.)
+        if( solute%nature == 'QM' ) direct_solute_sigma_k = .true.
+        if (.not.direct_solute_sigma_k)  then  !compute the solute charge density in direct space and FFT it
           if ( all(abs(sourcedistrib)<=epsilon(1._dp)) ) then
               electric_potential = 0._dp
               return
@@ -198,9 +200,13 @@ contains
           sourcedistrib_k = fftw3OutForward ! It is verified that at this point, FFT-1(sourcedistrib_k)/ (nfft1*nfft2*nfft3) = sourcedistrib
           ! FFT(Laplacian(V(r))) = FFT( - 4Pi charge density(r) ) in elecUnits = (ik)^2 V(k) = -4pi rho(k)
           ! V(k) = 4Pi rho(k) / k^2
-        else  !directely compute the solute charge density analitically in k-space
-          call getreciprocalsolutechargedensity()
-          sourcedistrib_k = solute%sigma_k/grid%dV
+        else  !directely compute the solute charge density analytically in k-space + add the electron density if QM-solute
+          call GetReciprocalSoluteChargeDensity()
+             if( solute%nature == 'QM' ) then
+               sourcedistrib_k = ( solute%sigma_k + solute%electron_density_k )/grid%dV
+              else
+                sourcedistrib_k = solute%sigma_k/grid%dV
+             end if
         end if
  
         DO k = 1, gridnode(3)
@@ -239,26 +245,29 @@ contains
 
 
         ! old construction
-        if (getinput%log('better_poisson_solver', defaultvalue=.false.)) then
-            !please be aware that this will compute the external potential, but
-            !it won't be use to to compute the external FE, thus it is like you
+!        if (getinput%log('better_poisson_solver', defaultvalue=.false.)) then
+!            !please be aware that this will compute the external potential, but
+!            it won't be use to to compute the external FE, thus it is like you
             !were not using electrostatic at all
             ! get electrostatic potentiel in real space, that is the true Poisson potentiel. It is not solvent dependent
-            fftw3InBackward = electric_potential_k
-            select case(dp)
-            case(c_double)
-              call dfftw_execute (fpspb)
-            case(c_float)
-              call sfftw_execute (fpspb)
-            end select
-            electric_potential = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
-        else
+!            fftw3InBackward = electric_potential_k
+!            select case(dp)
+!            case(c_double)
+!              call dfftw_execute (fpspb)
+!            case(c_float)
+!              call sfftw_execute (fpspb)
+!            end select
+!            electric_potential = qfact * fftw3OutBackward / REAL(PRODUCT(gridnode),dp) ! kJ/mol
+!        else
             ! new construction
             ! get multipolar electrostatic potential in real space. It is already solvent dependent here
-            do s=1,solvent(1)%nspec
-                if (.not. allocated(solvent(s)%sigma_k) ) then
-                    call solvent(s)%init_chargedensity_molecularpolarization
-                end if
+      !      do s=1,solvent(1)%nspec
+
+            if( solvent(1)%nspec > 1 ) stop 'Dans fastpoissonsolver: cette version QM/MM ne marche pas pour ns >1'
+            s = 1
+
+             IF( solute%nature /= "QM" ) then
+
                 do io = 1, grid%no
                     fftw3InBackward = electric_potential_k * conjg( solvent(s)%sigma_k(:,:,:,io) )
                     select case(dp)
@@ -269,8 +278,25 @@ contains
                     end select
                     solvent(s)%vextq(io,:,:,:) = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
                 end do
-            end do
-        end if
+
+               ELSE
+
+               do io = 1, grid%no
+                   fftw3InBackward = electric_potential_k * conjg( solvent(s)%pseudo_charge_density_k(:,:,:,io) )
+                   select case(dp)
+                   case(c_double)
+                   call dfftw_execute(fpspb)
+                   case(c_float)
+                   call sfftw_execute(fpspb)
+                   end select
+                    solvent(s)%vextq(io,:,:,:) = qfact * fftw3OutBackward / real( product(gridnode) ,dp) ! kJ/mol
+               end do
+
+              END IF  ! endif QM/MM
+
+
+
+!            end if
 
 
 

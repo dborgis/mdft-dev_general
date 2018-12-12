@@ -288,7 +288,7 @@ end subroutine energy_bridge
     use module_solvent, only: solvent
     implicit none
     real(dp) :: solute_net_charge, L
-    solute_net_charge = sum (solute%site%q)
+    solute_net_charge = sum (solute%site%q) + solute%electronic_charge
     if( ff%apply_energy_corrections_due_to_charged_solute .eqv. .false. ) then
       ff%pbc_correction = 0._dp
     else if( abs(solute_net_charge)<1.E-7 ) then
@@ -336,7 +336,7 @@ end subroutine energy_bridge
       ff%pscheme_correction=0.0_dp
       do s=1,solvent(1)%nspec
         gamma = solvent(s)%quadrupole(1,1)+solvent(s)%quadrupole(2,2)+solvent(s)%quadrupole(3,3) ! quadrupole moment trace
-        solute_net_charge = sum(solute%site%q)
+        solute_net_charge = sum(solute%site%q) + solute%electronic_charge
         ff%pscheme_correction =ff%pscheme_correction-gamma*solvent(s)%n0*2909.857_dp*solute_net_charge ! in kJ/mol
       end do
   end subroutine typeC_corrections

@@ -54,6 +54,7 @@ contains
   
   end subroutine
 
+
   subroutine read_cube_file( array , filename)
     use module_grid, only: grid
     use precision_kinds, only: dp
@@ -144,8 +145,10 @@ end do
 close(10)
 
 end subroutine write_to_Gaussian_cube_file
-
-subroutine read_Gaussian_cube_file( array , filename)
+!
+!
+!
+subroutine read_Gaussian_cube_file( array , filename, sum_charge)
 use module_grid, only: grid
 use precision_kinds, only: dp
 
@@ -153,9 +156,10 @@ implicit none
 
 character(50), intent(in) :: filename
 real(dp), intent(out) :: array(grid%nx,grid%ny,grid%nz)
+real(dp), intent(out):: sum_charge
 character(50) :: dummytext
-integer :: numsites,numpoints(3),dummyint,i,j,k,n
-real(dp) :: deltarinbohr(3),dummyfloat,tmp
+integer :: numsites,numpoints(3),dummyint,i,j,k,n, ix, iy, iz
+real(dp) :: deltarinbohr(3),dummyfloat,tmp, zz
 real(dp), parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
 !open the cube file you want to read
 print*, 'You are starting to read this cube file ', filename
@@ -187,10 +191,43 @@ end do
 do i=1, grid%nx
   do j=1, grid%ny
 
-    read(10,*) ( array(i,j,k) , k=1,grid%nz )
+    read(10,'(6e13.5)') ( array(i,j,k) , k=1,grid%nz )
 
   end do
 end do
+
+array = -array*AngtoBohr**3 ! transform to Ang-3
+array(grid%nx/2+1,grid%ny/2+1,grid%nz/2+1) = 0._dp
+
+sum_charge = 0._dp
+do k = 1, grid%nz
+  do j = 1, grid%ny
+    do i = 1, grid%nx
+       sum_charge = sum_charge + array(i, j, k)*grid%dv
+    end do
+  end do
+end do
+!print*, 'total electronic charge = ', sum_charge
+array(grid%nx/2+1,grid%ny/2+1,grid%nz/2+1) = (-8.0_dp - sum_charge)/grid%dv
+sum_charge = 0._dp
+do k = 1, grid%nz
+  do j = 1, grid%ny
+    do i = 1, grid%nx
+      sum_charge = sum_charge + array(i, j, k)*grid%dv
+    end do
+  end do
+end do
+!print*, 'new total electronic charge = ', sum_charge
+!print*, 'Done in subroutine read_Gaussian_cube_file'
+
+open(20,file='output/electron_density_z.out')
+do k = 1, grid%nz
+       zz = (k - grid%nz/2 -1)*grid%dl(3)
+        write(20,*) zz, array(grid%nx/2+1,grid%ny/2+1,k),&
+                         array(grid%nx/2+1,k,grid%nz/2+1),array(k,grid%ny/2+1,grid%nz/2+1)
+end do
+close(20)
+
 close(10)
 end subroutine read_Gaussian_cube_file
 
