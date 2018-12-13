@@ -19,7 +19,7 @@ contains
         use module_input
         implicit none
         character(len=80) :: filename
-real(dp), allocatable :: density(:,:,:), charge_density(:,:,:), pseudo_charge_density(:,:,:)
+        real(dp), allocatable :: density(:,:,:), charge_density(:,:,:), pseudo_charge_density(:,:,:)
         integer :: nx, ny, nz, ix, iy, iz, is, isite, no,io
         real(dp), parameter :: pi=acos(-1._dp)
         logical:: output_full_density
@@ -103,37 +103,47 @@ WRITE_SOLVENT_PSEUDO_CHARGE_DENSITY: BLOCK
 use module_input, only: getinput
 real(dp) :: sum_charges
 
-logical :: compute_solvent_pseudo_charge_density
+logical :: write_solvent_pseudo_charge_density
 
-compute_solvent_pseudo_charge_density = getinput%log( "compute_solvent_pseudo_charge_density", defaultValue = .false. )
+write_solvent_pseudo_charge_density = getinput%log( "write_solvent_pseudo_charge_density", defaultValue = .false. )
 
-if( compute_solvent_pseudo_charge_density ) then
+if( write_solvent_pseudo_charge_density ) then
 
-call get_final_Solvent_Pseudo_Charge_Density ( charge_density )
+call get_final_Solvent_Pseudo_Charge_Density ( pseudo_charge_density )
 
-filename = "output/solvent_pseudo_charge_density.cube"
-call write_to_cube_file( charge_density, filename )
+filename = "output/charge_density/solvent_pseudo_charge_density.cube"
+! write charge density as punctual charges
+call write_to_cube_file( pseudo_charge_density, filename )
 print*, "New file created:", trim(adjustl(filename))
+
+filename = "output/charge_density/solvent_pseudo_charge_density_GAUSSIAN.cube"
+call write_to_Gaussian_cube_file( pseudo_charge_density*grid%dv, filename )
+print*, "New file created:", trim(adjustl(filename)),  '   for visualization  !!!!'
+
+filename = "output/charge_density/solvent_pseudo_charge_density_for_GAUSSIAN.out"
+call write_to_Gaussian_charge_file( pseudo_charge_density*grid%dv, filename )
+print*, "New file created:", trim(adjustl(filename)),  '    as input to Gaussian  !!!!'
 
 !  Compute and print corresponding RDFs
 if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) ) then
-filename = 'output/solvent_pseudo_charge_density_rdf'
-charge_density = charge_density/solvent(1)%n0
-call output_rdf ( charge_density , filename ) ! Get radial distribution functions
+filename = 'output/charge_density/solvent_pseudo_charge_density_rdf'
+pseudo_charge_density = pseudo_charge_density/solvent(1)%n0
+!pseudo_charge_density = pseudo_charge_density*grid%dv
+call output_rdf ( pseudo_charge_density , filename ) ! Get radial distribution functions
 print*, "New file created:", trim(adjustl(filename))
 end if
 
 !
-call get_Solvent_Molecule_Pseudo_Charge_Density( charge_density , 1 )
-filename = "output/molecule_pseudo_charge_density.cube"
-call write_to_cube_file( charge_density, filename )
-print*, "New file created:", trim(adjustl(filename))
-if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) ) then
+!call get_Solvent_Molecule_Pseudo_Charge_Density( charge_density , 1 )
+!filename = "output/molecule_pseudo_charge_density.cube"
+!call write_to_cube_file( charge_density, filename )
+!print*, "New file created:", trim(adjustl(filename))
+!if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) ) then
 
-filename = 'output/molecule_pseudo_charge_density_rdf'
-call output_rdf ( charge_density , filename ) ! Get radial distribution functions
-print*, "New file created:", trim(adjustl(filename))
-end if
+!filename = 'output/molecule_pseudo_charge_density_rdf'
+!call output_rdf ( charge_density , filename ) ! Get radial distribution functions
+!print*, "New file created:", trim(adjustl(filename))
+!end if
 
 end if
 
@@ -150,21 +160,21 @@ WRITE_POLARIZATION: BLOCK
         if( write_polarization_to_disk ) then
             allocate(px(nx,ny,nz,size(solvent)), py(nx,ny,nz,size(solvent)), pz(nx,ny,nz,size(solvent)), source=0._dp)
             call get_final_polarization(px,py,pz)
-            filename = "output/Px.cube"
+            filename = "output/polarization/Px.cube"
             call write_to_cube_file(px,filename)
             print*, "New file output/Px.cube. Try$ vmd -cube output/Px.cube"
-            filename = "output/Py.cube"
+            filename = "output/polarization/Py.cube"
             call write_to_cube_file(py,filename)
-            print*, "New file output/Py.cube. Try$ vmd -cube output/Py.cube"
+            print*, "New file output/polarization/Py.cube. Try$ vmd -cube output/Py.cube"
             filename = "output/Pz.cube"
             call write_to_cube_file(pz,filename)
-            print*, "New file output/Pz.cube. Try$ vmd -cube output/Pz.cube"
-            filename='output/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1) , filename)
-            filename = "output/Pnorm.cube"
+            print*, "New file output/polarization/Pz.cube. Try$ vmd -cube output/Pz.cube"
+            filename='output/polarization/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1) , filename)
+            filename = "output/polarization/Pnorm.cube"
             call write_to_cube_file( sqrt( px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ), filename ) 
-            print*, "New file output/Pnorm.cube. Try$ vmd -cube output/Pnorm.cube"
+            print*, "New file output/polarization/Pnorm.cube. Try$ vmd -cube output/Pnorm.cube"
             if( size(solute%site) < 50 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
-                filename = 'output/pnorm'
+                filename = 'output/polarization/pnorm'
                 call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
                 print*, "New output file ", trim(adjustl(filename)), ". Try$ xmgrace output/pnorm.xvg"
             end if

@@ -23,7 +23,7 @@ SUBROUTINE output_rdf (array,filename)
     implicit none
 
     REAL(dp), DIMENSION(grid%nx,grid%ny,grid%nz), INTENT(IN) :: array
-    CHARACTER(50), INTENT(IN) :: filename
+    CHARACTER(80), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
     REAL(dp), ALLOCATABLE :: rdf(:)
     INTEGER:: n,bin,nbins

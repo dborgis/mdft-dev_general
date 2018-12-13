@@ -1,0 +1,8 @@
+#QM argon
+1
+#    charge     sigma     epsilon       x            y           z      Zatomic   Atom Name  Surname
+1      8.0      1.50         1.0      0.00000    0.000000    0.000100      18         Ar        Ar
+# electronic charge density
+argon_electron_density_Gaussian.cube
+#solute-solvent coupling  ("classical_charges" ou "pseudo")
+pseudo

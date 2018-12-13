@@ -1,0 +1,10 @@
+#QM  Potassium K+
+1  1
+#   charge  sigma   epsilon   x       y       z       Z   atom
+1   9.0     1.5     1.5      0.0     0.0     0.0     19  K
+# electronic charge density
+potassium_electron_density_Gaussian.cube
+#solute-solvent coupling  ("classical_charges" ou "pseudo")
+pseudo
+
+

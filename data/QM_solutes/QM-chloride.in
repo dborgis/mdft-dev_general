@@ -1,0 +1,8 @@
+#QM Chloride 
+1
+#    charge     sigma     epsilon      x         y           z      Zatomic   Atom Name  Surname
+1     7.0        1.0       0.10      0.0       0.00        0.00       17       I          I-1 
+# electronic charge density
+chloride_electron_density_Gaussian.cube
+#solute-solvent coupling  ("classical_charges" ou "pseudo")
+pseudo

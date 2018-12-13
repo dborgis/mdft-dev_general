@@ -330,14 +330,16 @@ COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY: BLOCK
         select case (solute%solvent_coupling)
         case ("pseudo")
               call Get_solvent_molecule_reciprocal_pseudo_charge_density
-            print*, 'choix pseudo'
+            print*, 'solvent_quantum_representation: pseudo'
         case ("classical_charges")
               solvent(1)%pseudo_charge_density_k(:,:,:,:) = solvent(1)%sigma_k(:,:,:,:)
-             print*, 'choix classical_charges'
+             print*, 'solvent_quantum_representation: classical_charges'
         end select
 
      else
            solvent(1)%pseudo_charge_density_k(:,:,:,:) = solvent(1)%sigma_k(:,:,:,:)
+           print*, 'if classical solute: solvent_quantum_representation= classical_charges'
+
      end if
 
 END BLOCK COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY
@@ -446,8 +448,9 @@ complex(dp)  :: fac, X
 real(dp) :: GaussianFactor
 complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
 real(dp), parameter :: AngtoBohr = 1.889725989_dp, BohrtoAng = 1.0_dp/AngtoBohr
-real(dp), parameter :: q_h = 0.41_dp, A_1h = 0.75_dp/BohrtoAng, B_1h = 0.150_dp, B_2h = 0.5_dp/BohrtoAng, B_3h = 0.35_dp/BohrtoAng
-real(dp), parameter :: q_o = -0.82_dp, A_1o = 0.575_dp/BohrtoAng, B_1o = 0.620_dp, B_2o = 1.0_dp/BohrtoAng, B_3o = 0.4_dp/BohrtoAng
+real(dp), parameter :: q_h = 0.4238_dp, A_1h = 0.75_dp/BohrtoAng, B_1h = 0.150_dp, B_2h = 0.5_dp/BohrtoAng, B_3h = 0.35_dp/BohrtoAng
+real(dp), parameter :: q_o = -0.8476_dp, A_1o = 0.575_dp/BohrtoAng, B_1o = 0.620_dp, B_2o = 1.0_dp/BohrtoAng, B_3o = 0.4_dp/BohrtoAng
+real(dp), parameter :: C_1o = 0.03195, C_2o = 0.48129_dp/BohrtoAng, C_3o = 0.12092_dp/BohrtoAng
 
 nx = grid%nx
 ny = grid%ny
@@ -476,7 +479,8 @@ if( solvent(1)%name /= 'spce' ) stop 'init_solvent_molecule_pseudo_charge_densit
            n= 1 ! oxygen site
 
            GaussianFactor =  q_o*exp( -sum(kvec**2 )/(4._dp*A_1o**2)) &
-                     - B_1o*( exp(-sum( kvec**2 )/(4._dp*B_2o**2)) - exp(-sum( kvec**2 )/(4._dp*B_3o**2)) )
+                     - B_1o*( exp(-sum( kvec**2 )/(4._dp*B_2o**2)) - exp(-sum( kvec**2 )/(4._dp*B_3o**2)) ) &
+                     + C_1o*( exp(-sum( kvec**2 )/(4._dp*C_2o**2)) - exp(-sum( kvec**2 )/(4._dp*C_3o**2)) )
 
            r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
            r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
@@ -488,7 +492,7 @@ if( solvent(1)%name /= 'spce' ) stop 'init_solvent_molecule_pseudo_charge_densit
         do n= 2, 3 ! sum of hydrogen sites site
 
            GaussianFactor =  q_h*exp(-sum( kvec**2 )/(4._dp*A_1h**2))&
-                - B_1o*( exp(-sum( kvec**2 )/(4._dp*B_2h**2)) - exp(-sum( kvec**2 )/(4._dp*B_3h**2)) )
+                - B_1h*( exp(-sum( kvec**2 )/(4._dp*B_2h**2)) - exp(-sum( kvec**2 )/(4._dp*B_3h**2)) )
 
             r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
             r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )

@@ -74,7 +74,7 @@ contains
 
         IF (verbose) THEN
             BLOCK
-                CHARACTER(50) :: filename
+                CHARACTER(80) :: filename
                 filename='output/soluteChargeDensity.cube'
                 CALL write_to_cube_file ( sourcedistrib, filename  )
             END BLOCK
