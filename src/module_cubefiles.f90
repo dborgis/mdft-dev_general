@@ -101,7 +101,7 @@ contains
         end do
     end do
     close(10)
-  end subroutine
+  end subroutine read_cube_file
 
 
 subroutine write_to_Gaussian_cube_file ( array , filename )
@@ -155,6 +155,8 @@ end subroutine write_to_Gaussian_cube_file
 subroutine read_Gaussian_cube_file( array , filename, sum_charge)
 use module_grid, only: grid
 use precision_kinds, only: dp
+use module_solute, only: solute
+
 
 implicit none
 
@@ -163,6 +165,7 @@ real(dp), intent(out) :: array(grid%nx,grid%ny,grid%nz)
 real(dp), intent(out):: sum_charge
 character(50) :: dummytext
 integer :: numsites,numpoints(3),dummyint,i,j,k,n, ix, iy, iz
+real(dp) :: nucleus_charge( size(solute%site) ), pos(3: size(solute%site)), sum_nuclei_charges
 real(dp) :: deltarinbohr(3),dummyfloat,tmp, zz
 real(dp), parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
 !open the cube file you want to read
@@ -171,8 +174,11 @@ open(10, file=filename, form = 'formatted')
 !read the header
 read(10,*) dummytext
 read(10,*) dummytext
+
 ! number of sites and a bunch of 0 that I do not know why there are here
 read(10,*)  numsites , dummytext
+if( numsites /= size( solute%site) ) stop 'problem in read_Gaussian_Cube_file: nb site ne size( solute%site ) !! '
+
 ! read primary vectors
 read(10,*) numpoints(1), deltarinbohr(1), dummytext
 read(10,*) numpoints(2),dummytext, deltarinbohr(2), dummytext
@@ -188,8 +194,10 @@ if ( abs(deltarinbohr(2) - grid%dy*angtobohr) > 1.0d-5  )  stop "error in read_c
 if ( abs(deltarinbohr(3) - grid%dz*angtobohr) > 1.0d-5  ) stop "error in read_cube_file, the cube file does not have the same DeltaZ than the grid used in MDFT calc"
 
 ! read the atoms and their coordinates in Bohr
+sum_nuclei_charges = 0._dp
 do n = 1, numsites
-read(10,*) dummyint, dummyfloat, dummyfloat,dummyfloat,dummyfloat
+read(10,*) nucleus_charge(n), dummyfloat, dummyfloat,dummyfloat,dummyfloat
+sum_nuclei_charges = sum_nuclei_charges + nucleus_charge(n)
 end do
 !Now read the cube file
 do i=1, grid%nx
@@ -211,7 +219,7 @@ do k = 1, grid%nz
     end do
   end do
 end do
-print*, 'total electronic charge = ', sum_charge
+print*, 'total electronic charge = ', sum_charge,'  total charge = ', sum_charge + sum_nuclei_charges
 array(grid%nx/2+1,grid%ny/2+1,grid%nz/2+1) = (-8.0_dp - sum_charge)/grid%dv
 sum_charge = 0._dp
 do k = 1, grid%nz
@@ -230,6 +238,7 @@ do k = 1, grid%nz
         write(20,*) zz, array(grid%nx/2+1,grid%ny/2+1,k),&
                          array(grid%nx/2+1,k,grid%nz/2+1),array(k,grid%ny/2+1,grid%nz/2+1)
 end do
+!stop
 close(20)
 
 close(10)
@@ -253,8 +262,9 @@ real(dp), parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Ne
 real(dp), parameter :: zero = 0._dp, two =2.0_dp
 real(dp) :: x, y, z
 
+open( 10 , file = filename , form = 'formatted' )
+
 ! write Gaussian_charge_file.
-open(10, file=filename, form = 'formatted')
 
 do i=1, grid%nx
   do j=1, grid%ny

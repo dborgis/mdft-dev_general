@@ -294,8 +294,6 @@ contains
 
               END IF  ! endif QM/MM
 
-
-
 !            end if
 
 

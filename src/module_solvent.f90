@@ -450,6 +450,7 @@ complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
 real(dp), parameter :: AngtoBohr = 1.889725989_dp, BohrtoAng = 1.0_dp/AngtoBohr
 real(dp), parameter :: q_h = 0.4238_dp, A_1h = 0.75_dp/BohrtoAng, B_1h = 0.150_dp, B_2h = 0.5_dp/BohrtoAng, B_3h = 0.35_dp/BohrtoAng
 real(dp), parameter :: q_o = -0.8476_dp, A_1o = 0.575_dp/BohrtoAng, B_1o = 0.620_dp, B_2o = 1.0_dp/BohrtoAng, B_3o = 0.4_dp/BohrtoAng
+!real(dp), parameter :: q_o = -0.8476_dp, A_1o = 0.575_dp/BohrtoAng, B_1o = 3.0*0.620_dp, B_2o = 1.0_dp/BohrtoAng, B_3o = 0.4_dp/BohrtoAng
 real(dp), parameter :: C_1o = 0.03195, C_2o = 0.48129_dp/BohrtoAng, C_3o = 0.12092_dp/BohrtoAng
 
 nx = grid%nx
