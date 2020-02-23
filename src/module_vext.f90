@@ -648,6 +648,31 @@ contains
         end do
 
 
+
+! write coulombic external potential for tests
+!Write_Coulomb_external_potential : BLOCK
+
+!    integer :: io, itheta, iphi, ipsi,  n, ntheta
+!    real(dp) :: z
+
+!    ntheta = grid%ntheta
+!write(*,*) 'colonne 1:  theta, phi, psi=',4.0*grid%thetaofntheta(1)/fourpi,4.0*grid%phiofnphi(1)/fourpi, 4.0*grid%psiofnpsi(1)/fourpi
+!write(*,*) 'colonne 2:  theta, phi, psi=',4.0*grid%thetaofntheta(ntheta)/fourpi,4.0*grid%phiofnphi(1)/fourpi, 4.0*grid%psiofnpsi(1)/fourpi
+
+!    do n = 1, nz
+!          z = (n - 1 -nz/2 -1)*grid%dz
+!          write(100,*) z, solvent(1)%vextq(grid%io(1,1,1), nx/2 +1, ny/2 +1, n),solvent(1)%vextq(grid%io(grid%ntheta,1,1), nx/2 +1, ny/2 +1, n)
+!          write(101,*) z, solvent(1)%vext(grid%io(1,1,1), nx/2 +1, ny/2 +1, n),solvent(1)%vext(grid%io(grid%ntheta,1,1), nx/2 +1, ny/2 +1, n)
+!          write(102,*) z, solvent(1)%vext(grid%io(1,1,1), nx/2 +1, ny/2 +1, n) - solvent(1)%vextq(grid%io(1,1,1), nx/2 +1, ny/2 +1, n),&
+!                           solvent(1)%vext(grid%io(grid%ntheta,1,1), nx/2 +1, ny/2 +1, n) - solvent(1)%vextq(grid%io(grid%ntheta,1,1), nx/2 +1, ny/2 +1, n)
+!    end do
+
+!    STOP
+
+
+!END BLOCK Write_Coulomb_external_potential
+
+
         ! IF (verbose) THEN
         !     BLOCK
         !         CHARACTER(50) :: filename ! dummy
