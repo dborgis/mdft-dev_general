@@ -29,7 +29,7 @@ contains
       use precision_kinds, only: dp, i4b
       use module_input,    ONLY: getinput
       use module_grid, only: grid
-      use module_cubefiles
+      !use module_cubefiles, only : Read_Gaussian_cube_file
 
 
       implicit none
@@ -388,6 +388,99 @@ END Block GET_QUANTUM_ELECTRON_DENSITY
            !$omp end do
            !$omp end parallel
     END SUBROUTINE
+
+
 !
+subroutine read_Gaussian_cube_file( array , filename, sum_charge)
+use module_grid, only: grid
+use precision_kinds, only: dp
+
+
+implicit none
+
+character(80), intent(in) :: filename
+real(dp), intent(out) :: array(grid%nx,grid%ny,grid%nz)
+real(dp), intent(out):: sum_charge
+character(50) :: dummytext
+integer :: numsites,numpoints(3),dummyint,i,j,k,n, ix, iy, iz
+real(dp) :: nucleus_charge( size(solute%site) ), pos(3: size(solute%site)), sum_nuclei_charges
+real(dp) :: deltarinbohr(3),dummyfloat,tmp, zz
+real(dp), parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
+!open the cube file you want to read
+print*, 'You are starting to read this cube file ', filename
+open(10, file=filename, form = 'formatted')
+!read the header
+read(10,*) dummytext
+read(10,*) dummytext
+
+! number of sites and a bunch of 0 that I do not know why there are here
+read(10,*)  numsites , dummytext
+if( numsites /= size( solute%site) ) stop 'problem in read_Gaussian_Cube_file: nb site ne size( solute%site ) !! '
+
+! read primary vectors
+read(10,*) numpoints(1), deltarinbohr(1), dummytext
+read(10,*) numpoints(2),dummytext, deltarinbohr(2), dummytext
+read(10,*) numpoints(3), dummytext,dummytext, deltarinbohr(3)
+
+!For safety check that the numbpoints and the grid length correspond to the
+!grid used in the current calc
+if (numpoints(1)/=grid%nx) stop "error in read_cube_file, the cube file does not have the same number of points in X direction than the grid used in MDFT calc"
+if (numpoints(2)/=grid%ny) stop "error in read_cube_file, the cube file does not have the same number of points in Y direction than the grid used in MDFT calc"
+if (numpoints(3)/=grid%nz) stop "error in read_cube_file, the cube file does not have the same number of points in Z direction than the grid used in MDFT calc"
+if ( abs(deltarinbohr(1) - grid%dx*angtobohr) > 1.0d-5 ) stop "error in read_cube_file, the cube file does not have the same DeltaX than the grid used in MDFT calc"
+if ( abs(deltarinbohr(2) - grid%dy*angtobohr) > 1.0d-5  )  stop "error in read_cube_file, the cube file does not have the same DeltaY than the grid used in MDFT calc"
+if ( abs(deltarinbohr(3) - grid%dz*angtobohr) > 1.0d-5  ) stop "error in read_cube_file, the cube file does not have the same DeltaZ than the grid used in MDFT calc"
+
+! read the atoms and their coordinates in Bohr
+sum_nuclei_charges = 0._dp
+do n = 1, numsites
+read(10,*) nucleus_charge(n), dummyfloat, dummyfloat,dummyfloat,dummyfloat
+sum_nuclei_charges = sum_nuclei_charges + nucleus_charge(n)
+end do
+!Now read the cube file
+do i=1, grid%nx
+do j=1, grid%ny
+
+read(10,'(6e13.5)') ( array(i,j,k) , k=1,grid%nz )
+
+end do
+end do
+array = -array*AngtoBohr**3 ! transform to Ang-3
+print*, 'value at 0 =',array(grid%nx/2+1,grid%ny/2+1,grid%nz/2+1)
+array(grid%nx/2+1,grid%ny/2+1,grid%nz/2+1) = 0._dp
+
+sum_charge = 0._dp
+do k = 1, grid%nz
+do j = 1, grid%ny
+do i = 1, grid%nx
+sum_charge = sum_charge + array(i, j, k)*grid%dv
+end do
+end do
+end do
+print*, 'total electronic charge = ', sum_charge,'  total charge = ', sum_charge + sum_nuclei_charges
+array(grid%nx/2+1,grid%ny/2+1,grid%nz/2+1) = (-8.0_dp - sum_charge)/grid%dv
+sum_charge = 0._dp
+do k = 1, grid%nz
+do j = 1, grid%ny
+do i = 1, grid%nx
+sum_charge = sum_charge + array(i, j, k)*grid%dv
+end do
+end do
+end do
+print*, 'new total electronic charge = ', sum_charge
+print*, 'Done in subroutine read_Gaussian_cube_file'
+
+open(20,file='output/electron_density_z.out')
+do k = 1, grid%nz
+zz = (k - grid%nz/2 -1)*grid%dl(3)
+write(20,*) zz, array(grid%nx/2+1,grid%ny/2+1,k),&
+array(grid%nx/2+1,k,grid%nz/2+1),array(k,grid%ny/2+1,grid%nz/2+1)
+end do
+!stop
+close(20)
+
+close(10)
+end subroutine read_Gaussian_cube_file
+
 
 end module module_solute
