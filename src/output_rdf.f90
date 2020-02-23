@@ -25,7 +25,7 @@ SUBROUTINE output_rdf (array,filename)
     REAL(dp), DIMENSION(grid%nx,grid%ny,grid%nz), INTENT(IN) :: array
     CHARACTER(80), INTENT(IN) :: filename
     REAL(dp) :: RdfMaxRange, dr
-    REAL(dp), ALLOCATABLE :: rdf(:)
+    REAL(dp), ALLOCATABLE :: rdf(:), solute_site_gr(:,:)
     INTEGER:: n,bin,nbins
     TYPE :: errortype
         LOGICAL :: found
@@ -44,6 +44,7 @@ SUBROUTINE output_rdf (array,filename)
     nbins = int( rdfmaxrange/dr ) +1
 
     allocate (rdf(nbins), source=0._dp)
+    allocate( solute_site_gr(nbins, size(solute%site)), source=0.0_dp )
 
     !
     ! Compute and print the site-site radial distribution of each solute site
@@ -81,18 +82,24 @@ SUBROUTINE output_rdf (array,filename)
         dontPrintZeros = .false.
         do bin=1,nbins
             xbin = real((bin-0.5)*dr) ! we use the coordinates of the middle of the bin. first bin from x=0 to x=dr is written has dr/2. 2nd bin [dr,2dr] has coordinate 1.5dr
+            solute_site_gr(bin,n) = rdf(bin)
             if( .not. dontPrintZeros ) then ! print the zeros
                 write(10,*) xbin, rdf(bin) ! For bin that covers 0<r<dr, I print at 0.5dr, i.e., at the middle of the bin
                 if( rdf(bin)/=0 ) dontPrintZeros = .true.
             else if( dontPrintZeros ) then
                 if( rdf(bin)/=0 ) then
                     write(10,*) xbin, rdf(bin)
-                    write(11,*) xbin, rdf(bin)
                 end if
             end if
         end do
     end do
     close(10)
+
+   do bin=1, nbins
+      xbin = real((bin-0.5)*dr)
+      write(11,'(11F7.3)') xbin,(solute_site_gr(bin,n), n=1,min(10,size(solute%site)))  !limited to 10 sites
+   end do
+   close(11)
 
 contains
 
