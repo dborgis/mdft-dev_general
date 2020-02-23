@@ -13,6 +13,7 @@ module module_energy_cproj_mrso
     ! Everything here but the function is private. Don't worry about all these var in the module.
     !
     private
+    public c000  ! c^00_000(q=0)
 
     !
     ! FFTW3 header - modern (fortran 2003) version. Expects iso_c_binding
@@ -31,9 +32,11 @@ module module_energy_cproj_mrso
         real(dp) :: dq
         real(dp), allocatable :: normq(:)
         integer, allocatable :: m(:), n(:), mu(:), nu(:), khi(:)
-        complex(dp), allocatable :: mnmunukhi_q(:,:)
+        complex(dp), allocatable ::  mnmunukhi_q(:,:)
     end type c_type
     type(c_type), protected :: c
+
+    real(dp) :: c000
 
     complex(dp), allocatable, protected :: deltarho_p(:,:,:,:) ! deltarho_p(np,nx,ny,nz)
 
@@ -365,6 +368,7 @@ contains
                 real(dp) :: qmaxnecessary
                 qmaxnecessary = norm2([maxval(grid%kx(1:nx)), maxval(grid%ky(1:ny)), maxval(grid%kz(1:nz/2+1))])
                 call read_c_luc(1,c%mnmunukhi_q,mmax,mrso,qmaxnecessary,c%np,c%nq,c%dq,c%m,c%n,c%mu,c%nu,c%khi,c%ip)
+                c000 = real( c%mnmunukhi_q(1,1)  )
                 !please retains what is dq to compute HS bridge if necessary
                 dq=c%dq
                 ! The c(m,n,mu,nu,khi) that we read from Luc had 2 drawbacks:
