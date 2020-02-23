@@ -5,7 +5,7 @@ module module_solvent
     use module_input, only: getinput
     use module_grid, only: grid
     use constants, only: qfact
-    use module_postprocessing !! for test only. REMOVE
+!    use module_postprocessing !! for test only. REMOVE
 
     implicit none
     private
@@ -210,7 +210,7 @@ contains
         !
         !solvent(1)%name = getinput%char('solvent', defaultvalue="spce") ! This wont be valid anymore when several solvents will be used.
         Do s=1,size(solvent)
-          print*, "Solvent number  " , s, " is " , solvent(s)%name, " with a molecular fraction of", solvent(s)%mole_fraction
+          write(*,'(A,I3,A,A,A,F7.3)') "Solvent number  " , s, " is " , solvent(s)%name," with a molecular fraction of", solvent(s)%mole_fraction
           select case (solvent(s)%name)
           case ("spce")
               solvent(s)%hs_radius = 0.0_dp
@@ -232,7 +232,6 @@ contains
               if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
           case ("tip3p")
               ! cf 
-              print*, "case tip3p"
               solvent(s)%nsite = 3
               solvent(s)%molrotsymorder = 2
               allocate( solvent(s)%site(3) )
@@ -338,7 +337,7 @@ COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY: BLOCK
 
      else
            solvent(1)%pseudo_charge_density_k(:,:,:,:) = solvent(1)%sigma_k(:,:,:,:)
-           print*, 'if classical solute: solvent_quantum_representation= classical_charges'
+!           print*, 'if classical solute: solvent_quantum_representation= classical_charges'
 
      end if
 
@@ -375,7 +374,7 @@ END BLOCK COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY
         complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
         real(dp) :: smootherfactor
-        real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
+        real(dp) :: smootherradius = 0.0_dp ! dramaticaly important
         nx = grid%nx
         ny = grid%ny
         nz = grid%nz
@@ -459,7 +458,7 @@ nz = grid%nz
 no = grid%no
 ns = size(solvent) ! Count of solvent species
 
-print*, 'passed in subroutine get_solvent_molecule_pseudo_charge_density, created by Daniel on 7-12-2018 for introducing QM/MM electron-water pseudopotential'
+!print*, 'passed in subroutine get_solvent_molecule_pseudo_charge_density, created by Daniel on 7-12-2018 for introducing QM/MM electron-water pseudopotential'
 
 ! At this stage: pseudo_charge_density is the Fourier transformed charge density of a single water molecule in the reference frame defined by solvent.in
 
@@ -534,7 +533,7 @@ nz = grid%nz
 no = grid%no
 ns = size(solvent) ! Count of solvent species
 
-print*, 'passed in subroutine init_solvent_molecule_charge_density, created by Daniel on 7-12-2018, same as chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin'
+!print*, 'passed in subroutine init_solvent_molecule_charge_density, created by Daniel on 7-12-2018, same as chargeDensityAndMolecularPolarizationOfASolventMoleculeAtOrigin'
 
 !charge_density is the Fourier transformed "classical" charge density of a single water molecule in the reference frame defined by solvent.in
 
