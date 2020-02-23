@@ -253,7 +253,7 @@ nz = grid%nz
 no = grid%no
 ns = solvent(1)%nspec
 
-print*, 'passed in get_final_Solvent_Pseudo_Charge_Density'
+!print*, 'passed in get_final_Solvent_Pseudo_Charge_Density'
 
 if( ns /= 1 ) stop 'subroutine get_final_Solvent_Pseudo_Density only for a single solvent component'
 
