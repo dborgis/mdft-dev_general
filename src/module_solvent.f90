@@ -374,7 +374,7 @@ END BLOCK COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY
         complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
         real(dp) :: smootherfactor
-        real(dp) :: smootherradius = 0.0_dp ! dramaticaly important
+        real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
         nx = grid%nx
         ny = grid%ny
         nz = grid%nz
@@ -556,7 +556,7 @@ smootherfactor =  exp(-smootherradius**2 * sum( kvec**2 )/2._dp)
 
 r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(1)/2._dp
 r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(2)/2._dp
-r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   ! - grid%length(3)/2._dp
+r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(3)/2._dp
 kr = dot_product( kvec, r )
 X = -iC*kr
 solvent(1)%sigma_k(i,j,k,io) = solvent(1)%sigma_k(i,j,k,io) &
