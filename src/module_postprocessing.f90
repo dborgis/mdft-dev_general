@@ -28,6 +28,7 @@ contains
         real(dp), parameter :: angtobohr = 1.889725989_dp
         logical:: output_full_density
   !      character(180) :: solvent_pseudo_charge_density
+  !      character(80) :: charge_densities_directory_path
 
         nx=grid%nx
         ny=grid%ny
@@ -102,6 +103,7 @@ WRITE_DENSITY: BLOCK
         print*, "New file output/density.bin"
 END BLOCK WRITE_DENSITY
 
+!charge_densities_directory_path =  getinput%char('charge_densities_directory_path', defaultvalue='output/charge_density/')
 
 WRITE_SOLVENT_PSEUDO_CHARGE_DENSITY: BLOCK
 use module_input, only: getinput
@@ -179,12 +181,14 @@ use module_input, only: getinput
 real(dp) :: sum_charges
 
 logical :: write_solvent_electron_density
+character(80) :: solvent_electron_density_type
 
 write_solvent_electron_density = getinput%log( "write_solvent_electron_density", defaultValue = .false. )
+solvent_electron_density_type = getinput%char('solvent_electron_density_type', defaultvalue='point_charges')
 
 if( write_solvent_electron_density ) then
 
-    call Get_water_molecule_reciprocal_electron_density( molecule_charge_density_k )
+    call Get_water_molecule_reciprocal_electron_density( molecule_charge_density_k, solvent_electron_density_type )
     call get_final_Solvent_Pseudo_Charge_Density ( molecule_charge_density_k, electron_density )
 
     filename = "output/charge_density/solvent_electron_density.cube"
@@ -556,7 +560,7 @@ END DO
 end subroutine get_final_polarization
 
 
-subroutine Get_water_molecule_reciprocal_electron_density( water_molecule_electron_density_k )
+subroutine Get_water_molecule_reciprocal_electron_density( water_molecule_electron_density_k , electron_density_type )
 use iso_c_binding
 use precision_kinds
 use module_solvent, only: solvent
@@ -564,14 +568,19 @@ use module_grid, only: grid
 
 implicit none
 integer :: nx, ny, nz, no, ns
-integer :: i, j, k, n, s, io, d
-real(dp)     :: r(3), kr, kvec(3)
+integer :: i, j, k, n, s, io, d, m
+real(dp)     :: r(3), kr, kvec(3), q2, f_o, f_h
 complex(dp), allocatable, intent(out) :: water_molecule_electron_density_k(:,:,:,:)
 complex(dp)  :: fac, X
 real(dp) :: GaussianFactor
 complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
+real(dp), parameter :: fourpi = 4._dp*acos(-1._dp)
 real(dp), parameter :: q_h = 0.4238_dp, q_o = -0.8476_dp !SPC/E
 !real(dp), parameter :: q_h = 0.41_dp, q_o = -0.82_dp !SPC
+real(dp), parameter, dimension(4) :: a_o = (/3.0485, 2.2868, 1.5463, 0.867 /) , b_o =(/ 13.2771, 5.7011, 0.3229, 32.9089 /)
+real(dp), parameter, dimension(4)  :: a_h = (/ 0.48918, 0.262003, 0.196767, 0.049879 /), b_h(4) = (/ 20.6593, 7.74029, 49.5519, 2.20159 /)
+real(dp), parameter :: c_o = 0.2508,  c_h = 0.001305
+character(80) :: electron_density_type
 
 nx = grid%nx
 ny = grid%ny
@@ -589,49 +598,115 @@ if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns
 if( solvent(1)%name /= 'spce' ) stop 'init_solvent_molecule_pseudo_charge_density only work for spc or spce'
 
 
+if(electron_density_type == 'point_charges') then
 !$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
 !$omp do
 
-do io = 1, no
+    do io = 1, no
 
-do k = 1, nz
-do j = 1, ny
-do i = 1, nx/2+1
-kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+    do k = 1, nz
+    do j = 1, ny
+    do i = 1, nx/2+1
+    kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+    q2 = (grid%kx(i)**2 + grid%ky(j)**2 + grid%kz(k)**2)/fourpi**2
 
-n= 1 ! oxygen site
-
-GaussianFactor =  8.8
-
-r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
-r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
-r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
-kr = dot_product( kvec, r )
-X = -iC*kr
-water_molecule_electron_density_k(i,j,k,io) = water_molecule_electron_density_k(i,j,k,io) + exp(X) *(8.0 - q_o)
-
-do n= 2, 3 ! sum of hydrogen sites site
+    n= 1 ! oxygen site
 
 
-r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
-r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
-r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
-kr = dot_product( kvec, r )
-X = -iC*kr
-water_molecule_electron_density_k(i,j,k,io) =  water_molecule_electron_density_k(i,j,k,io)  + exp(X)*(1.0 - q_h)
+    r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
+    r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
+    r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
+    kr = dot_product( kvec, r )
+    X = -iC*kr
+    water_molecule_electron_density_k(i,j,k,io) = water_molecule_electron_density_k(i,j,k,io) + exp(X) *(8.0 - q_o)
 
-end do ! loop over hydrogen sites
+    do n= 2, 3 ! sum of hydrogen sites site
 
 
-end do !loop nx
-end do ! loop ny
-end do !loop nz
+    r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
+    r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
+    r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
+    kr = dot_product( kvec, r )
+    X = -iC*kr
+    water_molecule_electron_density_k(i,j,k,io) =  water_molecule_electron_density_k(i,j,k,io)  + exp(X)*(1.0 - q_h)
 
-end do !loop no
+    end do ! loop over hydrogen sites
 
+
+    end do !loop nx
+    end do ! loop ny
+    end do !loop nz
+
+    end do !loop no
 
 !$omp end do
 !$omp end parallel
+
+elseif (electron_density_type == 'dressed') then
+
+!$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
+!$omp do
+
+    do io = 1, no
+
+    do k = 1, nz
+    do j = 1, ny
+    do i = 1, nx/2+1
+    kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+    q2 = (grid%kx(i)**2 + grid%ky(j)**2 + grid%kz(k)**2)/fourpi**2
+
+    f_o = 0._dp
+       do m = 1, 4
+         f_o = f_o + a_o(m)*exp(-b_o(m)*q2)
+       end do
+    f_o = f_o + c_o
+    f_o = f_o/8._dp
+
+    f_h = 0._dp
+    do m = 1, 4
+    f_h = f_h + a_h(m)*exp(-b_h(m)*q2)
+    end do
+    f_h = f_h + c_h
+
+
+    n= 1 ! oxygen site
+
+
+    r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
+    r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
+    r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
+    kr = dot_product( kvec, r )
+    X = -iC*kr
+    water_molecule_electron_density_k(i,j,k,io) = water_molecule_electron_density_k(i,j,k,io) + exp(X) *(8.0 - q_o)*f_o
+
+    do n= 2, 3 ! sum of hydrogen sites site
+
+
+    r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
+    r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )
+    r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )
+    kr = dot_product( kvec, r )
+    X = -iC*kr
+    water_molecule_electron_density_k(i,j,k,io) =  water_molecule_electron_density_k(i,j,k,io)  + exp(X)*(1.0 - q_h)*f_h
+
+    end do ! loop over hydrogen sites
+
+
+    end do !loop nx
+    end do ! loop ny
+    end do !loop nz
+
+    end do !loop no
+
+!$omp end do
+!$omp end parallel
+
+else
+    STOP 'option erroe in subroutine Get_water_molecule_reciprocal_electron_density'
+
+endif
+
+
 end subroutine Get_water_molecule_reciprocal_electron_density
 
 subroutine Get_SPC_water_molecule_reciprocal_charge_density( SPC_water_charge_density_k )
