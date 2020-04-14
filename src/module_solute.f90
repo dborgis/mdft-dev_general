@@ -39,7 +39,7 @@ contains
       character(3) :: QM_flag
       character(80) :: filename
       real(dp), allocatable :: solute_electron_density(:,:,:)
-      character(130) ::  solute_electron_density_filename
+      character(130) ::  solute_electron_density_filename, cube_file_type
       integer(i4b) :: plan_forward  !for fftw3
 
       include "fftw3.f03"
@@ -71,15 +71,22 @@ GET_QUANTUM_ELECTRON_DENSITY: Block
       if( solute%nature == 'QM') then
         write(*,*) 'the solute is described quantum-mechanically by its electron density'
         read(5,*)  ! comment line
-        read(5,*)  solute_electron_density_filename
-        write(*,*) 'The electron_density_filename : ', solute_electron_density_filename,' was read'
+        read(5,*)  solute_electron_density_filename, cube_file_type
+        write(*,*) 'The electron_density_filename : ', solute_electron_density_filename,' was read, of type ',cube_file_type
         read(5,*)  ! comment line
         read(5,*)  solute%solvent_coupling
         print*, solute%solvent_coupling
 
       allocate ( solute_electron_density( grid%nx, grid%ny, grid%nz ) )
 
-      CALL Read_Gaussian_cube_file( solute_electron_density, solute_electron_density_filename, solute%electronic_charge )
+      if (cube_file_type == 'Gaussian') then
+           CALL Read_Gaussian_cube_file( solute_electron_density, solute_electron_density_filename, solute%electronic_charge )
+      else if (cube_file_type == 'vmd') then
+           CALL Read_cube_file( solute_electron_density, solute_electron_density_filename, solute%electronic_charge )
+      else
+           write(*,*)  'Error in cuble_file_type, should be Gaussian or vmd'
+        STOP
+      end if
       print*,'cube file read: DONE. Total electronic charge =',solute%electronic_charge
 
       allocate( solute%electron_density_k( grid%nx/2 + 1, grid%ny, grid%nz) )
@@ -482,5 +489,73 @@ close(20)
 close(10)
 end subroutine read_Gaussian_cube_file
 
+
+
+subroutine read_cube_file( array , filename, sum_charge)
+use module_grid, only: grid
+use precision_kinds, only: dp
+
+implicit none
+
+character(80), intent(in) :: filename
+real(dp), intent(out) :: array(grid%nx,grid%ny,grid%nz), sum_charge
+real(dp) :: nucleus_charge( size(solute%site) ), pos(3: size(solute%site)), sum_nuclei_charges
+character(80) :: dummytext
+integer :: numsites,numpoints(3),dummyint,i,j,k,n
+real(dp) :: deltarinbohr(3),dummyfloat,tmp
+real(dp), parameter :: angtobohr = 1.889725989_dp ! 1 Bohr = 1.889725989 Ang. Necessary because of VMD understanding of lengths
+!open the cube file you want to read
+print*, 'You are starting to read this cube file ', filename
+open(10, file=filename, form = 'formatted')
+!read the header
+read(10,*) dummytext
+read(10,*) dummytext
+! number of sites and a bunch of 0 that I do not know why there are here
+read(10,*)  numsites , dummytext
+! read primary vectors
+read(10,*) numpoints(1), deltarinbohr(1), dummytext
+read(10,*) numpoints(2),dummytext, deltarinbohr(2), dummytext
+read(10,*) numpoints(3), dummytext,dummytext, deltarinbohr(3)
+!For safety check that the numbpoints and the grid length correspond to the
+!grid used in the current calc
+if (numpoints(1)/=grid%nx) stop "error in read_cube_file, the cube file does not have the same number of points in X direction than the grid used in MDFT calc"
+if (numpoints(2)/=grid%ny) stop "error in read_cube_file, the cube file does not have the same number of points in Y direction than the grid used in MDFT calc"
+if (numpoints(3)/=grid%nz) stop "error in read_cube_file, the cube file does not have the same number of points in Z direction than the grid used in MDFT calc"
+if ( abs(deltarinbohr(1) - grid%dx*angtobohr) > 1.0d-5 ) stop "error in read_cube_file, the cube file does not have the same DeltaX than the grid used in MDFT calc"
+if ( abs(deltarinbohr(2) - grid%dy*angtobohr) > 1.0d-5  )  stop "error in read_cube_file, the cube file does not have the same DeltaY than the grid used in MDFT calc"
+if ( abs(deltarinbohr(3) - grid%dz*angtobohr) > 1.0d-5  ) stop "error in read_cube_file, the cube file does not have the same DeltaZ than the grid used in MDFT calc"
+! read the atoms and their coordinates in Bohr
+sum_nuclei_charges = 0._dp
+do n = 1, numsites
+read(10,*) nucleus_charge(n), dummyfloat, dummyfloat,dummyfloat,dummyfloat
+sum_nuclei_charges = sum_nuclei_charges + nucleus_charge(n)
+end do
+
+!Now read the cube file
+do i=1, grid%nx
+do j=1, grid%ny
+do k=1, grid%nz
+read(10,*) tmp
+array(i,j,k)=tmp
+end do
+end do
+end do
+
+array = -array*AngtoBohr**3 ! transform to Ang-3
+
+sum_charge = 0._dp
+do k = 1, grid%nz
+do j = 1, grid%ny
+do i = 1, grid%nx
+sum_charge = sum_charge + array(i, j, k)*grid%dv
+end do
+end do
+end do
+print*, 'total electronic charge = ', sum_charge,'  total charge = ', sum_charge + sum_nuclei_charges
+
+
+
+close(10)
+end subroutine read_cube_file
 
 end module module_solute

@@ -229,7 +229,7 @@ contains
         real(dp) :: dv, kT,n0, Phib, A3, B6, sigma
 
         real(dp) :: n_cg, DeltaN_cg, deltaN, facteur
-        real(dp) :: vVoxel
+        real(dp) :: vVoxel, c00_000
         real(dp), parameter :: zero = 0._dp, one = 1.0_dp
         real(dp), parameter :: pi=acos(-1._dp)
 
@@ -253,6 +253,10 @@ contains
 
         A3 =  1.0_dp - c000/2.0_dp
 !          write(*,*) "A3 = ",A3, ' B6 =', B6, ' sigma =', sigma, 'cgb_version = ', cgb%version
+        if( solvent(1)%name == "spce" .and. grid%mmax == 0)  c00_000 = -14.64872
+        if( solvent(1)%name == "spce" .and. grid%mmax > 0)   c00_000 = -13.75
+        if( solvent(1)%name == "tip3p" ) c00_000 = -11.9078
+        A3 =  1.0_dp - c00_000/2.0_dp
 
 
         if(is_init .eqv. .FALSE.) then

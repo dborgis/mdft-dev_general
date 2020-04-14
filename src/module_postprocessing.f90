@@ -166,6 +166,7 @@ solvent_electron_density_type = getinput%char('solvent_electron_density_type', d
     ! write charge density as punctual charges
     call write_to_cube_file( charge_density/angtobohr**3, filename )
     print*, "New file created:", trim(adjustl(filename))
+    print*,'minval, maxval of charge_density = ',minval(charge_density/angtobohr**3), maxval(charge_density/angtobohr**3)
 
     !  Compute and print corresponding RDFs
     if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) ) then
@@ -199,6 +200,7 @@ if( write_solvent_electron_density ) then
     ! write charge density as punctual charges
     call write_to_cube_file( electron_density/angtobohr**3, filename )
     print*, "New file created:", trim(adjustl(filename))
+    print*,'minval, maxval of solvent_electron_density = ',minval(electron_density/angtobohr**3), maxval(electron_density/angtobohr**3)
 
     !  Compute and print corresponding RDFs
     if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) ) then
@@ -232,6 +234,7 @@ filename = "output/charge_density/solvent_electrostatic_potential.cube"
 ! write charge density as punctual charges
 call write_to_cube_file( solvent_electrostatic_potential/angtobohr, filename )
 print*, "New file created:", trim(adjustl(filename))
+print*,'minval, maxval of solvent_electrostatic_potential = ',minval(solvent_electrostatic_potential/angtobohr), maxval(solvent_electrostatic_potential/angtobohr)
 
 !  Compute and print corresponding RDFs
 if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) ) then
@@ -1015,13 +1018,13 @@ end select
 electrostatic_potential = fftw3outbackward/real(nx*ny*nz,dp)
 
 ! Only for cubic grids !
-solute_net_charge = sum(solute%site%q)
-If (solute_net_charge /= 0._dp) then
-   electrostatic_potential = electrostatic_potential &
-               - (1.0 - 1.0/solvent(1)%relativePermittivity)*solute_net_charge &
-                 *(1.4185/grid%length(3) + 1.05*solvent(1)%n0)
-   write(*,*) 'TypeB and C corrections applied to the electrostatic potential'
-end if
+!solute_net_charge = sum(solute%site%q)
+!If (solute_net_charge /= 0._dp) then
+!   electrostatic_potential = electrostatic_potential &
+!               - (1.0 - 1.0/solvent(1)%relativePermittivity)*(solute_net_charge &
+!                 *2.837/grid%length(3) + twopi*solvent(1)%n0*0.8476/3.0 )
+!   write(*,*) 'TypeB and C corrections applied to the electrostatic potential'
+!end if
 
 deallocate( fftw3inforward, fftw3outforward, fftw3outbackward, fftw3inbackward )
 end subroutine Get_solvent_electrostatic_potential
