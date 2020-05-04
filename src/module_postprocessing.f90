@@ -22,35 +22,35 @@ contains
         real(dp), allocatable :: density(:,:,:)
         integer :: nx, ny, nz, ix, iy, iz, is, isite, no,io
         real(dp), parameter :: pi=acos(-1._dp)
-        logical:: output_full_density
+        logical:: output_full_density,write_density,write_angular_density
         nx=grid%nx
         ny=grid%ny
         nz=grid%nz
         no=grid%no
 
+        allocate (density(nx,ny,nz))
+        call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
 
         !
         ! print density (in fact, rho/rho0)
         !
-        allocate (density(nx,ny,nz))
-        call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
+WRITE_NUMBER_DENSITIES: BLOCK
+        write_density=getinput%log('write_density', defaultvalue=.false.)
+        IF(write_density) then
         filename = "output/density.cube"
         call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
-        filename = 'output/z_density.out'
-        CALL compute_z_density ( density , filename ) ! TODO for now only write for the first species
         print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
-        filename = 'output/z_density.out'
-        CALL compute_z_density ( density(:,:,:) , filename ) ! TODO for now only write for the first species
+        END IF
 
-
-        output_full_density=getinput%log('write_full_density', defaultvalue=.false.)
         ! print binary file one can use as a restart point
-        !
+        write_angular_density=getinput%log('write_angular_density',defaultvalue=.false.)
+        IF(write_angular_density) then
         open(10,file='output/density.bin',form='unformatted')
-        if (output_full_density) then
-          write(10) -size(solvent)
+        output_full_density=getinput%log('write_full_density',defaultvalue=.false.)
+        if(output_full_density) then
+           write(10) -size(solvent)
         else
-          write(10) size(solvent)
+           write(10) size(solvent)
         end if
         write(10) grid%mmax
         write(10) grid%no
@@ -91,10 +91,10 @@ contains
         end block
         close(10)
         print*, "New file output/density.bin"
+        END IF
+END BLOCK WRITE_NUMBER_DENSITIES
 
 
-
-        !
         ! print polarization in each direction
         !
         block
@@ -114,7 +114,6 @@ contains
             filename = "output/Pz.cube"
             call write_to_cube_file(pz,filename)
             print*, "New file output/Pz.cube. Try$ vmd -cube output/Pz.cube"
-            filename='output/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1) , filename)
             filename = "output/Pnorm.cube"
             call write_to_cube_file( sqrt( px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ), filename ) 
             print*, "New file output/Pnorm.cube. Try$ vmd -cube output/Pnorm.cube"
@@ -221,6 +220,7 @@ contains
                 filename = 'output/rdf.xvg'
                 call output_rdf ( density , filename ) ! Get radial distribution functions
                 print*, "New file ", trim(adjustl(filename))
+                
                 if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
                     call output_gsitesite ! may be very time-consuming for large supercells / solutes
                     call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
