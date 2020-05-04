@@ -78,7 +78,7 @@ contains
 
         if (any(solvent(1)%vext <= -solvent(1)%vext_threeshold)) then
             print*, "OMG we should be calling this prevent_numerical_catastrophe..."
-            error stop
+             error stop
             ! call prevent_numerical_catastrophes
         end if
 

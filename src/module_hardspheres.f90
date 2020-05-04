@@ -86,7 +86,7 @@ subroutine compute_hard_spheres_parameters
   implicit none
   character(4) :: hs_functional
   if(.not.allocated(hs)) allocate(hs(solvent(1)%nspec))
-  hs_functional=getinput%char('hs_functional')
+  hs_functional=getinput%char('hs_functional',defaultvalue = 'PY')
   if(hs_functional(1:2)/='PY' .and. hs_functional(1:2)/='CS') then
     stop "functional not implemented. See module_hardspheres:97"
   end if
@@ -140,7 +140,7 @@ SUBROUTINE excess_chemical_potential_and_reference_bulk_grand_potential
   real(dp) :: R,kT
   integer  :: s
   character(len=4) :: hs_functional
-  hs_functional=getinput%char('hs_functional')
+  hs_functional=getinput%char('hs_functional', defaultvalue = 'PY')
   kT=thermo%kbT
   do s=1,size(solvent) ! compute excess chemical potential, so that bulk grand potential is zero for density = constant = ref bulk density
     ! weighted densities in the case of constant density = ref bulk density

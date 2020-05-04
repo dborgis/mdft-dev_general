@@ -248,6 +248,11 @@ contains
         n0 = solvent(1)%n0
         facteur = kT*vVoxel
 
+        if(is_init .eqv. .FALSE.) then
+            call init
+        end if
+
+
         B6 = cgb%B6
         sigma = cgb%sigma
 
@@ -259,9 +264,6 @@ contains
         A3 =  1.0_dp - c00_000/2.0_dp
 
 
-        if(is_init .eqv. .FALSE.) then
-            call init
-        end if
 
 
 ! We work here with reduced densities rho/rho_0

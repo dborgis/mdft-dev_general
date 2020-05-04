@@ -102,6 +102,7 @@ GET_QUANTUM_ELECTRON_DENSITY: Block
       end select
 
       solute%electron_density_k = solute%electron_density_k*grid%dv
+
 !
       deallocate( solute_electron_density )
 

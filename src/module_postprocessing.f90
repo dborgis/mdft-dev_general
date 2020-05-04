@@ -27,7 +27,7 @@ contains
         complex(dp), parameter :: zeroc=(0._dp,0._dp)
         real(dp), parameter :: angtobohr = 1.889725989_dp
         real(dp) :: charge_smoothing_radius
-        logical:: output_full_density
+        logical:: output_full_density,write_density,write_angular_density
   !      character(180) :: solvent_pseudo_charge_density
   !      character(80) :: charge_densities_directory_path
 
@@ -43,7 +43,12 @@ contains
         allocate ( density(nx, ny, nz) , charge_density(nx, ny, nz ), pseudo_charge_density(nx, ny, nz), electron_density(nx, ny, nz ) )
 
 
-WRITE_DENSITY: BLOCK
+WRITE_NUMBER_DENSITIES: BLOCK
+ !   use module_input
+  !  logical:: output_full_density,output_density,write_angular_density
+
+    write_density=getinput%log('write_density', defaultvalue=.false.)
+    if(write_density) then
         call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
 
         filename = "output/density.cube"
@@ -53,16 +58,18 @@ WRITE_DENSITY: BLOCK
         print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
         filename = 'output/z_density.out'
         CALL compute_z_density ( density(:,:,:) , filename ) ! TODO for now only write for the first species
+    end if
 
+    write_angular_density=getinput%log('write_angular_density', defaultvalue=.false.)
 
-        output_full_density=getinput%log('write_full_density', defaultvalue=.false.)
-        ! print binary file one can use as a restart point
-        !
+! print binary file one can use as a restart point
+    if(write_angular_density) then
         open(10,file='output/density.bin',form='unformatted')
-        if (output_full_density) then
-          write(10) -size(solvent)
+        output_full_density=getinput%log('write_full_density', defaultvalue=.false.)
+        if(output_full_density) then
+           write(10) -size(solvent)
         else
-          write(10) size(solvent)
+           write(10) size(solvent)
         end if
         write(10) grid%mmax
         write(10) grid%no
@@ -103,7 +110,8 @@ WRITE_DENSITY: BLOCK
         end block
         close(10)
         print*, "New file output/density.bin"
-END BLOCK WRITE_DENSITY
+    end if
+END BLOCK WRITE_NUMBER_DENSITIES
 
 allocate ( molecule_charge_density_k(nx/2 +1, ny, nz, no), source = zeroC )
 
