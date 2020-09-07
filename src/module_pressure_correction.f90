@@ -84,7 +84,8 @@ subroutine pressure_correction
     deallocate( density )
     ! when the supercell is empty of any perturbation, ie pure solvent
     nmolecules_without_solute = solvent(1)%n0*product(grid%length)
-
+    write(*,*)
+    write(*,*) "Nb iterations = ",ff%ieval
     write(*,*)
     write(*,'(A,F12.5,A,F9.2,A)') "Supercell volume", product(grid%length)," Ang³ = ",product(grid%length)/1000.," nm³"
     write(*,'(A,F12.7,A)') "Bulk solvent density", solvent(1)%n0," molecule.Ang⁻³"
@@ -106,7 +107,7 @@ block
     character(30) :: bridge_option
 
     bridge_option = getinput%char("bridge", defaultvalue="no")
-    write(*,*)
+
     write(*,*) "bridge_option =  ", bridge_option
     if(bridge_option == 'hard_sphere' ) write(*,'(A,F7.3,A)') 'hard sphere radius = ',hs(1)%r,' A'
     if(bridge_option == 'cgb' ) write(*,'(A,A,A,F6.2,A,F8.3,A)') 'cgb_version = ',cgb%version,'    B6 = ',cgb%B6,'  sigma = ',cgb%sigma,' A'

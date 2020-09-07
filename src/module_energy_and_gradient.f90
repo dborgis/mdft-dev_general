@@ -235,7 +235,7 @@ subroutine energy_and_gradient (f, df)
         reldf = (fold-f)/maxval([abs(fold),abs(f),1._dp])
    !     write(*,"(I5,12F14.4)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%exc_b, ff%pbc_correction, ff%pscheme_correction, reldf, pgtol, Ttot, Textid, Texc
     ! Format qui convient mieux pour une petite fenêtre
-    write(*,"(I5,8F10.3)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%exc_b, reldf, pgtol, Ttot
+       write(*,"(I5,5F10.3,2F10.4,F10.2)") ff%ieval, ff%tot, ff%ext, ff%id, ff%exc_cproj, ff%exc_b, reldf, pgtol, Ttot
     end block
 
 end subroutine energy_and_gradient

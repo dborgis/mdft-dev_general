@@ -143,7 +143,7 @@ write_solvent_pseudo_charge_density = getinput%log( "write_solvent_pseudo_charge
         !print*, "New file created:", trim(adjustl(filename)),  '    as input to Gaussian  !!!!'
 
         !  Compute and print corresponding RDFs
-        if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) ) then
+        if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
             filename = 'output/charge_density/solvent_pseudo_charge_density_rdf'
             !pseudo_charge_density = pseudo_charge_density/solvent(1)%n0
             !pseudo_charge_density = pseudo_charge_density*grid%dv
@@ -177,7 +177,7 @@ solvent_electron_density_type = getinput%char('solvent_electron_density_type', d
     print*,'minval, maxval of charge_density = ',minval(charge_density/angtobohr**3), maxval(charge_density/angtobohr**3)
 
     !  Compute and print corresponding RDFs
-    if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) ) then
+    if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
         filename = 'output/charge_density/solvent_charge_density_rdf'
         !charge_density = charge_density/solvent(1)%n0
         !pseudo_charge_density = pseudo_charge_density*grid%dv
@@ -211,7 +211,7 @@ if( write_solvent_electron_density ) then
     print*,'minval, maxval of solvent_electron_density = ',minval(electron_density/angtobohr**3), maxval(electron_density/angtobohr**3)
 
     !  Compute and print corresponding RDFs
-    if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) ) then
+    if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
         filename = 'output/charge_density/solvent_electron_density_rdf'
         !electron_density = electron_density/solvent(1)%n0
         !pseudo_charge_density = pseudo_charge_density*grid%dv
@@ -245,7 +245,7 @@ print*, "New file created:", trim(adjustl(filename))
 print*,'minval, maxval of solvent_electrostatic_potential = ',minval(solvent_electrostatic_potential/angtobohr), maxval(solvent_electrostatic_potential/angtobohr)
 
 !  Compute and print corresponding RDFs
-if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) ) then
+if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
 filename = 'output/charge_density/solvent_electrostatic_potential_rdf'
 call output_rdf ( solvent_electrostatic_potential, filename ) ! Get radial distribution functions
 print*, "New file created:", trim(adjustl(filename))

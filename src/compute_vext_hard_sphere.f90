@@ -40,11 +40,19 @@ contains
        ny= grid%ny
        nz= grid%nz
   
-  
+! Here for a single site only
+   if (solute%nsite /= 1) then
+       STOP 'Option hard_sphere_solute for one site only'
+   end if
+   if (solute%site(1)%eps /= 0.0_dp) then
+    STOP 'eps should be 0 for hard_sphere_solute option'
+   end if
+   hard_sphere_solute_radius = solute%site(1)%sig
+   write(*,*) 'hard_sphere_solute_radius =',hard_sphere_solute_radius
    
    ! look for tag 'hard_sphere_solute_radius' which gives the radius of the sphere for the external potential
-   hard_sphere_solute_radius=getinput%dp('radius_of_hard_sphere_solute',defaultvalue=0.0_dp)
-   if  (hard_sphere_solute_radius==0.0) return
+   !hard_sphere_solute_radius=getinput%dp('radius_of_hard_sphere_solute',defaultvalue=0.0_dp)
+   !if  (hard_sphere_solute_radius==0.0) return
 
 
    !check if radius is allocated. if not it may be because you wand an hard sphere solute but no hardsphere solvent, in that case
@@ -55,9 +63,11 @@ contains
   
   
    ! compute the sum of solute and solvent radius
+!  HERE MODIFIED: ONLY HS RADIUS, solvent not accounted for
    do solute_site = 1 , solute%nsite
      do s = 1 , solvent(1)%nspec
-       sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + HS(s)%R ) ** 2
+   !    sum_of_solute_and_solvent_radius = ( hard_sphere_solute_radius + HS(s)%R ) ** 2   ! PREVIOUS
+       sum_of_solute_and_solvent_radius =  hard_sphere_solute_radius** 2
        do k = 1 , nz
          z_grid = real( k - 1 , dp ) * deltaz
          z_nm2 = ( z_grid - solute%site(solute_site)%r(3) ) ** 2
