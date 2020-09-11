@@ -230,8 +230,27 @@ contains
               solvent(s)%npluc(0:5)=[1,6,75,252,877,2002]
               solvent(s)%n_line_cfile=1024
               if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
+          case ("spce-m")
+              solvent(s)%name='spce'
+              solvent(s)%hs_radius = 0.0_dp
+              solvent(s)%nsite = 3
+              solvent(s)%molrotsymorder = 2
+              allocate( solvent(s)%site(3) )
+              solvent(s)%site(1:3)%q = [-1.0, 0.5, 0.5]
+              solvent(s)%site(1:3)%sig = [3.166, 0., 0.]
+              solvent(s)%site(1:3)%eps = [0.65, 0., 0.]
+              solvent(s)%site(1)%r = [0., 0., 0.]
+              solvent(s)%site(2)%r = [0.816495, 0.0, 0.5773525]
+              solvent(s)%site(3)%r = [-0.816495, 0.0, 0.5773525]
+              solvent(s)%site(1:3)%Z = [8, 1, 1]
+              solvent(s)%n0 = 0.0332891*solvent(s)%mole_fraction
+              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
+              solvent(s)%relativePermittivity = 71._dp
+              solvent(s)%npluc(0:5)=[1,6,75,252,877,2002]
+              solvent(s)%n_line_cfile=1024
+              if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent spce only avail with mmax between 0 and 5"
           case ("tip3p")
-              ! cf 
+              ! cf
               solvent(s)%nsite = 3
               solvent(s)%molrotsymorder = 2
               allocate( solvent(s)%site(3) )
@@ -252,6 +271,24 @@ contains
               ! Il y aussi J.Chem.Phys.108, 10220 (1998) qui donne 82, 94, 86 suivant N et paramètres de réaction field.
               ! Ma simulation rapide N=100 donne 100, et MC/HNC résultant donne 91.
               ! Luc
+         case ("tip3p-m")
+              solvent(s)%name='tip3p'
+              solvent(s)%nsite = 3
+              solvent(s)%molrotsymorder = 2
+              allocate( solvent(s)%site(3) )
+              solvent(s)%site(1:3)%q = [-0.95, 0.475, 0.475]
+              solvent(s)%site(1:3)%sig = [3.15061, 0., 0.]
+              solvent(s)%site(1:3)%eps = [0.636386, 0., 0.]
+              solvent(s)%site(1)%r = [0., 0., 0.]
+              solvent(s)%site(2)%r = [0.756950, 0.0, 0.585882]
+              solvent(s)%site(3)%r = [-0.756950, 0.0, 0.585882]
+              solvent(s)%site(1:3)%Z = [8, 1, 1]
+              solvent(s)%n0 = 0.03349459*solvent(s)%mole_fraction
+              solvent(s)%rho0 = solvent(s)%n0 / (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
+              solvent(s)%relativePermittivity = 91._dp ! cf mail de Luc du 16/12/2016 :
+              solvent(s)%npluc(0:5)=[1,6,75,252,877,2002]
+              solvent(s)%n_line_cfile=1024
+              if( grid%mmax>5 .or. grid%mmax<0) error stop "solvent tip3p only avail with mmax between 0 and 5"
           case ("acetonitrile")
               ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
               solvent(s)%nsite = 3 ! z<---Me---C--N--
@@ -374,7 +411,7 @@ END BLOCK COMPUTE_SOLVENT_MOLECULE_RECIPROCAL_PSEUDO_CHARGE_DENSITY
         complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
         real(dp), parameter :: epsdp = epsilon(1._dp)
         real(dp) :: smootherfactor
-        real(dp) :: smootherradius = 0.5_dp ! dramaticaly important
+        real(dp) :: smootherradius = 0.2_dp ! dramaticaly important
         nx = grid%nx
         ny = grid%ny
         nz = grid%nz

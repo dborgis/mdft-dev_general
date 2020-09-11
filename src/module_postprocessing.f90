@@ -240,14 +240,14 @@ call Get_solvent_electrostatic_potential( charge_density, solvent_electrostatic_
 
 filename = "output/charge_density/solvent_electrostatic_potential.cube"
 ! write charge density as punctual charges
-call write_to_cube_file( solvent_electrostatic_potential/angtobohr, filename )
+call write_to_cube_file( solvent_electrostatic_potential/angtobohr, filename )  ! here in atomic units
 print*, "New file created:", trim(adjustl(filename))
 print*,'minval, maxval of solvent_electrostatic_potential = ',minval(solvent_electrostatic_potential/angtobohr), maxval(solvent_electrostatic_potential/angtobohr)
 
 !  Compute and print corresponding RDFs
 if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
 filename = 'output/charge_density/solvent_electrostatic_potential_rdf'
-call output_rdf ( solvent_electrostatic_potential, filename ) ! Get radial distribution functions
+call output_rdf ( solvent_electrostatic_potential, filename ) ! Get radial distribution functions: Here in e/A
 print*, "New file created:", trim(adjustl(filename))
 end if
 
@@ -832,6 +832,7 @@ elseif(electron_density_type == 'dressed') then
         SPC_water_charge_density_k(i,j,k,io) = SPC_water_charge_density_k(i,j,k,io) + exp(X)*( -(8.0_dp - q_o)*f_o + 8.0_dp)
 
     do n= 2, 3 ! sum of hydrogen sites site
+
 
 
         r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )
