@@ -3,7 +3,7 @@ module module_postprocessing
     use module_cubefiles 
     implicit none
     private
-    public :: init_postprocessing ! , get_Solvent_Molecule_Pseudo_Charge_Density
+    public :: init_postprocessing !
 
 contains
 !
@@ -35,22 +35,20 @@ contains
         ny=grid%ny
         nz=grid%nz
         no=grid%no
-        charge_smoothing_radius = grid%dl(1)   ! TAKE CARE for non-cubic boxes
+
 
         !
-        ! print density (in fact, rho/rho0)
+        ! compute density (in fact, rho/rho0)
 
         allocate ( density(nx, ny, nz) , charge_density(nx, ny, nz ), pseudo_charge_density(nx, ny, nz), electron_density(nx, ny, nz ) )
-
-
-WRITE_NUMBER_DENSITIES: BLOCK
- !   use module_input
-  !  logical:: output_full_density,output_density,write_angular_density
-
-    write_density=getinput%log('write_density', defaultvalue=.false.)
-    if(write_density) then
         call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
 
+WRITE_NUMBER_DENSITIES: BLOCK
+  !  On option 'write_density = true' computes and writes on disk the number density density(:,:,:) (normalized to 1) as well as
+  !  as the density along a single axis z
+  !
+    write_density=getinput%log('write_density', defaultvalue=.false.)
+    if(write_density) then
         filename = "output/density.cube"
         call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
         filename = 'output/z_density.out'
@@ -59,6 +57,10 @@ WRITE_NUMBER_DENSITIES: BLOCK
         filename = 'output/z_density.out'
         CALL compute_z_density ( density(:,:,:) , filename ) ! TODO for now only write for the first species
     end if
+
+! On option 'write_angular_density = true' writes on disk the angular density to be used as a restart point
+! With option 'write_full_density = true' the density is written in angular space, whereas with 'write_full_density = false'
+! it is written in generalized spherical harmonics projections
 
     write_angular_density=getinput%log('write_angular_density', defaultvalue=.false.)
 
@@ -113,25 +115,43 @@ WRITE_NUMBER_DENSITIES: BLOCK
     end if
 END BLOCK WRITE_NUMBER_DENSITIES
 
+WRITE_DENSITY_RDFs: BLOCK
+if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) .or. getinput%log ('write_rdf', defaultvalue=.false.) ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
+density = density / solvent(1)%n0
+filename = 'output/rdf'
+call output_rdf ( density , filename ) ! Get radial distribution functions
+print*, "New file ", trim(adjustl(filename))
+if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
+call output_gsitesite ! may be very time-consuming for large supercells / solutes
+call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
+end if
+
+end if
+END BLOCK WRITE_DENSITY_RDFs
+
+!        deallocate (density)
+
+
 allocate ( molecule_charge_density_k(nx/2 +1, ny, nz, no), source = zeroC )
 
-WRITE_SOLVENT_PSEUDO_CHARGE_DENSITY: BLOCK
-use module_input, only: getinput
-real(dp) :: sum_charges
 
-logical :: write_solvent_pseudo_charge_density
+!WRITE_SOLVENT_PSEUDO_CHARGE_DENSITY: BLOCK
+!real(dp) :: sum_charges
 
-write_solvent_pseudo_charge_density = getinput%log( "write_solvent_pseudo_charge_density", defaultValue = .false. )
+!logical :: write_solvent_pseudo_charge_density
 
-    if( write_solvent_pseudo_charge_density ) then
+!write_solvent_pseudo_charge_density = getinput%log( "write_solvent_pseudo_charge_density", defaultValue = .false. )
+!charge_smoothing_radius = getinput%dp( "charge_smoothing_radius", defaultValue = grid%dl(1)/2.0 )
 
-        call Get_molecule_reciprocal_pseudo_charge_density( molecule_charge_density_k, charge_smoothing_radius )
-        call get_final_Solvent_Pseudo_Charge_Density ( molecule_charge_density_k, pseudo_charge_density )
+!    if( write_solvent_pseudo_charge_density ) then
 
-        filename = "output/charge_density/solvent_pseudo_charge_density.cube"
-        ! write charge density as punctual charges
-        call write_to_cube_file( pseudo_charge_density/solvent(1)%n0, filename )
-        print*, "New file created:", trim(adjustl(filename))
+!        call Get_molecule_reciprocal_pseudo_charge_density( molecule_charge_density_k, charge_smoothing_radius )
+!        call get_final_Solvent_Charge_Density ( molecule_charge_density_k, pseudo_charge_density )
+
+!        filename = "output/charge_density/solvent_pseudo_charge_density.cube"
+!        ! write charge density as punctual charges
+!        call write_to_cube_file( pseudo_charge_density/angtobohr**3, filename )
+!        print*, "New file created:", trim(adjustl(filename))
 
         !WRITE FOR GAUSSIAN FILES
         !filename = "output/charge_density/solvent_pseudo_charge_density_GAUSSIAN.cube"
@@ -143,54 +163,53 @@ write_solvent_pseudo_charge_density = getinput%log( "write_solvent_pseudo_charge
         !print*, "New file created:", trim(adjustl(filename)),  '    as input to Gaussian  !!!!'
 
         !  Compute and print corresponding RDFs
-        if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
-            filename = 'output/charge_density/solvent_pseudo_charge_density_rdf'
+!            filename = 'output/charge_density/solvent_pseudo_charge_density_rdf'
             !pseudo_charge_density = pseudo_charge_density/solvent(1)%n0
             !pseudo_charge_density = pseudo_charge_density*grid%dv
-            call output_rdf ( pseudo_charge_density/angtobohr**3 , filename ) ! Get radial distribution functions
-            print*, "New file created:", trim(adjustl(filename))
-        end if
+!            call output_rdf ( pseudo_charge_density/solvent(1)%n0 , filename ) ! Get radial distribution functions
+!            print*, "New file created:", trim(adjustl(filename))
 
-    end if
-END BLOCK WRITE_SOLVENT_PSEUDO_CHARGE_DENSITY
+!    end if
+!END BLOCK WRITE_SOLVENT_PSEUDO_CHARGE_DENSITY
 
 
 WRITE_SOLVENT_CHARGE_DENSITY: BLOCK
-use module_input, only: getinput
-real(dp) :: sum_charges
-
 logical :: write_solvent_charge_density
 character(80) :: solvent_electron_density_type
 
 write_solvent_charge_density = getinput%log( "write_solvent_charge_density", defaultValue = .false. )
-solvent_electron_density_type = getinput%char('solvent_electron_density_type', defaultvalue='point_charges')
 
     if( write_solvent_charge_density ) then
 
+IF(solvent(1)%name == 'spce'.OR.solvent(1)%name == 'spce-m') THEN
+    solvent_electron_density_type = getinput%char('solvent_electron_density_type', defaultvalue='point_charges')
     call Get_SPC_water_molecule_reciprocal_charge_density( molecule_charge_density_k, solvent_electron_density_type )
-    call get_final_Solvent_Pseudo_Charge_Density ( molecule_charge_density_k, charge_density )
+    call get_final_Solvent_Charge_Density ( molecule_charge_density_k, charge_density )
+ELSE
+    charge_smoothing_radius = getinput%dp( "charge_smoothing_radius", defaultValue = grid%dl(1)/2.0 )
+    call Get_molecule_reciprocal_pseudo_charge_density( molecule_charge_density_k, charge_smoothing_radius )
+    call get_final_Solvent_Charge_Density ( molecule_charge_density_k, charge_density )
+ENDIF
 
     filename = "output/charge_density/solvent_charge_density.cube"
     ! write charge density as punctual charges
     call write_to_cube_file( charge_density/angtobohr**3, filename )
     print*, "New file created:", trim(adjustl(filename))
-    print*,'minval, maxval of charge_density = ',minval(charge_density/angtobohr**3), maxval(charge_density/angtobohr**3)
+    !print*,'minval, maxval of charge_density = ',minval(charge_density/angtobohr**3), maxval(charge_density/angtobohr**3)
 
     !  Compute and print corresponding RDFs
-    if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
         filename = 'output/charge_density/solvent_charge_density_rdf'
         !charge_density = charge_density/solvent(1)%n0
         !pseudo_charge_density = pseudo_charge_density*grid%dv
         call output_rdf ( charge_density/solvent(1)%n0 , filename ) ! Get radial distribution functions
         print*, "New file created:", trim(adjustl(filename))
-    end if
+
 
     end if
 END BLOCK WRITE_SOLVENT_CHARGE_DENSITY
 
 
 WRITE_SOLVENT_ELECTRON_DENSITY: BLOCK
-use module_input, only: getinput
 real(dp) :: sum_charges
 
 logical :: write_solvent_electron_density
@@ -201,9 +220,13 @@ solvent_electron_density_type = getinput%char('solvent_electron_density_type', d
 
 if( write_solvent_electron_density ) then
 
+IF(solvent(1)%name == 'spce'.OR.solvent(1)%name == 'spce-m') THEN
     call Get_water_molecule_reciprocal_electron_density( molecule_charge_density_k, solvent_electron_density_type )
-    call get_final_Solvent_Pseudo_Charge_Density ( molecule_charge_density_k, electron_density )
-
+    call get_final_Solvent_Charge_Density ( molecule_charge_density_k, electron_density )
+ELSE
+    call Get_molecule_reciprocal_electron_density( molecule_charge_density_k )
+    call get_final_Solvent_Charge_Density ( molecule_charge_density_k, electron_density )
+END IF
     filename = "output/charge_density/solvent_electron_density.cube"
     ! write charge density as punctual charges
     call write_to_cube_file( electron_density/angtobohr**3, filename )
@@ -211,13 +234,11 @@ if( write_solvent_electron_density ) then
     print*,'minval, maxval of solvent_electron_density = ',minval(electron_density/angtobohr**3), maxval(electron_density/angtobohr**3)
 
     !  Compute and print corresponding RDFs
-    if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
         filename = 'output/charge_density/solvent_electron_density_rdf'
         !electron_density = electron_density/solvent(1)%n0
         !pseudo_charge_density = pseudo_charge_density*grid%dv
         call output_rdf ( electron_density/solvent(1)%n0 , filename ) ! Get radial distribution functions
         print*, "New file created:", trim(adjustl(filename))
-    end if
 
 end if
 END BLOCK WRITE_SOLVENT_ELECTRON_DENSITY
@@ -225,7 +246,6 @@ END BLOCK WRITE_SOLVENT_ELECTRON_DENSITY
 deallocate ( molecule_charge_density_k )
 
 WRITE_SOLVENT_ELECTROSTATIC_POTENTIAL: BLOCK
-use module_input, only: getinput
 
 logical :: write_solvent_electrostatic_potential
 
@@ -245,11 +265,10 @@ print*, "New file created:", trim(adjustl(filename))
 print*,'minval, maxval of solvent_electrostatic_potential = ',minval(solvent_electrostatic_potential/angtobohr), maxval(solvent_electrostatic_potential/angtobohr)
 
 !  Compute and print corresponding RDFs
-if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) ) then
+
 filename = 'output/charge_density/solvent_electrostatic_potential_rdf'
 call output_rdf ( solvent_electrostatic_potential, filename ) ! Get radial distribution functions: Here in e/A
 print*, "New file created:", trim(adjustl(filename))
-end if
 
 end if
 END BLOCK WRITE_SOLVENT_ELECTROSTATIC_POTENTIAL
@@ -258,7 +277,6 @@ END BLOCK WRITE_SOLVENT_ELECTROSTATIC_POTENTIAL
         ! print polarization in each direction
         !
 WRITE_POLARIZATION: BLOCK
-        use module_input, only: getinput
         real(dp), allocatable, dimension(:,:,:,:) :: px, py, pz ! last dimension accoutns for the solvent id.
         logical :: write_polarization_to_disk
         write_polarization_to_disk = getinput%log( "write_polarization_to_disk", defaultValue = .false. )
@@ -286,47 +304,17 @@ WRITE_POLARIZATION: BLOCK
         end if
 END BLOCK WRITE_POLARIZATION
 !
-!
-WRITE_DENSITY_RDFs: BLOCK
-            use module_solvent, only: solvent
-            use module_input, only: getinput
-            if( (solvent(1)%nsite < 11 .and. size(solute%site) < 11) .or. getinput%log ('write_rdf', defaultvalue=.false.) ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
-                density = density / solvent(1)%n0
-                filename = 'output/rdf'
-                call output_rdf ( density , filename ) ! Get radial distribution functions
-                print*, "New file ", trim(adjustl(filename))
-                if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
-                    call output_gsitesite ! may be very time-consuming for large supercells / solutes
-                    call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
-                end if
-
-            end if
-END BLOCK WRITE_DENSITY_RDFs
-
-!        deallocate (density)
-
 PRESSURE_CORRECTIONS: BLOCK
-            use module_pressure_correction, only: pressure_correction
-            call pressure_correction()
+use module_pressure_correction, only: pressure_correction
+call pressure_correction()
 END BLOCK PRESSURE_CORRECTIONS
 
-!         if( allocated(hs) ) then
-!           block
-!             real(dp)::x
-!             x=hs(1)%pf
-!             write(*,'(A,F7.2)') "packing fraction η =",x
-!             write(*,'(A,F7.2)') "βP/n PY by pressure route        = (1+2η+3η²)           /(1-η)² =",(1+2*x+3*x**2)/(1-x)**2
-!             write(*,'(A,F7.2)') "βP/n PY by compressibility route = (1+ η+ η²)           /(1-η)³ =",(1+x+x**2)/(1-x)**3
-!             write(*,'(A,F7.2)') "βP/n CS                          = (1+ η+ η²-η³)        /(1-η)³ =",(1+x+x**2-x**3)/(1-x)**3
-!             write(*,'(A,F7.2)') "βP/n CSK                         = (1+ η+ η²-2(1+η)η³/3)/(1-η)³ =",&
-!               (1+x+x**2-(2./3.)*(1+x)*x**3)/((1.-x)**3)
-!           end block
-!         end if
 !
-    end subroutine init_postprocessing
+end subroutine init_postprocessing
+
 !
 !
-subroutine get_final_Solvent_Pseudo_Charge_Density(molecule_charge_density_k, charge_density )
+subroutine get_final_Solvent_Charge_Density(molecule_charge_density_k, charge_density )
 
 use iso_c_binding
 use precision_kinds
@@ -420,117 +408,8 @@ end select
 
 deallocate( charge_density_k, fftw3InForward, fftw3OutForward, fftw3outbackward )
 
-end subroutine get_final_Solvent_Pseudo_Charge_Density
+end subroutine get_final_Solvent_Charge_Density
 
-
-subroutine get_Centered_Solvent_Molecule_Pseudo_Charge_Density( charge_density , io)
-
-! pseudo-charge density of a single molecule at the center of the box
-! for illustration only: takes solvent(1)%pseudo_charge_density_k(:,:,:,io) and
-! shift it to (Lx/2,Ly/2,Lz/2)
-
-use iso_c_binding
-use precision_kinds
-use module_solvent, only: solvent
-use module_grid, only: grid
-
-IMPLICIT NONE
-INTEGER(i2b) :: i, j, k, s
-integer(i2b), intent(in) :: io
-
-REAL(dp), allocatable, intent(out) :: charge_density(:,:,:) ! solvent pseudo-density
-complex(dp), allocatable :: charge_density_k(:,:,:)  !  same in k-space
-
-integer(i4b) :: plan_forward, plan_backward ! fftw3 plan forward or backward
-complex(dp), parameter :: zeroc=(0._dp,0._dp), ic=(0._dp,1._dp)
-real(dp), parameter :: zero = 0._dp
-real(dp), parameter :: twopi  =2._dp*acos(-1._dp)
-real(dp), parameter :: fourpi =2._dp*twopi
-real(dp), parameter :: espdp=epsilon(1._dp)
-integer :: nx, ny, nz, no, ns
-real(dp) :: sum_charges, r(3), kr, kvec(3)
-
-include "fftw3.f03"
-
-nx = grid%nx
-ny = grid%ny
-nz = grid%nz
-no = grid%no
-ns = solvent(1)%nspec
-
-!print*, 'passed in get_Solvent_Molecule_Pseudo_Charge_Density'
-
-if( ns /= 1 ) stop 'subroutine get_Solvent_Molecule_Pseudo_Density only for a single solvent component'
-if(io > no) stop 'in get_Solvent_Molecule_Pseudo_Charge_Density: io cannot be smaller than grid%no '
-
-! allocate the arrays needed as input for fft (in_forward) or output for fft (out_forward)
-! or needed as input for inverse fft (in_backward) etc.
-
-allocate( charge_density (nx, ny, nz) ,source=zero )
-allocate( charge_density_k (nx/2+1, ny, nz) ,source=zeroc)
-
-! prepare plans needed by fftw3
-select case(dp)
-case(c_double)
-call dfftw_plan_dft_c2r_3d (plan_backward, nx, ny, nz, charge_density_k, charge_density, fftw_estimate )
-case(c_float)
-call sfftw_plan_dft_c2r_3d (plan_backward, nx, ny, nz, charge_density_k, charge_density, fftw_estimate )
-end select
-
-charge_density_k(:,:,:) =  solvent(1)%pseudo_charge_density_k(:,:,:,io)
-
-! shift to center of the box
-do k = 1, nz
-  do j = 1, ny
-    do i = 1, nx/2+1
-
-     kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
-
-     r(1) = - grid%length(1)/2._dp
-     r(2) = - grid%length(2)/2._dp
-     r(3) = - grid%length(3)/2._dp
-     kr =  dot_product( kvec, r )
-
-     charge_density_k(i, j, k) = charge_density_k(i, j, k)  * exp(-ic*kr)
-
-    end do !loop nx
-  end do ! loop ny
-end do !loop nz
-
-
-! FFT backward
-select case(dp)
-case(c_double)
-call dfftw_execute(plan_backward)
-case(c_float)
-call sfftw_execute(plan_backward)
-end select
-
-charge_density = charge_density/grid%dv/real(nx*ny*nz,dp)
-
-!check molecule charge density
-   sum_charges = zero
-   do k = 1, nz
-     do j = 1, ny
-       do i = 1, nx
-          sum_charges = sum_charges + charge_density(i, j, k)*grid%dv
-       end do
-     end do
-   end do
-!'print*, '***************'
-print*, 'check solvent charge : io= ', io,'total charge= ',sum_charges
-!'print*, '***************'
-
-select case(dp)
-case(c_double)
-call dfftw_destroy_plan (plan_backward)
-case(c_float)
-call sfftw_destroy_plan (plan_backward)
-end select
-
-deallocate( charge_density_k )
-
-end subroutine get_Centered_Solvent_Molecule_Pseudo_Charge_Density
 !
 !
 !
@@ -859,7 +738,9 @@ else
 end if
 
 end subroutine Get_SPC_water_molecule_reciprocal_charge_density
-
+!
+!
+! Here get solvent molecule reciprocal charge density with pointt charges convoluted by smootherradius
 subroutine Get_molecule_reciprocal_pseudo_charge_density( molecule_charge_density_k, smootherradius )
 
 use module_grid, only: grid
@@ -883,7 +764,6 @@ ns = size(solvent) ! Count of solvent species
 
 if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns = 1'
 
-!allocate( SPC_water_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
 molecule_charge_density_k = zeroC
 
 !$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
@@ -917,8 +797,120 @@ end do !loop no
 !$omp end parallel
 
 end subroutine Get_molecule_reciprocal_pseudo_charge_density
+!
+! ! Here get solvent molecule reciprocal charge density with straight point charges
+subroutine Get_molecule_reciprocal_charge_density( molecule_charge_density_k )
+
+use module_grid, only: grid
+use module_solvent, only: solvent
+implicit none
+integer :: nx, ny, nz, no, ns
+integer :: i, j, k, n, s, io, d, m
+real(dp)     :: r(3), kr, kvec(3), q2, f_o, f_h
+complex(dp)  :: fac, X
+complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
+real(dp), parameter :: epsdp = epsilon(1._dp)
+complex(dp), allocatable :: molecule_charge_density_k(:,:,:,:)
+
+nx = grid%nx
+ny = grid%ny
+nz = grid%nz
+no = grid%no
+ns = size(solvent) ! Count of solvent species
+
+if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns = 1'
+
+!allocate( SPC_water_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
+molecule_charge_density_k = zeroC
+
+!$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
+!$omp do
+do io = 1, no
+
+do k = 1, nz
+do j = 1, ny
+do i = 1, nx/2+1
+
+do n=1, solvent(1)%nsite
+
+kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+
+r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(1)/2._dp
+r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(2)/2._dp
+r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(3)/2._dp
+kr = dot_product( kvec, r )
+X = -iC*kr
+molecule_charge_density_k(i,j,k,io) = molecule_charge_density_k(i,j,k,io) + solvent(1)%site(n)%q*exp(X) ! exact
+end do ! loop over solvent sites
 
 
+end do !loop nx
+end do ! loop ny
+end do !loop nz
+
+end do !loop no
+!$omp end do
+!$omp end parallel
+
+end subroutine Get_molecule_reciprocal_charge_density
+
+
+subroutine Get_molecule_reciprocal_electron_density( molecule_charge_density_k )
+
+use module_grid, only: grid
+use module_solvent, only: solvent
+implicit none
+integer :: nx, ny, nz, no, ns
+integer :: i, j, k, n, s, io, d, m
+real(dp)     :: r(3), kr, kvec(3), q2, f_o, f_h
+complex(dp)  :: fac, X
+complex(dp), parameter :: zeroc = (0._dp,0._dp), ic = (0._dp,1._dp)
+real(dp), parameter :: epsdp = epsilon(1._dp)
+complex(dp), allocatable :: molecule_charge_density_k(:,:,:,:)
+
+nx = grid%nx
+ny = grid%ny
+nz = grid%nz
+no = grid%no
+ns = size(solvent) ! Count of solvent species
+
+if( ns /= 1) stop 'init_solvent_molecule_pseudo_charge_density only works for ns = 1'
+
+!allocate( SPC_water_charge_density_k(nx/2+1, ny, nz, no), SOURCE=zeroC )
+molecule_charge_density_k = zeroC
+
+!$omp parallel private(i, j, k, kvec, smootherfactor, r, kr, X, fac)
+!$omp do
+do io = 1, no
+
+do k = 1, nz
+do j = 1, ny
+do i = 1, nx/2+1
+
+do n=1, solvent(1)%nsite
+
+kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+
+r(1) = dot_product(   [grid%Rotxx(io),grid%Rotxy(io),grid%Rotxz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(1)/2._dp
+r(2) = dot_product(   [grid%Rotyx(io),grid%Rotyy(io),grid%Rotyz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(2)/2._dp
+r(3) = dot_product(   [grid%Rotzx(io),grid%Rotzy(io),grid%Rotzz(io)]  ,  solvent(1)%site(n)%r  )   !  - grid%length(3)/2._dp
+kr = dot_product( kvec, r )
+X = -iC*kr
+molecule_charge_density_k(i,j,k,io) = molecule_charge_density_k(i,j,k,io) + (solvent(1)%site(n)%Z - solvent(1)%site(n)%q)*exp(X) ! exact
+end do ! loop over solvent sites
+
+
+end do !loop nx
+end do ! loop ny
+end do !loop nz
+
+end do !loop no
+!$omp end do
+!$omp end parallel
+
+end subroutine Get_molecule_reciprocal_electron_density
+!
+!
 subroutine Get_solvent_electrostatic_potential( charge_density, electrostatic_potential )
 
 use iso_c_binding
@@ -1037,7 +1029,118 @@ electrostatic_potential = fftw3outbackward/real(nx*ny*nz,dp)
 
 deallocate( fftw3inforward, fftw3outforward, fftw3outbackward, fftw3inbackward )
 end subroutine Get_solvent_electrostatic_potential
+!
+!
+!
+!useless subroutine for time being
+subroutine get_Centered_Solvent_Molecule_Pseudo_Charge_Density( charge_density , io)
 
+! pseudo-charge density of a single molecule at the center of the box
+! for illustration only: takes solvent(1)%pseudo_charge_density_k(:,:,:,io) and
+! shift it to (Lx/2,Ly/2,Lz/2)
+
+use iso_c_binding
+use precision_kinds
+use module_solvent, only: solvent
+use module_grid, only: grid
+
+IMPLICIT NONE
+INTEGER(i2b) :: i, j, k, s
+integer(i2b), intent(in) :: io
+
+REAL(dp), allocatable, intent(out) :: charge_density(:,:,:) ! solvent pseudo-density
+complex(dp), allocatable :: charge_density_k(:,:,:)  !  same in k-space
+
+integer(i4b) :: plan_forward, plan_backward ! fftw3 plan forward or backward
+complex(dp), parameter :: zeroc=(0._dp,0._dp), ic=(0._dp,1._dp)
+real(dp), parameter :: zero = 0._dp
+real(dp), parameter :: twopi  =2._dp*acos(-1._dp)
+real(dp), parameter :: fourpi =2._dp*twopi
+real(dp), parameter :: espdp=epsilon(1._dp)
+integer :: nx, ny, nz, no, ns
+real(dp) :: sum_charges, r(3), kr, kvec(3)
+
+include "fftw3.f03"
+
+nx = grid%nx
+ny = grid%ny
+nz = grid%nz
+no = grid%no
+ns = solvent(1)%nspec
+
+!print*, 'passed in get_Solvent_Molecule_Pseudo_Charge_Density'
+
+if( ns /= 1 ) stop 'subroutine get_Solvent_Molecule_Pseudo_Density only for a single solvent component'
+if(io > no) stop 'in get_Solvent_Molecule_Pseudo_Charge_Density: io cannot be smaller than grid%no '
+
+! allocate the arrays needed as input for fft (in_forward) or output for fft (out_forward)
+! or needed as input for inverse fft (in_backward) etc.
+
+allocate( charge_density (nx, ny, nz) ,source=zero )
+allocate( charge_density_k (nx/2+1, ny, nz) ,source=zeroc)
+
+! prepare plans needed by fftw3
+select case(dp)
+case(c_double)
+call dfftw_plan_dft_c2r_3d (plan_backward, nx, ny, nz, charge_density_k, charge_density, fftw_estimate )
+case(c_float)
+call sfftw_plan_dft_c2r_3d (plan_backward, nx, ny, nz, charge_density_k, charge_density, fftw_estimate )
+end select
+
+charge_density_k(:,:,:) =  solvent(1)%pseudo_charge_density_k(:,:,:,io)
+
+! shift to center of the box
+do k = 1, nz
+do j = 1, ny
+do i = 1, nx/2+1
+
+kvec = [ grid%kx(i), grid%ky(j), grid%kz(k) ]
+
+r(1) = - grid%length(1)/2._dp
+r(2) = - grid%length(2)/2._dp
+r(3) = - grid%length(3)/2._dp
+kr =  dot_product( kvec, r )
+
+charge_density_k(i, j, k) = charge_density_k(i, j, k)  * exp(-ic*kr)
+
+end do !loop nx
+end do ! loop ny
+end do !loop nz
+
+
+! FFT backward
+select case(dp)
+case(c_double)
+call dfftw_execute(plan_backward)
+case(c_float)
+call sfftw_execute(plan_backward)
+end select
+
+charge_density = charge_density/grid%dv/real(nx*ny*nz,dp)
+
+!check molecule charge density
+sum_charges = zero
+do k = 1, nz
+do j = 1, ny
+do i = 1, nx
+sum_charges = sum_charges + charge_density(i, j, k)*grid%dv
+end do
+end do
+end do
+!'print*, '***************'
+print*, 'check solvent charge : io= ', io,'total charge= ',sum_charges
+!'print*, '***************'
+
+select case(dp)
+case(c_double)
+call dfftw_destroy_plan (plan_backward)
+case(c_float)
+call sfftw_destroy_plan (plan_backward)
+end select
+
+deallocate( charge_density_k )
+
+end subroutine get_Centered_Solvent_Molecule_Pseudo_Charge_Density
 
 
 end module module_postprocessing

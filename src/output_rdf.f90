@@ -97,7 +97,8 @@ SUBROUTINE output_rdf (array,filename)
 
    do bin=1, nbins
       xbin = real((bin-0.5)*dr)
-      write(11,'(11F7.3)') xbin,(solute_site_gr(bin,n), n=1,min(50,size(solute%site)))  !limited to 10 sites
+      !write(11,'(11F7.3)') xbin,(solute_site_gr(bin,n), n=1,min(10,size(solute%site)))  !limited to 10 sites
+      write(11,*) xbin,( solute_site_gr(bin,n), n=1,size(solute%site) )  !limited to solute_size
    end do
    close(11)
 

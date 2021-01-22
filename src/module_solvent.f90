@@ -323,13 +323,34 @@ contains
               solvent(s)%site(4)%r = [1.02274, 0.0, 1.8282]  !H1
               solvent(s)%site(5)%r = [-0.51137,  0.88572, 1.8282] ! H2
               solvent(s)%site(6)%r = [-0.51137, -0.88572, 1.8282] ! H3
-              solvent(s)%site(1:6)%Z = [9, 6, 7, 1, 1, 1]
+              solvent(s)%site(1:6)%Z = [6, 6, 7, 1, 1, 1]
               solvent(s)%n0 = 0.011694635*solvent(s)%mole_fraction
               solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
               solvent(s)%relativePermittivity = 26.38_dp ! from Luc
               solvent(s)%npluc(0:6)=[1, 6, 19, 136, 397, 244, 571]
               solvent(s)%n_line_cfile=512
-              if( grid%mmax>4 .or. grid%mmax<0) error stop "mmax is not between 0 and 4"
+              if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 6"
+          case ("acn6_md")
+                ! Reference: Bohm, Mc Donald, Madden
+                solvent(s)%nsite = 6 ! z<---CH3---C--N--
+                solvent(s)%molrotsymorder = 3
+                allocate( solvent(s)%site(6) )
+                solvent(s)%site(1:6)%q = [-0.577, 0.488, -0.514, 0.201, 0.201, 0.201]
+                solvent(s)%site(1:6)%sig = [3.0, 3.4, 3.3, 2.2, 2.2, 2.2]
+                solvent(s)%site(1:6)%eps = [0.4177, 0.4177, 0.4177, 0.0835, 0.0835, 0.0835]
+                solvent(s)%site(1)%r = [0., 0., 1.46]  !C CH3
+                solvent(s)%site(2)%r = [0., 0., 0.]    !C N
+                solvent(s)%site(3)%r = [0., 0., -1.17] !N
+                solvent(s)%site(4)%r = [1.02274, 0.0, 1.8282]  !H1
+                solvent(s)%site(5)%r = [-0.51137,  0.88572, 1.8282] ! H2
+                solvent(s)%site(6)%r = [-0.51137, -0.88572, 1.8282] ! H3
+                solvent(s)%site(1:6)%Z = [6, 6, 7, 1, 1, 1]
+                solvent(s)%n0 = 0.011694635*solvent(s)%mole_fraction
+                solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
+                solvent(s)%relativePermittivity = 26.38_dp ! from Luc
+                solvent(s)%npluc(0:6)=[1, 6, 19, 136, 397, 244, 571]
+                solvent(s)%n_line_cfile=512
+                if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 6"
           case default
                print*,  "the solvent you want to use: ", trim(solvent(s)%name), " is not available, you can only use spce, tip3p or acetonitrile for now, sorry :("
                stop
