@@ -121,12 +121,20 @@ density = density / solvent(1)%n0
 filename = 'output/rdf'
 call output_rdf ( density , filename ) ! Get radial distribution functions
 print*, "New file ", trim(adjustl(filename))
+end if
+
+if( (solvent(1)%nsite > 5 .or. size(solute%site) > 10) .and. getinput%log ('write_site-site_rdf', defaultvalue=.false.) ) then
+   print*, 'site-site rdfs only computed if (solvent(1)%nsite < 5 .and. size(solute%site) < 10)'
+end if
+if( (solvent(1)%nsite < 5 .and. size(solute%site) < 10) .and. getinput%log ('write_site-site_rdf', defaultvalue=.false.) ) then
+   call output_gsitesite ! may be very time-consuming for large supercells / solutes
+   print*, "New file:  output/g-sitesite.out"
+end if
+
 if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
-call output_gsitesite ! may be very time-consuming for large supercells / solutes
 call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
 end if
 
-end if
 END BLOCK WRITE_DENSITY_RDFs
 
 !        deallocate (density)
@@ -1141,6 +1149,10 @@ end select
 deallocate( charge_density_k )
 
 end subroutine get_Centered_Solvent_Molecule_Pseudo_Charge_Density
+
+
+
+
 
 
 end module module_postprocessing

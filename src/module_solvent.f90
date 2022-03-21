@@ -351,8 +351,28 @@ contains
                 solvent(s)%npluc(0:6)=[1, 6, 19, 136, 397, 244, 571]
                 solvent(s)%n_line_cfile=512
                 if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 6"
+           case ("co2-0.8rhoc")
+              ! Reference: Edwards, Madden and McDonald, doi:10.1080/00268978400100731
+                solvent(s)%nsite = 3 ! z<---O--C--O--
+                solvent(s)%molrotsymorder = 1000
+                allocate( solvent(s)%site(3) )
+                solvent(s)%site(1:3)%q = [-0.3256, 0.6512, -0.3256]
+                solvent(s)%site(1:3)%sig = [3.033, 2.757, 3.033]
+                solvent(s)%site(1:3)%eps = [0.669, 0.2338, 0.669]
+                solvent(s)%site(1)%r = [0., 0., 1.149]  !O1
+                solvent(s)%site(2)%r = [0., 0., 0.]    !C 
+                solvent(s)%site(3)%r = [0., 0., -1.149] !O2
+                solvent(s)%site(1:3)%Z = [8, 6, 8]
+                !solvent(1)%n0 = 0.0289
+                solvent(s)%n0 = 0.005115*solvent(s)%mole_fraction
+                solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
+                !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
+                solvent(s)%relativePermittivity = 1.3_dp ! TODO TO BE CHECKED AND INCLUDED.
+                solvent(s)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
+                solvent(s)%n_line_cfile=4096
+                if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 6"
           case default
-               print*,  "the solvent you want to use: ", trim(solvent(s)%name), " is not available, you can only use spce, tip3p or acetonitrile for now, sorry :("
+               print*,  "the solvent you want to use: ", trim(solvent(s)%name), " is not available, sorry :("
                stop
           end select
         end do
