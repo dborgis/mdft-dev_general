@@ -1,6 +1,6 @@
 module module_density
 
-    use precision_kinds, only: dp
+    use precision_kinds, only: dp,i2b
     implicit none
     private
     public :: init_density
@@ -69,7 +69,8 @@ contains
       integer :: ios
 
       integer :: ix, iy, iz, ix_prev, iy_prev, iz_prev
-      integer :: ns_prev, no_prev, nsite_prev, isite, is, no
+      integer :: ns_prev, no_prev, isite, is, no
+      integer(i2b) :: nsite_prev
       integer :: mmax_prev, np_prev, io, mmax, np
       integer :: nx_prev, ny_prev, nz_prev, nx, ny, nz
       type(site_type) :: tmp_site
@@ -104,13 +105,14 @@ contains
       mmax=grid%mmax
 
       read ( 10, iostat=ios ) ns_prev
+      write(*,*) 'ns_prev=',ns_prev
       if (ns_prev<0) then
         read_full_density=.true.
-        print*, "The denisity.bin file you are rereading contains xi(Omega,r)"
+        print*, "The density.bin file you are rereading contains xi(Omega,r)"
         ns_prev=-ns_prev
       else
         read_full_density=.false.
-        print*,  "The denisity.bin file you are rereading is stored in projections"
+        print*,  "The density.bin file you are rereading is stored in projections"
       end if
       read ( 10, iostat=ios ) mmax_prev
       read ( 10, iostat=ios ) no_prev
@@ -129,10 +131,16 @@ contains
       offset_x = (grid%lx - dx_prev * nx_prev) / 2
       offset_y = (grid%ly - dy_prev * ny_prev) / 2
       offset_z = (grid%lz - dz_prev * nz_prev) / 2
+      write(*,*) offset_x,offset_y,offset_z
 
+   !   write(*,*) mmax_prev, grid%mmax
+   !  write(*,*) no_prev, grid%no
+   !  write(*,*) nx_prev, grid%nx
+   !   write(*,*) dx_prev, grid%dx
+   !   write(*,*) nsite_prev,size(solute%site)
       if(nsite_prev /= size(solute%site) ) then
-        print*, "Error in restart. Solutes are differents"
-        stop
+        print*, "Error in restart. Solutes are differents in size"
+      !  stop
       endif
 
       do isite=1,nsite_prev
@@ -142,7 +150,13 @@ contains
             (solute%site(isite)%r(3) /= tmp_site%r(3)+offset_z) .or. &
             (solute%site(isite)%sig /= tmp_site%sig) .or. &
             (solute%site(isite)%eps /= tmp_site%eps) ) then
-          print*, "Error in restart. Solutes are differents"
+          print*, "Error in restart. Solutes are differents in parameters"
+    !      write(*,*) "For site number",isite
+    !      write(*,*) solute%site(isite)%r(1) - tmp_site%r(1)+offset_x
+    !      write(*,*) solute%site(isite)%r(2) - tmp_site%r(2)+offset_y
+    !      write(*,*) solute%site(isite)%r(3) - tmp_site%r(3)+offset_z
+    !      write(*,*) solute%site(isite)%sig - tmp_site%sig
+    !      write(*,*) solute%site(isite)%eps - tmp_site%eps
           stop
         endif
       enddo

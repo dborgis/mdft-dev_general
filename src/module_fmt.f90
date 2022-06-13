@@ -2,7 +2,7 @@ module module_fmt
 
 contains
 
-subroutine  energy_fmt (Ffmt,df)
+subroutine  energy_bridge_fmt (Ffmt,df)
 
   use precision_kinds  ,ONLY: dp, i2b
   use module_thermo, only: thermo
@@ -95,7 +95,6 @@ subroutine  energy_fmt (Ffmt,df)
     end do
   end do
   
-
 
   ! check if the hard sphere functional is Percus-Yevick or Carnahan-Starling
   ! Get the free energy functional that should be used. For now Percus Yevick and Carnahan Starling only. May be expanded.
@@ -217,9 +216,9 @@ subroutine  energy_fmt (Ffmt,df)
         END DO
     END DO
     DEALLOCATE(gamma)
-    print*, Ffmt,Fint
+
     Ffmt=Ffmt-Fint
-    print*, Ffmt,Fint
+
    CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -255,7 +254,6 @@ subroutine  energy_fmt (Ffmt,df)
            INTEGER(i2b) :: k_index
            ! gamma(k)=cs(k)*rho(k)
            ! gamma is named fftw3%in_backward not to have useless big table
-           print*, dq
            do l=1,nx/2+1
              do m=1,ny
                do n=1,nz
@@ -316,6 +314,6 @@ subroutine  energy_fmt (Ffmt,df)
 !  !stop
 !  
 !
-end subroutine energy_fmt
+end subroutine energy_bridge_fmt
 
 end module module_fmt

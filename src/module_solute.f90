@@ -50,7 +50,9 @@ contains
       END DO
       CLOSE (5)
       solute%site%q = solute%site%q * getinput%dp('solute_charges_scale_factor', defaultvalue=1._dp)
-
+      ! solute%site%r(1) = solute%site%r(1) + 1.0
+      ! solute%site%r(2) = solute%site%r(2) + 1.0
+      ! solute%site%r(3) = solute%site%r(3) + 1.0
       block
         real(dp) :: solutexmin, solutexmax, soluteymin, soluteymax, solutezmin, solutezmax, &
                     solutediameterx, solutediametery, solutediameterz!, solutesigmaljmax

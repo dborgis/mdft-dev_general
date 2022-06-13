@@ -16,6 +16,7 @@ module module_lbfgs_nocedal_mdft
                                                  ! epsmch dans lbfgsb.f = epsilon(1.)
       real(mydp)               :: pgtol  = 0.00000001_mydp ! The iteration will stop when max{|proj g_i | i = 1, ..., n} <= pgtol
                                                 ! where pg_i is the ith component of the projected gradient.
+      real(mydp)             :: precision_factor
       character(len=60)      :: task, csave
       logical                :: lsave(4)
       integer                :: isave(44)
@@ -46,6 +47,9 @@ contains
       integer :: n, m
 
       lbfgsb%itermax = getinput%int("maximum_iteration_nbr", defaultvalue=huge(1), assert=">0")
+      lbfgsb%precision_factor = getinput%dp("precision_factor", defaultvalue = 1.0_mydp )
+      lbfgsb%factr = lbfgsb%factr*lbfgsb%precision_factor
+      lbfgsb%pgtol = lbfgsb%pgtol*lbfgsb%precision_factor
 
       lbfgsb%n = grid%nx * grid%ny * grid%nz * grid%no * solvent(1)%nspec
       n=lbfgsb%n

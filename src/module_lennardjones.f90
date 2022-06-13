@@ -1,8 +1,9 @@
 module module_lennardjones
     use precision_kinds, only: dp
     implicit none
+    real(dp) :: LJ_energy_correction
     private
-    public :: calcul_lennardjones, calcul_lennardjones_lent_de_reference
+    public :: calcul_lennardjones, calcul_lennardjones_lent_de_reference, LJ_energy_correction
 contains
 
     subroutine calcul_lennardjones
@@ -86,7 +87,6 @@ contains
         end do
 
 
-
         do s=1,ns
           do ss=1,solvent(s)%nsite
             do io=1,no
@@ -100,6 +100,7 @@ contains
         allocate( xtab(xtabsize) )
         allocate( ytab(ytabsize) )
         allocate( ztab(ztabsize) )
+        LJ_energy_correction = 0._dp
         do u=1,size(solute%site)
           if( solute%site(u)%eps <= epsdp ) cycle ! if the solute site does not wear a Lennard-Jones contribution
 
@@ -144,6 +145,8 @@ contains
               if( solvent(s)%site(ss)%eps<=epsdp ) cycle
               epsuv=sqrt(solute%site(u)%eps * solvent(s)%site(ss)%eps)
               siguv6=(  (solute%site(u)%sig + solvent(s)%site(ss)%sig)*0.5_dp)**6
+              LJ_energy_correction = LJ_energy_correction &
+                        - (16.0_dp*3.14159_dp/3.0_dp)*epsuv*siguv6*solvent(s)%n0/cutoff**3
               !$omp parallel private(indextabz, iz, zgrid, indextaby, iy, ygrid, indextabx, ix, xgrid, io, xss, yss, zss, dx, dy, dz, rsq, vlj, div)
               !$omp do
               do indextabz=1,ztabsize ! indextabz is the index in ztabsize
@@ -235,6 +238,7 @@ contains
       integer :: isolute, s, ss, ix, iy, iz, io, px, py, pz
       cutoff = getinput%dp('rvdw', defaultvalue=10.0_dp, assert=">=0")
       cutoffAuCarre = cutoff**2
+      LJ_energy_correction = 0._dp
       ! pour tous les sites de solutés
       do isolute = 1, size(solute%site)
         ! pour toutes les fluides
@@ -245,6 +249,10 @@ contains
             epsilonLJ = sqrt( solute%site(isolute)%eps * solvent(s)%site(ss)%eps )
             if( epsilonLJ <= epsilon(1.) ) cycle
             sigmaLJ = ( solute%site(isolute)%sig + solvent(s)%site(ss)%sig )/2._dp
+
+            LJ_energy_correction = LJ_energy_correction &
+                          - (16.0_dp*3.14159_dp/3.0_dp)*epsilonLJ*sigmaLJ**6*solvent(s)%n0/cutoff**3
+
             ! pour chaque point de la grille orientationnelle
             do io = 1, grid%no
               ! les trois déplacements ci dessous correspondent au x, y, z d'un site de solvant après rotation lié à l'orientation io.
@@ -292,7 +300,7 @@ contains
           end do
         end do
       end do
-
+write(*,*) 'LJ long range correction = ',LJ_energy_correction,'   computed with calcul_lennardjones_lent_de_reference'
     end subroutine calcul_lennardjones_lent_de_reference
 
 
