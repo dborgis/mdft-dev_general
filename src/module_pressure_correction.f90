@@ -143,11 +143,12 @@ block
     close(80)
 
     write(*,'(A,F12.2,A)') "SFE ISc /PC         ", deltaGtotMDFT + PMV_correction," kJ/mol"
-!    write(*,'(A,F12.2,A)') "SFE ISc*/PC+        ", deltaGtotMDFT + PMV_correction + Volodymyr_empirical_correction," kJ/mol"
+    write(*,'(A,F12.2,A)') "SFE ISc*/PC+        ", deltaGtotMDFT + PMV_correction + Volodymyr_empirical_correction," kJ/mol"
 !    write(*,'(A,F12.2,A)') "SFE with cavity correction ", deltaGtotMDFT -deltaG_cavity," kJ/mol"
+    else 
+      PMV_correction = 0.0_dp
     end if
 end block
-
 
 
     write(*,'(A,F12.2,A)') "ESTIMATED SOLVATION FREE ENERGY: ", deltaGtotMDFT + PMV_correction + LJ_energy_correction,"  kJ/mol"
