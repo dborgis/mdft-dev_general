@@ -36,6 +36,7 @@ subroutine pressure_correction
     real(dp), parameter :: zerodp = 0._dp, epsilon = 1.0e-3_dp
     real(dp) :: deltaG_emptybox, deltaG
     integer :: s, nx, ny, nz, no
+    logical :: apply_pressure_correction
 
     numberdensity = solvent(1)%n0
     deltaGtotMDFT = ff%tot
@@ -124,10 +125,13 @@ block
     call energy_and_gradient(deltaG_emptybox) ! compute the grandpotential of such system
     ff%apply_energy_corrections_due_to_charged_solute = oldvalue ! put back the old value
     Pbulk = deltaG_emptybox / (grid%lx * grid%ly * grid%lz) ! Omega[rho=rho_0]=PV ! Pbulk in kJ/mol/Ang^3
-    write(*,'(A,F12.2,A)') "Bulk pressure       ", Pbulk*kJpermolperang3_to_Pa_x_Pa_to_atm," atm"
+    write(*,'(A,F12.2,A)') "HNC solvation  pressure       ", Pbulk*kJpermolperang3_to_Pa_x_Pa_to_atm," atm"
     open(81,file="output/pressure")
     write(81,*) Pbulk
     close(81)
+    
+    apply_pressure_correction = getinput%log("apply_pressure_correction", defaultvalue= .false.)
+    if( apply_pressure_correction ) then
     PMV_correction  = -deltaN/solvent(1)%n0*Pbulk  !correction is -PV where V is excluded Volume
     Volodymyr_empirical_correction =  deltaN*thermo%kbT
     PMV_correction_with_cavity_volume = Pbulk*cavity_volume
@@ -145,6 +149,8 @@ block
     write(*,'(A,F12.2,A)') "SFE ISc /PC         ", deltaGtotMDFT + PMV_correction," kJ/mol"
     write(*,'(A,F12.2,A)') "SFE ISc*/PC+        ", deltaGtotMDFT + PMV_correction + Volodymyr_empirical_correction," kJ/mol"
 !    write(*,'(A,F12.2,A)') "SFE with cavity correction ", deltaGtotMDFT -deltaG_cavity," kJ/mol"
+     endif 
+     
     else 
       PMV_correction = 0.0_dp
     end if

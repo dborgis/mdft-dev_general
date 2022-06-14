@@ -19,7 +19,7 @@ contains
         use module_input
         implicit none
         character(len=80) :: filename
-        real(dp), allocatable :: density(:,:,:)
+        real(dp), allocatable :: density(:,:,:), charge_density
         integer :: nx, ny, nz, ix, iy, iz, is, isite, no,io
         real(dp), parameter :: pi=acos(-1._dp)
         logical:: output_full_density,write_density,write_angular_density
@@ -28,20 +28,13 @@ contains
         nz=grid%nz
         no=grid%no
 
-        allocate (density(nx,ny,nz))
-        call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
-
+        
         !
         ! print density (in fact, rho/rho0)
         !
-WRITE_NUMBER_DENSITIES: BLOCK
-        write_density=getinput%log('write_density', defaultvalue=.false.)
-        IF(write_density) then
-        filename = "output/density.cube"
-        call write_to_cube_file (density/solvent(1)%rho0/(4*pi**2), filename)
-        print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
-        END IF
 
+
+WRITE_ANGULAR_DENSITIES: BLOCK
         ! print binary file one can use as a restart point
         write_angular_density=getinput%log('write_angular_density',defaultvalue=.false.)
         IF(write_angular_density) then
@@ -92,164 +85,85 @@ WRITE_NUMBER_DENSITIES: BLOCK
         close(10)
         print*, "New file output/density.bin"
         END IF
+END BLOCK WRITE_ANGULAR_DENSITIES
+
+
+allocate (density(nx,ny,nz))
+call grid%integrate_over_orientations( solvent(1)%xi**2 * solvent(1)%rho0, density)
+
+
+WRITE_NUMBER_DENSITIES: BLOCK
+        write_density=getinput%log('write_density', defaultvalue=.false.)
+        IF(write_density) then
+        filename = "output/density.cube"
+        call write_to_cube_file (density/solvent(1)%n0, filename)
+        print*, "New file output/density.cube. Try$ vmd -cube output/density.cube"
+        END IF
 END BLOCK WRITE_NUMBER_DENSITIES
 
 
+WRITE_NUMBER_DENSITY_RDFs: BLOCK
+if( (solvent(1)%nsite < 50 .and. size(solute%site) < 50) .or. getinput%log ('write_rdf', defaultvalue=.false.) ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
+density = density / solvent(1)%n0
+filename = 'output/rdf'
+call output_rdf ( density , filename ) ! Get radial distribution functions
+print*, "New file ", trim(adjustl(filename))
+end if
+
+if( (solvent(1)%nsite > 5 .or. size(solute%site) > 10) .and. getinput%log ('write_site-site_rdf', defaultvalue=.false.) ) then
+   print*, 'site-site rdfs only computed if (solvent(1)%nsite < 5 .and. size(solute%site) < 10)'
+end if
+if( (solvent(1)%nsite < 5 .and. size(solute%site) < 10) .and. getinput%log ('write_site-site_rdf', defaultvalue=.false.) ) then
+   call output_gsitesite ! may be very time-consuming for large supercells / solutes
+   print*, "New file:  output/g-sitesite.out"
+end if
+
+!if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
+!call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
+!end if
+
+END BLOCK WRITE_NUMBER_DENSITY_RDFs
+deallocate (density)
+
         ! print polarization in each direction
         !
-        block
-        use module_input, only: getinput
+
+WRITE_POLARIZATION: BLOCK
         real(dp), allocatable, dimension(:,:,:,:) :: px, py, pz ! last dimension accoutns for the solvent id.
         logical :: write_polarization_to_disk
-        write_polarization_to_disk = getinput%log( "write_polarization_to_disk", defaultValue = .false. )
+        write_polarization_to_disk = getinput%log( "write_polarization", defaultValue = .false. )
         if( write_polarization_to_disk ) then
             allocate(px(nx,ny,nz,size(solvent)), py(nx,ny,nz,size(solvent)), pz(nx,ny,nz,size(solvent)), source=0._dp)
             call get_final_polarization(px,py,pz)
-            filename = "output/Px.cube"
+            filename = "output/polarization/Px.cube"
             call write_to_cube_file(px,filename)
             print*, "New file output/Px.cube. Try$ vmd -cube output/Px.cube"
-            filename = "output/Py.cube"
+            filename = "output/polarization/Py.cube"
             call write_to_cube_file(py,filename)
-            print*, "New file output/Py.cube. Try$ vmd -cube output/Py.cube"
+            print*, "New file output/polarization/Py.cube. Try$ vmd -cube output/Py.cube"
             filename = "output/Pz.cube"
             call write_to_cube_file(pz,filename)
-            print*, "New file output/Pz.cube. Try$ vmd -cube output/Pz.cube"
-            filename = "output/Pnorm.cube"
+            print*, "New file output/polarization/Pz.cube. Try$ vmd -cube output/Pz.cube"
+            filename='output/polarization/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1) , filename)
+            filename = "output/polarization/Pnorm.cube"
             call write_to_cube_file( sqrt( px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ), filename ) 
-            print*, "New file output/Pnorm.cube. Try$ vmd -cube output/Pnorm.cube"
+            print*, "New file output/polarization/Pnorm.cube. Try$ vmd -cube output/Pnorm.cube"
             if( size(solute%site) < 50 ) then ! plotting site site radial distribution functions (of the polarization here) for large molecules is not usefull
-                filename = 'output/pnorm.xvg'
+                filename = 'output/polarization/pnorm'
                 call output_rdf ( sqrt(  px(:,:,:,1)**2 +py(:,:,:,1)**2 +pz(:,:,:,1)**2  ) , filename ) ! Get radial distribution functions
                 print*, "New output file ", trim(adjustl(filename)), ". Try$ xmgrace output/pnorm.xvg"
             end if
+        deallocate( px, py, pz)
         end if
-        end block
+END BLOCK WRITE_POLARIZATION
 
 
+PRESSURE_CORRECTIONS: BLOCK
+use module_pressure_correction, only: pressure_correction
+call pressure_correction()
+END BLOCK PRESSURE_CORRECTIONS
 
-!         use system,             ONLY: thermocond
-!         use module_solvent, only: solvent
-!         use module_input,              ONLY: verbose, getinput
-!         ! use solute_geometry,    ONLY: soluteIsPlanar => isPlanar, soluteIsLinear => isLinear
-!         use constants,          ONLY: zerodp
-!         use hardspheres,        only: hs
-!         use module_grid, only: grid
-!
-!         IMPLICIT NONE
-!
-!         CHARACTER(50):: filename
-!         REAL(dp), ALLOCATABLE , DIMENSION (:,:,:,:) :: neq, Px, Py, Pz ! equilibrium density, ie rho(r), and Pi polarization(r)
-!         INTEGER(i2b) :: nfft1, nfft2, nfft3
-!         INTEGER(i2b) :: s
-!
-!         nfft1 = grid%nx
-!         nfft2 = grid%ny
-!         nfft3 = grid%nz
-!
-!         CALL print_cg_vect_new ! print output/density.bin that contains cg_vect_new
-!
-!         allocate ( neq (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
-!         do s=1,size(solvent)
-!             call get_final_density (neq,s)
-!         end do
-!
-!         DO s=1,solvent(1)%nspec
-!           write(*,'(A,F12.2)') "Solvent molecules in supercell", SUM(neq)*grid%dv *solvent(s)%n0
-!         END DO
-!
-!
-!         IF (verbose) THEN
-!             filename = 'output/density.cube'
-!             CALL write_to_cube_file (neq(:,:,:,1), filename) ! TODO for now only write for the first species
-!             IF ( getinput%char("polarization", defaultvalue="no") /= "no" ) THEN
-!                 ALLOCATE ( Px (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
-!                 ALLOCATE ( Py (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
-!                 ALLOCATE ( Pz (nfft1,nfft2,nfft3,solvent(1)%nspec) ,SOURCE=zerodp)
-!                 CALL get_final_polarization (Px,Py,Pz)
-!                 filename='output/normP.cube' ; CALL write_to_cube_file ( (SQRT(Px(:,:,:,1)**2+Py(:,:,:,1)**2+Pz(:,:,:,1)**2)), filename) ! TODO for now only write for the first species
-!                 filename='output/Px.cube' ; CALL write_to_cube_file(Px(:,:,:,1), filename)
-!                 filename='output/z_Px.dat'; CALL compute_z_density(Px(:,:,:,1) , filename)
-!                 DEALLOCATE (Px)
-!                 filename='output/Py.cube' ; CALL write_to_cube_file(Py(:,:,:,1), filename)
-!                 filename='output/z_Py.dat'; CALL compute_z_density(Py(:,:,:,1) , filename)
-!                 DEALLOCATE (Py)
-!                 filename='output/Pz.cube' ; CALL write_to_cube_file(Pz(:,:,:,1), filename)
-!                 filename='output/z_Pz.dat'; CALL compute_z_density(Pz(:,:,:,1) , filename)
-!                 DEALLOCATE (Pz)
-!             END IF
-!
-!
-!             ! If calculation is for hard sphere fluid in presence of a hard wall compute profile perp wall
-!             ! TODO: DONT HAVE TIME TO WRITE THE TEST TODAY
-!             filename = 'output/z_density.out'
-!             CALL compute_z_density ( neq (:,:,:,1) , filename ) ! TODO for now only write for the first species
-!
-!             ! IF (soluteIsLinear()) THEN
-!             !     ! nothing for now
-!             ! END IF
-!             !
-!             ! IF( soluteIsPlanar() ) THEN
-!             !     PRINT*,'This solute has planar symetry'
-!             !     filename = 'output/planardensity.out'
-!             !     CALL compute_planar_density ( neq (:,:,:,1) , filename ) ! TODO for now only write for the first species
-!             ! END IF
-!
-!             IF ( getinput%char('other_predefined_vext')=='vextdef0' ) THEN
-!                 filename = 'output/molecular_density_in_xy_plane.out'
-!                 PRINT*,"I am writing file ",filename
-!                 OPEN(378,FILE=filename)
-!                     BLOCK
-!                         INTEGER(i2b) :: i,j
-!                         DO i=1,SIZE(neq,1)
-!                             DO j=1,SIZE(neq,2)
-!                                 WRITE(378,*)[i,j]*grid%length(1:2)/grid%n_nodes(1:2),neq(i,j,1,1)
-!                             END DO
-!                             WRITE(378,*)
-!                         END DO
-!                     END BLOCK
-!                 CLOSE(378)
-!             END IF
-!         END IF
-!
-!
-        block
-            use module_solvent, only: solvent
-            use module_input, only: getinput
-            if( (solvent(1)%nsite < 10 .and. size(solute%site) < 10) .or. getinput%log ('write_rdf', defaultvalue=.false.) ) then ! For solutes and solvents with more than a few sites, site-site radial distribution functions are no longer meaningful.
-                density = density / solvent(1)%n0
-                filename = 'output/rdf.xvg'
-                call output_rdf ( density , filename ) ! Get radial distribution functions
-                print*, "New file ", trim(adjustl(filename))
-                
-                if( getinput%log("write_angular_rdf", defaultValue=.false.)) then
-                    call output_gsitesite ! may be very time-consuming for large supercells / solutes
-                    call output_gOfRandCosThetaAndPsi ! may also be very time-consuming
-                end if
-
-            end if
-        end block
-
-        deallocate (density)
-
-        block
-            use module_pressure_correction, only: pressure_correction
-            call pressure_correction()
-        end block
-
-!         if( allocated(hs) ) then
-!           block
-!             real(dp)::x
-!             x=hs(1)%pf
-!             write(*,'(A,F7.2)') "packing fraction η =",x
-!             write(*,'(A,F7.2)') "βP/n PY by pressure route        = (1+2η+3η²)           /(1-η)² =",(1+2*x+3*x**2)/(1-x)**2
-!             write(*,'(A,F7.2)') "βP/n PY by compressibility route = (1+ η+ η²)           /(1-η)³ =",(1+x+x**2)/(1-x)**3
-!             write(*,'(A,F7.2)') "βP/n CS                          = (1+ η+ η²-η³)        /(1-η)³ =",(1+x+x**2-x**3)/(1-x)**3
-!             write(*,'(A,F7.2)') "βP/n CSK                         = (1+ η+ η²-2(1+η)η³/3)/(1-η)³ =",&
-!               (1+x+x**2-(2./3.)*(1+x)*x**3)/((1.-x)**3)
-!           end block
-!         end if
-!
-    end subroutine init_postprocessing
+end subroutine init_postprocessing
 !
 !     SUBROUTINE print_cg_vect_new
 !         use module_minimizer, ONLY: cg_vect_new
