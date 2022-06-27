@@ -514,7 +514,7 @@ contains
                                 deltarho_p_mq_loc = (0._dp,0._dp)
                                 do mup=-m,m
                                     deltarho_p_q_loc  = deltarho_p_q_loc  + gamma_p_q (p3%p(m,mup,mu2)) * R(m,mup,khi)
-                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(p3%p(m,mup,mu2)) * R(m,mup,khi)
+                                    deltarho_p_mq_loc = deltarho_p_mq_loc + gamma_p_mq(p3%p(m,mup,mu2)) * R(m,mup,-khi)  ! SIGN changed
                                 end do
                                 deltarho_p_q(ip) = deltarho_p_q_loc
                                 deltarho_p_mq(ip) = deltarho_p_mq_loc *(-1)**m
@@ -633,7 +633,7 @@ contains
                                 ! Equation 1.22
                                 do khi=-m,m
                                     deltarho_p_q(ip)  = deltarho_p_q(ip)  + gamma_p_q (p3%p(m,khi,mu2)) *R(m,mup,khi)
-                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(p3%p(m,khi,mu2)) *R(m,mup,khi)
+                                    deltarho_p_mq(ip) = deltarho_p_mq(ip) + gamma_p_mq(p3%p(m,khi,mu2)) *R(m,mup,-khi)  !  SIGN changed
                                 end do
                                 deltarho_p_mq(ip) = deltarho_p_mq(ip) *(-1)**m
                             end do

@@ -159,11 +159,8 @@ contains
         if (rmat3(1)/=0._dp .or. rmat3(2)/=0._dp) then       ! if rmat3 is along with axis z, the GSH is null, and we don't carre about phi.
             rmat2 = cross_product((/0._dp,0._dp,1._dp/),rmat3) ! in the MDFT definition of Omega, the rotation axes are z-y-z.
         else ! qx=qy=0
-            if (rmat3(3)>=0) then
-                rmat2 = cross_product(rmat3,(/1._dp,0._dp,0._dp/)) ! cross product of rmat3 and axis x gives axis y, phi definied as zero.
-            else
-                rmat2 = -cross_product(rmat3,(/1._dp,0._dp,0._dp/))
-            end if
+             rmat2 = cross_product(rmat3,(/1._dp,0._dp,0._dp/)) ! cross product of rmat3 and axis x gives axis y, phi definied as zero.
+            
         end if
         !
         ! Normalize
