@@ -56,7 +56,7 @@ SET(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod")
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran*")
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -ffree-line-length-none -O3 -ffast-math -pedantic -std=f2008 -fopenmp")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-march=native -ffree-line-length-none -O0             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds -g -fopenmp")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-march=native -ffree-line-length-none -O0             -pedantic -std=f2008 -ffpe-trap=zero,underflow,overflow -Wall -fcheck=bounds -pg -fopenmp")
   #-ftree-vectorizer-verbose=10 -fopt-info
   #set (CMAKE_Fortran_FLAGS_DEBUG   "-g -fbacktrace -pedantic -fwhole-file -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -fbounds-check -pg -frecursive -fcheck=all -Wall -ffpe-trap=zero,underflow,overflow")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
@@ -98,6 +98,7 @@ set(mdft_SRCS
   src/module_energy_cdeltacd.f90
   src/module_thermo.f90
   src/module_debug.f90
+#  src/module_aposteriori_corrections.f90
   src/compute_vext_hard_cylinder.f90
   src/compute_vext_hard_sphere.f90
   src/compute_wca_diameter.f90
