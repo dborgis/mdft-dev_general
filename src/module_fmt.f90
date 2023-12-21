@@ -47,10 +47,10 @@ subroutine  energy_bridge_fmt (Ffmt,df)
   kT = thermo%kBT 
 
   ! in case of empty supercell
-  if( all(abs(solvent(1)%xi)<=epsdp) ) then
-    Ffmt = -sum( hs%Fexc0 * solvent(1)%mole_fraction )
-    return
-  end if
+  !if( all(abs(solvent(1)%xi)<=epsdp) ) then
+   ! Ffmt = -sum( hs%Fexc0 * solvent(1)%mole_fraction )
+   ! return
+  !end if
   
   allocate( rho (nx,ny,nz,solvent(1)%nspec) ,SOURCE=0._dp)
   do s=1,size(solvent)
@@ -119,6 +119,8 @@ subroutine  energy_bridge_fmt (Ffmt,df)
   ! gradients
   ! dFHS_i and weighted_density_j are arrays of dimension (nx,ny,nz)
   ! excess free energy per atom derived wrt weighted density 0 (eq. A5 in Sears2003)
+   IF( present(df) ) THEN
+  
   allocate ( dFHS(nx,ny,nz,wdl:wdu) ,SOURCE=0._dp)
 
   ! Perkus Yevick
@@ -193,12 +195,14 @@ subroutine  energy_bridge_fmt (Ffmt,df)
     end do
   end do
   deallocate (dFex)
-
+  END IF  ! end present(df)
+  
     CALL build_delta_rho_from_last_minimizer_step
     CALL build_delta_rho_in_Fourier_space
     CALL build_gamma_is_delta_rho_k_dot_cs_k
 
     ! compute excess energy and its gradient
+    If( present(df) ) then
     Fint = 0.0_dp
     DO s = 1 , solvent(1)%nspec
         fact = dv* solvent(s)%rho0
@@ -215,9 +219,27 @@ subroutine  energy_bridge_fmt (Ffmt,df)
             END DO
         END DO
     END DO
+    ELSE  ! if df not present
+    Fint = 0.0_dp
+    DO s = 1 , solvent(1)%nspec
+        fact = dv* solvent(s)%rho0
+        DO i = 1 , nx
+            DO j = 1 , ny
+                DO k = 1 , nz
+                    Vint = -kt * solvent(s)%rho0 * gamma(i,j,k)
+                    DO io = 1 , grid%no
+                            psi = solvent(s)%xi(io,i,j,k)
+                            Fint = Fint   + grid%w(io)* fact * 0.5_dp * ( psi ** 2 - 1.0_dp) * Vint
+                    END DO
+                END DO
+            END DO
+        END DO
+    END DO
+    END IF !end present(df)
     DEALLOCATE(gamma)
 
     Ffmt=Ffmt-Fint
+    write(*,*) 'Ffmt =', Ffmt
 
    CONTAINS
 

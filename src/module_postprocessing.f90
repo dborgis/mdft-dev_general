@@ -39,7 +39,7 @@ WRITE_ANGULAR_DENSITIES: BLOCK
         write_angular_density=getinput%log('write_angular_density',defaultvalue=.false.)
         IF(write_angular_density) then
         open(10,file='output/density.bin',form='unformatted')
-        output_full_density=getinput%log('write_full_density',defaultvalue=.false.)
+        output_full_density=getinput%log('write_full_density',defaultvalue=.true.)
         if(output_full_density) then
            write(10) -size(solvent)
         else

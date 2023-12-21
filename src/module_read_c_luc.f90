@@ -121,6 +121,7 @@ contains
             end block
         end block
         close(88)
+        !write(*,*) cmnmunukhi(1,1),'   dans read_c_luc'
     end subroutine read_c_luc
 
 end module module_read_c_luc

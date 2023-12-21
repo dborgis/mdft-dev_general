@@ -241,8 +241,6 @@ end subroutine energy_and_gradient
 
 
 
-
-
 subroutine energy_bridge(fb, df)
     use precision_kinds, only: dp
     use module_input, only: getinput
@@ -263,7 +261,12 @@ subroutine energy_bridge(fb, df)
       end if
     case("hard_sphere")    
       call cs_of_k_hard_sphere 
-      call energy_bridge_fmt (fb, df)
+      if( present(df) ) then
+        call energy_bridge_fmt (fb, df)
+      else
+        call energy_bridge_fmt (fb)
+      end if
+      
     case ("wca")
        stop "wca bridge not yet (re)implemented!"
     case ("3b")

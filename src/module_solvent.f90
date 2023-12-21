@@ -54,6 +54,7 @@ module module_solvent
         type(correlationfunction_type) :: cd
         complex(dp), allocatable :: ck_angular(:,:,:,:,:,:) ! TODO REMOVE THIS IS FOR TESTING PURPOSE ONLY!
         real(dp) :: relativePermittivity ! relative permittivity == static dielectric constant = dielectric constant = coonstante diélectrique
+        real(dp) :: pressure = 0.0  !pressure for the state point under consideration, in bar. Set to zero.
         integer:: npluc(0:6)
         integer:: n_line_cfile
     contains
@@ -363,6 +364,7 @@ contains
                 solvent(s)%rho0 = solvent(s)%n0/ (8._dp*acos(-1._dp)**2/solvent(s)%molrotsymorder)
                 !solvent(1)%rho0 = solvent(1)%n0/ (8._dp*acos(-1._dp)**2)
                 solvent(s)%relativePermittivity = 1.3_dp ! TODO TO BE CHECKED AND INCLUDED.
+                solvent(s)%pressure = 102.7  !pressure of the bulk solvent in bar
                 solvent(s)%npluc(0:6)=[1,6, 19, 44, 85, 146, 231]
                 solvent(s)%n_line_cfile=4096
                 if( grid%mmax>6 .or. grid%mmax<0) error stop "mmax is not between 0 and 6"
