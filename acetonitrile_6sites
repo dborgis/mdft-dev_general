@@ -1,9 +1,0 @@
-acetonitrile 6 sites from Bohm, McDonald and Madden
-6                                        
-index; charge; sigmaLJ (Angstroms); epsilonLJ (kJ/mol); x (Angstroms); y (Angstroms); z (Angstroms); atomic Number Z; comment
-1  -0.577    3.000    0.4177    0.0000    0.00000    1.46000    6     C(H3)        
-2   0.488    3.400    0.4177    0.0000    0.00000    0.00000    6     C(N)        
-3  -0.514    3.300    0.4177    0.0000    0.00000   -1.17000    7     N        
-4   0.201    2.200    0.0835    1.02274   0.00000    1.82820    1     H1        
-5   0.201    2.200    0.0835   -0.51137   0.88572    1.82820    1     H2        
-6   0.201    2.200    0.0835   -0.51137  -0.88572    1.8282     1     H3        
